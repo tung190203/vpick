@@ -1,38 +1,36 @@
 import { createRouter, createWebHistory } from 'vue-router'
-
-import LoginPage from '@/components/pages/LoginPage.vue'
-import DashboardPage from '@/components/pages/DashboardPage.vue'
-import AppLayout from '@/layouts/AppLayout.vue'
-import AuthLayout from '@/layouts/AuthLayout.vue'
-
-const routes = [
-  {
-    path: '/login',
-    component: AuthLayout,
-    children: [
-      {
-        path: '',
-        name: 'login',
-        component: LoginPage
-      }
-    ]
-  },
-  {
-    path: '/',
-    component: AppLayout,
-    children: [
-      {
-        path: '',
-        name: 'dashboard',
-        component: DashboardPage
-      }
-    ]
-  }
-]
+import { route } from './router'
+import {LOCAL_STORAGE_KEY} from "@/constants/index.js";
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
-})
+  routes: route
+});
 
-export default router
+// router.beforeEach((to, from, next) => {
+//   const loginToken = localStorage.getItem(LOCAL_STORAGE_KEY.LOGIN_TOKEN);
+//   const authPages = ["login", "register"];
+//   if (!loginToken && !authPages.includes(to.name)) {
+//     next({ name: "login", query: { redirect: to.fullPath } });
+//   } else if (loginToken && authPages.includes(to.name)) {
+//     next({ name: "dashboard" });
+//   } else {
+//     next();
+//   }
+// });
+router.beforeEach((to, from, next) => {
+  const loginToken = localStorage.getItem(LOCAL_STORAGE_KEY.LOGIN_TOKEN);
+  const authPages = ["login", "register"];
+  const allowWithoutToken = ["login-success"]; // cho phép vào route này không cần token
+
+  if (!loginToken && !authPages.includes(to.name) && !allowWithoutToken.includes(to.name)) {
+    next({ name: "login", query: { redirect: to.fullPath } });
+  } else if (loginToken && authPages.includes(to.name)) {
+    next({ name: "dashboard" });
+  } else {
+    next();
+  }
+});
+
+
+export default router;

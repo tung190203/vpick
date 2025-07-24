@@ -12,11 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->id(); // id (PK)
+            $table->id();
             $table->string('full_name');
             $table->string('email')->unique();
-            $table->string('password_hash');
+            $table->string('password');
             $table->string('avatar_url')->nullable();
+            $table->string('google_id')->nullable();
             $table->integer('vndupr_score')->default(0);
             $table->string('tier')->nullable();
             $table->enum('role', ['player', 'referee', 'admin'])->default('player');
