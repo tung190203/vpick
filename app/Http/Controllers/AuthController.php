@@ -2,10 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\ResetPasswordMail;
 use App\Models\User;
 use App\Notifications\VerifyEmailNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Str;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -53,7 +57,67 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Đăng ký thành công. Vui lòng kiểm tra email để xác minh tài khoản.'
-          ]);
+        ]);
+    }
+
+    public function forgotPassword(Request $request)
+    {
+        $request->validate(['email' => 'required|email']);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return response()->json(['message' => 'Email không tồn tại'], 404);
+        }
+        $token = Str::random(60);
+
+        DB::table('password_reset_tokens')->updateOrInsert(
+            ['email' => $user->email],
+            [
+                'token' => bcrypt($token),
+                'created_at' => now()
+            ]
+        );
+
+        $resetLink = url('/reset-password?token=' . $token . '&email=' . urlencode($user->email));
+
+        // Gửi email
+        Mail::to($user->email)->send(new ResetPasswordMail($resetLink));
+
+
+        return response()->json(['message' => 'Đã gửi email đặt lại mật khẩu']);
+    }
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'token' => 'required',
+            'password' => 'required|min:6|confirmed',
+        ]);
+
+        $record = DB::table('password_reset_tokens')->where('email', $request->email)->first();
+
+        if (!$record) {
+            return response()->json(['message' => 'Không tìm thấy yêu cầu đặt lại mật khẩu.'], 404);
+        }
+
+        if (!Hash::check($request->token, $record->token)) {
+            return response()->json(['message' => 'Token không hợp lệ hoặc đã hết hạn.'], 400);
+        }
+
+        // Đặt lại mật khẩu
+        $user = User::where('email', $request->email)->first();
+        if (!$user) {
+            return response()->json(['message' => 'Người dùng không tồn tại.'], 404);
+        }
+
+        $user->password = $request->password;
+        $user->save();
+
+        // Xoá token sau khi đặt lại xong
+        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+
+        return response()->json(['message' => 'Mật khẩu đã được đặt lại thành công']);
     }
 
     public function refresh(Request $request)
@@ -110,15 +174,6 @@ class AuthController extends Controller
         }
     }
 
-    public function logout(Request $request)
-    {
-        try {
-            JWTAuth::invalidate($request->bearerToken());
-            return response()->json(['message' => 'Đăng xuất thành công']);
-        } catch (JWTException $e) {
-            return response()->json(['error' => 'Không thể đăng xuất'], 500);
-        }
-    }
     public function me(Request $request)
     {
         return response()->json($request->user());

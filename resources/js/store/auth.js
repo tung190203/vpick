@@ -46,9 +46,15 @@ export const useUserStore = defineStore("user", () => {
   };
 
   const logoutUser = async () => {
-    await AuthService.logout()
     clearUserData()
     localStorage.removeItem(LOCAL_STORAGE_KEY.LOGIN_TOKEN)
+  }
+
+  const forgotPassword = async (data) => {
+    return AuthService.forgotPassword(data);
+  }
+  const resetPassword = async (data) => {
+    return AuthService.resetPassword(data);
   }
 
   return {
@@ -56,5 +62,7 @@ export const useUserStore = defineStore("user", () => {
     registerUser,
     loginUser,
     logoutUser,
+    forgotPassword,
+    resetPassword,
   }  
 });

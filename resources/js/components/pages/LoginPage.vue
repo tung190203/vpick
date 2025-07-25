@@ -86,6 +86,9 @@ const loginWithGoogle = () => {
             {{ err.$message }}
           </span>
         </div>
+        <div class="text-right text-sm text-blue-600 hover:underline">
+          <router-link to="/forgot-password">Quên mật khẩu?</router-link>
+        </div>
 
         <Button type="submit" class="w-full">Đăng nhập</Button>
       </form>

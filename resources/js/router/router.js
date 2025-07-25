@@ -6,6 +6,9 @@ import AppLayout from '@/layouts/AppLayout.vue'
 import AuthLayout from '@/layouts/AuthLayout.vue'
 import VerifyEmailPage from '@/components/pages/VerifyEmailPage.vue'
 import VerifyPage from '@/components/pages/VerifyPage.vue'
+import ProfilePage from '@/components/pages/ProfilePage.vue'
+import ForgotPasswordPage from '../components/pages/ForgotPasswordPage.vue'
+import ResetPasswordPage from '../components/pages/ResetPasswordPage.vue'
 
 export const route = [
   {
@@ -38,7 +41,12 @@ export const route = [
         path: '',
         name: 'dashboard',
         component: DashboardPage
-      }
+      },
+      {
+        path: '/profile',
+        name: 'profile',
+        component: ProfilePage
+      },
     ]
   },
   {
@@ -55,6 +63,16 @@ export const route = [
     path: '/verify',
     name: 'verify',
     component: VerifyPage
+  },
+  {
+    path: '/forgot-password',
+    name: 'forgot-password',
+    component: ForgotPasswordPage
+  },
+  {
+    path: '/reset-password',
+    name: 'reset-password',
+    component: ResetPasswordPage
   },
   {
     path: '/:pathMatch(.*)*',
