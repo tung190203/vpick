@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Notifications\VerifyEmailNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Socialite\Facades\Socialite;
@@ -26,6 +27,10 @@ class AuthController extends Controller
 
         $user = Auth::user();
 
+        if (!$user->email_verified_at) {
+            return response()->json(['message' => 'Vui lòng xác minh email trước khi đăng nhập'], 403);
+        }
+
         return response()->json($this->responseWithToken($token, $user));
     }
 
@@ -41,13 +46,14 @@ class AuthController extends Controller
         $user = User::create([
             'full_name' => $request->full_name,
             'email' => $request->email,
-            'password' => bcrypt($request->password),
+            'password' => $request->password,
         ]);
 
+        $user->notify(new VerifyEmailNotification());
+
         return response()->json([
-            'message' => 'Đăng ký thành công',
-            'user' => $user
-        ], 201);
+            'message' => 'Đăng ký thành công. Vui lòng kiểm tra email để xác minh tài khoản.'
+          ]);
     }
 
     public function refresh(Request $request)

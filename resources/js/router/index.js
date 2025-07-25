@@ -7,21 +7,10 @@ const router = createRouter({
   routes: route
 });
 
-// router.beforeEach((to, from, next) => {
-//   const loginToken = localStorage.getItem(LOCAL_STORAGE_KEY.LOGIN_TOKEN);
-//   const authPages = ["login", "register"];
-//   if (!loginToken && !authPages.includes(to.name)) {
-//     next({ name: "login", query: { redirect: to.fullPath } });
-//   } else if (loginToken && authPages.includes(to.name)) {
-//     next({ name: "dashboard" });
-//   } else {
-//     next();
-//   }
-// });
 router.beforeEach((to, from, next) => {
   const loginToken = localStorage.getItem(LOCAL_STORAGE_KEY.LOGIN_TOKEN);
-  const authPages = ["login", "register"];
-  const allowWithoutToken = ["login-success"]; // cho phép vào route này không cần token
+  const authPages = ["login", "register",'verify-email', 'verify'];
+  const allowWithoutToken = ["login-success"];
 
   if (!loginToken && !authPages.includes(to.name) && !allowWithoutToken.includes(to.name)) {
     next({ name: "login", query: { redirect: to.fullPath } });

@@ -39,7 +39,7 @@ const login = async () => {
         router.push({ name: 'dashboard' })
       }, 1000)
     } catch (error) {
-      console.error('Login failed:', error)
+      toast.error(error.response?.data?.message || 'Đăng nhập thất bại!')
     }
   }
 }

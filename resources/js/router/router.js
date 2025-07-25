@@ -4,6 +4,8 @@ import RegisterPage from '@/components/pages/RegisterPage.vue'
 import DashboardPage from '@/components/pages/DashboardPage.vue'
 import AppLayout from '@/layouts/AppLayout.vue'
 import AuthLayout from '@/layouts/AuthLayout.vue'
+import VerifyEmailPage from '@/components/pages/VerifyEmailPage.vue'
+import VerifyPage from '@/components/pages/VerifyPage.vue'
 
 export const route = [
   {
@@ -43,6 +45,16 @@ export const route = [
     path: '/login-success',
     name: 'login-success',
     component: LoginSuccessPage
+  },
+  {
+    path: '/verify-email',
+    name: 'verify-email',
+    component: VerifyEmailPage
+  },
+  {
+    path: '/verify',
+    name: 'verify',
+    component: VerifyPage
   },
   {
     path: '/:pathMatch(.*)*',

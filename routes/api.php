@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\VerificationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -24,7 +25,10 @@ Route::prefix('auth')->group(function () {
     Route::get('/google/callback', [AuthController::class, 'handleGoogleCallback']);
 });
 
-Route::middleware('auth:api')->group(function () {
+Route::get('/verify-email', [VerificationController::class, 'verify']);
+Route::post('/resend-email', [VerificationController::class, 'resend']);
+
+Route::middleware(['auth:api', 'verified'])->group(function () {
     // Các route yêu cầu xác thực
     Route::get('/user', function (Request $request) {
         return $request->user();

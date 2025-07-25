@@ -21,6 +21,8 @@ return new class extends Migration
             $table->integer('vndupr_score')->default(0);
             $table->string('tier')->nullable();
             $table->enum('role', ['player', 'referee', 'admin'])->default('player');
+            $table->timestamp('email_verified_at')->nullable();
+            $table->string('remember_token')->nullable();
             $table->timestamps();
         });
     }

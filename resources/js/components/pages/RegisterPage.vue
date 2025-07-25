@@ -34,8 +34,8 @@ const register = async () => {
       await userStore.registerUser(data)
       toast.success('Đăng ký thành công!')
       setTimeout(() => {
-        router.push('/login')
-      }, 1500)
+        router.push({ path: '/verify', query: { email: data.email } })
+      }, 1000)
     } catch (error) {
       const message = error.response?.data?.message || 'Đăng ký thất bại, vui lòng thử lại!'
       toast.error(`${message}`)
