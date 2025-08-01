@@ -27,6 +27,7 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         'google_id',
         'tier',
         'role',
+        'email_verified_at'
     ];
 
     /**

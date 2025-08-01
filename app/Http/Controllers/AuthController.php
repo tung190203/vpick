@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Str;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -35,7 +36,9 @@ class AuthController extends Controller
             return response()->json(['message' => 'Vui lòng xác minh email trước khi đăng nhập'], 403);
         }
 
-        return response()->json($this->responseWithToken($token, $user));
+        $refreshToken = JWTAuth::claims(['type' => 'refresh'])->fromUser(auth()->user());
+
+        return response()->json($this->responseWithToken($token, $refreshToken, $user));
     }
 
     public function register(Request $request)
@@ -51,6 +54,7 @@ class AuthController extends Controller
             'full_name' => $request->full_name,
             'email' => $request->email,
             'password' => $request->password,
+            'avatar_url' => asset('images/default-avatar.png'),
         ]);
 
         $user->notify(new VerifyEmailNotification());
@@ -152,38 +156,54 @@ class AuthController extends Controller
             $googleUser = Socialite::driver('google')->stateless()->user();
 
             // Tìm hoặc tạo người dùng mới
-            $user = User::updateOrCreate(
+            $avatarContent = file_get_contents($googleUser->getAvatar());
+            $avatarName = 'avatars/' . uniqid() . '.jpg';
+            Storage::disk('public')->put($avatarName, $avatarContent);
+            $user = User::firstOrCreate(
                 ['email' => $googleUser->getEmail()],
                 [
                     'full_name' => $googleUser->getName(),
                     'google_id' => $googleUser->getId(),
-                    'avatar_url' => $googleUser->getAvatar(),
-                    'password' => bcrypt(Str::random(16)),
+                    'avatar_url' => asset('storage/' . $avatarName),
+                    'password' => Hash::make(Str::random(16)),
+                    'email_verified_at' => now(),
                 ]
             );
-
+            
+            // if (!$user->wasRecentlyCreated) {
+            //     $user->update([
+            //         'full_name' => $googleUser->getName(),
+            //         'google_id' => $googleUser->getId(),
+            //         'avatar_url' => asset('storage/' . $avatarName),
+            //     ]);
+            // }
+            Auth::login($user);
             $token = JWTAuth::fromUser($user);
+
+            $refreshToken = JWTAuth::claims(['type' => 'refresh'])->fromUser(auth()->user());
 
             return redirect(config('app.redirect_success_url') . '/login-success?' . http_build_query([
                 'access_token' => $token,
+                'refresh_token' => $refreshToken,
                 'token_type' => 'Bearer',
                 'expires_in' => 3600,
             ]));
         } catch (\Exception $e) {
+            \Log::error('Google login error: ' . $e->getMessage());
             return response()->json(['error' => 'Không thể đăng nhập bằng Google'], 500);
         }
     }
-
     public function me(Request $request)
     {
         return response()->json($request->user());
     }
 
-    private function responseWithToken(string $token, object $user): array
+    private function responseWithToken(string $token, string $refresh_token, object $user): array
     {
         return [
             'token' => [
                 'access_token' => $token,
+                'refresh_token' => $refresh_token,
                 'token_type' => 'Bearer',
                 'expires_in' => 3600,
             ],

@@ -15,14 +15,16 @@ const data = reactive({
   full_name: '',
   email: '',
   password: '',
-  password_confirmation: ''
+  password_confirmation: '',
+  accept_terms: true
 })
 
 const rules = computed(() => ({
   full_name: { required },
   email: { required, email },
   password: { required, minLength: minLength(6) },
-  password_confirmation: { required, sameAsPassword: sameAs(data.password) }
+  password_confirmation: { required, sameAsPassword: sameAs(data.password) },
+  accept_terms: { required }
 }))
 
 const v$ = useVuelidate(rules, data)
@@ -103,7 +105,25 @@ const registerWithGoogle = () => {
           </p>
         </div>
 
-        <Button type="submit" class="w-full">Đăng ký</Button>
+        <div>
+          <label class="flex items-start gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              v-model="data.accept_terms"
+              class="mt-1 accent-primary checked:bg-primary checked:border-primary focus:ring-primary"
+            />
+            <span>
+              Bằng cách đăng ký, bạn đồng ý với
+              <router-link to="/terms" class="text-red-600 underline ml-1">Điều khoản & Điều kiện</router-link>
+              và xác nhận đã đọc thông báo về quyền riêng tư của chúng tôi.
+            </span>
+          </label>
+          <p v-if="v$.accept_terms.$error" class="text-sm text-red-500 mt-1">
+            Bạn phải đồng ý với điều khoản để tiếp tục
+          </p>
+        </div>
+
+        <Button type="submit" class="w-full bg-primary hover:bg-secondary">Đăng ký</Button>
       </form>
 
       <div class="text-center my-4 text-sm text-gray-500">Hoặc</div>

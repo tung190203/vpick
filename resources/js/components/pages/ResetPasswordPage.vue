@@ -64,7 +64,7 @@ const submit = async () => {
             <form @submit.prevent="submit" class="space-y-4">
                 <div>
                     <input type="email" placeholder="Email" v-model="data.email" disabled
-                        class="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        class="w-full px-4 py-2 border rounded focus:outline-none focus:ring-1 focus:ring-primary" />
                     <span v-for="err in v$.email.$errors" :key="err.$uid" class="text-red-500 text-sm">
                         {{ err.$message }}
                     </span>
@@ -72,7 +72,7 @@ const submit = async () => {
 
                 <div>
                     <input type="hidden" placeholder="Token" v-model="data.token"
-                        class="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        class="w-full px-4 py-2 border rounded focus:outline-none focus:ring-1 focus:ring-primary" />
                     <span v-for="err in v$.token.$errors" :key="err.$uid" class="text-red-500 text-sm">
                         {{ err.$message }}
                     </span>
@@ -80,7 +80,7 @@ const submit = async () => {
 
                 <div>
                     <input type="password" placeholder="Mật khẩu mới" v-model="data.password"
-                        class="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        class="w-full px-4 py-2 border rounded focus:outline-none focus:ring-1 focus:ring-primary" />
                     <span v-for="err in v$.password.$errors" :key="err.$uid" class="text-red-500 text-sm">
                         {{ err.$message }}
                     </span>
@@ -88,7 +88,7 @@ const submit = async () => {
 
                 <div>
                     <input type="password" placeholder="Xác nhận mật khẩu" v-model="data.password_confirmation"
-                        class="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        class="w-full px-4 py-2 border rounded focus:outline-none focus:ring-1 focus:ring-primary" />
                     <span v-if="v$.password_confirmation.$dirty && v$.password_confirmation.$errors.length"
                         class="text-red-500 text-sm">
                         {{ v$.password_confirmation.$errors[0].$message }}
@@ -96,7 +96,7 @@ const submit = async () => {
 
                 </div>
 
-                <Button type="submit" class="w-full">Đặt lại mật khẩu</Button>
+                <Button type="submit" class="w-full bg-primary hover:bg-secondary">Đặt lại mật khẩu</Button>
             </form>
         </div>
     </div>

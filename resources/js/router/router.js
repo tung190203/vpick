@@ -7,9 +7,14 @@ import AuthLayout from '@/layouts/AuthLayout.vue'
 import VerifyEmailPage from '@/components/pages/VerifyEmailPage.vue'
 import VerifyPage from '@/components/pages/VerifyPage.vue'
 import ProfilePage from '@/components/pages/ProfilePage.vue'
-import ForgotPasswordPage from '../components/pages/ForgotPasswordPage.vue'
-import ResetPasswordPage from '../components/pages/ResetPasswordPage.vue'
-
+import ForgotPasswordPage from '@/components/pages/ForgotPasswordPage.vue'
+import ResetPasswordPage from '@/components/pages/ResetPasswordPage.vue'
+import Leaderboard from '@/components/pages/Leaderboard.vue'
+import ClubPage from '@/components/pages/ClubPage.vue'
+import TournamentPage from '@/components/pages/TournamentPage.vue'
+import TournamentDetail from '../components/pages/TournamentDetail.vue'
+import TermsPage from '../components/pages/TermsPage.vue'
+import CreateFriendlyMatchPage from '../components/pages/CreateFriendlyMatchPage.vue'
 export const route = [
   {
     path: '/login',
@@ -47,6 +52,32 @@ export const route = [
         name: 'profile',
         component: ProfilePage
       },
+      {
+        path: '/leaderboard',
+        name: 'leaderboard',
+        component: Leaderboard
+      },
+      {
+        path: '/club',
+        name: 'club',
+        component: ClubPage,
+      },
+      {
+        path: '/tournaments',
+        name: 'tournaments',
+        component: TournamentPage
+      },
+      {
+        path: '/tournament/:id',
+        name: 'tournament-detail',
+        component: TournamentDetail,
+        props: true
+      },
+      {
+        path: '/friendly-match/create',
+        name: 'create-friendly-match',
+        component: CreateFriendlyMatchPage
+      }
     ]
   },
   {
@@ -73,6 +104,11 @@ export const route = [
     path: '/reset-password',
     name: 'reset-password',
     component: ResetPasswordPage
+  },
+  {
+    path: '/terms',
+    name: 'terms',
+    component: TermsPage
   },
   {
     path: '/:pathMatch(.*)*',

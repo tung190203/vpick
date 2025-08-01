@@ -11,7 +11,7 @@
   
         <div>
           <button
-            class="w-full py-2 px-4 bg-blue-500 text-white font-semibold rounded disabled:opacity-50 disabled:cursor-not-allowed"
+            class="w-full py-2 px-4 bg-primary hover:bg-secondary text-white font-semibold rounded disabled:opacity-50 disabled:cursor-not-allowed"
             :disabled="countdown > 0 || loading"
             @click="resendEmail"
           >

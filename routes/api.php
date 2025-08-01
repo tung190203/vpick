@@ -1,12 +1,14 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\VerificationController;
+use App\Http\Controllers\VerifiedController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
-|--------------------------------------------------------------------------
+------------------------------------------------
 | API Routes
 |--------------------------------------------------------------------------
 |
@@ -32,4 +34,11 @@ Route::post('/resend-email', [VerificationController::class, 'resend']);
 
 Route::middleware(['auth:api', 'verified'])->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
+    Route::prefix('user')->group(function () {
+        Route::post('/update', [UserController::class, 'update']);
+    });
+    Route::prefix('verification')->group(function () {
+        Route::post('/create', [VerifiedController::class, 'create']);
+        Route::get('/show', [VerifiedController::class, 'show']);
+    });
 });

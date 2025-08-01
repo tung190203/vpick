@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('password');
             $table->string('avatar_url')->nullable();
             $table->string('google_id')->nullable();
-            $table->integer('vndupr_score')->default(0);
+            $table->decimal('vndupr_score', 8, 1)->default(0);
             $table->string('tier')->nullable();
             $table->enum('role', ['player', 'referee', 'admin'])->default('player');
             $table->timestamp('email_verified_at')->nullable();

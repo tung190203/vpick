@@ -2,7 +2,7 @@
 import { reactive, computed } from 'vue'
 import useVuelidate from '@vuelidate/core'
 import { required, email, minLength, helpers } from '@vuelidate/validators'
-
+import { useVerifyStore } from '@/store/verify'
 import Button from '@/components/atoms/Button.vue'
 import { useUserStore } from '@/store/auth'
 import { useRouter } from 'vue-router'
@@ -10,6 +10,7 @@ import { toast } from 'vue3-toastify'
 
 const router = useRouter()
 const userStore = useUserStore()
+const verifyStore = useVerifyStore()
 
 const data = reactive({
   email: '',
@@ -34,9 +35,11 @@ const login = async () => {
   if (!v$.value.$invalid) {
     try {
       await userStore.loginUser(data)
+      await verifyStore.showVerification()
       toast.success('Đăng nhập thành công!')
+      const redirectPath = router.currentRoute.value.query.redirect || { name: 'dashboard' }
       setTimeout(() => {
-        router.push({ name: 'dashboard' })
+        router.push(redirectPath)
       }, 1000)
     } catch (error) {
       toast.error(error.response?.data?.message || 'Đăng nhập thất bại!')
@@ -90,7 +93,7 @@ const loginWithGoogle = () => {
           <router-link to="/forgot-password">Quên mật khẩu?</router-link>
         </div>
 
-        <Button type="submit" class="w-full">Đăng nhập</Button>
+        <Button type="submit" class="w-full bg-primary hover:bg-secondary">Đăng nhập</Button>
       </form>
 
       <div class="text-center my-4 text-sm text-gray-500">Hoặc</div>

@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('user_id')->unique();
             $table->string('certified_by')->nullable();
             $table->enum('certification_lv', ['A', 'B', 'C', 'local', 'pro'])->nullable();
-            $table->enum('status', ['active', 'suspended'])->default('active');
+            $table->enum('status', ['pending','active', 'suspended'])->default('pending');
             $table->timestamps();
         });
     }
