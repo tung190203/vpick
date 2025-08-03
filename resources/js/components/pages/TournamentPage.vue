@@ -13,9 +13,9 @@
                     <label class="text-sm text-gray-600 whitespace-nowrap">Trạng thái:</label>
                     <select v-model="filter.status" class="px-3 py-2 h-[40px] border rounded text-sm w-full">
                         <option value="">Tất cả</option>
-                        <option value="upcoming">Sắp diễn ra</option>
-                        <option value="ongoing">Đang diễn ra</option>
-                        <option value="finished">Đã kết thúc</option>
+                        <option v-for="(status, key) in TOURNAMENT_STATUS" :key="key" :value="status">
+                            {{ statusLabel(status) }}
+                        </option>
                     </select>
                 </div>
             </div>
@@ -28,7 +28,7 @@
 
         <!-- Tournament Grid -->
         <div class="max-w-7xl mx-auto grid gap-6 sm:grid-cols-2 lg:grid-cols-3 px-2">
-            <div v-for="tournament in filteredTournaments" :key="tournament.id"
+            <div v-for="tournament in tournaments" :key="tournament.id"
                 class="relative bg-white rounded-xl shadow hover:shadow-md transition p-5 flex flex-col justify-between cursor-pointer"
                 @click="() => $router.push(`/tournament/${tournament.id}`)">
                 <!-- Badge đẹp hơn -->
@@ -50,7 +50,7 @@
                     </p>
                     <p class="text-sm text-gray-500 flex items-center gap-1">
                         <CalendarIcon class="w-4 h-4 text-blue-600" />
-                        {{ tournament.date }}
+                        {{ formatDatetime(tournament.start_date) }} - {{ formatDatetime(tournament.end_date) }}
                     </p>
                 </div>
 
@@ -58,63 +58,65 @@
                     <span :class="statusClass(tournament.status)" class="text-xs font-semibold px-2 py-1 rounded">
                         {{ statusLabel(tournament.status) }}
                     </span>
-                    <span class="text-xs text-gray-500">
-                        {{ tournament.teams }} đội tham gia
-                    </span>
                 </div>
             </div>
-
         </div>
 
         <!-- Empty state -->
-        <div v-if="filteredTournaments.length === 0" class="text-center mt-10 text-gray-500 text-sm">
+        <div v-if="tournaments.length === 0" class="text-center mt-10 text-gray-500 text-sm">
             Không tìm thấy giải đấu phù hợp.
         </div>
+        <!-- Pagination -->
+        <div v-if="pagination.last_page > 1" class="mt-10 flex justify-center items-center gap-2">
+            <!-- Previous Button -->
+            <button @click="changePage(pagination.current_page - 1)" :disabled="pagination.current_page === 1"
+                class="w-10 h-10 flex items-center justify-center rounded-md border border-gray-300 text-gray-600 bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition">
+                <ChevronLeftIcon class="w-5 h-5" />
+            </button>
+
+            <!-- Page Numbers -->
+            <template v-for="page in visiblePages" :key="page">
+                <button v-if="page !== '...'" @click="changePage(page)" :class="[
+                    'w-10 h-10 flex items-center justify-center rounded-md border text-sm font-medium transition',
+                    page === pagination.current_page
+                        ? 'bg-primary text-white border-primary'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                ]">
+                    {{ page }}
+                </button>
+                <span v-else class="w-10 h-10 flex items-center justify-center text-gray-500">...</span>
+            </template>
+
+            <!-- Next Button -->
+            <button @click="changePage(pagination.current_page + 1)"
+                :disabled="pagination.current_page === pagination.last_page"
+                class="w-10 h-10 flex items-center justify-center rounded-md border border-gray-300 text-gray-600 bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition">
+                <ChevronRightIcon class="w-5 h-5" />
+            </button>
+        </div>
+
     </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { MapPinIcon, CalendarIcon } from '@heroicons/vue/24/solid'
+import { ref, computed, onMounted, watch } from 'vue'
+import { MapPinIcon, CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/vue/24/solid'
+import * as TournamentService from '@/service/tournament'
+import { formatDatetime } from '@/composables/formatDatetime'
+import { TOURNAMENT_STATUS, TOURNAMENT_STATUS_LABEL } from '@/constants/index.js'
 
-const tournaments = ref([
-    {
-        id: 1,
-        name: 'Hanoi Open 2025',
-        location: 'Hà Nội',
-        date: '2025-08-12',
-        status: 'upcoming',
-        teams: 16,
-        joined: true
-    },
-    {
-        id: 2,
-        name: 'Saigon Championship',
-        location: 'TP. HCM',
-        date: '2025-07-20',
-        status: 'ongoing',
-        teams: 24,
-        joined: false
-    },
-    {
-        id: 3,
-        name: 'Đà Nẵng Friendly Cup',
-        location: 'Đà Nẵng',
-        date: '2025-06-05',
-        status: 'finished',
-        teams: 12,
-        joined: true
-    },
-    {
-        id: 4,
-        name: 'Hue Youth Tournament',
-        location: 'Huế',
-        date: '2025-09-02',
-        status: 'upcoming',
-        teams: 10,
-        joined: false
-    }
-])
+// const tournaments = ref([
+//     {
+//         id: 1,
+//         name: 'Hanoi Open 2025',
+//         location: 'Hà Nội',
+//         date: '2025-08-12',
+//         status: 'upcoming',
+//         teams: 16,
+//         joined: true
+//     },
+// ])
+const tournaments = ref([])
 
 const filter = ref({
     status: '',
@@ -123,29 +125,111 @@ const filter = ref({
     toDate: ''
 })
 
-const filteredTournaments = computed(() => {
-    return tournaments.value.filter(tour => {
-        const keywordMatch = tour.name.toLowerCase().includes(filter.value.keyword.toLowerCase())
-        const statusMatch = filter.value.status ? tour.status === filter.value.status : true
-        return keywordMatch && statusMatch
-    })
+watch(filter, () => {
+  getAllTournaments(1)
+}, { deep: true })
+
+
+const pagination = ref({
+    current_page: 1,
+    last_page: 1,
+    total: 0,
+    per_page: 10
+})
+const visiblePages = computed(() => {
+    const total = pagination.value.last_page
+    const current = pagination.value.current_page
+    const delta = 2 // số trang hai bên
+
+    if (total <= 7) {
+        return Array.from({ length: total }, (_, i) => i + 1)
+    }
+
+    const pages = []
+    const left = Math.max(2, current - delta)
+    const right = Math.min(total - 1, current + delta)
+
+    pages.push(1)
+
+    if (left > 2) {
+        pages.push('...')
+    }
+
+    for (let i = left; i <= right; i++) {
+        pages.push(i)
+    }
+
+    if (right < total - 1) {
+        pages.push('...')
+    }
+
+    pages.push(total)
+
+    return pages
 })
 
 const statusLabel = status => {
     switch (status) {
-        case 'upcoming': return 'Sắp diễn ra'
-        case 'ongoing': return 'Đang diễn ra'
-        case 'finished': return 'Đã kết thúc'
+        case TOURNAMENT_STATUS.UPCOMING: return TOURNAMENT_STATUS_LABEL.UPCOMING
+        case TOURNAMENT_STATUS.ONGOING: return TOURNAMENT_STATUS_LABEL.ONGOING
+        case TOURNAMENT_STATUS.FINISHED: return TOURNAMENT_STATUS_LABEL.FINISHED
         default: return ''
     }
 }
 
 const statusClass = status => {
     switch (status) {
-        case 'upcoming': return 'bg-yellow-100 text-yellow-800'
-        case 'ongoing': return 'bg-green-100 text-green-800'
-        case 'finished': return 'bg-gray-200 text-gray-700'
+        case TOURNAMENT_STATUS.UPCOMING: return 'bg-yellow-100 text-yellow-800'
+        case TOURNAMENT_STATUS.ONGOING: return 'bg-green-100 text-green-800'
+        case TOURNAMENT_STATUS.FINISHED: return 'bg-gray-200 text-gray-700'
         default: return ''
     }
 }
+
+// const getAllTournaments = async (page = 1) => {
+//     try {
+//         const res = await TournamentService.getTournaments({ page, ...filter.value })
+//         if (res && res.data) {
+//             tournaments.value = res.data
+//             pagination.value = res.meta
+//         } else {
+//             console.error('No tournaments data found')
+//         }
+//     } catch (error) {
+//         console.error('Error fetching tournaments:', error)
+//     }
+// }
+
+const getAllTournaments = async (page = 1) => {
+  try {
+    const params = {
+      page,
+      keyword: filter.value.keyword || '',
+      status: filter.value.status || '',
+    }
+
+    const res = await TournamentService.getTournaments(params)
+
+    if (res && res.data) {
+      tournaments.value = res.data
+      pagination.value = res.meta
+    } else {
+      console.error('No tournaments data found')
+    }
+  } catch (error) {
+    console.error('Error fetching tournaments:', error)
+  }
+}
+
+
+const changePage = (page) => {
+    if (page >= 1 && page <= pagination.value.last_page) {
+        pagination.value.current_page = page
+        getAllTournaments(page)
+    }
+}
+
+onMounted(async () => {
+    await getAllTournaments()
+})
 </script>

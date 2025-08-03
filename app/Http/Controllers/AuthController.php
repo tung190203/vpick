@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\UserResource;
 use App\Mail\ResetPasswordMail;
 use App\Models\User;
 use App\Notifications\VerifyEmailNotification;
@@ -195,7 +196,8 @@ class AuthController extends Controller
     }
     public function me(Request $request)
     {
-        return response()->json($request->user());
+        // return response()->json($request->user());
+        return response()->json( new UserResource($request->user()));
     }
 
     private function responseWithToken(string $token, string $refresh_token, object $user): array

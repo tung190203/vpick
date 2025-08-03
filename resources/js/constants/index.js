@@ -12,4 +12,17 @@ export const API_ENDPOINT = {
   AUTH: '/auth',
   USER: '/user',
   VERIFICATION: '/verification',
+  TOURNAMENT: '/tournament',
+};
+
+export const TOURNAMENT_STATUS = {
+  UPCOMING: 'upcoming',
+  ONGOING: 'ongoing',
+  FINISHED: 'finished',
+};
+
+export const TOURNAMENT_STATUS_LABEL = {
+  UPCOMING: 'Sắp diễn ra',
+  ONGOING: 'Đang diễn ra',
+  FINISHED: 'Đã kết thúc',
 };

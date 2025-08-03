@@ -4,11 +4,24 @@
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
             <div class="flex items-center space-x-4">
                 <img :src="getUser.avatar_url" alt="Avatar" class="w-16 h-16 rounded-full border" />
-                <div class="text-xl font-semibold">{{ getUser.full_name }}</div>
+                <div>
+                    <div class="text-xl font-semibold">{{ getUser.full_name }}</div>
+                    <div class="text-xs font-bold flex jutify-start items-cente select-none text-green-500">
+                        <component :is="getUser.email_verified_at ? CheckCircleIcon : XCircleIcon" class="w-4 h-4 mr-1" />
+                        {{ getUser.email_verified_at ? 'Đã xác minh' : 'Chưa xác minh' }}
+                    </div>
+                </div>
             </div>
-            <div class="mt-4 sm:mt-0 flex items-center gap-4 text-sm text-gray-600">
-                <div><span class="font-medium">VNDUPR:</span> {{ getUser.vndupr_score }}</div> |
-                <div><span class="font-medium">Tier:</span> {{ getUser.tier ?? 'Chưa phân cấp' }}</div>
+            <div>
+                <div class="mt-4 sm:mt-0 flex items-center gap-4 text-sm text-gray-600">
+                    <div><span class="font-medium">VNDUPR:</span> {{ getUser.vndupr_score }}</div> |
+                    <div><span class="font-medium">Tier:</span> {{ getUser.tier ?? 'Chưa phân cấp' }}</div>
+                </div>
+                <div class="text-xs font-bold flex jutify-start items-cente select-none"
+                    :class="verifyStatusColor(getVerify.status)">
+                    <component :is="verifyStatusIcon(getVerify.status)" class="w-4 h-4 mr-1" />
+                    {{ verifyStatusText(getVerify.status) }}
+                </div>
             </div>
         </div>
 
@@ -220,25 +233,19 @@
 import { ref } from 'vue'
 import { LOCAL_STORAGE_USER } from '@/constants/index.js'
 import PerformanceChart from '../molecules/PerformanceChart.vue'
-import { EyeIcon, EyeSlashIcon } from '@heroicons/vue/24/outline'
+import { EyeIcon, EyeSlashIcon, ClockIcon } from '@heroicons/vue/24/outline'
+import { CheckCircleIcon, XCircleIcon } from '@heroicons/vue/24/solid'
 import { useUserStore } from '@/store/auth'
+import { useVerifyStore } from '@/store/verify'
 import { storeToRefs } from 'pinia'
 import { toast } from 'vue3-toastify'
 
 const userData = localStorage.getItem(LOCAL_STORAGE_USER.USER)
 const userStore = useUserStore()
+const verifyStore = useVerifyStore()
 const { getUser } = storeToRefs(userStore)
-const player = userData
-    ? JSON.parse(userData)
-    : {
-        avatar_url: 'https://via.placeholder.com/64x64',
-        full_name: 'Nguyễn Văn A',
-        vndupr_score: 4.5,
-        tier: 'S3',
-        totalMatches: 24,
-        winRate: 65,
-        badge: '5 trận thắng liên tiếp'
-    }
+const { getVerify } = storeToRefs(verifyStore)
+const player = userData ? JSON.parse(userData) : {};
 
 const tabs = [
     { key: 'information', label: 'Thông tin cá nhân' },
@@ -252,6 +259,45 @@ const password = ref('')
 const avatarPreview = ref(null)
 const fileInput = ref(null)
 const showPassword = ref(false)
+
+const verifyStatusColor = (status) => {
+    switch (status) {
+        case "pending":
+            return "text-yellow-500";
+        case "approved":
+            return "text-green-500";
+        case "rejected":
+            return "text-red-500";
+        default:
+            return "text-gray-500";
+    }
+}
+
+const verifyStatusText = (status) => {
+    switch (status) {
+        case "pending":
+            return "Chờ xác minh điểm vndupr";
+        case "approved":
+            return "Đã xác minh điểm vndupr";
+        case "rejected":
+            return "Đã từ chối xác minh";
+        default:
+            return "Không xác định";
+    }
+}
+
+const verifyStatusIcon = (status) => {
+    switch (status) {
+        case "pending":
+            return ClockIcon;
+        case "approved":
+            return CheckCircleIcon;
+        case "rejected":
+            return XCircleIcon;
+        default:
+            return null;
+    }
+}
 
 const handleAvatarUpload = (e) => {
     const file = e.target.files[0]
@@ -282,7 +328,7 @@ const onDragOver = (e) => {
 const updateProfile = async () => {
     const formData = new FormData()
     formData.append('full_name', player.full_name)
-    if(password.value && password.value.trim() !== '') {
+    if (password.value && password.value.trim() !== '') {
         formData.append('password', password.value)
     }
     const file = fileInput.value?.files[0]

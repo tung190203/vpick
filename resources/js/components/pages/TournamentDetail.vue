@@ -4,9 +4,9 @@
     <div class="space-y-1">
       <h1 class="text-2xl font-bold text-gray-800 flex items-center justify-between">
         {{ tournament.name }}
-        <span class="text-sm px-2 py-1 rounded bg-green-100 text-green-800">Đang diễn ra</span>
+        <span class="text-sm px-2 py-1 rounded" :class="statusClass(tournament.status)">{{ statusLabel(tournament.status) }}</span>
       </h1>
-      <p class="text-gray-600">{{ tournament.location }} | {{ tournament.dateStart }} - {{ tournament.dateEnd }}</p>
+      <p class="text-gray-600">{{ tournament.location }} | {{ tournament.start_date }} - {{ tournament.end_date }}</p>
     </div>
 
     <!-- Mô tả -->
@@ -50,8 +50,6 @@
               <th class="p-3">Người chơi 1</th>
               <th class="p-3">Người chơi 2</th>
               <th class="p-3">Thời gian</th>
-              <th class="p-3">Thể thức</th>
-              <th class="p-3">Bảng</th>
               <th class="p-3">Trạng thái</th>
             </tr>
           </thead>
@@ -60,8 +58,6 @@
               <td class="p-3">{{ match.player1 }}</td>
               <td class="p-3">{{ match.player2 }}</td>
               <td class="p-3">{{ match.time }}</td>
-              <td class="p-3">{{ match.type }}</td>
-              <td class="p-3">{{ match.group }}</td>
               <td class="p-3">
                 <span class="text-xs px-2 py-1 rounded" :class="{
                   'bg-green-100 text-green-800': match.status === 'Đã diễn ra',
@@ -91,9 +87,11 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { toast } from 'vue3-toastify'
+import * as TournamentService from '@/service/tournament'
+import { TOURNAMENT_STATUS, TOURNAMENT_STATUS_LABEL } from '@/constants/index.js'
 
 const route = useRoute()
-const tournamentId = route.params.id
+const id = route.params.id
 
 const tournament = ref({})
 const matches = ref([])
@@ -108,17 +106,36 @@ const filteredMatches = computed(() =>
   )
 )
 
-onMounted(() => {
-  tournament.value = {
-    id: tournamentId,
-    name: 'Giải Hè Pickleball 2025',
-    location: 'Nhà thi đấu Quận 1',
-    dateStart: '2025-08-15',
-    dateEnd: '2025-08-18',
-    description:
-      'Giải đấu quy tụ 32 vận động viên xuất sắc nhất toàn quốc. Đây là cơ hội để các vận động viên thể hiện tài năng và cống hiến những trận đấu hấp dẫn.',
+const getDetailTournament = async (id) => {
+  try {
+    const response = await TournamentService.getTournamentById(id)
+    tournament.value = response.data
+  } catch (error) {
+    console.error('Error fetching tournament details:', error)
+    toast.error('Không thể tải thông tin giải đấu.')
   }
+}
 
+const statusLabel = status => {
+    switch (status) {
+        case TOURNAMENT_STATUS.UPCOMING: return TOURNAMENT_STATUS_LABEL.UPCOMING
+        case TOURNAMENT_STATUS.ONGOING: return TOURNAMENT_STATUS_LABEL.ONGOING
+        case TOURNAMENT_STATUS.FINISHED: return TOURNAMENT_STATUS_LABEL.FINISHED
+        default: return ''
+    }
+}
+
+const statusClass = status => {
+    switch (status) {
+        case TOURNAMENT_STATUS.UPCOMING: return 'bg-yellow-100 text-yellow-800'
+        case TOURNAMENT_STATUS.ONGOING: return 'bg-green-100 text-green-800'
+        case TOURNAMENT_STATUS.FINISHED: return 'bg-gray-200 text-gray-700'
+        default: return ''
+    }
+}
+
+onMounted(async() => {
+  await getDetailTournament(id)
   matches.value = [
     { id: 1, player1: 'Nam', player2: 'Minh', time: '10:00 - 15/08', type: 'Đơn', group: 'A', status: 'Đã diễn ra' },
     { id: 2, player1: 'Tú', player2: 'Phát', time: '11:30 - 15/08', type: 'Đơn', group: 'A', status: 'Sắp diễn ra' },

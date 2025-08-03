@@ -43,9 +43,9 @@ async function fetchUser(token, type) {
 if (token) {
   setTimeout(async () => {
     localStorage.setItem(LOCAL_STORAGE_KEY.LOGIN_TOKEN, token)
-    await fetchUser(token, type)
     await verifyStore.showVerification()
-  }, 1500)
+    await fetchUser(token, type)
+  }, 1000)
 } else {
   router.replace({ name: 'login' })
 }

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VerificationController;
 use App\Http\Controllers\VerifiedController;
@@ -40,5 +41,12 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
     Route::prefix('verification')->group(function () {
         Route::post('/create', [VerifiedController::class, 'create']);
         Route::get('/show', [VerifiedController::class, 'show']);
+    });
+    Route::prefix('tournament')->group(function () {
+        Route::get('/list', [TournamentController::class, 'list']);
+        // Route::post('/create', [TournamentController::class, 'createTournament']);
+        Route::get('/{id}', [TournamentController::class, 'showTournament']);
+        // Route::put('/{id}/update', [TournamentController::class, 'updateTournament']);
+        // Route::delete('/{id}/delete', [TournamentController::class, 'deleteTournament']);
     });
 });

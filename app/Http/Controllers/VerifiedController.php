@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\VerificationResource;
 use App\Models\Verify;
 use Illuminate\Http\Request;
 
@@ -33,7 +34,7 @@ class VerifiedController extends Controller
             return response()->json(['message' => 'Failed to create verification request.'], 500);
         }
 
-        return response()->json($verification);
+        return response()->json(new VerificationResource($verification));
     }
     public function show()
     {
@@ -43,6 +44,6 @@ class VerifiedController extends Controller
         if (!$verification) {
             return response()->json(['message' => 'Verification request not found.'], 404);
         }
-        return response()->json($verification);
+        return response()->json(new VerificationResource($verification));
     }
 }

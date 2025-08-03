@@ -1,0 +1,14 @@
+import axiosInstance from "@/utils/httpRequest.js";
+import {API_ENDPOINT} from "@/constants/index.js";
+
+const tournamentEndpoint = API_ENDPOINT.TOURNAMENT;
+
+export const getTournaments = async (params) => {
+  return axiosInstance.get(`${tournamentEndpoint}/list`, { params })
+    .then((response) => response.data);
+}
+
+export const getTournamentById = async (id) => {
+  return axiosInstance.get(`${tournamentEndpoint}/${id}`)
+    .then((response) => response.data);
+}

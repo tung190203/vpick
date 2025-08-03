@@ -116,7 +116,7 @@ const logout = async () => {
     mobileMenuOpen.value = false
     setTimeout(() => {
       router.push({ name: 'login' })
-    }, 1000)
+    }, 500)
   } catch (error) {
     toast.error(error.response?.data?.message || 'Đăng xuất thất bại!')
   }

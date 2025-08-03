@@ -66,9 +66,11 @@ axiosInstance.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const res = await axios.post(`${import.meta.env.VITE_BASE_URL}/auth/refresh-token`, {
-          refresh_token: refreshToken,
-        });
+        const res = await axios.post(`${import.meta.env.VITE_BASE_URL}/auth/refresh-token`,{},{
+            headers: {
+              Authorization: `Bearer ${refreshToken}`,
+            },
+        });        
 
         const newAccessToken = res.data.access_token;
         localStorage.setItem(LOCAL_STORAGE_KEY.LOGIN_TOKEN, newAccessToken);

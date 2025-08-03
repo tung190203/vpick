@@ -4,7 +4,10 @@ import {LOCAL_STORAGE_KEY} from "@/constants/index.js";
 
 const router = createRouter({
   history: createWebHistory(),
-  routes: route
+  routes: route,
+  scrollBehavior(to, from, savedPosition) {
+    return { top: 0 }
+  }
 });
 
 router.beforeEach((to, from, next) => {

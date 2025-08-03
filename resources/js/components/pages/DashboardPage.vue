@@ -140,20 +140,18 @@ const userStore = useUserStore()
 const verifyStore = useVerifyStore()
 const { getUser } = storeToRefs(userStore)
 
-onMounted(() => {
-  checkBeginner()
-})
-
-watch(getUser, () => {
-  checkBeginner()
-}, { deep: true })
-
 function checkBeginner() {
-  if(LOCAL_STORAGE_KEY.VERIFY in localStorage) {
-    showSkillPopup.value = false
-    return
+  const verified = localStorage.getItem(LOCAL_STORAGE_KEY.VERIFY);
+  if (verified) {
+    showSkillPopup.value = false;
+  } else {
+    showSkillPopup.value = true;
   }
 }
+
+onMounted(async() => {
+  await checkBeginner()
+})
 
 const handleSkillConfirm = async (data) => {
   try {

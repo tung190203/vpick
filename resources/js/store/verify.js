@@ -5,15 +5,12 @@ import { computed, reactive, watch } from "vue";
 
 export const useVerifyStore = defineStore("verify", () => {
   const verify = reactive({
-    id: null,
     user_id: null,
     status: "",
     vndupr_score: 0,
     verified_id: null,
     approver_id: null,
     certified_file: "",
-    created_at: "",
-    updated_at: "",
   });
 
   const getVerify = computed(() => verify);
