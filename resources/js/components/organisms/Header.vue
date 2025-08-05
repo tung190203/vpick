@@ -9,7 +9,7 @@
       <!-- Desktop Menu -->
       <nav class="hidden md:flex space-x-6 text-gray-700 font-medium">
         <RouterLink to="/" class="text-white">Trang chủ</RouterLink>
-        <RouterLink to="/tournaments" class="text-white">Giải đấu</RouterLink>
+        <RouterLink to="/tournament" class="text-white">Giải đấu</RouterLink>
         <RouterLink to="/friendly-match/create" class="text-white">Giao hữu</RouterLink>
         <RouterLink to="/leaderboard" class="text-white">Bảng xếp hạng</RouterLink>
         <RouterLink to="/club" class="text-white">CLB</RouterLink>
@@ -41,7 +41,7 @@
               </router-link>
             </li>
             <li>
-              <router-link to="/my-tournaments"
+              <router-link to="/my-tournament"
                 class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded" @click="dropdownOpen = false">
                 Giải đấu của tôi
               </router-link>
@@ -67,7 +67,7 @@
     <!-- Mobile Menu -->
     <div v-if="mobileMenuOpen" class="md:hidden mt-3 space-y-2">
       <RouterLink to="/" class="block text-gray-700 text-white">Trang chủ</RouterLink>
-      <RouterLink to="/tournaments" class="block text-gray-700 text-white">Giải đấu</RouterLink>
+      <RouterLink to="/tournament" class="block text-gray-700 text-white">Giải đấu</RouterLink>
       <RouterLink to="/friendly/create" class="block text-gray-700 text-white">Giao hữu</RouterLink>
       <RouterLink to="/leaderboard" class="block text-gray-700 text-white">Bảng xếp hạng</RouterLink>
       <RouterLink to="/club" class="block text-gray-700 text-white">CLB</RouterLink>

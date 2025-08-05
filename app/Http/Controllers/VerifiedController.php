@@ -21,7 +21,7 @@ class VerifiedController extends Controller
             'user_id' => $request->user_id,
             'vndupr_score' => $request->vndupr_score,
         ];
-        if($request->hasFile('certified_file')) {
+        if ($request->hasFile('certified_file')) {
             $data['certified_file'] = $request->file('certified_file')->store('certified_files', 'public');
         }
         if ($request->has('verifier_id')) {
@@ -41,9 +41,9 @@ class VerifiedController extends Controller
         $verification = Verify::where('user_id', auth()->id())
             ->with(['user', 'verifier', 'approver'])
             ->first();
-        if (!$verification) {
-            return response()->json(['message' => 'Verification request not found.'], 404);
-        }
-        return response()->json(new VerificationResource($verification));
+
+        return response()->json(
+            $verification ? new VerificationResource($verification) : null
+        );
     }
 }

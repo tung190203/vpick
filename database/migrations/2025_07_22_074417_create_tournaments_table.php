@@ -19,7 +19,6 @@ return new class extends Migration
             $table->string('location')->nullable();
             $table->unsignedBigInteger('club_id')->nullable();
             $table->unsignedBigInteger('created_by')->nullable();
-            $table->enum('type', ['đơn', 'đôi', 'đồng đội']);
             $table->enum('level', ['local', 'provincial', 'national']);
             $table->text('description')->nullable();
             $table->timestamps();

@@ -15,14 +15,18 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('tournament_id');
             $table->string('round')->nullable();
-            $table->unsignedBigInteger('player1_id');
-            $table->unsignedBigInteger('player2_id');
+            $table->unsignedBigInteger('player1_id')->nullable();
+            $table->unsignedBigInteger('player2_id')->nullable();
+            $table->unsignedBigInteger('team1_id')->nullable();
+            $table->unsignedBigInteger('team2_id')->nullable();
             $table->string('score')->nullable();
             $table->enum('result', ['player1_win', 'player2_win', 'forfeit'])->nullable();
             $table->unsignedBigInteger('confirmed_by')->nullable();
             $table->boolean('qr_confirmed')->default(false);
             $table->unsignedBigInteger('referee_id')->nullable();
             $table->enum('status', ['pending', 'completed', 'disputed'])->default('pending');
+            $table->unsignedBigInteger('group_id')->nullable();
+            $table->unsignedBigInteger('tournament_type_id')->nullable();
             $table->timestamps();
         });
     }

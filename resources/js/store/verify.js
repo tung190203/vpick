@@ -44,7 +44,7 @@ export const useVerifyStore = defineStore("verify", () => {
   const showVerification = async () => {
     try {
       const res = await VerifyService.showVerification();
-      if (res) {
+      if (res && Object.keys(res).length > 0) {
         fillVerifyData(res);
       }
       return res;

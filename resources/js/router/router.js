@@ -63,8 +63,8 @@ export const route = [
         component: ClubPage,
       },
       {
-        path: '/tournaments',
-        name: 'tournaments',
+        path: '/tournament',
+        name: 'tournament',
         component: TournamentPage
       },
       {

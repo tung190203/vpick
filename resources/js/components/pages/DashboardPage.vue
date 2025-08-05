@@ -23,7 +23,7 @@
       <!-- Action Buttons -->
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <button class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-center"
-          @click="() => $router.push('/tournaments')">
+          @click="() => $router.push('/tournament')">
           Tham gia giải đấu
         </button>
         <button class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg text-center">
