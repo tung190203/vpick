@@ -32,7 +32,6 @@ class TournamentResource extends JsonResource
                     'name' => $this->createdBy->full_name,
                 ];
             }),
-            'type' => $this->type,
             'level' => $this->level,
             'description' => $this->description,
             'status' => match (true) {
@@ -52,7 +51,43 @@ class TournamentResource extends JsonResource
             'matches_count' => $this->whenLoaded('matches', function () {
                 return $this->matches->count();
             }),
-            ''
+            'types' => $this->whenLoaded('types', function () {
+                return $this->types->map(function ($type) {
+                    return [
+                        'id' => $type->id,
+                        'type' => $type->type,
+                        'description' => $type->description,
+                        'groups' => $type->groups->map(function ($group) {
+                            return [
+                                'id' => $group->id,
+                                'name' => $group->name,
+                                'matches' => $group->matches->map(function ($match) {
+                                    return [
+                                        'id' => $match->id,
+                                        'player1' => $match->player1 ? [
+                                            'id' => $match->player1->id,
+                                            'name' => $match->player1->full_name,
+                                        ] : null,
+                                        'player2' => $match->player2 ? [
+                                            'id' => $match->player2->id,
+                                            'name' => $match->player2->full_name,
+                                        ] : null,
+                                        'team1' => $match->team1 ? [
+                                            'id' => $match->team1->id,
+                                            'name' => $match->team1->name,
+                                        ] : null,
+                                        'team2' => $match->team2 ? [
+                                            'id' => $match->team2->id,
+                                            'name' => $match->team2->name,
+                                        ] : null,
+                                        'status' => $match->status,
+                                    ];
+                                }),
+                            ];
+                        }),
+                    ];
+                });
+            }),
         ];
     }
 }

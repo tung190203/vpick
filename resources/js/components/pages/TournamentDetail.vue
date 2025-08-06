@@ -4,7 +4,8 @@
     <div class="space-y-1">
       <h1 class="text-2xl font-bold text-gray-800 flex items-center justify-between">
         {{ tournament.name }}
-        <span class="text-sm px-2 py-1 rounded" :class="statusClass(tournament.status)">{{ statusLabel(tournament.status) }}</span>
+        <span class="text-sm px-2 py-1 rounded" :class="statusClass(tournament.status)">{{
+          statusLabel(tournament.status) }}</span>
       </h1>
       <p class="text-gray-600">{{ tournament.location }} | {{ tournament.start_date }} - {{ tournament.end_date }}</p>
     </div>
@@ -30,7 +31,7 @@
     <!-- Tabs bảng đấu -->
     <div>
       <div class="flex gap-4 border-b mb-4">
-        <button v-for="group in matchGroups" :key="group" @click="selectedGroup = group"
+        <button v-for="group in matchGroupsByType[selectedType] || []" :key="group" @click="selectedGroup = group"
           class="py-1 px-3 text-sm font-medium" :class="{
             'border-b-2 border-primary text-primary': selectedGroup === group,
             'text-gray-600': selectedGroup !== group
@@ -76,10 +77,16 @@
 
     <!-- Nút tham gia -->
     <div class="text-right">
-      <button @click="joinTournament" class="bg-primary text-white px-5 py-2 rounded hover:bg-secondary transition-colors">
+      <button v-if="tournament.joined" class="bg-gray-300 text-gray-700 px-5 py-2 rounded cursor-not-allowed" disabled>
+        Đã tham gia giải
+      </button>
+
+      <button v-else @click="joinTournament"
+        class="bg-primary text-white px-5 py-2 rounded hover:bg-secondary transition-colors">
         Tham gia giải
       </button>
     </div>
+
   </div>
 </template>
 
@@ -95,10 +102,10 @@ const id = route.params.id
 
 const tournament = ref({})
 const matches = ref([])
-const matchTypes = ref(['Đơn', 'Đôi', 'Hỗn hợp'])
-const matchGroups = ref(['A', 'B', 'C', 'D'])
+const matchTypes = ref([])
+const matchGroupsByType = ref([])
 const selectedType = ref('Đơn')
-const selectedGroup = ref('A')
+const selectedGroup = ref(null)
 
 const filteredMatches = computed(() =>
   matches.value.filter(
@@ -106,43 +113,65 @@ const filteredMatches = computed(() =>
   )
 )
 
+function getTypeLabel(type) {
+  switch (type) {
+    case 'single':
+      return 'Đơn';
+    case 'double':
+      return 'Đôi';
+    case 'mixed':
+      return 'Hỗn hợp';
+    default:
+      return 'Không xác định';
+  }
+}
+
 const getDetailTournament = async (id) => {
   try {
     const response = await TournamentService.getTournamentById(id)
     tournament.value = response.data
+    const types = response.data.types || []
+    matchTypes.value = types.map(type => getTypeLabel(type.type))
+    const groupsMap = {}
+    types.forEach(type => {
+      const label = getTypeLabel(type.type)
+      groupsMap[label] = (type.groups || []).map(group => group.name)
+    })
+    matchGroupsByType.value = groupsMap
+    selectedType.value = matchTypes.value[0]
+    selectedGroup.value = matchGroupsByType.value[selectedType.value]?.[0] || null
   } catch (error) {
     console.error('Error fetching tournament details:', error)
-    toast.error('Không thể tải thông tin giải đấu.')
   }
 }
 
 const statusLabel = status => {
-    switch (status) {
-        case TOURNAMENT_STATUS.UPCOMING: return TOURNAMENT_STATUS_LABEL.UPCOMING
-        case TOURNAMENT_STATUS.ONGOING: return TOURNAMENT_STATUS_LABEL.ONGOING
-        case TOURNAMENT_STATUS.FINISHED: return TOURNAMENT_STATUS_LABEL.FINISHED
-        default: return ''
-    }
+  switch (status) {
+    case TOURNAMENT_STATUS.UPCOMING: return TOURNAMENT_STATUS_LABEL.UPCOMING
+    case TOURNAMENT_STATUS.ONGOING: return TOURNAMENT_STATUS_LABEL.ONGOING
+    case TOURNAMENT_STATUS.FINISHED: return TOURNAMENT_STATUS_LABEL.FINISHED
+    default: return ''
+  }
 }
 
 const statusClass = status => {
-    switch (status) {
-        case TOURNAMENT_STATUS.UPCOMING: return 'bg-yellow-100 text-yellow-800'
-        case TOURNAMENT_STATUS.ONGOING: return 'bg-green-100 text-green-800'
-        case TOURNAMENT_STATUS.FINISHED: return 'bg-gray-200 text-gray-700'
-        default: return ''
-    }
+  switch (status) {
+    case TOURNAMENT_STATUS.UPCOMING: return 'bg-yellow-100 text-yellow-800'
+    case TOURNAMENT_STATUS.ONGOING: return 'bg-green-100 text-green-800'
+    case TOURNAMENT_STATUS.FINISHED: return 'bg-gray-200 text-gray-700'
+    default: return ''
+  }
 }
 
-onMounted(async() => {
+onMounted(async () => {
   await getDetailTournament(id)
-  matches.value = [
-    { id: 1, player1: 'Nam', player2: 'Minh', time: '10:00 - 15/08', type: 'Đơn', group: 'A', status: 'Đã diễn ra' },
-    { id: 2, player1: 'Tú', player2: 'Phát', time: '11:30 - 15/08', type: 'Đơn', group: 'A', status: 'Sắp diễn ra' },
-    { id: 3, player1: 'Tùng/Thắng', player2: 'Long/Phong', time: '13:00 - 15/08', type: 'Đôi', group: 'B', status: 'Sắp diễn ra' },
-    { id: 4, player1: 'An/Phúc', player2: 'Hà/Hương', time: '14:30 - 15/08', type: 'Hỗn hợp', group: 'C', status: 'Chưa rõ' },
-    { id: 5, player1: 'Bình', player2: 'Dương', time: '15:30 - 15/08', type: 'Đơn', group: 'D', status: 'Sắp diễn ra' },
-  ]
+  // matches.value = [
+  //   { id: 1, player1: 'Nam', player2: 'Minh', time: '10:00 - 15/08', type: 'Đơn', group: 'A', status: 'Đã diễn ra' },
+  //   { id: 2, player1: 'Tú', player2: 'Phát', time: '11:30 - 15/08', type: 'Đơn', group: 'A', status: 'Sắp diễn ra' },
+  //   { id: 3, player1: 'Tùng/Thắng', player2: 'Long/Phong', time: '13:00 - 15/08', type: 'Đôi', group: 'B', status: 'Sắp diễn ra' },
+  //   { id: 4, player1: 'An/Phúc', player2: 'Hà/Hương', time: '14:30 - 15/08', type: 'Hỗn hợp', group: 'C', status: 'Chưa rõ' },
+  //   { id: 5, player1: 'Bình', player2: 'Dương', time: '15:30 - 15/08', type: 'Đơn', group: 'D', status: 'Sắp diễn ra' },
+  // ]
 })
 
 function joinTournament() {

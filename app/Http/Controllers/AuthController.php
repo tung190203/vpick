@@ -190,13 +190,11 @@ class AuthController extends Controller
                 'expires_in' => 3600,
             ]));
         } catch (\Exception $e) {
-            \Log::error('Google login error: ' . $e->getMessage());
             return response()->json(['error' => 'Không thể đăng nhập bằng Google'], 500);
         }
     }
     public function me(Request $request)
     {
-        // return response()->json($request->user());
         return response()->json( new UserResource($request->user()));
     }
 
@@ -209,7 +207,7 @@ class AuthController extends Controller
                 'token_type' => 'Bearer',
                 'expires_in' => 3600,
             ],
-            'user' => $user,
+            'user' => new UserResource($user),
         ];
     }
 }
