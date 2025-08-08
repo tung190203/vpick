@@ -7,12 +7,13 @@
                 <div>
                     <div class="text-xl font-semibold">{{ getUser.full_name }}</div>
                     <div class="text-xs font-bold flex jutify-start items-cente select-none text-green-500">
-                        <component :is="getUser.email_verified_at ? CheckCircleIcon : XCircleIcon" class="w-4 h-4 mr-1" />
+                        <component :is="getUser.email_verified_at ? CheckCircleIcon : XCircleIcon"
+                            class="w-4 h-4 mr-1" />
                         {{ getUser.email_verified_at ? 'Đã xác minh' : 'Chưa xác minh' }}
                     </div>
                 </div>
             </div>
-            <div>
+            <div v-if="getRole === ROLE.PLAYER">
                 <div class="mt-4 sm:mt-0 flex items-center gap-4 text-sm text-gray-600">
                     <div><span class="font-medium">VNDUPR:</span> {{ getUser.vndupr_score }}</div> |
                     <div><span class="font-medium">Tier:</span> {{ getUser.tier ?? 'Chưa phân cấp' }}</div>
@@ -231,7 +232,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { LOCAL_STORAGE_USER } from '@/constants/index.js'
+import { LOCAL_STORAGE_USER, ROLE } from '@/constants/index.js'
 import PerformanceChart from '../molecules/PerformanceChart.vue'
 import { EyeIcon, EyeSlashIcon, ClockIcon } from '@heroicons/vue/24/outline'
 import { CheckCircleIcon, XCircleIcon } from '@heroicons/vue/24/solid'
@@ -244,15 +245,21 @@ const userData = localStorage.getItem(LOCAL_STORAGE_USER.USER)
 const userStore = useUserStore()
 const verifyStore = useVerifyStore()
 const { getUser } = storeToRefs(userStore)
+const { getRole } = storeToRefs(userStore)
 const { getVerify } = storeToRefs(verifyStore)
 const player = userData ? JSON.parse(userData) : {};
 
-const tabs = [
-    { key: 'information', label: 'Thông tin cá nhân' },
-    { key: 'stats', label: 'Thống kê' },
-    { key: 'clubs', label: 'CLB' },
-    { key: 'history', label: 'Lịch sử thi đấu' },
-]
+const tabs = getRole.value === ROLE.PLAYER
+    ? [
+        { key: 'information', label: 'Thông tin cá nhân' },
+        { key: 'stats', label: 'Thống kê' },
+        { key: 'clubs', label: 'CLB' },
+        { key: 'history', label: 'Lịch sử thi đấu' },
+    ]
+    : [
+        { key: 'information', label: 'Thông tin cá nhân' }
+    ];
+
 
 const password = ref('')
 

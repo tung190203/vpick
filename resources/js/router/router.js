@@ -12,9 +12,14 @@ import ResetPasswordPage from '@/components/pages/ResetPasswordPage.vue'
 import Leaderboard from '@/components/pages/Leaderboard.vue'
 import ClubPage from '@/components/pages/ClubPage.vue'
 import TournamentPage from '@/components/pages/TournamentPage.vue'
-import TournamentDetail from '../components/pages/TournamentDetail.vue'
-import TermsPage from '../components/pages/TermsPage.vue'
-import CreateFriendlyMatchPage from '../components/pages/CreateFriendlyMatchPage.vue'
+import TournamentDetail from '@/components/pages/TournamentDetail.vue'
+import TermsPage from '@/components/pages/TermsPage.vue'
+import CreateFriendlyMatchPage from '@/components/pages/CreateFriendlyMatchPage.vue'
+import ForbiddenPage from '@/components/pages/ForbiddenPage.vue'
+import AdminDashboard from '@/components/pages/admin/AdminDashboard.vue'
+import RefereeDashboard from '@/components/pages/referee/RefereeDashboard.vue'
+import { ROLE } from '@/constants/index.js'
+
 export const route = [
   {
     path: '/login',
@@ -45,39 +50,76 @@ export const route = [
       {
         path: '',
         name: 'dashboard',
-        component: DashboardPage
+        component: DashboardPage,
+        meta: {
+          role: [ROLE.PLAYER]
+        }
       },
       {
         path: '/profile',
         name: 'profile',
-        component: ProfilePage
+        component: ProfilePage,
+        meta: {
+          role: [ROLE.PLAYER, ROLE.ADMIN, ROLE.REFEREE]
+        }
       },
       {
         path: '/leaderboard',
         name: 'leaderboard',
-        component: Leaderboard
+        component: Leaderboard,
+        meta: {
+          role: [ROLE.PLAYER]
+        }
       },
       {
         path: '/club',
         name: 'club',
         component: ClubPage,
+        meta: {
+          role: [ROLE.PLAYER]
+        }
       },
       {
         path: '/tournament',
         name: 'tournament',
-        component: TournamentPage
+        component: TournamentPage,
+        meta: {
+          role: [ROLE.PLAYER]
+        }
       },
       {
         path: '/tournament/:id',
         name: 'tournament-detail',
         component: TournamentDetail,
-        props: true
+        props: true,
+        meta: {
+          role: [ROLE.PLAYER]
+        }
       },
       {
         path: '/friendly-match/create',
         name: 'create-friendly-match',
-        component: CreateFriendlyMatchPage
-      }
+        component: CreateFriendlyMatchPage,
+        meta: {
+          role: [ROLE.PLAYER]
+        }
+      },
+      {
+        path: '/admin/dashboard',
+        name: 'admin.dashboard',
+        component: AdminDashboard,
+        meta: {
+          role: [ROLE.ADMIN]
+        }
+      },
+      {
+        path: '/referee/dashboard',
+        name: 'referee.dashboard',
+        component: RefereeDashboard,
+        meta: {
+          role: [ROLE.REFEREE]
+        }
+      },
     ]
   },
   {
@@ -108,7 +150,15 @@ export const route = [
   {
     path: '/terms',
     name: 'terms',
-    component: TermsPage
+    component: TermsPage,
+    meta: {
+      role: [ROLE.PLAYER, ROLE.ADMIN, ROLE.REFEREE]
+    }
+  },
+  {
+    path: '/forbidden',
+    name: 'forbidden',
+    component: ForbiddenPage,
   },
   {
     path: '/:pathMatch(.*)*',

@@ -22,6 +22,7 @@ class UserResource extends JsonResource
             'role' => $this->role,
             'tier' => $this->tier,
             'vndupr_score' => $this->vndupr_score,
+            'email_verified_at' => $this->email_verified_at,
         ];
     }
 }

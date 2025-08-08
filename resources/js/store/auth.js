@@ -14,6 +14,7 @@ export const useUserStore = defineStore("user", () => {
   })
 
   const getUser = computed(() => user)
+  const getRole = computed(() => user.role)
 
   const loadUserFromLocalStorage = () => {
     const storedUser = localStorage.getItem(LOCAL_STORAGE_USER.USER);
@@ -67,6 +68,7 @@ export const useUserStore = defineStore("user", () => {
 
   return {
     getUser,
+    getRole,
     registerUser,
     loginUser,
     logoutUser,

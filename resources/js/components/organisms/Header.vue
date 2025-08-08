@@ -2,17 +2,29 @@
     <header class="bg-primary/90 backdrop-blur-md shadow px-4 py-3 sticky top-0 z-50 transition duration-300 border-b">
     <div class="flex justify-between items-center">
       <!-- Logo -->
-      <router-link to="/" class="text-xl font-bold text-blue-600">
-        <img src="@/assets/images/logo.png" class="w-16" alt="">
-      </router-link>
-
+      <img
+        src="@/assets/images/logo.png"
+        alt="Logo"
+        class="h-10 cursor-pointer"
+        @click="goToDashboard"
+      />
       <!-- Desktop Menu -->
       <nav class="hidden md:flex space-x-6 text-gray-700 font-medium">
-        <RouterLink to="/" class="text-white">Trang chủ</RouterLink>
-        <RouterLink to="/tournament" class="text-white">Giải đấu</RouterLink>
-        <RouterLink to="/friendly-match/create" class="text-white">Giao hữu</RouterLink>
-        <RouterLink to="/leaderboard" class="text-white">Bảng xếp hạng</RouterLink>
-        <RouterLink to="/club" class="text-white">CLB</RouterLink>
+        <template v-if="getRole === ROLE.ADMIN">
+          <RouterLink to="/admin/dashboard" class="text-white">Trang chủ</RouterLink>
+        </template>
+        <template v-if="getRole === ROLE.REFEREE">
+          <RouterLink to="/referee/dashboard" class="text-white">Trang chủ</RouterLink>
+          <RouterLink to="" class="text-white">Giải đấu được phân công</RouterLink>
+          <RouterLink to="" class="text-white">Báo cáo / Khiếu nại</RouterLink>
+        </template>
+        <template v-if="getRole === ROLE.PLAYER">
+          <RouterLink to="/" class="text-white">Trang chủ</RouterLink>
+          <RouterLink to="/tournament" class="text-white">Giải đấu</RouterLink>
+          <RouterLink to="/friendly-match/create" class="text-white">Giao hữu</RouterLink>
+          <RouterLink to="/leaderboard" class="text-white">Bảng xếp hạng</RouterLink>
+          <RouterLink to="/club" class="text-white">CLB</RouterLink>
+        </template>
       </nav>
 
       <!-- Right user info -->
@@ -40,13 +52,13 @@
                 Hồ sơ cá nhân
               </router-link>
             </li>
-            <li>
+            <li v-if="getRole === ROLE.PLAYER">
               <router-link to="/my-tournament"
                 class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded" @click="dropdownOpen = false">
                 Giải đấu của tôi
               </router-link>
             </li>
-            <li>
+            <li v-if="getRole === ROLE.PLAYER">
               <router-link to="/settings" class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded" @click="dropdownOpen = false">
                 Cài đặt
               </router-link>
@@ -81,10 +93,28 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/auth'
 import { toast } from 'vue3-toastify'
 import { storeToRefs } from 'pinia'
+import { ROLE } from '@/constants/index'
 
 const userStore = useUserStore()
 const router = useRouter()
 const { getUser } = storeToRefs(userStore)
+const { getRole } = storeToRefs(userStore)
+
+const goToDashboard = () => {
+  switch (getRole.value) {
+    case ROLE.ADMIN:
+      router.push({ name: 'admin.dashboard' })
+      break
+    case ROLE.REFEREE:
+      router.push({ name: 'referee.dashboard' })
+      break
+    case ROLE.PLAYER:
+    default:
+      router.push({ name: 'dashboard' })
+      break
+  }
+}
+
 
 const mobileMenuOpen = ref(false)
 const dropdownOpen = ref(false)
