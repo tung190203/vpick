@@ -104,7 +104,6 @@ import { MapPinIcon, CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from '@he
 import * as TournamentService from '@/service/tournament'
 import { formatDatetime } from '@/composables/formatDatetime'
 import { TOURNAMENT_STATUS, TOURNAMENT_STATUS_LABEL } from '@/constants/index.js'
-import { toast } from 'vue3-toastify'
 
 const tournaments = ref([])
 
