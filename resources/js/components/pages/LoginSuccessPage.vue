@@ -11,7 +11,7 @@
 <script setup>
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
-import { LOCAL_STORAGE_KEY, LOCAL_STORAGE_USER } from '@/constants/index.js'
+import { LOCAL_STORAGE_KEY, LOCAL_STORAGE_USER, ROLE } from '@/constants/index.js'
 import { useVerifyStore } from '@/store/verify.js'
 
 const router = useRouter()
@@ -33,7 +33,22 @@ async function fetchUser(token, type) {
       }
     })
     localStorage.setItem(LOCAL_STORAGE_USER.USER, JSON.stringify(res.data))
-    router.replace({ name: 'dashboard' })
+    if(res && res.data) {
+      switch (res.data.role) {
+        case ROLE.ADMIN:
+          router.replace({ name: 'admin.dashboard' })
+          break
+        case ROLE.REFEREE:
+          router.replace({ name: 'referee.dashboard' })
+          break
+        case ROLE.PLAYER:
+          router.replace({ name: 'dashboard' })
+          break
+        default:
+          router.replace({ name: 'dashboard' })
+          break
+      }
+    }
   } catch (err) {
     console.error('Lấy thông tin user thất bại:', err)
     router.replace({ name: 'login' })

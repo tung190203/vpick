@@ -8,6 +8,12 @@ export const LOCAL_STORAGE_USER = {
   USER: "user",
 };
 
+export const ROLE = {
+  PLAYER: 'player',
+  REFEREE: 'referee',
+  ADMIN: 'admin',
+};
+
 export const API_ENDPOINT = {
   AUTH: '/auth',
   USER: '/user',

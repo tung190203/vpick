@@ -7,10 +7,12 @@ import Button from '@/components/atoms/Button.vue'
 import { useUserStore } from '@/store/auth'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue3-toastify'
+import { storeToRefs } from 'pinia'
 
 const router = useRouter()
 const userStore = useUserStore()
 const verifyStore = useVerifyStore()
+const { getRole: userRole } = storeToRefs(userStore);
 
 const data = reactive({
   email: '',
@@ -37,7 +39,17 @@ const login = async () => {
       await userStore.loginUser(data)
       await verifyStore.showVerification()
       toast.success('Đăng nhập thành công!')
-      const redirectPath = router.currentRoute.value.query.redirect || { name: 'dashboard' }
+      const roleRouteMap = {
+        user: 'dashboard',
+        admin: 'admin.dashboard',
+        referee: 'referee.dashboard'
+      }
+      const defaultRouteName = roleRouteMap[userRole.value] || 'home'
+
+      const redirectPath =
+        router.currentRoute.value.query.redirect
+          ? router.currentRoute.value.query.redirect
+          : { name: defaultRouteName }
       setTimeout(() => {
         router.push(redirectPath)
       }, 1000)

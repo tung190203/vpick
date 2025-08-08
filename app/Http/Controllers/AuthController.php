@@ -151,7 +151,7 @@ class AuthController extends Controller
         return Socialite::driver('google')->stateless()->redirect();
     }
 
-    public function handleGoogleCallback()
+    public function handleGoogleCallback(Request $request)
     {
         try {
             $googleUser = Socialite::driver('google')->stateless()->user();
@@ -171,31 +171,29 @@ class AuthController extends Controller
                 ]
             );
             
-            // if (!$user->wasRecentlyCreated) {
-            //     $user->update([
-            //         'full_name' => $googleUser->getName(),
-            //         'google_id' => $googleUser->getId(),
-            //         'avatar_url' => asset('storage/' . $avatarName),
-            //     ]);
-            // }
             Auth::login($user);
             $token = JWTAuth::fromUser($user);
 
             $refreshToken = JWTAuth::claims(['type' => 'refresh'])->fromUser(auth()->user());
 
-            return redirect(config('app.redirect_success_url') . '/login-success?' . http_build_query([
-                'access_token' => $token,
-                'refresh_token' => $refreshToken,
-                'token_type' => 'Bearer',
-                'expires_in' => 3600,
-            ]));
+            if ($request->header('User-Agent') && strpos($request->header('User-Agent'), 'MobileApp') !== false) {
+                return response()->json($this->responseWithToken($token, $refreshToken, $user));
+            } else {
+                return redirect(config('app.redirect_success_url') . '/login-success?' . http_build_query([
+                    'access_token' => $token,
+                    'refresh_token' => $refreshToken,
+                    'token_type' => 'Bearer',
+                    'expires_in' => 3600,
+                ]));
+            }
         } catch (\Exception $e) {
             return response()->json(['error' => 'Không thể đăng nhập bằng Google'], 500);
         }
     }
+
     public function me(Request $request)
     {
-        return response()->json( new UserResource($request->user()));
+        return response()->json(new UserResource($request->user()));
     }
 
     private function responseWithToken(string $token, string $refresh_token, object $user): array
