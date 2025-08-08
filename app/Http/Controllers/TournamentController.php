@@ -50,4 +50,25 @@ class TournamentController extends Controller
             'data' => new TournamentResource($tournament),
         ]);
     }
+
+    public function joinTournament(Request $request, $id)
+    {
+        $tournament = Tournament::findOrFail($id);
+        $user = $request->user();
+
+        // Kiểm tra nếu người dùng đã tham gia
+        if ($tournament->participants()->where('user_id', $user->id)->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You have already joined this tournament.',
+            ], 400);
+        }
+
+        $tournament->participants()->create(['user_id' => $user->id]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'You have successfully joined the tournament.',
+        ]);
+    }
 }
