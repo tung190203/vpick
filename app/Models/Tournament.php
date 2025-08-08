@@ -16,7 +16,6 @@ class Tournament extends Model
         'location',
         'club_id',
         'created_by',
-        'type',
         'level',
         'description',
     ];
@@ -40,5 +39,58 @@ class Tournament extends Model
     public function participants()
     {
         return $this->hasMany(Participant::class);
+    }
+    public function types()
+    {
+        return $this->hasMany(TournamentType::class, 'tournament_id');
+    }
+    public function scopeWithFullRelations($query)
+    {
+        return $query->with([
+            'club',
+            'createdBy',
+            'matches',
+            'participants',
+            'types',
+            'types.groups',
+            'types.groups.matches',
+        ]);
+    }
+    public function scopeUpcoming($query)
+    {
+        return $query->where('start_date', '>', now());
+    }
+    public function scopeOngoing($query)
+    {
+        return $query->where('start_date', '<=', now())
+            ->where('end_date', '>=', now());
+    }
+    public function scopeFinished($query)
+    {
+        return $query->where('end_date', '<', now());
+    }
+
+    public function scopeSearch($query, $keyword)
+    {
+        return $query->where('name', 'like', '%' . $keyword . '%');
+    }
+
+    public function scopeFilterByDate($query, $startDate = null, $endDate = null)
+    {
+        return $query
+            ->when($startDate, fn($q) => $q->whereDate('start_date', '>=', $startDate))
+            ->when($endDate, fn($q) => $q->whereDate('end_date', '<=', $endDate));
+    }
+
+    public function scopeFilterByStatus($query, $status)
+    {
+        $query = match ($status) {
+            self::STATUS_UPCOMING => $query->upcoming(),
+            self::STATUS_ONGOING => $query->ongoing(),
+            self::STATUS_FINISHED => $query->finished(),
+            default => $query->whereNull('status'),
+        };
+
+        return $query;
     }
 }

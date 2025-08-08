@@ -104,18 +104,8 @@ import { MapPinIcon, CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from '@he
 import * as TournamentService from '@/service/tournament'
 import { formatDatetime } from '@/composables/formatDatetime'
 import { TOURNAMENT_STATUS, TOURNAMENT_STATUS_LABEL } from '@/constants/index.js'
+import { toast } from 'vue3-toastify'
 
-// const tournaments = ref([
-//     {
-//         id: 1,
-//         name: 'Hanoi Open 2025',
-//         location: 'Hà Nội',
-//         date: '2025-08-12',
-//         status: 'upcoming',
-//         teams: 16,
-//         joined: true
-//     },
-// ])
 const tournaments = ref([])
 
 const filter = ref({
@@ -126,7 +116,7 @@ const filter = ref({
 })
 
 watch(filter, () => {
-  getAllTournaments(1)
+    getAllTournaments(1)
 }, { deep: true })
 
 
@@ -186,39 +176,23 @@ const statusClass = status => {
     }
 }
 
-// const getAllTournaments = async (page = 1) => {
-//     try {
-//         const res = await TournamentService.getTournaments({ page, ...filter.value })
-//         if (res && res.data) {
-//             tournaments.value = res.data
-//             pagination.value = res.meta
-//         } else {
-//             console.error('No tournaments data found')
-//         }
-//     } catch (error) {
-//         console.error('Error fetching tournaments:', error)
-//     }
-// }
-
 const getAllTournaments = async (page = 1) => {
-  try {
-    const params = {
-      page,
-      keyword: filter.value.keyword || '',
-      status: filter.value.status || '',
-    }
+    try {
+        const params = {
+            page,
+            keyword: filter.value.keyword || '',
+            status: filter.value.status || '',
+        }
 
-    const res = await TournamentService.getTournaments(params)
+        const res = await TournamentService.getTournaments(params)
 
-    if (res && res.data) {
-      tournaments.value = res.data
-      pagination.value = res.meta
-    } else {
-      console.error('No tournaments data found')
+        if (res && res.data) {
+            tournaments.value = res.data
+            pagination.value = res.meta
+        }
+    } catch (error) {
+        console.error('Error fetching tournaments:', error)
     }
-  } catch (error) {
-    console.error('Error fetching tournaments:', error)
-  }
 }
 
 
