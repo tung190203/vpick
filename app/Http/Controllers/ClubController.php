@@ -18,7 +18,6 @@ class ClubController extends Controller
     public function index(Request $request)
     {
         $clubs      = $this->club->getAllClub($request->all());
-        return $clubs;
         return $this->club->response('Get list club successfully', $clubs);
     }
 
