@@ -5,6 +5,7 @@ use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VerificationController;
 use App\Http\Controllers\VerifiedController;
+use App\Http\Controllers\ClubController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -48,5 +49,13 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
         Route::get('/{id}', [TournamentController::class, 'showTournament']);
         // Route::put('/{id}/update', [TournamentController::class, 'updateTournament']);
         // Route::delete('/{id}/delete', [TournamentController::class, 'deleteTournament']);
+    });
+
+    Route::prefix('club')->group(function () {
+        Route::get('/index', [ClubController::class, 'index']);
+        Route::post('/store', [ClubController::class, 'store']);
+        Route::post('/update/{id}', [ClubController::class, 'update']);
+        Route::get('/{id}/edit', [ClubController::class, 'edit']);
+        Route::post('/delete', [ClubController::class, 'destroy']);
     });
 });
