@@ -15,13 +15,11 @@ class ClubController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $clubs  = $this->club->getAllClub();
-        return response()->json([
-            'message'   => 'Get list club successfully',
-            'clubs'      => $clubs,
-        ]);
+        $clubs      = $this->club->getAllClub($request->all());
+        return $clubs;
+        return $this->club->response('Get list club successfully', $clubs);
     }
 
     /**
@@ -33,11 +31,8 @@ class ClubController extends Controller
             'name'      => 'required|unique:clubs',
             'location'  => 'required'
         ]);
-        $club   = $this->club->createClub($request);
-        return response()->json([
-            'message'   => 'Create club successfully',
-            'clubs'      => $club,
-        ]);
+        $club   = $this->club->createClub($request->all());
+        return $this->club->response('Create club successfully', $club, 'store');
     }
 
     /**
@@ -46,10 +41,7 @@ class ClubController extends Controller
     public function edit($id)
     {
         $club  = $this->club->getClubById($id);
-        return response()->json([
-            'message'   => 'Get club successfully',
-            'clubs'      => $club,
-        ]);
+        return $this->club->response('Get club successfully', $club, 'edit');
     }
 
     /**
@@ -61,11 +53,8 @@ class ClubController extends Controller
             'name'      => 'required|unique:clubs',
             'location'  => 'required'
         ]);
-        $club   = $this->club->updateClub($request, $id);
-        return response()->json([
-            'message'   => 'Update club successfully',
-            'clubs'      => $club,
-        ]);
+        $club   = $this->club->updateClub($request->all(), $id);
+        return $this->club->response('Update club successfully', $club, 'update');
     }
 
     /**
@@ -73,9 +62,7 @@ class ClubController extends Controller
      */
     public function destroy(Request $request)
     {
-        $club   = $this->club->deleteClub($request);
-        return response()->json([
-            'message'   => 'Delete club successfully',
-        ]);
+        $club   = $this->club->deleteClub($request->all());
+        return $this->club->response('Delete club successfully', [], 'delete');
     }
 }
