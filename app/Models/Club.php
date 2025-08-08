@@ -43,13 +43,14 @@ class Club extends Model
 
     public function createClub($request)
     {
-        $club               = new Club();
-        $club->name         = $request['name'];
-        $club->location     = $request['location'];
-        $club->logo_url     = $request['logo_url'];
-        $club->created_by   = $request['created_by'];
-        $club->save();
-        return $club;
+        // $club               = new Club();
+        // $club->name         = $request['name'];
+        // $club->location     = $request['location'];
+        // $club->logo_url     = $request['logo_url'];
+        // $club->created_by   = $request['created_by'];
+        // $club->save();
+        // return $club;
+        return Club::create($request);
     }
 
     public function getClubById($id)

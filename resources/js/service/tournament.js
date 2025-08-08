@@ -12,3 +12,8 @@ export const getTournamentById = async (id) => {
   return axiosInstance.get(`${tournamentEndpoint}/${id}`)
     .then((response) => response.data);
 }
+
+export const joinTournament = async (id) => {
+  return axiosInstance.post(`${tournamentEndpoint}/${id}/join`)
+    .then((response) => response.data);
+}
