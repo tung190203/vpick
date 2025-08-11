@@ -49,6 +49,7 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
         Route::get('/{id}', [TournamentController::class, 'showTournament']);
         // Route::put('/{id}/update', [TournamentController::class, 'updateTournament']);
         // Route::delete('/{id}/delete', [TournamentController::class, 'deleteTournament']);
+        Route::post('/{id}/join', [TournamentController::class, 'joinTournament']);
     });
 
     Route::prefix('club')->group(function () {

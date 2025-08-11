@@ -4,8 +4,9 @@
     <div class="space-y-1">
       <h1 class="text-2xl font-bold text-gray-800 flex items-center justify-between">
         {{ tournament.name }}
-        <span class="text-sm px-2 py-1 rounded" :class="statusClass(tournament.status)">{{
-          statusLabel(tournament.status) }}</span>
+        <span class="text-sm px-2 py-1 rounded" :class="statusClass(tournament.status)">
+          {{ statusLabel(tournament.status) }}
+        </span>
       </h1>
       <p class="text-gray-600">{{ tournament.location }} | {{ tournament.start_date }} - {{ tournament.end_date }}</p>
     </div>
@@ -60,11 +61,7 @@
               <td class="p-3">{{ match.player2 }}</td>
               <td class="p-3">{{ match.time }}</td>
               <td class="p-3">
-                <span class="text-xs px-2 py-1 rounded" :class="{
-                  'bg-green-100 text-green-800': match.status === 'Đã diễn ra',
-                  'bg-yellow-100 text-yellow-800': match.status === 'Sắp diễn ra',
-                  'bg-gray-100 text-gray-600': match.status === 'Chưa rõ'
-                }">
+                <span class="text-xs px-2 py-1 rounded" :class="matchStatusClass(match.status)">
                   {{ match.status }}
                 </span>
               </td>
@@ -81,12 +78,11 @@
         Đã tham gia giải
       </button>
 
-      <button v-else @click="joinTournament"
+      <button v-else @click="joinTournament()"
         class="bg-primary text-white px-5 py-2 rounded hover:bg-secondary transition-colors">
         Tham gia giải
       </button>
     </div>
-
   </div>
 </template>
 
@@ -95,7 +91,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { toast } from 'vue3-toastify'
 import * as TournamentService from '@/service/tournament'
-import { TOURNAMENT_STATUS, TOURNAMENT_STATUS_LABEL } from '@/constants/index.js'
+import { TOURNAMENT_STATUS, TOURNAMENT_STATUS_LABEL, MATCH_STATUS, MATCH_STATUS_LABEL, TYPE_OF_TOURNAMENT, TYPE_OF_TOURNAMENT_LABEL } from '@/constants/index.js'
 
 const route = useRoute()
 const id = route.params.id
@@ -103,7 +99,7 @@ const id = route.params.id
 const tournament = ref({})
 const matches = ref([])
 const matchTypes = ref([])
-const matchGroupsByType = ref([])
+const matchGroupsByType = ref({})
 const selectedType = ref('Đơn')
 const selectedGroup = ref(null)
 
@@ -113,39 +109,78 @@ const filteredMatches = computed(() =>
   )
 )
 
+const matchStatusClass = status => {
+  switch (status) {
+    case MATCH_STATUS_LABEL.PENDING: return 'bg-yellow-100 text-yellow-800'
+    case MATCH_STATUS_LABEL.COMPLETED: return 'bg-green-100 text-green-800'
+    case MATCH_STATUS_LABEL.DISPUTED: return 'bg-red-100 text-red-800'
+    default: return 'bg-gray-100 text-gray-600'
+  }
+}
+
 function getTypeLabel(type) {
   switch (type) {
-    case 'single':
-      return 'Đơn';
-    case 'double':
-      return 'Đôi';
-    case 'mixed':
-      return 'Hỗn hợp';
-    default:
-      return 'Không xác định';
+    case TYPE_OF_TOURNAMENT.SINGLE: return TYPE_OF_TOURNAMENT_LABEL.SINGLE
+    case TYPE_OF_TOURNAMENT.DOUBLE: return TYPE_OF_TOURNAMENT_LABEL.DOUBLE
+    case TYPE_OF_TOURNAMENT.MIXED: return TYPE_OF_TOURNAMENT_LABEL.MIXED
+    default: return 'Không xác định'
+  }
+}
+
+function getMatchStatusLabel(status) {
+  switch (status) {
+    case MATCH_STATUS.PENDING: return MATCH_STATUS_LABEL.PENDING
+    case MATCH_STATUS.COMPLETED: return MATCH_STATUS_LABEL.COMPLETED
+    case MATCH_STATUS.DISPUTED: return MATCH_STATUS_LABEL.DISPUTED
+    default: return 'Chưa rõ'
   }
 }
 
 const getDetailTournament = async (id) => {
   try {
     const response = await TournamentService.getTournamentById(id)
+    console.log('Tournament details:', response.data)
     tournament.value = response.data
+
     const types = response.data.types || []
     matchTypes.value = types.map(type => getTypeLabel(type.type))
+
     const groupsMap = {}
+    const allMatches = []
+
     types.forEach(type => {
       const label = getTypeLabel(type.type)
-      groupsMap[label] = (type.groups || []).map(group => group.name)
+      const groups = type.groups || []
+
+      groupsMap[label] = groups.map(group => group.name)
+
+      groups.forEach(group => {
+        const groupMatches = group.matches || []
+        groupMatches.forEach(match => {
+          allMatches.push({
+            id: match.id,
+            type: label,
+            group: group.name,
+            player1: match.player1?.name || match.team1?.name || 'N/A',
+            player2: match.player2?.name || match.team2?.name || 'N/A',
+            time: match.time || 'Chưa xác định',
+            status: getMatchStatusLabel(match.status)
+          })
+        })
+      })
     })
+
     matchGroupsByType.value = groupsMap
+    matches.value = allMatches
     selectedType.value = matchTypes.value[0]
     selectedGroup.value = matchGroupsByType.value[selectedType.value]?.[0] || null
+
   } catch (error) {
     console.error('Error fetching tournament details:', error)
   }
 }
 
-const statusLabel = status => {
+function statusLabel(status) {
   switch (status) {
     case TOURNAMENT_STATUS.UPCOMING: return TOURNAMENT_STATUS_LABEL.UPCOMING
     case TOURNAMENT_STATUS.ONGOING: return TOURNAMENT_STATUS_LABEL.ONGOING
@@ -154,7 +189,7 @@ const statusLabel = status => {
   }
 }
 
-const statusClass = status => {
+function statusClass(status) {
   switch (status) {
     case TOURNAMENT_STATUS.UPCOMING: return 'bg-yellow-100 text-yellow-800'
     case TOURNAMENT_STATUS.ONGOING: return 'bg-green-100 text-green-800'
@@ -163,18 +198,25 @@ const statusClass = status => {
   }
 }
 
+const joinTournament = async () => {
+  if(tournament.value.end_date && new Date(tournament.value.end_date) < new Date()) {
+    toast.error('Giải đấu đã kết thúc, không thể tham gia!')
+    return
+  }
+  try {
+    const response = await TournamentService.joinTournament(id)
+    if (response && response?.success) {
+      tournament.value.joined = true
+      toast.success('Bạn đã tham gia giải đấu thành công!')
+    } else {
+      toast.error('Không thể tham gia giải đấu. Vui lòng thử lại sau.')
+    }
+  } catch (error) {
+    console.error('Error joining tournament:', error)
+  }
+}
+
 onMounted(async () => {
   await getDetailTournament(id)
-  // matches.value = [
-  //   { id: 1, player1: 'Nam', player2: 'Minh', time: '10:00 - 15/08', type: 'Đơn', group: 'A', status: 'Đã diễn ra' },
-  //   { id: 2, player1: 'Tú', player2: 'Phát', time: '11:30 - 15/08', type: 'Đơn', group: 'A', status: 'Sắp diễn ra' },
-  //   { id: 3, player1: 'Tùng/Thắng', player2: 'Long/Phong', time: '13:00 - 15/08', type: 'Đôi', group: 'B', status: 'Sắp diễn ra' },
-  //   { id: 4, player1: 'An/Phúc', player2: 'Hà/Hương', time: '14:30 - 15/08', type: 'Hỗn hợp', group: 'C', status: 'Chưa rõ' },
-  //   { id: 5, player1: 'Bình', player2: 'Dương', time: '15:30 - 15/08', type: 'Đơn', group: 'D', status: 'Sắp diễn ra' },
-  // ]
 })
-
-function joinTournament() {
-  toast.success('Bạn đã tham gia giải đấu thành công!')
-}
 </script>
