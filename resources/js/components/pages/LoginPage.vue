@@ -44,7 +44,7 @@ const login = async () => {
         admin: 'admin.dashboard',
         referee: 'referee.dashboard'
       }
-      const defaultRouteName = roleRouteMap[userRole.value] || 'home'
+      const defaultRouteName = roleRouteMap[userRole.value] || 'dashboard'
 
       const redirectPath =
         router.currentRoute.value.query.redirect

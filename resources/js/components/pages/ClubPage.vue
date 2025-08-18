@@ -22,7 +22,7 @@
             <!-- Danh sách CLB -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
                 <div v-for="club in filteredClubs" :key="club.id"
-                    class="relative bg-gray-50 border rounded-xl shadow hover:shadow-md transition duration-300 pb-12">
+                    class="relative bg-gray-50 border rounded-xl shadow hover:shadow-md transition duration-300 pb-12 cursor-pointer">
                     <div class="p-4 flex items-center space-x-4">
                         <img :src="club.logo" alt="Logo CLB" class="w-14 h-14 object-cover rounded-full border" />
                         <div>

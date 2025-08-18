@@ -26,7 +26,7 @@
           @click="() => $router.push('/tournament')">
           Tham gia giải đấu
         </button>
-        <button class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg text-center">
+        <button class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg text-center" @click="() => $router.push('friendly-match/create')">
           Nhập điểm / Tạo giao hữu
         </button>
         <button class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded-lg text-center"
