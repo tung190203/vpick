@@ -5,7 +5,8 @@
       <img
         src="@/assets/images/logo.png"
         alt="Logo"
-        class="h-10 cursor-pointer"
+        class="cursor-pointer"
+        style="height: 3.5rem;"
         @click="goToDashboard"
       />
       <!-- Desktop Menu -->

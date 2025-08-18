@@ -30,6 +30,16 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         'email_verified_at'
     ];
 
+    const PLAYER = 'player';
+    const ADMIN = 'admin';
+
+    const REFEREE = 'referee';
+
+    const ROLE = [
+        self::PLAYER,
+        self::ADMIN,
+        self::REFEREE
+    ];
     /**
      * The attributes that should be hidden for serialization.
      *
