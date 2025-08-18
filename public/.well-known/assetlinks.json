@@ -1,0 +1,14 @@
+[
+    {
+      "relation": [
+        "delegate_permission/common.handle_all_urls"
+      ],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.pickleball.tech.picki",
+        "sha256_cert_fingerprints": [
+          "B0:6C:3E:B7:EB:52:05:7A:F8:CA:9A:D5:CF:05:94:C7:14:AA:58:AD:18:85:1C:17:91:80:15:70:40:B3:2C:BF"
+        ]
+      }
+    }
+  ]
