@@ -11,45 +11,28 @@ class Matches extends Model
     protected $table = 'matches';
 
     protected $fillable = [
-        'tournament_id',
+        'group_id',
         'round',
-        'player1_id',
-        'player2_id',
-        'team1_id',
-        'team2_id',
-        'score',
-        'result',
-        'confirmed_by',
-        'qr_confirmed',
+        'participant1_id',
+        'participant2_id',
         'referee_id',
         'status',
-        'group_id',
-        'tournament_type_id',
+        'scheduled_at',
     ];
-
-    public function tournament()
-    {
-        return $this->belongsTo(Tournament::class, 'tournament_id');
-    }
-    public function player1()
-    {
-        return $this->belongsTo(User::class, 'player1_id');
-    }
-    public function player2()
-    {
-        return $this->belongsTo(User::class, 'player2_id');
-    }
-    public function team1()
-    {
-        return $this->belongsTo(Team::class, 'team1_id');
-    }
-    public function team2()
-    {
-        return $this->belongsTo(Team::class, 'team2_id');
-    }
-
     public function group()
     {
         return $this->belongsTo(Group::class, 'group_id');
+    }
+    public function participant1()
+    {
+        return $this->belongsTo(Participant::class, 'participant1_id');
+    }
+    public function participant2()
+    {
+        return $this->belongsTo(Participant::class, 'participant2_id');
+    }
+    public function referee()
+    {
+        return $this->belongsTo(User::class, 'referee_id');
     }
 }

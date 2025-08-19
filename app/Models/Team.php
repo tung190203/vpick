@@ -11,11 +11,16 @@ class Team extends Model
 
     protected $fillable = [
         'name',
-        'tournament_id',
+        'tournament_type_id',
     ];
 
     public function tournament()
     {
         return $this->belongsTo(Tournament::class, 'tournament_id');
+    }
+
+    public function members()
+    {
+        return $this->belongsToMany(User::class, 'team_members', 'team_id', 'user_id');
     }
 }

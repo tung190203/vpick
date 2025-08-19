@@ -6,7 +6,6 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\VerificationController;
 use App\Http\Controllers\VerifiedController;
 use App\Http\Controllers\ClubController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -43,13 +42,12 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
         Route::post('/create', [VerifiedController::class, 'create']);
         Route::get('/show', [VerifiedController::class, 'show']);
     });
-    Route::prefix('tournament')->group(function () {
-        Route::get('/list', [TournamentController::class, 'list']);
-        // Route::post('/create', [TournamentController::class, 'createTournament']);
-        Route::get('/{id}', [TournamentController::class, 'showTournament']);
-        // Route::put('/{id}/update', [TournamentController::class, 'updateTournament']);
-        // Route::delete('/{id}/delete', [TournamentController::class, 'deleteTournament']);
-        Route::post('/{id}/join', [TournamentController::class, 'joinTournament']);
+    Route::prefix('tournaments')->group(function () {
+        Route::get('/index', [TournamentController::class, 'index']);
+        Route::post('/store', [TournamentController::class, 'store']);
+        Route::get('/{id}', [TournamentController::class, 'show']);
+        Route::post('/update/{id}', [TournamentController::class, 'update']);
+        Route::post('/delete', [TournamentController::class, 'destroy']);
     });
 
     Route::prefix('club')->group(function () {
