@@ -18,7 +18,7 @@ export const API_ENDPOINT = {
   AUTH: '/auth',
   USER: '/user',
   VERIFICATION: '/verification',
-  TOURNAMENT: '/tournament',
+  TOURNAMENT: '/tournaments',
 };
 
 export const TOURNAMENT_STATUS = {

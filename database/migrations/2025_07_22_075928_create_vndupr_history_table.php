@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('vndupr_history', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id');
-            $table->unsignedBigInteger('match_id');
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('match_id')->constrained('matches')->onDelete('cascade');
             $table->integer('score_before');
             $table->integer('score_after');
             $table->decimal('match_rating', 4, 2);

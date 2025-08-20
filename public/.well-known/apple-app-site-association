@@ -1,42 +1,29 @@
 {
   "applinks": {
+    "apps": [],
     "details": [
       {
-        "appIDs": [
-          "TEAMID.com.pickleball.tech.picki"
-        ],
-        "components": [
-          {
-            "/": "/verify-email*",
-            "comment": "Email verification links"
-          },
-          {
-            "/": "/forgot-password*",
-            "comment": "Forgot password links"
-          },
-          {
-            "/": "/reset-password*",
-            "comment": "Password reset links"
-          },
-          {
-            "/": "/invite*",
-            "comment": "Invitation links"
-          },
-          {
-            "/": "/profile*",
-            "comment": "Profile links"
-          },
-          {
-            "/": "/tournament*",
-            "comment": "Tournament links"
-          }
+        "appID": "2M3R3789X9.com.pickleball.tech.picki",
+        "paths": [
+          "/verify-email",
+          "/verify-email/*",
+          "/forgot-password",
+          "/forgot-password/*",
+          "/reset-password",
+          "/reset-password/*",
+          "/profile",
+          "/profile/*",
+          "/tournament",
+          "/tournament/*",
+          "/invite",
+          "/invite/*"
         ]
       }
     ]
   },
   "webcredentials": {
     "apps": [
-      "TEAMID.com.pickleball.tech.picki"
+      "2M3R3789X9.com.pickleball.tech.picki"
     ]
   }
 }

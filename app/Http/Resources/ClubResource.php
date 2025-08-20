@@ -16,12 +16,14 @@ class ClubResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'                => $this->id,
-            'name'              => $this->name,
-            'location'          => $this->location,
-            'logo_url'          => $this->logo_url,
-            'created_by'        => $this->created_by,
-            'member'            => UserResource::collection($this->whenLoaded('member'))
+            'id' => $this->id,
+            'name' => $this->name,
+            'location' => $this->location,
+            'logo_url' => $this->logo_url,
+            'created_by' => $this->created_by,
+            'members' => UserResource::collection($this->whenLoaded('members')),
+            'quantity_members' => $this->members->count(),
+            'highest_score' => $this->members->max('vndupr_score') ?? 0,
         ];
     }
 }

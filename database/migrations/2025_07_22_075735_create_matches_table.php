@@ -13,20 +13,13 @@ return new class extends Migration
     {
         Schema::create('matches', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tournament_id');
+            $table->foreignId('group_id')->constrained('groups')->onDelete('cascade');
             $table->string('round')->nullable();
-            $table->unsignedBigInteger('player1_id')->nullable();
-            $table->unsignedBigInteger('player2_id')->nullable();
-            $table->unsignedBigInteger('team1_id')->nullable();
-            $table->unsignedBigInteger('team2_id')->nullable();
-            $table->string('score')->nullable();
-            $table->enum('result', ['player1_win', 'player2_win', 'forfeit'])->nullable();
-            $table->unsignedBigInteger('confirmed_by')->nullable();
-            $table->boolean('qr_confirmed')->default(false);
-            $table->unsignedBigInteger('referee_id')->nullable();
-            $table->enum('status', ['pending', 'completed', 'disputed'])->default('pending');
-            $table->unsignedBigInteger('group_id')->nullable();
-            $table->unsignedBigInteger('tournament_type_id')->nullable();
+            $table->foreignId('participant1_id')->constrained('participants');
+            $table->foreignId('participant2_id')->constrained('participants');
+            $table->foreignId('referee_id')->nullable()->constrained('users');
+            $table->enum('status', ['pending','completed','disputed'])->default('pending');
+            $table->timestamp('scheduled_at')->nullable();
             $table->timestamps();
         });
     }

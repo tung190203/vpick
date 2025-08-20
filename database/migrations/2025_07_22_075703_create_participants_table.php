@@ -13,12 +13,12 @@ return new class extends Migration
     {
         Schema::create('participants', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id');
-            $table->unsignedBigInteger('tournament_id');
-            $table->unsignedBigInteger('team_id')->nullable();
+            $table->foreignId('tournament_type_id')->constrained('tournament_types')->onDelete('cascade');
+            $table->enum('type', ['user','team']);
+            $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('cascade');
+            $table->foreignId('team_id')->nullable()->constrained('teams')->onDelete('cascade');
             $table->boolean('is_confirmed')->default(false);
             $table->timestamps();
-            $table->unique(['user_id', 'tournament_id']);
         });
     }
 

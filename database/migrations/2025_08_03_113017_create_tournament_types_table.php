@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('tournament_types', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tournament_id');
+            $table->foreignId('tournament_id')->constrained('tournaments')->onDelete('cascade');
             $table->enum('type', ['single', 'double', 'mixed']);
             $table->string('description')->nullable();
             $table->timestamps();

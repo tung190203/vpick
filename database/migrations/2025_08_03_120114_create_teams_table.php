@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('teams', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->unsignedBigInteger('tournament_id');
+            $table->foreignId('tournament_type_id')->constrained('tournament_types')->onDelete('cascade');
             $table->timestamps();
         });
     }

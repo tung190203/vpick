@@ -4,64 +4,95 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Club;
+use App\Models\ClubMember;
+use App\Http\Resources\ClubResource;
 
 class ClubController extends Controller
 {
-    public function __construct(Club $club)
-    {
-        $this->club = $club;
-    }
-
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request)
     {
-        $clubs      = $this->club->getAllClub($request->all());
-        return $this->club->response('Get list club successfully', $clubs);
-    }
+        $query = Club::with('members')
+            ->orderBy('created_at')
+            ->when($request->filled('name'), fn($q) => $q->search(['name'], $request->name))
+            ->when($request->filled('location'), fn($q) => $q->search(['location'], $request->location));
 
-    /**
-     * Store a newly created resource in storage.
-     */
+        $clubs = $query->paginate($request->get('perPage', Club::PER_PAGE));
+
+        return response()->json([
+            'message' => 'Get list club successfully',
+            'data' => ClubResource::collection($clubs),
+        ]);
+    }
     public function store(Request $request)
     {
         $request->validate([
-            'name'      => 'required|unique:clubs',
-            'location'  => 'required'
+            'name' => 'required|unique:clubs',
+            'location' => 'nullable|string',
+            'logo_url' => 'nullable|image|max:2048',
+            'created_by' => 'required|exists:users,id',
         ]);
-        $club   = $this->club->createClub($request->all());
-        return $this->club->response('Create club successfully', $club, 'store');
+
+        if ($request->hasFile('logo_url')) {
+            $logoPath = $request->file('logo_url')->store('logos', 'public');
+            $request->merge(['logo_url' => $logoPath]);
+        }
+
+        $club = Club::create($request->only(['name', 'location', 'logo_url', 'created_by']));
+
+        return response()->json([
+            'message' => 'Create club successfully',
+            'data' => new ClubResource($club),
+        ]);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit($id)
+    public function show($id)
     {
-        $club  = $this->club->getClubById($id);
-        return $this->club->response('Get club successfully', $club, 'edit');
+        $club = Club::with('members')->findOrFail($id);
+
+        return response()->json([
+            'message' => 'Get club successfully',
+            'data' => new ClubResource($club),
+        ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, $id)
     {
+        $club = Club::findOrFail($id);
+    
         $request->validate([
-            'name'      => 'required|unique:clubs',
-            'location'  => 'required'
+            'name' => "required|unique:clubs,name,{$id}",
+            'location' => 'nullable|string',
+            'logo_url' => 'nullable|image|max:2048',
         ]);
-        $club   = $this->club->updateClub($request->all(), $id);
-        return $this->club->response('Update club successfully', $club, 'update');
-    }
+    
+        $logoPath = $club->logo_url;
+        if ($request->hasFile('logo_url')) {
+            $logoPath = $request->file('logo_url')->store('logos', 'public');
+        }
+    
+        $club->update([
+            'name' => $request->name ?? $club->name,
+            'location' => $request->location ?? $club->location,
+            'logo_url' => $logoPath ?? $club->logo_url,
+            'created_by' => $request->created_by ?? $club->created_by,
+        ]);
+    
+        return response()->json([
+            'message' => 'Update club successfully',
+            'data' => new ClubResource($club->refresh()),
+        ]);
+    }    
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Request $request)
     {
-        $club   = $this->club->deleteClub($request->all());
-        return $this->club->response('Delete club successfully', [], 'delete');
+        $ids = $request->input('ids', []);
+
+        ClubMember::whereIn('club_id', $ids)->delete();
+        Club::whereIn('id', $ids)->delete();
+
+        return response()->json([
+            'message' => 'Delete club successfully',
+            'data' => [],
+        ]);
     }
 }
