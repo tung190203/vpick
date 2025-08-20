@@ -20,7 +20,9 @@ class Club extends Model
 
     public function members()
     {
-        return $this->belongsToMany(User::class, 'club_members', 'club_id', 'user_id');
+        return $this->belongsToMany(User::class, 'club_members')
+            ->withPivot('is_manager')
+            ->withTimestamps();
     }
 
     public function scopeSearch($query, $fillable, $searchTerm)

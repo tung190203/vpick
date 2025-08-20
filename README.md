@@ -27,3 +27,10 @@ echo "✅ Truy cập ứng dụng tại: http://localhost:8000"
 # Bước 8: (Tuỳ chọn) Tạo lại tài liệu API nếu có thay đổi
 php artisan scribe:generate
 echo "📘 Tài liệu API có tại: http://localhost:8000/docs"
+
+# Import tỉnh thành phố bằng lệnh command 
+php artisan import:provinces 2025-08-20
+có thể bỏ phần optional ngày tháng năm 
+php artisan import:provinces
+# -----------------------------------------------
+Thay đổi theo ngày tháng năm hiện tại để lấy dữ liệu mới nhất { yyyy-mm-dd }

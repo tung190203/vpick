@@ -496,11 +496,41 @@ endpoints:
         exampleWasSpecified: false
         nullable: true
         custom: []
+      location_id:
+        name: location_id
+        description: 'The <code>id</code> of an existing record in the locations table.'
+        required: false
+        example: null
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        custom: []
+      vndupr_score:
+        name: vndupr_score
+        description: 'Must be at least 0. Must not be greater than 100.'
+        required: false
+        example: 1
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        custom: []
+      about:
+        name: about
+        description: 'Must not be greater than 300 characters.'
+        required: false
+        example: mniihfqcoynlazghdtqtq
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        custom: []
       password:
         name: password
         description: 'Must be at least 8 characters.'
         required: false
-        example: OP>@;4
+        example: "(!Cs'YAKYLk4>SJIrIV"
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -508,7 +538,9 @@ endpoints:
         custom: []
     cleanBodyParameters:
       full_name: vmqeopfuudtdsufvyvddq
-      password: OP>@;4
+      vndupr_score: 1
+      about: mniihfqcoynlazghdtqtq
+      password: "(!Cs'YAKYLk4>SJIrIV"
     fileParameters:
       avatar_url: null
     responses: []
@@ -709,7 +741,7 @@ endpoints:
         name: start_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-08-20T04:02:53'
+        example: '2025-08-20T09:43:49'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -719,7 +751,7 @@ endpoints:
         name: end_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-08-20T04:02:53'
+        example: '2025-08-20T09:43:49'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -834,8 +866,8 @@ endpoints:
         custom: []
     cleanBodyParameters:
       name: consequatur
-      start_date: '2025-08-20T04:02:53'
-      end_date: '2025-08-20T04:02:53'
+      start_date: '2025-08-20T09:43:49'
+      end_date: '2025-08-20T09:43:49'
       location: consequatur
       level: local
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
@@ -952,7 +984,7 @@ endpoints:
         name: start_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-08-20T04:02:53'
+        example: '2025-08-20T09:43:49'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -962,7 +994,7 @@ endpoints:
         name: end_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-08-20T04:02:53'
+        example: '2025-08-20T09:43:49'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -1106,8 +1138,8 @@ endpoints:
         custom: []
     cleanBodyParameters:
       name: consequatur
-      start_date: '2025-08-20T04:02:53'
-      end_date: '2025-08-20T04:02:53'
+      start_date: '2025-08-20T09:43:49'
+      end_date: '2025-08-20T09:43:49'
       location: consequatur
       level: local
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
@@ -1430,8 +1462,90 @@ endpoints:
     custom: []
   -
     httpMethods:
+      - POST
+    uri: 'api/club/join/{id}'
+    metadata:
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      id:
+        name: id
+        description: 'The ID of the join.'
+        required: true
+        example: consequatur
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+    cleanUrlParameters:
+      id: consequatur
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
       - GET
     uri: api/home
+    metadata:
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: '*'
+        description: null
+        custom: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
+      - GET
+    uri: api/locations
     metadata:
       groupName: Endpoints
       groupDescription: ''

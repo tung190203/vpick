@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\LocationController;
 use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VerificationController;
@@ -57,7 +58,9 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
         Route::get('/{id}', [ClubController::class, 'show']);
         Route::post('/update/{id}', [ClubController::class, 'update']);
         Route::post('/delete', [ClubController::class, 'destroy']);
+        Route::post('/join/{id}', [ClubController::class, 'join']);
     });
 
     Route::get('/home',[HomeController::class, 'index']);
+    Route::get('/locations',[LocationController::class, 'index']);
 });

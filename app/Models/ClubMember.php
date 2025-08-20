@@ -9,7 +9,13 @@ class ClubMember extends Model
 {
     use HasFactory;
 
-    protected $table    = 'club_members';
+    protected $table = 'club_members';
 
-    protected $perPage  = 10;
+    protected $perPage = 10;
+
+    protected $fillable = [
+        'club_id',
+        'user_id',
+        'is_manager',
+    ];
 }

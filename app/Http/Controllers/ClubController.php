@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Club;
 use App\Models\ClubMember;
 use App\Http\Resources\ClubResource;
+use Illuminate\Support\Facades\DB;
 
 class ClubController extends Controller
 {
@@ -26,23 +27,31 @@ class ClubController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|unique:clubs',
-            'location' => 'nullable|string',
-            'logo_url' => 'nullable|image|max:2048',
+            'name'       => 'required|unique:clubs',
+            'location'   => 'nullable|string',
+            'logo_url'   => 'nullable|image|max:2048',
             'created_by' => 'required|exists:users,id',
         ]);
-
-        if ($request->hasFile('logo_url')) {
-            $logoPath = $request->file('logo_url')->store('logos', 'public');
-            $request->merge(['logo_url' => $logoPath]);
-        }
-
-        $club = Club::create($request->only(['name', 'location', 'logo_url', 'created_by']));
-
-        return response()->json([
-            'message' => 'Create club successfully',
-            'data' => new ClubResource($club),
-        ]);
+    
+        return DB::transaction(function () use ($request) {
+            $logoPath = null;
+            if ($request->hasFile('logo_url')) {
+                $logoPath = $request->file('logo_url')->store('logos', 'public');
+            }
+            $club = Club::create([
+                'name'       => $request->name,
+                'location'   => $request->location,
+                'logo_url'   => $logoPath,
+                'created_by' => $request->created_by,
+            ]);
+            $club->members()->attach($request->created_by, ['is_manager' => true]);
+            $club->load('members');
+    
+            return response()->json([
+                'message' => 'Create club successfully',
+                'data'    => new ClubResource($club),
+            ]);
+        });
     }
 
     public function show($id)
@@ -93,6 +102,25 @@ class ClubController extends Controller
         return response()->json([
             'message' => 'Delete club successfully',
             'data' => [],
+        ]);
+    }
+
+    public function join(Request $request, $id)
+    {
+        $club = Club::findOrFail($id);
+        $userId = auth()->id();
+
+        if ($club->members()->where('user_id', $userId)->exists()) {
+            return response()->json([
+                'message' => 'Người dùng đã là thành viên của câu lạc bộ này',
+            ], 409);
+        }
+
+        $club->members()->attach($userId);
+
+        return response()->json([
+            'message' => 'Tham gia câu lạc bộ thành công',
+            'data' => new ClubResource($club->load('members')),
         ]);
     }
 }

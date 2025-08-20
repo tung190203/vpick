@@ -13,6 +13,9 @@ class UserController extends Controller
         $request->validate([
             'full_name' => 'required|string|max:255',
             'avatar_url' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'location_id' => 'nullable|exists:locations,id',
+            'vndupr_score' => 'nullable|numeric|min:0|max:100',
+            'about' => 'nullable|string|max:300',
             'password' => 'nullable|string|min:8',
         ]);
 
@@ -25,7 +28,6 @@ class UserController extends Controller
             $data['password'] = $request->input('password');
         }
         if ($request->hasFile('avatar_url')) {
-            // Xoá avatar cũ nếu tồn tại
             if ($user->avatar_url) {
                 $oldPath = str_replace(asset('storage/') . '/', '', $user->avatar_url);
                 if (Storage::disk('public')->exists($oldPath)) {
@@ -33,10 +35,18 @@ class UserController extends Controller
                 }
             }
 
-            // Lưu avatar mới
             $avatar = $request->file('avatar_url');
             $path = $avatar->store('avatars', 'public');
             $data['avatar_url'] = asset('storage/' . $path);
+        }
+        if ($request->filled('location_id')) {
+            $data['location_id'] = $request->input('location_id');
+        }
+        if ($request->filled('about')) {
+            $data['about'] = $request->input('about');
+        }
+        if ($request->filled('vndupr_score')) {
+            $data['vndupr_score'] = $request->input('vndupr_score');
         }
 
         $user->update($data);
