@@ -60,7 +60,7 @@ endpoints:
         name: email
         description: 'Must be a valid email address.'
         required: true
-        example: gbailey@example.net
+        example: qkunze@example.com
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -70,7 +70,7 @@ endpoints:
         name: password
         description: 'Must be at least 6 characters.'
         required: true
-        example: '+-0pBNvYgxwmi/#iw'
+        example: 'Z5ij-e/dl4m{o,'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -80,7 +80,7 @@ endpoints:
         name: full_name
         description: ''
         required: true
-        example: architecto
+        example: consequatur
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -90,17 +90,17 @@ endpoints:
         name: password_confirmation
         description: 'The value and <code>password</code> must match.'
         required: true
-        example: architecto
+        example: consequatur
         type: string
         enumValues: []
         exampleWasSpecified: false
         nullable: false
         custom: []
     cleanBodyParameters:
-      email: gbailey@example.net
-      password: '+-0pBNvYgxwmi/#iw'
-      full_name: architecto
-      password_confirmation: architecto
+      email: qkunze@example.com
+      password: 'Z5ij-e/dl4m{o,'
+      full_name: consequatur
+      password_confirmation: consequatur
     fileParameters: []
     responses: []
     responseFields: []
@@ -166,14 +166,14 @@ endpoints:
         name: email
         description: 'Must be a valid email address.'
         required: true
-        example: gbailey@example.net
+        example: qkunze@example.com
         type: string
         enumValues: []
         exampleWasSpecified: false
         nullable: false
         custom: []
     cleanBodyParameters:
-      email: gbailey@example.net
+      email: qkunze@example.com
     fileParameters: []
     responses: []
     responseFields: []
@@ -208,7 +208,7 @@ endpoints:
         name: email
         description: 'Must be a valid email address.'
         required: true
-        example: gbailey@example.net
+        example: qkunze@example.com
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -218,7 +218,7 @@ endpoints:
         name: token
         description: ''
         required: true
-        example: architecto
+        example: consequatur
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -228,16 +228,16 @@ endpoints:
         name: password
         description: 'Must be at least 6 characters.'
         required: true
-        example: ']|{+-0pBNvYg'
+        example: '[2UZ5ij-e/dl4'
         type: string
         enumValues: []
         exampleWasSpecified: false
         nullable: false
         custom: []
     cleanBodyParameters:
-      email: gbailey@example.net
-      token: architecto
-      password: ']|{+-0pBNvYg'
+      email: qkunze@example.com
+      token: consequatur
+      password: '[2UZ5ij-e/dl4'
     fileParameters: []
     responses: []
     responseFields: []
@@ -482,7 +482,7 @@ endpoints:
         name: full_name
         description: 'Must not be greater than 255 characters.'
         required: true
-        example: b
+        example: vmqeopfuudtdsufvyvddq
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -502,15 +502,15 @@ endpoints:
         name: password
         description: 'Must be at least 8 characters.'
         required: false
-        example: ']|{+-0pBNvYg'
+        example: OP>@;4
         type: string
         enumValues: []
         exampleWasSpecified: false
         nullable: true
         custom: []
     cleanBodyParameters:
-      full_name: b
-      password: ']|{+-0pBNvYg'
+      full_name: vmqeopfuudtdsufvyvddq
+      password: OP>@;4
     fileParameters:
       avatar_url: null
     responses: []
@@ -546,7 +546,7 @@ endpoints:
         name: user_id
         description: 'The <code>id</code> of an existing record in the users table.'
         required: true
-        example: 16
+        example: 17
         type: integer
         enumValues: []
         exampleWasSpecified: false
@@ -556,7 +556,7 @@ endpoints:
         name: vndupr_score
         description: 'Must be at least 0. Must not be greater than 10.'
         required: true
-        example: 2
+        example: 5
         type: number
         enumValues: []
         exampleWasSpecified: false
@@ -576,16 +576,16 @@ endpoints:
         name: verifier_id
         description: 'The <code>id</code> of an existing record in the users table.'
         required: false
-        example: 16
+        example: 17
         type: integer
         enumValues: []
         exampleWasSpecified: false
         nullable: true
         custom: []
     cleanBodyParameters:
-      user_id: 16
-      vndupr_score: 2
-      verifier_id: 16
+      user_id: 17
+      vndupr_score: 5
+      verifier_id: 17
     fileParameters:
       certified_file: null
     responses: []
@@ -638,7 +638,7 @@ endpoints:
   -
     httpMethods:
       - GET
-    uri: api/tournament/list
+    uri: api/tournaments/index
     metadata:
       groupName: Endpoints
       groupDescription: ''
@@ -677,8 +677,189 @@ endpoints:
     custom: []
   -
     httpMethods:
+      - POST
+    uri: api/tournaments/store
+    metadata:
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      name:
+        name: name
+        description: ''
+        required: true
+        example: consequatur
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      start_date:
+        name: start_date
+        description: 'Must be a valid date.'
+        required: false
+        example: '2025-08-20T04:02:53'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        custom: []
+      end_date:
+        name: end_date
+        description: 'Must be a valid date.'
+        required: false
+        example: '2025-08-20T04:02:53'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        custom: []
+      location:
+        name: location
+        description: ''
+        required: false
+        example: consequatur
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        custom: []
+      level:
+        name: level
+        description: ''
+        required: true
+        example: local
+        type: string
+        enumValues:
+          - local
+          - provincial
+          - national
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      description:
+        name: description
+        description: ''
+        required: false
+        example: 'Dolores dolorum amet iste laborum eius est dolor.'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        custom: []
+      tournament_types:
+        name: tournament_types
+        description: ''
+        required: true
+        example:
+          - []
+        type: 'object[]'
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      club_id:
+        name: club_id
+        description: 'The <code>id</code> of an existing record in the clubs table.'
+        required: false
+        example: null
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        custom: []
+      'tournament_types[].type':
+        name: 'tournament_types[].type'
+        description: ''
+        required: true
+        example: single
+        type: string
+        enumValues:
+          - single
+          - double
+          - mixed
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      'tournament_types[].description':
+        name: 'tournament_types[].description'
+        description: ''
+        required: false
+        example: 'Dolores dolorum amet iste laborum eius est dolor.'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        custom: []
+      'tournament_types[].groups':
+        name: 'tournament_types[].groups'
+        description: ''
+        required: false
+        example: null
+        type: 'object[]'
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      'tournament_types[].groups[].name':
+        name: 'tournament_types[].groups[].name'
+        description: ''
+        required: true
+        example: consequatur
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      'tournament_types[].groups[].matches':
+        name: 'tournament_types[].groups[].matches'
+        description: ''
+        required: false
+        example: null
+        type: object
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+    cleanBodyParameters:
+      name: consequatur
+      start_date: '2025-08-20T04:02:53'
+      end_date: '2025-08-20T04:02:53'
+      location: consequatur
+      level: local
+      description: 'Dolores dolorum amet iste laborum eius est dolor.'
+      tournament_types:
+        -
+          type: single
+          description: 'Dolores dolorum amet iste laborum eius est dolor.'
+          groups:
+            -
+              name: consequatur
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
       - GET
-    uri: 'api/tournament/{id}'
+    uri: 'api/tournaments/{id}'
     metadata:
       groupName: Endpoints
       groupDescription: ''
@@ -697,14 +878,577 @@ endpoints:
         name: id
         description: 'The ID of the tournament.'
         required: true
-        example: architecto
+        example: consequatur
         type: string
         enumValues: []
         exampleWasSpecified: false
         nullable: false
         custom: []
     cleanUrlParameters:
-      id: architecto
+      id: consequatur
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: '*'
+        description: null
+        custom: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
+      - POST
+    uri: 'api/tournaments/update/{id}'
+    metadata:
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      id:
+        name: id
+        description: 'The ID of the update.'
+        required: true
+        example: consequatur
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+    cleanUrlParameters:
+      id: consequatur
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      name:
+        name: name
+        description: ''
+        required: true
+        example: consequatur
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      start_date:
+        name: start_date
+        description: 'Must be a valid date.'
+        required: false
+        example: '2025-08-20T04:02:53'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        custom: []
+      end_date:
+        name: end_date
+        description: 'Must be a valid date.'
+        required: false
+        example: '2025-08-20T04:02:53'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        custom: []
+      location:
+        name: location
+        description: ''
+        required: false
+        example: consequatur
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        custom: []
+      level:
+        name: level
+        description: ''
+        required: true
+        example: local
+        type: string
+        enumValues:
+          - local
+          - provincial
+          - national
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      description:
+        name: description
+        description: ''
+        required: false
+        example: 'Dolores dolorum amet iste laborum eius est dolor.'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        custom: []
+      club_id:
+        name: club_id
+        description: 'The <code>id</code> of an existing record in the clubs table.'
+        required: false
+        example: null
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        custom: []
+      tournament_types:
+        name: tournament_types
+        description: ''
+        required: false
+        example: null
+        type: 'object[]'
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      'tournament_types[].id':
+        name: 'tournament_types[].id'
+        description: 'The <code>id</code> of an existing record in the tournament_types table.'
+        required: false
+        example: null
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        custom: []
+      'tournament_types[].type':
+        name: 'tournament_types[].type'
+        description: ''
+        required: true
+        example: double
+        type: string
+        enumValues:
+          - single
+          - double
+          - mixed
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      'tournament_types[].description':
+        name: 'tournament_types[].description'
+        description: ''
+        required: false
+        example: 'Dolores dolorum amet iste laborum eius est dolor.'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        custom: []
+      'tournament_types[].groups':
+        name: 'tournament_types[].groups'
+        description: ''
+        required: false
+        example: null
+        type: 'object[]'
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      'tournament_types[].groups[].id':
+        name: 'tournament_types[].groups[].id'
+        description: 'The <code>id</code> of an existing record in the groups table.'
+        required: false
+        example: null
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        custom: []
+      'tournament_types[].groups[].name':
+        name: 'tournament_types[].groups[].name'
+        description: ''
+        required: true
+        example: consequatur
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      'tournament_types[].groups[].matches':
+        name: 'tournament_types[].groups[].matches'
+        description: ''
+        required: false
+        example: null
+        type: 'object[]'
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      'tournament_types[].groups[].matches[].id':
+        name: 'tournament_types[].groups[].matches[].id'
+        description: 'The <code>id</code> of an existing record in the matches table.'
+        required: false
+        example: null
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        custom: []
+    cleanBodyParameters:
+      name: consequatur
+      start_date: '2025-08-20T04:02:53'
+      end_date: '2025-08-20T04:02:53'
+      location: consequatur
+      level: local
+      description: 'Dolores dolorum amet iste laborum eius est dolor.'
+      tournament_types:
+        -
+          type: double
+          description: 'Dolores dolorum amet iste laborum eius est dolor.'
+          groups:
+            -
+              name: consequatur
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
+      - POST
+    uri: api/tournaments/delete
+    metadata:
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
+      - GET
+    uri: api/club/index
+    metadata:
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: '*'
+        description: null
+        custom: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
+      - POST
+    uri: api/club/store
+    metadata:
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+      custom: []
+    headers:
+      Content-Type: multipart/form-data
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      name:
+        name: name
+        description: ''
+        required: true
+        example: consequatur
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      location:
+        name: location
+        description: ''
+        required: false
+        example: consequatur
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        custom: []
+      logo_url:
+        name: logo_url
+        description: 'Must be an image. Must not be greater than 2048 kilobytes.'
+        required: false
+        example: null
+        type: file
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        custom: []
+      created_by:
+        name: created_by
+        description: 'The <code>id</code> of an existing record in the users table.'
+        required: true
+        example: consequatur
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+    cleanBodyParameters:
+      name: consequatur
+      location: consequatur
+      created_by: consequatur
+    fileParameters:
+      logo_url: null
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
+      - GET
+    uri: 'api/club/{id}'
+    metadata:
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      id:
+        name: id
+        description: 'The ID of the club.'
+        required: true
+        example: consequatur
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+    cleanUrlParameters:
+      id: consequatur
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: '*'
+        description: null
+        custom: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
+      - POST
+    uri: 'api/club/update/{id}'
+    metadata:
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+      custom: []
+    headers:
+      Content-Type: multipart/form-data
+      Accept: application/json
+    urlParameters:
+      id:
+        name: id
+        description: 'The ID of the update.'
+        required: true
+        example: consequatur
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+    cleanUrlParameters:
+      id: consequatur
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      name:
+        name: name
+        description: ''
+        required: false
+        example: null
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      location:
+        name: location
+        description: ''
+        required: false
+        example: consequatur
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        custom: []
+      logo_url:
+        name: logo_url
+        description: 'Must be an image. Must not be greater than 2048 kilobytes.'
+        required: false
+        example: null
+        type: file
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        custom: []
+    cleanBodyParameters:
+      location: consequatur
+    fileParameters:
+      logo_url: null
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
+      - POST
+    uri: api/club/delete
+    metadata:
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
+      - GET
+    uri: api/home
+    metadata:
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
     queryParameters: []
     cleanQueryParameters: []
     bodyParameters: []

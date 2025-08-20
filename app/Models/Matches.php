@@ -35,4 +35,16 @@ class Matches extends Model
     {
         return $this->belongsTo(User::class, 'referee_id');
     }
+
+    public function scopeWithFullRelations($query)
+    {
+        return $query->with([
+            'group',
+            'referee',
+            'participant1.user',
+            'participant1.team.members',
+            'participant2.user',
+            'participant2.team.members',
+        ]);
+    }
 }

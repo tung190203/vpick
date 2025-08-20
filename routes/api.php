@@ -6,6 +6,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\VerificationController;
 use App\Http\Controllers\VerifiedController;
 use App\Http\Controllers\ClubController;
+use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -53,8 +54,10 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
     Route::prefix('club')->group(function () {
         Route::get('/index', [ClubController::class, 'index']);
         Route::post('/store', [ClubController::class, 'store']);
+        Route::get('/{id}', [ClubController::class, 'show']);
         Route::post('/update/{id}', [ClubController::class, 'update']);
-        Route::get('/{id}/edit', [ClubController::class, 'edit']);
         Route::post('/delete', [ClubController::class, 'destroy']);
     });
+
+    Route::get('/home',[HomeController::class, 'index']);
 });
