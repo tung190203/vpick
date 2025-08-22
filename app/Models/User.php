@@ -29,7 +29,8 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         'google_id',
         'tier',
         'role',
-        'email_verified_at'
+        'email_verified_at',
+        'is_profile_completed'
     ];
 
     const PLAYER = 'player';

@@ -538,11 +538,22 @@ endpoints:
         exampleWasSpecified: false
         nullable: true
         custom: []
+      is_profile_completed:
+        name: is_profile_completed
+        description: ''
+        required: false
+        example: true
+        type: boolean
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        custom: []
     cleanBodyParameters:
       full_name: vmqeopfuudtdsufvyvddq
       vndupr_score: 1
       about: mniihfqcoynlazghdtqtq
       password: "(!Cs'YAKYLk4>SJIrIV"
+      is_profile_completed: true
     fileParameters:
       avatar_url: null
     responses: []
@@ -743,7 +754,7 @@ endpoints:
         name: start_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-08-20T09:43:49'
+        example: '2025-08-22T13:33:06'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -753,7 +764,7 @@ endpoints:
         name: end_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-08-20T09:43:49'
+        example: '2025-08-22T13:33:06'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -868,8 +879,8 @@ endpoints:
         custom: []
     cleanBodyParameters:
       name: consequatur
-      start_date: '2025-08-20T09:43:49'
-      end_date: '2025-08-20T09:43:49'
+      start_date: '2025-08-22T13:33:06'
+      end_date: '2025-08-22T13:33:06'
       location: consequatur
       level: local
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
@@ -986,7 +997,7 @@ endpoints:
         name: start_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-08-20T09:43:49'
+        example: '2025-08-22T13:33:06'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -996,7 +1007,7 @@ endpoints:
         name: end_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-08-20T09:43:49'
+        example: '2025-08-22T13:33:06'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -1140,8 +1151,8 @@ endpoints:
         custom: []
     cleanBodyParameters:
       name: consequatur
-      start_date: '2025-08-20T09:43:49'
-      end_date: '2025-08-20T09:43:49'
+      start_date: '2025-08-22T13:33:06'
+      end_date: '2025-08-22T13:33:06'
       location: consequatur
       level: local
       description: 'Dolores dolorum amet iste laborum eius est dolor.'

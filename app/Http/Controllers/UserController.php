@@ -17,6 +17,7 @@ class UserController extends Controller
             'vndupr_score' => 'nullable|numeric|min:0|max:100',
             'about' => 'nullable|string|max:300',
             'password' => 'nullable|string|min:8',
+            'is_profile_completed' => 'nullable|boolean',
         ]);
 
         $user = User::findOrFail(auth()->id());
@@ -48,6 +49,10 @@ class UserController extends Controller
         if ($request->filled('vndupr_score')) {
             $data['vndupr_score'] = $request->input('vndupr_score');
         }
+
+        if ($request->boolean('is_profile_completed') && !$user->is_profile_completed) {
+            $data['is_profile_completed'] = true;
+        }        
 
         $user->update($data);
 
