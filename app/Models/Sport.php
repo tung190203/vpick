@@ -1,0 +1,39 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
+
+class Sport extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'name',
+        'icon',
+        'slug',
+    ];
+
+    public function tournaments()
+    {
+        return $this->hasMany(MiniTournament::class, 'sport_id');
+    }
+
+    public static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($sport) {
+            if (empty($sport->slug)) {
+                $sport->slug = Str::slug($sport->name);
+            }
+        });
+        static::updating(function ($sport) {
+            if (empty($sport->slug)) {
+                $sport->slug = Str::slug($sport->name);
+            }
+        });
+    }
+}

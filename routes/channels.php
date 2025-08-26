@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\MiniTournament;
 use Illuminate\Support\Facades\Broadcast;
 
 /*
@@ -15,4 +16,10 @@ use Illuminate\Support\Facades\Broadcast;
 
 Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
+});
+
+Broadcast::channel('mini-tournament.{tournamentId}', function ($user, $tournamentId) {
+    $tournament = MiniTournament::find($tournamentId);
+
+    return $tournament?->all_users->pluck('id')->contains($user->id);
 });

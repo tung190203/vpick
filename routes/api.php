@@ -2,12 +2,16 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\MiniMatchController;
+use App\Http\Controllers\MiniParticipantController;
 use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VerificationController;
 use App\Http\Controllers\VerifiedController;
 use App\Http\Controllers\ClubController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\MiniTournamentController;
+use App\Http\Controllers\SendMessageController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -63,4 +67,36 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
 
     Route::get('/home',[HomeController::class, 'index']);
     Route::get('/locations',[LocationController::class, 'index']);
+    // Mini Tournament Routes
+    Route::prefix('mini-tournaments')->group(function (): void {
+        Route::get('/index', [MiniTournamentController::class, 'index']);
+        Route::post('/store', [MiniTournamentController::class, 'store']);
+        Route::get('/{id}', [MiniTournamentController::class, 'show']);
+        Route::post('/update/{id}', [MiniTournamentController::class, 'update']);
+    });
+    // Mini Participant Routes
+    Route::prefix('mini-participants')->group(function (): void {
+        Route::get('/index/{miniTournamentId}', [MiniParticipantController::class, 'index']);
+        Route::post('/join/{miniTournamentId}', [MiniParticipantController::class, 'join']);
+        Route::post('/confirm/{participantId}', [MiniParticipantController::class, 'confirm']);
+        Route::post('accept/{participantId}', [MiniParticipantController::class, 'acceptInvite']);
+        Route::post('/invite/{miniTournamentId}', [MiniParticipantController::class, 'invite']);
+        Route::post('/delete/{participantId}', [MiniParticipantController::class, 'delete']);
+    });
+    // Mini Match Routes
+    Route::prefix('mini-matches')->group(function (): void {
+        Route::get('/index/{miniTournamentId}', [MiniMatchController::class, 'index']);
+        Route::post('/store/{miniTournamentId}', [MiniMatchController::class, 'store']);
+        Route::post('/add-set/{matchId}', [MiniMatchController::class, 'addSetResult']);
+        Route::delete('/delete-set/{matchId}/{setNumber}', [MiniMatchController::class, 'deleteSetResult']);
+        Route::delete('/delete/{matchId}', [MiniMatchController::class, 'destroy']);
+        // Xác nhận kết quả (QR Code)
+        Route::get('/{matchId}/generate-qr', [MiniMatchController::class, 'generateQr']);
+        Route::post('/confirm-result/{matchId}', [MiniMatchController::class, 'confirmResult']);
+    });
+
+    Route::prefix('send-message')->group(function () {
+        Route::post('/{tournamentId}', [SendMessageController::class, 'storeMessage']);
+        Route::get('/index/{tournamentId}', [SendMessageController::class, 'getMessages']);
+    });
 });
