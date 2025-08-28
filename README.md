@@ -34,3 +34,7 @@ có thể bỏ phần optional ngày tháng năm
 php artisan import:provinces
 # -----------------------------------------------
 Thay đổi theo ngày tháng năm hiện tại để lấy dữ liệu mới nhất { yyyy-mm-dd }
+
+# -----------------------------------------------
+seeders data
+php artisan db:seed 
