@@ -1,0 +1,54 @@
+{
+  "resources/css/app.css": {
+    "file": "assets/app-BKgjxmBa.css",
+    "src": "resources/css/app.css",
+    "isEntry": true
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-Dtu35dcy.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true,
+    "css": [
+      "assets/app-BtW8R1eT.css",
+      "assets/app-BKgjxmBa.css"
+    ],
+    "assets": [
+      "assets/google-icon-Db3x1qGV.svg",
+      "assets/pickleball-banner-CEzsk-BQ.png",
+      "assets/pickleball-banner-1-DkgNn8B4.png",
+      "assets/pickleball-banner-2-BknHubJi.png",
+      "assets/logo-hbqRt3lM.png",
+      "assets/email-sent-DLgpSAAS.svg",
+      "assets/default-avatar-Dk-5jadl.png"
+    ]
+  },
+  "resources/js/assets/images/default-avatar.png": {
+    "file": "assets/default-avatar-Dk-5jadl.png",
+    "src": "resources/js/assets/images/default-avatar.png"
+  },
+  "resources/js/assets/images/email-sent.svg": {
+    "file": "assets/email-sent-DLgpSAAS.svg",
+    "src": "resources/js/assets/images/email-sent.svg"
+  },
+  "resources/js/assets/images/google-icon.svg": {
+    "file": "assets/google-icon-Db3x1qGV.svg",
+    "src": "resources/js/assets/images/google-icon.svg"
+  },
+  "resources/js/assets/images/logo.png": {
+    "file": "assets/logo-hbqRt3lM.png",
+    "src": "resources/js/assets/images/logo.png"
+  },
+  "resources/js/assets/images/pickleball-banner-1.png": {
+    "file": "assets/pickleball-banner-1-DkgNn8B4.png",
+    "src": "resources/js/assets/images/pickleball-banner-1.png"
+  },
+  "resources/js/assets/images/pickleball-banner-2.png": {
+    "file": "assets/pickleball-banner-2-BknHubJi.png",
+    "src": "resources/js/assets/images/pickleball-banner-2.png"
+  },
+  "resources/js/assets/images/pickleball-banner.png": {
+    "file": "assets/pickleball-banner-CEzsk-BQ.png",
+    "src": "resources/js/assets/images/pickleball-banner.png"
+  }
+}
