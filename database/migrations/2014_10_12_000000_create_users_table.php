@@ -22,6 +22,10 @@ return new class extends Migration
             $table->string('tier')->nullable();
             $table->enum('role', ['player', 'referee', 'admin'])->default('player');
             $table->timestamp('email_verified_at')->nullable();
+            $table->unsignedBigInteger('location_id')->nullable();
+            $table->text('about')->nullable();
+            $table->boolean('is_profile_completed')->default(false)
+                ->comment('Xác định xem người dùng đã hoàn thành hồ sơ cá nhân hay chưa');
             $table->string('remember_token')->nullable();
             $table->timestamps();
         });
