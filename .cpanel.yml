@@ -1,0 +1,21 @@
+deployment:
+  tasks:
+    # 1. Khai báo thư mục code
+    - export DEPLOYPATH=/home/arplus/vpick
+
+    # 2. In thông báo
+    - echo "🚀 Pulling latest code into $DEPLOYPATH"
+
+    # 3. Clear cache cũ
+    - cd $DEPLOYPATH && /bin/php artisan config:clear
+    - cd $DEPLOYPATH && /bin/php artisan cache:clear
+    - cd $DEPLOYPATH && /bin/php artisan route:clear
+    - cd $DEPLOYPATH && /bin/php artisan view:clear
+
+    # 4. Build cache mới
+    - cd $DEPLOYPATH && /bin/php artisan config:cache
+    - cd $DEPLOYPATH && /bin/php artisan route:cache
+    - cd $DEPLOYPATH && /bin/php artisan view:cache
+
+    # 5. Thông báo hoàn tất
+    - echo "✅ Deployment completed!"
