@@ -1,0 +1,21 @@
+parameters:
+    level: 6
+    reportUnmatchedIgnoredErrors: true
+    inferPrivatePropertyTypeFromConstructor: true
+    ignoreErrors:
+        - identifier: missingType.iterableValue
+        - identifier: missingType.return
+        - identifier: missingType.parameter
+        - identifier: missingType.generics
+        - identifier: missingType.property
+          path: src\Tools\Globals.php
+        - identifier: return.type
+          path: camel\BaseDTOCollection.php
+        - identifier: argument.templateType
+        - '#Call to an undefined method ReflectionType::getName\(\).#'
+        - '#Call to an undefined method Illuminate\\Contracts\\Foundation\\Application::forgetInstance\(\)#'
+        - '#Access to an undefined property Illuminate\\Support\\HigherOrderCollectionProxy#'
+        - '#Access to an undefined property Illuminate\\Contracts\\Foundation\\Application::\$view#'
+        - '#Unsafe usage of new static#'
+        - '#Dead catch#'
+        - '/Access to an undefined property Knuckles\\Scribe\\Extracting\\Shared\\ResponseFieldTools::\$config./'
