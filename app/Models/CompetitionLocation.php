@@ -16,6 +16,14 @@ class CompetitionLocation extends Model
         'location_id',
         'latitude',
         'longitude',
+        'image',
+        'address',
+        'phone',
+        'opening_time',
+        'closing_time',
+        'note_booking',
+        'website',
+        'avatar_url'
     ];
 
     public function location()
