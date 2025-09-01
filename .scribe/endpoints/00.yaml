@@ -752,7 +752,7 @@ endpoints:
         name: start_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-01T15:23:08'
+        example: '2025-09-01T15:45:09'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -762,7 +762,7 @@ endpoints:
         name: end_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-01T15:23:08'
+        example: '2025-09-01T15:45:09'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -877,8 +877,8 @@ endpoints:
         custom: []
     cleanBodyParameters:
       name: consequatur
-      start_date: '2025-09-01T15:23:08'
-      end_date: '2025-09-01T15:23:08'
+      start_date: '2025-09-01T15:45:09'
+      end_date: '2025-09-01T15:45:09'
       location: consequatur
       level: local
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
@@ -995,7 +995,7 @@ endpoints:
         name: start_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-01T15:23:08'
+        example: '2025-09-01T15:45:09'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -1005,7 +1005,7 @@ endpoints:
         name: end_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-01T15:23:08'
+        example: '2025-09-01T15:45:09'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -1149,8 +1149,8 @@ endpoints:
         custom: []
     cleanBodyParameters:
       name: consequatur
-      start_date: '2025-09-01T15:23:08'
-      end_date: '2025-09-01T15:23:08'
+      start_date: '2025-09-01T15:45:09'
+      end_date: '2025-09-01T15:45:09'
       location: consequatur
       level: local
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
@@ -1753,7 +1753,7 @@ endpoints:
         name: starts_at
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-01T15:23:08'
+        example: '2025-09-01T15:45:09'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -1967,7 +1967,7 @@ endpoints:
       name: mqeopfuudtdsufvyvddqa
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
       match_type: '3'
-      starts_at: '2025-09-01T15:23:08'
+      starts_at: '2025-09-01T15:45:09'
       duration_minutes: 66
       is_private: false
       fee_amount: 65
@@ -2140,7 +2140,7 @@ endpoints:
         name: starts_at
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-01T15:23:08'
+        example: '2025-09-01T15:45:09'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -2354,7 +2354,7 @@ endpoints:
       name: mqeopfuudtdsufvyvddqa
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
       match_type: '3'
-      starts_at: '2025-09-01T15:23:08'
+      starts_at: '2025-09-01T15:45:09'
       duration_minutes: 66
       is_private: false
       fee_amount: 65
@@ -2889,7 +2889,7 @@ endpoints:
         name: scheduled_at
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-01T15:23:08'
+        example: '2025-09-01T15:45:09'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -2907,7 +2907,7 @@ endpoints:
         custom: []
     cleanBodyParameters:
       round: consequatur
-      scheduled_at: '2025-09-01T15:23:08'
+      scheduled_at: '2025-09-01T15:45:09'
     fileParameters: []
     responses: []
     responseFields: []
@@ -2983,7 +2983,7 @@ endpoints:
         name: scheduled_at
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-01T15:23:08'
+        example: '2025-09-01T15:45:09'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -3001,7 +3001,7 @@ endpoints:
         custom: []
     cleanBodyParameters:
       round: consequatur
-      scheduled_at: '2025-09-01T15:23:08'
+      scheduled_at: '2025-09-01T15:45:09'
     fileParameters: []
     responses: []
     responseFields: []
