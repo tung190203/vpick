@@ -754,7 +754,7 @@ endpoints:
         name: start_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-01T16:21:30'
+        example: '2025-09-01T17:02:52'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -764,7 +764,7 @@ endpoints:
         name: end_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-01T16:21:30'
+        example: '2025-09-01T17:02:52'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -879,8 +879,8 @@ endpoints:
         custom: []
     cleanBodyParameters:
       name: consequatur
-      start_date: '2025-09-01T16:21:30'
-      end_date: '2025-09-01T16:21:30'
+      start_date: '2025-09-01T17:02:52'
+      end_date: '2025-09-01T17:02:52'
       location: consequatur
       level: local
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
@@ -997,7 +997,7 @@ endpoints:
         name: start_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-01T16:21:30'
+        example: '2025-09-01T17:02:52'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -1007,7 +1007,7 @@ endpoints:
         name: end_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-01T16:21:30'
+        example: '2025-09-01T17:02:52'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -1151,8 +1151,8 @@ endpoints:
         custom: []
     cleanBodyParameters:
       name: consequatur
-      start_date: '2025-09-01T16:21:30'
-      end_date: '2025-09-01T16:21:30'
+      start_date: '2025-09-01T17:02:52'
+      end_date: '2025-09-01T17:02:52'
       location: consequatur
       level: local
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
@@ -1755,7 +1755,7 @@ endpoints:
         name: starts_at
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-01T16:21:30'
+        example: '2025-09-01T17:02:52'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -1969,7 +1969,7 @@ endpoints:
       name: mqeopfuudtdsufvyvddqa
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
       match_type: '3'
-      starts_at: '2025-09-01T16:21:30'
+      starts_at: '2025-09-01T17:02:52'
       duration_minutes: 66
       is_private: false
       fee_amount: 65
@@ -2142,7 +2142,7 @@ endpoints:
         name: starts_at
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-01T16:21:30'
+        example: '2025-09-01T17:02:52'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -2356,7 +2356,7 @@ endpoints:
       name: mqeopfuudtdsufvyvddqa
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
       match_type: '3'
-      starts_at: '2025-09-01T16:21:30'
+      starts_at: '2025-09-01T17:02:52'
       duration_minutes: 66
       is_private: false
       fee_amount: 65
@@ -2781,13 +2781,16 @@ endpoints:
     queryParameters: []
     cleanQueryParameters: []
     bodyParameters:
-      only_my_matches:
-        name: only_my_matches
+      filter:
+        name: filter
         description: ''
         required: false
-        example: false
-        type: boolean
-        enumValues: []
+        example: my_matches
+        type: string
+        enumValues:
+          - matches
+          - my_matches
+          - leaderboard
         exampleWasSpecified: false
         nullable: true
         custom: []
@@ -2802,7 +2805,7 @@ endpoints:
         nullable: true
         custom: []
     cleanBodyParameters:
-      only_my_matches: false
+      filter: my_matches
       per_page: 17
     fileParameters: []
     responses:
@@ -2891,7 +2894,7 @@ endpoints:
         name: scheduled_at
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-01T16:21:30'
+        example: '2025-09-01T17:02:52'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -2929,7 +2932,7 @@ endpoints:
         custom: []
     cleanBodyParameters:
       round: consequatur
-      scheduled_at: '2025-09-01T16:21:30'
+      scheduled_at: '2025-09-01T17:02:52'
       team1_name: mqeopfuudtdsufvyvddqa
       team2_name: mniihfqcoynlazghdtqtq
     fileParameters: []
@@ -3027,7 +3030,7 @@ endpoints:
         name: scheduled_at
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-01T16:21:30'
+        example: '2025-09-01T17:02:52'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -3047,7 +3050,7 @@ endpoints:
       round: consequatur
       team1_name: mqeopfuudtdsufvyvddqa
       team2_name: mniihfqcoynlazghdtqtq
-      scheduled_at: '2025-09-01T16:21:30'
+      scheduled_at: '2025-09-01T17:02:52'
     fileParameters: []
     responses: []
     responseFields: []
