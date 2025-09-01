@@ -24,32 +24,49 @@ class MiniMatchController extends Controller
     public function index(Request $request, $miniTournamentId)
     {
         $request->validate([
-            'only_my_matches' => 'nullable|boolean',
+            'filter' => 'nullable|string|in:matches,my_matches,leaderboard',
             'per_page' => 'nullable|integer',
         ]);
-
+    
         $miniTournament = MiniTournament::findOrFail($miniTournamentId);
-
-        $query = MiniMatch::withFullRelations()
-            ->where('mini_tournament_id', $miniTournament->id)
-            ->orderBy('round')
-            ->orderBy('scheduled_at');
-
-        if ($request->boolean('only_my_matches')) {
-            $query->where(function ($q) {
-                $q->whereHas('participant1', function ($sub) {
-                    $sub->where('user_id', Auth::id());
-                })->orWhereHas('participant2', function ($sub) {
-                    $sub->where('user_id', Auth::id());
+    
+        $filter = $request->input('filter', 'matches'); // default: matches
+    
+        switch ($filter) {
+            case 'my_matches':
+                $query = MiniMatch::withFullRelations()
+                    ->where('mini_tournament_id', $miniTournament->id)
+                    ->orderBy('round')
+                    ->orderBy('scheduled_at');
+    
+                $userId = Auth::id();
+                $query->where(function ($q) use ($userId) {
+                    $q->whereHas('participant1', function ($sub) use ($userId) {
+                        $sub->where('user_id', $userId)
+                            ->orWhereHas('team.members', function ($m) use ($userId) {
+                                $m->where('user_id', $userId);
+                            });
+                    })->orWhereHas('participant2', function ($sub) use ($userId) {
+                        $sub->where('user_id', $userId)
+                            ->orWhereHas('team.members', function ($m) use ($userId) {
+                                $m->where('user_id', $userId);
+                            });
+                    });
                 });
-            });
+    
+                $matches = $query->paginate($request->input('per_page', MiniMatch::PER_PAGE));
+                return ResponseHelper::success(MiniMatchResource::collection($matches));
+            case 'matches':
+            default:
+                $query = MiniMatch::withFullRelations()
+                    ->where('mini_tournament_id', $miniTournament->id)
+                    ->orderBy('round')
+                    ->orderBy('scheduled_at');
+    
+                $matches = $query->paginate($request->input('per_page', MiniMatch::PER_PAGE));
+                return ResponseHelper::success(MiniMatchResource::collection($matches));
         }
-
-        $matches = $query->paginate($request->input('per_page', MiniMatch::PER_PAGE));
-
-        return ResponseHelper::success(MiniMatchResource::collection($matches));
     }
-
     /**
      * Tạo trận đấu mới
      * participants nếu là int => user
