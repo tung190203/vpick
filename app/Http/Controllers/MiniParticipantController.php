@@ -143,24 +143,30 @@ class MiniParticipantController extends Controller
         $participant->is_confirmed = true;
         $participant->save();
 
-        return response()->json([
-            'status' => 'success',
-            'data' => new MiniParticipantResource($participant),
-        ]);
+        return ResponseHelper::success(new MiniParticipantResource($participant), 'Bạn đã chấp nhận lời mời thành công.', 200);
     }
 
+    /**
+     * Creator mời user hoặc team vào giải đấu.
+     * - Chỉ creator mới có quyền mời
+     * - Check max_players
+     * - Nếu auto_approve = true và is_private = false -> is_confirmed = true
+     */
     public function invite(Request $request, $tournamentId)
     {
         $miniTournament = MiniTournament::findOrFail($tournamentId);
 
-        // Chỉ creator mới có quyền mời
-        if ((int) $miniTournament->created_by !== (int) Auth::id()) {
-            return ResponseHelper::error('Bạn không có quyền mời người tham gia.', 403);
-        }
+        // Kiểm tra quyền mời:
+        $userId = Auth::id();
+        $isCreator = (int) $miniTournament->created_by === $userId;
+        $canAddFriends = $miniTournament->allow_participant_add_friends
+            && MiniParticipant::where('mini_tournament_id', $tournamentId)
+                ->where('user_id', $userId)
+                ->where('is_confirmed', true)
+                ->exists();
 
-        // Check max slot
-        if ($miniTournament->max_players && $miniTournament->participants()->count() >= $miniTournament->max_players) {
-            return ResponseHelper::error('Đã đạt số lượng người chơi tối đa.', 400);
+        if (!$isCreator && !$canAddFriends) {
+            return ResponseHelper::error('Bạn không có quyền mời người tham gia.', 403);
         }
 
         $validated = $request->validate([
@@ -186,6 +192,12 @@ class MiniParticipantController extends Controller
             return ResponseHelper::error('Người tham gia này đã được mời hoặc tham gia rồi.', 400);
         }
 
+        // Kiểm tra max slot (tính cả participant chưa confirm)
+        $confirmedCount = $miniTournament->participants()->where('is_confirmed', true)->count();
+        if ($miniTournament->max_players && $confirmedCount >= $miniTournament->max_players) {
+            return ResponseHelper::error('Đã đạt số lượng người chơi tối đa.', 400);
+        }
+
         $participant = MiniParticipant::create([
             'mini_tournament_id' => $miniTournament->id,
             'type' => $type,
@@ -196,6 +208,10 @@ class MiniParticipantController extends Controller
 
         return ResponseHelper::success(new MiniParticipantResource($participant), 'Người tham gia đã được mời thành công.', 201);
     }
+    /**
+     * Xóa một participant khỏi mini tournament.
+     * - Chỉ creator mới có quyền xóa
+     */
 
     public function delete($participantId)
     {

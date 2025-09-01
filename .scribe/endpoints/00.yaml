@@ -752,7 +752,7 @@ endpoints:
         name: start_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-08-26T15:12:45'
+        example: '2025-09-01T14:30:38'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -762,7 +762,7 @@ endpoints:
         name: end_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-08-26T15:12:45'
+        example: '2025-09-01T14:30:38'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -877,8 +877,8 @@ endpoints:
         custom: []
     cleanBodyParameters:
       name: consequatur
-      start_date: '2025-08-26T15:12:45'
-      end_date: '2025-08-26T15:12:45'
+      start_date: '2025-09-01T14:30:38'
+      end_date: '2025-09-01T14:30:38'
       location: consequatur
       level: local
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
@@ -995,7 +995,7 @@ endpoints:
         name: start_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-08-26T15:12:45'
+        example: '2025-09-01T14:30:38'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -1005,7 +1005,7 @@ endpoints:
         name: end_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-08-26T15:12:45'
+        example: '2025-09-01T14:30:38'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -1149,8 +1149,8 @@ endpoints:
         custom: []
     cleanBodyParameters:
       name: consequatur
-      start_date: '2025-08-26T15:12:45'
-      end_date: '2025-08-26T15:12:45'
+      start_date: '2025-09-01T14:30:38'
+      end_date: '2025-09-01T14:30:38'
       location: consequatur
       level: local
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
@@ -1602,7 +1602,7 @@ endpoints:
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: ''
+      title: 'danh sách mini tournament'
       description: ''
       authenticated: false
       deprecated: false
@@ -1679,7 +1679,7 @@ endpoints:
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: ''
+      title: 'tạo mini tournament'
       description: ''
       authenticated: false
       deprecated: false
@@ -1753,7 +1753,7 @@ endpoints:
         name: starts_at
         description: 'Must be a valid date.'
         required: false
-        example: '2025-08-26T15:12:45'
+        example: '2025-09-01T14:30:38'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -1967,7 +1967,7 @@ endpoints:
       name: mqeopfuudtdsufvyvddqa
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
       match_type: '3'
-      starts_at: '2025-08-26T15:12:45'
+      starts_at: '2025-09-01T14:30:38'
       duration_minutes: 66
       is_private: false
       fee_amount: 65
@@ -2004,7 +2004,7 @@ endpoints:
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: ''
+      title: 'chi tiết mini tournament'
       description: ''
       authenticated: false
       deprecated: false
@@ -2055,7 +2055,7 @@ endpoints:
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: ''
+      title: 'cập nhật mini tournament'
       description: ''
       authenticated: false
       deprecated: false
@@ -2140,7 +2140,7 @@ endpoints:
         name: starts_at
         description: 'Must be a valid date.'
         required: false
-        example: '2025-08-26T15:12:45'
+        example: '2025-09-01T14:30:38'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -2354,7 +2354,7 @@ endpoints:
       name: mqeopfuudtdsufvyvddqa
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
       match_type: '3'
-      starts_at: '2025-08-26T15:12:45'
+      starts_at: '2025-09-01T14:30:38'
       duration_minutes: 66
       is_private: false
       fee_amount: 65
@@ -2635,8 +2635,11 @@ endpoints:
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: ''
-      description: ''
+      title: 'Creator mời user hoặc team vào giải đấu.'
+      description: |-
+        - Chỉ creator mới có quyền mời
+        - Check max_players
+        - Nếu auto_approve = true và is_private = false -> is_confirmed = true
       authenticated: false
       deprecated: false
       custom: []
@@ -2710,8 +2713,8 @@ endpoints:
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: ''
-      description: ''
+      title: 'Xóa một participant khỏi mini tournament.'
+      description: '- Chỉ creator mới có quyền xóa'
       authenticated: false
       deprecated: false
       custom: []
@@ -2825,7 +2828,10 @@ endpoints:
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Tạo trận đấu mới'
+      title: |-
+        Tạo trận đấu mới
+        participants nếu là int => user
+        truyền mảng lên là team
       description: ''
       authenticated: false
       deprecated: false
@@ -2861,9 +2867,9 @@ endpoints:
         custom: []
       participant1_id:
         name: participant1_id
-        description: 'The <code>id</code> of an existing record in the mini_participants table.'
-        required: true
-        example: consequatur
+        description: ''
+        required: false
+        example: null
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -2871,9 +2877,9 @@ endpoints:
         custom: []
       participant2_id:
         name: participant2_id
-        description: 'The <code>id</code> of an existing record in the mini_participants table.'
-        required: true
-        example: consequatur
+        description: ''
+        required: false
+        example: null
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -2883,7 +2889,7 @@ endpoints:
         name: scheduled_at
         description: 'Must be a valid date.'
         required: false
-        example: '2025-08-26T15:12:45'
+        example: '2025-09-01T14:30:38'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -2901,9 +2907,101 @@ endpoints:
         custom: []
     cleanBodyParameters:
       round: consequatur
-      participant1_id: consequatur
-      participant2_id: consequatur
-      scheduled_at: '2025-08-26T15:12:45'
+      scheduled_at: '2025-09-01T14:30:38'
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
+      - POST
+    uri: 'api/mini-matches/update/{matchId}'
+    metadata:
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Cập nhật thông tin trận đấu trong kèo đấu'
+      description: ''
+      authenticated: false
+      deprecated: false
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      matchId:
+        name: matchId
+        description: ''
+        required: true
+        example: consequatur
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+    cleanUrlParameters:
+      matchId: consequatur
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      round:
+        name: round
+        description: ''
+        required: false
+        example: consequatur
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        custom: []
+      participant1_id:
+        name: participant1_id
+        description: ''
+        required: false
+        example: null
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      participant2_id:
+        name: participant2_id
+        description: ''
+        required: false
+        example: null
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      scheduled_at:
+        name: scheduled_at
+        description: 'Must be a valid date.'
+        required: false
+        example: '2025-09-01T14:30:38'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        custom: []
+      referee:
+        name: referee
+        description: 'The <code>id</code> of an existing record in the referees table.'
+        required: false
+        example: null
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        custom: []
+    cleanBodyParameters:
+      round: consequatur
+      scheduled_at: '2025-09-01T14:30:38'
     fileParameters: []
     responses: []
     responseFields: []
@@ -3190,6 +3288,46 @@ endpoints:
     custom: []
   -
     httpMethods:
+      - GET
+    uri: api/mini-matches/index
+    metadata:
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Trình lọc trận đấu (theo địa điểm, môn thể thao, từ khóa, thời gian, vị trí)'
+      description: ''
+      authenticated: false
+      deprecated: false
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: '*'
+        description: null
+        custom: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
       - POST
     uri: 'api/send-message/{tournamentId}'
     metadata:
@@ -3313,6 +3451,369 @@ endpoints:
         custom: []
     cleanBodyParameters:
       per_page: 21
+    fileParameters: []
+    responses:
+      -
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: '*'
+        description: null
+        custom: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
+      - GET
+    uri: api/competition-locations/index
+    metadata:
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Lọc và lấy danh sách địa điểm thi đấu (trình lọc sân bóng)'
+      description: ''
+      authenticated: false
+      deprecated: false
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      lat:
+        name: lat
+        description: ''
+        required: false
+        example: null
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      lng:
+        name: lng
+        description: ''
+        required: false
+        example: null
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      radius:
+        name: radius
+        description: 'Must be at least 1.'
+        required: false
+        example: 73
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      minLat:
+        name: minLat
+        description: ''
+        required: false
+        example: null
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      maxLat:
+        name: maxLat
+        description: ''
+        required: false
+        example: null
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      minLng:
+        name: minLng
+        description: ''
+        required: false
+        example: null
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      maxLng:
+        name: maxLng
+        description: ''
+        required: false
+        example: null
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      sport_id:
+        name: sport_id
+        description: 'The <code>id</code> of an existing record in the sports table.'
+        required: false
+        example: 17
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      location_id:
+        name: location_id
+        description: 'The <code>id</code> of an existing record in the locations table.'
+        required: false
+        example: 17
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      number_of_yards:
+        name: number_of_yards
+        description: 'Must be at least 1.'
+        required: false
+        example: 45
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      keyword:
+        name: keyword
+        description: 'Must not be greater than 255 characters.'
+        required: false
+        example: qeopfuudtdsufvyvddqam
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      is_followed:
+        name: is_followed
+        description: ''
+        required: false
+        example: true
+        type: boolean
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      per_page:
+        name: per_page
+        description: 'Must be at least 1. Must not be greater than 100.'
+        required: false
+        example: 8
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+    cleanBodyParameters:
+      radius: 73
+      sport_id: 17
+      location_id: 17
+      number_of_yards: 45
+      keyword: qeopfuudtdsufvyvddqam
+      is_followed: true
+      per_page: 8
+    fileParameters: []
+    responses:
+      -
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: '*'
+        description: null
+        custom: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
+      - GET
+    uri: api/follows/index
+    metadata:
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Danh sách theo dõi của người dùng'
+      description: ''
+      authenticated: false
+      deprecated: false
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: '*'
+        description: null
+        custom: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
+      - POST
+    uri: api/follows/store
+    metadata:
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Theo dõi một đối tượng'
+      description: ''
+      authenticated: false
+      deprecated: false
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      followable_type:
+        name: followable_type
+        description: ''
+        required: true
+        example: consequatur
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      followable_id:
+        name: followable_id
+        description: ''
+        required: true
+        example: 17
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+    cleanBodyParameters:
+      followable_type: consequatur
+      followable_id: 17
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
+      - DELETE
+    uri: api/follows/delete
+    metadata:
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Hủy theo dõi một đối tượng'
+      description: ''
+      authenticated: false
+      deprecated: false
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      followable_type:
+        name: followable_type
+        description: ''
+        required: true
+        example: consequatur
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      followable_id:
+        name: followable_id
+        description: ''
+        required: true
+        example: 17
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+    cleanBodyParameters:
+      followable_type: consequatur
+      followable_id: 17
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
+      - GET
+    uri: api/sports/index
+    metadata:
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Danh sách môn thể thao'
+      description: ''
+      authenticated: false
+      deprecated: false
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
     fileParameters: []
     responses:
       -

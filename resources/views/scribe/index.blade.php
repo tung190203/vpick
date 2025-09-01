@@ -150,16 +150,16 @@
                                 <a href="#endpoints-GETapi-locations">GET api/locations</a>
                             </li>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-GETapi-mini-tournaments-index">
-                                <a href="#endpoints-GETapi-mini-tournaments-index">GET api/mini-tournaments/index</a>
+                                <a href="#endpoints-GETapi-mini-tournaments-index">danh sách mini tournament</a>
                             </li>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-POSTapi-mini-tournaments-store">
-                                <a href="#endpoints-POSTapi-mini-tournaments-store">POST api/mini-tournaments/store</a>
+                                <a href="#endpoints-POSTapi-mini-tournaments-store">tạo mini tournament</a>
                             </li>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-GETapi-mini-tournaments--id-">
-                                <a href="#endpoints-GETapi-mini-tournaments--id-">GET api/mini-tournaments/{id}</a>
+                                <a href="#endpoints-GETapi-mini-tournaments--id-">chi tiết mini tournament</a>
                             </li>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-POSTapi-mini-tournaments-update--id-">
-                                <a href="#endpoints-POSTapi-mini-tournaments-update--id-">POST api/mini-tournaments/update/{id}</a>
+                                <a href="#endpoints-POSTapi-mini-tournaments-update--id-">cập nhật mini tournament</a>
                             </li>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-GETapi-mini-participants-index--miniTournamentId-">
                                 <a href="#endpoints-GETapi-mini-participants-index--miniTournamentId-">Danh sách người tham gia 1 mini tournament.</a>
@@ -174,16 +174,21 @@
                                 <a href="#endpoints-POSTapi-mini-participants-accept--participantId-">Người được mời vào giải -> bấm chấp nhận lời mời.</a>
                             </li>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-POSTapi-mini-participants-invite--miniTournamentId-">
-                                <a href="#endpoints-POSTapi-mini-participants-invite--miniTournamentId-">POST api/mini-participants/invite/{miniTournamentId}</a>
+                                <a href="#endpoints-POSTapi-mini-participants-invite--miniTournamentId-">Creator mời user hoặc team vào giải đấu.</a>
                             </li>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-POSTapi-mini-participants-delete--participantId-">
-                                <a href="#endpoints-POSTapi-mini-participants-delete--participantId-">POST api/mini-participants/delete/{participantId}</a>
+                                <a href="#endpoints-POSTapi-mini-participants-delete--participantId-">Xóa một participant khỏi mini tournament.</a>
                             </li>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-GETapi-mini-matches-index--miniTournamentId-">
                                 <a href="#endpoints-GETapi-mini-matches-index--miniTournamentId-">Lấy danh sách trận đấu trong mini tournament (theo vòng, thời gian, lọc theo người chơi)</a>
                             </li>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-POSTapi-mini-matches-store--miniTournamentId-">
-                                <a href="#endpoints-POSTapi-mini-matches-store--miniTournamentId-">Tạo trận đấu mới</a>
+                                <a href="#endpoints-POSTapi-mini-matches-store--miniTournamentId-">Tạo trận đấu mới
+participants nếu là int => user
+truyền mảng lên là team</a>
+                            </li>
+                                                                                <li class="tocify-item level-2" data-unique="endpoints-POSTapi-mini-matches-update--matchId-">
+                                <a href="#endpoints-POSTapi-mini-matches-update--matchId-">Cập nhật thông tin trận đấu trong kèo đấu</a>
                             </li>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-POSTapi-mini-matches-add-set--matchId-">
                                 <a href="#endpoints-POSTapi-mini-matches-add-set--matchId-">Thêm hoặc cập nhật kết quả 1 hiệp (set)</a>
@@ -200,11 +205,29 @@
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-POSTapi-mini-matches-confirm-result--matchId-">
                                 <a href="#endpoints-POSTapi-mini-matches-confirm-result--matchId-">Xác nhận kết quả trận đấu (thông qua QR code)</a>
                             </li>
+                                                                                <li class="tocify-item level-2" data-unique="endpoints-GETapi-mini-matches-index">
+                                <a href="#endpoints-GETapi-mini-matches-index">Trình lọc trận đấu (theo địa điểm, môn thể thao, từ khóa, thời gian, vị trí)</a>
+                            </li>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-POSTapi-send-message--tournamentId-">
                                 <a href="#endpoints-POSTapi-send-message--tournamentId-">POST api/send-message/{tournamentId}</a>
                             </li>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-GETapi-send-message-index--tournamentId-">
                                 <a href="#endpoints-GETapi-send-message-index--tournamentId-">GET api/send-message/index/{tournamentId}</a>
+                            </li>
+                                                                                <li class="tocify-item level-2" data-unique="endpoints-GETapi-competition-locations-index">
+                                <a href="#endpoints-GETapi-competition-locations-index">Lọc và lấy danh sách địa điểm thi đấu (trình lọc sân bóng)</a>
+                            </li>
+                                                                                <li class="tocify-item level-2" data-unique="endpoints-GETapi-follows-index">
+                                <a href="#endpoints-GETapi-follows-index">Danh sách theo dõi của người dùng</a>
+                            </li>
+                                                                                <li class="tocify-item level-2" data-unique="endpoints-POSTapi-follows-store">
+                                <a href="#endpoints-POSTapi-follows-store">Theo dõi một đối tượng</a>
+                            </li>
+                                                                                <li class="tocify-item level-2" data-unique="endpoints-DELETEapi-follows-delete">
+                                <a href="#endpoints-DELETEapi-follows-delete">Hủy theo dõi một đối tượng</a>
+                            </li>
+                                                                                <li class="tocify-item level-2" data-unique="endpoints-GETapi-sports-index">
+                                <a href="#endpoints-GETapi-sports-index">Danh sách môn thể thao</a>
                             </li>
                                                                         </ul>
                             </ul>
@@ -217,7 +240,7 @@
     </ul>
 
     <ul class="toc-footer" id="last-updated">
-        <li>Last updated: August 26, 2025</li>
+        <li>Last updated: September 1, 2025</li>
     </ul>
 </div>
 
@@ -1549,7 +1572,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --form "about=mniihfqcoynlazghdtqtq"\
     --form "password=(!Cs'YAKYLk4&gt;SJIrIV"\
     --form "is_profile_completed=1"\
-    --form "avatar_url=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpIHKgN7" </code></pre></div>
+    --form "avatar_url=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/php4IeiKG" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -1670,7 +1693,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpIHKgN7</code></p>
+<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/php4IeiKG</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>location_id</code></b>&nbsp;&nbsp;
@@ -1758,7 +1781,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --form "user_id=17"\
     --form "vndupr_score=5"\
     --form "verifier_id=17"\
-    --form "certified_file=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpOlAqFd" </code></pre></div>
+    --form "certified_file=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phphFYAv5" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -1888,7 +1911,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Must be a file. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpOlAqFd</code></p>
+<p>Must be a file. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phphFYAv5</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>verifier_id</code></b>&nbsp;&nbsp;
@@ -2169,8 +2192,8 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Accept: application/json" \
     --data "{
     \"name\": \"consequatur\",
-    \"start_date\": \"2025-08-26T15:12:45\",
-    \"end_date\": \"2025-08-26T15:12:45\",
+    \"start_date\": \"2025-09-01T14:30:38\",
+    \"end_date\": \"2025-09-01T14:30:38\",
     \"location\": \"consequatur\",
     \"level\": \"local\",
     \"description\": \"Dolores dolorum amet iste laborum eius est dolor.\",
@@ -2201,8 +2224,8 @@ const headers = {
 
 let body = {
     "name": "consequatur",
-    "start_date": "2025-08-26T15:12:45",
-    "end_date": "2025-08-26T15:12:45",
+    "start_date": "2025-09-01T14:30:38",
+    "end_date": "2025-09-01T14:30:38",
     "location": "consequatur",
     "level": "local",
     "description": "Dolores dolorum amet iste laborum eius est dolor.",
@@ -2316,10 +2339,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="start_date"                data-endpoint="POSTapi-tournaments-store"
-               value="2025-08-26T15:12:45"
+               value="2025-09-01T14:30:38"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-08-26T15:12:45</code></p>
+<p>Must be a valid date. Example: <code>2025-09-01T14:30:38</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>end_date</code></b>&nbsp;&nbsp;
@@ -2327,10 +2350,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="end_date"                data-endpoint="POSTapi-tournaments-store"
-               value="2025-08-26T15:12:45"
+               value="2025-09-01T14:30:38"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-08-26T15:12:45</code></p>
+<p>Must be a valid date. Example: <code>2025-09-01T14:30:38</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>location</code></b>&nbsp;&nbsp;
@@ -2602,8 +2625,8 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Accept: application/json" \
     --data "{
     \"name\": \"consequatur\",
-    \"start_date\": \"2025-08-26T15:12:45\",
-    \"end_date\": \"2025-08-26T15:12:45\",
+    \"start_date\": \"2025-09-01T14:30:38\",
+    \"end_date\": \"2025-09-01T14:30:38\",
     \"location\": \"consequatur\",
     \"level\": \"local\",
     \"description\": \"Dolores dolorum amet iste laborum eius est dolor.\",
@@ -2634,8 +2657,8 @@ const headers = {
 
 let body = {
     "name": "consequatur",
-    "start_date": "2025-08-26T15:12:45",
-    "end_date": "2025-08-26T15:12:45",
+    "start_date": "2025-09-01T14:30:38",
+    "end_date": "2025-09-01T14:30:38",
     "location": "consequatur",
     "level": "local",
     "description": "Dolores dolorum amet iste laborum eius est dolor.",
@@ -2761,10 +2784,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="start_date"                data-endpoint="POSTapi-tournaments-update--id-"
-               value="2025-08-26T15:12:45"
+               value="2025-09-01T14:30:38"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-08-26T15:12:45</code></p>
+<p>Must be a valid date. Example: <code>2025-09-01T14:30:38</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>end_date</code></b>&nbsp;&nbsp;
@@ -2772,10 +2795,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="end_date"                data-endpoint="POSTapi-tournaments-update--id-"
-               value="2025-08-26T15:12:45"
+               value="2025-09-01T14:30:38"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-08-26T15:12:45</code></p>
+<p>Must be a valid date. Example: <code>2025-09-01T14:30:38</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>location</code></b>&nbsp;&nbsp;
@@ -3177,7 +3200,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --form "name=consequatur"\
     --form "location=consequatur"\
     --form "created_by=consequatur"\
-    --form "logo_url=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpMXvKqq" </code></pre></div>
+    --form "logo_url=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpShUNdC" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -3307,7 +3330,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpMXvKqq</code></p>
+<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpShUNdC</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>created_by</code></b>&nbsp;&nbsp;
@@ -3475,7 +3498,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Content-Type: multipart/form-data" \
     --header "Accept: application/json" \
     --form "location=consequatur"\
-    --form "logo_url=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpmqyhkY" </code></pre></div>
+    --form "logo_url=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpnI1oTN" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -3615,7 +3638,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpmqyhkY</code></p>
+<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpnI1oTN</code></p>
         </div>
         </form>
 
@@ -4095,7 +4118,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             </div>
                         </form>
 
-                    <h2 id="endpoints-GETapi-mini-tournaments-index">GET api/mini-tournaments/index</h2>
+                    <h2 id="endpoints-GETapi-mini-tournaments-index">danh sách mini tournament</h2>
 
 <p>
 </p>
@@ -4268,7 +4291,7 @@ Must be one of:
         </div>
         </form>
 
-                    <h2 id="endpoints-POSTapi-mini-tournaments-store">POST api/mini-tournaments/store</h2>
+                    <h2 id="endpoints-POSTapi-mini-tournaments-store">tạo mini tournament</h2>
 
 <p>
 </p>
@@ -4288,7 +4311,7 @@ Must be one of:
     --form "name=mqeopfuudtdsufvyvddqa"\
     --form "description=Dolores dolorum amet iste laborum eius est dolor."\
     --form "match_type=3"\
-    --form "starts_at=2025-08-26T15:12:45"\
+    --form "starts_at=2025-09-01T14:30:38"\
     --form "duration_minutes=66"\
     --form "is_private="\
     --form "fee_amount=65"\
@@ -4307,7 +4330,7 @@ Must be one of:
     --form "allow_participant_add_friends=1"\
     --form "send_notification="\
     --form "status=4"\
-    --form "poster=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpp0zFEz" </code></pre></div>
+    --form "poster=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpS1u8So" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -4325,7 +4348,7 @@ body.append('sport_id', 'consequatur');
 body.append('name', 'mqeopfuudtdsufvyvddqa');
 body.append('description', 'Dolores dolorum amet iste laborum eius est dolor.');
 body.append('match_type', '3');
-body.append('starts_at', '2025-08-26T15:12:45');
+body.append('starts_at', '2025-09-01T14:30:38');
 body.append('duration_minutes', '66');
 body.append('is_private', '');
 body.append('fee_amount', '65');
@@ -4435,7 +4458,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpp0zFEz</code></p>
+<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpS1u8So</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>sport_id</code></b>&nbsp;&nbsp;
@@ -4489,10 +4512,10 @@ Must be one of:
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="starts_at"                data-endpoint="POSTapi-mini-tournaments-store"
-               value="2025-08-26T15:12:45"
+               value="2025-09-01T14:30:38"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-08-26T15:12:45</code></p>
+<p>Must be a valid date. Example: <code>2025-09-01T14:30:38</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>duration_minutes</code></b>&nbsp;&nbsp;
@@ -4783,7 +4806,7 @@ Must be one of:
         </div>
         </form>
 
-                    <h2 id="endpoints-GETapi-mini-tournaments--id-">GET api/mini-tournaments/{id}</h2>
+                    <h2 id="endpoints-GETapi-mini-tournaments--id-">chi tiết mini tournament</h2>
 
 <p>
 </p>
@@ -4919,7 +4942,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             </div>
                     </form>
 
-                    <h2 id="endpoints-POSTapi-mini-tournaments-update--id-">POST api/mini-tournaments/update/{id}</h2>
+                    <h2 id="endpoints-POSTapi-mini-tournaments-update--id-">cập nhật mini tournament</h2>
 
 <p>
 </p>
@@ -4939,7 +4962,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --form "name=mqeopfuudtdsufvyvddqa"\
     --form "description=Dolores dolorum amet iste laborum eius est dolor."\
     --form "match_type=3"\
-    --form "starts_at=2025-08-26T15:12:45"\
+    --form "starts_at=2025-09-01T14:30:38"\
     --form "duration_minutes=66"\
     --form "is_private="\
     --form "fee_amount=65"\
@@ -4958,7 +4981,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --form "allow_participant_add_friends=1"\
     --form "send_notification="\
     --form "status=4"\
-    --form "poster=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpDcpdLe" </code></pre></div>
+    --form "poster=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/php0Ssj3O" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -4976,7 +4999,7 @@ body.append('sport_id', 'consequatur');
 body.append('name', 'mqeopfuudtdsufvyvddqa');
 body.append('description', 'Dolores dolorum amet iste laborum eius est dolor.');
 body.append('match_type', '3');
-body.append('starts_at', '2025-08-26T15:12:45');
+body.append('starts_at', '2025-09-01T14:30:38');
 body.append('duration_minutes', '66');
 body.append('is_private', '');
 body.append('fee_amount', '65');
@@ -5098,7 +5121,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpDcpdLe</code></p>
+<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/php0Ssj3O</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>sport_id</code></b>&nbsp;&nbsp;
@@ -5152,10 +5175,10 @@ Must be one of:
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="starts_at"                data-endpoint="POSTapi-mini-tournaments-update--id-"
-               value="2025-08-26T15:12:45"
+               value="2025-09-01T14:30:38"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-08-26T15:12:45</code></p>
+<p>Must be a valid date. Example: <code>2025-09-01T14:30:38</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>duration_minutes</code></b>&nbsp;&nbsp;
@@ -6048,12 +6071,16 @@ You can check the Dev Tools console for debugging information.</code></pre>
             </div>
                     </form>
 
-                    <h2 id="endpoints-POSTapi-mini-participants-invite--miniTournamentId-">POST api/mini-participants/invite/{miniTournamentId}</h2>
+                    <h2 id="endpoints-POSTapi-mini-participants-invite--miniTournamentId-">Creator mời user hoặc team vào giải đấu.</h2>
 
 <p>
 </p>
 
-
+<ul>
+<li>Chỉ creator mới có quyền mời</li>
+<li>Check max_players</li>
+<li>Nếu auto_approve = true và is_private = false -&gt; is_confirmed = true</li>
+</ul>
 
 <span id="example-requests-POSTapi-mini-participants-invite--miniTournamentId-">
 <blockquote>Example request:</blockquote>
@@ -6213,12 +6240,14 @@ Must be one of:
         </div>
         </form>
 
-                    <h2 id="endpoints-POSTapi-mini-participants-delete--participantId-">POST api/mini-participants/delete/{participantId}</h2>
+                    <h2 id="endpoints-POSTapi-mini-participants-delete--participantId-">Xóa một participant khỏi mini tournament.</h2>
 
 <p>
 </p>
 
-
+<ul>
+<li>Chỉ creator mới có quyền xóa</li>
+</ul>
 
 <span id="example-requests-POSTapi-mini-participants-delete--participantId-">
 <blockquote>Example request:</blockquote>
@@ -6513,7 +6542,9 @@ You can check the Dev Tools console for debugging information.</code></pre>
         </div>
         </form>
 
-                    <h2 id="endpoints-POSTapi-mini-matches-store--miniTournamentId-">Tạo trận đấu mới</h2>
+                    <h2 id="endpoints-POSTapi-mini-matches-store--miniTournamentId-">Tạo trận đấu mới
+participants nếu là int =&gt; user
+truyền mảng lên là team</h2>
 
 <p>
 </p>
@@ -6531,9 +6562,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Accept: application/json" \
     --data "{
     \"round\": \"consequatur\",
-    \"participant1_id\": \"consequatur\",
-    \"participant2_id\": \"consequatur\",
-    \"scheduled_at\": \"2025-08-26T15:12:45\"
+    \"scheduled_at\": \"2025-09-01T14:30:38\"
 }"
 </code></pre></div>
 
@@ -6550,9 +6579,7 @@ const headers = {
 
 let body = {
     "round": "consequatur",
-    "participant1_id": "consequatur",
-    "participant2_id": "consequatur",
-    "scheduled_at": "2025-08-26T15:12:45"
+    "scheduled_at": "2025-09-01T14:30:38"
 };
 
 fetch(url, {
@@ -6661,24 +6688,24 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>participant1_id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
- &nbsp;
+<i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="participant1_id"                data-endpoint="POSTapi-mini-matches-store--miniTournamentId-"
-               value="consequatur"
+               value=""
                data-component="body">
     <br>
-<p>The <code>id</code> of an existing record in the mini_participants table. Example: <code>consequatur</code></p>
+
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>participant2_id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
- &nbsp;
+<i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="participant2_id"                data-endpoint="POSTapi-mini-matches-store--miniTournamentId-"
-               value="consequatur"
+               value=""
                data-component="body">
     <br>
-<p>The <code>id</code> of an existing record in the mini_participants table. Example: <code>consequatur</code></p>
+
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>scheduled_at</code></b>&nbsp;&nbsp;
@@ -6686,10 +6713,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="scheduled_at"                data-endpoint="POSTapi-mini-matches-store--miniTournamentId-"
-               value="2025-08-26T15:12:45"
+               value="2025-09-01T14:30:38"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-08-26T15:12:45</code></p>
+<p>Must be a valid date. Example: <code>2025-09-01T14:30:38</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>referee</code></b>&nbsp;&nbsp;
@@ -6697,6 +6724,193 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="referee"                data-endpoint="POSTapi-mini-matches-store--miniTournamentId-"
+               value=""
+               data-component="body">
+    <br>
+<p>The <code>id</code> of an existing record in the referees table.</p>
+        </div>
+        </form>
+
+                    <h2 id="endpoints-POSTapi-mini-matches-update--matchId-">Cập nhật thông tin trận đấu trong kèo đấu</h2>
+
+<p>
+</p>
+
+
+
+<span id="example-requests-POSTapi-mini-matches-update--matchId-">
+<blockquote>Example request:</blockquote>
+
+
+<div class="bash-example">
+    <pre><code class="language-bash">curl --request POST \
+    "http://localhost/api/mini-matches/update/consequatur" \
+    --header "Content-Type: application/json" \
+    --header "Accept: application/json" \
+    --data "{
+    \"round\": \"consequatur\",
+    \"scheduled_at\": \"2025-09-01T14:30:38\"
+}"
+</code></pre></div>
+
+
+<div class="javascript-example">
+    <pre><code class="language-javascript">const url = new URL(
+    "http://localhost/api/mini-matches/update/consequatur"
+);
+
+const headers = {
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+};
+
+let body = {
+    "round": "consequatur",
+    "scheduled_at": "2025-09-01T14:30:38"
+};
+
+fetch(url, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+}).then(response =&gt; response.json());</code></pre></div>
+
+</span>
+
+<span id="example-responses-POSTapi-mini-matches-update--matchId-">
+</span>
+<span id="execution-results-POSTapi-mini-matches-update--matchId-" hidden>
+    <blockquote>Received response<span
+                id="execution-response-status-POSTapi-mini-matches-update--matchId-"></span>:
+    </blockquote>
+    <pre class="json"><code id="execution-response-content-POSTapi-mini-matches-update--matchId-"
+      data-empty-response-text="<Empty response>" style="max-height: 400px;"></code></pre>
+</span>
+<span id="execution-error-POSTapi-mini-matches-update--matchId-" hidden>
+    <blockquote>Request failed with error:</blockquote>
+    <pre><code id="execution-error-message-POSTapi-mini-matches-update--matchId-">
+
+Tip: Check that you&#039;re properly connected to the network.
+If you&#039;re a maintainer of ths API, verify that your API is running and you&#039;ve enabled CORS.
+You can check the Dev Tools console for debugging information.</code></pre>
+</span>
+<form id="form-POSTapi-mini-matches-update--matchId-" data-method="POST"
+      data-path="api/mini-matches/update/{matchId}"
+      data-authed="0"
+      data-hasfiles="0"
+      data-isarraybody="0"
+      autocomplete="off"
+      onsubmit="event.preventDefault(); executeTryOut('POSTapi-mini-matches-update--matchId-', this);">
+    <h3>
+        Request&nbsp;&nbsp;&nbsp;
+                    <button type="button"
+                    style="background-color: #8fbcd4; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-tryout-POSTapi-mini-matches-update--matchId-"
+                    onclick="tryItOut('POSTapi-mini-matches-update--matchId-');">Try it out ⚡
+            </button>
+            <button type="button"
+                    style="background-color: #c97a7e; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-canceltryout-POSTapi-mini-matches-update--matchId-"
+                    onclick="cancelTryOut('POSTapi-mini-matches-update--matchId-');" hidden>Cancel 🛑
+            </button>&nbsp;&nbsp;
+            <button type="submit"
+                    style="background-color: #6ac174; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-executetryout-POSTapi-mini-matches-update--matchId-"
+                    data-initial-text="Send Request 💥"
+                    data-loading-text="⏱ Sending..."
+                    hidden>Send Request 💥
+            </button>
+            </h3>
+            <p>
+            <small class="badge badge-black">POST</small>
+            <b><code>api/mini-matches/update/{matchId}</code></b>
+        </p>
+                <h4 class="fancy-heading-panel"><b>Headers</b></h4>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Content-Type"                data-endpoint="POSTapi-mini-matches-update--matchId-"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Accept"                data-endpoint="POSTapi-mini-matches-update--matchId-"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                        <h4 class="fancy-heading-panel"><b>URL Parameters</b></h4>
+                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>matchId</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="matchId"                data-endpoint="POSTapi-mini-matches-update--matchId-"
+               value="consequatur"
+               data-component="url">
+    <br>
+<p>Example: <code>consequatur</code></p>
+            </div>
+                            <h4 class="fancy-heading-panel"><b>Body Parameters</b></h4>
+        <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>round</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+                <input type="text" style="display: none"
+                              name="round"                data-endpoint="POSTapi-mini-matches-update--matchId-"
+               value="consequatur"
+               data-component="body">
+    <br>
+<p>Example: <code>consequatur</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>participant1_id</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+                <input type="text" style="display: none"
+                              name="participant1_id"                data-endpoint="POSTapi-mini-matches-update--matchId-"
+               value=""
+               data-component="body">
+    <br>
+
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>participant2_id</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+                <input type="text" style="display: none"
+                              name="participant2_id"                data-endpoint="POSTapi-mini-matches-update--matchId-"
+               value=""
+               data-component="body">
+    <br>
+
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>scheduled_at</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+                <input type="text" style="display: none"
+                              name="scheduled_at"                data-endpoint="POSTapi-mini-matches-update--matchId-"
+               value="2025-09-01T14:30:38"
+               data-component="body">
+    <br>
+<p>Must be a valid date. Example: <code>2025-09-01T14:30:38</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>referee</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+                <input type="text" style="display: none"
+                              name="referee"                data-endpoint="POSTapi-mini-matches-update--matchId-"
                value=""
                data-component="body">
     <br>
@@ -7397,6 +7611,130 @@ You can check the Dev Tools console for debugging information.</code></pre>
             </div>
                     </form>
 
+                    <h2 id="endpoints-GETapi-mini-matches-index">Trình lọc trận đấu (theo địa điểm, môn thể thao, từ khóa, thời gian, vị trí)</h2>
+
+<p>
+</p>
+
+
+
+<span id="example-requests-GETapi-mini-matches-index">
+<blockquote>Example request:</blockquote>
+
+
+<div class="bash-example">
+    <pre><code class="language-bash">curl --request GET \
+    --get "http://localhost/api/mini-matches/index" \
+    --header "Content-Type: application/json" \
+    --header "Accept: application/json"</code></pre></div>
+
+
+<div class="javascript-example">
+    <pre><code class="language-javascript">const url = new URL(
+    "http://localhost/api/mini-matches/index"
+);
+
+const headers = {
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+};
+
+fetch(url, {
+    method: "GET",
+    headers,
+}).then(response =&gt; response.json());</code></pre></div>
+
+</span>
+
+<span id="example-responses-GETapi-mini-matches-index">
+            <blockquote>
+            <p>Example response (401):</p>
+        </blockquote>
+                <details class="annotation">
+            <summary style="cursor: pointer;">
+                <small onclick="textContent = parentElement.parentElement.open ? 'Show headers' : 'Hide headers'">Show headers</small>
+            </summary>
+            <pre><code class="language-http">cache-control: no-cache, private
+content-type: application/json
+access-control-allow-origin: *
+ </code></pre></details>         <pre>
+
+<code class="language-json" style="max-height: 300px;">{
+    &quot;message&quot;: &quot;Unauthenticated.&quot;
+}</code>
+ </pre>
+    </span>
+<span id="execution-results-GETapi-mini-matches-index" hidden>
+    <blockquote>Received response<span
+                id="execution-response-status-GETapi-mini-matches-index"></span>:
+    </blockquote>
+    <pre class="json"><code id="execution-response-content-GETapi-mini-matches-index"
+      data-empty-response-text="<Empty response>" style="max-height: 400px;"></code></pre>
+</span>
+<span id="execution-error-GETapi-mini-matches-index" hidden>
+    <blockquote>Request failed with error:</blockquote>
+    <pre><code id="execution-error-message-GETapi-mini-matches-index">
+
+Tip: Check that you&#039;re properly connected to the network.
+If you&#039;re a maintainer of ths API, verify that your API is running and you&#039;ve enabled CORS.
+You can check the Dev Tools console for debugging information.</code></pre>
+</span>
+<form id="form-GETapi-mini-matches-index" data-method="GET"
+      data-path="api/mini-matches/index"
+      data-authed="0"
+      data-hasfiles="0"
+      data-isarraybody="0"
+      autocomplete="off"
+      onsubmit="event.preventDefault(); executeTryOut('GETapi-mini-matches-index', this);">
+    <h3>
+        Request&nbsp;&nbsp;&nbsp;
+                    <button type="button"
+                    style="background-color: #8fbcd4; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-tryout-GETapi-mini-matches-index"
+                    onclick="tryItOut('GETapi-mini-matches-index');">Try it out ⚡
+            </button>
+            <button type="button"
+                    style="background-color: #c97a7e; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-canceltryout-GETapi-mini-matches-index"
+                    onclick="cancelTryOut('GETapi-mini-matches-index');" hidden>Cancel 🛑
+            </button>&nbsp;&nbsp;
+            <button type="submit"
+                    style="background-color: #6ac174; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-executetryout-GETapi-mini-matches-index"
+                    data-initial-text="Send Request 💥"
+                    data-loading-text="⏱ Sending..."
+                    hidden>Send Request 💥
+            </button>
+            </h3>
+            <p>
+            <small class="badge badge-green">GET</small>
+            <b><code>api/mini-matches/index</code></b>
+        </p>
+                <h4 class="fancy-heading-panel"><b>Headers</b></h4>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Content-Type"                data-endpoint="GETapi-mini-matches-index"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Accept"                data-endpoint="GETapi-mini-matches-index"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                        </form>
+
                     <h2 id="endpoints-POSTapi-send-message--tournamentId-">POST api/send-message/{tournamentId}</h2>
 
 <p>
@@ -7415,7 +7753,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Accept: application/json" \
     --form "type=text"\
     --form "content=consequatur"\
-    --form "file=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpWm3Chy" </code></pre></div>
+    --form "file=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpOWskBh" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -7558,7 +7896,7 @@ Must be one of:
                value=""
                data-component="body">
     <br>
-<p>Must be a file. Must not be greater than 10240 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpWm3Chy</code></p>
+<p>Must be a file. Must not be greater than 10240 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpOWskBh</code></p>
         </div>
         </form>
 
@@ -7718,6 +8056,837 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <p>Must be at least 1. Must not be greater than 100. Example: <code>21</code></p>
         </div>
         </form>
+
+                    <h2 id="endpoints-GETapi-competition-locations-index">Lọc và lấy danh sách địa điểm thi đấu (trình lọc sân bóng)</h2>
+
+<p>
+</p>
+
+
+
+<span id="example-requests-GETapi-competition-locations-index">
+<blockquote>Example request:</blockquote>
+
+
+<div class="bash-example">
+    <pre><code class="language-bash">curl --request GET \
+    --get "http://localhost/api/competition-locations/index" \
+    --header "Content-Type: application/json" \
+    --header "Accept: application/json" \
+    --data "{
+    \"radius\": 73,
+    \"sport_id\": 17,
+    \"location_id\": 17,
+    \"number_of_yards\": 45,
+    \"keyword\": \"qeopfuudtdsufvyvddqam\",
+    \"is_followed\": true,
+    \"per_page\": 8
+}"
+</code></pre></div>
+
+
+<div class="javascript-example">
+    <pre><code class="language-javascript">const url = new URL(
+    "http://localhost/api/competition-locations/index"
+);
+
+const headers = {
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+};
+
+let body = {
+    "radius": 73,
+    "sport_id": 17,
+    "location_id": 17,
+    "number_of_yards": 45,
+    "keyword": "qeopfuudtdsufvyvddqam",
+    "is_followed": true,
+    "per_page": 8
+};
+
+fetch(url, {
+    method: "GET",
+    headers,
+    body: JSON.stringify(body),
+}).then(response =&gt; response.json());</code></pre></div>
+
+</span>
+
+<span id="example-responses-GETapi-competition-locations-index">
+            <blockquote>
+            <p>Example response (401):</p>
+        </blockquote>
+                <details class="annotation">
+            <summary style="cursor: pointer;">
+                <small onclick="textContent = parentElement.parentElement.open ? 'Show headers' : 'Hide headers'">Show headers</small>
+            </summary>
+            <pre><code class="language-http">cache-control: no-cache, private
+content-type: application/json
+access-control-allow-origin: *
+ </code></pre></details>         <pre>
+
+<code class="language-json" style="max-height: 300px;">{
+    &quot;message&quot;: &quot;Unauthenticated.&quot;
+}</code>
+ </pre>
+    </span>
+<span id="execution-results-GETapi-competition-locations-index" hidden>
+    <blockquote>Received response<span
+                id="execution-response-status-GETapi-competition-locations-index"></span>:
+    </blockquote>
+    <pre class="json"><code id="execution-response-content-GETapi-competition-locations-index"
+      data-empty-response-text="<Empty response>" style="max-height: 400px;"></code></pre>
+</span>
+<span id="execution-error-GETapi-competition-locations-index" hidden>
+    <blockquote>Request failed with error:</blockquote>
+    <pre><code id="execution-error-message-GETapi-competition-locations-index">
+
+Tip: Check that you&#039;re properly connected to the network.
+If you&#039;re a maintainer of ths API, verify that your API is running and you&#039;ve enabled CORS.
+You can check the Dev Tools console for debugging information.</code></pre>
+</span>
+<form id="form-GETapi-competition-locations-index" data-method="GET"
+      data-path="api/competition-locations/index"
+      data-authed="0"
+      data-hasfiles="0"
+      data-isarraybody="0"
+      autocomplete="off"
+      onsubmit="event.preventDefault(); executeTryOut('GETapi-competition-locations-index', this);">
+    <h3>
+        Request&nbsp;&nbsp;&nbsp;
+                    <button type="button"
+                    style="background-color: #8fbcd4; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-tryout-GETapi-competition-locations-index"
+                    onclick="tryItOut('GETapi-competition-locations-index');">Try it out ⚡
+            </button>
+            <button type="button"
+                    style="background-color: #c97a7e; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-canceltryout-GETapi-competition-locations-index"
+                    onclick="cancelTryOut('GETapi-competition-locations-index');" hidden>Cancel 🛑
+            </button>&nbsp;&nbsp;
+            <button type="submit"
+                    style="background-color: #6ac174; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-executetryout-GETapi-competition-locations-index"
+                    data-initial-text="Send Request 💥"
+                    data-loading-text="⏱ Sending..."
+                    hidden>Send Request 💥
+            </button>
+            </h3>
+            <p>
+            <small class="badge badge-green">GET</small>
+            <b><code>api/competition-locations/index</code></b>
+        </p>
+                <h4 class="fancy-heading-panel"><b>Headers</b></h4>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Content-Type"                data-endpoint="GETapi-competition-locations-index"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Accept"                data-endpoint="GETapi-competition-locations-index"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <h4 class="fancy-heading-panel"><b>Body Parameters</b></h4>
+        <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>lat</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+                <input type="text" style="display: none"
+                              name="lat"                data-endpoint="GETapi-competition-locations-index"
+               value=""
+               data-component="body">
+    <br>
+
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>lng</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+                <input type="text" style="display: none"
+                              name="lng"                data-endpoint="GETapi-competition-locations-index"
+               value=""
+               data-component="body">
+    <br>
+
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>radius</code></b>&nbsp;&nbsp;
+<small>number</small>&nbsp;
+<i>optional</i> &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="radius"                data-endpoint="GETapi-competition-locations-index"
+               value="73"
+               data-component="body">
+    <br>
+<p>Must be at least 1. Example: <code>73</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>minLat</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+                <input type="text" style="display: none"
+                              name="minLat"                data-endpoint="GETapi-competition-locations-index"
+               value=""
+               data-component="body">
+    <br>
+
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>maxLat</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+                <input type="text" style="display: none"
+                              name="maxLat"                data-endpoint="GETapi-competition-locations-index"
+               value=""
+               data-component="body">
+    <br>
+
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>minLng</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+                <input type="text" style="display: none"
+                              name="minLng"                data-endpoint="GETapi-competition-locations-index"
+               value=""
+               data-component="body">
+    <br>
+
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>maxLng</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+                <input type="text" style="display: none"
+                              name="maxLng"                data-endpoint="GETapi-competition-locations-index"
+               value=""
+               data-component="body">
+    <br>
+
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>sport_id</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="sport_id"                data-endpoint="GETapi-competition-locations-index"
+               value="17"
+               data-component="body">
+    <br>
+<p>The <code>id</code> of an existing record in the sports table. Example: <code>17</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>location_id</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="location_id"                data-endpoint="GETapi-competition-locations-index"
+               value="17"
+               data-component="body">
+    <br>
+<p>The <code>id</code> of an existing record in the locations table. Example: <code>17</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>number_of_yards</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="number_of_yards"                data-endpoint="GETapi-competition-locations-index"
+               value="45"
+               data-component="body">
+    <br>
+<p>Must be at least 1. Example: <code>45</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>keyword</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+                <input type="text" style="display: none"
+                              name="keyword"                data-endpoint="GETapi-competition-locations-index"
+               value="qeopfuudtdsufvyvddqam"
+               data-component="body">
+    <br>
+<p>Must not be greater than 255 characters. Example: <code>qeopfuudtdsufvyvddqam</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>is_followed</code></b>&nbsp;&nbsp;
+<small>boolean</small>&nbsp;
+<i>optional</i> &nbsp;
+                <label data-endpoint="GETapi-competition-locations-index" style="display: none">
+            <input type="radio" name="is_followed"
+                   value="true"
+                   data-endpoint="GETapi-competition-locations-index"
+                   data-component="body"             >
+            <code>true</code>
+        </label>
+        <label data-endpoint="GETapi-competition-locations-index" style="display: none">
+            <input type="radio" name="is_followed"
+                   value="false"
+                   data-endpoint="GETapi-competition-locations-index"
+                   data-component="body"             >
+            <code>false</code>
+        </label>
+    <br>
+<p>Example: <code>true</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>per_page</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="per_page"                data-endpoint="GETapi-competition-locations-index"
+               value="8"
+               data-component="body">
+    <br>
+<p>Must be at least 1. Must not be greater than 100. Example: <code>8</code></p>
+        </div>
+        </form>
+
+                    <h2 id="endpoints-GETapi-follows-index">Danh sách theo dõi của người dùng</h2>
+
+<p>
+</p>
+
+
+
+<span id="example-requests-GETapi-follows-index">
+<blockquote>Example request:</blockquote>
+
+
+<div class="bash-example">
+    <pre><code class="language-bash">curl --request GET \
+    --get "http://localhost/api/follows/index" \
+    --header "Content-Type: application/json" \
+    --header "Accept: application/json"</code></pre></div>
+
+
+<div class="javascript-example">
+    <pre><code class="language-javascript">const url = new URL(
+    "http://localhost/api/follows/index"
+);
+
+const headers = {
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+};
+
+fetch(url, {
+    method: "GET",
+    headers,
+}).then(response =&gt; response.json());</code></pre></div>
+
+</span>
+
+<span id="example-responses-GETapi-follows-index">
+            <blockquote>
+            <p>Example response (401):</p>
+        </blockquote>
+                <details class="annotation">
+            <summary style="cursor: pointer;">
+                <small onclick="textContent = parentElement.parentElement.open ? 'Show headers' : 'Hide headers'">Show headers</small>
+            </summary>
+            <pre><code class="language-http">cache-control: no-cache, private
+content-type: application/json
+access-control-allow-origin: *
+ </code></pre></details>         <pre>
+
+<code class="language-json" style="max-height: 300px;">{
+    &quot;message&quot;: &quot;Unauthenticated.&quot;
+}</code>
+ </pre>
+    </span>
+<span id="execution-results-GETapi-follows-index" hidden>
+    <blockquote>Received response<span
+                id="execution-response-status-GETapi-follows-index"></span>:
+    </blockquote>
+    <pre class="json"><code id="execution-response-content-GETapi-follows-index"
+      data-empty-response-text="<Empty response>" style="max-height: 400px;"></code></pre>
+</span>
+<span id="execution-error-GETapi-follows-index" hidden>
+    <blockquote>Request failed with error:</blockquote>
+    <pre><code id="execution-error-message-GETapi-follows-index">
+
+Tip: Check that you&#039;re properly connected to the network.
+If you&#039;re a maintainer of ths API, verify that your API is running and you&#039;ve enabled CORS.
+You can check the Dev Tools console for debugging information.</code></pre>
+</span>
+<form id="form-GETapi-follows-index" data-method="GET"
+      data-path="api/follows/index"
+      data-authed="0"
+      data-hasfiles="0"
+      data-isarraybody="0"
+      autocomplete="off"
+      onsubmit="event.preventDefault(); executeTryOut('GETapi-follows-index', this);">
+    <h3>
+        Request&nbsp;&nbsp;&nbsp;
+                    <button type="button"
+                    style="background-color: #8fbcd4; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-tryout-GETapi-follows-index"
+                    onclick="tryItOut('GETapi-follows-index');">Try it out ⚡
+            </button>
+            <button type="button"
+                    style="background-color: #c97a7e; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-canceltryout-GETapi-follows-index"
+                    onclick="cancelTryOut('GETapi-follows-index');" hidden>Cancel 🛑
+            </button>&nbsp;&nbsp;
+            <button type="submit"
+                    style="background-color: #6ac174; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-executetryout-GETapi-follows-index"
+                    data-initial-text="Send Request 💥"
+                    data-loading-text="⏱ Sending..."
+                    hidden>Send Request 💥
+            </button>
+            </h3>
+            <p>
+            <small class="badge badge-green">GET</small>
+            <b><code>api/follows/index</code></b>
+        </p>
+                <h4 class="fancy-heading-panel"><b>Headers</b></h4>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Content-Type"                data-endpoint="GETapi-follows-index"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Accept"                data-endpoint="GETapi-follows-index"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                        </form>
+
+                    <h2 id="endpoints-POSTapi-follows-store">Theo dõi một đối tượng</h2>
+
+<p>
+</p>
+
+
+
+<span id="example-requests-POSTapi-follows-store">
+<blockquote>Example request:</blockquote>
+
+
+<div class="bash-example">
+    <pre><code class="language-bash">curl --request POST \
+    "http://localhost/api/follows/store" \
+    --header "Content-Type: application/json" \
+    --header "Accept: application/json" \
+    --data "{
+    \"followable_type\": \"consequatur\",
+    \"followable_id\": 17
+}"
+</code></pre></div>
+
+
+<div class="javascript-example">
+    <pre><code class="language-javascript">const url = new URL(
+    "http://localhost/api/follows/store"
+);
+
+const headers = {
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+};
+
+let body = {
+    "followable_type": "consequatur",
+    "followable_id": 17
+};
+
+fetch(url, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+}).then(response =&gt; response.json());</code></pre></div>
+
+</span>
+
+<span id="example-responses-POSTapi-follows-store">
+</span>
+<span id="execution-results-POSTapi-follows-store" hidden>
+    <blockquote>Received response<span
+                id="execution-response-status-POSTapi-follows-store"></span>:
+    </blockquote>
+    <pre class="json"><code id="execution-response-content-POSTapi-follows-store"
+      data-empty-response-text="<Empty response>" style="max-height: 400px;"></code></pre>
+</span>
+<span id="execution-error-POSTapi-follows-store" hidden>
+    <blockquote>Request failed with error:</blockquote>
+    <pre><code id="execution-error-message-POSTapi-follows-store">
+
+Tip: Check that you&#039;re properly connected to the network.
+If you&#039;re a maintainer of ths API, verify that your API is running and you&#039;ve enabled CORS.
+You can check the Dev Tools console for debugging information.</code></pre>
+</span>
+<form id="form-POSTapi-follows-store" data-method="POST"
+      data-path="api/follows/store"
+      data-authed="0"
+      data-hasfiles="0"
+      data-isarraybody="0"
+      autocomplete="off"
+      onsubmit="event.preventDefault(); executeTryOut('POSTapi-follows-store', this);">
+    <h3>
+        Request&nbsp;&nbsp;&nbsp;
+                    <button type="button"
+                    style="background-color: #8fbcd4; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-tryout-POSTapi-follows-store"
+                    onclick="tryItOut('POSTapi-follows-store');">Try it out ⚡
+            </button>
+            <button type="button"
+                    style="background-color: #c97a7e; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-canceltryout-POSTapi-follows-store"
+                    onclick="cancelTryOut('POSTapi-follows-store');" hidden>Cancel 🛑
+            </button>&nbsp;&nbsp;
+            <button type="submit"
+                    style="background-color: #6ac174; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-executetryout-POSTapi-follows-store"
+                    data-initial-text="Send Request 💥"
+                    data-loading-text="⏱ Sending..."
+                    hidden>Send Request 💥
+            </button>
+            </h3>
+            <p>
+            <small class="badge badge-black">POST</small>
+            <b><code>api/follows/store</code></b>
+        </p>
+                <h4 class="fancy-heading-panel"><b>Headers</b></h4>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Content-Type"                data-endpoint="POSTapi-follows-store"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Accept"                data-endpoint="POSTapi-follows-store"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <h4 class="fancy-heading-panel"><b>Body Parameters</b></h4>
+        <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>followable_type</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="followable_type"                data-endpoint="POSTapi-follows-store"
+               value="consequatur"
+               data-component="body">
+    <br>
+<p>Example: <code>consequatur</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>followable_id</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="followable_id"                data-endpoint="POSTapi-follows-store"
+               value="17"
+               data-component="body">
+    <br>
+<p>Example: <code>17</code></p>
+        </div>
+        </form>
+
+                    <h2 id="endpoints-DELETEapi-follows-delete">Hủy theo dõi một đối tượng</h2>
+
+<p>
+</p>
+
+
+
+<span id="example-requests-DELETEapi-follows-delete">
+<blockquote>Example request:</blockquote>
+
+
+<div class="bash-example">
+    <pre><code class="language-bash">curl --request DELETE \
+    "http://localhost/api/follows/delete" \
+    --header "Content-Type: application/json" \
+    --header "Accept: application/json" \
+    --data "{
+    \"followable_type\": \"consequatur\",
+    \"followable_id\": 17
+}"
+</code></pre></div>
+
+
+<div class="javascript-example">
+    <pre><code class="language-javascript">const url = new URL(
+    "http://localhost/api/follows/delete"
+);
+
+const headers = {
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+};
+
+let body = {
+    "followable_type": "consequatur",
+    "followable_id": 17
+};
+
+fetch(url, {
+    method: "DELETE",
+    headers,
+    body: JSON.stringify(body),
+}).then(response =&gt; response.json());</code></pre></div>
+
+</span>
+
+<span id="example-responses-DELETEapi-follows-delete">
+</span>
+<span id="execution-results-DELETEapi-follows-delete" hidden>
+    <blockquote>Received response<span
+                id="execution-response-status-DELETEapi-follows-delete"></span>:
+    </blockquote>
+    <pre class="json"><code id="execution-response-content-DELETEapi-follows-delete"
+      data-empty-response-text="<Empty response>" style="max-height: 400px;"></code></pre>
+</span>
+<span id="execution-error-DELETEapi-follows-delete" hidden>
+    <blockquote>Request failed with error:</blockquote>
+    <pre><code id="execution-error-message-DELETEapi-follows-delete">
+
+Tip: Check that you&#039;re properly connected to the network.
+If you&#039;re a maintainer of ths API, verify that your API is running and you&#039;ve enabled CORS.
+You can check the Dev Tools console for debugging information.</code></pre>
+</span>
+<form id="form-DELETEapi-follows-delete" data-method="DELETE"
+      data-path="api/follows/delete"
+      data-authed="0"
+      data-hasfiles="0"
+      data-isarraybody="0"
+      autocomplete="off"
+      onsubmit="event.preventDefault(); executeTryOut('DELETEapi-follows-delete', this);">
+    <h3>
+        Request&nbsp;&nbsp;&nbsp;
+                    <button type="button"
+                    style="background-color: #8fbcd4; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-tryout-DELETEapi-follows-delete"
+                    onclick="tryItOut('DELETEapi-follows-delete');">Try it out ⚡
+            </button>
+            <button type="button"
+                    style="background-color: #c97a7e; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-canceltryout-DELETEapi-follows-delete"
+                    onclick="cancelTryOut('DELETEapi-follows-delete');" hidden>Cancel 🛑
+            </button>&nbsp;&nbsp;
+            <button type="submit"
+                    style="background-color: #6ac174; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-executetryout-DELETEapi-follows-delete"
+                    data-initial-text="Send Request 💥"
+                    data-loading-text="⏱ Sending..."
+                    hidden>Send Request 💥
+            </button>
+            </h3>
+            <p>
+            <small class="badge badge-red">DELETE</small>
+            <b><code>api/follows/delete</code></b>
+        </p>
+                <h4 class="fancy-heading-panel"><b>Headers</b></h4>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Content-Type"                data-endpoint="DELETEapi-follows-delete"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Accept"                data-endpoint="DELETEapi-follows-delete"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <h4 class="fancy-heading-panel"><b>Body Parameters</b></h4>
+        <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>followable_type</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="followable_type"                data-endpoint="DELETEapi-follows-delete"
+               value="consequatur"
+               data-component="body">
+    <br>
+<p>Example: <code>consequatur</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>followable_id</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="followable_id"                data-endpoint="DELETEapi-follows-delete"
+               value="17"
+               data-component="body">
+    <br>
+<p>Example: <code>17</code></p>
+        </div>
+        </form>
+
+                    <h2 id="endpoints-GETapi-sports-index">Danh sách môn thể thao</h2>
+
+<p>
+</p>
+
+
+
+<span id="example-requests-GETapi-sports-index">
+<blockquote>Example request:</blockquote>
+
+
+<div class="bash-example">
+    <pre><code class="language-bash">curl --request GET \
+    --get "http://localhost/api/sports/index" \
+    --header "Content-Type: application/json" \
+    --header "Accept: application/json"</code></pre></div>
+
+
+<div class="javascript-example">
+    <pre><code class="language-javascript">const url = new URL(
+    "http://localhost/api/sports/index"
+);
+
+const headers = {
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+};
+
+fetch(url, {
+    method: "GET",
+    headers,
+}).then(response =&gt; response.json());</code></pre></div>
+
+</span>
+
+<span id="example-responses-GETapi-sports-index">
+            <blockquote>
+            <p>Example response (401):</p>
+        </blockquote>
+                <details class="annotation">
+            <summary style="cursor: pointer;">
+                <small onclick="textContent = parentElement.parentElement.open ? 'Show headers' : 'Hide headers'">Show headers</small>
+            </summary>
+            <pre><code class="language-http">cache-control: no-cache, private
+content-type: application/json
+access-control-allow-origin: *
+ </code></pre></details>         <pre>
+
+<code class="language-json" style="max-height: 300px;">{
+    &quot;message&quot;: &quot;Unauthenticated.&quot;
+}</code>
+ </pre>
+    </span>
+<span id="execution-results-GETapi-sports-index" hidden>
+    <blockquote>Received response<span
+                id="execution-response-status-GETapi-sports-index"></span>:
+    </blockquote>
+    <pre class="json"><code id="execution-response-content-GETapi-sports-index"
+      data-empty-response-text="<Empty response>" style="max-height: 400px;"></code></pre>
+</span>
+<span id="execution-error-GETapi-sports-index" hidden>
+    <blockquote>Request failed with error:</blockquote>
+    <pre><code id="execution-error-message-GETapi-sports-index">
+
+Tip: Check that you&#039;re properly connected to the network.
+If you&#039;re a maintainer of ths API, verify that your API is running and you&#039;ve enabled CORS.
+You can check the Dev Tools console for debugging information.</code></pre>
+</span>
+<form id="form-GETapi-sports-index" data-method="GET"
+      data-path="api/sports/index"
+      data-authed="0"
+      data-hasfiles="0"
+      data-isarraybody="0"
+      autocomplete="off"
+      onsubmit="event.preventDefault(); executeTryOut('GETapi-sports-index', this);">
+    <h3>
+        Request&nbsp;&nbsp;&nbsp;
+                    <button type="button"
+                    style="background-color: #8fbcd4; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-tryout-GETapi-sports-index"
+                    onclick="tryItOut('GETapi-sports-index');">Try it out ⚡
+            </button>
+            <button type="button"
+                    style="background-color: #c97a7e; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-canceltryout-GETapi-sports-index"
+                    onclick="cancelTryOut('GETapi-sports-index');" hidden>Cancel 🛑
+            </button>&nbsp;&nbsp;
+            <button type="submit"
+                    style="background-color: #6ac174; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-executetryout-GETapi-sports-index"
+                    data-initial-text="Send Request 💥"
+                    data-loading-text="⏱ Sending..."
+                    hidden>Send Request 💥
+            </button>
+            </h3>
+            <p>
+            <small class="badge badge-green">GET</small>
+            <b><code>api/sports/index</code></b>
+        </p>
+                <h4 class="fancy-heading-panel"><b>Headers</b></h4>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Content-Type"                data-endpoint="GETapi-sports-index"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Accept"                data-endpoint="GETapi-sports-index"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                        </form>
 
             
 
