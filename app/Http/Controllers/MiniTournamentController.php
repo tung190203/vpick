@@ -59,8 +59,7 @@ class MiniTournamentController extends Controller
         $userId = auth()->id();
         $query->where(function ($q) use ($userId) {
             $q->where('is_private', 0)
-                ->orWhereHas('participants', fn($sub) => $sub->where('user_id', $userId))
-                ->orWhereHas('referees', fn($sub) => $sub->where('user_id', $userId));
+                ->orWhereHas('participants', fn($sub) => $sub->where('user_id', $userId));
         });
         $miniTournaments = $query->paginate($validated['per_page'] ?? MiniTournament::PER_PAGE);
 
