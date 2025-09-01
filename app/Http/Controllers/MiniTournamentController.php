@@ -12,6 +12,9 @@ use Illuminate\Support\Facades\Auth;
 
 class MiniTournamentController extends Controller
 {
+    /**
+     * tạo mini tournament
+     */
     public function store(StoreMiniTournamentRequest $request)
     {
         $data = $request->validated();
@@ -33,7 +36,9 @@ class MiniTournamentController extends Controller
 
         return ResponseHelper::success(new MiniTournamentResource($miniTournament), 'Mini Tournament created successfully', 201);
     }
-
+    /**
+     * danh sách mini tournament
+     */
     public function index(Request $request)
     {
         $validated = $request->validate([
@@ -51,17 +56,28 @@ class MiniTournamentController extends Controller
             $query->where('status', $validated['status']);
         }
 
+        $userId = auth()->id();
+        $query->where(function ($q) use ($userId) {
+            $q->where('is_private', 0)
+                ->orWhereHas('participants', fn($sub) => $sub->where('user_id', $userId))
+                ->orWhereHas('referees', fn($sub) => $sub->where('user_id', $userId));
+        });
         $miniTournaments = $query->paginate($validated['per_page'] ?? MiniTournament::PER_PAGE);
 
         return ResponseHelper::success(MiniTournamentResource::collection($miniTournaments), 'Mini Tournaments retrieved successfully');
     }
-
+    /**
+     * chi tiết mini tournament
+     */
     public function show($id)
     {
         $miniTournament = MiniTournament::withFullRelations()->findOrFail($id);
 
         return ResponseHelper::success(new MiniTournamentResource($miniTournament), 'Mini Tournament retrieved successfully');
     }
+    /**
+     * cập nhật mini tournament
+     */
     public function update(StoreMiniTournamentRequest $request, $id)
     {
         $miniTournament = MiniTournament::findOrFail($id);

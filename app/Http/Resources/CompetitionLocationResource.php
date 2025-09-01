@@ -20,6 +20,14 @@ class CompetitionLocationResource extends JsonResource
             'name' => $this->name,
             'latitude' => $this->latitude,
             'longitude' => $this->longitude,
+            'image' => $this->image,
+            'address' => $this->address,
+            'phone' => $this->phone,
+            'opening_time' => $this->opening_time,
+            'closing_time' => $this->closing_time,
+            'note_booking' => $this->note_booking,
+            'website' => $this->website,
+            'sports' => SportResource::collection($this->whenLoaded('sports')),
         ];
     }
 }

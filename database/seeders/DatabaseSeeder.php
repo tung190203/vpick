@@ -36,6 +36,7 @@ class DatabaseSeeder extends Seeder
             VerifySeeder::class,
             TournamentFullSeeder::class,
             MiniTournamentFullSeeder::class,
+            FollowSeeder::class,
         ]);
     }
 }

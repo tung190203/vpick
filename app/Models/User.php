@@ -67,6 +67,11 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         $this->attributes['password'] = bcrypt($password);
     }
 
+    public function follows()
+    {
+        return $this->morphMany(Follow::class, 'followable');
+    }
+
     public function getJWTIdentifier()
     {
         return $this->getKey();

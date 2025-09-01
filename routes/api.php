@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CompetitionLocationController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\MiniMatchController;
 use App\Http\Controllers\MiniParticipantController;
@@ -9,9 +10,11 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\VerificationController;
 use App\Http\Controllers\VerifiedController;
 use App\Http\Controllers\ClubController;
+use App\Http\Controllers\FollowController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MiniTournamentController;
 use App\Http\Controllers\SendMessageController;
+use App\Http\Controllers\SportController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -87,16 +90,33 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
     Route::prefix('mini-matches')->group(function (): void {
         Route::get('/index/{miniTournamentId}', [MiniMatchController::class, 'index']);
         Route::post('/store/{miniTournamentId}', [MiniMatchController::class, 'store']);
+        Route::post('/update/{matchId}', [MiniMatchController::class, 'update']);
         Route::post('/add-set/{matchId}', [MiniMatchController::class, 'addSetResult']);
         Route::delete('/delete-set/{matchId}/{setNumber}', [MiniMatchController::class, 'deleteSetResult']);
         Route::delete('/delete/{matchId}', [MiniMatchController::class, 'destroy']);
         // Xác nhận kết quả (QR Code)
         Route::get('/{matchId}/generate-qr', [MiniMatchController::class, 'generateQr']);
         Route::post('/confirm-result/{matchId}', [MiniMatchController::class, 'confirmResult']);
+        // Trình lọc trận đấu
+        Route::get('/index', [MiniMatchController::class, 'listMiniMatch']);
     });
 
     Route::prefix('send-message')->group(function () {
         Route::post('/{tournamentId}', [SendMessageController::class, 'storeMessage']);
         Route::get('/index/{tournamentId}', [SendMessageController::class, 'getMessages']);
+    });
+
+    Route::prefix('competition-locations')->group(function () {
+        Route::get('/index', [CompetitionLocationController::class, 'index']);
+    });
+
+    Route::prefix('follows')->group(function () {
+        Route::get('/index', [FollowController::class, 'index']);
+        Route::post('/store', [FollowController::class, 'store']);
+        Route::delete('/delete', [FollowController::class, 'destroy']);
+    });
+
+    Route::prefix('sports')->group(function () {
+        Route::get('/index', [SportController::class, 'index']);
     });
 });

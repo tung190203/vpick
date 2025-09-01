@@ -40,4 +40,9 @@ class Location extends Model
     
         return $query->where($field, 'like', '%' . $value . '%');
     }
+
+    public function competitionLocations()
+    {
+        return $this->hasMany(CompetitionLocation::class);
+    }
 }

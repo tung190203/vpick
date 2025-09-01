@@ -21,6 +21,11 @@ class Sport extends Model
         return $this->hasMany(MiniTournament::class, 'sport_id');
     }
 
+    public function competitionLocations()
+    {
+        return $this->belongsToMany(CompetitionLocation::class, 'competition_location_sport', 'sport_id', 'competition_location_id');
+    }
+
     public static function boot()
     {
         parent::boot();

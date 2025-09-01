@@ -12,4 +12,9 @@ class CompetitionLocationYard extends Model
         'competition_location_id',
         'yard_number',
     ];
+
+    public function competitionLocation()
+    {
+        return $this->belongsTo(CompetitionLocation::class);
+    }
 }
