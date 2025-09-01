@@ -23,6 +23,7 @@ class MessageResource extends JsonResource
             'meta' => $this->meta,
             'created_at' => $this->created_at->toDateTimeString(),
             'updated_at' => $this->updated_at->toDateTimeString(),
+            'is_own' => $this->user_id === auth()->id(),
         ];
     }
 }
