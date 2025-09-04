@@ -48,7 +48,6 @@ export const useUserStore = defineStore("user", () => {
     user.id = null;
     localStorage.removeItem(LOCAL_STORAGE_KEY.LOGIN_TOKEN)
     localStorage.removeItem(LOCAL_STORAGE_KEY.REFRESH_TOKEN);
-    localStorage.removeItem(LOCAL_STORAGE_KEY.VERIFY);
   };
 
   const logoutUser = async () => {

@@ -8,7 +8,6 @@ use App\Http\Controllers\MiniParticipantController;
 use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VerificationController;
-use App\Http\Controllers\VerifiedController;
 use App\Http\Controllers\ClubController;
 use App\Http\Controllers\FollowController;
 use App\Http\Controllers\HomeController;
@@ -46,10 +45,6 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::prefix('user')->group(function () {
         Route::post('/update', [UserController::class, 'update']);
-    });
-    Route::prefix('verification')->group(function () {
-        Route::post('/create', [VerifiedController::class, 'create']);
-        Route::get('/show', [VerifiedController::class, 'show']);
     });
     Route::prefix('tournaments')->group(function () {
         Route::get('/index', [TournamentController::class, 'index']);

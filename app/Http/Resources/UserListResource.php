@@ -18,7 +18,6 @@ class UserListResource extends JsonResource
             'id' => $this->id,
             'full_name' => $this->full_name,
             'avatar_url' => $this->avatar_url,
-            'vndupr_score' => $this->vndupr_score,
         ];
     }
 }

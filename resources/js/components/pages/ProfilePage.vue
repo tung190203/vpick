@@ -18,11 +18,6 @@
                     <div><span class="font-medium">VNDUPR:</span> {{ getUser.vndupr_score }}</div> |
                     <div><span class="font-medium">Tier:</span> {{ getUser.tier ?? 'Chưa phân cấp' }}</div>
                 </div>
-                <div class="text-xs font-bold flex jutify-start items-cente select-none"
-                    :class="verifyStatusColor(getVerify.status)">
-                    <component :is="verifyStatusIcon(getVerify.status)" class="w-4 h-4 mr-1" />
-                    {{ verifyStatusText(getVerify.status) }}
-                </div>
             </div>
         </div>
 
@@ -237,16 +232,13 @@ import PerformanceChart from '../molecules/PerformanceChart.vue'
 import { EyeIcon, EyeSlashIcon, ClockIcon } from '@heroicons/vue/24/outline'
 import { CheckCircleIcon, XCircleIcon } from '@heroicons/vue/24/solid'
 import { useUserStore } from '@/store/auth'
-import { useVerifyStore } from '@/store/verify'
 import { storeToRefs } from 'pinia'
 import { toast } from 'vue3-toastify'
 
 const userData = localStorage.getItem(LOCAL_STORAGE_USER.USER)
 const userStore = useUserStore()
-const verifyStore = useVerifyStore()
 const { getUser } = storeToRefs(userStore)
 const { getRole } = storeToRefs(userStore)
-const { getVerify } = storeToRefs(verifyStore)
 const player = userData ? JSON.parse(userData) : {};
 
 const tabs = getRole.value === ROLE.PLAYER
@@ -266,45 +258,6 @@ const password = ref('')
 const avatarPreview = ref(null)
 const fileInput = ref(null)
 const showPassword = ref(false)
-
-const verifyStatusColor = (status) => {
-    switch (status) {
-        case "pending":
-            return "text-yellow-500";
-        case "approved":
-            return "text-green-500";
-        case "rejected":
-            return "text-red-500";
-        default:
-            return "text-gray-500";
-    }
-}
-
-const verifyStatusText = (status) => {
-    switch (status) {
-        case "pending":
-            return "Chờ xác minh điểm vndupr";
-        case "approved":
-            return "Đã xác minh điểm vndupr";
-        case "rejected":
-            return "Đã từ chối xác minh";
-        default:
-            return "Không xác định";
-    }
-}
-
-const verifyStatusIcon = (status) => {
-    switch (status) {
-        case "pending":
-            return ClockIcon;
-        case "approved":
-            return CheckCircleIcon;
-        case "rejected":
-            return XCircleIcon;
-        default:
-            return null;
-    }
-}
 
 const handleAvatarUpload = (e) => {
     const file = e.target.files[0]

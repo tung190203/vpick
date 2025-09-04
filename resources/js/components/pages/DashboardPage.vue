@@ -110,7 +110,6 @@
       </div>
     </div>
   </div>
-  <BeginnerPopup :show="showSkillPopup" :onClose="() => (showSkillPopup = false)" :onConfirm="handleSkillConfirm" />
 </template>
 
 
@@ -120,13 +119,8 @@ import { Swiper, SwiperSlide } from 'swiper/vue'
 import { Autoplay } from 'swiper/modules'
 import 'swiper/css'
 import 'swiper/css/autoplay'
-import { onMounted, ref } from 'vue'
-import BeginnerPopup from '@/components/molecules/BeginnerPopup.vue'
 import { useUserStore } from '@/store/auth'
-import { useVerifyStore } from '@/store/verify'
 import { storeToRefs } from 'pinia'
-import { toast } from 'vue3-toastify'
-import { LOCAL_STORAGE_KEY } from "@/constants/index.js";
 
 const banners = [
   new URL('@/assets/images/pickleball-banner.png', import.meta.url).href,
@@ -134,50 +128,8 @@ const banners = [
   new URL('@/assets/images/pickleball-banner-2.png', import.meta.url).href,
 ]
 
-
-const showSkillPopup = ref(true)
 const userStore = useUserStore()
-const verifyStore = useVerifyStore()
 const { getUser } = storeToRefs(userStore)
-
-function checkBeginner() {
-  const verified = localStorage.getItem(LOCAL_STORAGE_KEY.VERIFY);
-  if (verified) {
-    showSkillPopup.value = false;
-  } else {
-    showSkillPopup.value = true;
-  }
-}
-
-onMounted(async() => {
-  await checkBeginner()
-})
-
-const handleSkillConfirm = async (data) => {
-  try {
-    const { vndupr_score } = data.level
-    const certified_file = data.certified_file || null
-    const verifier_id = data.verifier_id || null
-
-    const formData = new FormData()
-    formData.append('user_id', getUser.value.id)
-    formData.append('vndupr_score', vndupr_score)
-
-    if (verifier_id) {
-      formData.append('verifier_id', verifier_id)
-    }
-
-    if (certified_file) {
-      formData.append('certified_file', certified_file)
-    }
-
-    await verifyStore.createVerification(formData)
-    showSkillPopup.value = false
-    toast.success('Đã xác nhận trình độ thành công!')
-  } catch (error) {
-    console.error('Error updating skill level:', error)
-  }
-}
 
 const tournaments = [
   { id: 1, name: 'Giải CLB ABC', date: '2025-08-01', location: 'Hà Nội' },

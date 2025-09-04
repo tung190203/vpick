@@ -2,7 +2,6 @@
 import { reactive, computed } from 'vue'
 import useVuelidate from '@vuelidate/core'
 import { required, email, minLength, helpers } from '@vuelidate/validators'
-import { useVerifyStore } from '@/store/verify'
 import Button from '@/components/atoms/Button.vue'
 import { useUserStore } from '@/store/auth'
 import { useRouter } from 'vue-router'
@@ -11,7 +10,6 @@ import { storeToRefs } from 'pinia'
 
 const router = useRouter()
 const userStore = useUserStore()
-const verifyStore = useVerifyStore()
 const { getRole: userRole } = storeToRefs(userStore);
 
 const data = reactive({
@@ -37,7 +35,6 @@ const login = async () => {
   if (!v$.value.$invalid) {
     try {
       await userStore.loginUser(data)
-      await verifyStore.showVerification()
       toast.success('Đăng nhập thành công!')
       const roleRouteMap = {
         user: 'dashboard',

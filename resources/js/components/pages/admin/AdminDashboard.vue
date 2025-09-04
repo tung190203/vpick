@@ -64,12 +64,8 @@ import { Swiper, SwiperSlide } from 'swiper/vue'
 import { Autoplay } from 'swiper/modules'
 import 'swiper/css'
 import 'swiper/css/autoplay'
-import { onMounted, ref } from 'vue'
 import { useUserStore } from '@/store/auth'
-import { useVerifyStore } from '@/store/verify'
 import { storeToRefs } from 'pinia'
-import { toast } from 'vue3-toastify'
-import { LOCAL_STORAGE_KEY } from "@/constants/index.js";
 
 const banners = [
   new URL('@/assets/images/pickleball-banner.png', import.meta.url).href,
