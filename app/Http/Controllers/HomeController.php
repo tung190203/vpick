@@ -52,15 +52,23 @@ class HomeController extends Controller
             ->orderBy('order', 'asc')
             ->get();
         $myClub = Club::with('members')
-            ->whereHas('members', function ($query) use ($userId) {
-                $query->where('user_id', $userId);
+            ->whereHas('members', fn($q) => $q->where('user_id', $userId))
+            ->get();
+
+            $leaderboard = Club::with(['members.vnduprScores' => fn($q) => $q->where('score_type', 'vndupr_score')])
+            ->get()
+            ->map(function($club) {
+                $club->members_max_vndupr_score = $club->members
+                    ->map(function($member) {
+                        // Nếu chưa có score thì 0
+                        return $member->vnduprScores->max('score_value') ?? 0;
+                    })
+                    ->max(); // max trong club
+                return $club;
             })
-            ->get();
-        $leaderboard = Club::with('members')
-            ->withMax('members', 'vndupr_score')
-            ->orderByDesc('members_max_vndupr_score')
-            ->take(5)
-            ->get();
+            ->sortByDesc('members_max_vndupr_score')
+            ->take(5);
+        
 
         return response()->json([
             'message' => 'Welcome to the Home Page!',

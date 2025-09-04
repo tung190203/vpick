@@ -21,16 +21,9 @@ class ClubResource extends JsonResource
             'location' => $this->location,
             'logo_url' => $this->logo_url,
             'created_by' => $this->created_by,
-            'members' => $this->whenLoaded('members', function () {
-                return $this->members->map(function ($member) {
-                    $user = new UserListResource($member);
-                    return array_merge($user->toArray(request()), [
-                        'is_manager' => (bool) $member->pivot->is_manager,
-                    ]);
-                });
-            }),
-            'quantity_members' => $this->members->count(),
-            'highest_score' => $this->members->max('vndupr_score') ?? 0,
+            'members' => UserListResource::collection($this->whenLoaded('members')),
+            'quantity_members' => $this->whenLoaded('members', fn() => $this->members->count(), 0),
+            'highest_score' => $this->whenLoaded('members', fn() => $this->members->max(fn($m) => $m->vnduprScores->first()?->score_value ?? 0), 0),
         ];
     }
 }

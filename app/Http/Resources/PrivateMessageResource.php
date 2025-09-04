@@ -23,7 +23,7 @@ class PrivateMessageResource extends JsonResource
             'attachment_url' => $this->attachment_url,
             'attachment_type' => $this->attachment_type,
             'is_read' => $this->is_read,
-            'read_at' => $this->read_at ? $this->read_at->toDateTimeString() : null,
+            'read_at' => $this->read_at instanceof \Carbon\Carbon ? $this->read_at->toDateTimeString() : $this->read_at,
             'is_own' => $this->sender_id === auth()->id(),
         ];
     }
