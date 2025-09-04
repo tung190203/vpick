@@ -10,7 +10,6 @@ use App\Models\Club;
 use App\Models\CompetitionLocation;
 use App\Models\CompetitionLocationYard;
 use App\Models\User;
-use App\Models\UserBadge;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -33,7 +32,6 @@ class DatabaseSeeder extends Seeder
             ClubMemberSeeder::class,
             SportSeeder::class,
             RefereeSeeder::class,
-            VerifySeeder::class,
             TournamentFullSeeder::class,
             MiniTournamentFullSeeder::class,
             FollowSeeder::class,

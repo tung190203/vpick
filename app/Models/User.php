@@ -25,9 +25,7 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         'avatar_url',
         'location_id',
         'about',
-        'vndupr_score',
         'google_id',
-        'tier',
         'role',
         'email_verified_at',
         'is_profile_completed'
@@ -84,9 +82,5 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
     public function referee()
     {
         return $this->hasOne(Referee::class);
-    }
-    public function verify()
-    {
-        return $this->hasOne(Verify::class);
     }
 }

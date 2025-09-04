@@ -22,8 +22,6 @@ class UserResource extends JsonResource
             'location_id' => $this->location_id,
             'about' => $this->about,
             'role' => $this->role,
-            'tier' => $this->tier,
-            'vndupr_score' => $this->vndupr_score,
             'email_verified_at' => $this->email_verified_at,
             'is_profile_completed' => $this->is_profile_completed,
         ];

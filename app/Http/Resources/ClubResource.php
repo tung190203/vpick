@@ -4,7 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use App\Http\Resources\UserResource;
+use App\Http\Resources\UserListResource;
 
 class ClubResource extends JsonResource
 {
@@ -23,7 +23,7 @@ class ClubResource extends JsonResource
             'created_by' => $this->created_by,
             'members' => $this->whenLoaded('members', function () {
                 return $this->members->map(function ($member) {
-                    $user = new UserResource($member);
+                    $user = new UserListResource($member);
                     return array_merge($user->toArray(request()), [
                         'is_manager' => (bool) $member->pivot->is_manager,
                     ]);

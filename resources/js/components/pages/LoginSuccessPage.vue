@@ -12,11 +12,9 @@
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import { LOCAL_STORAGE_KEY, LOCAL_STORAGE_USER, ROLE } from '@/constants/index.js'
-import { useVerifyStore } from '@/store/verify.js'
 
 const router = useRouter()
 const route = useRoute()
-const verifyStore = useVerifyStore()
 
 const token = route.query.access_token
 const type = route.query.token_type || 'Bearer'
@@ -58,7 +56,6 @@ async function fetchUser(token, type) {
 if (token) {
   setTimeout(async () => {
     localStorage.setItem(LOCAL_STORAGE_KEY.LOGIN_TOKEN, token)
-    await verifyStore.showVerification()
     await fetchUser(token, type)
   }, 1000)
 } else {
