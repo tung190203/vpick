@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -206,6 +205,18 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
     {
         return $this->hasMany(UserSport::class);
     }
+
+    public function vnduprScores()
+{
+    return $this->hasManyThrough(
+        UserSportScore::class,
+        UserSport::class,
+        'user_id',      // FK trên bảng user_sport
+        'user_sport_id',// FK trên bảng user_sport_scores
+        'id',           // PK trên users
+        'id'            // PK trên user_sport
+    )->where('score_type', 'vndupr_score');
+}
 
     public function clubs()
     {

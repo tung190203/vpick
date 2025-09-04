@@ -2162,7 +2162,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --form "address=opfuudtdsufvyvddqamni"\
     --form "date_of_birth=2025-09-04"\
     --form "score_value[]=30"\
-    --form "avatar_url=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpElryJy" </code></pre></div>
+    --form "avatar_url=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpItbVMR" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -2287,7 +2287,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpElryJy</code></p>
+<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpItbVMR</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>location_id</code></b>&nbsp;&nbsp;
@@ -2568,8 +2568,8 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Accept: application/json" \
     --data "{
     \"name\": \"consequatur\",
-    \"start_date\": \"2025-09-04T11:05:46\",
-    \"end_date\": \"2025-09-04T11:05:46\",
+    \"start_date\": \"2025-09-04T14:36:26\",
+    \"end_date\": \"2025-09-04T14:36:26\",
     \"location\": \"consequatur\",
     \"level\": \"local\",
     \"description\": \"Dolores dolorum amet iste laborum eius est dolor.\",
@@ -2600,8 +2600,8 @@ const headers = {
 
 let body = {
     "name": "consequatur",
-    "start_date": "2025-09-04T11:05:46",
-    "end_date": "2025-09-04T11:05:46",
+    "start_date": "2025-09-04T14:36:26",
+    "end_date": "2025-09-04T14:36:26",
     "location": "consequatur",
     "level": "local",
     "description": "Dolores dolorum amet iste laborum eius est dolor.",
@@ -2715,10 +2715,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="start_date"                data-endpoint="POSTapi-tournaments-store"
-               value="2025-09-04T11:05:46"
+               value="2025-09-04T14:36:26"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-09-04T11:05:46</code></p>
+<p>Must be a valid date. Example: <code>2025-09-04T14:36:26</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>end_date</code></b>&nbsp;&nbsp;
@@ -2726,10 +2726,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="end_date"                data-endpoint="POSTapi-tournaments-store"
-               value="2025-09-04T11:05:46"
+               value="2025-09-04T14:36:26"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-09-04T11:05:46</code></p>
+<p>Must be a valid date. Example: <code>2025-09-04T14:36:26</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>location</code></b>&nbsp;&nbsp;
@@ -3001,8 +3001,8 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Accept: application/json" \
     --data "{
     \"name\": \"consequatur\",
-    \"start_date\": \"2025-09-04T11:05:46\",
-    \"end_date\": \"2025-09-04T11:05:46\",
+    \"start_date\": \"2025-09-04T14:36:26\",
+    \"end_date\": \"2025-09-04T14:36:26\",
     \"location\": \"consequatur\",
     \"level\": \"local\",
     \"description\": \"Dolores dolorum amet iste laborum eius est dolor.\",
@@ -3033,8 +3033,8 @@ const headers = {
 
 let body = {
     "name": "consequatur",
-    "start_date": "2025-09-04T11:05:46",
-    "end_date": "2025-09-04T11:05:46",
+    "start_date": "2025-09-04T14:36:26",
+    "end_date": "2025-09-04T14:36:26",
     "location": "consequatur",
     "level": "local",
     "description": "Dolores dolorum amet iste laborum eius est dolor.",
@@ -3160,10 +3160,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="start_date"                data-endpoint="POSTapi-tournaments-update--id-"
-               value="2025-09-04T11:05:46"
+               value="2025-09-04T14:36:26"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-09-04T11:05:46</code></p>
+<p>Must be a valid date. Example: <code>2025-09-04T14:36:26</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>end_date</code></b>&nbsp;&nbsp;
@@ -3171,10 +3171,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="end_date"                data-endpoint="POSTapi-tournaments-update--id-"
-               value="2025-09-04T11:05:46"
+               value="2025-09-04T14:36:26"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-09-04T11:05:46</code></p>
+<p>Must be a valid date. Example: <code>2025-09-04T14:36:26</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>location</code></b>&nbsp;&nbsp;
@@ -3576,7 +3576,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --form "name=consequatur"\
     --form "location=consequatur"\
     --form "created_by=consequatur"\
-    --form "logo_url=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpPfX9BH" </code></pre></div>
+    --form "logo_url=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/php5mukEe" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -3706,7 +3706,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpPfX9BH</code></p>
+<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/php5mukEe</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>created_by</code></b>&nbsp;&nbsp;
@@ -3874,7 +3874,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Content-Type: multipart/form-data" \
     --header "Accept: application/json" \
     --form "location=consequatur"\
-    --form "logo_url=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpMmhMNc" </code></pre></div>
+    --form "logo_url=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpnTdGOE" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -4014,7 +4014,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpMmhMNc</code></p>
+<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpnTdGOE</code></p>
         </div>
         </form>
 
@@ -4687,7 +4687,7 @@ Must be one of:
     --form "name=mqeopfuudtdsufvyvddqa"\
     --form "description=Dolores dolorum amet iste laborum eius est dolor."\
     --form "match_type=3"\
-    --form "starts_at=2025-09-04T11:05:46"\
+    --form "starts_at=2025-09-04T14:36:26"\
     --form "duration_minutes=66"\
     --form "is_private="\
     --form "fee=auto_split"\
@@ -4707,7 +4707,7 @@ Must be one of:
     --form "allow_participant_add_friends="\
     --form "send_notification="\
     --form "status=3"\
-    --form "poster=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpBovZAl" </code></pre></div>
+    --form "poster=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/php3WixsK" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -4725,7 +4725,7 @@ body.append('sport_id', 'consequatur');
 body.append('name', 'mqeopfuudtdsufvyvddqa');
 body.append('description', 'Dolores dolorum amet iste laborum eius est dolor.');
 body.append('match_type', '3');
-body.append('starts_at', '2025-09-04T11:05:46');
+body.append('starts_at', '2025-09-04T14:36:26');
 body.append('duration_minutes', '66');
 body.append('is_private', '');
 body.append('fee', 'auto_split');
@@ -4836,7 +4836,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpBovZAl</code></p>
+<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/php3WixsK</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>sport_id</code></b>&nbsp;&nbsp;
@@ -4890,10 +4890,10 @@ Must be one of:
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="starts_at"                data-endpoint="POSTapi-mini-tournaments-store"
-               value="2025-09-04T11:05:46"
+               value="2025-09-04T14:36:26"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-09-04T11:05:46</code></p>
+<p>Must be a valid date. Example: <code>2025-09-04T14:36:26</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>duration_minutes</code></b>&nbsp;&nbsp;
@@ -5360,7 +5360,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --form "name=mqeopfuudtdsufvyvddqa"\
     --form "description=Dolores dolorum amet iste laborum eius est dolor."\
     --form "match_type=3"\
-    --form "starts_at=2025-09-04T11:05:46"\
+    --form "starts_at=2025-09-04T14:36:26"\
     --form "duration_minutes=66"\
     --form "is_private="\
     --form "fee=auto_split"\
@@ -5380,7 +5380,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --form "allow_participant_add_friends="\
     --form "send_notification="\
     --form "status=3"\
-    --form "poster=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phprhqtGU" </code></pre></div>
+    --form "poster=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpQuKtQc" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -5398,7 +5398,7 @@ body.append('sport_id', 'consequatur');
 body.append('name', 'mqeopfuudtdsufvyvddqa');
 body.append('description', 'Dolores dolorum amet iste laborum eius est dolor.');
 body.append('match_type', '3');
-body.append('starts_at', '2025-09-04T11:05:46');
+body.append('starts_at', '2025-09-04T14:36:26');
 body.append('duration_minutes', '66');
 body.append('is_private', '');
 body.append('fee', 'auto_split');
@@ -5521,7 +5521,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phprhqtGU</code></p>
+<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpQuKtQc</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>sport_id</code></b>&nbsp;&nbsp;
@@ -5575,10 +5575,10 @@ Must be one of:
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="starts_at"                data-endpoint="POSTapi-mini-tournaments-update--id-"
-               value="2025-09-04T11:05:46"
+               value="2025-09-04T14:36:26"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-09-04T11:05:46</code></p>
+<p>Must be a valid date. Example: <code>2025-09-04T14:36:26</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>duration_minutes</code></b>&nbsp;&nbsp;
@@ -6799,7 +6799,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Content-Type: application/json" \
     --header "Accept: application/json" \
     --data "{
-    \"filter\": \"leaderboard\",
+    \"filter\": \"matches\",
     \"per_page\": 17
 }"
 </code></pre></div>
@@ -6816,7 +6816,7 @@ const headers = {
 };
 
 let body = {
-    "filter": "leaderboard",
+    "filter": "matches",
     "per_page": 17
 };
 
@@ -6934,10 +6934,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="filter"                data-endpoint="GETapi-mini-matches-index--miniTournamentId-"
-               value="leaderboard"
+               value="matches"
                data-component="body">
     <br>
-<p>Example: <code>leaderboard</code></p>
+<p>Example: <code>matches</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>matches</code></li> <li><code>my_matches</code></li> <li><code>leaderboard</code></li></ul>
         </div>
@@ -6974,7 +6974,7 @@ truyền mảng lên là team</h2>
     --header "Accept: application/json" \
     --data "{
     \"round\": \"consequatur\",
-    \"scheduled_at\": \"2025-09-04T11:05:46\",
+    \"scheduled_at\": \"2025-09-04T14:36:26\",
     \"team1_name\": \"mqeopfuudtdsufvyvddqa\",
     \"team2_name\": \"mniihfqcoynlazghdtqtq\",
     \"yard_number\": \"xbajwbpilpmufinllwloa\",
@@ -6995,7 +6995,7 @@ const headers = {
 
 let body = {
     "round": "consequatur",
-    "scheduled_at": "2025-09-04T11:05:46",
+    "scheduled_at": "2025-09-04T14:36:26",
     "team1_name": "mqeopfuudtdsufvyvddqa",
     "team2_name": "mniihfqcoynlazghdtqtq",
     "yard_number": "xbajwbpilpmufinllwloa",
@@ -7133,10 +7133,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="scheduled_at"                data-endpoint="POSTapi-mini-matches-store--miniTournamentId-"
-               value="2025-09-04T11:05:46"
+               value="2025-09-04T14:36:26"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-09-04T11:05:46</code></p>
+<p>Must be a valid date. Example: <code>2025-09-04T14:36:26</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>referee</code></b>&nbsp;&nbsp;
@@ -7215,7 +7215,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     \"round\": \"consequatur\",
     \"team1_name\": \"mqeopfuudtdsufvyvddqa\",
     \"team2_name\": \"mniihfqcoynlazghdtqtq\",
-    \"scheduled_at\": \"2025-09-04T11:05:46\",
+    \"scheduled_at\": \"2025-09-04T14:36:26\",
     \"yard_number\": \"xbajwbpilpmufinllwloa\",
     \"name_of_match\": \"uydlsmsjuryvojcybzvrb\"
 }"
@@ -7236,7 +7236,7 @@ let body = {
     "round": "consequatur",
     "team1_name": "mqeopfuudtdsufvyvddqa",
     "team2_name": "mniihfqcoynlazghdtqtq",
-    "scheduled_at": "2025-09-04T11:05:46",
+    "scheduled_at": "2025-09-04T14:36:26",
     "yard_number": "xbajwbpilpmufinllwloa",
     "name_of_match": "uydlsmsjuryvojcybzvrb"
 };
@@ -7394,10 +7394,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="scheduled_at"                data-endpoint="POSTapi-mini-matches-update--matchId-"
-               value="2025-09-04T11:05:46"
+               value="2025-09-04T14:36:26"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-09-04T11:05:46</code></p>
+<p>Must be a valid date. Example: <code>2025-09-04T14:36:26</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>referee</code></b>&nbsp;&nbsp;
@@ -8269,7 +8269,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Accept: application/json" \
     --form "type=text"\
     --form "content=consequatur"\
-    --form "file=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/php7E1als" </code></pre></div>
+    --form "file=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phppjnlje" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -8412,7 +8412,7 @@ Must be one of:
                value=""
                data-component="body">
     <br>
-<p>Must be a file. Must not be greater than 10240 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/php7E1als</code></p>
+<p>Must be a file. Must not be greater than 10240 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phppjnlje</code></p>
         </div>
         </form>
 
@@ -8727,7 +8727,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Accept: application/json" \
     --form "receiver_id=consequatur"\
     --form "message=consequatur"\
-    --form "attachment=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpX6wrQg" </code></pre></div>
+    --form "attachment=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpZOgPXH" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -8856,7 +8856,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Must be a file. Must not be greater than 10240 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpX6wrQg</code></p>
+<p>Must be a file. Must not be greater than 10240 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpZOgPXH</code></p>
         </div>
         </form>
 
