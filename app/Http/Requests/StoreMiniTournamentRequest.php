@@ -35,7 +35,9 @@ class StoreMiniTournamentRequest extends FormRequest
             'competition_location_id' => 'nullable|exists:competition_locations,id',
 
             'is_private' => 'boolean',
+            'fee' => 'nullable|in:' . implode(',', MiniTournament::FEE),
             'fee_amount' => 'nullable|integer|min:0',
+            'prize_pool' => 'nullable|integer|min:0',
             'max_players' => 'nullable|integer|min:1',
 
             'enable_dupr' => 'boolean',
@@ -45,18 +47,20 @@ class StoreMiniTournamentRequest extends FormRequest
             'max_rating' => 'nullable|numeric|min:0',
 
             'gender_policy' => 'required|integer|in:' .implode(',', MiniTournament::GENDER),
-            'min_age' => 'nullable|integer|min:1',
-            'max_age' => 'nullable|integer|min:1',
 
             'repeat_type' => 'required|integer|in:' . implode(',', MiniTournament::REPEAT),
             'role_type' => 'required|integer|in:' . implode(',', MiniTournament::ROLE),
-            'lock_cancellation' => 'boolean',
+            'lock_cancellation' => 'required|in:' . implode(',', MiniTournament::LOCK_CANCELLATION),
+            'age_group' => 'required|integer|in:' . implode(',', MiniTournament::AGE_GROUP),
 
             'auto_approve' => 'boolean',
             'allow_participant_add_friends' => 'boolean',
             'send_notification' => 'boolean',
 
-            'status' => 'required|integer|in:' . implode(',', MiniTournament::STATUS)
+            'status' => 'required|integer|in:' . implode(',', MiniTournament::STATUS),
+
+            'invite_user' => 'nullable|array',
+            'invite_user.*' => 'exists:users,id',
         ];
     }
 }

@@ -52,9 +52,15 @@ class CompetitionLocation extends Model
         return $this->hasMany(CompetitionLocationYard::class, 'competition_location_id');
     }
 
+    public function facilities()
+{
+        return $this->belongsToMany(Facility::class, 'competition_location_facility', 'competition_location_id', 'facility_id');
+}
+
+
     public static function scopeWithFullRelations($query)
     {
-        return $query->with(['location', 'sports', 'follows', 'competitionLocationYards']);
+        return $query->with(['location', 'sports', 'follows', 'competitionLocationYards','facilities']);
     }
 
     public function scopeInBounds($query, $minLat, $maxLat, $minLng, $maxLng)
@@ -93,7 +99,16 @@ class CompetitionLocation extends Model
             )
             ->when(
                 !empty($filters['number_of_yards']),
-                fn($q) => $q->whereHas('competitionLocationYards', fn($yq) => $yq->where('number_of_yards', $filters['number_of_yards']))
+                fn($q) => $q->withCount('competitionLocationYards')
+                             ->having('competition_location_yards_count', '>=', $filters['number_of_yards'])
+            )            
+            ->when(
+                !empty($filters['yard_type']) && is_array($filters['yard_type']),
+                fn($q) => $q->whereHas('competitionLocationYards', fn($yq) => $yq->whereIn('yard_type', $filters['yard_type']))
+            )
+            ->when(
+                !empty($filters['facility_id']) && is_array($filters['facility_id']),
+                fn($q) => $q->whereHas('facilities', fn($fq) => $fq->whereIn('facilities.id', $filters['facility_id']))
             );
     }
 

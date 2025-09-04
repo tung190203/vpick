@@ -39,6 +39,9 @@ class AuthController extends Controller
 
         $refreshToken = JWTAuth::claims(['type' => 'refresh'])->fromUser(auth()->user());
 
+        $user->last_login = now();
+        $user->save();
+
         return response()->json($this->responseWithToken($token, $refreshToken, $user));
     }
 
@@ -175,7 +178,8 @@ class AuthController extends Controller
             $token = JWTAuth::fromUser($user);
 
             $refreshToken = JWTAuth::claims(['type' => 'refresh'])->fromUser(auth()->user());
-
+            $user->last_login = now();
+            $user->save();
             if ($request->header('User-Agent') && strpos($request->header('User-Agent'), 'MobileApp') !== false) {
                 return response()->json($this->responseWithToken($token, $refreshToken, $user));
             } else {

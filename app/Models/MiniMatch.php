@@ -19,6 +19,8 @@ class MiniMatch extends Model
         'referee_id',
         'status',
         'participant_win_id',
+        'yard_number',
+        'name_of_match',
     ];
 
     const PER_PAGE = 10;
@@ -93,14 +95,18 @@ class MiniMatch extends Model
             )
             ->when(
                 !empty($filters['keyword']),
-                fn($q) => $q->whereHas('miniTournament.competitionLocation', function ($sub) use ($filters) {
-                    $sub->where('name', 'like', '%' . $filters['keyword'] . '%')
-                        ->orWhere('address', 'like', '%' . $filters['keyword'] . '%')
-                        ->orWhereHas(
-                            'location',
-                            fn($lq) => $lq->where('name', 'like', '%' . $filters['keyword'] . '%')
-                        );
-                })
+                fn($q) => $q->where('name_of_match', 'like', '%' . $filters['keyword'] . '%')
+                    ->orWhereHas('miniTournament', function ($sub) use ($filters) {
+                        $sub->where('name', 'like', '%' . $filters['keyword'] . '%')
+                            ->orWhereHas('competitionLocation', function ($locSub) use ($filters) {
+                                $locSub->where('name', 'like', '%' . $filters['keyword'] . '%')
+                                    ->orWhere('address', 'like', '%' . $filters['keyword'] . '%')
+                                    ->orWhereHas(
+                                        'location',
+                                        fn($lq) => $lq->where('name', 'like', '%' . $filters['keyword'] . '%')
+                                    );
+                            });
+                    })
             )
             ->when(
                 !empty($filters['date_from']),
@@ -110,73 +116,95 @@ class MiniMatch extends Model
                 ])
             )
             ->when(
-                !empty($filters['type']) && in_array($filters['type'], ['single', 'double']),
+                !empty($filters['type']) && is_array($filters['type']),
                 function ($q) use ($filters) {
-                    if ($filters['type'] === 'single') {
-                        $q->where(function ($sub) {
-                            $sub->whereHas('participant1', fn($p1) => $p1->whereNotNull('user_id')->whereNull('team_id'))
-                                ->orWhereHas('participant2', fn($p2) => $p2->whereNotNull('user_id')->whereNull('team_id'));
-                        });
-                    } else {
-                        $q->where(function ($sub) {
-                            $sub->whereHas('participant1', fn($p1) => $p1->whereNotNull('team_id')->whereNull('user_id'))
-                                ->orWhereHas('participant2', fn($p2) => $p2->whereNotNull('team_id')->whereNull('user_id'));
-                        });
-                    }
+                    $q->where(function ($subQuery) use ($filters) {
+                        foreach ($filters['type'] as $type) {
+                            if ($type === 'single') {
+                                $subQuery->orWhere(function ($sub) {
+                                    $sub->whereHas('participant1', fn($p1) => $p1->whereNotNull('user_id')->whereNull('team_id'))
+                                        ->orWhereHas('participant2', fn($p2) => $p2->whereNotNull('user_id')->whereNull('team_id'));
+                                });
+                            } elseif ($type === 'double') {
+                                $subQuery->orWhere(function ($sub) {
+                                    $sub->whereHas('participant1', fn($p1) => $p1->whereNotNull('team_id')->whereNull('user_id'))
+                                        ->orWhereHas('participant2', fn($p2) => $p2->whereNotNull('team_id')->whereNull('user_id'));
+                                });
+                            }
+                        }
+                    });
                 }
             )
             ->when(
                 !empty($filters['rating']),
                 function ($q) use ($filters) {
-                    $rating = (float) $filters['rating'];
-                    $q->whereHas('miniTournament', function ($tq) use ($rating) {
-                        $tq->where('min_rating', '<=', $rating)
-                            ->where('max_rating', '>=', $rating);
+                    $ratings = is_array($filters['rating']) ? $filters['rating'] : [$filters['rating']];
+                    $q->whereHas('miniTournament', function ($tq) use ($ratings) {
+                        foreach ($ratings as $rating) {
+                            $rating = (float) $rating;
+                            $tq->orWhere(function ($subQuery) use ($rating) {
+                                $subQuery->where('min_rating', '<=', $rating)
+                                    ->where('max_rating', '>=', $rating);
+                            });
+                        }
                     });
                 }
             )
             ->when(
-                !empty($filters['fee']) && in_array($filters['fee'], ['free', 'paid']),
+                !empty($filters['fee']) && is_array($filters['fee']),
                 function ($q) use ($filters) {
-                    if ($filters['fee'] === 'free') {
-                        $q->whereHas('miniTournament', fn($tq) => $tq->where('fee_amount', 0));
-                    } else {
-                        $q->whereHas('miniTournament', function ($tq) use ($filters) {
-                            $tq->whereBetween('fee_amount', [$filters['min_price'], $filters['max_price']]);
-                        });
-                    }
+                    $q->where(function ($subQuery) use ($filters) {
+                        foreach ($filters['fee'] as $feeType) {
+                            if ($feeType === 'free') {
+                                $subQuery->orWhereHas('miniTournament', fn($tq) => $tq->where('fee_amount', 0));
+                            } elseif ($feeType === 'paid') {
+                                $subQuery->orWhereHas('miniTournament', function ($tq) use ($filters) {
+                                    $tq->whereBetween('fee_amount', [$filters['min_price'], $filters['max_price']]);
+                                });
+                            }
+                        }
+                    });
                 }
             )
             ->when(
-                !empty($filters['time_of_day']) && in_array($filters['time_of_day'], ['morning', 'afternoon', 'evening']),
+                !empty($filters['time_of_day']) && is_array($filters['time_of_day']),
                 function ($q) use ($filters) {
-                    if ($filters['time_of_day'] === 'morning') {
-                        // Trước 11h
-                        $q->whereTime('scheduled_at', '<', '11:00:00');
-                    } elseif ($filters['time_of_day'] === 'afternoon') {
-                        // Từ 11h đến trước 16h
-                        $q->whereTime('scheduled_at', '>=', '11:00:00')
-                            ->whereTime('scheduled_at', '<', '16:00:00');
-                    } elseif ($filters['time_of_day'] === 'evening') {
-                        // Từ 16h trở đi
-                        $q->whereTime('scheduled_at', '>=', '16:00:00');
-                    }
+                    $q->where(function ($subQuery) use ($filters) {
+                        foreach ($filters['time_of_day'] as $timeOfDay) {
+                            if ($timeOfDay === 'morning') {
+                                $subQuery->orWhereTime('scheduled_at', '<', '11:00:00');
+                            } elseif ($timeOfDay === 'afternoon') {
+                                $subQuery->orWhere(function ($timeQuery) {
+                                    $timeQuery->whereTime('scheduled_at', '>=', '11:00:00')
+                                              ->whereTime('scheduled_at', '<', '16:00:00');
+                                });
+                            } elseif ($timeOfDay === 'evening') {
+                                $subQuery->orWhereTime('scheduled_at', '>=', '16:00:00');
+                            }
+                        }
+                    });
                 }
             )
             ->when(
-                !empty($filters['slot_status']) && in_array($filters['slot_status'], ['one_slot', 'two_slot', 'full_slot']),
+                !empty($filters['slot_status']) && is_array($filters['slot_status']),
                 function ($q) use ($filters) {
-                    if ($filters['slot_status'] === 'one_slot') {
-                        $q->whereRaw('(CASE WHEN participant1_id IS NULL THEN 1 ELSE 0 END + CASE WHEN participant2_id IS NULL THEN 1 ELSE 0 END) = 1');
-                    } elseif ($filters['slot_status'] === 'two_slot') {
-                        $q->where(function ($sub) {
-                            $sub->whereHas('participant1', fn($p) => $p->whereNotNull('team_id'))
-                                ->orWhereHas('participant2', fn($p) => $p->whereNotNull('team_id'));
-                        });
-                    } elseif ($filters['slot_status'] === 'full_slot') {
-                        $q->whereNull('participant1_id')
-                            ->whereNull('participant2_id');
-                    }
+                    $q->where(function ($subQuery) use ($filters) {
+                        foreach ($filters['slot_status'] as $slotStatus) {
+                            if ($slotStatus === 'one_slot') {
+                                $subQuery->orWhereRaw('(CASE WHEN participant1_id IS NULL THEN 1 ELSE 0 END + CASE WHEN participant2_id IS NULL THEN 1 ELSE 0 END) = 1');
+                            } elseif ($slotStatus === 'two_slot') {
+                                $subQuery->orWhere(function ($sub) {
+                                    $sub->whereHas('participant1', fn($p) => $p->whereNotNull('team_id'))
+                                        ->orWhereHas('participant2', fn($p) => $p->whereNotNull('team_id'));
+                                });
+                            } elseif ($slotStatus === 'full_slot') {
+                                $subQuery->orWhere(function ($sub) {
+                                    $sub->whereNull('participant1_id')
+                                        ->whereNull('participant2_id');
+                                });
+                            }
+                        }
+                    });
                 }
             );
     }

@@ -25,6 +25,11 @@ class Club extends Model
             ->withTimestamps();
     }
 
+    public function scopeWithFullRelations($query)
+    {
+        return $query->with('members', 'members.playTimes', 'members.sports', 'members.sports.sport');
+    }
+
     public function scopeSearch($query, $fillable, $searchTerm)
     {
         if ($searchTerm) {

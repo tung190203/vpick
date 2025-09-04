@@ -81,11 +81,14 @@ class MiniMatchController extends Controller
             'referee' => 'nullable|exists:referees,id',
             'team1_name' => 'nullable|string|max:255',
             'team2_name' => 'nullable|string|max:255',
+            'yard_number' => 'nullable|string|max:50',
+            'name_of_match' => 'nullable|string|max:255',
         ]);
 
-        $miniTournament = MiniTournament::findOrFail($miniTournamentId);
+        $miniTournament = MiniTournament::with('staff')->findOrFail($miniTournamentId);
+        $isOrganizer = $miniTournament->hasOrganizer(Auth::id());
 
-        if ((int) $miniTournament->created_by !== (int) Auth::id()) {
+        if (!$isOrganizer) {
             return ResponseHelper::error('Người dùng không có quyền tạo trận đấu trong giải đấu này', 403);
         }
 
@@ -125,6 +128,8 @@ class MiniMatchController extends Controller
             }
         }
 
+        $matchCount = MiniMatch::where('mini_tournament_id', $miniTournament->id)->count();
+        $defaultMatchName = 'Trận đấu số ' . ($matchCount + 1);
         // tạo trận đấu
         $match = MiniMatch::create([
             'mini_tournament_id' => $miniTournament->id,
@@ -134,6 +139,8 @@ class MiniMatchController extends Controller
             'referee_id' => $validated['referee'] ?? null,
             'status' => MiniMatch::STATUS_PENDING,
             'round' => $validated['round'] ?? null,
+            'yard_number' => $validated['yard_number'] ?? null,
+            'name_of_match' => $validated['name_of_match'] ?? $defaultMatchName,
         ]);
 
         $match = MiniMatch::withFullRelations()->findOrFail($match->id);
@@ -227,76 +234,80 @@ class MiniMatchController extends Controller
      * Cập nhật thông tin trận đấu trong kèo đấu
      */
 
-     public function update(Request $request, $matchId)
-     {
-         $validated = $request->validate([
-             'round' => 'nullable|string',
-             'participant1_id' => 'sometimes',
-             'participant2_id' => 'sometimes',
-             'team1_name' => 'nullable|string|max:255',
-             'team2_name' => 'nullable|string|max:255',
-             'scheduled_at' => 'nullable|date',
-             'referee' => 'nullable|exists:referees,id',
-         ]);
-     
-         $match = MiniMatch::with(['miniTournament', 'participant1', 'participant2'])->findOrFail($matchId);
-         $miniTournament = $match->miniTournament;
-     
-         if ((int) $miniTournament->created_by !== (int) Auth::id()) {
-             return ResponseHelper::error('Người dùng không có quyền sửa trận đấu trong giải đấu này', 403);
-         }
-     
-         // Xử lý participant 1
-         $p1 = array_key_exists('participant1_id', $validated)
-             ? $this->resolveParticipant(
-                 $validated['participant1_id'],
-                 $miniTournament->id,
-                 $match->participant1,
-                 $validated['team1_name'] ?? null
-             )
-             : $match->participant1;
-     
-         // Xử lý participant 2
-         $p2 = array_key_exists('participant2_id', $validated)
-             ? $this->resolveParticipant(
-                 $validated['participant2_id'],
-                 $miniTournament->id,
-                 $match->participant2,
-                 $validated['team2_name'] ?? null
-             )
-             : $match->participant2;
-     
-         if ($p1 && $p2 && $p1->id === $p2->id) {
-             return ResponseHelper::error('Người chơi không được trùng nhau', 400);
-         }
-     
-         $exists = MiniMatch::where('mini_tournament_id', $miniTournament->id)
-             ->where(function ($query) use ($p1, $p2) {
-                 $query->where(function ($q) use ($p1, $p2) {
-                     $q->where('participant1_id', $p1->id)->where('participant2_id', $p2->id);
-                 })->orWhere(function ($q) use ($p1, $p2) {
-                     $q->where('participant1_id', $p2->id)->where('participant2_id', $p1->id);
-                 });
-             })
-             ->where('id', '!=', $match->id)
-             ->exists();
-     
-         if ($exists) {
-             return ResponseHelper::error('Trận đấu giữa hai người chơi này đã tồn tại', 400);
-         }
-     
-         $match->update([
-             'participant1_id' => $p1?->id,
-             'participant2_id' => $p2?->id,
-             'scheduled_at' => $validated['scheduled_at'] ?? $match->scheduled_at,
-             'referee_id' => $validated['referee'] ?? $match->referee_id,
-             'round' => $validated['round'] ?? $match->round,
-         ]);
-     
-         $match = MiniMatch::withFullRelations()->findOrFail($match->id);
-     
-         return ResponseHelper::success(new MiniMatchResource($match), 'Cập nhật trận đấu thành công');
-     }     
+    public function update(Request $request, $matchId)
+    {
+        $validated = $request->validate([
+            'round' => 'nullable|string',
+            'participant1_id' => 'sometimes',
+            'participant2_id' => 'sometimes',
+            'team1_name' => 'nullable|string|max:255',
+            'team2_name' => 'nullable|string|max:255',
+            'scheduled_at' => 'nullable|date',
+            'referee' => 'nullable|exists:referees,id',
+            'yard_number' => 'nullable|string|max:50',
+            'name_of_match' => 'nullable|string|max:255',
+        ]);
+
+        $match = MiniMatch::with(['miniTournament', 'participant1', 'participant2'])->findOrFail($matchId);
+        $miniTournament = $match->miniTournament->load('staff');
+        $isOrganizer = $miniTournament->hasOrganizer(Auth::id());
+        if (!$isOrganizer) {
+            return ResponseHelper::error('Người dùng không có quyền sửa trận đấu trong giải đấu này', 403);
+        }
+
+        // Xử lý participant 1
+        $p1 = array_key_exists('participant1_id', $validated)
+            ? $this->resolveParticipant(
+                $validated['participant1_id'],
+                $miniTournament->id,
+                $match->participant1,
+                $validated['team1_name'] ?? null
+            )
+            : $match->participant1;
+
+        // Xử lý participant 2
+        $p2 = array_key_exists('participant2_id', $validated)
+            ? $this->resolveParticipant(
+                $validated['participant2_id'],
+                $miniTournament->id,
+                $match->participant2,
+                $validated['team2_name'] ?? null
+            )
+            : $match->participant2;
+
+        if ($p1 && $p2 && $p1->id === $p2->id) {
+            return ResponseHelper::error('Người chơi không được trùng nhau', 400);
+        }
+
+        $exists = MiniMatch::where('mini_tournament_id', $miniTournament->id)
+            ->where(function ($query) use ($p1, $p2) {
+                $query->where(function ($q) use ($p1, $p2) {
+                    $q->where('participant1_id', $p1->id)->where('participant2_id', $p2->id);
+                })->orWhere(function ($q) use ($p1, $p2) {
+                    $q->where('participant1_id', $p2->id)->where('participant2_id', $p1->id);
+                });
+            })
+            ->where('id', '!=', $match->id)
+            ->exists();
+
+        if ($exists) {
+            return ResponseHelper::error('Trận đấu giữa hai người chơi này đã tồn tại', 400);
+        }
+
+        $match->update([
+            'participant1_id' => $p1?->id,
+            'participant2_id' => $p2?->id,
+            'scheduled_at' => $validated['scheduled_at'] ?? $match->scheduled_at,
+            'referee_id' => $validated['referee'] ?? $match->referee_id,
+            'round' => $validated['round'] ?? $match->round,
+            'yard_number' => $validated['yard_number'] ?? $match->yard_number,
+            'name_of_match' => $validated['name_of_match'] ?? $match->name_of_match,
+        ]);
+
+        $match = MiniMatch::withFullRelations()->findOrFail($match->id);
+
+        return ResponseHelper::success(new MiniMatchResource($match), 'Cập nhật trận đấu thành công');
+    }
 
     /**
      * Thêm hoặc cập nhật kết quả 1 hiệp (set)
@@ -311,11 +322,10 @@ class MiniMatchController extends Controller
         ]);
 
         $match = MiniMatch::with('miniTournament')->findOrFail($matchId);
-        $tournament = $match->miniTournament;
-
-        // chỉ organizer mới được thêm/cập nhật set
-        if ((int) $tournament->created_by !== (int) Auth::id()) {
-            return ResponseHelper::error('Người dùng không có quyền thực thi', 403);
+        $tournament = $match->miniTournament->load('staff');
+        $isOrganizer = $tournament->hasOrganizer(Auth::id());
+        if (!$isOrganizer) {
+            return ResponseHelper::error('Người dùng không có quyền thêm kết quả trận đấu trong giải đấu này', 403);
         }
 
         // đảm bảo participant hợp lệ
@@ -363,10 +373,10 @@ class MiniMatchController extends Controller
     public function deleteSetResult($matchId, $setNumber)
     {
         $match = MiniMatch::with('miniTournament')->findOrFail($matchId);
-        $tournament = $match->miniTournament;
-
-        if ((int) $tournament->created_by !== (int) Auth::id()) {
-            return ResponseHelper::error('Người dùng không có quyền thực thi', 403);
+        $tournament = $match->miniTournament->load('staff');
+        $isOrganizer = $tournament->hasOrganizer(Auth::id());
+        if (!$isOrganizer) {
+            return ResponseHelper::error('Người dùng không có quyền xóa kết quả trận đấu trong giải đấu này', 403);
         }
 
         MiniMatchResult::where('mini_match_id', $match->id)
@@ -396,8 +406,9 @@ class MiniMatchController extends Controller
         }
 
         foreach ($matches as $match) {
-            $tournament = $match->miniTournament;
-            if ((int) $tournament->created_by !== (int) Auth::id()) {
+            $tournament = $match->miniTournament->load('staff');
+            $isOrganizer = $tournament->hasOrganizer(Auth::id());
+            if (!$isOrganizer) {
                 return ResponseHelper::error("Bạn không có quyền xóa trận đấu", 403);
             }
             if ($match->status === MiniMatch::STATUS_COMPLETED) {
@@ -430,7 +441,8 @@ class MiniMatchController extends Controller
     {
         $match = MiniMatch::with('results.participant.user')
             ->findOrFail($matchId);
-
+        $tournament = $match->miniTournament->load('staff');
+        $isOrganizer = $tournament->hasOrganizer(Auth::id());
         $participantIds = [$match->participant1_id, $match->participant2_id];
 
         $userParticipant = MiniParticipant::whereIn('id', $participantIds)
@@ -440,7 +452,7 @@ class MiniMatchController extends Controller
             })
             ->first();
 
-        if (!$userParticipant) {
+        if (!$userParticipant && !$isOrganizer) {
             return ResponseHelper::error('Bạn không có quyền xác nhận kết quả trận đấu này', 403);
         }
 
@@ -451,6 +463,9 @@ class MiniMatchController extends Controller
         if ($userParticipant->id == $match->participant1_id) {
             $match->participant1_confirm = true;
         } elseif ($userParticipant->id == $match->participant2_id) {
+            $match->participant2_confirm = true;
+        } elseif ($isOrganizer) {
+            $match->participant1_confirm = true;
             $match->participant2_confirm = true;
         }
 
@@ -487,10 +502,15 @@ class MiniMatchController extends Controller
             'sport_id' => 'sometimes|integer|exists:sports,id',
             'keyword' => 'sometimes|string|max:255',
             'rating' => 'sometimes',
-            'time_of_day' => 'sometimes|in:morning,afternoon,evening',
-            'slot_status' => 'sometimes|in:one_slot,two_slot,full_slot',
-            'type' => 'sometimes|in:single,double',
-            'fee' => 'sometimes|in:free,paid',
+            'rating.*' => 'integer',
+            'time_of_day' => 'sometimes|array',
+            'time_of_day.*' => 'in:morning,afternoon,evening',
+            'slot_status' => 'sometimes|array',
+            'slot_status.*' => 'in:one_slot,two_slot,full_slot',
+            'type' => 'sometimes|array',
+            'type.*' => 'in:single,double',
+            'fee' => 'sometimes|array',
+            'fee.*' => 'in:free,paid',
             'min_price' => 'sometimes|numeric|min:0',
             'max_price' => 'sometimes|numeric|min:0',
         ]);

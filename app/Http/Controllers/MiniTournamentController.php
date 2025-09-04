@@ -7,6 +7,7 @@ use App\Http\Requests\StoreMiniTournamentRequest;
 use App\Http\Resources\MiniTournamentResource;
 use App\Models\MiniParticipant;
 use App\Models\MiniTournament;
+use App\Models\MiniTournamentStaff;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -17,16 +18,31 @@ class MiniTournamentController extends Controller
      */
     public function store(StoreMiniTournamentRequest $request)
     {
-        $data = $request->validated();
-        $data['created_by'] = Auth::id();
+        $data = $request->safe()->except(['invite_user']);
 
         $miniTournament = MiniTournament::create($data);
-        MiniParticipant::create([
-            'mini_tournament_id' => $miniTournament->id,
-            'type' => 'user',
-            'user_id' => Auth::id(),
-            'is_confirmed' => true,
-        ]);
+        $miniTournament->staff()->attach(Auth::id(), ['role' => MiniTournamentStaff::ROLE_ORGANIZER]);
+
+        if ($data['role_type'] !== MiniTournament::ROLE_ORGANIZER) {
+            MiniParticipant::create([
+                'mini_tournament_id' => $miniTournament->id,
+                'type' => 'user',
+                'user_id' => Auth::id(),
+                'is_confirmed' => true,
+            ]);
+        }
+
+        if( $request->has('invite_user') ) {
+            $inviteUsers = $request->input('invite_user', []);
+            foreach ($inviteUsers as $userId) {
+                MiniParticipant::create([
+                    'mini_tournament_id' => $miniTournament->id,
+                    'type' => 'user',
+                    'user_id' => $userId,
+                    'is_confirmed' => true,
+                ]);
+            }
+        }
 
         if ($request->hasFile('poster')) {
             $posterPath = $request->file('poster')->store('posters', 'public');

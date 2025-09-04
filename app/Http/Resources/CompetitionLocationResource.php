@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\CompetitionLocationYard;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -28,6 +29,22 @@ class CompetitionLocationResource extends JsonResource
             'note_booking' => $this->note_booking,
             'website' => $this->website,
             'sports' => SportResource::collection($this->whenLoaded('sports')),
+            'yard_types' => $this->whenLoaded('competitionLocationYards', function () {
+                return $this->competitionLocationYards->pluck('yard_type')->unique()->map(function ($type) {
+                    return [
+                        'type' => $type,
+                        'name' => match ($type) {
+                            CompetitionLocationYard::TYPE_INDOOR => 'Trong nhà',
+                            CompetitionLocationYard::TYPE_OUTDOOR => 'Ngoài trời',
+                            CompetitionLocationYard::TYPE_PRIVATE_RENTAL => 'Thuê riêng',
+                            CompetitionLocationYard::TYPE_PAY_FEE => 'Đóng phí',
+                            CompetitionLocationYard::TYPE_ROOF => 'Mái che',
+                            default => 'Unknown',
+                        },
+                    ];
+                })->values();
+            }),
+            'facilities' => FacilityResource::collection($this->whenLoaded('facilities')),
         ];
     }
 }
