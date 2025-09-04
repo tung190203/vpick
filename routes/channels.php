@@ -23,3 +23,7 @@ Broadcast::channel('mini-tournament.{tournamentId}', function ($user, $tournamen
 
     return $tournament?->all_users->pluck('id')->contains($user->id);
 });
+
+Broadcast::channel('chat.{userId}', function ($user, $userId) {
+    return (int) $user->id === (int) $userId;
+});

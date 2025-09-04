@@ -20,7 +20,7 @@ class ParticipantResource extends JsonResource
             'name' => $this->user?->full_name ?? $this->team?->name,
             'members' => $this->when(
                 $this->relationLoaded('team') && $this->team?->relationLoaded('members'),
-                fn() => UserResource::collection($this->team->members)
+                fn() => UserListResource::collection($this->team->members)
             ),
         ];
     }

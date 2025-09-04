@@ -9,8 +9,10 @@ use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VerificationController;
 use App\Http\Controllers\ClubController;
+use App\Http\Controllers\FacilityController;
 use App\Http\Controllers\FollowController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MiniTournamentController;
 use App\Http\Controllers\SendMessageController;
 use App\Http\Controllers\SportController;
@@ -44,6 +46,8 @@ Route::post('/resend-email', [VerificationController::class, 'resend']);
 Route::middleware(['auth:api', 'verified'])->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::prefix('user')->group(function () {
+        Route::get('/index', [UserController::class, 'index']);
+        Route::get('/{id}', [UserController::class, 'show']);
         Route::post('/update', [UserController::class, 'update']);
     });
     Route::prefix('tournaments')->group(function () {
@@ -101,6 +105,12 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
         Route::get('/index/{tournamentId}', [SendMessageController::class, 'getMessages']);
     });
 
+    Route::prefix('messages')->group(function () {
+        Route::get('/conversation/{userId}', [MessageController::class, 'getConversation']);
+        Route::post('/store', [MessageController::class, 'store']);
+        Route::post('/mark-as-read/{senderId}', [MessageController::class, 'markConversationAsRead']);
+    });
+
     Route::prefix('competition-locations')->group(function () {
         Route::get('/index', [CompetitionLocationController::class, 'index']);
     });
@@ -113,5 +123,8 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
 
     Route::prefix('sports')->group(function () {
         Route::get('/index', [SportController::class, 'index']);
+    });
+    Route::prefix('facilities')->group(function () {
+        Route::get('/index', [FacilityController::class, 'index']);
     });
 });

@@ -27,6 +27,7 @@ class MiniMatchResource extends JsonResource
 
         return [
             'id' => $this->id,
+            'name_of_match' => $this->name_of_match,
             'mini_tournament_id' => $this->mini_tournament_id,
             'round' => $this->round,
             'participant1' => new MiniParticipantResource($this->whenLoaded('participant1')),
@@ -38,6 +39,7 @@ class MiniMatchResource extends JsonResource
             'participant_win' => new MiniParticipantResource($this->whenLoaded('participantWin')),
             'participant1_confirm' => $this->participant1_confirm,
             'participant2_confirm' => $this->participant2_confirm,
+            'yard_number' => $this->yard_number,
             'results_by_sets' => $groupedResults,
         ];
     }

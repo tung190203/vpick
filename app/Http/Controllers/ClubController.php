@@ -12,7 +12,7 @@ class ClubController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Club::with('members')
+        $query = Club::withFullRelations()
             ->orderBy('created_at')
             ->when($request->filled('name'), fn($q) => $q->search(['name'], $request->name))
             ->when($request->filled('location'), fn($q) => $q->search(['location'], $request->location));
@@ -56,7 +56,7 @@ class ClubController extends Controller
 
     public function show($id)
     {
-        $club = Club::with('members')->findOrFail($id);
+        $club = Club::withFullRelations()->findOrFail($id);
 
         return response()->json([
             'message' => 'Get club successfully',

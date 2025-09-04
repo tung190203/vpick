@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\MiniTournamentStaff;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -20,7 +21,6 @@ class MiniTournamentResource extends JsonResource
             'id' => $this->id,
             'poster' => $this->poster,
             'sport' => new SportResource($this->whenLoaded('sport')),
-            'created_by' => new UserListResource($this->whenLoaded('creator')),
             'name' => $this->name,
             'description' => $this->description,
             'match_type' => $this->match_type,
@@ -29,6 +29,10 @@ class MiniTournamentResource extends JsonResource
             'duration_minutes' => $this->duration_minutes,
             'competition_location' => new CompetitionLocationResource($this->whenLoaded('competitionLocation')),
             'is_private' => $this->is_private,
+            'fee' => $this->fee,
+            'age_group' => $this->age_group,
+            'age_group_text' => $this->age_group_text,
+            'prize_pool' => $this->prize_pool,
             'fee_amount' => $this->fee_amount,
             'max_players' => $this->max_players,
             'enable_dupr' => $this->enable_dupr,
@@ -37,8 +41,6 @@ class MiniTournamentResource extends JsonResource
             'max_rating' => $this->max_rating,
             'gender_policy' => $this->gender_policy,
             'gender_policy_text' => $this->gender_policy_text,
-            'min_age' => $this->min_age,
-            'max_age' => $this->max_age,
             'repeat_type' => $this->repeat_type,
             'repeat_type_text' => $this->repeat_type_text,
             'role_type' => $this->role_type,
@@ -49,6 +51,11 @@ class MiniTournamentResource extends JsonResource
             'send_notification' => $this->send_notification,
             'status' => $this->status,
             'status_text' => $this->status_text,
+            'staff' => $this->whenLoaded('staff', function () {
+                return $this->staff
+                    ->groupBy(fn($staff) => MiniTournamentStaff::getRoleText( $staff->pivot->role))
+                    ->map(fn($group) => MiniTournamentStaffResource::collection($group));
+            }),
             'participants' => [
                 'users' => MiniParticipantResource::collection(
                     $participants->where('type', 'user')

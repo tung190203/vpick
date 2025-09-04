@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\CompetitionLocationResource;
+use App\Http\Resources\FacilityResource;
 use App\Models\CompetitionLocation;
+use App\Models\CompetitionLocationYard;
+use App\Models\Facility;
 use Illuminate\Http\Request;
 
 class CompetitionLocationController extends Controller
@@ -28,15 +31,20 @@ class CompetitionLocationController extends Controller
             'maxLng' => self::VALIDATION_RULE,
             'sport_id' => 'sometimes|integer|exists:sports,id',
             'location_id' => 'sometimes|integer|exists:locations,id',
-            'number_of_yards' => 'sometimes|integer|min:1',
+            'number_of_yards' => 'sometimes|array',
+            'number_of_yards.*' => 'integer|min:1',
             'keyword' => 'sometimes|string|max:255',
             'is_followed' => 'sometimes|boolean',
             'per_page' => 'sometimes|integer|min:1|max:100',
+            'yard_type' => 'nullable|array',
+            'yard_type.*' => 'integer|in:' . implode(',', CompetitionLocationYard::YARD_TYPE),
+            'facility_id' => 'nullable|array',
+            'facility_id.*' => 'integer|exists:facilities,id',
         ]);
     
         $query = CompetitionLocation::withFullRelations()->filter($validated);
     
-        $hasFilter = collect(['sport_id', 'location_id', 'is_followed', 'keyword', 'lat', 'lng', 'radius', 'number_of_yards'])
+        $hasFilter = collect(['sport_id', 'location_id', 'is_followed', 'keyword', 'lat', 'lng', 'radius', 'number_of_yards', 'yard_type', 'facility_id'])
             ->some(fn($key) => $request->filled($key));
     
         if (!$hasFilter && (!empty($validated['minLat']) || !empty($validated['maxLat']) || !empty($validated['minLng']) || !empty($validated['maxLng']))) {
@@ -53,9 +61,24 @@ class CompetitionLocationController extends Controller
         }
     
         $locations = $query->paginate($validated['per_page'] ?? CompetitionLocation::PER_PAGE);
+
+        $yardTypes = CompetitionLocationYard::select('yard_type')
+            ->distinct()
+            ->get()
+            ->map(fn($yard) => [
+                'id' => $yard->yard_type,
+                'name' => $yard->yard_type_name,
+            ]);
+
+        $data = [
+            'competition_locations' => CompetitionLocationResource::collection($locations),
+            'yard_types' => $yardTypes,
+            'facilities' => FacilityResource::collection(Facility::all()),
+        ];
     
         return ResponseHelper::success(
-            CompetitionLocationResource::collection($locations),
+            // CompetitionLocationResource::collection($locations),
+            $data,
             'Lấy danh sách địa điểm thi đấu thành công',
         );
     }    

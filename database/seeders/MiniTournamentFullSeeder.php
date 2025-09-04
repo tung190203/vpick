@@ -8,6 +8,7 @@ use App\Models\MiniParticipant;
 use App\Models\MiniTeam;
 use App\Models\MiniTeamMember;
 use App\Models\MiniTournament;
+use App\Models\MiniTournamentStaff;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -26,10 +27,15 @@ class MiniTournamentFullSeeder extends Seeder
         $tournament = MiniTournament::create([
             'name' => 'Mini Summer Cup 2025',
             'sport_id' => 1, // chọn sport sample
-            'created_by' => $users->first()->id,
             'starts_at' => now()->addDays(3),
             'match_type' => 3, // single match example
             'status' => 2,
+        ]);
+
+        MiniTournamentStaff::create([
+            'mini_tournament_id' => $tournament->id,
+            'user_id' => $users->first()->id,
+            'role' => MiniTournamentStaff::ROLE_ORGANIZER,
         ]);
 
         // 2. Tạo Teams (2 teams cho tournament)

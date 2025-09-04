@@ -92,17 +92,16 @@ class MiniParticipantController extends Controller
     }
 
     /**
-     * Chủ giải (created_by) duyệt một participant.
+     * Chủ giải duyệt một participant.
      * - Chỉ creator mới được duyệt
      * - Set is_confirmed = true
      */
     public function confirm($participantId)
     {
         $participant = MiniParticipant::with('miniTournament')->findOrFail($participantId);
-        $miniTournament = $participant->miniTournament;
-
-        // Chỉ creator mới có quyền duyệt
-        if ((int) $miniTournament->created_by !== (int) Auth::id()) {
+        $miniTournamentWithStaff = $participant->miniTournament->load('staff');
+        $isOrganizer = $miniTournamentWithStaff->hasOrganizer(Auth::id());
+        if (!$isOrganizer) {
             return ResponseHelper::error('Bạn không có quyền duyệt người tham gia này.', 403);
         }
 
@@ -124,10 +123,12 @@ class MiniParticipantController extends Controller
      */
     public function acceptInvite($participantId)
     {
-        $participant = MiniParticipant::findOrFail($participantId);
+        $participant = MiniParticipant::with('miniTournament')->findOrFail($participantId);
 
-        if ((int) $participant->user_id !== (int) Auth::id()) {
-            return ResponseHelper::error('Bạn không có quyền chấp nhận lời mời này.', 403);
+        $miniTournamentWithStaff = $participant->miniTournament->load('staff');
+        $isOrganizer = $miniTournamentWithStaff->hasOrganizer(Auth::id());
+        if (!$isOrganizer) {
+            return ResponseHelper::error('Bạn không có quyền duyệt người tham gia này.', 403);
         }
 
         if ($participant->is_confirmed) {
@@ -154,18 +155,17 @@ class MiniParticipantController extends Controller
      */
     public function invite(Request $request, $tournamentId)
     {
-        $miniTournament = MiniTournament::findOrFail($tournamentId);
-
-        // Kiểm tra quyền mời:
+        $miniTournament = MiniTournament::with(['staff', 'participants'])->findOrFail($tournamentId);
         $userId = Auth::id();
-        $isCreator = (int) $miniTournament->created_by === $userId;
+
+        $isOrganizer = $miniTournament->hasOrganizer($userId);
         $canAddFriends = $miniTournament->allow_participant_add_friends
-            && MiniParticipant::where('mini_tournament_id', $tournamentId)
+            && $miniTournament->participants()
                 ->where('user_id', $userId)
                 ->where('is_confirmed', true)
                 ->exists();
 
-        if (!$isCreator && !$canAddFriends) {
+        if (!$isOrganizer && !$canAddFriends) {
             return ResponseHelper::error('Bạn không có quyền mời người tham gia.', 403);
         }
 
@@ -176,33 +176,29 @@ class MiniParticipantController extends Controller
         ]);
 
         $type = $validated['type'];
+        $userIdToInvite = $validated['user_id'] ?? null;
+        $teamIdToInvite = $validated['team_id'] ?? null;
 
-        // Check đã tồn tại
-        $exists = MiniParticipant::where('mini_tournament_id', $miniTournament->id)
-            ->where(function ($q) use ($type, $validated) {
-                if ($type === 'user') {
-                    $q->where('user_id', $validated['user_id']);
-                } else {
-                    $q->where('team_id', $validated['team_id']);
-                }
-            })
+        $exists = $miniTournament->participants()
+            ->when($type === 'user', fn($q) => $q->where('user_id', $userIdToInvite))
+            ->when($type === 'team', fn($q) => $q->where('team_id', $teamIdToInvite))
             ->exists();
 
         if ($exists) {
             return ResponseHelper::error('Người tham gia này đã được mời hoặc tham gia rồi.', 400);
         }
 
-        // Kiểm tra max slot (tính cả participant chưa confirm)
-        $confirmedCount = $miniTournament->participants()->where('is_confirmed', true)->count();
-        if ($miniTournament->max_players && $confirmedCount >= $miniTournament->max_players) {
+        if (
+            $miniTournament->max_players
+            && $miniTournament->participants()->where('is_confirmed', true)->count() >= $miniTournament->max_players
+        ) {
             return ResponseHelper::error('Đã đạt số lượng người chơi tối đa.', 400);
         }
 
-        $participant = MiniParticipant::create([
-            'mini_tournament_id' => $miniTournament->id,
+        $participant = $miniTournament->participants()->create([
             'type' => $type,
-            'user_id' => $type === 'user' ? $validated['user_id'] : null,
-            'team_id' => $type === 'team' ? $validated['team_id'] : null,
+            'user_id' => $userIdToInvite,
+            'team_id' => $teamIdToInvite,
             'is_confirmed' => $miniTournament->auto_approve && !$miniTournament->is_private,
         ]);
 
@@ -215,10 +211,11 @@ class MiniParticipantController extends Controller
 
     public function delete($participantId)
     {
-        $participant = MiniParticipant::findOrFail($participantId);
+        $participant = MiniParticipant::with('miniTournament')->findOrFail($participantId);
 
-        // Chỉ creator mới có quyền xóa
-        if ((int) $participant->miniTournament->created_by !== (int) Auth::id()) {
+        $miniTournamentWithStaff = $participant->miniTournament->load('staff');
+        $isOrganizer = $miniTournamentWithStaff->hasOrganizer(Auth::id());
+        if (!$isOrganizer) {
             return ResponseHelper::error('Bạn không có quyền xóa người tham gia này.', 403);
         }
 
