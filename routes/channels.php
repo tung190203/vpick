@@ -20,6 +20,7 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 
 Broadcast::channel('mini-tournament.{tournamentId}', function ($user, $tournamentId) {
     $tournament = MiniTournament::find($tournamentId);
+    if (!$tournament) return false;
 
     return $tournament?->all_users->pluck('id')->contains($user->id);
 });

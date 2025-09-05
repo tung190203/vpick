@@ -7,6 +7,8 @@ use App\Helpers\ResponseHelper;
 use App\Http\Resources\MessageResource;
 use App\Models\MiniTournament;
 use App\Models\MiniTournamentMessage;
+use App\Models\User;
+use App\Notifications\MiniTournamentMessageNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -48,8 +50,16 @@ class SendMessageController extends Controller
             'type' => $request->type,
             'content' => $content,
             'meta' => $meta,
-        ]);
-
+        ])->load('user');
+        // Gửi thông báo đến tất cả user trong tournament, trừ người gửi
+        foreach ($allUserIds as $userId) {
+            if ($userId != Auth::id()) {
+                $user = User::find($userId);
+                if ($user) {
+                    $user->notify(new MiniTournamentMessageNotification($message));
+                }
+            }
+        }
         broadcast(new MiniTournamentMessageSent(new MessageResource($message->load('user'))))->toOthers();
 
         return ResponseHelper::success(new MessageResource($message->load('user')), 'Gửi tin nhắn thành công');

@@ -7,6 +7,8 @@ use App\Events\MessageSent;
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\PrivateMessageResource;
 use App\Models\Message;
+use App\Models\User;
+use App\Notifications\PrivateMessageNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -38,6 +40,9 @@ class MessageController extends Controller
             'attachment_url' => $attachmentUrl,
             'attachment_type' => $attachmentType,
         ]);
+
+        $receiver = User::find($request->receiver_id);
+        $receiver->notify(new PrivateMessageNotification($message));
 
         broadcast(new MessageSent($message))->toOthers();
 

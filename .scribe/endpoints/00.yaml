@@ -289,7 +289,7 @@ endpoints:
           location: 'https://accounts.google.com/o/oauth2/auth?client_id=679656235890-o8sm9c7s8h95m1t82pc9rh6ucv480qlo.apps.googleusercontent.com&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fapi%2Fauth%2Fgoogle%2Fcallback&scope=openid+profile+email&response_type=code'
           content-type: 'text/html; charset=utf-8'
           x-ratelimit-limit: '60'
-          x-ratelimit-remaining: '59'
+          x-ratelimit-remaining: '56'
           access-control-allow-origin: '*'
         description: null
         custom: []
@@ -331,7 +331,7 @@ endpoints:
           cache-control: 'no-cache, private'
           content-type: application/json
           x-ratelimit-limit: '60'
-          x-ratelimit-remaining: '58'
+          x-ratelimit-remaining: '55'
           access-control-allow-origin: '*'
         description: null
         custom: []
@@ -373,7 +373,7 @@ endpoints:
           cache-control: 'no-cache, private'
           content-type: application/json
           x-ratelimit-limit: '60'
-          x-ratelimit-remaining: '57'
+          x-ratelimit-remaining: '54'
           access-control-allow-origin: '*'
         description: null
         custom: []
@@ -899,7 +899,7 @@ endpoints:
         name: date_of_birth
         description: 'Must be a valid date in the format <code>Y-m-d</code>.'
         required: false
-        example: '2025-09-04'
+        example: '2025-09-05'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -934,7 +934,7 @@ endpoints:
       latitute: 11613.31890586
       longitute: 11613.31890586
       address: opfuudtdsufvyvddqamni
-      date_of_birth: '2025-09-04'
+      date_of_birth: '2025-09-05'
       score_value:
         - 30
     fileParameters:
@@ -1022,7 +1022,7 @@ endpoints:
         name: start_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-04T14:36:26'
+        example: '2025-09-05T09:23:44'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -1032,7 +1032,7 @@ endpoints:
         name: end_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-04T14:36:26'
+        example: '2025-09-05T09:23:44'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -1147,8 +1147,8 @@ endpoints:
         custom: []
     cleanBodyParameters:
       name: consequatur
-      start_date: '2025-09-04T14:36:26'
-      end_date: '2025-09-04T14:36:26'
+      start_date: '2025-09-05T09:23:44'
+      end_date: '2025-09-05T09:23:44'
       location: consequatur
       level: local
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
@@ -1265,7 +1265,7 @@ endpoints:
         name: start_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-04T14:36:26'
+        example: '2025-09-05T09:23:44'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -1275,7 +1275,7 @@ endpoints:
         name: end_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-04T14:36:26'
+        example: '2025-09-05T09:23:44'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -1419,8 +1419,8 @@ endpoints:
         custom: []
     cleanBodyParameters:
       name: consequatur
-      start_date: '2025-09-04T14:36:26'
-      end_date: '2025-09-04T14:36:26'
+      start_date: '2025-09-05T09:23:44'
+      end_date: '2025-09-05T09:23:44'
       location: consequatur
       level: local
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
@@ -2023,7 +2023,7 @@ endpoints:
         name: starts_at
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-04T14:36:26'
+        example: '2025-09-05T09:23:44'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -2272,7 +2272,7 @@ endpoints:
       name: mqeopfuudtdsufvyvddqa
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
       match_type: '3'
-      starts_at: '2025-09-04T14:36:26'
+      starts_at: '2025-09-05T09:23:44'
       duration_minutes: 66
       is_private: false
       fee: auto_split
@@ -2446,7 +2446,7 @@ endpoints:
         name: starts_at
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-04T14:36:26'
+        example: '2025-09-05T09:23:44'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -2695,7 +2695,7 @@ endpoints:
       name: mqeopfuudtdsufvyvddqa
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
       match_type: '3'
-      starts_at: '2025-09-04T14:36:26'
+      starts_at: '2025-09-05T09:23:44'
       duration_minutes: 66
       is_private: false
       fee: auto_split
@@ -3234,7 +3234,7 @@ endpoints:
         name: scheduled_at
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-04T14:36:26'
+        example: '2025-09-05T09:23:44'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -3292,7 +3292,7 @@ endpoints:
         custom: []
     cleanBodyParameters:
       round: consequatur
-      scheduled_at: '2025-09-04T14:36:26'
+      scheduled_at: '2025-09-05T09:23:44'
       team1_name: mqeopfuudtdsufvyvddqa
       team2_name: mniihfqcoynlazghdtqtq
       yard_number: xbajwbpilpmufinllwloa
@@ -3392,7 +3392,7 @@ endpoints:
         name: scheduled_at
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-04T14:36:26'
+        example: '2025-09-05T09:23:44'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -3432,7 +3432,7 @@ endpoints:
       round: consequatur
       team1_name: mqeopfuudtdsufvyvddqa
       team2_name: mniihfqcoynlazghdtqtq
-      scheduled_at: '2025-09-04T14:36:26'
+      scheduled_at: '2025-09-05T09:23:44'
       yard_number: xbajwbpilpmufinllwloa
       name_of_match: uydlsmsjuryvojcybzvrb
     fileParameters: []
@@ -4480,6 +4480,112 @@ endpoints:
           access-control-allow-origin: '*'
         description: null
         custom: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
+      - GET
+    uri: api/notifications/index
+    metadata:
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      type:
+        name: type
+        description: ''
+        required: false
+        example: all
+        type: string
+        enumValues:
+          - all
+          - unread
+          - read
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      per_page:
+        name: per_page
+        description: 'Must be at least 1. Must not be greater than 100.'
+        required: false
+        example: 13
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+    cleanBodyParameters:
+      type: all
+      per_page: 13
+    fileParameters: []
+    responses:
+      -
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: '*'
+        description: null
+        custom: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
+      - POST
+    uri: api/notifications/mark-as-read
+    metadata:
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      notification_id:
+        name: notification_id
+        description: 'The <code>id</code> of an existing record in the notifications table.'
+        required: false
+        example: null
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        custom: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses: []
     responseFields: []
     auth: []
     controller: null

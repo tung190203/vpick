@@ -8,6 +8,8 @@ use App\Http\Resources\MiniTournamentResource;
 use App\Models\MiniParticipant;
 use App\Models\MiniTournament;
 use App\Models\MiniTournamentStaff;
+use App\Models\User;
+use App\Notifications\MiniTournamentInvitationNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -41,7 +43,11 @@ class MiniTournamentController extends Controller
                     'user_id' => $userId,
                     'is_confirmed' => true,
                 ]);
-            }
+                $user = User::find($userId);
+                if ($user) {
+                    $user->notify(new MiniTournamentInvitationNotification($miniTournament));
+                }
+            }  
         }
 
         if ($request->hasFile('poster')) {

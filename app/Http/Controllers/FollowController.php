@@ -7,6 +7,7 @@ use App\Http\Resources\FollowResource;
 use App\Models\CompetitionLocation;
 use App\Models\Follow;
 use App\Models\User;
+use App\Notifications\FollowNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -50,6 +51,13 @@ class FollowController extends Controller
 
         if(!$follow->wasRecentlyCreated) {
             return ResponseHelper::error('Bạn đã theo dõi rồi', 400);
+        }
+
+        $followable = $follow->followable;
+
+        // Gửi notification cho chủ thể được follow
+        if (method_exists($followable, 'notify')) {
+            $followable->notify(new FollowNotification(Auth::user(), $followable));
         }
 
         return ResponseHelper::success(
