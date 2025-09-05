@@ -37,12 +37,13 @@ class AuthController extends Controller
             return response()->json(['message' => 'Vui lòng xác minh email trước khi đăng nhập'], 403);
         }
 
-        $refreshToken = JWTAuth::claims(['type' => 'refresh'])->fromUser(auth()->user());
+        $accessToken = JWTAuth::claims(['type' => 'access'])->fromUser($user);
+        $refreshToken = JWTAuth::claims(['type' => 'refresh', 'exp' => now()->addDays(30)->timestamp])->fromUser($user);
 
         $user->last_login = now();
         $user->save();
 
-        return response()->json($this->responseWithToken($token, $refreshToken, $user));
+        return response()->json($this->responseWithToken($accessToken, $refreshToken, $user));
     }
 
     public function register(Request $request)
@@ -130,22 +131,34 @@ class AuthController extends Controller
 
     public function refresh(Request $request)
     {
-        try {
-            $token = $request->bearerToken();
+        $refreshToken = $request->bearerToken();
 
-            if (!$token) {
-                return response()->json(['error' => 'Token không được cung cấp'], 401);
+        if (!$refreshToken) {
+            return response()->json(['error' => 'Token không được cung cấp'], 401);
+        }
+
+        try {
+            $payload = JWTAuth::setToken($refreshToken)->getPayload();
+
+            if ($payload->get('type') !== 'refresh') {
+                return response()->json(['error' => 'Sai loại token'], 401);
             }
 
-            $newToken = JWTAuth::refresh($token);
+            $user = User::find($payload->get('sub'));
+            if (!$user) {
+                return response()->json(['error' => 'Người dùng không tồn tại'], 404);
+            }
+
+            // cấp lại access token mới
+            $newAccessToken = JWTAuth::claims(['type' => 'access'])->fromUser($user);
 
             return response()->json([
-                'access_token' => $newToken,
-                'token_type' => 'bearer',
+                'access_token' => $newAccessToken,
+                'token_type' => 'Bearer',
                 'expires_in' => 3600
             ]);
-        } catch (JWTException $e) {
-            return response()->json(['error' => 'Token không hợp lệ hoặc đã hết hạn'], 401);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Refresh token không hợp lệ hoặc đã hết hạn'], 401);
         }
     }
 
@@ -159,10 +172,10 @@ class AuthController extends Controller
         try {
             $googleUser = Socialite::driver('google')->stateless()->user();
 
-            // Tìm hoặc tạo người dùng mới
             $avatarContent = file_get_contents($googleUser->getAvatar());
             $avatarName = 'avatars/' . uniqid() . '.jpg';
             Storage::disk('public')->put($avatarName, $avatarContent);
+
             $user = User::firstOrCreate(
                 ['email' => $googleUser->getEmail()],
                 [
@@ -175,16 +188,17 @@ class AuthController extends Controller
             );
             
             Auth::login($user);
-            $token = JWTAuth::fromUser($user);
 
-            $refreshToken = JWTAuth::claims(['type' => 'refresh'])->fromUser(auth()->user());
+            $accessToken = JWTAuth::claims(['type' => 'access'])->fromUser($user);
+            $refreshToken = JWTAuth::claims(['type' => 'refresh', 'exp' => now()->addDays(30)->timestamp])->fromUser($user);
+
             $user->last_login = now();
             $user->save();
             if ($request->header('User-Agent') && strpos($request->header('User-Agent'), 'MobileApp') !== false) {
-                return response()->json($this->responseWithToken($token, $refreshToken, $user));
+                return response()->json($this->responseWithToken($accessToken, $refreshToken, $user));
             } else {
                 return redirect(config('app.redirect_success_url') . '/login-success?' . http_build_query([
-                    'access_token' => $token,
+                    'access_token' => $accessToken,
                     'refresh_token' => $refreshToken,
                     'token_type' => 'Bearer',
                     'expires_in' => 3600,
@@ -200,12 +214,12 @@ class AuthController extends Controller
         return response()->json(new UserResource($request->user()));
     }
 
-    private function responseWithToken(string $token, string $refresh_token, object $user): array
+    private function responseWithToken(string $accessToken, string $refreshToken, object $user): array
     {
         return [
             'token' => [
-                'access_token' => $token,
-                'refresh_token' => $refresh_token,
+                'access_token' => $accessToken,
+                'refresh_token' => $refreshToken,
                 'token_type' => 'Bearer',
                 'expires_in' => 3600,
             ],
