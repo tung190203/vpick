@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\ResponseHelper;
+use App\Http\Resources\NotificationResource;
 use Illuminate\Http\Request;
 
 class NotificationController extends Controller
@@ -11,15 +12,16 @@ class NotificationController extends Controller
     public function index(Request $request)
     {
         $validated = $request->validate([
-            'type' => 'in:all,unread,read',
+            'type' => 'nullable|in:all,unread,read',
             'per_page' => 'integer|min:1|max:100',
         ]);
 
+        $type = $validated['type'] ?? 'all';
         $query = auth()->user()->notifications()->latest();
 
-        if ($$validated['type'] === 'unread') {
+        if ($type === 'unread') {
             $query = auth()->user()->unreadNotifications()->latest();
-        } elseif ($$validated['type'] === 'read') {
+        } elseif ($type === 'read') {
             $query = auth()->user()->notifications()
                 ->whereNotNull('read_at')
                 ->latest();
@@ -27,8 +29,18 @@ class NotificationController extends Controller
 
         $notifications = $query->paginate($validated['per_page'] ?? self::DEFAULT_PER_PAGE);
 
-        return ResponseHelper::success($notifications, 'Lấy danh sách thông báo thành công');
-    }
+        $data = [
+            'notifications' => NotificationResource::collection($notifications),
+            'meta' => [
+                'current_page' => $notifications->currentPage(),
+                'last_page' => $notifications->lastPage(),
+                'per_page' => $notifications->perPage(),
+                'total' => $notifications->total(),
+            ],
+        ];
+    
+        return ResponseHelper::success($data, 'Lấy danh sách thông báo thành công');
+    }    
 
     public function markAsRead(Request $request)
     {

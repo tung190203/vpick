@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\ResponseHelper;
 use App\Http\Resources\TournamentResource;
 use App\Models\Participant;
 use App\Models\Team;
@@ -129,17 +130,10 @@ class TournamentController extends Controller
         if ($tournament) {
             $tournament = Tournament::withFullRelations()->find($tournament->id);
         } else {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Tournament creation failed',
-            ], 500);
+            return ResponseHelper::error('Tạo giải đấu thất bại', 500);
         }
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Tournament created successfully',
-            'data' => new TournamentResource($tournament),
-        ]);
+        return ResponseHelper::success(new TournamentResource($tournament), 'Tạo giải đấu thành công');
     }
 
     public function index(Request $request)
@@ -160,12 +154,17 @@ class TournamentController extends Controller
 
         $tournaments = $query->paginate(Tournament::PER_PAGE);
 
-        return $this->responseJson('success', 'Tournaments retrieved successfully', TournamentResource::collection($tournaments), [
-            'current_page' => $tournaments->currentPage(),
-            'per_page'     => $tournaments->perPage(),
-            'total'        => $tournaments->total(),
-            'last_page'    => $tournaments->lastPage(),
-        ]);
+        $data = [
+            'tournaments' => TournamentResource::collection($tournaments),
+            'meta' => [
+                'current_page' => $tournaments->currentPage(),
+                'per_page' => $tournaments->perPage(),
+                'total' => $tournaments->total(),
+                'last_page' => $tournaments->lastPage(),
+            ],
+        ];
+
+        return ResponseHelper::success($data, 'Lấy danh sách giải đấu thành công');
     }
 
     public function show($id)
@@ -173,13 +172,10 @@ class TournamentController extends Controller
         $tournament = Tournament::withFullRelations()->find($id);
 
         if (!$tournament) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Tournament not found',
-            ], 404);
+            return ResponseHelper::error('Giải đấu không tồn tại', 404);
         }
 
-       return $this->responseJson('success', 'Tournament retrieved successfully', new TournamentResource($tournament));
+        return ResponseHelper::success(new TournamentResource($tournament), 'Lấy chi tiết giải đấu thành công');
     }
 
     public function update(Request $request, $id)
@@ -187,10 +183,7 @@ class TournamentController extends Controller
         $tournament = Tournament::with('tournamentTypes.groups.matches')->find($id);
     
         if (!$tournament) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Tournament not found',
-            ], 404);
+            return ResponseHelper::error('Giải đấu không tồn tại', 404);
         }
     
         $validated = $request->validate([
@@ -281,9 +274,9 @@ class TournamentController extends Controller
             }
         });
     
-        $tournament->load('club', 'createdBy', 'tournamentTypes.groups.matches');
-    
-       return $this->responseJson('success', 'Tournament updated successfully', new TournamentResource($tournament));
+        $tournament->load('club', 'createdBy', 'tournamentTypes.groups.matches');    
+
+        return ResponseHelper::success(new TournamentResource($tournament), 'Cập nhật giải đấu thành công');
     }
 
     public function destroy(Request $request)
@@ -291,10 +284,7 @@ class TournamentController extends Controller
         $tournament = Tournament::find($request->id);
 
         if (!$tournament) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Tournament not found',
-            ], 404);
+            return ResponseHelper::error('Giải đấu không tồn tại', 404);
         }
 
         DB::transaction(function () use ($tournament) {
@@ -308,19 +298,6 @@ class TournamentController extends Controller
             $tournament->delete();
         });
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Tournament deleted successfully',
-        ]);
-    }
-
-    private function responseJson($status, $message, $data = null, $meta = null)
-    {
-        return response()->json([
-            'status' => $status,
-            'message' => $message,
-            'data' => $data,
-            'meta' => $meta,
-        ]);
+        return ResponseHelper::success(null, 'Xoá giải đấu thành công');
     }
 }

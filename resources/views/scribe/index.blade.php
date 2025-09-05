@@ -247,6 +247,12 @@ truyền mảng lên là team</a>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-POSTapi-notifications-mark-as-read">
                                 <a href="#endpoints-POSTapi-notifications-mark-as-read">POST api/notifications/mark-as-read</a>
                             </li>
+                                                                                <li class="tocify-item level-2" data-unique="endpoints-POSTapi-mini-tournament-notifications-subscribe--miniTournamentId-">
+                                <a href="#endpoints-POSTapi-mini-tournament-notifications-subscribe--miniTournamentId-">Đăng ký nhắc nhở giải đấu nhỏ.</a>
+                            </li>
+                                                                                <li class="tocify-item level-2" data-unique="endpoints-POSTapi-mini-tournament-notifications-unsubscribe--miniTournamentId-">
+                                <a href="#endpoints-POSTapi-mini-tournament-notifications-unsubscribe--miniTournamentId-">Hủy đăng ký nhắc nhở giải đấu nhỏ.</a>
+                            </li>
                                                                         </ul>
                             </ul>
             </div>
@@ -996,7 +1002,7 @@ fetch(url, {
 location: https://accounts.google.com/o/oauth2/auth?client_id=679656235890-o8sm9c7s8h95m1t82pc9rh6ucv480qlo.apps.googleusercontent.com&amp;redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fapi%2Fauth%2Fgoogle%2Fcallback&amp;scope=openid+profile+email&amp;response_type=code
 content-type: text/html; charset=utf-8
 x-ratelimit-limit: 60
-x-ratelimit-remaining: 56
+x-ratelimit-remaining: 59
 access-control-allow-origin: *
  </code></pre></details>         <pre>
 
@@ -1131,12 +1137,14 @@ fetch(url, {
             <pre><code class="language-http">cache-control: no-cache, private
 content-type: application/json
 x-ratelimit-limit: 60
-x-ratelimit-remaining: 55
+x-ratelimit-remaining: 58
 access-control-allow-origin: *
  </code></pre></details>         <pre>
 
 <code class="language-json" style="max-height: 300px;">{
-    &quot;error&quot;: &quot;Kh&ocirc;ng thể đăng nhập bằng Google&quot;
+    &quot;status&quot;: false,
+    &quot;message&quot;: &quot;Kh&ocirc;ng thể đăng nhập bằng Google&quot;,
+    &quot;errors&quot;: []
 }</code>
  </pre>
     </span>
@@ -1257,12 +1265,14 @@ fetch(url, {
             <pre><code class="language-http">cache-control: no-cache, private
 content-type: application/json
 x-ratelimit-limit: 60
-x-ratelimit-remaining: 54
+x-ratelimit-remaining: 57
 access-control-allow-origin: *
  </code></pre></details>         <pre>
 
 <code class="language-json" style="max-height: 300px;">{
-    &quot;message&quot;: &quot;Token x&aacute;c minh kh&ocirc;ng hợp lệ hoặc đ&atilde; hết hạn.&quot;
+    &quot;status&quot;: false,
+    &quot;message&quot;: &quot;Token x&aacute;c minh kh&ocirc;ng hợp lệ hoặc đ&atilde; hết hạn.&quot;,
+    &quot;errors&quot;: []
 }</code>
  </pre>
     </span>
@@ -2168,7 +2178,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --form "address=opfuudtdsufvyvddqamni"\
     --form "date_of_birth=2025-09-05"\
     --form "score_value[]=30"\
-    --form "avatar_url=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpULBFvk" </code></pre></div>
+    --form "avatar_url=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpHJVNWn" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -2293,7 +2303,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpULBFvk</code></p>
+<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpHJVNWn</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>location_id</code></b>&nbsp;&nbsp;
@@ -2574,8 +2584,8 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Accept: application/json" \
     --data "{
     \"name\": \"consequatur\",
-    \"start_date\": \"2025-09-05T09:23:44\",
-    \"end_date\": \"2025-09-05T09:23:44\",
+    \"start_date\": \"2025-09-05T18:19:33\",
+    \"end_date\": \"2025-09-05T18:19:33\",
     \"location\": \"consequatur\",
     \"level\": \"local\",
     \"description\": \"Dolores dolorum amet iste laborum eius est dolor.\",
@@ -2606,8 +2616,8 @@ const headers = {
 
 let body = {
     "name": "consequatur",
-    "start_date": "2025-09-05T09:23:44",
-    "end_date": "2025-09-05T09:23:44",
+    "start_date": "2025-09-05T18:19:33",
+    "end_date": "2025-09-05T18:19:33",
     "location": "consequatur",
     "level": "local",
     "description": "Dolores dolorum amet iste laborum eius est dolor.",
@@ -2721,10 +2731,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="start_date"                data-endpoint="POSTapi-tournaments-store"
-               value="2025-09-05T09:23:44"
+               value="2025-09-05T18:19:33"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-09-05T09:23:44</code></p>
+<p>Must be a valid date. Example: <code>2025-09-05T18:19:33</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>end_date</code></b>&nbsp;&nbsp;
@@ -2732,10 +2742,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="end_date"                data-endpoint="POSTapi-tournaments-store"
-               value="2025-09-05T09:23:44"
+               value="2025-09-05T18:19:33"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-09-05T09:23:44</code></p>
+<p>Must be a valid date. Example: <code>2025-09-05T18:19:33</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>location</code></b>&nbsp;&nbsp;
@@ -3007,8 +3017,8 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Accept: application/json" \
     --data "{
     \"name\": \"consequatur\",
-    \"start_date\": \"2025-09-05T09:23:44\",
-    \"end_date\": \"2025-09-05T09:23:44\",
+    \"start_date\": \"2025-09-05T18:19:33\",
+    \"end_date\": \"2025-09-05T18:19:33\",
     \"location\": \"consequatur\",
     \"level\": \"local\",
     \"description\": \"Dolores dolorum amet iste laborum eius est dolor.\",
@@ -3039,8 +3049,8 @@ const headers = {
 
 let body = {
     "name": "consequatur",
-    "start_date": "2025-09-05T09:23:44",
-    "end_date": "2025-09-05T09:23:44",
+    "start_date": "2025-09-05T18:19:33",
+    "end_date": "2025-09-05T18:19:33",
     "location": "consequatur",
     "level": "local",
     "description": "Dolores dolorum amet iste laborum eius est dolor.",
@@ -3166,10 +3176,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="start_date"                data-endpoint="POSTapi-tournaments-update--id-"
-               value="2025-09-05T09:23:44"
+               value="2025-09-05T18:19:33"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-09-05T09:23:44</code></p>
+<p>Must be a valid date. Example: <code>2025-09-05T18:19:33</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>end_date</code></b>&nbsp;&nbsp;
@@ -3177,10 +3187,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="end_date"                data-endpoint="POSTapi-tournaments-update--id-"
-               value="2025-09-05T09:23:44"
+               value="2025-09-05T18:19:33"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-09-05T09:23:44</code></p>
+<p>Must be a valid date. Example: <code>2025-09-05T18:19:33</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>location</code></b>&nbsp;&nbsp;
@@ -3454,7 +3464,13 @@ You can check the Dev Tools console for debugging information.</code></pre>
     <pre><code class="language-bash">curl --request GET \
     --get "http://localhost/api/club/index" \
     --header "Content-Type: application/json" \
-    --header "Accept: application/json"</code></pre></div>
+    --header "Accept: application/json" \
+    --data "{
+    \"name\": \"vmqeopfuudtdsufvyvddq\",
+    \"location\": \"amniihfqcoynlazghdtqt\",
+    \"perPage\": 16
+}"
+</code></pre></div>
 
 
 <div class="javascript-example">
@@ -3467,9 +3483,16 @@ const headers = {
     "Accept": "application/json",
 };
 
+let body = {
+    "name": "vmqeopfuudtdsufvyvddq",
+    "location": "amniihfqcoynlazghdtqt",
+    "perPage": 16
+};
+
 fetch(url, {
     method: "GET",
     headers,
+    body: JSON.stringify(body),
 }).then(response =&gt; response.json());</code></pre></div>
 
 </span>
@@ -3561,7 +3584,41 @@ You can check the Dev Tools console for debugging information.</code></pre>
     <br>
 <p>Example: <code>application/json</code></p>
             </div>
-                        </form>
+                                <h4 class="fancy-heading-panel"><b>Body Parameters</b></h4>
+        <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>name</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+                <input type="text" style="display: none"
+                              name="name"                data-endpoint="GETapi-club-index"
+               value="vmqeopfuudtdsufvyvddq"
+               data-component="body">
+    <br>
+<p>Must not be greater than 255 characters. Example: <code>vmqeopfuudtdsufvyvddq</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>location</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+                <input type="text" style="display: none"
+                              name="location"                data-endpoint="GETapi-club-index"
+               value="amniihfqcoynlazghdtqt"
+               data-component="body">
+    <br>
+<p>Must not be greater than 255 characters. Example: <code>amniihfqcoynlazghdtqt</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>perPage</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="perPage"                data-endpoint="GETapi-club-index"
+               value="16"
+               data-component="body">
+    <br>
+<p>Must be at least 1. Must not be greater than 100. Example: <code>16</code></p>
+        </div>
+        </form>
 
                     <h2 id="endpoints-POSTapi-club-store">POST api/club/store</h2>
 
@@ -3582,7 +3639,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --form "name=consequatur"\
     --form "location=consequatur"\
     --form "created_by=consequatur"\
-    --form "logo_url=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpSnMOnX" </code></pre></div>
+    --form "logo_url=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpuR9mdM" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -3712,7 +3769,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpSnMOnX</code></p>
+<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpuR9mdM</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>created_by</code></b>&nbsp;&nbsp;
@@ -3880,7 +3937,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Content-Type: multipart/form-data" \
     --header "Accept: application/json" \
     --form "location=consequatur"\
-    --form "logo_url=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpxaQmzf" </code></pre></div>
+    --form "logo_url=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpBPDbnT" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -4020,7 +4077,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpxaQmzf</code></p>
+<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpBPDbnT</code></p>
         </div>
         </form>
 
@@ -4267,7 +4324,15 @@ You can check the Dev Tools console for debugging information.</code></pre>
     <pre><code class="language-bash">curl --request GET \
     --get "http://localhost/api/home" \
     --header "Content-Type: application/json" \
-    --header "Accept: application/json"</code></pre></div>
+    --header "Accept: application/json" \
+    --data "{
+    \"mini_tournament_per_page\": 21,
+    \"tournament_per_page\": 13,
+    \"banner_per_page\": 16,
+    \"club_per_page\": 5,
+    \"leaderboard_per_page\": 14
+}"
+</code></pre></div>
 
 
 <div class="javascript-example">
@@ -4280,9 +4345,18 @@ const headers = {
     "Accept": "application/json",
 };
 
+let body = {
+    "mini_tournament_per_page": 21,
+    "tournament_per_page": 13,
+    "banner_per_page": 16,
+    "club_per_page": 5,
+    "leaderboard_per_page": 14
+};
+
 fetch(url, {
     method: "GET",
     headers,
+    body: JSON.stringify(body),
 }).then(response =&gt; response.json());</code></pre></div>
 
 </span>
@@ -4374,7 +4448,63 @@ You can check the Dev Tools console for debugging information.</code></pre>
     <br>
 <p>Example: <code>application/json</code></p>
             </div>
-                        </form>
+                                <h4 class="fancy-heading-panel"><b>Body Parameters</b></h4>
+        <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>mini_tournament_per_page</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="mini_tournament_per_page"                data-endpoint="GETapi-home"
+               value="21"
+               data-component="body">
+    <br>
+<p>Must be at least 1. Must not be greater than 100. Example: <code>21</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>tournament_per_page</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="tournament_per_page"                data-endpoint="GETapi-home"
+               value="13"
+               data-component="body">
+    <br>
+<p>Must be at least 1. Must not be greater than 100. Example: <code>13</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>banner_per_page</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="banner_per_page"                data-endpoint="GETapi-home"
+               value="16"
+               data-component="body">
+    <br>
+<p>Must be at least 1. Must not be greater than 100. Example: <code>16</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>club_per_page</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="club_per_page"                data-endpoint="GETapi-home"
+               value="5"
+               data-component="body">
+    <br>
+<p>Must be at least 1. Must not be greater than 100. Example: <code>5</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>leaderboard_per_page</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="leaderboard_per_page"                data-endpoint="GETapi-home"
+               value="14"
+               data-component="body">
+    <br>
+<p>Must be at least 1. Must not be greater than 100. Example: <code>14</code></p>
+        </div>
+        </form>
 
                     <h2 id="endpoints-GETapi-locations">GET api/locations</h2>
 
@@ -4391,7 +4521,12 @@ You can check the Dev Tools console for debugging information.</code></pre>
     <pre><code class="language-bash">curl --request GET \
     --get "http://localhost/api/locations" \
     --header "Content-Type: application/json" \
-    --header "Accept: application/json"</code></pre></div>
+    --header "Accept: application/json" \
+    --data "{
+    \"name\": \"vmqeopfuudtdsufvyvddq\",
+    \"per_page\": 1
+}"
+</code></pre></div>
 
 
 <div class="javascript-example">
@@ -4404,9 +4539,15 @@ const headers = {
     "Accept": "application/json",
 };
 
+let body = {
+    "name": "vmqeopfuudtdsufvyvddq",
+    "per_page": 1
+};
+
 fetch(url, {
     method: "GET",
     headers,
+    body: JSON.stringify(body),
 }).then(response =&gt; response.json());</code></pre></div>
 
 </span>
@@ -4498,7 +4639,30 @@ You can check the Dev Tools console for debugging information.</code></pre>
     <br>
 <p>Example: <code>application/json</code></p>
             </div>
-                        </form>
+                                <h4 class="fancy-heading-panel"><b>Body Parameters</b></h4>
+        <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>name</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+                <input type="text" style="display: none"
+                              name="name"                data-endpoint="GETapi-locations"
+               value="vmqeopfuudtdsufvyvddq"
+               data-component="body">
+    <br>
+<p>Must not be greater than 255 characters. Example: <code>vmqeopfuudtdsufvyvddq</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>per_page</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="per_page"                data-endpoint="GETapi-locations"
+               value="1"
+               data-component="body">
+    <br>
+<p>Must be at least 1. Must not be greater than 100. Example: <code>1</code></p>
+        </div>
+        </form>
 
                     <h2 id="endpoints-GETapi-mini-tournaments-index">danh sách mini tournament</h2>
 
@@ -4693,7 +4857,7 @@ Must be one of:
     --form "name=mqeopfuudtdsufvyvddqa"\
     --form "description=Dolores dolorum amet iste laborum eius est dolor."\
     --form "match_type=3"\
-    --form "starts_at=2025-09-05T09:23:44"\
+    --form "starts_at=2025-09-05T18:19:33"\
     --form "duration_minutes=66"\
     --form "is_private="\
     --form "fee=auto_split"\
@@ -4713,7 +4877,7 @@ Must be one of:
     --form "allow_participant_add_friends="\
     --form "send_notification="\
     --form "status=3"\
-    --form "poster=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/php0nRvSN" </code></pre></div>
+    --form "poster=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phphrbBh7" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -4731,7 +4895,7 @@ body.append('sport_id', 'consequatur');
 body.append('name', 'mqeopfuudtdsufvyvddqa');
 body.append('description', 'Dolores dolorum amet iste laborum eius est dolor.');
 body.append('match_type', '3');
-body.append('starts_at', '2025-09-05T09:23:44');
+body.append('starts_at', '2025-09-05T18:19:33');
 body.append('duration_minutes', '66');
 body.append('is_private', '');
 body.append('fee', 'auto_split');
@@ -4842,7 +5006,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/php0nRvSN</code></p>
+<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phphrbBh7</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>sport_id</code></b>&nbsp;&nbsp;
@@ -4896,10 +5060,10 @@ Must be one of:
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="starts_at"                data-endpoint="POSTapi-mini-tournaments-store"
-               value="2025-09-05T09:23:44"
+               value="2025-09-05T18:19:33"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-09-05T09:23:44</code></p>
+<p>Must be a valid date. Example: <code>2025-09-05T18:19:33</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>duration_minutes</code></b>&nbsp;&nbsp;
@@ -5366,7 +5530,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --form "name=mqeopfuudtdsufvyvddqa"\
     --form "description=Dolores dolorum amet iste laborum eius est dolor."\
     --form "match_type=3"\
-    --form "starts_at=2025-09-05T09:23:44"\
+    --form "starts_at=2025-09-05T18:19:33"\
     --form "duration_minutes=66"\
     --form "is_private="\
     --form "fee=auto_split"\
@@ -5386,7 +5550,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --form "allow_participant_add_friends="\
     --form "send_notification="\
     --form "status=3"\
-    --form "poster=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpvhavEM" </code></pre></div>
+    --form "poster=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpqxdDFN" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -5404,7 +5568,7 @@ body.append('sport_id', 'consequatur');
 body.append('name', 'mqeopfuudtdsufvyvddqa');
 body.append('description', 'Dolores dolorum amet iste laborum eius est dolor.');
 body.append('match_type', '3');
-body.append('starts_at', '2025-09-05T09:23:44');
+body.append('starts_at', '2025-09-05T18:19:33');
 body.append('duration_minutes', '66');
 body.append('is_private', '');
 body.append('fee', 'auto_split');
@@ -5527,7 +5691,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpvhavEM</code></p>
+<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpqxdDFN</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>sport_id</code></b>&nbsp;&nbsp;
@@ -5581,10 +5745,10 @@ Must be one of:
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="starts_at"                data-endpoint="POSTapi-mini-tournaments-update--id-"
-               value="2025-09-05T09:23:44"
+               value="2025-09-05T18:19:33"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-09-05T09:23:44</code></p>
+<p>Must be a valid date. Example: <code>2025-09-05T18:19:33</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>duration_minutes</code></b>&nbsp;&nbsp;
@@ -6980,7 +7144,7 @@ truyền mảng lên là team</h2>
     --header "Accept: application/json" \
     --data "{
     \"round\": \"consequatur\",
-    \"scheduled_at\": \"2025-09-05T09:23:44\",
+    \"scheduled_at\": \"2025-09-05T18:19:33\",
     \"team1_name\": \"mqeopfuudtdsufvyvddqa\",
     \"team2_name\": \"mniihfqcoynlazghdtqtq\",
     \"yard_number\": \"xbajwbpilpmufinllwloa\",
@@ -7001,7 +7165,7 @@ const headers = {
 
 let body = {
     "round": "consequatur",
-    "scheduled_at": "2025-09-05T09:23:44",
+    "scheduled_at": "2025-09-05T18:19:33",
     "team1_name": "mqeopfuudtdsufvyvddqa",
     "team2_name": "mniihfqcoynlazghdtqtq",
     "yard_number": "xbajwbpilpmufinllwloa",
@@ -7139,10 +7303,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="scheduled_at"                data-endpoint="POSTapi-mini-matches-store--miniTournamentId-"
-               value="2025-09-05T09:23:44"
+               value="2025-09-05T18:19:33"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-09-05T09:23:44</code></p>
+<p>Must be a valid date. Example: <code>2025-09-05T18:19:33</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>referee</code></b>&nbsp;&nbsp;
@@ -7221,7 +7385,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     \"round\": \"consequatur\",
     \"team1_name\": \"mqeopfuudtdsufvyvddqa\",
     \"team2_name\": \"mniihfqcoynlazghdtqtq\",
-    \"scheduled_at\": \"2025-09-05T09:23:44\",
+    \"scheduled_at\": \"2025-09-05T18:19:33\",
     \"yard_number\": \"xbajwbpilpmufinllwloa\",
     \"name_of_match\": \"uydlsmsjuryvojcybzvrb\"
 }"
@@ -7242,7 +7406,7 @@ let body = {
     "round": "consequatur",
     "team1_name": "mqeopfuudtdsufvyvddqa",
     "team2_name": "mniihfqcoynlazghdtqtq",
-    "scheduled_at": "2025-09-05T09:23:44",
+    "scheduled_at": "2025-09-05T18:19:33",
     "yard_number": "xbajwbpilpmufinllwloa",
     "name_of_match": "uydlsmsjuryvojcybzvrb"
 };
@@ -7400,10 +7564,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="scheduled_at"                data-endpoint="POSTapi-mini-matches-update--matchId-"
-               value="2025-09-05T09:23:44"
+               value="2025-09-05T18:19:33"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-09-05T09:23:44</code></p>
+<p>Must be a valid date. Example: <code>2025-09-05T18:19:33</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>referee</code></b>&nbsp;&nbsp;
@@ -8275,7 +8439,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Accept: application/json" \
     --form "type=text"\
     --form "content=consequatur"\
-    --form "file=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/php0QqKQA" </code></pre></div>
+    --form "file=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/php4UqFDM" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -8418,7 +8582,7 @@ Must be one of:
                value=""
                data-component="body">
     <br>
-<p>Must be a file. Must not be greater than 10240 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/php0QqKQA</code></p>
+<p>Must be a file. Must not be greater than 10240 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/php4UqFDM</code></p>
         </div>
         </form>
 
@@ -8733,7 +8897,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Accept: application/json" \
     --form "receiver_id=consequatur"\
     --form "message=consequatur"\
-    --form "attachment=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpLkunjE" </code></pre></div>
+    --form "attachment=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpSfgI8k" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -8862,7 +9026,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Must be a file. Must not be greater than 10240 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpLkunjE</code></p>
+<p>Must be a file. Must not be greater than 10240 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpSfgI8k</code></p>
         </div>
         </form>
 
@@ -9746,7 +9910,12 @@ You can check the Dev Tools console for debugging information.</code></pre>
     <pre><code class="language-bash">curl --request GET \
     --get "http://localhost/api/sports/index" \
     --header "Content-Type: application/json" \
-    --header "Accept: application/json"</code></pre></div>
+    --header "Accept: application/json" \
+    --data "{
+    \"per_page\": 21,
+    \"name\": \"mqeopfuudtdsufvyvddqa\"
+}"
+</code></pre></div>
 
 
 <div class="javascript-example">
@@ -9759,9 +9928,15 @@ const headers = {
     "Accept": "application/json",
 };
 
+let body = {
+    "per_page": 21,
+    "name": "mqeopfuudtdsufvyvddqa"
+};
+
 fetch(url, {
     method: "GET",
     headers,
+    body: JSON.stringify(body),
 }).then(response =&gt; response.json());</code></pre></div>
 
 </span>
@@ -9853,7 +10028,30 @@ You can check the Dev Tools console for debugging information.</code></pre>
     <br>
 <p>Example: <code>application/json</code></p>
             </div>
-                        </form>
+                                <h4 class="fancy-heading-panel"><b>Body Parameters</b></h4>
+        <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>per_page</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="per_page"                data-endpoint="GETapi-sports-index"
+               value="21"
+               data-component="body">
+    <br>
+<p>Must be at least 1. Must not be greater than 100. Example: <code>21</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>name</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+                <input type="text" style="display: none"
+                              name="name"                data-endpoint="GETapi-sports-index"
+               value="mqeopfuudtdsufvyvddqa"
+               data-component="body">
+    <br>
+<p>Must not be greater than 255 characters. Example: <code>mqeopfuudtdsufvyvddqa</code></p>
+        </div>
+        </form>
 
                     <h2 id="endpoints-GETapi-facilities-index">GET api/facilities/index</h2>
 
@@ -10259,6 +10457,246 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <p>The <code>id</code> of an existing record in the notifications table.</p>
         </div>
         </form>
+
+                    <h2 id="endpoints-POSTapi-mini-tournament-notifications-subscribe--miniTournamentId-">Đăng ký nhắc nhở giải đấu nhỏ.</h2>
+
+<p>
+</p>
+
+
+
+<span id="example-requests-POSTapi-mini-tournament-notifications-subscribe--miniTournamentId-">
+<blockquote>Example request:</blockquote>
+
+
+<div class="bash-example">
+    <pre><code class="language-bash">curl --request POST \
+    "http://localhost/api/mini-tournament-notifications/subscribe/consequatur" \
+    --header "Content-Type: application/json" \
+    --header "Accept: application/json"</code></pre></div>
+
+
+<div class="javascript-example">
+    <pre><code class="language-javascript">const url = new URL(
+    "http://localhost/api/mini-tournament-notifications/subscribe/consequatur"
+);
+
+const headers = {
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+};
+
+fetch(url, {
+    method: "POST",
+    headers,
+}).then(response =&gt; response.json());</code></pre></div>
+
+</span>
+
+<span id="example-responses-POSTapi-mini-tournament-notifications-subscribe--miniTournamentId-">
+</span>
+<span id="execution-results-POSTapi-mini-tournament-notifications-subscribe--miniTournamentId-" hidden>
+    <blockquote>Received response<span
+                id="execution-response-status-POSTapi-mini-tournament-notifications-subscribe--miniTournamentId-"></span>:
+    </blockquote>
+    <pre class="json"><code id="execution-response-content-POSTapi-mini-tournament-notifications-subscribe--miniTournamentId-"
+      data-empty-response-text="<Empty response>" style="max-height: 400px;"></code></pre>
+</span>
+<span id="execution-error-POSTapi-mini-tournament-notifications-subscribe--miniTournamentId-" hidden>
+    <blockquote>Request failed with error:</blockquote>
+    <pre><code id="execution-error-message-POSTapi-mini-tournament-notifications-subscribe--miniTournamentId-">
+
+Tip: Check that you&#039;re properly connected to the network.
+If you&#039;re a maintainer of ths API, verify that your API is running and you&#039;ve enabled CORS.
+You can check the Dev Tools console for debugging information.</code></pre>
+</span>
+<form id="form-POSTapi-mini-tournament-notifications-subscribe--miniTournamentId-" data-method="POST"
+      data-path="api/mini-tournament-notifications/subscribe/{miniTournamentId}"
+      data-authed="0"
+      data-hasfiles="0"
+      data-isarraybody="0"
+      autocomplete="off"
+      onsubmit="event.preventDefault(); executeTryOut('POSTapi-mini-tournament-notifications-subscribe--miniTournamentId-', this);">
+    <h3>
+        Request&nbsp;&nbsp;&nbsp;
+                    <button type="button"
+                    style="background-color: #8fbcd4; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-tryout-POSTapi-mini-tournament-notifications-subscribe--miniTournamentId-"
+                    onclick="tryItOut('POSTapi-mini-tournament-notifications-subscribe--miniTournamentId-');">Try it out ⚡
+            </button>
+            <button type="button"
+                    style="background-color: #c97a7e; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-canceltryout-POSTapi-mini-tournament-notifications-subscribe--miniTournamentId-"
+                    onclick="cancelTryOut('POSTapi-mini-tournament-notifications-subscribe--miniTournamentId-');" hidden>Cancel 🛑
+            </button>&nbsp;&nbsp;
+            <button type="submit"
+                    style="background-color: #6ac174; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-executetryout-POSTapi-mini-tournament-notifications-subscribe--miniTournamentId-"
+                    data-initial-text="Send Request 💥"
+                    data-loading-text="⏱ Sending..."
+                    hidden>Send Request 💥
+            </button>
+            </h3>
+            <p>
+            <small class="badge badge-black">POST</small>
+            <b><code>api/mini-tournament-notifications/subscribe/{miniTournamentId}</code></b>
+        </p>
+                <h4 class="fancy-heading-panel"><b>Headers</b></h4>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Content-Type"                data-endpoint="POSTapi-mini-tournament-notifications-subscribe--miniTournamentId-"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Accept"                data-endpoint="POSTapi-mini-tournament-notifications-subscribe--miniTournamentId-"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                        <h4 class="fancy-heading-panel"><b>URL Parameters</b></h4>
+                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>miniTournamentId</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="miniTournamentId"                data-endpoint="POSTapi-mini-tournament-notifications-subscribe--miniTournamentId-"
+               value="consequatur"
+               data-component="url">
+    <br>
+<p>Example: <code>consequatur</code></p>
+            </div>
+                    </form>
+
+                    <h2 id="endpoints-POSTapi-mini-tournament-notifications-unsubscribe--miniTournamentId-">Hủy đăng ký nhắc nhở giải đấu nhỏ.</h2>
+
+<p>
+</p>
+
+
+
+<span id="example-requests-POSTapi-mini-tournament-notifications-unsubscribe--miniTournamentId-">
+<blockquote>Example request:</blockquote>
+
+
+<div class="bash-example">
+    <pre><code class="language-bash">curl --request POST \
+    "http://localhost/api/mini-tournament-notifications/unsubscribe/consequatur" \
+    --header "Content-Type: application/json" \
+    --header "Accept: application/json"</code></pre></div>
+
+
+<div class="javascript-example">
+    <pre><code class="language-javascript">const url = new URL(
+    "http://localhost/api/mini-tournament-notifications/unsubscribe/consequatur"
+);
+
+const headers = {
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+};
+
+fetch(url, {
+    method: "POST",
+    headers,
+}).then(response =&gt; response.json());</code></pre></div>
+
+</span>
+
+<span id="example-responses-POSTapi-mini-tournament-notifications-unsubscribe--miniTournamentId-">
+</span>
+<span id="execution-results-POSTapi-mini-tournament-notifications-unsubscribe--miniTournamentId-" hidden>
+    <blockquote>Received response<span
+                id="execution-response-status-POSTapi-mini-tournament-notifications-unsubscribe--miniTournamentId-"></span>:
+    </blockquote>
+    <pre class="json"><code id="execution-response-content-POSTapi-mini-tournament-notifications-unsubscribe--miniTournamentId-"
+      data-empty-response-text="<Empty response>" style="max-height: 400px;"></code></pre>
+</span>
+<span id="execution-error-POSTapi-mini-tournament-notifications-unsubscribe--miniTournamentId-" hidden>
+    <blockquote>Request failed with error:</blockquote>
+    <pre><code id="execution-error-message-POSTapi-mini-tournament-notifications-unsubscribe--miniTournamentId-">
+
+Tip: Check that you&#039;re properly connected to the network.
+If you&#039;re a maintainer of ths API, verify that your API is running and you&#039;ve enabled CORS.
+You can check the Dev Tools console for debugging information.</code></pre>
+</span>
+<form id="form-POSTapi-mini-tournament-notifications-unsubscribe--miniTournamentId-" data-method="POST"
+      data-path="api/mini-tournament-notifications/unsubscribe/{miniTournamentId}"
+      data-authed="0"
+      data-hasfiles="0"
+      data-isarraybody="0"
+      autocomplete="off"
+      onsubmit="event.preventDefault(); executeTryOut('POSTapi-mini-tournament-notifications-unsubscribe--miniTournamentId-', this);">
+    <h3>
+        Request&nbsp;&nbsp;&nbsp;
+                    <button type="button"
+                    style="background-color: #8fbcd4; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-tryout-POSTapi-mini-tournament-notifications-unsubscribe--miniTournamentId-"
+                    onclick="tryItOut('POSTapi-mini-tournament-notifications-unsubscribe--miniTournamentId-');">Try it out ⚡
+            </button>
+            <button type="button"
+                    style="background-color: #c97a7e; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-canceltryout-POSTapi-mini-tournament-notifications-unsubscribe--miniTournamentId-"
+                    onclick="cancelTryOut('POSTapi-mini-tournament-notifications-unsubscribe--miniTournamentId-');" hidden>Cancel 🛑
+            </button>&nbsp;&nbsp;
+            <button type="submit"
+                    style="background-color: #6ac174; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-executetryout-POSTapi-mini-tournament-notifications-unsubscribe--miniTournamentId-"
+                    data-initial-text="Send Request 💥"
+                    data-loading-text="⏱ Sending..."
+                    hidden>Send Request 💥
+            </button>
+            </h3>
+            <p>
+            <small class="badge badge-black">POST</small>
+            <b><code>api/mini-tournament-notifications/unsubscribe/{miniTournamentId}</code></b>
+        </p>
+                <h4 class="fancy-heading-panel"><b>Headers</b></h4>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Content-Type"                data-endpoint="POSTapi-mini-tournament-notifications-unsubscribe--miniTournamentId-"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Accept"                data-endpoint="POSTapi-mini-tournament-notifications-unsubscribe--miniTournamentId-"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                        <h4 class="fancy-heading-panel"><b>URL Parameters</b></h4>
+                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>miniTournamentId</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="miniTournamentId"                data-endpoint="POSTapi-mini-tournament-notifications-unsubscribe--miniTournamentId-"
+               value="consequatur"
+               data-component="url">
+    <br>
+<p>Example: <code>consequatur</code></p>
+            </div>
+                    </form>
 
             
 

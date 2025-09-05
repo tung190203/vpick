@@ -22,4 +22,6 @@ class Banner extends Model
         'is_active' => 'boolean',
         'order' => 'integer',
     ];
+
+    const PER_PAGE = 10;
 }

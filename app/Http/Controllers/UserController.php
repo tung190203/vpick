@@ -191,9 +191,10 @@ class UserController extends Controller
             }
         }
 
-        return response()->json([
-            'message' => 'Cập nhật thông tin người dùng thành công',
+        $data = [
             'user' => UserResource::make($user->fresh()->loadFullRelations()),
-        ]);
+        ];
+
+        return ResponseHelper::success($data, 'Cập nhật thông tin người dùng thành công');
     }
 }

@@ -41,12 +41,12 @@ class CompetitionLocationController extends Controller
             'facility_id' => 'nullable|array',
             'facility_id.*' => 'integer|exists:facilities,id',
         ]);
-    
+
         $query = CompetitionLocation::withFullRelations()->filter($validated);
-    
+
         $hasFilter = collect(['sport_id', 'location_id', 'is_followed', 'keyword', 'lat', 'lng', 'radius', 'number_of_yards', 'yard_type', 'facility_id'])
             ->some(fn($key) => $request->filled($key));
-    
+
         if (!$hasFilter && (!empty($validated['minLat']) || !empty($validated['maxLat']) || !empty($validated['minLng']) || !empty($validated['maxLng']))) {
             $query->inBounds(
                 $validated['minLat'],
@@ -59,7 +59,7 @@ class CompetitionLocationController extends Controller
         if (!empty($validated['lat']) && !empty($validated['lng']) && !empty($validated['radius'])) {
             $query->nearBy($validated['lat'], $validated['lng'], $validated['radius']);
         }
-    
+
         $locations = $query->paginate($validated['per_page'] ?? CompetitionLocation::PER_PAGE);
 
         $yardTypes = CompetitionLocationYard::select('yard_type')
@@ -75,11 +75,7 @@ class CompetitionLocationController extends Controller
             'yard_types' => $yardTypes,
             'facilities' => FacilityResource::collection(Facility::all()),
         ];
-    
-        return ResponseHelper::success(
-            // CompetitionLocationResource::collection($locations),
-            $data,
-            'Lấy danh sách địa điểm thi đấu thành công',
-        );
-    }    
+
+        return ResponseHelper::success($data, 'Lấy danh sách địa điểm thi đấu thành công');
+    }
 }

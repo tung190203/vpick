@@ -16,6 +16,8 @@ class Sport extends Model
         'slug',
     ];
 
+    const PER_PAGE = 20;
+
     public function tournaments()
     {
         return $this->hasMany(MiniTournament::class, 'sport_id');

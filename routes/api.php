@@ -5,6 +5,7 @@ use App\Http\Controllers\CompetitionLocationController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\MiniMatchController;
 use App\Http\Controllers\MiniParticipantController;
+use App\Http\Controllers\MiniTournamentNotificationController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\UserController;
@@ -131,5 +132,9 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
     Route::prefix('notifications')->group(function () {
         Route::get('/index', [NotificationController::class, 'index']);
         Route::post('/mark-as-read', [NotificationController::class, 'markAsRead']);
+    });
+    Route::prefix('mini-tournament-notifications')->group(function () {
+        Route::post('/subscribe/{miniTournamentId}', [MiniTournamentNotificationController::class, 'subscribe']);
+        Route::post('/unsubscribe/{miniTournamentId}', [MiniTournamentNotificationController::class, 'unsubscribe']);
     });
 });
