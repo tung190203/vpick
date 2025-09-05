@@ -6,6 +6,12 @@ use App\Helpers\ResponseHelper;
 use App\Models\MiniParticipant;
 use App\Models\MiniTournament;
 use App\Http\Resources\MiniParticipantResource;
+use App\Models\MiniTournamentStaff;
+use App\Models\User;
+use App\Notifications\MiniTournamentCreatorInvitationNotification;
+use App\Notifications\MiniTournamentJoinConfirmedNotification;
+use App\Notifications\MiniTournamentJoinRequestNotification;
+use App\Notifications\MiniTournamentRemovedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -88,6 +94,18 @@ class MiniParticipantController extends Controller
             'is_confirmed' => $miniTournament->auto_approve && !$miniTournament->is_private,
         ]);
 
+        if (! $participant->is_confirmed) {
+            $organizers = $miniTournament->staff()
+                ->wherePivot('role', MiniTournamentStaff::ROLE_ORGANIZER)
+                ->get();
+        
+            foreach ($organizers as $organizer) {
+                if ($organizer->id !== Auth::id()) {
+                    $organizer->notify(new MiniTournamentJoinRequestNotification($participant));
+                }
+            }
+        }        
+
         return ResponseHelper::success(new MiniParticipantResource($participant), 'Tham gia giải đấu thành công.', 201);
     }
 
@@ -112,6 +130,8 @@ class MiniParticipantController extends Controller
 
         $participant->is_confirmed = true;
         $participant->save();
+
+        $participant->user->notify(new MiniTournamentJoinConfirmedNotification($participant));
 
         return ResponseHelper::success(new MiniParticipantResource($participant), 'Người tham gia đã được duyệt thành công.', 200);
     }
@@ -202,6 +222,13 @@ class MiniParticipantController extends Controller
             'is_confirmed' => $miniTournament->auto_approve && !$miniTournament->is_private,
         ]);
 
+        if ($type === 'user' && $userIdToInvite) {
+            $user = User::find($userIdToInvite);
+            if ($user) {
+                $user->notify(new MiniTournamentCreatorInvitationNotification($participant));
+            }
+        }
+
         return ResponseHelper::success(new MiniParticipantResource($participant), 'Người tham gia đã được mời thành công.', 201);
     }
     /**
@@ -220,6 +247,13 @@ class MiniParticipantController extends Controller
         }
 
         $participant->delete();
+
+        if ($participant->type === 'user' && $participant->user_id) {
+            $user = User::find($participant->user_id);
+            if ($user) {
+                $user->notify(new MiniTournamentRemovedNotification($participant));
+            }
+        }
 
         return ResponseHelper::success(null, 'Người tham gia đã được xóa thành công.', 200);
     }

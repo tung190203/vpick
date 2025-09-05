@@ -5,6 +5,7 @@ use App\Http\Controllers\CompetitionLocationController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\MiniMatchController;
 use App\Http\Controllers\MiniParticipantController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VerificationController;
@@ -126,5 +127,9 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
     });
     Route::prefix('facilities')->group(function () {
         Route::get('/index', [FacilityController::class, 'index']);
+    });
+    Route::prefix('notifications')->group(function () {
+        Route::get('/index', [NotificationController::class, 'index']);
+        Route::post('/mark-as-read', [NotificationController::class, 'markAsRead']);
     });
 });

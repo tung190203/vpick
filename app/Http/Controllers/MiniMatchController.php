@@ -10,6 +10,10 @@ use App\Models\MiniParticipant;
 use App\Models\MiniTeam;
 use App\Models\MiniTeamMember;
 use App\Models\MiniTournament;
+use App\Models\User;
+use App\Notifications\MiniMatchCreatedNotification;
+use App\Notifications\MiniMatchResultConfirmedNotification;
+use App\Notifications\MiniMatchUpdatedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -26,18 +30,18 @@ class MiniMatchController extends Controller
             'filter' => 'nullable|string|in:matches,my_matches,leaderboard',
             'per_page' => 'nullable|integer',
         ]);
-    
+
         $miniTournament = MiniTournament::findOrFail($miniTournamentId);
-    
+
         $filter = $request->input('filter', 'matches'); // default: matches
-    
+
         switch ($filter) {
             case 'my_matches':
                 $query = MiniMatch::withFullRelations()
                     ->where('mini_tournament_id', $miniTournament->id)
                     ->orderBy('round')
                     ->orderBy('scheduled_at');
-    
+
                 $userId = Auth::id();
                 $query->where(function ($q) use ($userId) {
                     $q->whereHas('participant1', function ($sub) use ($userId) {
@@ -52,7 +56,7 @@ class MiniMatchController extends Controller
                             });
                     });
                 });
-    
+
                 $matches = $query->paginate($request->input('per_page', MiniMatch::PER_PAGE));
                 return ResponseHelper::success(MiniMatchResource::collection($matches));
             case 'matches':
@@ -61,7 +65,7 @@ class MiniMatchController extends Controller
                     ->where('mini_tournament_id', $miniTournament->id)
                     ->orderBy('round')
                     ->orderBy('scheduled_at');
-    
+
                 $matches = $query->paginate($request->input('per_page', MiniMatch::PER_PAGE));
                 return ResponseHelper::success(MiniMatchResource::collection($matches));
         }
@@ -99,13 +103,13 @@ class MiniMatchController extends Controller
             null,
             $validated['team1_name'] ?? null
         );
-        
+
         $p2 = $this->resolveParticipant(
             $validated['participant2_id'] ?? null,
             $miniTournament->id,
             null,
             $validated['team2_name'] ?? null
-        );        
+        );
 
         // check trùng nhau
         if ($p1 && $p2) {
@@ -145,6 +149,23 @@ class MiniMatchController extends Controller
 
         $match = MiniMatch::withFullRelations()->findOrFail($match->id);
 
+        $participants = [$p1, $p2];
+
+        foreach ($participants as $participant) {
+            if (!$participant) continue;
+
+            if ($participant->type === 'user' && $participant->user) {
+                $participant->user->notify(new MiniMatchCreatedNotification($match));
+            }
+
+            if ($participant->type === 'team' && $participant->team) {
+                // Gửi notification cho tất cả thành viên team
+                foreach ($participant->team->members as $member) {
+                    $member->notify(new MiniMatchCreatedNotification($match));
+                }
+            }
+        }
+
         return ResponseHelper::success(new MiniMatchResource($match), 'Tạo trận đấu thành công');
     }
 
@@ -161,7 +182,7 @@ class MiniMatchController extends Controller
         if (empty($input)) {
             return null;
         }
-    
+
         // Nếu input là số (user đơn)
         if (!is_array($input)) {
             return MiniParticipant::firstOrCreate(
@@ -173,10 +194,10 @@ class MiniMatchController extends Controller
                 ['is_confirmed' => true]
             );
         }
-    
+
         // Nếu input là array -> LUÔN coi là team
         $userIds = collect($input)->map(fn($i) => (int) $i)->unique()->sort()->values()->all();
-    
+
         // Nếu currentParticipant là team -> update members + tên team
         if ($currentParticipant && $currentParticipant->type === 'team') {
             $team = $currentParticipant->team;
@@ -190,7 +211,7 @@ class MiniMatchController extends Controller
             }
             return $currentParticipant;
         }
-    
+
         // Tìm team có đúng danh sách userIds
         $existingTeam = MiniTeam::where('mini_tournament_id', $miniTournamentId)
             ->whereHas('members', function ($q) use ($userIds) {
@@ -200,7 +221,7 @@ class MiniMatchController extends Controller
                 $q->whereNotIn('user_id', $userIds);
             })
             ->first();
-    
+
         if ($existingTeam) {
             // Nếu có team rồi nhưng user truyền name -> update name
             if ($teamName) {
@@ -216,7 +237,7 @@ class MiniMatchController extends Controller
                 $existingTeam->members()->create(['user_id' => $uid]);
             }
         }
-    
+
         return MiniParticipant::firstOrCreate(
             [
                 'mini_tournament_id' => $miniTournamentId,
@@ -226,7 +247,7 @@ class MiniMatchController extends Controller
             ['is_confirmed' => true]
         );
     }
-    
+
 
 
 
@@ -305,6 +326,22 @@ class MiniMatchController extends Controller
         ]);
 
         $match = MiniMatch::withFullRelations()->findOrFail($match->id);
+
+        $participants = [$p1, $p2];
+
+        foreach ($participants as $participant) {
+            if (!$participant) continue;
+
+            if ($participant->type === 'user' && $participant->user) {
+                $participant->user->notify(new MiniMatchUpdatedNotification($match));
+            }
+
+            if ($participant->type === 'team' && $participant->team) {
+                foreach ($participant->team->members as $member) {
+                    $member->notify(new MiniMatchUpdatedNotification($match));
+                }
+            }
+        }
 
         return ResponseHelper::success(new MiniMatchResource($match), 'Cập nhật trận đấu thành công');
     }
@@ -479,6 +516,41 @@ class MiniMatchController extends Controller
         }
 
         $match->save();
+
+        // Xác định đối thủ cần nhận noti
+        $recipientUserIds = collect();
+
+        if ($userParticipant) {
+            $opponentParticipant = $userParticipant->id == $match->participant1_id
+                ? $match->participant2
+                : $match->participant1;
+
+            if ($opponentParticipant->type === 'user') {
+                $recipientUserIds->push($opponentParticipant->user_id);
+            } elseif ($opponentParticipant->type === 'team') {
+                $recipientUserIds = $recipientUserIds->merge($opponentParticipant->team->members->pluck('user_id'));
+            }
+        }
+
+        if ($isOrganizer) {
+            foreach ([$match->participant1, $match->participant2] as $participant) {
+                if ($participant->type === 'user') {
+                    $recipientUserIds->push($participant->user_id);
+                } elseif ($participant->type === 'team') {
+                    $recipientUserIds = $recipientUserIds->merge($participant->team->members->pluck('user_id'));
+                }
+            }
+        }
+
+        // Loại bỏ chính user vừa xác nhận
+        $recipientUserIds = $recipientUserIds->unique()->reject(fn($id) => $id == Auth::id());
+
+        foreach ($recipientUserIds as $uid) {
+            $user = User::find($uid);
+            if ($user) {
+                $user->notify(new MiniMatchResultConfirmedNotification($match));
+            }
+        }
 
         return ResponseHelper::success(new MiniMatchResource($match->fresh('results.participant.user')), 'Xác nhận kết quả thành công');
     }
