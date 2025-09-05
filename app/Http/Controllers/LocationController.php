@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\ResponseHelper;
 use App\Http\Resources\LocationResource;
 use App\Models\Location;
 use Illuminate\Http\Request;
@@ -10,16 +11,19 @@ class LocationController extends Controller
 {
     public function index(Request $request)
     {
+        $validated = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'per_page' => 'sometimes|integer|min:1|max:100',
+        ]);
         $query = Location::query();
-        if ($request->has('name')) {
-            $query->search('name', $request->input('name'));
+        if($validated['name'] ?? false) {
+            $query->where('name', 'like', '%' . $validated['name'] . '%');
         }
 
-        $locations = $query->get();
+        $locations = $query->orderBy('name', 'asc')
+            ->take($validated['per_page'] ?? Location::PER_PAGE)
+            ->get();
 
-        return response()->json([
-            'message' => 'List of locations',
-            'locations' => LocationResource::collection($locations)
-        ]);
+        return ResponseHelper::success(LocationResource::collection($locations), 'Lấy danh sách địa điểm thành công');
     }
 }

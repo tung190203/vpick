@@ -49,7 +49,7 @@
             'text-gray-600': selectedGroup !== group
           }"
         >
-          {{ group }}
+          Bảng {{ group }}
         </button>
       </div>
     </div>
@@ -181,9 +181,9 @@ function getMatchStatusLabel(status) {
 const getDetailTournament = async (id) => {
   try {
     const response = await TournamentService.getTournamentById(id)
-    tournament.value = response.data
+    tournament.value = response
 
-    const types = response.data.tournament_types || []
+    const types = response.tournament_types || []
     matchTypes.value = types.map((type) => getTypeLabel(type.type))
 
     const groupsMap = {}

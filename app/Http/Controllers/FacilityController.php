@@ -12,6 +12,7 @@ class FacilityController extends Controller
     public function index(Request $request)
     {
         $facilities = Facility::all();
+
         return ResponseHelper::success(FacilityResource::collection($facilities), 'Lấy danh sách tiện ích thành công');
     }
 }

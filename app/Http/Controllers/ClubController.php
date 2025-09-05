@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\ResponseHelper;
 use Illuminate\Http\Request;
 use App\Models\Club;
 use App\Models\ClubMember;
@@ -12,45 +13,46 @@ class ClubController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Club::withFullRelations()
-            ->orderBy('created_at')
-            ->when($request->filled('name'), fn($q) => $q->search(['name'], $request->name))
-            ->when($request->filled('location'), fn($q) => $q->search(['location'], $request->location));
-
-        $clubs = $query->paginate($request->get('perPage', Club::PER_PAGE));
-
-        return response()->json([
-            'message' => 'Get list club successfully',
-            'data' => ClubResource::collection($clubs),
+        $validated = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'location' => 'sometimes|string|max:255',
+            'perPage' => 'sometimes|integer|min:1|max:100',
         ]);
+        $query = Club::withFullRelations()->orderBy('created_at', 'desc');
+        if ($validated['name'] ?? false) {
+            $query->search(['name'], $validated['name']);
+        }
+        if ($validated['location'] ?? false) {
+            $query->search(['location'], $validated['location']);
+        }
+        $clubs = $query->take($validated['perPage'] ?? Club::PER_PAGE)->get();
+
+        return ResponseHelper::success(ClubResource::collection($clubs), 'Lấy danh sách câu lạc bộ thành công');
     }
     public function store(Request $request)
     {
         $request->validate([
-            'name'       => 'required|unique:clubs',
-            'location'   => 'nullable|string',
-            'logo_url'   => 'nullable|image|max:2048',
+            'name' => 'required|unique:clubs',
+            'location' => 'nullable|string',
+            'logo_url' => 'nullable|image|max:2048',
             'created_by' => 'required|exists:users,id',
         ]);
-    
+
         return DB::transaction(function () use ($request) {
             $logoPath = null;
             if ($request->hasFile('logo_url')) {
                 $logoPath = $request->file('logo_url')->store('logos', 'public');
             }
             $club = Club::create([
-                'name'       => $request->name,
-                'location'   => $request->location,
-                'logo_url'   => $logoPath,
+                'name' => $request->name,
+                'location' => $request->location,
+                'logo_url' => $logoPath,
                 'created_by' => $request->created_by,
             ]);
             $club->members()->attach($request->created_by, ['is_manager' => true]);
             $club->load('members');
-    
-            return response()->json([
-                'message' => 'Create club successfully',
-                'data'    => new ClubResource($club),
-            ]);
+
+            return ResponseHelper::success(new ClubResource($club), 'Tạo câu lạc bộ thành công');
         });
     }
 
@@ -58,39 +60,33 @@ class ClubController extends Controller
     {
         $club = Club::withFullRelations()->findOrFail($id);
 
-        return response()->json([
-            'message' => 'Get club successfully',
-            'data' => new ClubResource($club),
-        ]);
+        return ResponseHelper::success(new ClubResource($club), 'Lấy thông tin câu lạc bộ thành công');
     }
 
     public function update(Request $request, $id)
     {
         $club = Club::findOrFail($id);
-    
+
         $request->validate([
             'name' => "required|unique:clubs,name,{$id}",
             'location' => 'nullable|string',
             'logo_url' => 'nullable|image|max:2048',
         ]);
-    
+
         $logoPath = $club->logo_url;
         if ($request->hasFile('logo_url')) {
             $logoPath = $request->file('logo_url')->store('logos', 'public');
         }
-    
+
         $club->update([
             'name' => $request->name ?? $club->name,
             'location' => $request->location ?? $club->location,
             'logo_url' => $logoPath ?? $club->logo_url,
             'created_by' => $request->created_by ?? $club->created_by,
         ]);
-    
-        return response()->json([
-            'message' => 'Update club successfully',
-            'data' => new ClubResource($club->refresh()),
-        ]);
-    }    
+
+        return ResponseHelper::success(new ClubResource($club->refresh()), 'Cập nhật câu lạc bộ thành công');
+    }
 
     public function destroy(Request $request)
     {
@@ -99,10 +95,7 @@ class ClubController extends Controller
         ClubMember::whereIn('club_id', $ids)->delete();
         Club::whereIn('id', $ids)->delete();
 
-        return response()->json([
-            'message' => 'Delete club successfully',
-            'data' => [],
-        ]);
+        return ResponseHelper::success([], 'Xóa câu lạc bộ thành công');
     }
 
     public function join(Request $request, $id)
@@ -111,16 +104,11 @@ class ClubController extends Controller
         $userId = auth()->id();
 
         if ($club->members()->where('user_id', $userId)->exists()) {
-            return response()->json([
-                'message' => 'Người dùng đã là thành viên của câu lạc bộ này',
-            ], 409);
+            return ResponseHelper::error('Người dùng đã là thành viên của câu lạc bộ này', 409);
         }
 
         $club->members()->attach($userId);
 
-        return response()->json([
-            'message' => 'Tham gia câu lạc bộ thành công',
-            'data' => new ClubResource($club->load('members')),
-        ]);
+        return ResponseHelper::success(new ClubResource($club->load('members')), 'Tham gia câu lạc bộ thành công');
     }
 }

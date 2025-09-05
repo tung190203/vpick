@@ -30,9 +30,9 @@ async function fetchUser(token, type) {
         Authorization: `${type} ${token}`,
       }
     })
-    localStorage.setItem(LOCAL_STORAGE_USER.USER, JSON.stringify(res.data))
-    if(res && res.data) {
-      switch (res.data.role) {
+    localStorage.setItem(LOCAL_STORAGE_USER.USER, JSON.stringify(res.data.data))
+    if(res && res.data.data) {
+      switch (res.data.data.role) {
         case ROLE.ADMIN:
           router.replace({ name: 'admin.dashboard' })
           break

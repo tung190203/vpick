@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\ResponseHelper;
 use App\Http\Resources\UserResource;
 use App\Mail\ResetPasswordMail;
 use App\Models\User;
@@ -25,16 +26,16 @@ class AuthController extends Controller
 
         try {
             if (!$token = JWTAuth::attempt($credentials)) {
-                return response()->json(['message' => 'Sai thông tin đăng nhập'], 401);
+                return ResponseHelper::error('Sai thông tin đăng nhập', 401);
             }
         } catch (JWTException $e) {
-            return response()->json(['message' => 'Không thể tạo token'], 500);
+            return ResponseHelper::error('Không thể tạo token', 500);
         }
 
         $user = Auth::user();
 
         if (!$user->email_verified_at) {
-            return response()->json(['message' => 'Vui lòng xác minh email trước khi đăng nhập'], 403);
+            return ResponseHelper::error('Vui lòng xác minh email trước khi đăng nhập', 403);
         }
 
         $accessToken = JWTAuth::claims(['type' => 'access'])->fromUser($user);
@@ -43,7 +44,7 @@ class AuthController extends Controller
         $user->last_login = now();
         $user->save();
 
-        return response()->json($this->responseWithToken($accessToken, $refreshToken, $user));
+        return ResponseHelper::success($this->responseWithToken($accessToken, $refreshToken, $user), 'Đăng nhập thành công');
     }
 
     public function register(Request $request)
@@ -64,9 +65,7 @@ class AuthController extends Controller
 
         $user->notify(new VerifyEmailNotification());
 
-        return response()->json([
-            'message' => 'Đăng ký thành công. Vui lòng kiểm tra email để xác minh tài khoản.'
-        ]);
+        return ResponseHelper::success([], 'Đăng ký thành công. Vui lòng kiểm tra email để xác minh tài khoản.');
     }
 
     public function forgotPassword(Request $request)
@@ -76,7 +75,7 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
 
         if (!$user) {
-            return response()->json(['message' => 'Email không tồn tại'], 404);
+            return ResponseHelper::error('Email không tồn tại', 404);
         }
         $token = Str::random(60);
 
@@ -93,8 +92,7 @@ class AuthController extends Controller
         // Gửi email
         Mail::to($user->email)->send(new ResetPasswordMail($resetLink));
 
-
-        return response()->json(['message' => 'Đã gửi email đặt lại mật khẩu']);
+        return ResponseHelper::success([], 'Đã gửi email đặt lại mật khẩu. Vui lòng kiểm tra hộp thư đến.');
     }
     public function resetPassword(Request $request)
     {
@@ -107,17 +105,17 @@ class AuthController extends Controller
         $record = DB::table('password_reset_tokens')->where('email', $request->email)->first();
 
         if (!$record) {
-            return response()->json(['message' => 'Không tìm thấy yêu cầu đặt lại mật khẩu.'], 404);
+            return ResponseHelper::error('Không tìm thấy yêu cầu đặt lại mật khẩu.', 404);
         }
 
         if (!Hash::check($request->token, $record->token)) {
-            return response()->json(['message' => 'Token không hợp lệ hoặc đã hết hạn.'], 400);
+            return ResponseHelper::error('Token không hợp lệ hoặc đã hết hạn.', 400);
         }
 
         // Đặt lại mật khẩu
         $user = User::where('email', $request->email)->first();
         if (!$user) {
-            return response()->json(['message' => 'Người dùng không tồn tại.'], 404);
+            return ResponseHelper::error('Người dùng không tồn tại.', 404);
         }
 
         $user->password = $request->password;
@@ -126,7 +124,7 @@ class AuthController extends Controller
         // Xoá token sau khi đặt lại xong
         DB::table('password_reset_tokens')->where('email', $request->email)->delete();
 
-        return response()->json(['message' => 'Mật khẩu đã được đặt lại thành công']);
+        return ResponseHelper::success([], 'Mật khẩu đã được đặt lại thành công');
     }
 
     public function refresh(Request $request)
@@ -134,31 +132,32 @@ class AuthController extends Controller
         $refreshToken = $request->bearerToken();
 
         if (!$refreshToken) {
-            return response()->json(['error' => 'Token không được cung cấp'], 401);
+            return ResponseHelper::error('Token không được cung cấp', 401);
         }
 
         try {
             $payload = JWTAuth::setToken($refreshToken)->getPayload();
 
             if ($payload->get('type') !== 'refresh') {
-                return response()->json(['error' => 'Sai loại token'], 401);
+                return ResponseHelper::error('Sai loại token', 401);
             }
 
             $user = User::find($payload->get('sub'));
             if (!$user) {
-                return response()->json(['error' => 'Người dùng không tồn tại'], 404);
+                return ResponseHelper::error('Người dùng không tồn tại', 404);
             }
 
             // cấp lại access token mới
             $newAccessToken = JWTAuth::claims(['type' => 'access'])->fromUser($user);
-
-            return response()->json([
+            $data = [
                 'access_token' => $newAccessToken,
                 'token_type' => 'Bearer',
                 'expires_in' => 3600
-            ]);
+            ];
+
+            return ResponseHelper::success($data, 'Làm mới access token thành công');
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Refresh token không hợp lệ hoặc đã hết hạn'], 401);
+            return ResponseHelper::error('Refresh token không hợp lệ hoặc đã hết hạn', 401);
         }
     }
 
@@ -186,7 +185,7 @@ class AuthController extends Controller
                     'email_verified_at' => now(),
                 ]
             );
-            
+
             Auth::login($user);
 
             $accessToken = JWTAuth::claims(['type' => 'access'])->fromUser($user);
@@ -195,7 +194,7 @@ class AuthController extends Controller
             $user->last_login = now();
             $user->save();
             if ($request->header('User-Agent') && strpos($request->header('User-Agent'), 'MobileApp') !== false) {
-                return response()->json($this->responseWithToken($accessToken, $refreshToken, $user));
+                return ResponseHelper::success($this->responseWithToken($accessToken, $refreshToken, $user), 'Đăng nhập bằng Google thành công');
             } else {
                 return redirect(config('app.redirect_success_url') . '/login-success?' . http_build_query([
                     'access_token' => $accessToken,
@@ -205,13 +204,13 @@ class AuthController extends Controller
                 ]));
             }
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Không thể đăng nhập bằng Google'], 500);
+            return ResponseHelper::error('Không thể đăng nhập bằng Google', 500);
         }
     }
 
     public function me(Request $request)
     {
-        return response()->json(new UserResource($request->user()));
+        return ResponseHelper::success(new UserResource($request->user()), 'Lấy thông tin người dùng thành công');
     }
 
     private function responseWithToken(string $accessToken, string $refreshToken, object $user): array

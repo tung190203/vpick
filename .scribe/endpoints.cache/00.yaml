@@ -291,7 +291,7 @@ endpoints:
           location: 'https://accounts.google.com/o/oauth2/auth?client_id=679656235890-o8sm9c7s8h95m1t82pc9rh6ucv480qlo.apps.googleusercontent.com&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fapi%2Fauth%2Fgoogle%2Fcallback&scope=openid+profile+email&response_type=code'
           content-type: 'text/html; charset=utf-8'
           x-ratelimit-limit: '60'
-          x-ratelimit-remaining: '56'
+          x-ratelimit-remaining: '59'
           access-control-allow-origin: '*'
         description: null
         custom: []
@@ -328,12 +328,12 @@ endpoints:
     responses:
       -
         status: 500
-        content: '{"error":"Kh\u00f4ng th\u1ec3 \u0111\u0103ng nh\u1eadp b\u1eb1ng Google"}'
+        content: '{"status":false,"message":"Kh\u00f4ng th\u1ec3 \u0111\u0103ng nh\u1eadp b\u1eb1ng Google","errors":[]}'
         headers:
           cache-control: 'no-cache, private'
           content-type: application/json
           x-ratelimit-limit: '60'
-          x-ratelimit-remaining: '55'
+          x-ratelimit-remaining: '58'
           access-control-allow-origin: '*'
         description: null
         custom: []
@@ -370,12 +370,12 @@ endpoints:
     responses:
       -
         status: 400
-        content: '{"message":"Token x\u00e1c minh kh\u00f4ng h\u1ee3p l\u1ec7 ho\u1eb7c \u0111\u00e3 h\u1ebft h\u1ea1n."}'
+        content: '{"status":false,"message":"Token x\u00e1c minh kh\u00f4ng h\u1ee3p l\u1ec7 ho\u1eb7c \u0111\u00e3 h\u1ebft h\u1ea1n.","errors":[]}'
         headers:
           cache-control: 'no-cache, private'
           content-type: application/json
           x-ratelimit-limit: '60'
-          x-ratelimit-remaining: '54'
+          x-ratelimit-remaining: '57'
           access-control-allow-origin: '*'
         description: null
         custom: []
@@ -1024,7 +1024,7 @@ endpoints:
         name: start_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-05T09:23:44'
+        example: '2025-09-05T18:19:33'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -1034,7 +1034,7 @@ endpoints:
         name: end_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-05T09:23:44'
+        example: '2025-09-05T18:19:33'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -1149,8 +1149,8 @@ endpoints:
         custom: []
     cleanBodyParameters:
       name: consequatur
-      start_date: '2025-09-05T09:23:44'
-      end_date: '2025-09-05T09:23:44'
+      start_date: '2025-09-05T18:19:33'
+      end_date: '2025-09-05T18:19:33'
       location: consequatur
       level: local
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
@@ -1267,7 +1267,7 @@ endpoints:
         name: start_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-05T09:23:44'
+        example: '2025-09-05T18:19:33'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -1277,7 +1277,7 @@ endpoints:
         name: end_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-05T09:23:44'
+        example: '2025-09-05T18:19:33'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -1421,8 +1421,8 @@ endpoints:
         custom: []
     cleanBodyParameters:
       name: consequatur
-      start_date: '2025-09-05T09:23:44'
-      end_date: '2025-09-05T09:23:44'
+      start_date: '2025-09-05T18:19:33'
+      end_date: '2025-09-05T18:19:33'
       location: consequatur
       level: local
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
@@ -1493,8 +1493,41 @@ endpoints:
     cleanUrlParameters: []
     queryParameters: []
     cleanQueryParameters: []
-    bodyParameters: []
-    cleanBodyParameters: []
+    bodyParameters:
+      name:
+        name: name
+        description: 'Must not be greater than 255 characters.'
+        required: false
+        example: vmqeopfuudtdsufvyvddq
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      location:
+        name: location
+        description: 'Must not be greater than 255 characters.'
+        required: false
+        example: amniihfqcoynlazghdtqt
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      perPage:
+        name: perPage
+        description: 'Must be at least 1. Must not be greater than 100.'
+        required: false
+        example: 16
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+    cleanBodyParameters:
+      name: vmqeopfuudtdsufvyvddq
+      location: amniihfqcoynlazghdtqt
+      perPage: 16
     fileParameters: []
     responses:
       -
@@ -1806,8 +1839,63 @@ endpoints:
     cleanUrlParameters: []
     queryParameters: []
     cleanQueryParameters: []
-    bodyParameters: []
-    cleanBodyParameters: []
+    bodyParameters:
+      mini_tournament_per_page:
+        name: mini_tournament_per_page
+        description: 'Must be at least 1. Must not be greater than 100.'
+        required: false
+        example: 21
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      tournament_per_page:
+        name: tournament_per_page
+        description: 'Must be at least 1. Must not be greater than 100.'
+        required: false
+        example: 13
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      banner_per_page:
+        name: banner_per_page
+        description: 'Must be at least 1. Must not be greater than 100.'
+        required: false
+        example: 16
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      club_per_page:
+        name: club_per_page
+        description: 'Must be at least 1. Must not be greater than 100.'
+        required: false
+        example: 5
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      leaderboard_per_page:
+        name: leaderboard_per_page
+        description: 'Must be at least 1. Must not be greater than 100.'
+        required: false
+        example: 14
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+    cleanBodyParameters:
+      mini_tournament_per_page: 21
+      tournament_per_page: 13
+      banner_per_page: 16
+      club_per_page: 5
+      leaderboard_per_page: 14
     fileParameters: []
     responses:
       -
@@ -1846,8 +1934,30 @@ endpoints:
     cleanUrlParameters: []
     queryParameters: []
     cleanQueryParameters: []
-    bodyParameters: []
-    cleanBodyParameters: []
+    bodyParameters:
+      name:
+        name: name
+        description: 'Must not be greater than 255 characters.'
+        required: false
+        example: vmqeopfuudtdsufvyvddq
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      per_page:
+        name: per_page
+        description: 'Must be at least 1. Must not be greater than 100.'
+        required: false
+        example: 1
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+    cleanBodyParameters:
+      name: vmqeopfuudtdsufvyvddq
+      per_page: 1
     fileParameters: []
     responses:
       -
@@ -2025,7 +2135,7 @@ endpoints:
         name: starts_at
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-05T09:23:44'
+        example: '2025-09-05T18:19:33'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -2274,7 +2384,7 @@ endpoints:
       name: mqeopfuudtdsufvyvddqa
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
       match_type: '3'
-      starts_at: '2025-09-05T09:23:44'
+      starts_at: '2025-09-05T18:19:33'
       duration_minutes: 66
       is_private: false
       fee: auto_split
@@ -2448,7 +2558,7 @@ endpoints:
         name: starts_at
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-05T09:23:44'
+        example: '2025-09-05T18:19:33'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -2697,7 +2807,7 @@ endpoints:
       name: mqeopfuudtdsufvyvddqa
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
       match_type: '3'
-      starts_at: '2025-09-05T09:23:44'
+      starts_at: '2025-09-05T18:19:33'
       duration_minutes: 66
       is_private: false
       fee: auto_split
@@ -3236,7 +3346,7 @@ endpoints:
         name: scheduled_at
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-05T09:23:44'
+        example: '2025-09-05T18:19:33'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -3294,7 +3404,7 @@ endpoints:
         custom: []
     cleanBodyParameters:
       round: consequatur
-      scheduled_at: '2025-09-05T09:23:44'
+      scheduled_at: '2025-09-05T18:19:33'
       team1_name: mqeopfuudtdsufvyvddqa
       team2_name: mniihfqcoynlazghdtqtq
       yard_number: xbajwbpilpmufinllwloa
@@ -3394,7 +3504,7 @@ endpoints:
         name: scheduled_at
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-05T09:23:44'
+        example: '2025-09-05T18:19:33'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -3434,7 +3544,7 @@ endpoints:
       round: consequatur
       team1_name: mqeopfuudtdsufvyvddqa
       team2_name: mniihfqcoynlazghdtqtq
-      scheduled_at: '2025-09-05T09:23:44'
+      scheduled_at: '2025-09-05T18:19:33'
       yard_number: xbajwbpilpmufinllwloa
       name_of_match: uydlsmsjuryvojcybzvrb
     fileParameters: []
@@ -4429,8 +4539,30 @@ endpoints:
     cleanUrlParameters: []
     queryParameters: []
     cleanQueryParameters: []
-    bodyParameters: []
-    cleanBodyParameters: []
+    bodyParameters:
+      per_page:
+        name: per_page
+        description: 'Must be at least 1. Must not be greater than 100.'
+        required: false
+        example: 21
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      name:
+        name: name
+        description: 'Must not be greater than 255 characters.'
+        required: false
+        example: mqeopfuudtdsufvyvddqa
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+    cleanBodyParameters:
+      per_page: 21
+      name: mqeopfuudtdsufvyvddqa
     fileParameters: []
     responses:
       -
@@ -4521,7 +4653,7 @@ endpoints:
           - unread
           - read
         exampleWasSpecified: false
-        nullable: false
+        nullable: true
         custom: []
       per_page:
         name: per_page
@@ -4585,6 +4717,90 @@ endpoints:
         exampleWasSpecified: false
         nullable: true
         custom: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
+      - POST
+    uri: 'api/mini-tournament-notifications/subscribe/{miniTournamentId}'
+    metadata:
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Đăng ký nhắc nhở giải đấu nhỏ.'
+      description: ''
+      authenticated: false
+      deprecated: false
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      miniTournamentId:
+        name: miniTournamentId
+        description: ''
+        required: true
+        example: consequatur
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+    cleanUrlParameters:
+      miniTournamentId: consequatur
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
+      - POST
+    uri: 'api/mini-tournament-notifications/unsubscribe/{miniTournamentId}'
+    metadata:
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Hủy đăng ký nhắc nhở giải đấu nhỏ.'
+      description: ''
+      authenticated: false
+      deprecated: false
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      miniTournamentId:
+        name: miniTournamentId
+        description: ''
+        required: true
+        example: consequatur
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+    cleanUrlParameters:
+      miniTournamentId: consequatur
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
     cleanBodyParameters: []
     fileParameters: []
     responses: []

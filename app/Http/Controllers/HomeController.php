@@ -2,83 +2,73 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\ResponseHelper;
 use App\Http\Resources\BannerResource;
-use App\Http\Resources\ClubResource;
-use App\Http\Resources\MatchesResource;
-use App\Http\Resources\TournamentResource;
+use App\Http\Resources\ListClubResource;
+use App\Http\Resources\ListMiniTournamentResource;
+use App\Http\Resources\ListTournamentResource;
 use App\Models\Banner;
 use App\Models\Club;
-use App\Models\Matches;
+use App\Models\MiniTournament;
 use App\Models\Tournament;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
 class HomeController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $validated = $request->validate([
+            'mini_tournament_per_page' => 'sometimes|integer|min:1|max:100',
+            'tournament_per_page' => 'sometimes|integer|min:1|max:100',
+            'banner_per_page' => 'sometimes|integer|min:1|max:100',
+            'club_per_page' => 'sometimes|integer|min:1|max:100',
+            'leaderboard_per_page' => 'sometimes|integer|min:1|max:100',
+        ]);
         $userId = auth()->user()->id;
-        $upcomingMatches = Matches::withFullRelations()
-            ->where(function ($q) use ($userId) {
-                $q->whereHas('participant1', function ($q2) use ($userId) {
-                    $q2->where(function ($inner) use ($userId) {
-                        $inner->where('user_id', $userId)
-                            ->orWhereHas('team.members', function ($m) use ($userId) {
-                                $m->where('user_id', $userId);
-                            });
-                    });
-                })
-                    ->orWhereHas('participant2', function ($q2) use ($userId) {
-                        $q2->where(function ($inner) use ($userId) {
-                            $inner->where('user_id', $userId)
-                                ->orWhereHas('team.members', function ($m) use ($userId) {
-                                    $m->where('user_id', $userId);
-                                });
-                        });
-                    });
-            })
-            ->where('scheduled_at', '>', Carbon::now())
-            ->orderBy('scheduled_at', 'asc')
-            ->take(5)
+        $upcomingMiniTournaments = MiniTournament::withFullRelations()
+            ->whereHas('participants', fn($q) => $q->where('user_id', $userId))
+            ->where('starts_at', '>', Carbon::now())
+            ->orderBy('starts_at', 'asc')
+            ->take($validated['mini_tournament_per_page'] ?? MiniTournament::PER_PAGE)
             ->get();
 
         $upcomingTournaments = Tournament::withFullRelations()
             ->where('start_date', '>', Carbon::now())
             ->orderBy('start_date', 'asc')
-            ->take(5)
+            ->take($validated['tournament_per_page'] ?? Tournament::PER_PAGE)
             ->get();
 
         $banners = Banner::where('is_active', true)
             ->orderBy('order', 'asc')
+            ->take($validated['banner_per_page'] ?? Banner::PER_PAGE)
             ->get();
         $myClub = Club::with('members')
             ->whereHas('members', fn($q) => $q->where('user_id', $userId))
+            ->take($validated['club_per_page'] ?? Club::PER_PAGE)
             ->get();
 
-            $leaderboard = Club::with(['members.vnduprScores' => fn($q) => $q->where('score_type', 'vndupr_score')])
+        $leaderboard = Club::with(['members.vnduprScores' => fn($q) => $q->where('score_type', 'vndupr_score')])
             ->get()
-            ->map(function($club) {
+            ->map(function ($club) {
                 $club->members_max_vndupr_score = $club->members
-                    ->map(function($member) {
-                        // Nếu chưa có score thì 0
+                    ->map(function ($member) {
                         return $member->vnduprScores->max('score_value') ?? 0;
                     })
-                    ->max(); // max trong club
+                    ->max();
                 return $club;
             })
             ->sortByDesc('members_max_vndupr_score')
-            ->take(5);
-        
+            ->take($validated['leaderboard_per_page'] ?? Club::PER_PAGE);
 
-        return response()->json([
-            'message' => 'Welcome to the Home Page!',
-            'data' => [
-                'upcoming_matches' => MatchesResource::collection($upcomingMatches),
-                'upcoming_tournaments' => TournamentResource::collection($upcomingTournaments),
-                'banners' => BannerResource::collection($banners),
-                'my_club' => ClubResource::collection($myClub),
-                'leaderboard' => ClubResource::collection($leaderboard),
-            ],
-        ]);
+        $data = [
+            'upcoming_mini_tournament' => ListMiniTournamentResource::collection($upcomingMiniTournaments),
+            'upcoming_tournaments' => ListTournamentResource::collection($upcomingTournaments),
+            'banners' => BannerResource::collection($banners),
+            'my_club' => ListClubResource::collection($myClub),
+            'leaderboard' => ListClubResource::collection($leaderboard),
+        ];
+
+        return ResponseHelper::success($data, 'Lấy dữ liệu thành công');
     }
 }

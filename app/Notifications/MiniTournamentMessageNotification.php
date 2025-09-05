@@ -38,7 +38,7 @@ class MiniTournamentMessageNotification extends Notification implements ShouldQu
             'mini_tournament_id' => $this->message->mini_tournament_id,
             'message_id' => $this->message->id,
             'sender_id' => $this->message->user_id,
-            'sender_name' => $this->message->user->name,
+            'sender_name' => $this->message->user->full_name,
             'type' => $this->message->type,
             'content' => $this->message->content,
         ];
@@ -57,7 +57,7 @@ class MiniTournamentMessageNotification extends Notification implements ShouldQu
             'mini_tournament_id' => $this->message->mini_tournament_id,
             'message_id' => $this->message->id,
             'sender_id' => $this->message->user_id,
-            'sender_name' => $this->message->user->name,
+            'sender_name' => $this->message->user->fullname,
             'type' => $this->message->type,
             'content' => $this->message->content,
         ];

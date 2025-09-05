@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\ResponseHelper;
 use App\Http\Requests\StoreMiniTournamentRequest;
+use App\Http\Resources\ListMiniTournamentResource;
 use App\Http\Resources\MiniTournamentResource;
 use App\Models\MiniParticipant;
 use App\Models\MiniTournament;
@@ -85,7 +86,7 @@ class MiniTournamentController extends Controller
         });
         $miniTournaments = $query->paginate($validated['per_page'] ?? MiniTournament::PER_PAGE);
 
-        return ResponseHelper::success(MiniTournamentResource::collection($miniTournaments), 'Mini Tournaments retrieved successfully');
+        return ResponseHelper::success(ListMiniTournamentResource::collection($miniTournaments), 'Mini Tournaments retrieved successfully');
     }
     /**
      * chi tiết mini tournament

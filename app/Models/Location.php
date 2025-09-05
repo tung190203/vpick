@@ -14,6 +14,8 @@ class Location extends Model
         'name',
         'slug'
     ];
+
+    const PER_PAGE = 20;
     public static function boot()
     {
         parent::boot();

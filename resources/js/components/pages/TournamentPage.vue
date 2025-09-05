@@ -185,8 +185,8 @@ const getAllTournaments = async (page = 1) => {
 
         const res = await TournamentService.getTournaments(params)
 
-        if (res && res.data) {
-            tournaments.value = res.data
+        if (res) {
+            tournaments.value = res.tournaments
             pagination.value = res.meta
         }
     } catch (error) {
