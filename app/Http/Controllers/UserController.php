@@ -140,8 +140,8 @@ class UserController extends Controller
             'about' => 'nullable|string|max:300',
             'password' => 'nullable|string|min:8',
             'is_profile_completed' => 'nullable|boolean',
-            'latitute' => 'nullable|numeric',
-            'longitute' => 'nullable|numeric',
+            'latitude' => 'nullable|string',
+            'longitude' => 'nullable|string',
             'address' => 'nullable|string|max:255',
             'gender' => 'nullable|numeric|in:' . implode(',', User::GENDER),
             'date_of_birth' => 'nullable|date_format:Y-m-d',
@@ -151,7 +151,7 @@ class UserController extends Controller
             'score_value.*' => 'integer|min:0',
         ]);
         $user = User::findOrFail(auth()->id());
-        $data = collect($validated)->except(['avatar_url', 'password', 'is_profile_completed', 'score_value'])->toArray();
+        $data = collect($validated)->except(['avatar_url', 'password', 'is_profile_completed', 'score_value', 'sport_ids'])->toArray();
 
         if (!empty($validated['password'])) {
             $data['password'] = $validated['password'];
