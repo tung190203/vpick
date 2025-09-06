@@ -44,7 +44,7 @@ class UserController extends Controller
             'achievement' => 'sometimes',
         ]);
 
-        $query = User::withFullRelations()->filter($validated);
+        $query = User::withFullRelations()->filter($validated)->visibleFor(auth()->user());
 
         $hasFilter = collect([
             'sport_id',
@@ -149,6 +149,7 @@ class UserController extends Controller
             'sport_ids.*' => 'exists:sports,id',
             'score_value' => 'nullable|array',
             'score_value.*' => 'integer|min:0',
+            'visibility' => 'nullable|in:open,friend-only'
         ]);
         $user = User::findOrFail(auth()->id());
         $data = collect($validated)->except(['avatar_url', 'password', 'is_profile_completed', 'score_value', 'sport_ids'])->toArray();

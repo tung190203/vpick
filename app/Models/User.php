@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\HasApiTokens;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
@@ -36,6 +37,7 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         'longitude',
         'address',
         'last_login',
+        'visibility'
     ];
 
     const PER_PAGE = 15;
@@ -169,6 +171,11 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         return $this->morphMany(Follow::class, 'followable');
     }
 
+    public function followings()
+    {
+        return $this->hasMany(Follow::class, 'user_id');
+    }
+
     public function getJWTIdentifier()
     {
         return $this->getKey();
@@ -207,16 +214,16 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
     }
 
     public function vnduprScores()
-{
-    return $this->hasManyThrough(
-        UserSportScore::class,
-        UserSport::class,
-        'user_id',      // FK trên bảng user_sport
-        'user_sport_id',// FK trên bảng user_sport_scores
-        'id',           // PK trên users
-        'id'            // PK trên user_sport
-    )->where('score_type', 'vndupr_score');
-}
+    {
+        return $this->hasManyThrough(
+            UserSportScore::class,
+            UserSport::class,
+            'user_id',      // FK trên bảng user_sport
+            'user_sport_id',// FK trên bảng user_sport_scores
+            'id',           // PK trên users
+            'id'            // PK trên user_sport
+        )->where('score_type', 'vndupr_score');
+    }
 
     public function clubs()
     {
@@ -278,6 +285,43 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
     public function scopeLoadFullRelations()
     {
         return $this->load(['referee', 'follows', 'playTimes', 'sports', 'sports.sport', 'sports.scores', 'clubs']);
+    }
+
+    public function isMutualWith(User $other): bool
+    {
+        return $this->followings()
+            ->where('followable_type', User::class)
+            ->where('followable_id', $other->id)
+            ->exists()
+            &&
+            $other->followings()
+                ->where('followable_type', User::class)
+                ->where('followable_id', $this->id)
+                ->exists();
+    }
+
+    public function scopeVisibleFor($query, User $currentUser)
+    {
+        return $query->where(function ($q) use ($currentUser) {
+            // Luôn thấy user open
+            $q->where('visibility', 'open');
+
+            $q->orWhere(function ($q2) use ($currentUser) {
+                $q2->where('visibility', 'friend-only')
+                    ->whereExists(function ($sub) use ($currentUser) {
+                        $sub->select(DB::raw(1))
+                            ->from('follows as f1')
+                            ->join('follows as f2', function ($join) {
+                                $join->on('f1.user_id', '=', 'f2.followable_id')
+                                    ->on('f1.followable_id', '=', 'f2.user_id')
+                                    ->where('f1.followable_type', User::class)
+                                    ->where('f2.followable_type', User::class);
+                            })
+                            ->where('f1.user_id', $currentUser->id)
+                            ->whereColumn('f1.followable_id', 'users.id');
+                    });
+            });
+        });
     }
 
     public function scopeInBounds($query, $minLat, $maxLat, $minLng, $maxLng)
@@ -382,11 +426,11 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
             )
             ->when(
                 !empty($filters['achievement']) && $filters['achievement'] == true,
-                fn($query) => $query->where(function($q) {
+                fn($query) => $query->where(function ($q) {
                     $q->whereHas('badges')
-                      ->orWhereHas('sport', fn($q2) => $q2->whereNotNull('user_sport.tier')); // hoặc có tier
+                        ->orWhereHas('sport', fn($q2) => $q2->whereNotNull('user_sport.tier')); // hoặc có tier
                 })
-            );            
+            );
         if (!empty($filters['recent_matches']) && is_array($filters['recent_matches'])) {
             $query->withCount([
                 'matches' => fn($q) => $q->where('status', 'completed')
