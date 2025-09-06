@@ -17,6 +17,7 @@ class UserListResource extends JsonResource
         return [
             'id' => $this->id,
             'full_name' => $this->full_name,
+            'visibility' => $this->visibility,
             'avatar_url' => $this->avatar_url,
             'play_times' => UserPlayTimeResource::collection($this->whenLoaded('playTimes')),
             'sports' => UserSportResource::collection($this->whenLoaded('sports')),
