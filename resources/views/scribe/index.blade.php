@@ -149,6 +149,12 @@
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-GETapi-locations">
                                 <a href="#endpoints-GETapi-locations">GET api/locations</a>
                             </li>
+                                                                                <li class="tocify-item level-2" data-unique="endpoints-GETapi-search-location">
+                                <a href="#endpoints-GETapi-search-location">GET api/search-location</a>
+                            </li>
+                                                                                <li class="tocify-item level-2" data-unique="endpoints-GETapi-location-detail">
+                                <a href="#endpoints-GETapi-location-detail">GET api/location-detail</a>
+                            </li>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-GETapi-mini-tournaments-index">
                                 <a href="#endpoints-GETapi-mini-tournaments-index">danh sách mini tournament</a>
                             </li>
@@ -2178,7 +2184,8 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --form "address=mqeopfuudtdsufvyvddqa"\
     --form "date_of_birth=2025-09-06"\
     --form "score_value[]=45"\
-    --form "avatar_url=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpG2mVWF" </code></pre></div>
+    --form "visibility=open"\
+    --form "avatar_url=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpmhsTJM" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -2201,6 +2208,7 @@ body.append('longitude', 'consequatur');
 body.append('address', 'mqeopfuudtdsufvyvddqa');
 body.append('date_of_birth', '2025-09-06');
 body.append('score_value[]', '45');
+body.append('visibility', 'open');
 body.append('avatar_url', document.querySelector('input[name="avatar_url"]').files[0]);
 
 fetch(url, {
@@ -2303,7 +2311,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpG2mVWF</code></p>
+<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpmhsTJM</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>location_id</code></b>&nbsp;&nbsp;
@@ -2439,6 +2447,19 @@ You can check the Dev Tools console for debugging information.</code></pre>
                data-component="body">
     <br>
 <p>Must be at least 0.</p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>visibility</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+                <input type="text" style="display: none"
+                              name="visibility"                data-endpoint="POSTapi-user-update"
+               value="open"
+               data-component="body">
+    <br>
+<p>Example: <code>open</code></p>
+Must be one of:
+<ul style="list-style-type: square;"><li><code>open</code></li> <li><code>friend-only</code></li></ul>
         </div>
         </form>
 
@@ -2584,8 +2605,8 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Accept: application/json" \
     --data "{
     \"name\": \"consequatur\",
-    \"start_date\": \"2025-09-06T03:15:10\",
-    \"end_date\": \"2025-09-06T03:15:10\",
+    \"start_date\": \"2025-09-06T19:22:03\",
+    \"end_date\": \"2025-09-06T19:22:03\",
     \"location\": \"consequatur\",
     \"level\": \"local\",
     \"description\": \"Dolores dolorum amet iste laborum eius est dolor.\",
@@ -2616,8 +2637,8 @@ const headers = {
 
 let body = {
     "name": "consequatur",
-    "start_date": "2025-09-06T03:15:10",
-    "end_date": "2025-09-06T03:15:10",
+    "start_date": "2025-09-06T19:22:03",
+    "end_date": "2025-09-06T19:22:03",
     "location": "consequatur",
     "level": "local",
     "description": "Dolores dolorum amet iste laborum eius est dolor.",
@@ -2731,10 +2752,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="start_date"                data-endpoint="POSTapi-tournaments-store"
-               value="2025-09-06T03:15:10"
+               value="2025-09-06T19:22:03"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-09-06T03:15:10</code></p>
+<p>Must be a valid date. Example: <code>2025-09-06T19:22:03</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>end_date</code></b>&nbsp;&nbsp;
@@ -2742,10 +2763,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="end_date"                data-endpoint="POSTapi-tournaments-store"
-               value="2025-09-06T03:15:10"
+               value="2025-09-06T19:22:03"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-09-06T03:15:10</code></p>
+<p>Must be a valid date. Example: <code>2025-09-06T19:22:03</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>location</code></b>&nbsp;&nbsp;
@@ -3017,8 +3038,8 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Accept: application/json" \
     --data "{
     \"name\": \"consequatur\",
-    \"start_date\": \"2025-09-06T03:15:10\",
-    \"end_date\": \"2025-09-06T03:15:10\",
+    \"start_date\": \"2025-09-06T19:22:03\",
+    \"end_date\": \"2025-09-06T19:22:03\",
     \"location\": \"consequatur\",
     \"level\": \"local\",
     \"description\": \"Dolores dolorum amet iste laborum eius est dolor.\",
@@ -3049,8 +3070,8 @@ const headers = {
 
 let body = {
     "name": "consequatur",
-    "start_date": "2025-09-06T03:15:10",
-    "end_date": "2025-09-06T03:15:10",
+    "start_date": "2025-09-06T19:22:03",
+    "end_date": "2025-09-06T19:22:03",
     "location": "consequatur",
     "level": "local",
     "description": "Dolores dolorum amet iste laborum eius est dolor.",
@@ -3176,10 +3197,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="start_date"                data-endpoint="POSTapi-tournaments-update--id-"
-               value="2025-09-06T03:15:10"
+               value="2025-09-06T19:22:03"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-09-06T03:15:10</code></p>
+<p>Must be a valid date. Example: <code>2025-09-06T19:22:03</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>end_date</code></b>&nbsp;&nbsp;
@@ -3187,10 +3208,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="end_date"                data-endpoint="POSTapi-tournaments-update--id-"
-               value="2025-09-06T03:15:10"
+               value="2025-09-06T19:22:03"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-09-06T03:15:10</code></p>
+<p>Must be a valid date. Example: <code>2025-09-06T19:22:03</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>location</code></b>&nbsp;&nbsp;
@@ -3639,7 +3660,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --form "name=consequatur"\
     --form "location=consequatur"\
     --form "created_by=consequatur"\
-    --form "logo_url=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpsjgDMu" </code></pre></div>
+    --form "logo_url=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpUWXtVo" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -3769,7 +3790,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpsjgDMu</code></p>
+<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpUWXtVo</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>created_by</code></b>&nbsp;&nbsp;
@@ -3937,7 +3958,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Content-Type: multipart/form-data" \
     --header "Accept: application/json" \
     --form "location=consequatur"\
-    --form "logo_url=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/php5KWLu8" </code></pre></div>
+    --form "logo_url=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpyEJx06" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -4077,7 +4098,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/php5KWLu8</code></p>
+<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpyEJx06</code></p>
         </div>
         </form>
 
@@ -4664,6 +4685,296 @@ You can check the Dev Tools console for debugging information.</code></pre>
         </div>
         </form>
 
+                    <h2 id="endpoints-GETapi-search-location">GET api/search-location</h2>
+
+<p>
+</p>
+
+
+
+<span id="example-requests-GETapi-search-location">
+<blockquote>Example request:</blockquote>
+
+
+<div class="bash-example">
+    <pre><code class="language-bash">curl --request GET \
+    --get "http://localhost/api/search-location" \
+    --header "Content-Type: application/json" \
+    --header "Accept: application/json" \
+    --data "{
+    \"query\": \"vmqeopfuudtdsufvyvddq\"
+}"
+</code></pre></div>
+
+
+<div class="javascript-example">
+    <pre><code class="language-javascript">const url = new URL(
+    "http://localhost/api/search-location"
+);
+
+const headers = {
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+};
+
+let body = {
+    "query": "vmqeopfuudtdsufvyvddq"
+};
+
+fetch(url, {
+    method: "GET",
+    headers,
+    body: JSON.stringify(body),
+}).then(response =&gt; response.json());</code></pre></div>
+
+</span>
+
+<span id="example-responses-GETapi-search-location">
+            <blockquote>
+            <p>Example response (401):</p>
+        </blockquote>
+                <details class="annotation">
+            <summary style="cursor: pointer;">
+                <small onclick="textContent = parentElement.parentElement.open ? 'Show headers' : 'Hide headers'">Show headers</small>
+            </summary>
+            <pre><code class="language-http">cache-control: no-cache, private
+content-type: application/json
+access-control-allow-origin: *
+ </code></pre></details>         <pre>
+
+<code class="language-json" style="max-height: 300px;">{
+    &quot;message&quot;: &quot;Unauthenticated.&quot;
+}</code>
+ </pre>
+    </span>
+<span id="execution-results-GETapi-search-location" hidden>
+    <blockquote>Received response<span
+                id="execution-response-status-GETapi-search-location"></span>:
+    </blockquote>
+    <pre class="json"><code id="execution-response-content-GETapi-search-location"
+      data-empty-response-text="<Empty response>" style="max-height: 400px;"></code></pre>
+</span>
+<span id="execution-error-GETapi-search-location" hidden>
+    <blockquote>Request failed with error:</blockquote>
+    <pre><code id="execution-error-message-GETapi-search-location">
+
+Tip: Check that you&#039;re properly connected to the network.
+If you&#039;re a maintainer of ths API, verify that your API is running and you&#039;ve enabled CORS.
+You can check the Dev Tools console for debugging information.</code></pre>
+</span>
+<form id="form-GETapi-search-location" data-method="GET"
+      data-path="api/search-location"
+      data-authed="0"
+      data-hasfiles="0"
+      data-isarraybody="0"
+      autocomplete="off"
+      onsubmit="event.preventDefault(); executeTryOut('GETapi-search-location', this);">
+    <h3>
+        Request&nbsp;&nbsp;&nbsp;
+                    <button type="button"
+                    style="background-color: #8fbcd4; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-tryout-GETapi-search-location"
+                    onclick="tryItOut('GETapi-search-location');">Try it out ⚡
+            </button>
+            <button type="button"
+                    style="background-color: #c97a7e; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-canceltryout-GETapi-search-location"
+                    onclick="cancelTryOut('GETapi-search-location');" hidden>Cancel 🛑
+            </button>&nbsp;&nbsp;
+            <button type="submit"
+                    style="background-color: #6ac174; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-executetryout-GETapi-search-location"
+                    data-initial-text="Send Request 💥"
+                    data-loading-text="⏱ Sending..."
+                    hidden>Send Request 💥
+            </button>
+            </h3>
+            <p>
+            <small class="badge badge-green">GET</small>
+            <b><code>api/search-location</code></b>
+        </p>
+                <h4 class="fancy-heading-panel"><b>Headers</b></h4>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Content-Type"                data-endpoint="GETapi-search-location"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Accept"                data-endpoint="GETapi-search-location"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <h4 class="fancy-heading-panel"><b>Body Parameters</b></h4>
+        <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>query</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="query"                data-endpoint="GETapi-search-location"
+               value="vmqeopfuudtdsufvyvddq"
+               data-component="body">
+    <br>
+<p>Must not be greater than 255 characters. Example: <code>vmqeopfuudtdsufvyvddq</code></p>
+        </div>
+        </form>
+
+                    <h2 id="endpoints-GETapi-location-detail">GET api/location-detail</h2>
+
+<p>
+</p>
+
+
+
+<span id="example-requests-GETapi-location-detail">
+<blockquote>Example request:</blockquote>
+
+
+<div class="bash-example">
+    <pre><code class="language-bash">curl --request GET \
+    --get "http://localhost/api/location-detail" \
+    --header "Content-Type: application/json" \
+    --header "Accept: application/json" \
+    --data "{
+    \"place_id\": \"vmqeopfuudtdsufvyvddq\"
+}"
+</code></pre></div>
+
+
+<div class="javascript-example">
+    <pre><code class="language-javascript">const url = new URL(
+    "http://localhost/api/location-detail"
+);
+
+const headers = {
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+};
+
+let body = {
+    "place_id": "vmqeopfuudtdsufvyvddq"
+};
+
+fetch(url, {
+    method: "GET",
+    headers,
+    body: JSON.stringify(body),
+}).then(response =&gt; response.json());</code></pre></div>
+
+</span>
+
+<span id="example-responses-GETapi-location-detail">
+            <blockquote>
+            <p>Example response (401):</p>
+        </blockquote>
+                <details class="annotation">
+            <summary style="cursor: pointer;">
+                <small onclick="textContent = parentElement.parentElement.open ? 'Show headers' : 'Hide headers'">Show headers</small>
+            </summary>
+            <pre><code class="language-http">cache-control: no-cache, private
+content-type: application/json
+access-control-allow-origin: *
+ </code></pre></details>         <pre>
+
+<code class="language-json" style="max-height: 300px;">{
+    &quot;message&quot;: &quot;Unauthenticated.&quot;
+}</code>
+ </pre>
+    </span>
+<span id="execution-results-GETapi-location-detail" hidden>
+    <blockquote>Received response<span
+                id="execution-response-status-GETapi-location-detail"></span>:
+    </blockquote>
+    <pre class="json"><code id="execution-response-content-GETapi-location-detail"
+      data-empty-response-text="<Empty response>" style="max-height: 400px;"></code></pre>
+</span>
+<span id="execution-error-GETapi-location-detail" hidden>
+    <blockquote>Request failed with error:</blockquote>
+    <pre><code id="execution-error-message-GETapi-location-detail">
+
+Tip: Check that you&#039;re properly connected to the network.
+If you&#039;re a maintainer of ths API, verify that your API is running and you&#039;ve enabled CORS.
+You can check the Dev Tools console for debugging information.</code></pre>
+</span>
+<form id="form-GETapi-location-detail" data-method="GET"
+      data-path="api/location-detail"
+      data-authed="0"
+      data-hasfiles="0"
+      data-isarraybody="0"
+      autocomplete="off"
+      onsubmit="event.preventDefault(); executeTryOut('GETapi-location-detail', this);">
+    <h3>
+        Request&nbsp;&nbsp;&nbsp;
+                    <button type="button"
+                    style="background-color: #8fbcd4; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-tryout-GETapi-location-detail"
+                    onclick="tryItOut('GETapi-location-detail');">Try it out ⚡
+            </button>
+            <button type="button"
+                    style="background-color: #c97a7e; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-canceltryout-GETapi-location-detail"
+                    onclick="cancelTryOut('GETapi-location-detail');" hidden>Cancel 🛑
+            </button>&nbsp;&nbsp;
+            <button type="submit"
+                    style="background-color: #6ac174; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-executetryout-GETapi-location-detail"
+                    data-initial-text="Send Request 💥"
+                    data-loading-text="⏱ Sending..."
+                    hidden>Send Request 💥
+            </button>
+            </h3>
+            <p>
+            <small class="badge badge-green">GET</small>
+            <b><code>api/location-detail</code></b>
+        </p>
+                <h4 class="fancy-heading-panel"><b>Headers</b></h4>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Content-Type"                data-endpoint="GETapi-location-detail"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Accept"                data-endpoint="GETapi-location-detail"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <h4 class="fancy-heading-panel"><b>Body Parameters</b></h4>
+        <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>place_id</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="place_id"                data-endpoint="GETapi-location-detail"
+               value="vmqeopfuudtdsufvyvddq"
+               data-component="body">
+    <br>
+<p>Must not be greater than 255 characters. Example: <code>vmqeopfuudtdsufvyvddq</code></p>
+        </div>
+        </form>
+
                     <h2 id="endpoints-GETapi-mini-tournaments-index">danh sách mini tournament</h2>
 
 <p>
@@ -4857,7 +5168,7 @@ Must be one of:
     --form "name=mqeopfuudtdsufvyvddqa"\
     --form "description=Dolores dolorum amet iste laborum eius est dolor."\
     --form "match_type=3"\
-    --form "starts_at=2025-09-06T03:15:10"\
+    --form "starts_at=2025-09-06T19:22:03"\
     --form "duration_minutes=66"\
     --form "is_private="\
     --form "fee=auto_split"\
@@ -4877,7 +5188,7 @@ Must be one of:
     --form "allow_participant_add_friends="\
     --form "send_notification="\
     --form "status=3"\
-    --form "poster=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpNoOr4f" </code></pre></div>
+    --form "poster=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpDx9cUS" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -4895,7 +5206,7 @@ body.append('sport_id', 'consequatur');
 body.append('name', 'mqeopfuudtdsufvyvddqa');
 body.append('description', 'Dolores dolorum amet iste laborum eius est dolor.');
 body.append('match_type', '3');
-body.append('starts_at', '2025-09-06T03:15:10');
+body.append('starts_at', '2025-09-06T19:22:03');
 body.append('duration_minutes', '66');
 body.append('is_private', '');
 body.append('fee', 'auto_split');
@@ -5006,7 +5317,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpNoOr4f</code></p>
+<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpDx9cUS</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>sport_id</code></b>&nbsp;&nbsp;
@@ -5060,10 +5371,10 @@ Must be one of:
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="starts_at"                data-endpoint="POSTapi-mini-tournaments-store"
-               value="2025-09-06T03:15:10"
+               value="2025-09-06T19:22:03"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-09-06T03:15:10</code></p>
+<p>Must be a valid date. Example: <code>2025-09-06T19:22:03</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>duration_minutes</code></b>&nbsp;&nbsp;
@@ -5530,7 +5841,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --form "name=mqeopfuudtdsufvyvddqa"\
     --form "description=Dolores dolorum amet iste laborum eius est dolor."\
     --form "match_type=3"\
-    --form "starts_at=2025-09-06T03:15:10"\
+    --form "starts_at=2025-09-06T19:22:03"\
     --form "duration_minutes=66"\
     --form "is_private="\
     --form "fee=auto_split"\
@@ -5550,7 +5861,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --form "allow_participant_add_friends="\
     --form "send_notification="\
     --form "status=3"\
-    --form "poster=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phppnWjoT" </code></pre></div>
+    --form "poster=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpgogS2L" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -5568,7 +5879,7 @@ body.append('sport_id', 'consequatur');
 body.append('name', 'mqeopfuudtdsufvyvddqa');
 body.append('description', 'Dolores dolorum amet iste laborum eius est dolor.');
 body.append('match_type', '3');
-body.append('starts_at', '2025-09-06T03:15:10');
+body.append('starts_at', '2025-09-06T19:22:03');
 body.append('duration_minutes', '66');
 body.append('is_private', '');
 body.append('fee', 'auto_split');
@@ -5691,7 +6002,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phppnWjoT</code></p>
+<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpgogS2L</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>sport_id</code></b>&nbsp;&nbsp;
@@ -5745,10 +6056,10 @@ Must be one of:
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="starts_at"                data-endpoint="POSTapi-mini-tournaments-update--id-"
-               value="2025-09-06T03:15:10"
+               value="2025-09-06T19:22:03"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-09-06T03:15:10</code></p>
+<p>Must be a valid date. Example: <code>2025-09-06T19:22:03</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>duration_minutes</code></b>&nbsp;&nbsp;
@@ -6969,7 +7280,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Content-Type: application/json" \
     --header "Accept: application/json" \
     --data "{
-    \"filter\": \"leaderboard\",
+    \"filter\": \"my_matches\",
     \"per_page\": 17
 }"
 </code></pre></div>
@@ -6986,7 +7297,7 @@ const headers = {
 };
 
 let body = {
-    "filter": "leaderboard",
+    "filter": "my_matches",
     "per_page": 17
 };
 
@@ -7104,10 +7415,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="filter"                data-endpoint="GETapi-mini-matches-index--miniTournamentId-"
-               value="leaderboard"
+               value="my_matches"
                data-component="body">
     <br>
-<p>Example: <code>leaderboard</code></p>
+<p>Example: <code>my_matches</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>matches</code></li> <li><code>my_matches</code></li> <li><code>leaderboard</code></li></ul>
         </div>
@@ -7144,7 +7455,7 @@ truyền mảng lên là team</h2>
     --header "Accept: application/json" \
     --data "{
     \"round\": \"consequatur\",
-    \"scheduled_at\": \"2025-09-06T03:15:10\",
+    \"scheduled_at\": \"2025-09-06T19:22:03\",
     \"team1_name\": \"mqeopfuudtdsufvyvddqa\",
     \"team2_name\": \"mniihfqcoynlazghdtqtq\",
     \"yard_number\": \"xbajwbpilpmufinllwloa\",
@@ -7165,7 +7476,7 @@ const headers = {
 
 let body = {
     "round": "consequatur",
-    "scheduled_at": "2025-09-06T03:15:10",
+    "scheduled_at": "2025-09-06T19:22:03",
     "team1_name": "mqeopfuudtdsufvyvddqa",
     "team2_name": "mniihfqcoynlazghdtqtq",
     "yard_number": "xbajwbpilpmufinllwloa",
@@ -7303,10 +7614,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="scheduled_at"                data-endpoint="POSTapi-mini-matches-store--miniTournamentId-"
-               value="2025-09-06T03:15:10"
+               value="2025-09-06T19:22:03"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-09-06T03:15:10</code></p>
+<p>Must be a valid date. Example: <code>2025-09-06T19:22:03</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>referee</code></b>&nbsp;&nbsp;
@@ -7385,7 +7696,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     \"round\": \"consequatur\",
     \"team1_name\": \"mqeopfuudtdsufvyvddqa\",
     \"team2_name\": \"mniihfqcoynlazghdtqtq\",
-    \"scheduled_at\": \"2025-09-06T03:15:10\",
+    \"scheduled_at\": \"2025-09-06T19:22:03\",
     \"yard_number\": \"xbajwbpilpmufinllwloa\",
     \"name_of_match\": \"uydlsmsjuryvojcybzvrb\"
 }"
@@ -7406,7 +7717,7 @@ let body = {
     "round": "consequatur",
     "team1_name": "mqeopfuudtdsufvyvddqa",
     "team2_name": "mniihfqcoynlazghdtqtq",
-    "scheduled_at": "2025-09-06T03:15:10",
+    "scheduled_at": "2025-09-06T19:22:03",
     "yard_number": "xbajwbpilpmufinllwloa",
     "name_of_match": "uydlsmsjuryvojcybzvrb"
 };
@@ -7564,10 +7875,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="scheduled_at"                data-endpoint="POSTapi-mini-matches-update--matchId-"
-               value="2025-09-06T03:15:10"
+               value="2025-09-06T19:22:03"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-09-06T03:15:10</code></p>
+<p>Must be a valid date. Example: <code>2025-09-06T19:22:03</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>referee</code></b>&nbsp;&nbsp;
@@ -8439,7 +8750,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Accept: application/json" \
     --form "type=text"\
     --form "content=consequatur"\
-    --form "file=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpfnM8Hx" </code></pre></div>
+    --form "file=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpUrHoGp" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -8582,7 +8893,7 @@ Must be one of:
                value=""
                data-component="body">
     <br>
-<p>Must be a file. Must not be greater than 10240 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpfnM8Hx</code></p>
+<p>Must be a file. Must not be greater than 10240 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpUrHoGp</code></p>
         </div>
         </form>
 
@@ -8897,7 +9208,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Accept: application/json" \
     --form "receiver_id=consequatur"\
     --form "message=consequatur"\
-    --form "attachment=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phps9lsMC" </code></pre></div>
+    --form "attachment=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpWnViW6" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -9026,7 +9337,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Must be a file. Must not be greater than 10240 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phps9lsMC</code></p>
+<p>Must be a file. Must not be greater than 10240 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpWnViW6</code></p>
         </div>
         </form>
 

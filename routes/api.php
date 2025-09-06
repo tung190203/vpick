@@ -69,8 +69,11 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
         Route::post('/join/{id}', [ClubController::class, 'join']);
     });
 
-    Route::get('/home',[HomeController::class, 'index']);
-    Route::get('/locations',[LocationController::class, 'index']);
+    Route::get('/home', [HomeController::class, 'index']);
+    Route::get('/locations', [LocationController::class, 'index']);
+    // search geocoding
+    Route::get('/search-location', [UserController::class, 'searchLocation']);
+    Route::get('/location-detail', [UserController::class, 'detailGooglePlace']);
     // Mini Tournament Routes
     Route::prefix('mini-tournaments')->group(function (): void {
         Route::get('/index', [MiniTournamentController::class, 'index']);
