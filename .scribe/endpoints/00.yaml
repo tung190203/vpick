@@ -926,6 +926,18 @@ endpoints:
         exampleWasSpecified: false
         nullable: false
         custom: []
+      visibility:
+        name: visibility
+        description: ''
+        required: false
+        example: open
+        type: string
+        enumValues:
+          - open
+          - friend-only
+        exampleWasSpecified: false
+        nullable: true
+        custom: []
     cleanBodyParameters:
       full_name: vmqeopfuudtdsufvyvddq
       about: amniihfqcoynlazghdtqt
@@ -937,6 +949,7 @@ endpoints:
       date_of_birth: '2025-09-06'
       score_value:
         - 45
+      visibility: open
     fileParameters:
       avatar_url: null
     responses: []
@@ -1022,7 +1035,7 @@ endpoints:
         name: start_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-06T03:15:10'
+        example: '2025-09-06T19:22:03'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -1032,7 +1045,7 @@ endpoints:
         name: end_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-06T03:15:10'
+        example: '2025-09-06T19:22:03'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -1147,8 +1160,8 @@ endpoints:
         custom: []
     cleanBodyParameters:
       name: consequatur
-      start_date: '2025-09-06T03:15:10'
-      end_date: '2025-09-06T03:15:10'
+      start_date: '2025-09-06T19:22:03'
+      end_date: '2025-09-06T19:22:03'
       location: consequatur
       level: local
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
@@ -1265,7 +1278,7 @@ endpoints:
         name: start_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-06T03:15:10'
+        example: '2025-09-06T19:22:03'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -1275,7 +1288,7 @@ endpoints:
         name: end_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-06T03:15:10'
+        example: '2025-09-06T19:22:03'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -1419,8 +1432,8 @@ endpoints:
         custom: []
     cleanBodyParameters:
       name: consequatur
-      start_date: '2025-09-06T03:15:10'
-      end_date: '2025-09-06T03:15:10'
+      start_date: '2025-09-06T19:22:03'
+      end_date: '2025-09-06T19:22:03'
       location: consequatur
       level: local
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
@@ -1976,6 +1989,108 @@ endpoints:
   -
     httpMethods:
       - GET
+    uri: api/search-location
+    metadata:
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      query:
+        name: query
+        description: 'Must not be greater than 255 characters.'
+        required: true
+        example: vmqeopfuudtdsufvyvddq
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+    cleanBodyParameters:
+      query: vmqeopfuudtdsufvyvddq
+    fileParameters: []
+    responses:
+      -
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: '*'
+        description: null
+        custom: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
+      - GET
+    uri: api/location-detail
+    metadata:
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      place_id:
+        name: place_id
+        description: 'Must not be greater than 255 characters.'
+        required: true
+        example: vmqeopfuudtdsufvyvddq
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+    cleanBodyParameters:
+      place_id: vmqeopfuudtdsufvyvddq
+    fileParameters: []
+    responses:
+      -
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: '*'
+        description: null
+        custom: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
+      - GET
     uri: api/mini-tournaments/index
     metadata:
       groupName: Endpoints
@@ -2133,7 +2248,7 @@ endpoints:
         name: starts_at
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-06T03:15:10'
+        example: '2025-09-06T19:22:03'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -2382,7 +2497,7 @@ endpoints:
       name: mqeopfuudtdsufvyvddqa
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
       match_type: '3'
-      starts_at: '2025-09-06T03:15:10'
+      starts_at: '2025-09-06T19:22:03'
       duration_minutes: 66
       is_private: false
       fee: auto_split
@@ -2556,7 +2671,7 @@ endpoints:
         name: starts_at
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-06T03:15:10'
+        example: '2025-09-06T19:22:03'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -2805,7 +2920,7 @@ endpoints:
       name: mqeopfuudtdsufvyvddqa
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
       match_type: '3'
-      starts_at: '2025-09-06T03:15:10'
+      starts_at: '2025-09-06T19:22:03'
       duration_minutes: 66
       is_private: false
       fee: auto_split
@@ -3235,7 +3350,7 @@ endpoints:
         name: filter
         description: ''
         required: false
-        example: leaderboard
+        example: my_matches
         type: string
         enumValues:
           - matches
@@ -3255,7 +3370,7 @@ endpoints:
         nullable: true
         custom: []
     cleanBodyParameters:
-      filter: leaderboard
+      filter: my_matches
       per_page: 17
     fileParameters: []
     responses:
@@ -3344,7 +3459,7 @@ endpoints:
         name: scheduled_at
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-06T03:15:10'
+        example: '2025-09-06T19:22:03'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -3402,7 +3517,7 @@ endpoints:
         custom: []
     cleanBodyParameters:
       round: consequatur
-      scheduled_at: '2025-09-06T03:15:10'
+      scheduled_at: '2025-09-06T19:22:03'
       team1_name: mqeopfuudtdsufvyvddqa
       team2_name: mniihfqcoynlazghdtqtq
       yard_number: xbajwbpilpmufinllwloa
@@ -3502,7 +3617,7 @@ endpoints:
         name: scheduled_at
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-06T03:15:10'
+        example: '2025-09-06T19:22:03'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -3542,7 +3657,7 @@ endpoints:
       round: consequatur
       team1_name: mqeopfuudtdsufvyvddqa
       team2_name: mniihfqcoynlazghdtqtq
-      scheduled_at: '2025-09-06T03:15:10'
+      scheduled_at: '2025-09-06T19:22:03'
       yard_number: xbajwbpilpmufinllwloa
       name_of_match: uydlsmsjuryvojcybzvrb
     fileParameters: []

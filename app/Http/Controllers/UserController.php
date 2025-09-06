@@ -6,6 +6,7 @@ use App\Helpers\ResponseHelper;
 use App\Http\Resources\ClubResource;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Services\GeocodingService;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Storage;
@@ -131,7 +132,7 @@ class UserController extends Controller
         }
         return ResponseHelper::success(new UserResource($user), 'Lấy thông tin người dùng thành công');
     }
-    public function update(Request $request)
+    public function update(Request $request, GeocodingService $geocoder)
     {
         $validated = $request->validate([
             'full_name' => 'required|string|max:255',
@@ -197,5 +198,27 @@ class UserController extends Controller
         ];
 
         return ResponseHelper::success($data, 'Cập nhật thông tin người dùng thành công');
+    }
+
+    public function searchLocation(Request $request, GeocodingService $geocoder)
+    {
+        $validated = $request->validate([
+            'query' => 'required|string|max:255',
+        ]);
+
+        $results = $geocoder->search($validated['query']);
+
+        return ResponseHelper::success($results, 'Tìm kiếm địa điểm thành công');
+    }
+
+    public function detailGooglePlace(Request $request, GeocodingService $geocoder)
+    {
+        $validated = $request->validate([
+            'place_id' => 'required|string|max:255',
+        ]);
+
+        $result = $geocoder->getGooglePlaceDetail($validated['place_id']);
+
+        return ResponseHelper::success($result, 'Lấy chi tiết địa điểm thành công');
     }
 }
