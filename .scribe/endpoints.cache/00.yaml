@@ -901,7 +901,7 @@ endpoints:
         name: date_of_birth
         description: 'Must be a valid date in the format <code>Y-m-d</code>.'
         required: false
-        example: '2025-09-06'
+        example: '2025-09-08'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -948,7 +948,7 @@ endpoints:
       latitude: consequatur
       longitude: consequatur
       address: mqeopfuudtdsufvyvddqa
-      date_of_birth: '2025-09-06'
+      date_of_birth: '2025-09-08'
       score_value:
         - 45
       visibility: open
@@ -1037,7 +1037,7 @@ endpoints:
         name: start_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-06T19:22:03'
+        example: '2025-09-08T02:44:06'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -1047,7 +1047,7 @@ endpoints:
         name: end_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-06T19:22:03'
+        example: '2025-09-08T02:44:06'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -1162,8 +1162,8 @@ endpoints:
         custom: []
     cleanBodyParameters:
       name: consequatur
-      start_date: '2025-09-06T19:22:03'
-      end_date: '2025-09-06T19:22:03'
+      start_date: '2025-09-08T02:44:06'
+      end_date: '2025-09-08T02:44:06'
       location: consequatur
       level: local
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
@@ -1280,7 +1280,7 @@ endpoints:
         name: start_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-06T19:22:03'
+        example: '2025-09-08T02:44:06'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -1290,7 +1290,7 @@ endpoints:
         name: end_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-06T19:22:03'
+        example: '2025-09-08T02:44:06'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -1434,8 +1434,8 @@ endpoints:
         custom: []
     cleanBodyParameters:
       name: consequatur
-      start_date: '2025-09-06T19:22:03'
-      end_date: '2025-09-06T19:22:03'
+      start_date: '2025-09-08T02:44:06'
+      end_date: '2025-09-08T02:44:06'
       location: consequatur
       level: local
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
@@ -2250,7 +2250,7 @@ endpoints:
         name: starts_at
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-06T19:22:03'
+        example: '2025-09-08T02:44:06'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -2499,7 +2499,7 @@ endpoints:
       name: mqeopfuudtdsufvyvddqa
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
       match_type: '3'
-      starts_at: '2025-09-06T19:22:03'
+      starts_at: '2025-09-08T02:44:06'
       duration_minutes: 66
       is_private: false
       fee: auto_split
@@ -2673,7 +2673,7 @@ endpoints:
         name: starts_at
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-06T19:22:03'
+        example: '2025-09-08T02:44:06'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -2922,7 +2922,7 @@ endpoints:
       name: mqeopfuudtdsufvyvddqa
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
       match_type: '3'
-      starts_at: '2025-09-06T19:22:03'
+      starts_at: '2025-09-08T02:44:06'
       duration_minutes: 66
       is_private: false
       fee: auto_split
@@ -3461,7 +3461,7 @@ endpoints:
         name: scheduled_at
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-06T19:22:03'
+        example: '2025-09-08T02:44:06'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -3519,7 +3519,7 @@ endpoints:
         custom: []
     cleanBodyParameters:
       round: consequatur
-      scheduled_at: '2025-09-06T19:22:03'
+      scheduled_at: '2025-09-08T02:44:06'
       team1_name: mqeopfuudtdsufvyvddqa
       team2_name: mniihfqcoynlazghdtqtq
       yard_number: xbajwbpilpmufinllwloa
@@ -3619,7 +3619,7 @@ endpoints:
         name: scheduled_at
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-06T19:22:03'
+        example: '2025-09-08T02:44:06'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -3659,7 +3659,7 @@ endpoints:
       round: consequatur
       team1_name: mqeopfuudtdsufvyvddqa
       team2_name: mniihfqcoynlazghdtqtq
-      scheduled_at: '2025-09-06T19:22:03'
+      scheduled_at: '2025-09-08T02:44:06'
       yard_number: xbajwbpilpmufinllwloa
       name_of_match: uydlsmsjuryvojcybzvrb
     fileParameters: []
@@ -4699,6 +4699,46 @@ endpoints:
     httpMethods:
       - GET
     uri: api/facilities/index
+    metadata:
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: '*'
+        description: null
+        custom: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
+      - GET
+    uri: api/competition-location-yards/index
     metadata:
       groupName: Endpoints
       groupDescription: ''
