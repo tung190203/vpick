@@ -11,6 +11,7 @@ use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VerificationController;
 use App\Http\Controllers\ClubController;
+use App\Http\Controllers\CompetitionLocationYardController;
 use App\Http\Controllers\FacilityController;
 use App\Http\Controllers\FollowController;
 use App\Http\Controllers\HomeController;
@@ -131,6 +132,10 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
     });
     Route::prefix('facilities')->group(function () {
         Route::get('/index', [FacilityController::class, 'index']);
+    });
+
+    Route::prefix('competition-location-yards')->group(function () {
+        Route::get('/index', [CompetitionLocationYardController::class, 'index']);
     });
     Route::prefix('notifications')->group(function () {
         Route::get('/index', [NotificationController::class, 'index']);
