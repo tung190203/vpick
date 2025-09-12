@@ -21,8 +21,7 @@ class LocationController extends Controller
         }
 
         $locations = $query->orderBy('name', 'asc')
-            ->take($validated['per_page'] ?? Location::PER_PAGE)
-            ->get();
+            ->paginate($validated['per_page'] ?? Location::PER_PAGE);
 
         return ResponseHelper::success(LocationResource::collection($locations), 'Lấy danh sách địa điểm thành công');
     }
