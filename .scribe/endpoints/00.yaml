@@ -899,7 +899,7 @@ endpoints:
         name: date_of_birth
         description: 'Must be a valid date in the format <code>Y-m-d</code>.'
         required: false
-        example: '2025-09-12'
+        example: '2025-09-18'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -946,7 +946,7 @@ endpoints:
       latitude: consequatur
       longitude: consequatur
       address: mqeopfuudtdsufvyvddqa
-      date_of_birth: '2025-09-12'
+      date_of_birth: '2025-09-18'
       score_value:
         - 45
       visibility: open
@@ -1035,7 +1035,7 @@ endpoints:
         name: start_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-12T02:25:02'
+        example: '2025-09-18T03:11:14'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -1045,7 +1045,7 @@ endpoints:
         name: end_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-12T02:25:02'
+        example: '2025-09-18T03:11:14'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -1160,8 +1160,8 @@ endpoints:
         custom: []
     cleanBodyParameters:
       name: consequatur
-      start_date: '2025-09-12T02:25:02'
-      end_date: '2025-09-12T02:25:02'
+      start_date: '2025-09-18T03:11:14'
+      end_date: '2025-09-18T03:11:14'
       location: consequatur
       level: local
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
@@ -1278,7 +1278,7 @@ endpoints:
         name: start_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-12T02:25:02'
+        example: '2025-09-18T03:11:14'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -1288,7 +1288,7 @@ endpoints:
         name: end_date
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-12T02:25:02'
+        example: '2025-09-18T03:11:14'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -1432,8 +1432,8 @@ endpoints:
         custom: []
     cleanBodyParameters:
       name: consequatur
-      start_date: '2025-09-12T02:25:02'
-      end_date: '2025-09-12T02:25:02'
+      start_date: '2025-09-18T03:11:14'
+      end_date: '2025-09-18T03:11:14'
       location: consequatur
       level: local
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
@@ -2248,7 +2248,7 @@ endpoints:
         name: starts_at
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-12T02:25:02'
+        example: '2025-09-18T03:11:14'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -2368,11 +2368,61 @@ endpoints:
         exampleWasSpecified: false
         nullable: true
         custom: []
+      set_number:
+        name: set_number
+        description: 'Must be at least 1.'
+        required: true
+        example: 59
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      games_per_set:
+        name: games_per_set
+        description: 'Must be at least 11.'
+        required: true
+        example: 12
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      points_difference:
+        name: points_difference
+        description: 'Must be at least 1.'
+        required: true
+        example: 45
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      max_points:
+        name: max_points
+        description: 'Must be at least 11.'
+        required: true
+        example: 51
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      court_switch_points:
+        name: court_switch_points
+        description: 'Must be at least 1.'
+        required: true
+        example: 29
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
       gender_policy:
         name: gender_policy
         description: ''
         required: true
-        example: '2'
+        example: '1'
         type: integer
         enumValues:
           - '1'
@@ -2385,7 +2435,7 @@ endpoints:
         name: repeat_type
         description: ''
         required: true
-        example: '1'
+        example: '2'
         type: integer
         enumValues:
           - '1'
@@ -2399,7 +2449,7 @@ endpoints:
         name: role_type
         description: ''
         required: true
-        example: '1'
+        example: '2'
         type: integer
         enumValues:
           - '1'
@@ -2411,7 +2461,7 @@ endpoints:
         name: lock_cancellation
         description: ''
         required: true
-        example: '1'
+        example: '6'
         type: string
         enumValues:
           - '1'
@@ -2428,7 +2478,7 @@ endpoints:
         name: age_group
         description: ''
         required: true
-        example: '2'
+        example: '3'
         type: integer
         enumValues:
           - '1'
@@ -2442,7 +2492,7 @@ endpoints:
         name: auto_approve
         description: ''
         required: false
-        example: true
+        example: false
         type: boolean
         enumValues: []
         exampleWasSpecified: false
@@ -2452,7 +2502,7 @@ endpoints:
         name: allow_participant_add_friends
         description: ''
         required: false
-        example: false
+        example: true
         type: boolean
         enumValues: []
         exampleWasSpecified: false
@@ -2462,7 +2512,7 @@ endpoints:
         name: send_notification
         description: ''
         required: false
-        example: false
+        example: true
         type: boolean
         enumValues: []
         exampleWasSpecified: false
@@ -2472,7 +2522,7 @@ endpoints:
         name: status
         description: ''
         required: true
-        example: '3'
+        example: '4'
         type: integer
         enumValues:
           - '1'
@@ -2497,7 +2547,7 @@ endpoints:
       name: mqeopfuudtdsufvyvddqa
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
       match_type: '3'
-      starts_at: '2025-09-12T02:25:02'
+      starts_at: '2025-09-18T03:11:14'
       duration_minutes: 66
       is_private: false
       fee: auto_split
@@ -2508,15 +2558,20 @@ endpoints:
       enable_vndupr: true
       min_rating: 10
       max_rating: 10
-      gender_policy: '2'
-      repeat_type: '1'
-      role_type: '1'
-      lock_cancellation: '1'
-      age_group: '2'
-      auto_approve: true
-      allow_participant_add_friends: false
-      send_notification: false
-      status: '3'
+      set_number: 59
+      games_per_set: 12
+      points_difference: 45
+      max_points: 51
+      court_switch_points: 29
+      gender_policy: '1'
+      repeat_type: '2'
+      role_type: '2'
+      lock_cancellation: '6'
+      age_group: '3'
+      auto_approve: false
+      allow_participant_add_friends: true
+      send_notification: true
+      status: '4'
     fileParameters:
       poster: null
     responses: []
@@ -2671,7 +2726,7 @@ endpoints:
         name: starts_at
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-12T02:25:02'
+        example: '2025-09-18T03:11:14'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -2791,11 +2846,61 @@ endpoints:
         exampleWasSpecified: false
         nullable: true
         custom: []
+      set_number:
+        name: set_number
+        description: 'Must be at least 1.'
+        required: true
+        example: 59
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      games_per_set:
+        name: games_per_set
+        description: 'Must be at least 11.'
+        required: true
+        example: 12
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      points_difference:
+        name: points_difference
+        description: 'Must be at least 1.'
+        required: true
+        example: 45
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      max_points:
+        name: max_points
+        description: 'Must be at least 11.'
+        required: true
+        example: 51
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      court_switch_points:
+        name: court_switch_points
+        description: 'Must be at least 1.'
+        required: true
+        example: 29
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
       gender_policy:
         name: gender_policy
         description: ''
         required: true
-        example: '2'
+        example: '1'
         type: integer
         enumValues:
           - '1'
@@ -2808,7 +2913,7 @@ endpoints:
         name: repeat_type
         description: ''
         required: true
-        example: '1'
+        example: '2'
         type: integer
         enumValues:
           - '1'
@@ -2822,7 +2927,7 @@ endpoints:
         name: role_type
         description: ''
         required: true
-        example: '1'
+        example: '2'
         type: integer
         enumValues:
           - '1'
@@ -2834,7 +2939,7 @@ endpoints:
         name: lock_cancellation
         description: ''
         required: true
-        example: '1'
+        example: '6'
         type: string
         enumValues:
           - '1'
@@ -2851,7 +2956,7 @@ endpoints:
         name: age_group
         description: ''
         required: true
-        example: '2'
+        example: '3'
         type: integer
         enumValues:
           - '1'
@@ -2865,7 +2970,7 @@ endpoints:
         name: auto_approve
         description: ''
         required: false
-        example: true
+        example: false
         type: boolean
         enumValues: []
         exampleWasSpecified: false
@@ -2875,7 +2980,7 @@ endpoints:
         name: allow_participant_add_friends
         description: ''
         required: false
-        example: false
+        example: true
         type: boolean
         enumValues: []
         exampleWasSpecified: false
@@ -2885,7 +2990,7 @@ endpoints:
         name: send_notification
         description: ''
         required: false
-        example: false
+        example: true
         type: boolean
         enumValues: []
         exampleWasSpecified: false
@@ -2895,7 +3000,7 @@ endpoints:
         name: status
         description: ''
         required: true
-        example: '3'
+        example: '4'
         type: integer
         enumValues:
           - '1'
@@ -2920,7 +3025,7 @@ endpoints:
       name: mqeopfuudtdsufvyvddqa
       description: 'Dolores dolorum amet iste laborum eius est dolor.'
       match_type: '3'
-      starts_at: '2025-09-12T02:25:02'
+      starts_at: '2025-09-18T03:11:14'
       duration_minutes: 66
       is_private: false
       fee: auto_split
@@ -2931,15 +3036,20 @@ endpoints:
       enable_vndupr: true
       min_rating: 10
       max_rating: 10
-      gender_policy: '2'
-      repeat_type: '1'
-      role_type: '1'
-      lock_cancellation: '1'
-      age_group: '2'
-      auto_approve: true
-      allow_participant_add_friends: false
-      send_notification: false
-      status: '3'
+      set_number: 59
+      games_per_set: 12
+      points_difference: 45
+      max_points: 51
+      court_switch_points: 29
+      gender_policy: '1'
+      repeat_type: '2'
+      role_type: '2'
+      lock_cancellation: '6'
+      age_group: '3'
+      auto_approve: false
+      allow_participant_add_friends: true
+      send_notification: true
+      status: '4'
     fileParameters:
       poster: null
     responses: []
@@ -3273,6 +3383,83 @@ endpoints:
     custom: []
   -
     httpMethods:
+      - GET
+    uri: 'api/mini-participants/{id}/candidates'
+    metadata:
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Lấy danh sách ứng viên để mời vào giải đấu.'
+      description: |-
+        - scope: club, friends, area
+        - Nếu club -> cần truyền thêm club_id
+      authenticated: false
+      deprecated: false
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      id:
+        name: id
+        description: 'The ID of the mini participant.'
+        required: true
+        example: consequatur
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+    cleanUrlParameters:
+      id: consequatur
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      scope:
+        name: scope
+        description: ''
+        required: true
+        example: club
+        type: string
+        enumValues:
+          - club
+          - friends
+          - area
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      club_id:
+        name: club_id
+        description: 'This field is required when <code>scope</code> is <code>club</code>. The <code>id</code> of an existing record in the clubs table.'
+        required: false
+        example: null
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+    cleanBodyParameters:
+      scope: club
+    fileParameters: []
+    responses:
+      -
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: '*'
+        description: null
+        custom: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
       - POST
     uri: 'api/mini-participants/delete/{participantId}'
     metadata:
@@ -3459,7 +3646,7 @@ endpoints:
         name: scheduled_at
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-12T02:25:02'
+        example: '2025-09-18T03:11:15'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -3517,7 +3704,7 @@ endpoints:
         custom: []
     cleanBodyParameters:
       round: consequatur
-      scheduled_at: '2025-09-12T02:25:02'
+      scheduled_at: '2025-09-18T03:11:15'
       team1_name: mqeopfuudtdsufvyvddqa
       team2_name: mniihfqcoynlazghdtqtq
       yard_number: xbajwbpilpmufinllwloa
@@ -3617,7 +3804,7 @@ endpoints:
         name: scheduled_at
         description: 'Must be a valid date.'
         required: false
-        example: '2025-09-12T02:25:02'
+        example: '2025-09-18T03:11:15'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -3657,7 +3844,7 @@ endpoints:
       round: consequatur
       team1_name: mqeopfuudtdsufvyvddqa
       team2_name: mniihfqcoynlazghdtqtq
-      scheduled_at: '2025-09-12T02:25:02'
+      scheduled_at: '2025-09-18T03:11:15'
       yard_number: xbajwbpilpmufinllwloa
       name_of_match: uydlsmsjuryvojcybzvrb
     fileParameters: []

@@ -94,17 +94,17 @@ class MiniParticipantController extends Controller
             'is_confirmed' => $miniTournament->auto_approve && !$miniTournament->is_private,
         ]);
 
-        if (! $participant->is_confirmed) {
+        if (!$participant->is_confirmed) {
             $organizers = $miniTournament->staff()
                 ->wherePivot('role', MiniTournamentStaff::ROLE_ORGANIZER)
                 ->get();
-        
+
             foreach ($organizers as $organizer) {
                 if ($organizer->id !== Auth::id()) {
                     $organizer->notify(new MiniTournamentJoinRequestNotification($participant));
                 }
             }
-        }        
+        }
 
         return ResponseHelper::success(new MiniParticipantResource($participant), 'Tham gia giải đấu thành công.', 201);
     }
@@ -231,6 +231,71 @@ class MiniParticipantController extends Controller
 
         return ResponseHelper::success(new MiniParticipantResource($participant), 'Người tham gia đã được mời thành công.', 201);
     }
+
+    /**
+     * Lấy danh sách ứng viên để mời vào giải đấu.
+     * - scope: club, friends, area
+     * - Nếu club -> cần truyền thêm club_id
+     */
+    public function getCandidates(Request $request, $tournamentId)
+    {
+        $miniTournament = MiniTournament::with('participants')->findOrFail($tournamentId);
+        $user = Auth::user();
+    
+        $validated = $request->validate([
+            'scope' => 'required|in:club,friends,area',
+            'club_id' => 'required_if:scope,club|exists:clubs,id'
+        ]);
+    
+        $scope = $validated['scope'];
+        $candidates = collect();
+    
+        switch ($scope) {
+            case 'club':
+                $candidates = User::whereHas(
+                    'clubs',
+                    fn($q) => $q->where('clubs.id', $validated['club_id'])
+                )->get();
+                break;
+    
+            case 'friends':
+                $candidates = $user->friends()->get();
+                break;
+    
+            case 'area':
+                $candidates = User::where('location_id', $user->location_id)
+                    ->where('id', '!=', $user->id)
+                    ->get();
+                break;
+        }
+    
+        // lấy danh sách id participant trong giải này
+        $participantUserIds = $miniTournament->participants->pluck('user_id')->toArray();
+    
+        // map theo format UI
+        $result = $candidates->map(function ($u) use ($user, $participantUserIds) {
+            $visibility = 'open';
+            if ($u->invite_mode === 'friend_only') {
+                $visibility = 'friend_only';
+            } elseif ($u->invite_mode === 'private') {
+                $visibility = 'private';
+            }
+    
+            return [
+                'id' => $u->id,
+                'name' => $u->name,
+                'gender' => $u->gender,
+                'age_group' => $u->age_group,
+                'avatar' => $u->avatar_url,
+                'visibility' => $visibility,
+                'is_friend' => $user->isFriendWith($u),
+                'is_participant' => in_array($u->id, $participantUserIds), // 👈 thêm cờ này
+            ];
+        })->values();
+    
+        return ResponseHelper::success($result, 'Danh sách ứng viên');
+    }
+    
     /**
      * Xóa một participant khỏi mini tournament.
      * - Chỉ creator mới có quyền xóa
