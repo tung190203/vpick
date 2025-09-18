@@ -182,6 +182,9 @@
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-POSTapi-mini-participants-invite--miniTournamentId-">
                                 <a href="#endpoints-POSTapi-mini-participants-invite--miniTournamentId-">Creator mời user hoặc team vào giải đấu.</a>
                             </li>
+                                                                                <li class="tocify-item level-2" data-unique="endpoints-GETapi-mini-participants--id--candidates">
+                                <a href="#endpoints-GETapi-mini-participants--id--candidates">Lấy danh sách ứng viên để mời vào giải đấu.</a>
+                            </li>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-POSTapi-mini-participants-delete--participantId-">
                                 <a href="#endpoints-POSTapi-mini-participants-delete--participantId-">Xóa một participant khỏi mini tournament.</a>
                             </li>
@@ -273,7 +276,7 @@ truyền mảng lên là team</a>
     </ul>
 
     <ul class="toc-footer" id="last-updated">
-        <li>Last updated: September 12, 2025</li>
+        <li>Last updated: September 18, 2025</li>
     </ul>
 </div>
 
@@ -2185,10 +2188,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --form "latitude=consequatur"\
     --form "longitude=consequatur"\
     --form "address=mqeopfuudtdsufvyvddqa"\
-    --form "date_of_birth=2025-09-12"\
+    --form "date_of_birth=2025-09-18"\
     --form "score_value[]=45"\
     --form "visibility=open"\
-    --form "avatar_url=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/php3L6dMu" </code></pre></div>
+    --form "avatar_url=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpvuoILM" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -2209,7 +2212,7 @@ body.append('is_profile_completed', '');
 body.append('latitude', 'consequatur');
 body.append('longitude', 'consequatur');
 body.append('address', 'mqeopfuudtdsufvyvddqa');
-body.append('date_of_birth', '2025-09-12');
+body.append('date_of_birth', '2025-09-18');
 body.append('score_value[]', '45');
 body.append('visibility', 'open');
 body.append('avatar_url', document.querySelector('input[name="avatar_url"]').files[0]);
@@ -2314,7 +2317,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/php3L6dMu</code></p>
+<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpvuoILM</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>location_id</code></b>&nbsp;&nbsp;
@@ -2420,10 +2423,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="date_of_birth"                data-endpoint="POSTapi-user-update"
-               value="2025-09-12"
+               value="2025-09-18"
                data-component="body">
     <br>
-<p>Must be a valid date in the format <code>Y-m-d</code>. Example: <code>2025-09-12</code></p>
+<p>Must be a valid date in the format <code>Y-m-d</code>. Example: <code>2025-09-18</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>sport_ids</code></b>&nbsp;&nbsp;
@@ -2608,8 +2611,8 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Accept: application/json" \
     --data "{
     \"name\": \"consequatur\",
-    \"start_date\": \"2025-09-12T02:25:02\",
-    \"end_date\": \"2025-09-12T02:25:02\",
+    \"start_date\": \"2025-09-18T03:11:14\",
+    \"end_date\": \"2025-09-18T03:11:14\",
     \"location\": \"consequatur\",
     \"level\": \"local\",
     \"description\": \"Dolores dolorum amet iste laborum eius est dolor.\",
@@ -2640,8 +2643,8 @@ const headers = {
 
 let body = {
     "name": "consequatur",
-    "start_date": "2025-09-12T02:25:02",
-    "end_date": "2025-09-12T02:25:02",
+    "start_date": "2025-09-18T03:11:14",
+    "end_date": "2025-09-18T03:11:14",
     "location": "consequatur",
     "level": "local",
     "description": "Dolores dolorum amet iste laborum eius est dolor.",
@@ -2755,10 +2758,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="start_date"                data-endpoint="POSTapi-tournaments-store"
-               value="2025-09-12T02:25:02"
+               value="2025-09-18T03:11:14"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-09-12T02:25:02</code></p>
+<p>Must be a valid date. Example: <code>2025-09-18T03:11:14</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>end_date</code></b>&nbsp;&nbsp;
@@ -2766,10 +2769,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="end_date"                data-endpoint="POSTapi-tournaments-store"
-               value="2025-09-12T02:25:02"
+               value="2025-09-18T03:11:14"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-09-12T02:25:02</code></p>
+<p>Must be a valid date. Example: <code>2025-09-18T03:11:14</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>location</code></b>&nbsp;&nbsp;
@@ -3041,8 +3044,8 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Accept: application/json" \
     --data "{
     \"name\": \"consequatur\",
-    \"start_date\": \"2025-09-12T02:25:02\",
-    \"end_date\": \"2025-09-12T02:25:02\",
+    \"start_date\": \"2025-09-18T03:11:14\",
+    \"end_date\": \"2025-09-18T03:11:14\",
     \"location\": \"consequatur\",
     \"level\": \"local\",
     \"description\": \"Dolores dolorum amet iste laborum eius est dolor.\",
@@ -3073,8 +3076,8 @@ const headers = {
 
 let body = {
     "name": "consequatur",
-    "start_date": "2025-09-12T02:25:02",
-    "end_date": "2025-09-12T02:25:02",
+    "start_date": "2025-09-18T03:11:14",
+    "end_date": "2025-09-18T03:11:14",
     "location": "consequatur",
     "level": "local",
     "description": "Dolores dolorum amet iste laborum eius est dolor.",
@@ -3200,10 +3203,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="start_date"                data-endpoint="POSTapi-tournaments-update--id-"
-               value="2025-09-12T02:25:02"
+               value="2025-09-18T03:11:14"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-09-12T02:25:02</code></p>
+<p>Must be a valid date. Example: <code>2025-09-18T03:11:14</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>end_date</code></b>&nbsp;&nbsp;
@@ -3211,10 +3214,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="end_date"                data-endpoint="POSTapi-tournaments-update--id-"
-               value="2025-09-12T02:25:02"
+               value="2025-09-18T03:11:14"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-09-12T02:25:02</code></p>
+<p>Must be a valid date. Example: <code>2025-09-18T03:11:14</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>location</code></b>&nbsp;&nbsp;
@@ -3663,7 +3666,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --form "name=consequatur"\
     --form "location=consequatur"\
     --form "created_by=consequatur"\
-    --form "logo_url=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpsCYneA" </code></pre></div>
+    --form "logo_url=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpXF0Acf" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -3793,7 +3796,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpsCYneA</code></p>
+<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpXF0Acf</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>created_by</code></b>&nbsp;&nbsp;
@@ -3961,7 +3964,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Content-Type: multipart/form-data" \
     --header "Accept: application/json" \
     --form "location=consequatur"\
-    --form "logo_url=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpNB0B2a" </code></pre></div>
+    --form "logo_url=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpPNTXWX" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -4101,7 +4104,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpNB0B2a</code></p>
+<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpPNTXWX</code></p>
         </div>
         </form>
 
@@ -5171,7 +5174,7 @@ Must be one of:
     --form "name=mqeopfuudtdsufvyvddqa"\
     --form "description=Dolores dolorum amet iste laborum eius est dolor."\
     --form "match_type=3"\
-    --form "starts_at=2025-09-12T02:25:02"\
+    --form "starts_at=2025-09-18T03:11:14"\
     --form "duration_minutes=66"\
     --form "is_private="\
     --form "fee=auto_split"\
@@ -5182,16 +5185,21 @@ Must be one of:
     --form "enable_vndupr=1"\
     --form "min_rating=10"\
     --form "max_rating=10"\
-    --form "gender_policy=2"\
-    --form "repeat_type=1"\
-    --form "role_type=1"\
-    --form "lock_cancellation=1"\
-    --form "age_group=2"\
-    --form "auto_approve=1"\
-    --form "allow_participant_add_friends="\
-    --form "send_notification="\
-    --form "status=3"\
-    --form "poster=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpFEQcQa" </code></pre></div>
+    --form "set_number=59"\
+    --form "games_per_set=12"\
+    --form "points_difference=45"\
+    --form "max_points=51"\
+    --form "court_switch_points=29"\
+    --form "gender_policy=1"\
+    --form "repeat_type=2"\
+    --form "role_type=2"\
+    --form "lock_cancellation=6"\
+    --form "age_group=3"\
+    --form "auto_approve="\
+    --form "allow_participant_add_friends=1"\
+    --form "send_notification=1"\
+    --form "status=4"\
+    --form "poster=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpqdo7BM" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -5209,7 +5217,7 @@ body.append('sport_id', 'consequatur');
 body.append('name', 'mqeopfuudtdsufvyvddqa');
 body.append('description', 'Dolores dolorum amet iste laborum eius est dolor.');
 body.append('match_type', '3');
-body.append('starts_at', '2025-09-12T02:25:02');
+body.append('starts_at', '2025-09-18T03:11:14');
 body.append('duration_minutes', '66');
 body.append('is_private', '');
 body.append('fee', 'auto_split');
@@ -5220,15 +5228,20 @@ body.append('enable_dupr', '1');
 body.append('enable_vndupr', '1');
 body.append('min_rating', '10');
 body.append('max_rating', '10');
-body.append('gender_policy', '2');
-body.append('repeat_type', '1');
-body.append('role_type', '1');
-body.append('lock_cancellation', '1');
-body.append('age_group', '2');
-body.append('auto_approve', '1');
-body.append('allow_participant_add_friends', '');
-body.append('send_notification', '');
-body.append('status', '3');
+body.append('set_number', '59');
+body.append('games_per_set', '12');
+body.append('points_difference', '45');
+body.append('max_points', '51');
+body.append('court_switch_points', '29');
+body.append('gender_policy', '1');
+body.append('repeat_type', '2');
+body.append('role_type', '2');
+body.append('lock_cancellation', '6');
+body.append('age_group', '3');
+body.append('auto_approve', '');
+body.append('allow_participant_add_friends', '1');
+body.append('send_notification', '1');
+body.append('status', '4');
 body.append('poster', document.querySelector('input[name="poster"]').files[0]);
 
 fetch(url, {
@@ -5320,7 +5333,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpFEQcQa</code></p>
+<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpqdo7BM</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>sport_id</code></b>&nbsp;&nbsp;
@@ -5374,10 +5387,10 @@ Must be one of:
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="starts_at"                data-endpoint="POSTapi-mini-tournaments-store"
-               value="2025-09-12T02:25:02"
+               value="2025-09-18T03:11:14"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-09-12T02:25:02</code></p>
+<p>Must be a valid date. Example: <code>2025-09-18T03:11:14</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>duration_minutes</code></b>&nbsp;&nbsp;
@@ -5533,15 +5546,70 @@ Must be one of:
 <p>Must be at least 0. Example: <code>10</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>set_number</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="set_number"                data-endpoint="POSTapi-mini-tournaments-store"
+               value="59"
+               data-component="body">
+    <br>
+<p>Must be at least 1. Example: <code>59</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>games_per_set</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="games_per_set"                data-endpoint="POSTapi-mini-tournaments-store"
+               value="12"
+               data-component="body">
+    <br>
+<p>Must be at least 11. Example: <code>12</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>points_difference</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="points_difference"                data-endpoint="POSTapi-mini-tournaments-store"
+               value="45"
+               data-component="body">
+    <br>
+<p>Must be at least 1. Example: <code>45</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>max_points</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="max_points"                data-endpoint="POSTapi-mini-tournaments-store"
+               value="51"
+               data-component="body">
+    <br>
+<p>Must be at least 11. Example: <code>51</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>court_switch_points</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="court_switch_points"                data-endpoint="POSTapi-mini-tournaments-store"
+               value="29"
+               data-component="body">
+    <br>
+<p>Must be at least 1. Example: <code>29</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>gender_policy</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="gender_policy"                data-endpoint="POSTapi-mini-tournaments-store"
-               value="2"
+               value="1"
                data-component="body">
     <br>
-<p>Example: <code>2</code></p>
+<p>Example: <code>1</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>1</code></li> <li><code>2</code></li> <li><code>3</code></li></ul>
         </div>
@@ -5551,10 +5619,10 @@ Must be one of:
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="repeat_type"                data-endpoint="POSTapi-mini-tournaments-store"
-               value="1"
+               value="2"
                data-component="body">
     <br>
-<p>Example: <code>1</code></p>
+<p>Example: <code>2</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>1</code></li> <li><code>2</code></li> <li><code>3</code></li> <li><code>4</code></li></ul>
         </div>
@@ -5564,10 +5632,10 @@ Must be one of:
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="role_type"                data-endpoint="POSTapi-mini-tournaments-store"
-               value="1"
+               value="2"
                data-component="body">
     <br>
-<p>Example: <code>1</code></p>
+<p>Example: <code>2</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>1</code></li> <li><code>2</code></li></ul>
         </div>
@@ -5577,10 +5645,10 @@ Must be one of:
  &nbsp;
                 <input type="text" style="display: none"
                               name="lock_cancellation"                data-endpoint="POSTapi-mini-tournaments-store"
-               value="1"
+               value="6"
                data-component="body">
     <br>
-<p>Example: <code>1</code></p>
+<p>Example: <code>6</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>1</code></li> <li><code>2</code></li> <li><code>3</code></li> <li><code>4</code></li> <li><code>5</code></li> <li><code>6</code></li> <li><code>7</code></li></ul>
         </div>
@@ -5590,10 +5658,10 @@ Must be one of:
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="age_group"                data-endpoint="POSTapi-mini-tournaments-store"
-               value="2"
+               value="3"
                data-component="body">
     <br>
-<p>Example: <code>2</code></p>
+<p>Example: <code>3</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>1</code></li> <li><code>2</code></li> <li><code>3</code></li> <li><code>4</code></li></ul>
         </div>
@@ -5616,7 +5684,7 @@ Must be one of:
             <code>false</code>
         </label>
     <br>
-<p>Example: <code>true</code></p>
+<p>Example: <code>false</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>allow_participant_add_friends</code></b>&nbsp;&nbsp;
@@ -5637,7 +5705,7 @@ Must be one of:
             <code>false</code>
         </label>
     <br>
-<p>Example: <code>false</code></p>
+<p>Example: <code>true</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>send_notification</code></b>&nbsp;&nbsp;
@@ -5658,7 +5726,7 @@ Must be one of:
             <code>false</code>
         </label>
     <br>
-<p>Example: <code>false</code></p>
+<p>Example: <code>true</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>status</code></b>&nbsp;&nbsp;
@@ -5666,10 +5734,10 @@ Must be one of:
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="status"                data-endpoint="POSTapi-mini-tournaments-store"
-               value="3"
+               value="4"
                data-component="body">
     <br>
-<p>Example: <code>3</code></p>
+<p>Example: <code>4</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>1</code></li> <li><code>2</code></li> <li><code>3</code></li> <li><code>4</code></li></ul>
         </div>
@@ -5844,7 +5912,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --form "name=mqeopfuudtdsufvyvddqa"\
     --form "description=Dolores dolorum amet iste laborum eius est dolor."\
     --form "match_type=3"\
-    --form "starts_at=2025-09-12T02:25:02"\
+    --form "starts_at=2025-09-18T03:11:14"\
     --form "duration_minutes=66"\
     --form "is_private="\
     --form "fee=auto_split"\
@@ -5855,16 +5923,21 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --form "enable_vndupr=1"\
     --form "min_rating=10"\
     --form "max_rating=10"\
-    --form "gender_policy=2"\
-    --form "repeat_type=1"\
-    --form "role_type=1"\
-    --form "lock_cancellation=1"\
-    --form "age_group=2"\
-    --form "auto_approve=1"\
-    --form "allow_participant_add_friends="\
-    --form "send_notification="\
-    --form "status=3"\
-    --form "poster=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpc7oLs4" </code></pre></div>
+    --form "set_number=59"\
+    --form "games_per_set=12"\
+    --form "points_difference=45"\
+    --form "max_points=51"\
+    --form "court_switch_points=29"\
+    --form "gender_policy=1"\
+    --form "repeat_type=2"\
+    --form "role_type=2"\
+    --form "lock_cancellation=6"\
+    --form "age_group=3"\
+    --form "auto_approve="\
+    --form "allow_participant_add_friends=1"\
+    --form "send_notification=1"\
+    --form "status=4"\
+    --form "poster=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/php7x4HUk" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -5882,7 +5955,7 @@ body.append('sport_id', 'consequatur');
 body.append('name', 'mqeopfuudtdsufvyvddqa');
 body.append('description', 'Dolores dolorum amet iste laborum eius est dolor.');
 body.append('match_type', '3');
-body.append('starts_at', '2025-09-12T02:25:02');
+body.append('starts_at', '2025-09-18T03:11:14');
 body.append('duration_minutes', '66');
 body.append('is_private', '');
 body.append('fee', 'auto_split');
@@ -5893,15 +5966,20 @@ body.append('enable_dupr', '1');
 body.append('enable_vndupr', '1');
 body.append('min_rating', '10');
 body.append('max_rating', '10');
-body.append('gender_policy', '2');
-body.append('repeat_type', '1');
-body.append('role_type', '1');
-body.append('lock_cancellation', '1');
-body.append('age_group', '2');
-body.append('auto_approve', '1');
-body.append('allow_participant_add_friends', '');
-body.append('send_notification', '');
-body.append('status', '3');
+body.append('set_number', '59');
+body.append('games_per_set', '12');
+body.append('points_difference', '45');
+body.append('max_points', '51');
+body.append('court_switch_points', '29');
+body.append('gender_policy', '1');
+body.append('repeat_type', '2');
+body.append('role_type', '2');
+body.append('lock_cancellation', '6');
+body.append('age_group', '3');
+body.append('auto_approve', '');
+body.append('allow_participant_add_friends', '1');
+body.append('send_notification', '1');
+body.append('status', '4');
 body.append('poster', document.querySelector('input[name="poster"]').files[0]);
 
 fetch(url, {
@@ -6005,7 +6083,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpc7oLs4</code></p>
+<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/php7x4HUk</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>sport_id</code></b>&nbsp;&nbsp;
@@ -6059,10 +6137,10 @@ Must be one of:
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="starts_at"                data-endpoint="POSTapi-mini-tournaments-update--id-"
-               value="2025-09-12T02:25:02"
+               value="2025-09-18T03:11:14"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-09-12T02:25:02</code></p>
+<p>Must be a valid date. Example: <code>2025-09-18T03:11:14</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>duration_minutes</code></b>&nbsp;&nbsp;
@@ -6218,15 +6296,70 @@ Must be one of:
 <p>Must be at least 0. Example: <code>10</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>set_number</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="set_number"                data-endpoint="POSTapi-mini-tournaments-update--id-"
+               value="59"
+               data-component="body">
+    <br>
+<p>Must be at least 1. Example: <code>59</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>games_per_set</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="games_per_set"                data-endpoint="POSTapi-mini-tournaments-update--id-"
+               value="12"
+               data-component="body">
+    <br>
+<p>Must be at least 11. Example: <code>12</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>points_difference</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="points_difference"                data-endpoint="POSTapi-mini-tournaments-update--id-"
+               value="45"
+               data-component="body">
+    <br>
+<p>Must be at least 1. Example: <code>45</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>max_points</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="max_points"                data-endpoint="POSTapi-mini-tournaments-update--id-"
+               value="51"
+               data-component="body">
+    <br>
+<p>Must be at least 11. Example: <code>51</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>court_switch_points</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="court_switch_points"                data-endpoint="POSTapi-mini-tournaments-update--id-"
+               value="29"
+               data-component="body">
+    <br>
+<p>Must be at least 1. Example: <code>29</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>gender_policy</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="gender_policy"                data-endpoint="POSTapi-mini-tournaments-update--id-"
-               value="2"
+               value="1"
                data-component="body">
     <br>
-<p>Example: <code>2</code></p>
+<p>Example: <code>1</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>1</code></li> <li><code>2</code></li> <li><code>3</code></li></ul>
         </div>
@@ -6236,10 +6369,10 @@ Must be one of:
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="repeat_type"                data-endpoint="POSTapi-mini-tournaments-update--id-"
-               value="1"
+               value="2"
                data-component="body">
     <br>
-<p>Example: <code>1</code></p>
+<p>Example: <code>2</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>1</code></li> <li><code>2</code></li> <li><code>3</code></li> <li><code>4</code></li></ul>
         </div>
@@ -6249,10 +6382,10 @@ Must be one of:
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="role_type"                data-endpoint="POSTapi-mini-tournaments-update--id-"
-               value="1"
+               value="2"
                data-component="body">
     <br>
-<p>Example: <code>1</code></p>
+<p>Example: <code>2</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>1</code></li> <li><code>2</code></li></ul>
         </div>
@@ -6262,10 +6395,10 @@ Must be one of:
  &nbsp;
                 <input type="text" style="display: none"
                               name="lock_cancellation"                data-endpoint="POSTapi-mini-tournaments-update--id-"
-               value="1"
+               value="6"
                data-component="body">
     <br>
-<p>Example: <code>1</code></p>
+<p>Example: <code>6</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>1</code></li> <li><code>2</code></li> <li><code>3</code></li> <li><code>4</code></li> <li><code>5</code></li> <li><code>6</code></li> <li><code>7</code></li></ul>
         </div>
@@ -6275,10 +6408,10 @@ Must be one of:
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="age_group"                data-endpoint="POSTapi-mini-tournaments-update--id-"
-               value="2"
+               value="3"
                data-component="body">
     <br>
-<p>Example: <code>2</code></p>
+<p>Example: <code>3</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>1</code></li> <li><code>2</code></li> <li><code>3</code></li> <li><code>4</code></li></ul>
         </div>
@@ -6301,7 +6434,7 @@ Must be one of:
             <code>false</code>
         </label>
     <br>
-<p>Example: <code>true</code></p>
+<p>Example: <code>false</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>allow_participant_add_friends</code></b>&nbsp;&nbsp;
@@ -6322,7 +6455,7 @@ Must be one of:
             <code>false</code>
         </label>
     <br>
-<p>Example: <code>false</code></p>
+<p>Example: <code>true</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>send_notification</code></b>&nbsp;&nbsp;
@@ -6343,7 +6476,7 @@ Must be one of:
             <code>false</code>
         </label>
     <br>
-<p>Example: <code>false</code></p>
+<p>Example: <code>true</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>status</code></b>&nbsp;&nbsp;
@@ -6351,10 +6484,10 @@ Must be one of:
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="status"                data-endpoint="POSTapi-mini-tournaments-update--id-"
-               value="3"
+               value="4"
                data-component="body">
     <br>
-<p>Example: <code>3</code></p>
+<p>Example: <code>4</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>1</code></li> <li><code>2</code></li> <li><code>3</code></li> <li><code>4</code></li></ul>
         </div>
@@ -7144,6 +7277,179 @@ Must be one of:
         </div>
         </form>
 
+                    <h2 id="endpoints-GETapi-mini-participants--id--candidates">Lấy danh sách ứng viên để mời vào giải đấu.</h2>
+
+<p>
+</p>
+
+<ul>
+<li>scope: club, friends, area</li>
+<li>Nếu club -&gt; cần truyền thêm club_id</li>
+</ul>
+
+<span id="example-requests-GETapi-mini-participants--id--candidates">
+<blockquote>Example request:</blockquote>
+
+
+<div class="bash-example">
+    <pre><code class="language-bash">curl --request GET \
+    --get "http://localhost/api/mini-participants/consequatur/candidates" \
+    --header "Content-Type: application/json" \
+    --header "Accept: application/json" \
+    --data "{
+    \"scope\": \"club\"
+}"
+</code></pre></div>
+
+
+<div class="javascript-example">
+    <pre><code class="language-javascript">const url = new URL(
+    "http://localhost/api/mini-participants/consequatur/candidates"
+);
+
+const headers = {
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+};
+
+let body = {
+    "scope": "club"
+};
+
+fetch(url, {
+    method: "GET",
+    headers,
+    body: JSON.stringify(body),
+}).then(response =&gt; response.json());</code></pre></div>
+
+</span>
+
+<span id="example-responses-GETapi-mini-participants--id--candidates">
+            <blockquote>
+            <p>Example response (401):</p>
+        </blockquote>
+                <details class="annotation">
+            <summary style="cursor: pointer;">
+                <small onclick="textContent = parentElement.parentElement.open ? 'Show headers' : 'Hide headers'">Show headers</small>
+            </summary>
+            <pre><code class="language-http">cache-control: no-cache, private
+content-type: application/json
+access-control-allow-origin: *
+ </code></pre></details>         <pre>
+
+<code class="language-json" style="max-height: 300px;">{
+    &quot;message&quot;: &quot;Unauthenticated.&quot;
+}</code>
+ </pre>
+    </span>
+<span id="execution-results-GETapi-mini-participants--id--candidates" hidden>
+    <blockquote>Received response<span
+                id="execution-response-status-GETapi-mini-participants--id--candidates"></span>:
+    </blockquote>
+    <pre class="json"><code id="execution-response-content-GETapi-mini-participants--id--candidates"
+      data-empty-response-text="<Empty response>" style="max-height: 400px;"></code></pre>
+</span>
+<span id="execution-error-GETapi-mini-participants--id--candidates" hidden>
+    <blockquote>Request failed with error:</blockquote>
+    <pre><code id="execution-error-message-GETapi-mini-participants--id--candidates">
+
+Tip: Check that you&#039;re properly connected to the network.
+If you&#039;re a maintainer of ths API, verify that your API is running and you&#039;ve enabled CORS.
+You can check the Dev Tools console for debugging information.</code></pre>
+</span>
+<form id="form-GETapi-mini-participants--id--candidates" data-method="GET"
+      data-path="api/mini-participants/{id}/candidates"
+      data-authed="0"
+      data-hasfiles="0"
+      data-isarraybody="0"
+      autocomplete="off"
+      onsubmit="event.preventDefault(); executeTryOut('GETapi-mini-participants--id--candidates', this);">
+    <h3>
+        Request&nbsp;&nbsp;&nbsp;
+                    <button type="button"
+                    style="background-color: #8fbcd4; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-tryout-GETapi-mini-participants--id--candidates"
+                    onclick="tryItOut('GETapi-mini-participants--id--candidates');">Try it out ⚡
+            </button>
+            <button type="button"
+                    style="background-color: #c97a7e; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-canceltryout-GETapi-mini-participants--id--candidates"
+                    onclick="cancelTryOut('GETapi-mini-participants--id--candidates');" hidden>Cancel 🛑
+            </button>&nbsp;&nbsp;
+            <button type="submit"
+                    style="background-color: #6ac174; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-executetryout-GETapi-mini-participants--id--candidates"
+                    data-initial-text="Send Request 💥"
+                    data-loading-text="⏱ Sending..."
+                    hidden>Send Request 💥
+            </button>
+            </h3>
+            <p>
+            <small class="badge badge-green">GET</small>
+            <b><code>api/mini-participants/{id}/candidates</code></b>
+        </p>
+                <h4 class="fancy-heading-panel"><b>Headers</b></h4>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Content-Type"                data-endpoint="GETapi-mini-participants--id--candidates"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Accept"                data-endpoint="GETapi-mini-participants--id--candidates"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                        <h4 class="fancy-heading-panel"><b>URL Parameters</b></h4>
+                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>id</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="id"                data-endpoint="GETapi-mini-participants--id--candidates"
+               value="consequatur"
+               data-component="url">
+    <br>
+<p>The ID of the mini participant. Example: <code>consequatur</code></p>
+            </div>
+                            <h4 class="fancy-heading-panel"><b>Body Parameters</b></h4>
+        <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>scope</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="scope"                data-endpoint="GETapi-mini-participants--id--candidates"
+               value="club"
+               data-component="body">
+    <br>
+<p>Example: <code>club</code></p>
+Must be one of:
+<ul style="list-style-type: square;"><li><code>club</code></li> <li><code>friends</code></li> <li><code>area</code></li></ul>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>club_id</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+                <input type="text" style="display: none"
+                              name="club_id"                data-endpoint="GETapi-mini-participants--id--candidates"
+               value=""
+               data-component="body">
+    <br>
+<p>This field is required when <code>scope</code> is <code>club</code>. The <code>id</code> of an existing record in the clubs table.</p>
+        </div>
+        </form>
+
                     <h2 id="endpoints-POSTapi-mini-participants-delete--participantId-">Xóa một participant khỏi mini tournament.</h2>
 
 <p>
@@ -7458,7 +7764,7 @@ truyền mảng lên là team</h2>
     --header "Accept: application/json" \
     --data "{
     \"round\": \"consequatur\",
-    \"scheduled_at\": \"2025-09-12T02:25:02\",
+    \"scheduled_at\": \"2025-09-18T03:11:15\",
     \"team1_name\": \"mqeopfuudtdsufvyvddqa\",
     \"team2_name\": \"mniihfqcoynlazghdtqtq\",
     \"yard_number\": \"xbajwbpilpmufinllwloa\",
@@ -7479,7 +7785,7 @@ const headers = {
 
 let body = {
     "round": "consequatur",
-    "scheduled_at": "2025-09-12T02:25:02",
+    "scheduled_at": "2025-09-18T03:11:15",
     "team1_name": "mqeopfuudtdsufvyvddqa",
     "team2_name": "mniihfqcoynlazghdtqtq",
     "yard_number": "xbajwbpilpmufinllwloa",
@@ -7617,10 +7923,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="scheduled_at"                data-endpoint="POSTapi-mini-matches-store--miniTournamentId-"
-               value="2025-09-12T02:25:02"
+               value="2025-09-18T03:11:15"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-09-12T02:25:02</code></p>
+<p>Must be a valid date. Example: <code>2025-09-18T03:11:15</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>referee</code></b>&nbsp;&nbsp;
@@ -7699,7 +8005,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     \"round\": \"consequatur\",
     \"team1_name\": \"mqeopfuudtdsufvyvddqa\",
     \"team2_name\": \"mniihfqcoynlazghdtqtq\",
-    \"scheduled_at\": \"2025-09-12T02:25:02\",
+    \"scheduled_at\": \"2025-09-18T03:11:15\",
     \"yard_number\": \"xbajwbpilpmufinllwloa\",
     \"name_of_match\": \"uydlsmsjuryvojcybzvrb\"
 }"
@@ -7720,7 +8026,7 @@ let body = {
     "round": "consequatur",
     "team1_name": "mqeopfuudtdsufvyvddqa",
     "team2_name": "mniihfqcoynlazghdtqtq",
-    "scheduled_at": "2025-09-12T02:25:02",
+    "scheduled_at": "2025-09-18T03:11:15",
     "yard_number": "xbajwbpilpmufinllwloa",
     "name_of_match": "uydlsmsjuryvojcybzvrb"
 };
@@ -7878,10 +8184,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <i>optional</i> &nbsp;
                 <input type="text" style="display: none"
                               name="scheduled_at"                data-endpoint="POSTapi-mini-matches-update--matchId-"
-               value="2025-09-12T02:25:02"
+               value="2025-09-18T03:11:15"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-09-12T02:25:02</code></p>
+<p>Must be a valid date. Example: <code>2025-09-18T03:11:15</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>referee</code></b>&nbsp;&nbsp;
@@ -8753,7 +9059,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Accept: application/json" \
     --form "type=text"\
     --form "content=consequatur"\
-    --form "file=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpSPJUtD" </code></pre></div>
+    --form "file=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/php5FNVCk" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -8896,7 +9202,7 @@ Must be one of:
                value=""
                data-component="body">
     <br>
-<p>Must be a file. Must not be greater than 10240 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phpSPJUtD</code></p>
+<p>Must be a file. Must not be greater than 10240 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/php5FNVCk</code></p>
         </div>
         </form>
 
@@ -9211,7 +9517,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Accept: application/json" \
     --form "receiver_id=consequatur"\
     --form "message=consequatur"\
-    --form "attachment=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/php4mwXc9" </code></pre></div>
+    --form "attachment=@/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phppcxjZf" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -9340,7 +9646,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Must be a file. Must not be greater than 10240 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/php4mwXc9</code></p>
+<p>Must be a file. Must not be greater than 10240 kilobytes. Example: <code>/private/var/folders/x7/fhrjx9t106z42_q83jzbg8mr0000gn/T/phppcxjZf</code></p>
         </div>
         </form>
 

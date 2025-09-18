@@ -365,6 +365,18 @@ class MiniMatchController extends Controller
             return ResponseHelper::error('Người dùng không có quyền thêm kết quả trận đấu trong giải đấu này', 403);
         }
 
+        if (!empty($tournament->set_number) && $validated['set_number'] > $tournament->set_number) {
+            return ResponseHelper::error("Trận đấu không được vượt quá {$tournament->set_number} set", 400);
+        }
+
+        if (!empty($tournament->games_per_set)) {
+            foreach ($validated['results'] as $res) {
+                if ($res['score'] > $tournament->games_per_set) {
+                    return ResponseHelper::error("Điểm số không được vượt quá {$tournament->games_per_set} trong một set", 400);
+                }
+            }
+        }
+
         // đảm bảo participant hợp lệ
         $participantIds = [$match->participant1_id, $match->participant2_id];
         foreach ($validated['results'] as $res) {

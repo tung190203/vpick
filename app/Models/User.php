@@ -456,4 +456,40 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
             ->having('distance', '<=', $radiusKm)
             ->orderBy('distance');
     }
+
+    // User.php
+    public function isFriendWith(User $otherUser): bool
+    {
+        return $this->followings()
+            ->where('followable_id', $otherUser->id)
+            ->where('followable_type', User::class)
+            ->exists()
+            && $otherUser->followings()
+                ->where('followable_id', $this->id)
+                ->where('followable_type', User::class)
+                ->exists();
+    }
+
+    public function friends()
+    {
+        $userClass = config('auth.providers.users.model', User::class);
+        $userId = $this->id;
+
+        return User::query()
+            ->whereExists(function ($q) use ($userId, $userClass) {
+                $q->select(DB::raw(1))
+                    ->from('follows as f1')
+                    ->whereColumn('f1.followable_id', 'users.id')
+                    ->where('f1.user_id', $userId)
+                    ->where('followable_type', $userClass); // không alias ở đây
+            })
+            ->whereExists(function ($q) use ($userId, $userClass) {
+                $q->select(DB::raw(1))
+                    ->from('follows as f2')
+                    ->whereColumn('f2.user_id', 'users.id')
+                    ->where('f2.followable_id', $userId)
+                    ->where('followable_type', $userClass); // không alias ở đây
+            });
+    }
+
 }

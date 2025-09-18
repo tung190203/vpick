@@ -45,6 +45,11 @@ class StoreMiniTournamentRequest extends FormRequest
 
             'min_rating' => 'nullable|numeric|min:0',
             'max_rating' => 'nullable|numeric|min:0',
+            'set_number' => 'required|integer|min:1',
+            'games_per_set' => 'required|integer|min:11',
+            'points_difference' => 'required|integer|min:1',
+            'max_points' => 'required|integer|min:11',
+            'court_switch_points' => 'required|integer|min:1',
 
             'gender_policy' => 'required|integer|in:' .implode(',', MiniTournament::GENDER),
 

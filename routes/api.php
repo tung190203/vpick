@@ -89,6 +89,7 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
         Route::post('/confirm/{participantId}', [MiniParticipantController::class, 'confirm']);
         Route::post('accept/{participantId}', [MiniParticipantController::class, 'acceptInvite']);
         Route::post('/invite/{miniTournamentId}', [MiniParticipantController::class, 'invite']);
+        Route::get('/{id}/candidates', [MiniParticipantController::class, 'getCandidates']);
         Route::post('/delete/{participantId}', [MiniParticipantController::class, 'delete']);
     });
     // Mini Match Routes
