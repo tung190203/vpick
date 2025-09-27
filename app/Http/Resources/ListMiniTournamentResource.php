@@ -18,6 +18,7 @@ class ListMiniTournamentResource extends JsonResource
         return [
             'id' => $this->id,
             'poster' => $this->poster,
+            'starts_at' => $this->starts_at,
             'sport' => new SportResource($this->whenLoaded('sport')),
             'name' => $this->name,
             'description' => $this->description,
