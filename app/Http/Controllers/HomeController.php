@@ -27,11 +27,23 @@ class HomeController extends Controller
         ]);
         $userId = auth()->user()->id;
         $upcomingMiniTournaments = MiniTournament::withFullRelations()
-            ->whereHas('participants', fn($q) => $q->where('user_id', $userId))
             ->where('starts_at', '>', Carbon::now())
+            ->where(function ($query) use ($userId) {
+                $query->where('is_private', false) // công khai => luôn hiển thị
+                    ->orWhere(function ($q) use ($userId) {
+                        $q->where('is_private', true)
+                            ->where(function ($sub) use ($userId) {
+                                // nếu là participant
+                                $sub->whereHas('participants', fn($p) => $p->where('user_id', $userId))
+                                    // hoặc nếu là staff
+                                    ->orWhereHas('staff', fn($s) => $s->where('user_id', $userId));
+                            });
+                    });
+            })
             ->orderBy('starts_at', 'asc')
             ->take($validated['mini_tournament_per_page'] ?? MiniTournament::PER_PAGE)
             ->get();
+
 
         $upcomingTournaments = Tournament::withFullRelations()
             ->where('start_date', '>', Carbon::now())
