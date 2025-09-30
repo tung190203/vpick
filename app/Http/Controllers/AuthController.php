@@ -17,6 +17,7 @@ use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Str;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
+use Google_Client;
 
 class AuthController extends Controller
 {
@@ -206,6 +207,45 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             return ResponseHelper::error('Không thể đăng nhập bằng Google', 500);
         }
+    }
+
+    public function loginWithGoogle(Request $request)
+    {
+        $request->validate([
+            'id_token' => 'required|string',
+        ]);
+
+        $idToken = $request->input('id_token');
+
+        // Verify token với Google
+        $client = new Google_Client(['client_id' => config('services.google.client_id')]);
+        $payload = $client->verifyIdToken($idToken);
+
+        if (!$payload) {
+            return ResponseHelper::error('Token Google không hợp lệ', 401);
+        }
+
+        // Lưu hoặc tạo user
+        $user = User::firstOrCreate(
+            ['email' => $payload['email']],
+            [
+                'full_name' => $payload['name'] ?? null,
+                'google_id' => $payload['sub'],
+                'avatar_url' => $payload['picture'] ?? null,
+                'password' => Hash::make(Str::random(16)),
+                'email_verified_at' => now(),
+            ]
+        );
+
+        $accessToken = JWTAuth::claims(['type' => 'access'])->fromUser($user);
+        $refreshToken = JWTAuth::claims([
+            'type' => 'refresh',
+            'exp' => now()->addDays(30)->timestamp
+        ])->fromUser($user);
+        $user->last_login = now();
+        $user->save();
+
+        return ResponseHelper::success($this->responseWithToken($accessToken, $refreshToken, $user), 'Đăng nhập bằng Google thành công');
     }
 
     public function me(Request $request)
