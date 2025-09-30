@@ -217,14 +217,24 @@ class AuthController extends Controller
 
         $idToken = $request->input('id_token');
 
-        // Verify token với Google
-        $client = new Google_Client(['client_id' => config('services.google.client_id')]);
+        $validClients = [
+            'android' => config('services.google.android_client_id'),
+            'ios' => config('services.google.ios_client_id'),
+        ];
+
+        $client = new Google_Client();
         $payload = $client->verifyIdToken($idToken);
 
         if (!$payload) {
             return ResponseHelper::error('Token Google không hợp lệ', 401);
         }
 
+        $aud = $payload['aud'] ?? null;
+        $platform = collect($validClients)->search($aud);
+    
+        if ($platform === false) {
+            return ResponseHelper::error('Client ID không hợp lệ', 401);
+        }
         // Lưu hoặc tạo user
         $user = User::firstOrCreate(
             ['email' => $payload['email']],
@@ -244,8 +254,11 @@ class AuthController extends Controller
         ])->fromUser($user);
         $user->last_login = now();
         $user->save();
-
-        return ResponseHelper::success($this->responseWithToken($accessToken, $refreshToken, $user), 'Đăng nhập bằng Google thành công');
+    
+        $response = $this->responseWithToken($accessToken, $refreshToken, $user);
+        $response['platform'] = $platform; // android | ios
+    
+        return ResponseHelper::success($response, 'Đăng nhập bằng Google thành công');
     }
 
     public function me(Request $request)
