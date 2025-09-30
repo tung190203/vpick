@@ -220,6 +220,7 @@ class AuthController extends Controller
         $validClients = [
             'android' => config('services.google.android_client_id'),
             'ios' => config('services.google.ios_client_id'),
+            'web' => config('services.google.client_id'),
         ];
 
         $client = new Google_Client();
