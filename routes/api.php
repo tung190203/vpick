@@ -42,7 +42,7 @@ Route::prefix('auth')->group(function () {
     Route::get('/google/redirect', [AuthController::class, 'redirectToGoogle']);
     Route::get('/google/callback', [AuthController::class, 'handleGoogleCallback']);
     // Mobile login with Google
-    Route::post('/auth/google', [AuthController::class, 'loginWithGoogle']);
+    Route::post('/google', [AuthController::class, 'loginWithGoogle']);
 });
 
 Route::get('/verify-email', [VerificationController::class, 'verify']);
