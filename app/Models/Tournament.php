@@ -94,7 +94,7 @@ class Tournament extends Model
 
     public function participants()
     {
-        return $this->hasManyThrough(Participant::class, TournamentType::class);
+        return $this->hasMany(Participant::class, 'tournament_id');
     }
 
     public function matches()
@@ -102,16 +102,35 @@ class Tournament extends Model
         return $this->hasManyThrough(Matches::class, Group::class);
     }
 
+    Public function sport()
+    {
+        return $this->belongsTo(Sport::class, 'sports_id');
+    }
+
+    public function tournamentStaffs()
+    {
+        return $this->hasMany(TournamentStaff::class, 'tournament_id');
+    }
+
     public function scopeWithFullRelations($query)
     {
         return $query->with([
             'createdBy',
             'club',
+            'sport',
             'tournamentTypes.groups.matches.participant1.user',
             'tournamentTypes.groups.matches.participant1.team.members',
             'tournamentTypes.groups.matches.participant2.user',
             'tournamentTypes.groups.matches.participant2.team.members',
+            'tournamentStaffs',
+            'tournamentStaffs.user',
+            'participants',
         ]);
+    }
+
+    public function scopeWithBasicRelations($query)
+    {
+        return $query->with(['createdBy', 'club', 'sport', 'tournamentStaffs'] );
     }
     public function scopeUpcoming($query)
     {
