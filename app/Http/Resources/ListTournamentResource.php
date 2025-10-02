@@ -16,6 +16,7 @@ class ListTournamentResource extends JsonResource
     {
         return  [
             'id' => $this->id,
+            'poster' => $this->poster,
             'name' => $this->name,
             'start_date' => $this->start_date,
             'end_date' => $this->end_date,
