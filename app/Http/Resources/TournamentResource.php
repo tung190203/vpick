@@ -16,7 +16,7 @@ class TournamentResource extends JsonResource
     {
         return  [
             'id' => $this->id,
-            'poster' => $this->poster,
+            'poster' => $this->poster_url,
             'sport_id' => $this->sport_id,
             'sport' => $this->whenLoaded('sport', function () {
                 return [
