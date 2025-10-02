@@ -47,6 +47,22 @@ class HomeController extends Controller
 
         $upcomingTournaments = Tournament::withFullRelations()
             ->where('start_date', '>', Carbon::now())
+            ->where(function ($query) use ($userId) {
+                $query->where('is_private', false) // công khai => luôn thấy
+                    ->orWhere(function ($q) use ($userId) {
+                        $q->where('is_private', true)
+                            ->where(function ($sub) use ($userId) {
+                                // điều kiện được xem nếu là participant
+                                $sub->whereHas('participants', function ($p) use ($userId) {
+                                    $p->where('user_id', $userId);
+                                })
+                                    // hoặc nếu là staff
+                                    ->orWhereHas('tournamentStaffs', function ($s) use ($userId) {
+                                        $s->where('user_id', $userId);
+                                    });
+                            });
+                    });
+            })
             ->orderBy('start_date', 'asc')
             ->take($validated['tournament_per_page'] ?? Tournament::PER_PAGE)
             ->get();
