@@ -37,6 +37,8 @@ class Tournament extends Model
         'description',
     ];
 
+    protected $appends = ['poster_url'];
+
     const PER_PAGE = 10;
 
     const ALL_AGES = 1;
