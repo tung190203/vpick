@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 
 class Tournament extends Model
 {
@@ -35,6 +36,7 @@ class Tournament extends Model
         'club_id',
         'created_by',
         'description',
+        'status',
     ];
 
     protected $appends = ['poster_url'];
@@ -112,6 +114,18 @@ class Tournament extends Model
     public function tournamentStaffs()
     {
         return $this->hasMany(TournamentStaff::class, 'tournament_id');
+    }
+
+    public function staff()
+    {
+        return $this->belongsToMany(User::class, 'tournament_staff')
+            ->withPivot('role')
+            ->withTimestamps();
+    }
+
+    public function teams()
+    {
+        return $this->hasMany(Team::class, 'tournament_id');
     }
 
     public function scopeWithFullRelations($query)
@@ -195,5 +209,33 @@ class Tournament extends Model
     public function getPosterUrlAttribute()
     {
         return $this->poster ? asset('storage/' . $this->poster) : null;
+    }
+
+    public function getAllUsersAttribute(): Collection
+    {
+        $directUsers = $this->participants
+            ->where('type', 'user')
+            ->pluck('user')
+            ->filter();
+
+        $teamUsers = collect();
+        foreach ($this->participants->where('type', 'team') as $teamParticipant) {
+            if ($teamParticipant->team && $teamParticipant->team->members) {
+                $teamUsers = $teamUsers->merge(
+                    $teamParticipant->team->members->pluck('user')->filter()
+                );
+            }
+        }
+
+        return $directUsers->merge($teamUsers)->unique('id')->values();
+    }
+
+    public function hasOrganizer(int $userId): bool
+    {
+        return $this->staff->contains(
+            fn($staff) =>
+            (int) $staff->pivot->user_id === $userId
+            && (int) $staff->pivot->role === TournamentStaff::ROLE_ORGANIZER
+        );
     }
 }

@@ -10,6 +10,7 @@ class Participant extends Model
     use HasFactory;
 
     protected $fillable = [
+        'tournament_id',
         'tournament_type_id',
         'type',
         'user_id',
@@ -28,5 +29,10 @@ class Participant extends Model
     public function tournamentType()
     {
         return $this->belongsTo(TournamentType::class, 'tournament_type_id');
+    }
+
+    public function tournament()
+    {
+        return $this->belongsTo(Tournament::class, 'tournament_id');
     }
 }
