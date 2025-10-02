@@ -10,23 +10,68 @@ class Tournament extends Model
     use HasFactory;
 
     protected $fillable = [
+        'poster',
         'name',
+        'sport_id',
         'start_date',
+        'registration_open_at',
+        'registration_closed_at',
+        'early_registration_deadline',
+        'duration',
+        'min_level',
+        'max_level',
+        'age_group',
+        'gender_policy',
+        'participant',
+        'max_team',
+        'player_per_team',
+        'max_player',
+        'fee',
+        'standard_fee_amount',
+        'is_private',
+        'auto_approve',
         'end_date',
         'location',
         'club_id',
         'created_by',
-        'level',
         'description',
     ];
 
-    protected $appends = ['status'];
-
-    const STATUS_UPCOMING = 'upcoming';
-    const STATUS_ONGOING = 'ongoing';
-    const STATUS_FINISHED = 'finished';
-
     const PER_PAGE = 10;
+
+    const ALL_AGES = 1;
+    const YOUTH = 2; // dưới 18
+    const ADULT = 3; // từ 18 - 55
+    const  SENIOR = 4; // trên 55
+
+    const AGES = [
+        self::ALL_AGES,
+        self::YOUTH,
+        self::ADULT,
+        self::SENIOR,
+    ];
+
+    const MALE = 1;
+    const FEMALE = 2;
+    const MIXED = 3;
+
+    const GENDER = [
+        self::MALE,
+        self::FEMALE,
+        self::MIXED,
+    ];
+
+    const DRAFT = 1;
+    const OPEN = 2;
+    const CLOSED = 3;
+    const CANCELLED = 4;
+
+    const STATUS = [
+        self::DRAFT,
+        self::OPEN,
+        self::CLOSED,
+        self::CANCELLED,
+    ];
 
     public function club()
     {
@@ -94,32 +139,40 @@ class Tournament extends Model
             ->when($endDate, fn($q) => $q->whereDate('end_date', '<=', $endDate));
     }
 
-    public function scopeFilterByStatus($query, $status)
+    public function getAgeGroupTextAttribute()
     {
-        $query = match ($status) {
-            self::STATUS_UPCOMING => $query->upcoming(),
-            self::STATUS_ONGOING => $query->ongoing(),
-            self::STATUS_FINISHED => $query->finished(),
-            default => $query,
+        return match ($this->age_group) {
+            self::ALL_AGES => 'Mọi lứa tuổi',
+            self::YOUTH => 'Thiếu niên (dưới 18)',
+            self::ADULT => 'Người lớn (18-55)',
+            self::SENIOR => 'Cao tuổi (trên 55)',
+            default => 'Không xác định',
         };
-
-        return $query;
     }
 
-    public function getStatusAttribute()
+    public function getGenderPolicyTextAttribute()
     {
-        if ($this->end_date && $this->end_date < now()) {
-            return self::STATUS_FINISHED;
-        }
+        return match ($this->gender_policy) {
+            self::MIXED => 'Nam Nữ',
+            self::MALE => 'Nam',
+            self::FEMALE => 'Nữ',
+            default => 'Không xác định',
+        };
+    }
 
-        if ($this->start_date && $this->start_date > now()) {
-            return self::STATUS_UPCOMING;
-        }
+    public function getStatusTextAttribute()
+    {
+        return match ($this->status) {
+            self::DRAFT => 'Bản nháp',
+            self::OPEN => 'Mở đăng ký',
+            self::CLOSED => 'Đóng đăng ký',
+            self::CANCELLED => 'Hủy',
+            default => 'Không xác định',
+        };
+    }
 
-        if ($this->start_date && $this->end_date && $this->start_date <= now() && $this->end_date >= now()) {
-            return self::STATUS_ONGOING;
-        }
-
-        return null;
+    public function getPosterUrlAttribute()
+    {
+        return $this->poster ? asset('storage/' . $this->poster) : null;
     }
 }

@@ -4,131 +4,65 @@ namespace App\Http\Controllers;
 
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\TournamentResource;
-use App\Models\Participant;
-use App\Models\Team;
 use App\Models\Tournament;
+use App\Models\TournamentStaff;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class TournamentController extends Controller
 {
     public function store(Request $request)
     {
         $validated = $request->validate([
+            'poster' => 'nullable|image|max:350',
+            'sport_id' => 'required|exists:sports,id',
             'name' => 'required|string',
+            'location' => 'nullable|string',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date',
-            'location' => 'nullable|string',
-            'level' => 'required|in:local,provincial,national',
+            'registration_open_at' => 'nullable|date',
+            'registration_closed_at' => 'nullable|date',
+            'early_registration_deadline' => 'nullable|date',
+            'duration' => 'nullable|integer',
+            'min_level' => 'nullable|integer',
+            'max_level' => 'nullable|integer',
+            'age_group' => 'nullable|in:' . implode(',', Tournament::AGES),
+            'gender_policy' => 'nullable|in:' . implode(',', Tournament::GENDER),
+            'participant' => 'nullable|in:team,user',
+            'max_team' => 'nullable|integer|required_if:participant,team',
+            'min_player_per_team' => 'nullable|integer|required_if:participant,team',
+            'max_player_per_team' => 'nullable|integer|required_if:participant,team',
+            'max_player' => 'nullable|integer|required_if:participant,user',
+            'fee' => 'nullable|in:free,pair',
+            'standard_fee_amount' => 'nullable|numeric|required_if:fee,pair',
+            'is_private' => 'nullable|boolean',
+            'auto_approve' => 'nullable|boolean',
             'description' => 'nullable|string',
-            'tournament_types' => 'required|array',
-            'tournament_types.*.type' => 'required|in:single,double,mixed',
-            'tournament_types.*.description' => 'nullable|string',
-            'tournament_types.*.groups' => 'array',
-            'tournament_types.*.groups.*.name' => 'required|string',
-            'tournament_types.*.groups.*.matches' => 'array',
             'club_id' => 'nullable|exists:clubs,id',
         ]);
 
         $tournament = null;
 
-        DB::transaction(function () use ($validated, &$tournament) {
-            // 1. Tạo giải
+        DB::transaction(function () use ($validated, &$tournament, $request) {
+            if ($request->hasFile('poster')) {
+                $path = $request->file('poster')->store('tournaments/posters', 'public');
+                $validated['poster'] = $path;
+            }
             $tournament = Tournament::create([
-                'name' => $validated['name'],
-                'start_date' => $validated['start_date'] ?? null,
-                'end_date' => $validated['end_date'] ?? null,
-                'location' => $validated['location'] ?? null,
-                'level' => $validated['level'],
-                'description' => $validated['description'] ?? null,
+                ...$validated,
                 'created_by' => auth()->id(),
-                'club_id' => $validated['club_id'] ?? null,
             ]);
 
-            // 2. Tạo thể thức
-            foreach ($validated['tournament_types'] as $typeData) {
-                $type = $tournament->tournamentTypes()->create([
-                    'type' => $typeData['type'],
-                    'description' => $typeData['description'] ?? null,
-                ]);
-
-                // 3. Tạo bảng
-                if (!empty($typeData['groups'])) {
-                    foreach ($typeData['groups'] as $groupData) {
-                        $group = $type->groups()->create([
-                            'name' => $groupData['name'],
-                        ]);
-
-                        // 4. Nếu có matches -> tạo participants + matches
-                        if (!empty($groupData['matches'])) {
-                            foreach ($groupData['matches'] as $matchData) {
-
-                                // Xử lý participant1
-                                if (in_array($type->type, ['double', 'mixed'])) {
-                                    // Team participant
-                                    $team1 = Team::create([
-                                        'name' => $matchData['participant1']['name'],
-                                        'tournament_type_id' => $type->id,
-                                    ]);
-                                    $team1->members()->attach($matchData['participant1']['members']);
-
-                                    $p1 = Participant::create([
-                                        'tournament_type_id' => $type->id,
-                                        'type' => 'team',
-                                        'team_id' => $team1->id,
-                                        'is_confirmed' => true,
-                                    ]);
-                                } else {
-                                    // User participant
-                                    $p1 = Participant::firstOrCreate([
-                                        'user_id' => $matchData['participant1_id'],
-                                        'tournament_type_id' => $type->id,
-                                        'type' => 'user',
-                                    ], [
-                                        'is_confirmed' => true,
-                                    ]);
-                                }
-
-                                // Xử lý participant2
-                                if (in_array($type->type, ['double', 'mixed'])) {
-                                    $team2 = Team::create([
-                                        'name' => $matchData['participant2']['name'],
-                                        'tournament_type_id' => $type->id,
-                                    ]);
-                                    $team2->members()->attach($matchData['participant2']['members']);
-
-                                    $p2 = Participant::create([
-                                        'tournament_type_id' => $type->id,
-                                        'type' => 'team',
-                                        'team_id' => $team2->id,
-                                        'is_confirmed' => true,
-                                    ]);
-                                } else {
-                                    $p2 = Participant::firstOrCreate([
-                                        'user_id' => $matchData['participant2_id'],
-                                        'tournament_type_id' => $type->id,
-                                        'type' => 'user',
-                                    ], [
-                                        'is_confirmed' => true,
-                                    ]);
-                                }
-
-                                // 5. Tạo match
-                                $group->matches()->create([
-                                    'participant1_id' => $p1->id,
-                                    'participant2_id' => $p2->id,
-                                    'scheduled_at' => $matchData['scheduled_at'] ?? null,
-                                    'status' => 'pending',
-                                ]);
-                            }
-                        }
-                    }
-                }
-            }
+            TournamentStaff::create([
+                'tournament_id' => $tournament->id,
+                'user_id' => auth()->id(),
+                'role' => TournamentStaff::ROLE_ORGANIZER,
+            ]);
         });
 
         if ($tournament) {
-            $tournament = Tournament::withFullRelations()->find($tournament->id);
+            $tournament = Tournament::withBasicRelations()->find($tournament->id);
         } else {
             return ResponseHelper::error('Tạo giải đấu thất bại', 500);
         }
@@ -146,10 +80,6 @@ class TournamentController extends Controller
 
         if ($request->has('start_date') || $request->has('end_date')) {
             $query->filterByDate($request->start_date, $request->end_date);
-        }
-
-        if ($request->has('status')) {
-            $query->filterByStatus($request->status);
         }
 
         $tournaments = $query->paginate(Tournament::PER_PAGE);
@@ -180,102 +110,50 @@ class TournamentController extends Controller
 
     public function update(Request $request, $id)
     {
-        $tournament = Tournament::with('tournamentTypes.groups.matches')->find($id);
-    
-        if (!$tournament) {
-            return ResponseHelper::error('Giải đấu không tồn tại', 404);
-        }
-    
         $validated = $request->validate([
-            'name' => 'required|string',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date',
-            'location' => 'nullable|string',
-            'level' => 'required|in:local,provincial,national',
-            'description' => 'nullable|string',
-            'club_id' => 'nullable|exists:clubs,id',
-            'tournament_types' => 'array',
-            'tournament_types.*.id' => 'nullable|exists:tournament_types,id',
-            'tournament_types.*.type' => 'required|in:single,double,mixed',
-            'tournament_types.*.description' => 'nullable|string',
-            'tournament_types.*.groups' => 'array',
-            'tournament_types.*.groups.*.id' => 'nullable|exists:groups,id',
-            'tournament_types.*.groups.*.name' => 'required|string',
-            'tournament_types.*.groups.*.matches' => 'array',
-            'tournament_types.*.groups.*.matches.*.id' => 'nullable|exists:matches,id',
+            'poster' => 'nullable|image|max:350',
+            'sport_id' => 'sometime|exists:sports,id',
+            'name' => 'sometimes|required|string',
+            'location' => 'sometimes|nullable|string',
+            'start_date' => 'sometimes|nullable|date',
+            'end_date' => 'sometimes|nullable|date',
+            'registration_open_at' => 'sometimes|nullable|date',
+            'registration_closed_at' => 'sometimes|nullable|date',
+            'early_registration_deadline' => 'sometimes|nullable|date',
+            'duration' => 'sometimes|nullable|integer',
+            'min_level' => 'sometimes|nullable|integer',
+            'max_level' => 'sometimes|nullable|integer',
+            'age_group' => 'sometimes|nullable|in:' . implode(',', Tournament::AGES),
+            'gender_policy' => 'sometimes|nullable|in:' . implode(',', Tournament::GENDER),
+            'participant' => 'sometimes|nullable|in:team,user',
+            'max_team' => 'sometimes|nullable|integer|required_if:participant,team',
+            'min_player_per_team' => 'sometimes|nullable|integer|required_if:participant,team',
+            'max_player_per_team' => 'sometimes|nullable|integer|required_if:participant,team',
+            'max_player' => 'sometimes|nullable|integer|required_if:participant,user',
+            'fee' => 'sometimes|nullable|in:free,pair',
+            'standard_fee_amount' => 'sometimes|nullable|numeric|required_if:fee,pair',
+            'is_private' => 'sometimes|nullable|boolean',
+            'auto_approve' => 'sometimes|nullable|boolean',
+            'description' => 'sometimes|nullable|string',
+            'club_id' => 'sometimes|nullable|exists:clubs,id',
         ]);
     
-        DB::transaction(function () use (&$tournament, $validated) {
-
-            $tournament->update([
-                'name' => $validated['name'],
-                'start_date' => $validated['start_date'] ?? null,
-                'end_date' => $validated['end_date'] ?? null,
-                'location' => $validated['location'] ?? null,
-                'level' => $validated['level'],
-                'description' => $validated['description'] ?? null,
-                'club_id' => $validated['club_id'] ?? null,
-            ]);
+        $tournament = Tournament::findOrFail($id);
     
-            if (!empty($validated['tournament_types'])) {
-                $typeIds = [];
-                foreach ($validated['tournament_types'] as $typeData) {
-
-                    $type = !empty($typeData['id'])
-                        ? $tournament->tournamentTypes()->find($typeData['id'])
-                        : $tournament->tournamentTypes()->make();
-    
-                    $type->fill([
-                        'type' => $typeData['type'],
-                        'description' => $typeData['description'] ?? null,
-                    ]);
-                    $tournament->tournamentTypes()->save($type);
-                    $typeIds[] = $type->id;
-
-                    if (!empty($typeData['groups'])) {
-                        $groupIds = [];
-                        foreach ($typeData['groups'] as $groupData) {
-                            $group = !empty($groupData['id'])
-                                ? $type->groups()->find($groupData['id'])
-                                : $type->groups()->make();
-    
-                            $group->fill([
-                                'name' => $groupData['name'],
-                            ]);
-                            $type->groups()->save($group);
-                            $groupIds[] = $group->id;
-
-                            if (!empty($groupData['matches'])) {
-                                $matchIds = [];
-                                foreach ($groupData['matches'] as $matchData) {
-                                    $match = !empty($matchData['id'])
-                                        ? $group->matches()->find($matchData['id'])
-                                        : $group->matches()->make();
-    
-                                    $match->fill([
-                                        'participant1_id' => $matchData['participant1_id'],
-                                        'participant2_id' => $matchData['participant2_id'],
-                                        'scheduled_at' => $matchData['scheduled_at'] ?? null,
-                                        'status' => $matchData['status'] ?? 'pending',
-                                    ]);
-                                    $group->matches()->save($match);
-                                    $matchIds[] = $match->id;
-                                }
-    
-                                $group->matches()->whereNotIn('id', $matchIds)->delete();
-                            }
-                        }
-                    
-                        $type->groups()->whereNotIn('id', $groupIds)->delete();
-                    }
+        DB::transaction(function () use ($validated, $tournament, $request) {
+            if ($request->hasFile('poster')) {
+                if ($tournament->poster && Storage::disk('public')->exists($tournament->poster)) {
+                    Storage::disk('public')->delete($tournament->poster);
                 }
-
-                $tournament->tournamentTypes()->whereNotIn('id', $typeIds)->delete();
+                $path = $request->file('poster')->store('tournaments/posters', 'public');
+                $validated['poster'] = $path;
             }
+            $tournament->fill($validated);
+            $tournament->save();
         });
     
-        $tournament->load('club', 'createdBy', 'tournamentTypes.groups.matches');    
-
+        $tournament = Tournament::withBasicRelations()->find($tournament->id);
+    
         return ResponseHelper::success(new TournamentResource($tournament), 'Cập nhật giải đấu thành công');
     }
 
