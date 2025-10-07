@@ -15,14 +15,21 @@ router.beforeEach((to, from, next) => {
   const savedUser = localStorage.getItem(LOCAL_STORAGE_USER.USER);
   const user = savedUser ? JSON.parse(savedUser) : null;
   const userRole = user?.role;
+  const hasSeenOnboarding = localStorage.getItem(LOCAL_STORAGE_KEY.ONBOARDING) === "true";
 
   const publicPages = [
     "login", "register", "verify-email", "verify",
-    "forgot-password", "reset-password", "login-success", "terms"
+    "forgot-password", "reset-password", "login-success", "terms", "onboarding", 'complete-registration', 'verify-change-password', 'reset-password'
   ];
 
-  if (!loginToken && !publicPages.includes(to.name)) {
-    return next({ name: "login", query: { redirect: to.fullPath } });
+  if (!loginToken) {
+    if (!hasSeenOnboarding && to.name !== "onboarding") {
+      return next({ name: "onboarding" }); // show onboarding trước
+    }
+
+    if (!publicPages.includes(to.name)) {
+      return next({ name: "login", query: { redirect: to.fullPath } });
+    }
   }
 
   if (loginToken && publicPages.includes(to.name)) {

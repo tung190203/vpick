@@ -1,12 +1,14 @@
 <script setup>
-import { reactive, ref, computed } from 'vue'
+import { reactive, computed } from 'vue'
 import useVuelidate from '@vuelidate/core'
 import { required, email, helpers } from '@vuelidate/validators'
 import Button from '@/components/atoms/Button.vue'
 import { toast } from 'vue3-toastify'
 import { useUserStore } from '@/store/auth'
+import { useRouter } from 'vue-router'
 
 const userStore = useUserStore()
+const router = useRouter()
 
 const data = reactive({
   email: ''
@@ -21,50 +23,41 @@ const rules = computed(() => ({
 
 const v$ = useVuelidate(rules, data)
 
-const countdown = ref(0)
-const loading = ref(false)
-let timer = null
-
-const startCountdown = () => {
-  countdown.value = 60
-  timer = setInterval(() => {
-    if (countdown.value > 0) countdown.value--
-    else clearInterval(timer)
-  }, 1000)
-}
-
 const submit = async () => {
   v$.value.$touch()
-  if (!v$.value.$invalid && countdown.value === 0 && !loading.value) {
-    loading.value = true
+  if (!v$.value.$invalid) {
     try {
       await userStore.forgotPassword(data)
-      toast.success('Vui lòng kiểm tra email để đặt lại mật khẩu.')
-      startCountdown()
+      toast.success('Yêu cầu đã được gửi. Vui lòng kiểm tra email của bạn.')
+      setTimeout(() => {
+        router.push({path: '/verify-change-password', query: { email: data.email }} )
+      }, 2000)
     } catch (error) {
       toast.error(error.response?.data?.message || 'Không thể gửi yêu cầu.')
-    } finally {
-      loading.value = false
     }
   }
 }
 </script>
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-    <div class="w-full max-w-md p-8 bg-white rounded shadow">
-      <h2 class="text-2xl font-bold mb-6 text-center ">Quên mật khẩu</h2>
-
-      <p class="text-sm text-gray-600 text-center mb-4">
-        Nhập email đã đăng ký để nhận liên kết đặt lại mật khẩu.
+  <div class="min-h-screen flex flex-col items-center justify-center px-4">
+    <img src="@/assets/images/logo-splash.svg" class="w-[60%]" alt="">
+    <div class="text-center mb-8 mt-8">
+      <h1 class="text-white text-2xl mb-2">Quên mật khẩu</h1>
+      <p class="text-sm text-white font-light">
+        Tận hưởng toàn bộ tính năng của Pickleball, bao gồm cập nhật giải đấu, 
+        bảng xếp hạng và thông báo trận đấu độc quyền!
       </p>
-
+    </div>
+    <div class="w-full max-w-md p-8 bg-white rounded shadow">
       <form @submit.prevent="submit" class="space-y-4">
         <div>
+          <label for="email" class="form-in font-semibold text-[14px]">Email</label>
           <input
+            id="email"
             type="email"
             placeholder="Email"
             v-model="data.email"
-            class="w-full px-4 py-2 border rounded focus:outline-none focus:ring-1 focus:ring-primary"
+            class="w-full px-4 py-2 mt-1 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-sm"
           />
           <span
             v-for="err in v$.email.$errors"
@@ -75,19 +68,19 @@ const submit = async () => {
           </span>
         </div>
 
-        <button
-          type="submit"
-          :disabled="countdown > 0 || loading"
-          class="w-full py-2 px-4 bg-primary hover:bg-secondary text-white font-semibold rounded disabled:opacity-50 disabled:cursor-not-allowed"
+        <Button 
+          type="submit" 
+          :class="{
+            'w-full bg-primary hover:bg-secondary': data.email,
+            'w-full bg-[#edeef2] text-[#333333] hover:bg-[#edeefe]': !data.email
+          }"
         >
-          <span v-if="countdown === 0 && !loading">Gửi yêu cầu</span>
-          <span v-else-if="loading">Đang gửi...</span>
-          <span v-else>Gửi lại sau {{ countdown }}s</span>
-        </button>
+          Gửi yêu cầu
+        </Button>
       </form>
 
       <div class="text-sm mt-4 text-center">
-        <router-link to="/login" class="text-blue-600 hover:underline">
+        <router-link to="/login" class="text-[#4392E0] hover:underline">
           Quay lại đăng nhập
         </router-link>
       </div>

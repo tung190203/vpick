@@ -23,7 +23,17 @@ class AuthController extends Controller
 {
     public function login(Request $request)
     {
-        $credentials = $request->only('email', 'password');
+        $request->validate([
+            'login' => 'required|string',
+            'password' => 'required|string',
+        ]);
+
+        $loginField = filter_var($request->login, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
+
+        $credentials = [
+            $loginField => $request->login,
+            'password' => $request->password
+        ];
 
         try {
             if (!$token = JWTAuth::attempt($credentials)) {
@@ -51,22 +61,119 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $request->validate([
-            'email' => 'required|email|unique:users',
-            'password' => 'required|min:6',
-            'full_name' => 'required|string',
-            'password_confirmation' => 'required|same:password',
+            'login' => [
+                'required',
+                'string',
+                function ($_, $value, $fail) {
+                    $exists = User::where('email', $value)
+                        ->orWhere('phone', $value)
+                        ->exists();
+                    if ($exists) {
+                        $fail('Email hoặc số điện thoại đã được sử dụng.');
+                    }
+                },
+            ],
         ]);
 
+        $loginField = filter_var($request->login, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
         $user = User::create([
-            'full_name' => $request->full_name,
-            'email' => $request->email,
-            'password' => $request->password,
+            $loginField => $request->login,
             'avatar_url' => asset('images/default-avatar.png'),
+            'full_name' => 'PickiUser' . Str::random(5),
         ]);
 
-        $user->notify(new VerifyEmailNotification());
+        $user->notify(new VerifyEmailNotification($loginField, $request->login));
 
-        return ResponseHelper::success([], 'Đăng ký thành công. Vui lòng kiểm tra email để xác minh tài khoản.');
+        $message = $loginField === 'email'
+            ? 'Đăng ký thành công. Vui lòng kiểm tra email để xác minh tài khoản.'
+            : 'Đăng ký thành công. Vui lòng kiểm tra tin nhắn để xác minh tài khoản.';
+
+        return ResponseHelper::success([], $message);
+    }
+
+    public function verifyOtp(Request $request)
+    {
+        $request->validate([
+            'login' => 'required|string',
+            'otp' => 'required|digits:6',
+        ]);
+
+        $type = filter_var($request->login, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
+
+        $record = DB::table('verification_codes')
+            ->where('type', $type)
+            ->where('identifier', $request->login)
+            ->first();
+
+        if (!$record) {
+            return ResponseHelper::error('Không tìm thấy mã xác minh.', 404);
+        }
+
+        if ($record->otp !== $request->otp) {
+            return ResponseHelper::error('Mã OTP không đúng.', 400);
+        }
+
+        if (now()->greaterThan($record->expires_at)) {
+            return ResponseHelper::error('Mã OTP đã hết hạn.', 400);
+        }
+
+        // Xác minh user
+        $user = User::where($type, $request->login)->first();
+        if (!$user) {
+            return ResponseHelper::error('Người dùng không tồn tại.', 404);
+        }
+
+        $user->email_verified_at = now();
+        $user->save();
+
+        DB::table('verification_codes')
+            ->where('type', $type)
+            ->where('identifier', $request->login)
+            ->delete();
+
+        return ResponseHelper::success([], 'Xác minh thành công');
+    }
+
+    public function resendOtp(Request $request)
+    {
+        $request->validate(['login' => 'required|string']);
+
+        $type = filter_var($request->login, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
+
+        $user = User::where($type, $request->login)->first();
+
+        if (!$user) {
+            return ResponseHelper::error('Không tìm thấy người dùng.', 404);
+        }
+
+        $user->notify(new VerifyEmailNotification($type, $request->login));
+
+        return ResponseHelper::success([], 'Mã OTP mới đã được gửi.');
+    }
+
+    public function fillPassword(Request $request)
+    {
+        $request->validate([
+            'login' => 'required|string',
+            'password' => 'required|min:6|confirmed',
+        ]);
+
+        $type = filter_var($request->login, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
+
+        $user = User::where($type, $request->login)->first();
+
+        if (!$user) {
+            return ResponseHelper::error('Không tìm thấy người dùng.', 404);
+        }
+
+        if ($user->password) {
+            return ResponseHelper::error('Người dùng đã có mật khẩu.', 400);
+        }
+
+        $user->password = $request->password;
+        $user->save();
+
+        return ResponseHelper::success([], 'Hoàn tất đăng ký');
     }
 
     public function forgotPassword(Request $request)
@@ -78,41 +185,65 @@ class AuthController extends Controller
         if (!$user) {
             return ResponseHelper::error('Email không tồn tại', 404);
         }
-        $token = Str::random(60);
 
-        DB::table('password_reset_tokens')->updateOrInsert(
-            ['email' => $user->email],
-            [
-                'token' => bcrypt($token),
-                'created_at' => now()
-            ]
-        );
-
-        $resetLink = url('/reset-password?token=' . $token . '&email=' . urlencode($user->email));
-
-        // Gửi email
-        Mail::to($user->email)->send(new ResetPasswordMail($resetLink));
+        Mail::to($user->email)->send(new ResetPasswordMail($request->email));
 
         return ResponseHelper::success([], 'Đã gửi email đặt lại mật khẩu. Vui lòng kiểm tra hộp thư đến.');
     }
+
+    public function verifyOtpPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'otp' => 'required|digits:6',
+        ]);
+
+        $record = DB::table('verification_codes')
+            ->where('type', 'email')
+            ->where('identifier', $request->email)
+            ->first();
+
+        if (!$record) {
+            return ResponseHelper::error('Không tìm thấy mã xác minh.', 404);
+        }
+
+        if ($record->otp !== $request->otp) {
+            return ResponseHelper::error('Mã OTP không đúng.', 400);
+        }
+
+        if (now()->greaterThan($record->expires_at)) {
+            return ResponseHelper::error('Mã OTP đã hết hạn.', 400);
+        }
+
+        DB::table('verification_codes')
+            ->where('type', 'email')
+            ->where('identifier', $request->email)
+            ->delete();
+
+        return ResponseHelper::success([], 'Xác minh OTP thành công. Bạn có thể đặt lại mật khẩu bây giờ.');
+    }
+
+    public function resendOtpPassword(Request $request)
+    {
+        $request->validate(['email' => 'required|email|exists:users,email']);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return ResponseHelper::error('Không tìm thấy người dùng.', 404);
+        }
+
+        Mail::to($user->email)->send(new ResetPasswordMail($request->email));
+
+        return ResponseHelper::success([], 'Mã OTP mới đã được gửi đến email của bạn.');
+    }
+
     public function resetPassword(Request $request)
     {
         $request->validate([
             'email' => 'required|email',
-            'token' => 'required',
             'password' => 'required|min:6|confirmed',
         ]);
-
-        $record = DB::table('password_reset_tokens')->where('email', $request->email)->first();
-
-        if (!$record) {
-            return ResponseHelper::error('Không tìm thấy yêu cầu đặt lại mật khẩu.', 404);
-        }
-
-        if (!Hash::check($request->token, $record->token)) {
-            return ResponseHelper::error('Token không hợp lệ hoặc đã hết hạn.', 400);
-        }
-
         // Đặt lại mật khẩu
         $user = User::where('email', $request->email)->first();
         if (!$user) {
@@ -121,9 +252,6 @@ class AuthController extends Controller
 
         $user->password = $request->password;
         $user->save();
-
-        // Xoá token sau khi đặt lại xong
-        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
 
         return ResponseHelper::success([], 'Mật khẩu đã được đặt lại thành công');
     }
@@ -232,7 +360,7 @@ class AuthController extends Controller
 
         $aud = $payload['aud'] ?? null;
         $platform = collect($validClients)->search($aud);
-    
+
         if ($platform === false) {
             return ResponseHelper::error('Client ID không hợp lệ', 401);
         }
@@ -255,11 +383,59 @@ class AuthController extends Controller
         ])->fromUser($user);
         $user->last_login = now();
         $user->save();
-    
+
         $response = $this->responseWithToken($accessToken, $refreshToken, $user);
         $response['platform'] = $platform; // android | ios
-    
+
         return ResponseHelper::success($response, 'Đăng nhập bằng Google thành công');
+    }
+
+    public function redirectToFacebook()
+    {
+        return Socialite::driver('facebook')->stateless()->redirect();
+    }
+
+    public function handleFacebookCallback(Request $request)
+    {
+        try {
+            $fbUser = Socialite::driver('facebook')->stateless()->user();
+
+            $avatarContent = file_get_contents($fbUser->getAvatar());
+            $avatarName = 'avatars/' . uniqid() . '.jpg';
+            Storage::disk('public')->put($avatarName, $avatarContent);
+
+            $user = User::firstOrCreate(
+                ['email' => $fbUser->getEmail()],
+                [
+                    'full_name' => $fbUser->getName(),
+                    'facebook_id' => $fbUser->getId(),
+                    'avatar_url' => asset('storage/' . $avatarName),
+                    'password' => Hash::make(Str::random(16)),
+                    'email_verified_at' => now(),
+                ]
+            );
+
+            Auth::login($user);
+
+            $accessToken = JWTAuth::claims(['type' => 'access'])->fromUser($user);
+            $refreshToken = JWTAuth::claims(['type' => 'refresh', 'exp' => now()->addDays(30)->timestamp])->fromUser($user);
+
+            $user->last_login = now();
+            $user->save();
+
+            if ($request->header('User-Agent') && strpos($request->header('User-Agent'), 'MobileApp') !== false) {
+                return ResponseHelper::success($this->responseWithToken($accessToken, $refreshToken, $user), 'Đăng nhập bằng Facebook thành công');
+            } else {
+                return redirect(config('app.redirect_success_url') . '/login-success?' . http_build_query([
+                    'access_token' => $accessToken,
+                    'refresh_token' => $refreshToken,
+                    'token_type' => 'Bearer',
+                    'expires_in' => 3600,
+                ]));
+            }
+        } catch (\Exception $e) {
+            return ResponseHelper::error('Không thể đăng nhập bằng Facebook', 500);
+        }
     }
 
     public function me(Request $request)

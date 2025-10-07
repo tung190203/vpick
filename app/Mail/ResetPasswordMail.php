@@ -8,6 +8,8 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class ResetPasswordMail extends Mailable implements ShouldQueue
 {
@@ -16,10 +18,23 @@ class ResetPasswordMail extends Mailable implements ShouldQueue
     /**
      * Create a new message instance.
      */
-    public $resetLink;
-    public function __construct($resetLink)
+    public $email;
+    public $otp;
+    public function __construct($email)
     {
-        $this->resetLink = $resetLink;
+        $this->email = $email;
+        $this->otp = rand(100000, 999999);
+
+        // 🔹 Lưu vào DB (bảng verification_codes)
+        DB::table('verification_codes')->updateOrInsert(
+            ['type' => 'email', 'identifier' => $this->email],
+            [
+                'otp' => $this->otp,
+                'expires_at' => now()->addMinutes(10),
+                'updated_at' => now(),
+                'created_at' => now(),
+            ]
+        );
     }
 
     /**
@@ -40,7 +55,8 @@ class ResetPasswordMail extends Mailable implements ShouldQueue
         return new Content(
             view: 'emails.reset_password',
             with: [
-                'resetLink' => $this->resetLink,
+                'email' => $this->email,
+                'otp' => $this->otp,
             ]
         );
     }

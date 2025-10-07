@@ -1,24 +1,27 @@
 {
   "resources/css/app.css": {
-    "file": "assets/app-Cx5LoVbI.css",
+    "file": "assets/app-DQzTk51P.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-D-KAsx-L.js",
+    "file": "assets/app-BOG0duQ2.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "css": [
-      "assets/app-CLoARdDR.css",
-      "assets/app-Cx5LoVbI.css"
+      "assets/app-B-Ahiako.css",
+      "assets/app-DQzTk51P.css"
     ],
     "assets": [
+      "assets/logo-splash-DOuQK6QO.svg",
       "assets/google-icon-Db3x1qGV.svg",
+      "assets/facebook-icon-Bc72ncmI.svg",
       "assets/pickleball-banner-CEzsk-BQ.png",
       "assets/pickleball-banner-1-DkgNn8B4.png",
       "assets/pickleball-banner-2-BknHubJi.png",
       "assets/logo-hbqRt3lM.png",
+      "assets/splash-bg-hSO4uccQ.png",
       "assets/email-sent-DLgpSAAS.svg",
       "assets/default-avatar-Dk-5jadl.png"
     ]
@@ -31,9 +34,17 @@
     "file": "assets/email-sent-DLgpSAAS.svg",
     "src": "resources/js/assets/images/email-sent.svg"
   },
+  "resources/js/assets/images/facebook-icon.svg": {
+    "file": "assets/facebook-icon-Bc72ncmI.svg",
+    "src": "resources/js/assets/images/facebook-icon.svg"
+  },
   "resources/js/assets/images/google-icon.svg": {
     "file": "assets/google-icon-Db3x1qGV.svg",
     "src": "resources/js/assets/images/google-icon.svg"
+  },
+  "resources/js/assets/images/logo-splash.svg": {
+    "file": "assets/logo-splash-DOuQK6QO.svg",
+    "src": "resources/js/assets/images/logo-splash.svg"
   },
   "resources/js/assets/images/logo.png": {
     "file": "assets/logo-hbqRt3lM.png",
@@ -50,5 +61,9 @@
   "resources/js/assets/images/pickleball-banner.png": {
     "file": "assets/pickleball-banner-CEzsk-BQ.png",
     "src": "resources/js/assets/images/pickleball-banner.png"
+  },
+  "resources/js/assets/images/splash-bg.png": {
+    "file": "assets/splash-bg-hSO4uccQ.png",
+    "src": "resources/js/assets/images/splash-bg.png"
   }
 }

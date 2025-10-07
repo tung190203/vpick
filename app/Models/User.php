@@ -28,6 +28,7 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         'location_id',
         'about',
         'google_id',
+        'facebook_id',
         'role',
         'email_verified_at',
         'is_profile_completed',
@@ -37,7 +38,8 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         'longitude',
         'address',
         'last_login',
-        'visibility'
+        'visibility',
+        'phone'
     ];
 
     const PER_PAGE = 15;

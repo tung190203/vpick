@@ -32,6 +32,18 @@ export const useUserStore = defineStore("user", () => {
   const registerUser = async (data) => {
     await AuthService.register(data);
   }
+
+  const verifyOtp = async (data) => {
+    await AuthService.verifyOtp(data);
+  }
+  const resendOtp = async (data) => {
+    await AuthService.resendOtp(data);
+  }
+
+  const fillPassword = async (data) => {
+    await AuthService.fillPassword(data);
+  }
+
   const loginUser = async (data) => {
     const response = await AuthService.login(data);
     fillUserData(response.user);
@@ -57,6 +69,15 @@ export const useUserStore = defineStore("user", () => {
   const forgotPassword = async (data) => {
     return AuthService.forgotPassword(data);
   }
+
+  const verifyOtpPassword = async (data) => {
+    return AuthService.verifyOtpPassword(data);
+  }
+
+  const resendOtpPassword = async (data) => {
+    return AuthService.resendOtpPassword(data);
+  }
+
   const resetPassword = async (data) => {
     return AuthService.resetPassword(data);
   }
@@ -73,6 +94,11 @@ export const useUserStore = defineStore("user", () => {
     logoutUser,
     forgotPassword,
     resetPassword,
-    updateUser
+    updateUser,
+    verifyOtp,
+    resendOtp,
+    fillPassword,
+    verifyOtpPassword,
+    resendOtpPassword,
   }  
 });
