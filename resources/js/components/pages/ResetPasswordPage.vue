@@ -98,7 +98,7 @@ const submit = async () => {
                     </span>
                 </div>
 
-                <Button type="submit" class="w-full bg-primary hover:bg-secondary">
+                <Button type="submit" class="w-full !bg-primary hover:!bg-secondary">
                     Đặt lại mật khẩu
                 </Button>
             </form>

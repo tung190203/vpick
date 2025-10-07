@@ -71,8 +71,8 @@ const submit = async () => {
         <Button 
           type="submit" 
           :class="{
-            'w-full bg-primary hover:bg-secondary': data.email,
-            'w-full bg-[#edeef2] text-[#333333] hover:bg-[#edeefe]': !data.email
+            'w-full !bg-primary hover:!bg-secondary': data.email,
+            'w-full !bg-[#edeef2] !text-[#333333] hover:!bg-[#edeefe]': !data.email
           }"
         >
           Gửi yêu cầu
