@@ -27,7 +27,7 @@ function goLogin() {
       </p>
     </div>
     <div class="w-full max-w-md space-y-4">
-      <Button class="w-full bg-white !text-[#333333] hover:bg-secondary hover:text-white" @click="goRegister">
+      <Button class="w-full bg-white !text-[#333333] hover:bg-secondary hover:!text-white" @click="goRegister">
         Đăng ký
       </Button>
       <Button class="w-full bg-secondary hover:bg-white hover:text-[#333333]" @click="goLogin">
