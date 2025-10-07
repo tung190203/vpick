@@ -184,7 +184,7 @@
                                                       <h1
                                                         style="margin: 16px 0px"
                                                       >
-                                                      Có yêu cầu đặt lại mật khẩu từ {{ $email }}
+                                                      Đây là mã xác minh {{$type}} của bạn:
                                                       </h1>
                                                       <p>
                                                         Nếu bạn không yêu cầu, vui lòng bỏ qua email này.

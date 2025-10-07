@@ -1,7 +1,7 @@
 <script setup>
 import { reactive, computed } from 'vue'
 import useVuelidate from '@vuelidate/core'
-import { required, email, minLength, sameAs } from '@vuelidate/validators'
+import { required, helpers } from '@vuelidate/validators'
 
 import { useRouter } from 'vue-router'
 import Button from '@/components/atoms/Button.vue'
@@ -12,19 +12,24 @@ const router = useRouter()
 const userStore = useUserStore()
 
 const data = reactive({
-  full_name: '',
-  email: '',
-  password: '',
-  password_confirmation: '',
-  accept_terms: true
+  login: '',
 })
 
+const isEmailOrPhone = helpers.withMessage(
+  'Vui lòng nhập email hoặc số điện thoại hợp lệ',
+  value => {
+    if (!value) return true
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    const phoneRegex = /^0\d{9,10}$/
+    return emailRegex.test(value) || phoneRegex.test(value)
+  }
+)
+
 const rules = computed(() => ({
-  full_name: { required },
-  email: { required, email },
-  password: { required, minLength: minLength(6) },
-  password_confirmation: { required, sameAsPassword: sameAs(data.password) },
-  accept_terms: { required }
+  login: {
+    required: helpers.withMessage('Không được để trống', required),
+    isEmailOrPhone
+  },
 }))
 
 const v$ = useVuelidate(rules, data)
@@ -36,7 +41,7 @@ const register = async () => {
       await userStore.registerUser(data)
       toast.success('Đăng ký thành công!')
       setTimeout(() => {
-        router.push({ path: '/verify', query: { email: data.email } })
+        router.push({ path: '/verify', query: { login: data.login } })
       }, 1000)
     } catch (error) {
       const message = error.response?.data?.message || 'Đăng ký thất bại, vui lòng thử lại!'
@@ -49,96 +54,69 @@ const register = async () => {
 const registerWithGoogle = () => {
   window.location.href = import.meta.env.VITE_BASE_URL + '/auth/google/redirect'
 }
+const registerWithFacebook = () => {
+  window.location.href = import.meta.env.VITE_BASE_URL + '/auth/facebook/redirect'
+}
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-    <div class="w-full max-w-md p-8 bg-white rounded shadow">
-      <h2 class="text-2xl font-bold mb-6 text-center">Đăng ký</h2>
-
+  <div class="min-h-screen flex flex-col items-center justify-center px-4">
+    <img src="@/assets/images/logo-splash.svg" class="w-[60%]" alt="">
+    <div class="text-center mb-8 mt-8">
+      <h1 class="text-white text-2xl mb-2">Đăng nhập/Đăng ký</h1>
+      <p class="text-sm text-white font-light">Tận hưởng toàn bộ tính năng của Pickleball, bao gồm cập nhật giải đấu, 
+        bảng xếp hạng và thông báo trận đấu độc quyền!</p>
+    </div>
+    <div class="w-full max-w-md p-8 bg-white rounded-[12px] shadow">
       <form @submit.prevent="register" class="space-y-4">
         <div>
+          <label for="login" class="form-in font-semibold text-[14px]">Email</label>
           <input
+            id="login"
             type="text"
-            placeholder="Họ và tên"
-            v-model="data.full_name"
-            class="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Nhập email của bạn"
+            v-model="data.login"
+            class="w-full px-4 py-2 my-1 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-sm"
           />
-          <p v-if="v$.full_name.$error" class="text-sm text-red-500 mt-1">
-            Họ và tên không được để trống
+          <p v-for="err in v$.login.$errors" class="text-sm text-red-500 mt-1">
+            {{ err.$message }}
           </p>
         </div>
-
-        <div>
-          <input
-            type="email"
-            placeholder="Email"
-            v-model="data.email"
-            class="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <p v-if="v$.email.$error" class="text-sm text-red-500 mt-1">
-            {{ v$.email.email.$invalid ? 'Email không hợp lệ' : 'Email không được để trống' }}
-          </p>
-        </div>
-
-        <div>
-          <input
-            type="password"
-            placeholder="Mật khẩu"
-            v-model="data.password"
-            class="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <p v-if="v$.password.$error" class="text-sm text-red-500 mt-1">
-            {{ v$.password.minLength.$invalid ? 'Mật khẩu tối thiểu 6 ký tự' : 'Mật khẩu không được để trống' }}
-          </p>
-        </div>
-
-        <div>
-          <input
-            type="password"
-            placeholder="Nhập lại mật khẩu"
-            v-model="data.password_confirmation"
-            class="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <p v-if="v$.password_confirmation.$error" class="text-sm text-red-500 mt-1">
-            {{ v$.password_confirmation.sameAsPassword.$invalid ? 'Mật khẩu nhập lại không khớp' : 'Vui lòng xác nhận mật khẩu' }}
-          </p>
-        </div>
-
-        <div>
-          <label class="flex items-start gap-2 text-sm text-gray-700">
-            <input
-              type="checkbox"
-              v-model="data.accept_terms"
-              class="mt-1 accent-primary checked:bg-primary checked:border-primary focus:ring-primary"
-            />
-            <span>
-              Bằng cách đăng ký, bạn đồng ý với
-              <router-link to="/terms" class="text-red-600 underline ml-1">Điều khoản & Điều kiện</router-link>
-              và xác nhận đã đọc thông báo về quyền riêng tư của chúng tôi.
-            </span>
-          </label>
-          <p v-if="v$.accept_terms.$error" class="text-sm text-red-500 mt-1">
-            Bạn phải đồng ý với điều khoản để tiếp tục
-          </p>
-        </div>
-
-        <Button type="submit" class="w-full bg-primary hover:bg-secondary">Đăng ký</Button>
+        <Button 
+          type="submit"
+          :class="{
+            'w-full !bg-primary hover:!bg-secondary': data.login,
+            'w-full !bg-[#edeef2] !text-[#333333] hover:!bg-[#edeefe]': !data.login
+          }"
+        >
+          Tiếp tục
+        </Button>
       </form>
 
-      <div class="text-center my-4 text-sm text-gray-500">Hoặc</div>
+      <div class="flex items-center my-4 text-sm text-gray-500">
+        <div class="flex-grow border-t border-gray-300"></div>
+        <span class="px-4">Hoặc đăng ký với</span>
+        <div class="flex-grow border-t border-gray-300"></div>
+      </div>
 
-      <Button
+      <div class="flex gap-2">
+        <Button
         class="w-full flex items-center justify-center gap-2 bg-white !text-gray-800 border border-gray-300 hover:bg-gray-50"
         @click="registerWithGoogle"
       >
         <img src="@/assets/images/google-icon.svg" class="w-5 h-5" alt="Google" />
-        Đăng ký bằng Google
       </Button>
+      <Button
+        class="w-full flex items-center justify-center gap-2 bg-white !text-gray-800 border border-gray-300 hover:bg-gray-50"
+        @click="registerWithFacebook"
+      >
+        <img src="@/assets/images/facebook-icon.svg" class="w-5 h-5" alt="Google" />
+      </Button>
+      </div>
 
       <div class="text-sm mt-4 text-center">
         Đã có tài khoản?
-        <router-link to="/login" class="text-blue-600 hover:underline">
+        <router-link to="/login" class="text-[#4392E0] hover:underline">
           Đăng nhập ngay
         </router-link>
       </div>

@@ -12,8 +12,28 @@ export const register = async (data) => {
   return axiosInstance.post(`${authEndpoint}/register`, data).then((response) => response.data.data);
 };
 
+export const verifyOtp = async (data) => {
+  return axiosInstance.post(`${authEndpoint}/verify-otp`, data).then((response) => response.data.data);
+}
+
+export const resendOtp = async (data) => {
+  return axiosInstance.post(`${authEndpoint}/resend-otp`, data).then((response) => response.data.data);
+}
+
+export const fillPassword = async (data) => {
+  return axiosInstance.post(`${authEndpoint}/fill-password`, data).then((response) => response.data.data);
+}
+
 export const forgotPassword = async (data) => {
   return axiosInstance.post(`${authEndpoint}/forgot-password`, data).then((response) => response.data.data);
+}
+
+export const verifyOtpPassword = async (data) => {
+  return axiosInstance.post(`${authEndpoint}/verify-otp-password`, data).then((response) => response.data.data);
+}
+
+export const resendOtpPassword = async (data) => {
+  return axiosInstance.post(`${authEndpoint}/resend-otp-password`, data).then((response) => response.data.data);
 }
 
 export const resetPassword = async (data) => {

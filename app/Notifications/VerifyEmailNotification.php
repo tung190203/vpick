@@ -6,42 +6,54 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\DB;
 
 class VerifyEmailNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    /**
-     * Create a new notification instance.
-     */
-    public function __construct()
+    protected string $type;
+    protected string $identifier;
+
+    public function __construct(string $type, string $identifier)
     {
-        //
+        $this->type = $type;
+        $this->identifier = $identifier;
     }
 
-    /**
-     * Get the notification's delivery channels.
-     *
-     * @return array<int, string>
-     */
-    public function via(object $notifiable): array
+    public function via($notifiable)
     {
-        return ['mail'];
+        return $this->type === 'email' ? ['mail'] : ['database'];
+        // Với 'phone' bạn có thể thay 'database' bằng service SMS thực tế (Twilio, ViettelSMS, v.v.)
     }
 
     /**
      * Get the mail representation of the notification.
      */
-    public function toMail(object $notifiable): MailMessage
+    public function toMail($notifiable)
     {
-        $token = encrypt(['email' => $notifiable->email, 'expires_at' => now()->addMinutes(60)]);
-        $url = config('app.frontend_url') . "/verify-email?token=" . urlencode($token);
-    
+        $otp = rand(100000, 999999);
+
+        DB::table('verification_codes')->updateOrInsert(
+            ['type' => $this->type, 'identifier' => $this->identifier],
+            [
+                'otp' => $otp,
+                'expires_at' => now()->addMinutes(10),
+                'updated_at' => now(),
+                'created_at' => now(),
+            ]
+        );
+
+        // Dữ liệu truyền qua view
+        $data = [
+            'otp' => $otp,
+            'type' => $this->type,
+        ];
+
+        // Dùng custom view
         return (new MailMessage)
-            ->subject('Xác minh email của bạn')
-            ->line('Nhấn vào nút bên dưới để xác minh email.')
-            ->action('Xác minh email', $url)
-            ->line('Nếu bạn không đăng ký, hãy bỏ qua email này.');
+            ->subject('Mã xác minh tài khoản của bạn')
+            ->view('emails.verify', $data);
     }
 
     /**
@@ -52,7 +64,8 @@ class VerifyEmailNotification extends Notification implements ShouldQueue
     public function toArray(object $notifiable): array
     {
         return [
-            //
+            'type' => $this->type,
+            'identifier' => $this->identifier,
         ];
     }
 }
