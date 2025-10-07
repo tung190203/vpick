@@ -89,8 +89,8 @@ const fillData = async () => {
         <Button
           type="submit"
           :class="{
-            'w-full bg-primary hover:bg-secondary': data.password && data.password_confirmation,
-            'w-full bg-[#edeef2] text-[#333333] hover:bg-[#edeefe]': !data.password || !data.password_confirmation
+            'w-full !bg-primary hover:!bg-secondary': data.password && data.password_confirmation,
+            'w-full !bg-[#edeef2] !text-[#333333] hover:!bg-[#edeefe]': !data.password || !data.password_confirmation
           }"
         >
             Hoàn tất đăng ký

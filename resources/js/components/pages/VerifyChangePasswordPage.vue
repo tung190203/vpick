@@ -34,15 +34,15 @@
   
         <!-- Loading xác minh -->
         <div v-if="submitting" class="flex justify-center space-x-2 mt-3">
-          <div class="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
-          <div class="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-.2s]"></div>
-          <div class="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-.4s]"></div>
+          <div class="w-2 h-2 !bg-primary rounded-full animate-bounce"></div>
+          <div class="w-2 h-2 !bg-primary rounded-full animate-bounce [animation-delay:-.2s]"></div>
+          <div class="w-2 h-2 !bg-primary rounded-full animate-bounce [animation-delay:-.4s]"></div>
         </div>
   
         <!-- Nút xác minh -->
         <div class="mt-4">
           <button
-            class="w-full py-2 px-4 bg-primary hover:bg-secondary text-white font-semibold rounded disabled:opacity-50 disabled:cursor-not-allowed"
+            class="w-full py-2 px-4 !bg-primary hover:!bg-secondary text-white font-semibold rounded disabled:opacity-50 disabled:cursor-not-allowed"
             :disabled="submitting || otpDigits.join('').length < 6"
             @click="submitOtp"
           >
@@ -59,7 +59,7 @@
           </template>
           <template v-else>
             <button
-              class="text-primary font-semibold hover:underline"
+              class="!text-primary font-semibold hover:underline"
               :disabled="loading"
               @click="resendOtp"
             >
