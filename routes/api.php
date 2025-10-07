@@ -35,12 +35,20 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/resend-otp', [AuthController::class, 'resendOtp']);
+    Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
     Route::post('/refresh-token', [AuthController::class, 'refresh']);
+    Route::post('/fill-password', [AuthController::class, 'fillPassword']);
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('/verify-otp-password', [AuthController::class, 'verifyOtpPassword']);
+    Route::post('/resend-otp-password', [AuthController::class, 'resendOtpPassword']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
     Route::get('/google/redirect', [AuthController::class, 'redirectToGoogle']);
     Route::get('/google/callback', [AuthController::class, 'handleGoogleCallback']);
+    Route::get('/facebook/redirect', [AuthController::class, 'redirectToFacebook']);
+    Route::get('/facebook/callback', [AuthController::class, 'handleFacebookCallback']);
+
     // Mobile login with Google
     Route::post('/google', [AuthController::class, 'loginWithGoogle']);
 });

@@ -18,9 +18,34 @@ import CreateFriendlyMatchPage from '@/components/pages/CreateFriendlyMatchPage.
 import ForbiddenPage from '@/components/pages/ForbiddenPage.vue'
 import AdminDashboard from '@/components/pages/admin/AdminDashboard.vue'
 import RefereeDashboard from '@/components/pages/referee/RefereeDashboard.vue'
+import OnboardingPage from "@/components/pages/Onboarding.vue"
+import CompleteRegistrationPage from '@/components/pages/CompleteRegistrationPage.vue'
+import VerifyChangePasswordPage from '@/components/pages/VerifyChangePasswordPage.vue'
 import { ROLE } from '@/constants/index.js'
 
 export const route = [
+  {
+    path: '/onboarding',
+    component: AuthLayout,
+    children: [
+      {
+        path: '',
+        name: 'onboarding',
+        component: OnboardingPage
+      }
+    ]
+  },  
+  {
+    path: '/complete-registration',
+    component: AuthLayout,
+    children: [
+      {
+        path: '',
+        name: 'complete-registration',
+        component: CompleteRegistrationPage
+      }
+    ]
+  },  
   {
     path: '/login',
     component: AuthLayout,
@@ -134,19 +159,48 @@ export const route = [
   },
   {
     path: '/verify',
-    name: 'verify',
-    component: VerifyPage
+    component: AuthLayout,
+    children: [
+      {
+        path: '',
+        name: 'verify',
+        component: VerifyPage
+      }
+    ]
   },
   {
     path: '/forgot-password',
-    name: 'forgot-password',
-    component: ForgotPasswordPage
-  },
+    component: AuthLayout,
+    children: [
+      {
+        path: '',
+        name: 'forgot-password',
+        component: ForgotPasswordPage
+      }
+    ]
+  },  
+  {
+    path: '/verify-change-password',
+    component: AuthLayout,
+    children: [
+      {
+        path: '',
+        name: 'verify-change-password',
+        component: VerifyChangePasswordPage
+      }
+    ]
+  },  
   {
     path: '/reset-password',
-    name: 'reset-password',
-    component: ResetPasswordPage
-  },
+    component: AuthLayout,
+    children: [
+      {
+        path: '',
+        name: 'reset-password',
+        component: ResetPasswordPage
+      }
+    ]
+  },  
   {
     path: '/terms',
     name: 'terms',

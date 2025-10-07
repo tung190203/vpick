@@ -1,6 +1,7 @@
 export const LOCAL_STORAGE_KEY = {
     LOGIN_TOKEN: "access_token",
     REFRESH_TOKEN: 'refresh_token',
+    ONBOARDING: "hasSeenOnboarding",
 };
 
 export const LOCAL_STORAGE_USER = {
