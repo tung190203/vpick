@@ -37,6 +37,7 @@ class AuthController extends Controller
             ]);
         }
         if(!$exits->email_verified_at) {
+            $exits->notify(new VerifyEmailNotification($loginField, $request->login));
             return ResponseHelper::error('Vui lòng xác minh email trước khi đăng nhập', 403, [
                 'status_code' => 'OTP_PENDING'
             ]);
@@ -80,10 +81,14 @@ class AuthController extends Controller
         if ($existingUser) {
             if (!$existingUser->email_verified_at) {
                 $existingUser->notify(new VerifyEmailNotification($loginField, $request->login));
-                return ResponseHelper::success(['status_code' => 'OTP_PENDING'], 'Bạn chưa xác minh tài khoản, mã OTP mới đã được gửi.');
+                return ResponseHelper::error('Vui lòng xác minh email trước khi đăng nhập', 403, [
+                    'status_code' => 'OTP_PENDING'
+                ]);
             }
             if (!$existingUser->password) {
-                return ResponseHelper::success(['status_code' => 'PASSWORD_PENDING'], 'Bạn đã xác minh nhưng chưa điền mật khẩu, vui lòng hoàn tất đăng ký.');
+                return ResponseHelper::error('Bạn chưa hoàn tất đăng ký mật khẩu', 403, [
+                    'status_code' => 'PASSWORD_PENDING'
+                ]);
             }
             return ResponseHelper::error('Email hoặc số điện thoại đã được sử dụng.', 400, ['status_code' => 'REGISTERED']);
         }
