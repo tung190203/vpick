@@ -44,6 +44,7 @@ class AuthController extends Controller
         }
 
         if (!$exits->password) {
+            $exits->notify(new VerifyEmailNotification($loginField, $request->login));
             return ResponseHelper::error('Bạn chưa hoàn tất đăng ký mật khẩu', 403, [
                 'status_code' => 'PASSWORD_PENDING'
             ]);
@@ -86,6 +87,7 @@ class AuthController extends Controller
                 ]);
             }
             if (!$existingUser->password) {
+                $existingUser->notify(new VerifyEmailNotification($loginField, $request->login));
                 return ResponseHelper::error('Bạn chưa hoàn tất đăng ký mật khẩu', 403, [
                     'status_code' => 'PASSWORD_PENDING'
                 ]);
