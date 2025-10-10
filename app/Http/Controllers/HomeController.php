@@ -26,11 +26,6 @@ class HomeController extends Controller
             'leaderboard_per_page' => 'sometimes|integer|min:1|max:100',
         ]);
         $userId = auth()->user()->id;
-        $userInfo = [
-            'vndupr_score' =>  auth()->user()->load('vnduprScores')->vnduprScores->max('score_value') ?? 0,
-            'win_rate' => 60,
-            'performance' => 80
-        ];
         $upcomingMiniTournaments = MiniTournament::withFullRelations()
             ->where('starts_at', '>', Carbon::now())
             ->where('status', MiniTournament::STATUS_OPEN)
@@ -97,7 +92,6 @@ class HomeController extends Controller
             ->take($validated['leaderboard_per_page'] ?? Club::PER_PAGE);
 
         $data = [
-            'user_info' => $userInfo,
             'upcoming_mini_tournament' => ListMiniTournamentResource::collection($upcomingMiniTournaments),
             'upcoming_tournaments' => ListTournamentResource::collection($upcomingTournaments),
             'banners' => BannerResource::collection($banners),
