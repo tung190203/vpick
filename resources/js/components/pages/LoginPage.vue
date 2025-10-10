@@ -44,7 +44,7 @@ const login = async () => {
   v$.value.$touch()
   if (!v$.value.$invalid) {
     try {
-      await userStore.loginUser(data)
+      const res = await userStore.loginUser(data)
       toast.success('Đăng nhập thành công!')
       const roleRouteMap = {
         user: 'dashboard',
@@ -62,6 +62,16 @@ const login = async () => {
       }, 1000)
     } catch (error) {
       toast.error(error.response?.data?.message || 'Đăng nhập thất bại!')
+      if(error.response?.data?.errors?.status_code === "PASSWORD_PENDING") {
+        setTimeout(() => {
+          router.push({ path: '/complete-registration', query: { login: data.login } })
+        }, 1000)
+      }
+      if(error.response?.data?.errors?.status_code === "OTP_PENDING") {
+        setTimeout(() => {
+          router.push({ path: '/verify', query: { login: data.login } })
+        }, 1000)
+      }
     }
   }
 }

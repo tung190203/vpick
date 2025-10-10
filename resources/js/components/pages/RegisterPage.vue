@@ -46,7 +46,16 @@ const register = async () => {
     } catch (error) {
       const message = error.response?.data?.message || 'Đăng ký thất bại, vui lòng thử lại!'
       toast.error(`${message}`)
-      console.error('Đăng ký thất bại:', error)
+      if(error.response?.data?.errors?.status_code === "PASSWORD_PENDING") {
+        setTimeout(() => {
+          router.push({ path: '/complete-registration', query: { login: data.login } })
+        }, 1000)
+      }
+      if(error.response?.data?.errors?.status_code === "OTP_PENDING") {
+        setTimeout(() => {
+          router.push({ path: '/verify', query: { login: data.login } })
+        }, 1000)
+      }
     }
   }
 }
