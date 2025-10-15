@@ -129,7 +129,7 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
     });
 
     Route::prefix('competition-locations')->group(function () {
-        Route::get('/index', [CompetitionLocationController::class, 'index']);
+        Route::match(['get', 'post'], '/index', [CompetitionLocationController::class, 'index']);
     });
 
     Route::prefix('follows')->group(function () {
