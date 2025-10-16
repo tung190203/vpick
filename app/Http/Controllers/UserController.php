@@ -221,4 +221,39 @@ class UserController extends Controller
 
         return ResponseHelper::success($result, 'Lấy chi tiết địa điểm thành công');
     }
+
+    public function destroy(Request $request, $id)
+    {
+        $user = User::find($id);
+        if (!$user) {
+            return ResponseHelper::error('Người dùng không tồn tại', 404);
+        }
+        if ($user->id !== auth()->id()) {
+            return ResponseHelper::error('Bạn không có quyền xóa người dùng này', 403);
+        }
+
+        // Xóa ảnh đại diện khỏi storage
+        if ($user->avatar_url) {
+            $oldPath = str_replace(asset('storage/') . '/', '', $user->avatar_url);
+            if (Storage::disk('public')->exists($oldPath)) {
+                Storage::disk('public')->delete($oldPath);
+            }
+        }
+
+        $user->follows()->delete();
+        $user->followings()->delete();
+        $user->referee()->delete();
+        $user->playTimes()->delete();
+        $user->badges()->delete();
+        $user->sport()->delete();
+        $user->sports()->delete();
+        $user->vnduprScores()->delete();
+        $user->clubs()->detach();
+        $user->participants()->delete();
+        $user->miniParticipants()->delete();
+
+        $user->delete();
+
+        return ResponseHelper::success(null, 'Xóa người dùng thành công');
+    }
 }
