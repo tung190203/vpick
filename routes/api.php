@@ -59,7 +59,7 @@ Route::post('/resend-email', [VerificationController::class, 'resend']);
 Route::middleware(['auth:api', 'verified'])->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::prefix('user')->group(function () {
-        Route::get('/index', [UserController::class, 'index']);
+        Route::match(['get', 'post'], '/index', [UserController::class, 'index']);
         Route::get('/{id}', [UserController::class, 'show']);
         Route::post('/update', [UserController::class, 'update']);
         Route::delete('/delete/{id}', [UserController::class, 'destroy']);
