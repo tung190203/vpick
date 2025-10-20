@@ -39,7 +39,8 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         'address',
         'last_login',
         'visibility',
-        'phone'
+        'phone',
+        'self_score',
     ];
 
     const PER_PAGE = 15;

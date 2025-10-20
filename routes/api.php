@@ -105,7 +105,7 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
     });
     // Mini Match Routes
     Route::prefix('mini-matches')->group(function (): void {
-        Route::get('/index/{miniTournamentId}', [MiniMatchController::class, 'index']);
+        Route::match(['get', 'post'], '/index/{miniTournamentId}', [MiniMatchController::class, 'index']);
         Route::post('/store/{miniTournamentId}', [MiniMatchController::class, 'store']);
         Route::post('/update/{matchId}', [MiniMatchController::class, 'update']);
         Route::post('/add-set/{matchId}', [MiniMatchController::class, 'addSetResult']);

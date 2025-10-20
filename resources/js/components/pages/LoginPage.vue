@@ -46,6 +46,12 @@ const login = async () => {
     try {
       const res = await userStore.loginUser(data)
       toast.success('Đăng nhập thành công!')
+      if(res && res?.user?.is_profile_completed == 0) {
+        setTimeout(() => {
+          router.push({ path: '/complete-profile' })
+        }, 1000)
+        return
+      }
       const roleRouteMap = {
         user: 'dashboard',
         admin: 'admin.dashboard',

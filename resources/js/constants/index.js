@@ -18,6 +18,9 @@ export const API_ENDPOINT = {
   AUTH: '/auth',
   USER: '/user',
   TOURNAMENT: '/tournaments',
+  LOCATION: '/locations',
+  SPORT: '/sports',
+  CLUB: '/club',
 };
 
 export const TOURNAMENT_STATUS = {

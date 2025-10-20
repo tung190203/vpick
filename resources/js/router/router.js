@@ -21,6 +21,8 @@ import RefereeDashboard from '@/components/pages/referee/RefereeDashboard.vue'
 import OnboardingPage from "@/components/pages/Onboarding.vue"
 import CompleteRegistrationPage from '@/components/pages/CompleteRegistrationPage.vue'
 import VerifyChangePasswordPage from '@/components/pages/VerifyChangePasswordPage.vue'
+import CompleteProfilePage from '@/components/pages/CompleteProfilePage.vue'
+import UpdateProfilePage from '@/components/pages/UpdateProfilePage.vue'
 import { ROLE } from '@/constants/index.js'
 
 export const route = [
@@ -200,7 +202,29 @@ export const route = [
         component: ResetPasswordPage
       }
     ]
-  },  
+  },
+  {
+    path: '/complete-profile',
+    component: AuthLayout,
+    children: [
+      {
+        path: '',
+        name: 'complete-profile',
+        component: CompleteProfilePage
+      }
+    ]
+  },
+  {
+    path: '/update-profile',
+    component: AuthLayout,
+    children: [
+      {
+        path: '',
+        name: 'update-profile',
+        component: UpdateProfilePage
+      }
+    ]
+  },
   {
     path: '/terms',
     name: 'terms',
