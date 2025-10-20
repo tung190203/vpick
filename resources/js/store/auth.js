@@ -49,6 +49,7 @@ export const useUserStore = defineStore("user", () => {
     fillUserData(response.user);
     localStorage.setItem(LOCAL_STORAGE_KEY.LOGIN_TOKEN, response.token.access_token);
     localStorage.setItem(LOCAL_STORAGE_KEY.REFRESH_TOKEN, response.token.refresh_token);
+    return response;
   }
 
   const fillUserData = (userData) => {

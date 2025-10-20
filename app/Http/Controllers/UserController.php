@@ -132,7 +132,7 @@ class UserController extends Controller
         }
         return ResponseHelper::success(new UserResource($user), 'Lấy thông tin người dùng thành công');
     }
-    public function update(Request $request, GeocodingService $geocoder)
+    public function update(Request $request)
     {
         $validated = $request->validate([
             'full_name' => 'required|string|max:255',
@@ -150,7 +150,8 @@ class UserController extends Controller
             'sport_ids.*' => 'exists:sports,id',
             'score_value' => 'nullable|array',
             'score_value.*' => 'integer|min:0',
-            'visibility' => 'nullable|in:open,friend-only'
+            'visibility' => 'nullable|in:open,friend-only',
+            'self_score' => 'nullable|string|max:255',
         ]);
         $user = User::findOrFail(auth()->id());
         $data = collect($validated)->except(['avatar_url', 'password', 'is_profile_completed', 'score_value', 'sport_ids'])->toArray();
@@ -176,19 +177,24 @@ class UserController extends Controller
 
         $user->update($data);
 
-        $user->load('sports.scores', 'sports.sport');
-        if (!empty($validated['sport_ids'])) {
-            foreach ($validated['sport_ids'] as $index => $sportId) {
-                $userSport = $user->sports()->firstOrCreate(
-                    ['sport_id' => $sportId],
-                    ['tier' => null]
-                );
+        if (isset($validated['sport_ids'])) {
+            $user->sports()->each(function ($userSport) {
+                $userSport->scores()->delete();
+                $userSport->delete();
+            });
+            if (!empty($validated['sport_ids'])) {
+                foreach ($validated['sport_ids'] as $index => $sportId) {
+                    $userSport = $user->sports()->create([
+                        'sport_id' => $sportId,
+                        'tier' => null
+                    ]);
 
-                if (!empty($validated['score_value'][$index])) {
-                    $userSport->scores()->updateOrCreate(
-                        ['score_type' => 'personal_score'],
-                        ['score_value' => $validated['score_value'][$index]]
-                    );
+                    if (!empty($validated['score_value'][$index])) {
+                        $userSport->scores()->create([
+                            'score_type' => 'personal_score',
+                            'score_value' => $validated['score_value'][$index]
+                        ]);
+                    }
                 }
             }
         }
