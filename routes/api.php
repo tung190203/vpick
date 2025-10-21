@@ -115,7 +115,7 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
         Route::get('/{matchId}/generate-qr', [MiniMatchController::class, 'generateQr']);
         Route::post('/confirm-result/{matchId}', [MiniMatchController::class, 'confirmResult']);
         // Trình lọc trận đấu
-        Route::get('/index', [MiniMatchController::class, 'listMiniMatch']);
+        Route::match(['get', 'post'], '/list-match', [MiniMatchController::class, 'listMiniMatch']);
     });
 
     Route::prefix('send-message')->group(function () {
