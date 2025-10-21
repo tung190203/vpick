@@ -41,6 +41,9 @@ class MiniMatchResource extends JsonResource
             'participant2_confirm' => $this->participant2_confirm,
             'yard_number' => $this->yard_number,
             'results_by_sets' => $groupedResults,
+            'competition_location' => $this->whenLoaded('miniTournament', function () {
+                return optional(optional($this->miniTournament)->competitionLocation)?->only(['id', 'name', 'latitude', 'longitude']);
+            }),
         ];
     }
 }
