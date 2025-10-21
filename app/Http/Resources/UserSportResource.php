@@ -16,7 +16,10 @@ class UserSportResource extends JsonResource
     {
         return [
             'sport_id' => $this->sport_id,
-            'sport_name' => $this->when($this->relationLoaded('sport') && $this->sport, $this->sport->name),
+            'sport_name' => $this->when(
+                $this->relationLoaded('sport'),
+                fn() => optional($this->sport)->name
+            ),
             'scores' => UserSportScoreResource::collection($this->whenLoaded('scores')),
         ];
     }

@@ -61,9 +61,10 @@ Route::post('/resend-email', [VerificationController::class, 'resend']);
 Route::middleware(['auth:api', 'verified'])->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::prefix('user')->group(function () {
-        Route::get('/index', [UserController::class, 'index']);
+        Route::match(['get', 'post'], '/index', [UserController::class, 'index']);
         Route::get('/{id}', [UserController::class, 'show']);
         Route::post('/update', [UserController::class, 'update']);
+        Route::delete('/delete/{id}', [UserController::class, 'destroy']);
     });
     Route::prefix('tournaments')->group(function () {
         Route::get('/index', [TournamentController::class, 'index']);
@@ -125,7 +126,7 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
     });
     // Mini Match Routes
     Route::prefix('mini-matches')->group(function (): void {
-        Route::get('/index/{miniTournamentId}', [MiniMatchController::class, 'index']);
+        Route::match(['get', 'post'], '/index/{miniTournamentId}', [MiniMatchController::class, 'index']);
         Route::post('/store/{miniTournamentId}', [MiniMatchController::class, 'store']);
         Route::post('/update/{matchId}', [MiniMatchController::class, 'update']);
         Route::post('/add-set/{matchId}', [MiniMatchController::class, 'addSetResult']);
@@ -156,13 +157,14 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
     });
 
     Route::prefix('competition-locations')->group(function () {
-        Route::get('/index', [CompetitionLocationController::class, 'index']);
+        Route::match(['get', 'post'], '/index', [CompetitionLocationController::class, 'index']);
     });
 
     Route::prefix('follows')->group(function () {
         Route::get('/index', [FollowController::class, 'index']);
         Route::post('/store', [FollowController::class, 'store']);
         Route::delete('/delete', [FollowController::class, 'destroy']);
+        Route::get('/list-friends', [FollowController::class, 'getFriends']);
     });
 
     Route::prefix('sports')->group(function () {
