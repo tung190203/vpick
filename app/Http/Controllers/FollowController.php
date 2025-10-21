@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\FollowResource;
+use App\Http\Resources\UserListResource;
 use App\Models\CompetitionLocation;
 use App\Models\Follow;
 use App\Models\User;
@@ -124,4 +125,40 @@ class FollowController extends Controller
             ->where('followable_type', $model)
             ->delete() > 0;
     }
+
+    /**
+ * Lấy danh sách bạn bè (mutual follows)
+ */
+public function getFriends(Request $request)
+{
+    $validated = $request->validate([
+        'per_page' => 'sometimes|integer|min:1|max:100',
+    ]);
+
+    $userId = Auth::id();
+    $perPage = $validated['per_page'] ?? 15;
+
+    // Lấy danh sách user mà current user đang follow
+    $following = Follow::where('user_id', $userId)
+        ->where('followable_type', User::class)
+        ->pluck('followable_id')
+        ->toArray();
+
+    // Lấy danh sách user đang follow current user
+    $followers = Follow::where('followable_id', $userId)
+        ->where('followable_type', User::class)
+        ->pluck('user_id')
+        ->toArray();
+
+    // Tìm giao = bạn bè
+    $friendIds = array_intersect($following, $followers);
+
+    // Lấy thông tin user
+    $friends = User::whereIn('id', $friendIds)->paginate($perPage);
+
+    return ResponseHelper::success(
+        UserListResource::collection($friends),
+        'Lấy danh sách bạn bè thành công'
+    );
+}
 }

@@ -137,6 +137,7 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
         Route::get('/index', [FollowController::class, 'index']);
         Route::post('/store', [FollowController::class, 'store']);
         Route::delete('/delete', [FollowController::class, 'destroy']);
+        Route::get('/list-friends', [FollowController::class, 'getFriends']);
     });
 
     Route::prefix('sports')->group(function () {

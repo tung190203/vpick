@@ -21,6 +21,7 @@ export const API_ENDPOINT = {
   LOCATION: '/locations',
   SPORT: '/sports',
   CLUB: '/club',
+  FOLLOW: '/follows',
 };
 
 export const TOURNAMENT_STATUS = {
