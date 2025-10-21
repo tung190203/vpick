@@ -1,165 +1,341 @@
 <template>
-  <div class="min-h-screen bg-gray-100 p-4 sm:p-6">
-    <!-- Swiper Header -->
-    <Swiper :modules="[Autoplay]" :slides-per-view="1" :loop="true"
-      :autoplay="{ delay: 2000, disableOnInteraction: false }"
-      class="w-full max-w-screen-xl mx-auto mt-4 rounded-xl overflow-hidden">
-      <SwiperSlide v-for="(img, index) in banners" :key="index">
-        <img :src="img" class="w-full aspect-[21/9] object-cover" alt="" />
-      </SwiperSlide>
-    </Swiper>
+  <div class="min-h-screen bg-gray-100 p-4 lg:p-6">
+    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+      <!-- Left column -->
+      <div class="lg:col-span-2 space-y-6">
+        <!-- VN/DUPR Card -->
+        <div class="bg-red-custom text-white rounded-[8px] shadow-lg p-6 relative overflow-hidden"
+          :style="{ backgroundImage: `url(${Background})` }">
+          <div class="absolute top-0 left-0 w-full h-full opacity-10 bg-gradient-to-br from-red-500 to-red-700"></div>
 
-    <!-- User Info + Actions -->
-    <div class="max-w-screen-xl mx-auto mt-8 bg-white rounded-xl shadow p-4 sm:p-6 space-y-4">
-      <div
-        class="text-lg sm:text-xl font-semibold flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-1 sm:space-y-0">
-        <div class="flex items-center max-w-full truncate">
-          <img :src="getUser.avatar_url" class="w-8 h-8 rounded-full mr-2" alt="" />
-          <span class="truncate">{{ getUser.full_name }}</span>
-        </div>
-        <div class="text-sm text-gray-600 truncate">🏅 VNDUPR: 4.50 – <span class="font-medium">S3</span></div>
-      </div>
-
-      <!-- Action Buttons -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-        <button class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-center"
-          @click="() => $router.push('/tournament')">
-          Tham gia giải đấu
-        </button>
-        <button class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg text-center" @click="() => $router.push('friendly-match/create')">
-          Nhập điểm / Tạo giao hữu
-        </button>
-        <button class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded-lg text-center"
-          @click="() => $router.push('/leaderboard')">
-          Xem bảng xếp hạng
-        </button>
-        <button class="bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg text-center">
-          Quét mã QR
-        </button>
-      </div>
-    </div>
-
-    <!-- Stats Grid -->
-    <div class="max-w-screen-xl mx-auto mt-8 grid grid-cols-1 md:grid-cols-5 gap-4">
-      <div class="bg-white rounded-xl shadow p-6 text-center">
-        <h2 class="text-3xl font-bold text-green-600">80</h2>
-        <p class="text-gray-700">Số trận thắng</p>
-      </div>
-      <div class="bg-white rounded-xl shadow p-6 text-center">
-        <h2 class="text-3xl font-bold text-red-600">20</h2>
-        <p class="text-gray-700">Số trận thua</p>
-      </div>
-      <div class="bg-white rounded-xl shadow p-6 text-center">
-        <h2 class="text-3xl font-bold text-blue-600">100</h2>
-        <p class="text-gray-700">Tổng số trận</p>
-      </div>
-      <div class="bg-white rounded-xl shadow p-6 text-center">
-        <h2 class="text-3xl font-bold">3</h2>
-        <p class="text-gray-700">Giải đấu đã tạo</p>
-      </div>
-      <div class="bg-white rounded-xl shadow p-6 text-center">
-        <h2 class="text-3xl font-bold">3</h2>
-        <p class="text-gray-700">Người chơi</p>
-      </div>
-    </div>
-
-    <!-- Tournament Sections -->
-    <TournamentList title="Trận Sắp Tới" :tournaments="tournaments" link="" emptyText="Không có trận nào sắp tới." />
-    <TournamentList title="Giải Đấu Gần Đây" :tournaments="tournaments" link="/tournament"
-      emptyText="Không có giải đấu gần đây." />
-
-    <!-- Clubs -->
-    <div class="max-w-screen-xl mx-auto mt-8">
-      <div class="bg-white rounded-xl shadow p-6">
-        <div class="flex items-center justify-between mb-6">
-          <h3 class="text-base sm:text-lg md:text-xl font-bold text-gray-800">CLB tiêu biểu</h3>
-
-          <RouterLink to="/giai-dau"
-            class="text-sm text-purple-600 hover:text-purple-800 font-medium inline-flex items-center">
-            Xem thêm
-            <svg xmlns="http://www.w3.org/2000/svg" class="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-            </svg>
-          </RouterLink>
-        </div>
-
-        <div v-if="clubs.length" class="space-y-4">
-          <div v-for="club in clubs" :key="club.id"
-            class="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 rounded-lg hover:shadow transition cursor-pointer">
-            <div class="flex items-center w-full sm:w-auto">
-              <div class="w-12 h-12 rounded-full bg-gray-300 flex-shrink-0"></div>
-              <div class="ml-4">
-                <h4 class="text-sm font-semibold text-gray-900 max-w-[160px] truncate">{{ club.name }}</h4>
-                <p class="text-xs text-gray-500">Số thành viên: {{ club.members }}</p>
+          <div class="relative z-10">
+            <div class="flex flex-col md:flex-row md:justify-between md:items-start">
+              <!-- Left side - Ratings -->
+              <div class="mb-6 md:mb-0">
+                <div class="text-sm opacity-90 mb-1 text-[32px]">VNDUPR</div>
+                <div class="text-6xl font-bold leading-none mb-4 text-[100px]">{{ homeData.user_info?.vndupr_scor ?? 0
+                  }}
+                </div>
+                <div class="text-sm opacity-90 mb-1 text-[32px]">DUPR</div>
+                <div class="text-5xl font-bold leading-none text-[100px]">3.65</div>
               </div>
-            </div>
 
-            <div class="mt-2 sm:mt-0 text-xs text-left md:text-right grid grid-cols-2 gap-x-4">
-              <div class="text-gray-400 uppercase">VNDUPR</div>
-              <div class="text-gray-400 uppercase">VN RANK</div>
-              <div class="text-black font-medium">{{ club.vndupr }}</div>
-              <div class="text-black font-medium">{{ club.rank }}</div>
+              <!-- Right side - Stats & QR -->
+              <div class="flex flex-col items-end justify-between h-[264px]">
+                <!-- QR Icon ở trên cùng -->
+                <QrCodeIcon class="w-12 h-12 mb-6 text-white" />
+
+                <!-- Hai vòng tròn nằm dưới cùng -->
+                <div class="flex items-center space-x-8">
+                  <!-- Vòng cung 1 - Chiến thắng -->
+                  <div class="flex flex-col items-center">
+                    <div class="relative w-32 h-32">
+                      <svg class="w-32 h-32 transform rotate-[225deg]" viewBox="0 0 140 140">
+                        <!-- Vòng nền mờ (270 độ - 3/4 vòng tròn) -->
+                        <path d="M 70 10 A 60 60 0 1 1 10 70" stroke="white" stroke-width="16" fill="none"
+                          opacity="0.25" />
+                        <!-- Vòng cung progress -->
+                        <path d="M 70 10 A 60 60 0 1 1 10 70" stroke="white" stroke-width="16" fill="none"
+                          stroke-linecap="round"
+                          :stroke-dasharray="`${282.74 * (homeData.user_info?.win_rate || 0) / 100} 282.74`"
+                          class="transition-all duration-1000 ease-out" />
+                      </svg>
+                      <div class="absolute inset-0 flex items-center justify-center text-3xl font-semibold">
+                        {{ homeData.user_info?.win_rate }}%
+                      </div>
+                    </div>
+                    <p class="text-[24px] font-medium">Chiến thắng</p>
+                  </div>
+
+                  <!-- Vòng cung 2 - Phong độ -->
+                  <div class="flex flex-col items-center">
+                    <div class="relative w-32 h-32">
+                      <svg class="w-32 h-32 transform rotate-[225deg]" viewBox="0 0 140 140">
+                        <!-- Vòng nền mờ (270 độ - 3/4 vòng tròn) -->
+                        <path d="M 70 10 A 60 60 0 1 1 10 70" stroke="white" stroke-width="16" fill="none"
+                          opacity="0.25" />
+                        <!-- Vòng cung progress -->
+                        <path d="M 70 10 A 60 60 0 1 1 10 70" stroke="white" stroke-width="16" fill="none"
+                          stroke-linecap="round"
+                          :stroke-dasharray="`${282.74 * (homeData.user_info?.performance || 0) / 100} 282.74`"
+                          class="transition-all duration-1000 ease-out" />
+                      </svg>
+                      <div class="absolute inset-0 flex items-center justify-center text-center">
+                        <span class="text-lg font-bold leading-tight" v-html="getPerformanceLevel"></span>
+                      </div>
+                    </div>
+                    <p class="text-[24px] font-medium">Phong độ</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div v-else class="text-gray-500 text-center py-6">
-          Không có CLB tiêu biểu.
+        <!-- Kèo đấu sắp tới -->
+        <section>
+          <div class="flex items-center justify-start mb-4">
+            <h2 class="text-xl font-semibold text-gray-800">Kèo đấu sắp tới</h2>
+            <div
+              class="flex items-center text-sm text-gray-600 ml-4 cursor-pointer hover:text-gray-800 bg-[#FFFFFF] p-1.5 rounded-full shadow-md">
+              <ArrowUpRightIcon class="w-4 h-4 text-gray-[#838799]" />
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div v-for="(mini, i) in homeData?.upcoming_mini_tournament" :key="i"
+              class="bg-white rounded-[8px] shadow hover:shadow-lg p-4 transition-all relative">
+              <!-- Bell notification icon -->
+              <div class="absolute top-4 right-4 text-red-500 cursor-pointer hover:text-red-600">
+                <BellAlertIcon class="w-5 h-5" />
+              </div>
+
+              <div class="text-base text-gray-700 font-semibold">{{ formatTime(mini.starts_at) }}</div>
+              <div class="text-sm text-gray-500 mt-0.5">{{ formatDate(mini.starts_at) }}</div>
+              <div class="text-base text-gray-900 font-bold mt-2 line-clamp-1 cursor-pointer">{{ mini.name }}</div>
+
+              <div class="pt-4 border-gray-100">
+                <div class="flex justify-start space-x-4">
+                  <!-- Cột 1: Người tạo -->
+                  <div class="flex flex-col items-start pr-4 border-r">
+                    <span class="text-xs text-gray-500 font-medium mb-2">Người tạo</span>
+                    <div class="flex -space-x-2">
+                      <img v-for="(organizer, idx) in mini.staff?.organizer" :key="'creator-' + idx"
+                        :src="organizer.user.avatar_url" :alt="organizer.user.full_name"
+                        class="w-8 h-8 rounded-full border-2 border-white object-cover" />
+                    </div>
+                  </div>
+
+                  <!-- Cột 2: Người tham gia -->
+                  <div class="flex flex-col items-start">
+                    <span class="text-xs text-gray-500 font-medium mb-2">Người tham gia</span>
+                    <div class="flex items-center -space-x-2">
+                      <img v-for="(user, idx) in mini.all_users.slice(0, 3)" :key="'participant-' + idx"
+                        :src="user.avatar_url" :alt="user.full_name"
+                        class="w-8 h-8 rounded-full border-2 border-white object-cover" />
+                      <div v-if="mini.all_users.length > 3"
+                        class="w-8 h-8 rounded-full border-2 border-white bg-gray-200 flex items-center justify-center text-xs font-semibold text-gray-600">
+                        +{{ mini.all_users.length - 3 }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Giải đấu sắp tới -->
+        <section>
+          <div class="flex items-center justify-start mb-4">
+            <h2 class="text-xl font-semibold text-gray-800">Giải đấu sắp tới</h2>
+            <div
+              class="flex items-center text-sm text-gray-600 ml-4 cursor-pointer hover:text-gray-800 bg-[#FFFFFF] p-1.5 rounded-full shadow-md">
+              <ArrowUpRightIcon class="w-4 h-4 text-gray-[#838799]" />
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div v-for="(t, i) in homeData.upcoming_tournaments" :key="i"
+              class="bg-white rounded-[8px] shadow hover:shadow-lg overflow-hidden transition-all p-[16px]">
+              <div class="relative h-40">
+                <img :src="t.poster" alt="" class="w-full h-full object-cover rounded-[4px] cursor-pointer" />
+              </div>
+              <div class="py-4">
+                <div class="text-sm font-bold text-gray-900 mb-2 cursor-pointer">{{ t.name }}</div>
+                <div class="text-xs text-[#004D99] flex items-center">
+                  <MapPinIcon class="w-4 h-4 mr-1 flex-shrink-0 mt-0.5 text-[#4392E0]" />
+                  <span class="line-clamp-1">{{ t.location }}</span>
+                </div>
+                <div class="text-xs text-[#004D99] flex items-center my-2">
+                  <CalendarDaysIcon class="w-4 h-4 mr-1 flex-shrink-0 mt-0.5 text-[#4392E0]" />
+                  <span class="line-clamp-1">{{ formatDate(t.start_date) }}</span>
+                </div>
+                <div>
+                  <p class="text-sm line-clamp-2">
+                    {{ t.description }}
+                  </p>
+                </div>
+              </div>
+              <div class="flex justify-end w-full">
+                <button
+                  class="bg-[#D72D36] text-white text-sm font-semibold px-2 py-1 rounded-[4px] hover:bg-[#D72D37] transition-colors flex items-center justify-center gap-2">
+                  <ArrowUpRightIcon class="w-4 h-4" />
+                  Đăng ký ngay
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Right column -->
+      <div class="space-y-6">
+        <!-- Favorite Features -->
+        <div class="bg-white rounded-[8px] shadow p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold text-gray-900 text-base">Tính năng ưu thích</h3>
+            <button class="text-gray-600 hover:text-gray-700 rounded-full p-2 bg-[#EDEEF2] shadow-md">
+              <PencilIcon class="w-3 h-3" />
+            </button>
+          </div>
+          <div class="grid grid-cols-4 gap-4">
+            <div v-for="(f, i) in features" :key="i" class="flex flex-col items-center text-center cursor-pointer">
+              <div class="w-12 h-12 bg-red-100 text-red-600 flex items-center justify-center rounded-full mb-2">
+                <component :is="f.icon" class="w-6 h-6" />
+              </div>
+              <p class="text-xs text-gray-700 font-medium">{{ f.label }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Green banner -->
+        <div
+          class="bg-green-400 rounded-[8px] h-[133px] flex items-center justify-center text-white font-semibold text-lg shadow">
+        </div>
+        <!-- Friends -->
+        <div class="bg-white rounded-[8px] shadow p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold text-gray-900 text-base">Bạn bè</h3>
+            <div
+              class="flex items-center text-sm text-gray-600 ml-4 cursor-pointer hover:text-gray-800 bg-[#FFFFFF] p-1.5 rounded-full shadow-md">
+              <ArrowUpRightIcon class="w-4 h-4 text-gray-[#838799]" />
+            </div>
+          </div>
+          <ul class="space-y-3">
+            <li v-for="(f, i) in friendList" :key="i"
+              class="flex items-center justify-between py-1 cursor-pointer hover:bg-gray-100 rounded-md px-2">
+              <div class="flex items-center space-x-3">
+                <div class="relative">
+                  <img :src="f.avatar_url" class="w-10 h-10 rounded-full object-cover" />
+                  <span v-if="f.visibility === 'open'"
+                    class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></span>
+                </div>
+                <span class="text-sm font-medium text-gray-800">{{ f.full_name }}</span>
+              </div>
+            </li>
+          </ul>
         </div>
       </div>
     </div>
   </div>
+
+  <div class="fixed bottom-6 right-6 flex flex-col items-center space-y-3">
+    <div class="relative cursor-pointer">
+      <img src="https://i.pravatar.cc/100?img=1" alt="avatar1" class="w-12 h-12 rounded-full border-white shadow-md" />
+      <button
+        class="absolute -top-1.5 -right-1.5 bg-gray-300 hover:bg-gray-400 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow">
+        <XMarkIcon class="w-3 h-3" />
+      </button>
+      <!-- Badge online -->
+      <span class="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border border-white rounded-full"></span>
+    </div>
+
+    <!-- Avatar 2 -->
+    <div class="relative cursor-pointer">
+      <img src="https://i.pravatar.cc/100?img=2" alt="avatar2" class="w-12 h-12 rounded-full border-white shadow-md" />
+      <span class="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border border-white rounded-full"></span>
+    </div>
+
+    <!-- Nút bút chì -->
+    <button class="bg-gray-100 hover:bg-gray-200 w-12 h-12 rounded-full shadow-lg flex items-center justify-center">
+      <PencilIcon class="w-5 h-5 text-gray-500" />
+    </button>
+  </div>
 </template>
 
-
 <script setup>
-import TournamentList from '@/components/molecules/TournamentList.vue'
-import { Swiper, SwiperSlide } from 'swiper/vue'
-import { Autoplay } from 'swiper/modules'
-import 'swiper/css'
-import 'swiper/css/autoplay'
-import { useUserStore } from '@/store/auth'
-import { storeToRefs } from 'pinia'
+import {
+  UserIcon,
+  UsersIcon,
+  ChartBarIcon,
+  QrCodeIcon,
+  BellAlertIcon,
+  ArrowUpRightIcon,
+  PencilIcon,
+  XMarkIcon
+} from "@heroicons/vue/24/outline";
+import { MapPinIcon, CalendarDaysIcon } from "@heroicons/vue/24/solid";
+import Background from "@/assets/images/dashboard-bg.svg";
+import { onMounted, ref, computed } from "vue";
+import * as HomeService from "@/service/home";
+import * as FollowService from "@/service/follow";
 
-const banners = [
-  new URL('@/assets/images/pickleball-banner.png', import.meta.url).href,
-  new URL('@/assets/images/pickleball-banner-1.png', import.meta.url).href,
-  new URL('@/assets/images/pickleball-banner-2.png', import.meta.url).href,
-]
+const homeData = ref([]);
+const friendList = ref([]);
 
-const userStore = useUserStore()
-const { getUser } = storeToRefs(userStore)
-
-const tournaments = [
-  { id: 1, name: 'Giải CLB ABC', date: '2025-08-01', location: 'Hà Nội' },
-  { id: 2, name: 'Open 2025 - Khu vực miền Bắc', date: '2025-08-05', location: 'Bắc Ninh' },
-  { id: 3, name: 'Pickleball Summer Cup', date: '2025-08-12', location: 'TP.HCM' },
-  { id: 4, name: 'Friendly Match CLB D', date: '2025-08-15', location: 'Đà Nẵng' },
-  { id: 5, name: 'Mini Tournament', date: '2025-08-20', location: 'Huế' },
-]
-
-const clubs = [
-  {
-    id: 1,
-    name: "CLB ABCXYZ",
-    members: 20,
-    vndupr: 4.5,
-    rank: "Top 200"
-  },
-  {
-    id: 2,
-    name: "CLB DEF123",
-    members: 15,
-    vndupr: 3.8,
-    rank: "Top 300"
-  },
-  {
-    id: 3,
-    name: "CLB GHI456",
-    members: 25,
-    vndupr: 5.0,
-    rank: "Top 100"
+const getHomeData = async () => {
+  try {
+    const response = await HomeService.getHomeData({
+      mini_tournament_per_page: 3,
+      tournament_per_page: 3
+    });
+    homeData.value = response;
+  } catch (error) {
+    console.error("Error fetching home data:", error);
   }
-]
+};
+
+const getFriendLists = async () => {
+  try {
+    const response = await FollowService.getFriendList();
+    friendList.value = response;
+  } catch (error) {
+    console.error("Error fetching friend list:", error);
+  }
+};
+
+const getPerformanceLevel = computed(() => {
+  const performance = homeData.value?.user_info?.performance || 0;
+
+  if (performance >= 76) return 'Xuất <br/> sắc';
+  if (performance >= 51) return 'Tốt';
+  if (performance >= 26) return 'Trung <br/> bình';
+  return 'Kém';
+});
+
+onMounted(async () => {
+  await getHomeData({
+    mini_tournament_per_page: 3,
+    tournament_per_page: 3
+  });
+  await getFriendLists();
+});
+
+function formatTime(datetime) {
+  const date = new Date(datetime);
+  let hours = date.getHours();
+  const minutes = date.getMinutes();
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+
+  hours = hours % 12;
+  hours = hours ? hours : 12; // 0 giờ thành 12
+
+  const minutesStr = minutes < 10 ? '0' + minutes : minutes;
+
+  return `${hours}:${minutesStr} ${ampm}`;
+}
+
+function formatDate(datetime) {
+  const date = new Date(datetime);
+  const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+  const dayName = days[date.getDay()];
+  const day = date.getDate();
+  const month = date.getMonth() + 1;
+
+  return `${dayName}, ${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}`;
+}
+
+const features = [
+  { label: "CLB", icon: UsersIcon },
+  { label: "Tạo trận", icon: QrCodeIcon },
+  { label: "Tìm sân", icon: UserIcon },
+  { label: "Xếp hạng", icon: ChartBarIcon },
+];
+
 </script>
+
+<style scoped>
+.bg-red-custom {
+  background-size: cover;
+  background-position: center;
+}
+</style>
