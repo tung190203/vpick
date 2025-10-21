@@ -21,6 +21,7 @@ class UserResource extends JsonResource
             'email' => $this->email,
             'visibility' => $this->visibility,
             'avatar_url' => $this->avatar_url,
+            'thumbnail' => $this->thumbnail,
             'location_id' => $this->location_id,
             'latitude' => $this->latitude,
             'longitude' => $this->longitude,
