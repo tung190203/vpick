@@ -3,12 +3,14 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CompetitionLocationController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\MatchesController;
 use App\Http\Controllers\MiniMatchController;
 use App\Http\Controllers\MiniParticipantController;
 use App\Http\Controllers\MiniTournamentNotificationController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ParticipantController;
 use App\Http\Controllers\TournamentController;
+use App\Http\Controllers\TournamentTypeController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VerificationController;
 use App\Http\Controllers\ClubController;
@@ -21,6 +23,8 @@ use App\Http\Controllers\MiniTournamentController;
 use App\Http\Controllers\SendMessageController;
 use App\Http\Controllers\SportController;
 use App\Http\Controllers\TeamController;
+use App\Models\Matches;
+use App\Models\TournamentType;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -72,6 +76,22 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
         Route::get('/{id}', [TournamentController::class, 'show']);
         Route::post('/update/{id}', [TournamentController::class, 'update']);
         Route::post('/delete', [TournamentController::class, 'destroy']);
+    });
+
+    Route::prefix('tournament-types')->group(function () {
+        Route::post('/store', [TournamentTypeController::class, 'store']);
+        Route::match(['put', 'patch'], '/{tournamentType}', [TournamentTypeController::class, 'update']);
+        Route::get('/{tournamentType}', [TournamentTypeController::class, 'show']);
+        Route::delete('/{tournamentType}', [TournamentTypeController::class, 'destroy']);
+        Route::get('/{tournamentType}/bracket', [TournamentTypeController::class, 'getBracket']);
+        Route::get('/{tournamentType}/rank', [TournamentTypeController::class, 'getRank']);
+    });
+
+    Route::prefix('matches')->group(function() {
+        Route::get('/index/{tournamentypeId}', [MatchesController::class, 'index']);
+        Route::get('/detail/{matchId}', [MatchesController::class, 'detail']);
+        Route::post('/update/{matchId}', [MatchesController::class, 'update']);
+        Route::post('/{match}/swap', [MatchesController::class, 'swapTeams']);
     });
 
     Route::prefix('participants')->group(function () {

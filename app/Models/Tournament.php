@@ -19,6 +19,8 @@ class Tournament extends Model
         'registration_closed_at',
         'early_registration_deadline',
         'duration',
+        'enable_dupr',
+        'enable_vndupr',
         'min_level',
         'max_level',
         'age_group',

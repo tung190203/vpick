@@ -19,18 +19,14 @@ class ParticipantController extends Controller
     {
         $validated = $request->validate([
             'is_confirmed' => 'nullable|boolean',
-            'type' => 'nullable|in:user,team',
             'per_page' => 'nullable|integer|min:1|max:100',
         ]);
 
         $query = Participant::where('tournament_id', $tournamentId)
-            ->with(['user', 'team', 'tournamentType']);
+            ->with(['user']);
 
         if (isset($validated['is_confirmed'])) {
             $query->where('is_confirmed', $validated['is_confirmed']);
-        }
-        if (isset($validated['type'])) {
-            $query->where('type', $validated['type']);
         }
         $participants = $query->paginate($validated['per_page'] ?? 15);
 
@@ -39,10 +35,6 @@ class ParticipantController extends Controller
 
     public function join(Request $request, $tournamentId)
     {
-        $validated = $request->validate([
-            'type' => 'required|in:user,team',
-            'team_id' => 'required_if:type,team|exists:teams,id',
-        ]);
         $tournament = Tournament::findOrFail($tournamentId);
         $user = Auth::user();
         if ($tournament->registration_closed_at < now()) {
@@ -58,13 +50,11 @@ class ParticipantController extends Controller
             ->where('score_type', 'vndupr_score')
             ->value('score_value');
         if (is_null($score)) {
-            return response()->json(['message' => 'Bạn chưa có điểm số cho môn thể thao này.'], 422);
+            return ResponseHelper::error('Bạn chưa có điểm số cho môn thể thao này.', 422);
         }
 
         if ($score < $tournament->min_level || $score > $tournament->max_level) {
-            return response()->json([
-                'message' => "Điểm số của bạn không nằm trong yêu cầu giải đấu"
-            ], 422);
+            return ResponseHelper::error('Điểm số của bạn không nằm trong yêu cầu giải đấu', 422);
         }
         $age = Carbon::parse($user->date_of_birth)->age;
         switch ($tournament->age_group) {
@@ -86,31 +76,26 @@ class ParticipantController extends Controller
                 }
                 break;
         }
-        switch ($tournament->gender_policy) {
-            case Tournament::MALE:
-                if ($user->gender != Tournament::MALE) {
-                    return ResponseHelper::error('Giải này chỉ dành cho Nam.', 422);
-                }
-                break;
-
-            case Tournament::FEMALE:
-                if ($user->gender != Tournament::FEMALE) {
-                    return ResponseHelper::error('Giải này chỉ dành cho Nữ.', 422);
-                }
-                break;
-
-            case Tournament::MIXED:
-                break;
+        if($user->gender != null){
+            switch ($tournament->gender_policy) {
+                case Tournament::MALE:
+                    if ($user->gender != Tournament::MALE) {
+                        return ResponseHelper::error('Giải này chỉ dành cho Nam.', 422);
+                    }
+                    break;
+    
+                case Tournament::FEMALE:
+                    if ($user->gender != Tournament::FEMALE) {
+                        return ResponseHelper::error('Giải này chỉ dành cho Nữ.', 422);
+                    }
+                    break;
+    
+                case Tournament::MIXED:
+                    break;
+            }
         }
-        $participantType = $tournament->participant;
-        if ($participantType === 'user' && $validated['type'] === 'user') {
-            if ($tournament->participants()->count() >= $tournament->max_player) {
-                return ResponseHelper::error('Số lượng người tham gia đã đạt giới hạn.', 422);
-            }
-        } else {
-            if ($tournament->participants()->count() >= ($tournament->max_team * $tournament->player_per_team)) {
-                return ResponseHelper::error('Số lượng người tham gia đã đạt giới hạn.', 422);
-            }
+        if ($tournament->participants()->count() >= $tournament->max_player) {
+            return ResponseHelper::error('Số lượng người tham gia đã đạt giới hạn.', 422);
         }
 
         $exists = Participant::where('tournament_id', $tournament->id)
@@ -123,9 +108,7 @@ class ParticipantController extends Controller
 
         $participant = Participant::create([
             'tournament_id' => $tournamentId,
-            'type' => $validated['type'],
-            'user_id' => $validated['type'] === 'user' ? $user->id : null,
-            'team_id' => $validated['type'] === 'team' ? $validated['team_id'] : null,
+            'user_id' => $user->id,
             'is_confirmed' => $tournament->auto_approve && !$tournament->is_private,
         ]);
 

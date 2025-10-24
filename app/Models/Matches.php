@@ -12,24 +12,46 @@ class Matches extends Model
 
     protected $fillable = [
         'group_id',
+        'tournament_type_id',
         'round',
-        'participant1_id',
-        'participant2_id',
+        'next_match_id',
+        'next_position',
+        'loser_next_match_id',
+        'loser_next_position',
+        'home_team_id',
+        'away_team_id',
+        'leg',
         'referee_id',
         'status',
+        'is_bye',
+        'is_loser_bracket',
+        'is_third_place',
         'scheduled_at',
+        'court',
+        'winner_id'
     ];
+    public function tournamentType()
+    {
+        return $this->belongsTo(TournamentType::class);
+    }
+
     public function group()
     {
-        return $this->belongsTo(Group::class, 'group_id');
+        return $this->belongsTo(Group::class);
     }
-    public function participant1()
+
+    public function results()
     {
-        return $this->belongsTo(Participant::class, 'participant1_id');
+        return $this->hasMany(MatchResult::class, 'match_id');
     }
-    public function participant2()
+    public function homeTeam()
     {
-        return $this->belongsTo(Participant::class, 'participant2_id');
+        return $this->belongsTo(Team::class, 'home_team_id');
+    }
+
+    public function awayTeam()
+    {
+        return $this->belongsTo(Team::class, 'away_team_id');
     }
     public function referee()
     {
@@ -41,10 +63,11 @@ class Matches extends Model
         return $query->with([
             'group',
             'referee',
-            'participant1.user',
-            'participant1.team.members',
-            'participant2.user',
-            'participant2.team.members',
+            'homeTeam',
+            'homeTeam.members',
+            'awayTeam',
+            'awayTeam.members',
+            'results',
         ]);
     }
 }
