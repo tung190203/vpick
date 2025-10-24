@@ -41,6 +41,29 @@ return new class extends Migration
      */
     public function down(): void
     {
-        
+        Schema::table('tournaments', function (Blueprint $table) {
+            $table->dropColumn([
+                'poster',
+                'sport_id',
+                'registration_open_at',
+                'registration_closed_at',
+                'early_registration_deadline',
+                'duration',
+                'min_level',
+                'max_level',
+                'age_group',
+                'gender_policy',
+                'participant',
+                'max_team',
+                'player_per_team',
+                'max_player',
+                'fee',
+                'standard_fee_amount',
+                'is_private',
+                'status',
+                'auto_approve',
+            ]);
+            $table->integer('level')->nullable();
+        });
     }
 };

@@ -12,7 +12,9 @@ class MatchResult extends Model
     protected $table = 'match_results';
     protected $fillable = [
         'match_id',
-        'participant_id',
+        'team_id',
+        'score',
+        'set_number',
         'won_match',
         'confirmed',
     ];

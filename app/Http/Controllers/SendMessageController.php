@@ -7,6 +7,8 @@ use App\Helpers\ResponseHelper;
 use App\Http\Resources\MessageResource;
 use App\Models\MiniTournament;
 use App\Models\MiniTournamentMessage;
+use App\Models\Tournament;
+use App\Models\TournamentMessage;
 use App\Models\User;
 use App\Notifications\MiniTournamentMessageNotification;
 use Illuminate\Http\Request;
@@ -14,7 +16,7 @@ use Illuminate\Support\Facades\Auth;
 
 class SendMessageController extends Controller
 {
-    public function storeMessage(Request $request, $tournamentId)
+    public function storeMessageMiniTour(Request $request, $tournamentId)
     {
         $request->validate([
             'type' => 'required|in:text,image,voice,emoji,file',
@@ -65,7 +67,7 @@ class SendMessageController extends Controller
         return ResponseHelper::success(new MessageResource($message->load('user')), 'Gửi tin nhắn thành công');
     }
 
-    public function getMessages(Request $request, $tournamentId)
+    public function getMessagesMiniTour(Request $request, $tournamentId)
     {
         $validate = $request->validate([
             'per_page' => 'sometimes|integer|min:1|max:100'
@@ -82,6 +84,66 @@ class SendMessageController extends Controller
             ->with('user')
             ->orderBy('created_at', 'asc')
             ->paginate($validate['per_page'] ?? MiniTournamentMessage::PER_PAGE);
+
+        return ResponseHelper::success(MessageResource::collection($messages), 'Lấy tin nhắn thành công', 200, [
+            'current_page' => $messages->currentPage(),
+            'last_page' => $messages->lastPage(),
+            'per_page' => $messages->perPage(),
+            'total' => $messages->total(),
+        ]);
+    }
+
+    public function storeMessageTour(Request $request, $tournamentId)
+    {
+        $request->validate([
+            'type' => 'required|in:text,image,voice,emoji,file',
+            'content' => 'nullable|string',
+            'file' => 'nullable|file|max:10240',
+        ]);
+        $tournament = Tournament::findOrFail($tournamentId);
+
+        $allUserIds = $tournament->all_users->pluck('id');
+
+        if (!$allUserIds->contains(Auth::id())) {
+            return ResponseHelper::error('Bạn không có quyền gửi tin nhắn vào giải đấu này', 403);
+        }
+        $content = $request->input('content', null);
+        $meta = null;
+        if ($request->hasFile('file')) {
+            $path = $request->file('file')->store('chat', 'public');
+            $content = $path;
+            $meta = [
+                'filename' => $request->file('file')->getClientOriginalName(),
+                'size' => $request->file('file')->getSize(),
+            ];
+        }
+        $message = TournamentMessage::create([
+            'tournament_id' => $tournamentId,
+            'user_id' => Auth::id(),
+            'type' => $request->type,
+            'content' => $content,
+            'meta' => $meta,
+        ])->load('user');
+
+        return ResponseHelper::success(new MessageResource($message->load('user')), 'Gửi tin nhắn thành công');
+    }
+
+    public function getMessagesTour(Request $request, $tournamentId)
+    {
+        $validate = $request->validate([
+            'per_page' => 'sometimes|integer|min:1|max:100'
+        ]);
+        $tournament = Tournament::findOrFail($tournamentId);
+        $allUserIds = $tournament->all_users->pluck('id');
+
+        if (!$allUserIds->contains(Auth::id())) {
+            return ResponseHelper::error('Bạn không có quyền xem tin nhắn trong giải đấu này', 403);
+        }
+
+        $messages = TournamentMessage::where('tournament_id', $tournamentId)
+            ->with('user')
+            ->orderBy('created_at', 'asc')
+            ->paginate($validate['per_page'] ?? TournamentMessage::PER_PAGE);
 
         return ResponseHelper::success(MessageResource::collection($messages), 'Lấy tin nhắn thành công', 200, [
             'current_page' => $messages->currentPage(),
