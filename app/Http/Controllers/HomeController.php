@@ -33,6 +33,7 @@ class HomeController extends Controller
         ];
         $upcomingMiniTournaments = MiniTournament::withFullRelations()
             ->where('starts_at', '>', Carbon::now())
+            ->where('status', MiniTournament::STATUS_OPEN)
             ->where(function ($query) use ($userId) {
                 $query->where('is_private', false) // công khai => luôn hiển thị
                     ->orWhere(function ($q) use ($userId) {
@@ -52,6 +53,7 @@ class HomeController extends Controller
 
         $upcomingTournaments = Tournament::withFullRelations()
             ->where('start_date', '>', Carbon::now())
+            ->where('status', Tournament::OPEN)
             ->where(function ($query) use ($userId) {
                 $query->where('is_private', false) // công khai => luôn thấy
                     ->orWhere(function ($q) use ($userId) {

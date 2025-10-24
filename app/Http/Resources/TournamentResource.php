@@ -33,6 +33,8 @@ class TournamentResource extends JsonResource
             'registration_closed_at' => $this->registration_closed_at,
             'early_registration_deadline' => $this->early_registration_deadline,
             'duration' => $this->duration,
+            'enable_dupr' => $this->enable_dupr,
+            'enable_vndupr' => $this->enable_vndupr,
             'min_level' => $this->min_level,
             'max_level' => $this->max_level,
             'age_group' => $this->age_group,

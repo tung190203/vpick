@@ -16,12 +16,8 @@ class ParticipantResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'type' => $this->user_id ? 'user' : 'team',
-            'name' => $this->user?->full_name ?? $this->team?->name,
-            'members' => $this->when(
-                $this->relationLoaded('team') && $this->team?->relationLoaded('members'),
-                fn() => UserListResource::collection($this->team->members)
-            ),
+            'name' => $this->user?->full_name,
+            'avatar' => $this->user?->avatar_url,
         ];
     }
 }
