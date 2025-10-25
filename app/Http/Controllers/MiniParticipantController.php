@@ -283,7 +283,7 @@ class MiniParticipantController extends Controller
     
             return [
                 'id' => $u->id,
-                'name' => $u->name,
+                'name' => $u->full_name,
                 'gender' => $u->gender,
                 'age_group' => $u->age_group,
                 'avatar' => $u->avatar_url,
