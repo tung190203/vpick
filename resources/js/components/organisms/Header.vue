@@ -23,17 +23,17 @@
                     Trang chủ
                 </RouterLink>
 
-                <RouterLink
-                    to="/friendly-match/create"
-                    :class="linkClass('/friendly-match/create')"
-                >
-                    <PlusCircleIcon class="w-5 h-5" />
-                    Tạo kèo đấu
-                </RouterLink>
-
                 <RouterLink to="/friends" :class="linkClass('/friends')">
                     <UsersIcon class="w-5 h-5" />
                     Bạn bè
+                </RouterLink>
+
+                <RouterLink
+                    to="/mini-tournament/create"
+                    :class="linkClass('/mini-tournament/create')"
+                >
+                    <PlusCircleIcon class="w-5 h-5" />
+                    Tạo kèo đấu
                 </RouterLink>
 
                 <RouterLink to="/tools" :class="linkClass('/tools')">

@@ -9,6 +9,7 @@
             <main class="flex-1 overflow-y-auto">
                 <router-view />
             </main>
+            <ChatGroup />
         </div>
     </div>
 </template>
@@ -17,6 +18,7 @@
 import { computed, ref, onMounted, onBeforeUnmount } from "vue";
 import Header from "@/components/organisms/Header.vue";
 import Sidebar from "@/components/organisms/Sidebar.vue";
+import ChatGroup from "@/components/molecules/ChatGroup.vue";
 
 const sidebarRef = ref(null);
 const isMobile = ref(window.innerWidth <= 1024);
