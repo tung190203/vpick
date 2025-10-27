@@ -14,7 +14,7 @@ import ClubPage from '@/components/pages/ClubPage.vue'
 import TournamentPage from '@/components/pages/TournamentPage.vue'
 import TournamentDetail from '@/components/pages/TournamentDetail.vue'
 import TermsPage from '@/components/pages/TermsPage.vue'
-import CreateFriendlyMatchPage from '@/components/pages/CreateFriendlyMatchPage.vue'
+import CreateMiniTournamentPage from '@/components/pages/CreateMiniTournamentPage.vue'
 import ForbiddenPage from '@/components/pages/ForbiddenPage.vue'
 import AdminDashboard from '@/components/pages/admin/AdminDashboard.vue'
 import RefereeDashboard from '@/components/pages/referee/RefereeDashboard.vue'
@@ -124,9 +124,9 @@ export const route = [
         }
       },
       {
-        path: '/friendly-match/create',
-        name: 'create-friendly-match',
-        component: CreateFriendlyMatchPage,
+        path: '/mini-tournament/create',
+        name: 'create-mini-tournament',
+        component: CreateMiniTournamentPage,
         meta: {
           role: [ROLE.PLAYER]
         }

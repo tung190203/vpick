@@ -47,6 +47,7 @@ export const useUserStore = defineStore("user", () => {
   const loginUser = async (data) => {
     const response = await AuthService.login(data);
     fillUserData(response.user);
+    localStorage.setItem(LOCAL_STORAGE_USER.USER, JSON.stringify(response.user));
     localStorage.setItem(LOCAL_STORAGE_KEY.LOGIN_TOKEN, response.token.access_token);
     localStorage.setItem(LOCAL_STORAGE_KEY.REFRESH_TOKEN, response.token.refresh_token);
     return response;

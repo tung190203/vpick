@@ -59,23 +59,6 @@
                         </span>
                     </RouterLink>
 
-                    <RouterLink
-                        to="/friendly-match/create"
-                        :class="mobileLinkClass('/friendly-match/create')"
-                    >
-                        <PlusCircleIcon class="w-5 h-5 flex-shrink-0" />
-                        <span
-                            class="font-medium whitespace-nowrap overflow-hidden transition-all duration-300"
-                            :class="
-                                isExpanded
-                                    ? 'opacity-100 ml-3 max-w-xs'
-                                    : 'opacity-0 ml-0 max-w-0'
-                            "
-                        >
-                            Tạo kèo đấu
-                        </span>
-                    </RouterLink>
-
                     <RouterLink to="/friends" :class="mobileLinkClass('/friends')">
                         <UsersIcon class="w-5 h-5 flex-shrink-0" />
                         <span
@@ -87,6 +70,23 @@
                             "
                         >
                             Bạn bè
+                        </span>
+                    </RouterLink>
+
+                    <RouterLink
+                        to="/mini-tournament/create"
+                        :class="mobileLinkClass('/mini-tournament/create')"
+                    >
+                        <PlusCircleIcon class="w-5 h-5 flex-shrink-0" />
+                        <span
+                            class="font-medium whitespace-nowrap overflow-hidden transition-all duration-300"
+                            :class="
+                                isExpanded
+                                    ? 'opacity-100 ml-3 max-w-xs'
+                                    : 'opacity-0 ml-0 max-w-0'
+                            "
+                        >
+                            Tạo kèo đấu
                         </span>
                     </RouterLink>
 
