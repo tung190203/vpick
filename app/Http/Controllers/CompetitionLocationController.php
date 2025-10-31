@@ -42,7 +42,13 @@ class CompetitionLocationController extends Controller
             'facility_id.*' => 'integer|exists:facilities,id',
         ]);
 
-        $query = CompetitionLocation::withFullRelations()->filter($validated);
+        $query = CompetitionLocation::withFullRelations();
+
+        if (!empty($validated['lat']) && !empty($validated['lng']) && !empty($validated['radius'])) {
+            $query->nearBy($validated['lat'], $validated['lng'], $validated['radius']);
+        }
+
+        $query->filter($validated);
 
         $hasFilter = collect(['sport_id', 'location_id', 'is_followed', 'keyword', 'lat', 'lng', 'radius', 'number_of_yards', 'yard_type', 'facility_id'])
             ->some(fn($key) => $request->filled($key));
@@ -54,10 +60,6 @@ class CompetitionLocationController extends Controller
                 $validated['minLng'],
                 $validated['maxLng']
             );
-        }
-
-        if (!empty($validated['lat']) && !empty($validated['lng']) && !empty($validated['radius'])) {
-            $query->nearBy($validated['lat'], $validated['lng'], $validated['radius']);
         }
 
         $locations = $query->paginate($validated['per_page'] ?? CompetitionLocation::PER_PAGE);
