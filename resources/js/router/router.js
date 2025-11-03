@@ -13,6 +13,7 @@ import Leaderboard from '@/components/pages/Leaderboard.vue'
 import ClubPage from '@/components/pages/ClubPage.vue'
 import TournamentPage from '@/components/pages/TournamentPage.vue'
 import TournamentDetail from '@/components/pages/TournamentDetail.vue'
+import MiniTournamentDetail from '@/components/pages/MiniTournamentDetail.vue'
 import TermsPage from '@/components/pages/TermsPage.vue'
 import CreateMiniTournamentPage from '@/components/pages/CreateMiniTournamentPage.vue'
 import ForbiddenPage from '@/components/pages/ForbiddenPage.vue'
@@ -108,29 +109,42 @@ export const route = [
       },
       {
         path: '/tournament',
-        name: 'tournament',
-        component: TournamentPage,
         meta: {
           role: [ROLE.PLAYER]
-        }
-      },
+        },
+        children: [
+          {
+            path: '',
+            name: 'tournament',
+            component: TournamentPage
+          },
+          {
+            path: ':id',
+            name: 'tournament-detail',
+            component: TournamentDetail,
+            props: true
+          }
+        ]
+      },      
       {
-        path: '/tournament/:id',
-        name: 'tournament-detail',
-        component: TournamentDetail,
-        props: true,
+        path: '/mini-tournament',
         meta: {
           role: [ROLE.PLAYER]
-        }
-      },
-      {
-        path: '/mini-tournament/create',
-        name: 'create-mini-tournament',
-        component: CreateMiniTournamentPage,
-        meta: {
-          role: [ROLE.PLAYER]
-        }
-      },
+        },
+        children: [
+          {
+            path: 'create',
+            name: 'create-mini-tournament',
+            component: CreateMiniTournamentPage
+          },
+          {
+            path: ':id',
+            name: 'mini-tournament-detail',
+            component: MiniTournamentDetail,
+            props: true
+          }
+        ]
+      },      
       {
         path: '/admin/dashboard',
         name: 'admin.dashboard',

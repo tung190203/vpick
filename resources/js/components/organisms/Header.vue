@@ -30,7 +30,7 @@
 
                 <RouterLink
                     to="/mini-tournament/create"
-                    :class="linkClass('/mini-tournament/create')"
+                    :class="linkClass('/mini-tournament')"
                 >
                     <PlusCircleIcon class="w-5 h-5" />
                     Tạo kèo đấu

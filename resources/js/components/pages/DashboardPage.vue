@@ -219,10 +219,11 @@
 
 <script setup>
 import {
-  UserIcon,
-  UsersIcon,
+  MapPinIcon as MapPinIconOutline,
+  UserGroupIcon,
   ChartBarIcon,
   QrCodeIcon,
+  PlusCircleIcon,
   BellAlertIcon,
   ArrowUpRightIcon,
   PencilIcon,
@@ -299,9 +300,9 @@ function formatDate(datetime) {
 }
 
 const features = [
-  { label: "CLB", icon: UsersIcon },
-  { label: "Tạo trận", icon: QrCodeIcon },
-  { label: "Tìm sân", icon: UserIcon },
+  { label: "CLB", icon: UserGroupIcon },
+  { label: "Tạo trận", icon: PlusCircleIcon },
+  { label: "Tìm sân", icon: MapPinIconOutline },
   { label: "Xếp hạng", icon: ChartBarIcon },
 ];
 
