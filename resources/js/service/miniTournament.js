@@ -7,3 +7,9 @@ export const storeMiniTournament = async (data) => {
   return axiosInstance.post(`${miniTournamentEndpoint}/store`, data)
     .then((response) => response.data.data);
 }
+
+export const getMiniTournamentById = async (id) => {
+  console.log("Fetching mini tournament with ID:", id);
+  return axiosInstance.get(`${miniTournamentEndpoint}/${id}`)
+    .then((response) => response.data.data);
+}

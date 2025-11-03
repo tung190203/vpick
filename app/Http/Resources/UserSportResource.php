@@ -20,7 +20,7 @@ class UserSportResource extends JsonResource
                 $this->relationLoaded('sport'),
                 fn() => optional($this->sport)->name
             ),
-            'scores' => UserSportScoreResource::collection($this->whenLoaded('scores')),
+            'scores' => UserSportScoreResource::collection($this->whenLoaded('scores')) ?? [],
         ];
     }
 }

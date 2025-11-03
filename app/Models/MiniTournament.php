@@ -272,6 +272,7 @@ class MiniTournament extends Model
             'participants.user',
             'participants.team',
             'participants.team.members.user',
+            'participants.user.sports.scores',
             'staff',
         ]);
     }
