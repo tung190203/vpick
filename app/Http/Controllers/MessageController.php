@@ -68,18 +68,37 @@ class MessageController extends Controller
         return ResponseHelper::success('Đánh dấu cuộc trò chuyện đã đọc', ['updated_count' => $count]);
     }
 
-    public function getConversation($userId)
+    public function getConversation(Request $request, $userId)
     {
+        $validated = $request->validate([
+            'per_page' => 'nullable|integer|min:1|max:100',
+        ]);
+    
+        $perPage = $validated['per_page'] ?? Message::PER_PAGE;
+    
         $messages = Message::where(function ($query) use ($userId) {
-            $query->where('sender_id', auth()->id())
-                  ->where('receiver_id', $userId);
-        })->orWhere(function ($query) use ($userId) {
-            $query->where('sender_id', $userId)
-                  ->where('receiver_id', auth()->id());
-        })->with('sender:id,full_name,avatar_url')
-          ->orderBy('created_at', 'asc')
-          ->get();
-
-        return ResponseHelper::success('Lấy cuộc trò chuyện thành công', PrivateMessageResource::collection($messages));
+                $query->where('sender_id', auth()->id())
+                      ->where('receiver_id', $userId);
+            })
+            ->orWhere(function ($query) use ($userId) {
+                $query->where('sender_id', $userId)
+                      ->where('receiver_id', auth()->id());
+            })
+            ->with('sender:id,full_name,avatar_url')
+            ->orderBy('created_at', 'asc')
+            ->paginate($perPage);
+    
+        $data = [
+            'messages' => PrivateMessageResource::collection($messages),
+        ];
+    
+        $meta = [
+            'current_page' => $messages->currentPage(),
+            'last_page'    => $messages->lastPage(),
+            'per_page'     => $messages->perPage(),
+            'total'        => $messages->total(),
+        ];
+    
+        return ResponseHelper::success($data, 'Lấy cuộc trò chuyện thành công', 200, $meta);
     }
 }

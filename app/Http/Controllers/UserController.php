@@ -43,6 +43,7 @@ class UserController extends Controller
             'same_club_id.*' => 'exists:clubs,id',
             'verify_profile' => 'nullable|boolean',
             'achievement' => 'sometimes',
+            'is_map' => 'sometimes|boolean',
         ]);
 
         $query = User::withFullRelations()->filter($validated)->visibleFor(auth()->user());
@@ -67,7 +68,13 @@ class UserController extends Controller
             'achievement',
         ])->some(fn($key) => $request->filled($key));
 
-        if (!$hasFilter && (!empty($validated['minLat']) || !empty($validated['maxLat']) || !empty($validated['minLng']) || !empty($validated['maxLng']))) {
+        if (
+            !$hasFilter &&
+            (!empty($validated['minLat']) ||
+                !empty($validated['maxLat']) ||
+                !empty($validated['minLng']) ||
+                !empty($validated['maxLng']))
+        ) {
             $query->inBounds(
                 $validated['minLat'],
                 $validated['maxLat'],
@@ -80,49 +87,67 @@ class UserController extends Controller
             $query->nearBy($validated['lat'], $validated['lng'], $validated['radius']);
         }
 
-        // Paginate
-        $paginated = $query->paginate($validated['per_page'] ?? User::PER_PAGE);
+        if (!empty($validated['is_map']) && $validated['is_map'] === true) {
+            $users = $query->get();
 
-        // Xử lý recent_matches sau khi paginate
-        if (!empty($validated['recent_matches']) && is_array($validated['recent_matches'])) {
-            // Lấy collection từ paginator
-            $collection = $paginated->getCollection();
+            $data = [
+                'users' => UserResource::collection($users),
+                'clubs' => ClubResource::collection(auth()->user()->clubs()->get()),
+            ];
 
-            // Tính total_matches_count
-            $collection->transform(function ($user) {
-                $user->total_matches_count = ($user->matches_count ?? 0) + ($user->mini_matches_count ?? 0);
-                return $user;
-            });
+            $meta = [
+                'current_page' => 1,
+                'per_page' => $users->count(),
+                'total' => $users->count(),
+                'last_page' => 1,
+            ];
+        } else {
+            $paginated = $query->paginate($validated['per_page'] ?? User::PER_PAGE);
 
-            // Filter theo low/medium/high
-            $collection = $collection->filter(function ($user) use ($validated) {
-                foreach ($validated['recent_matches'] as $opt) {
-                    if ($opt === 'high' && $user->total_matches_count > 12)
-                        return true;
-                    if ($opt === 'medium' && $user->total_matches_count >= 5 && $user->total_matches_count <= 12)
-                        return true;
-                    if ($opt === 'low' && $user->total_matches_count <= 4)
-                        return true;
-                }
-                return false;
-            })->values();
+            // Nếu có recent_matches thì xử lý lọc sau khi paginate
+            if (!empty($validated['recent_matches']) && is_array($validated['recent_matches'])) {
+                $collection = $paginated->getCollection();
 
-            // Tạo lại LengthAwarePaginator
-            $paginated = new LengthAwarePaginator(
-                $collection,
-                $paginated->total(),       // giữ tổng số item
-                $paginated->perPage(),     // giữ per page
-                $paginated->currentPage(), // giữ trang hiện tại
-                ['path' => $request->url(), 'query' => $request->query()] // giữ query string
-            );
+                $collection->transform(function ($user) {
+                    $user->total_matches_count = ($user->matches_count ?? 0) + ($user->mini_matches_count ?? 0);
+                    return $user;
+                });
+
+                $collection = $collection->filter(function ($user) use ($validated) {
+                    foreach ($validated['recent_matches'] as $opt) {
+                        if ($opt === 'high' && $user->total_matches_count > 12)
+                            return true;
+                        if ($opt === 'medium' && $user->total_matches_count >= 5 && $user->total_matches_count <= 12)
+                            return true;
+                        if ($opt === 'low' && $user->total_matches_count <= 4)
+                            return true;
+                    }
+                    return false;
+                })->values();
+
+                $paginated = new LengthAwarePaginator(
+                    $collection,
+                    $paginated->total(),
+                    $paginated->perPage(),
+                    $paginated->currentPage(),
+                    ['path' => $request->url(), 'query' => $request->query()]
+                );
+            }
+
+            $data = [
+                'users' => UserResource::collection($paginated),
+                'clubs' => ClubResource::collection(auth()->user()->clubs()->get()),
+            ];
+
+            $meta = [
+                'current_page' => $paginated->currentPage(),
+                'per_page' => $paginated->perPage(),
+                'total' => $paginated->total(),
+                'last_page' => $paginated->lastPage(),
+            ];
         }
 
-        $data = [
-            'users' => UserResource::collection($paginated),
-            'clubs' => ClubResource::collection(auth()->user()->clubs()->get()),
-        ];
-
-        return ResponseHelper::success($data, 'Lấy danh sách người dùng thành công');
+        return ResponseHelper::success($data, 'Lấy danh sách người dùng thành công', 200, $meta);
     }
     public function show($id)
     {

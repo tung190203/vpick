@@ -72,11 +72,14 @@ class SendMessageController extends Controller
         $validate = $request->validate([
             'per_page' => 'sometimes|integer|min:1|max:100'
         ]);
-        $tournament = MiniTournament::findOrFail($tournamentId);
+        $tournament = MiniTournament::withFullRelations()->findOrFail($tournamentId);
+        $allStaffIds = $tournament->staff->pluck('id');
         $allUserIds = $tournament->all_users->pluck('id');
 
+        $allIds = array_merge($allStaffIds->toArray(), $allUserIds->toArray());
+
         // Kiểm tra quyền xem message
-        if (!$allUserIds->contains(Auth::id())) {
+        if (!in_array(Auth::id(), $allIds)) {
             return ResponseHelper::error('Bạn không có quyền xem tin nhắn trong giải đấu này', 403);
         }
 
@@ -85,12 +88,14 @@ class SendMessageController extends Controller
             ->orderBy('created_at', 'asc')
             ->paginate($validate['per_page'] ?? MiniTournamentMessage::PER_PAGE);
 
-        return ResponseHelper::success(MessageResource::collection($messages), 'Lấy tin nhắn thành công', 200, [
+        $meta = [
             'current_page' => $messages->currentPage(),
             'last_page' => $messages->lastPage(),
             'per_page' => $messages->perPage(),
             'total' => $messages->total(),
-        ]);
+        ];
+
+        return ResponseHelper::success(MessageResource::collection($messages), 'Lấy tin nhắn thành công', 200, $meta);
     }
 
     public function storeMessageTour(Request $request, $tournamentId)
@@ -133,10 +138,13 @@ class SendMessageController extends Controller
         $validate = $request->validate([
             'per_page' => 'sometimes|integer|min:1|max:100'
         ]);
-        $tournament = Tournament::findOrFail($tournamentId);
+        $tournament = Tournament::withFullRelations()->findOrFail($tournamentId);
+        $allStaffIds = $tournament->staff->pluck('id');
         $allUserIds = $tournament->all_users->pluck('id');
 
-        if (!$allUserIds->contains(Auth::id())) {
+        $allIds = array_merge($allStaffIds->toArray(), $allUserIds->toArray());
+
+        if (!in_array(Auth::id(), $allIds)) {
             return ResponseHelper::error('Bạn không có quyền xem tin nhắn trong giải đấu này', 403);
         }
 
@@ -145,11 +153,13 @@ class SendMessageController extends Controller
             ->orderBy('created_at', 'asc')
             ->paginate($validate['per_page'] ?? TournamentMessage::PER_PAGE);
 
-        return ResponseHelper::success(MessageResource::collection($messages), 'Lấy tin nhắn thành công', 200, [
+        $meta = [
             'current_page' => $messages->currentPage(),
             'last_page' => $messages->lastPage(),
             'per_page' => $messages->perPage(),
             'total' => $messages->total(),
-        ]);
+        ];
+
+        return ResponseHelper::success(MessageResource::collection($messages), 'Lấy tin nhắn thành công', 200, $meta);
     }
 }

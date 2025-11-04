@@ -12,12 +12,31 @@ use Illuminate\Http\Request;
 
 class TeamController extends Controller
 {
-    public function listTeams($tournamentId)
+    public function listTeams(Request $request, $tournamentId)
     {
-        $teams = Team::where('tournament_id', $tournamentId)->with('members')->get();
-
-        return ResponseHelper::success(ListTeamResource::collection($teams), 'Lấy danh sách đội thành công');
-    }
+        $validated = $request->validate([
+            'per_page' => 'nullable|integer|min:1|max:100',
+        ]);
+    
+        $perPage = $validated['per_page'] ?? Team::PER_PAGE;
+    
+        $teams = Team::where('tournament_id', $tournamentId)
+            ->with('members')
+            ->paginate($perPage);
+    
+        $data = [
+            'teams' => ListTeamResource::collection($teams),
+        ];
+    
+        $meta = [
+            'current_page' => $teams->currentPage(),
+            'last_page'    => $teams->lastPage(),
+            'per_page'     => $teams->perPage(),
+            'total'        => $teams->total(),
+        ];
+    
+        return ResponseHelper::success($data, 'Lấy danh sách đội thành công', 200, $meta);
+    }    
 
     public function createTeam(Request $request, $tournamentId)
     {

@@ -23,8 +23,6 @@ use App\Http\Controllers\MiniTournamentController;
 use App\Http\Controllers\SendMessageController;
 use App\Http\Controllers\SportController;
 use App\Http\Controllers\TeamController;
-use App\Models\Matches;
-use App\Models\TournamentType;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -88,25 +86,25 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
     });
 
     Route::prefix('matches')->group(function() {
-        Route::get('/index/{tournamentypeId}', [MatchesController::class, 'index']);
+        Route::match(['get', 'post'], '/index/{tournamentTypeId}', [MatchesController::class, 'index']);
         Route::get('/detail/{matchId}', [MatchesController::class, 'detail']);
         Route::post('/update/{matchId}', [MatchesController::class, 'update']);
         Route::post('/{match}/swap', [MatchesController::class, 'swapTeams']);
     });
 
     Route::prefix('participants')->group(function () {
-        Route::get('/index/{tournamentId}', [ParticipantController::class, 'index']);
+        Route::match(['get', 'post'], '/index/{tournamentId}', [ParticipantController::class, 'index']);
         Route::post('/join/{tournamentId}', [ParticipantController::class, 'join']);
-        Route::get('/suggestions/{tournamentId}', [ParticipantController::class, 'suggestUsers']);
-        Route::get('/invite-friend/{tournamentId}', [ParticipantController::class, 'inviteFriends']);
+        Route::match(['get', 'post'], '/suggestions/{tournamentId}', [ParticipantController::class, 'suggestUsers']);
+        Route::match(['get', 'post'], '/invite-friend/{tournamentId}', [ParticipantController::class, 'inviteFriends']);
         Route::post('/confirm/{participantId}', [ParticipantController::class, 'confirm']);
         Route::post('/accept/{participantId}', [ParticipantController::class, 'acceptInvite']);
-        Route::post('/invite/{tournamentId}', [ParticipantController::class, 'invite']);
+        Route::match(['get', 'post'], '/invite/{tournamentId}', [ParticipantController::class, 'invite']);
         Route::post('/delete/{participantId}', [ParticipantController::class, 'delete']);
     });
 
     Route::prefix('teams')->group(function () {
-        Route::get('/index/{tournamentId}', [TeamController::class, 'listTeams']);
+        Route::match(['get', 'post'], '/index/{tournamentId}', [TeamController::class, 'listTeams']);
         Route::post('/create/{tournamentId}', [TeamController::class, 'createTeam']);
         Route::post('/add-member/{teamId}', [TeamController::class, 'addMember']);
         Route::post('/remove-member/{teamId}', [TeamController::class, 'removeMember']);
@@ -114,7 +112,7 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
     });
 
     Route::prefix('club')->group(function () {
-        Route::get('/index', [ClubController::class, 'index']);
+        Route::match(['get', 'post'], '/index', [ClubController::class, 'index']);
         Route::post('/store', [ClubController::class, 'store']);
         Route::get('/{id}', [ClubController::class, 'show']);
         Route::post('/update/{id}', [ClubController::class, 'update']);
@@ -122,26 +120,26 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
         Route::post('/join/{id}', [ClubController::class, 'join']);
     });
 
-    Route::get('/home', [HomeController::class, 'index']);
-    Route::get('/locations', [LocationController::class, 'index']);
+    Route::match(['get', 'post'], '/home', [HomeController::class, 'index']);
+    Route::match(['get', 'post'], '/locations', [LocationController::class, 'index']);
     // search geocoding
     Route::get('/search-location', [UserController::class, 'searchLocation']);
     Route::get('/location-detail', [UserController::class, 'detailGooglePlace']);
     // Mini Tournament Routes
     Route::prefix('mini-tournaments')->group(function (): void {
-        Route::get('/index', [MiniTournamentController::class, 'index']);
+        Route::match(['get', 'post'], '/index', [MiniTournamentController::class, 'index']);
         Route::post('/store', [MiniTournamentController::class, 'store']);
         Route::get('/{id}', [MiniTournamentController::class, 'show']);
         Route::post('/update/{id}', [MiniTournamentController::class, 'update']);
     });
     // Mini Participant Routes
     Route::prefix('mini-participants')->group(function (): void {
-        Route::get('/index/{miniTournamentId}', [MiniParticipantController::class, 'index']);
+        Route::match(['get', 'post'], '/index/{miniTournamentId}', [MiniParticipantController::class, 'index']);
         Route::post('/join/{miniTournamentId}', [MiniParticipantController::class, 'join']);
         Route::post('/confirm/{participantId}', [MiniParticipantController::class, 'confirm']);
         Route::post('accept/{participantId}', [MiniParticipantController::class, 'acceptInvite']);
         Route::post('/invite/{miniTournamentId}', [MiniParticipantController::class, 'invite']);
-        Route::get('/{id}/candidates', [MiniParticipantController::class, 'getCandidates']);
+        Route::match(['get', 'post'], '/{id}/candidates', [MiniParticipantController::class, 'getCandidates']);
         Route::post('/delete/{participantId}', [MiniParticipantController::class, 'delete']);
     });
     // Mini Match Routes
@@ -162,16 +160,16 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
     Route::prefix('send-message')->group(function () {
         Route::prefix('mini-tournament')->group(function () {
             Route::post('/{tournamentId}', [SendMessageController::class, 'storeMessageMiniTour']);
-            Route::get('/index/{tournamentId}', [SendMessageController::class, 'getMessagesMiniTour']);
+            Route::match(['get', 'post'], '/index/{tournamentId}', [SendMessageController::class, 'getMessagesMiniTour']);
         });
         Route::prefix('tournament')->group(function () {
             Route::post('/{tournamentId}', [SendMessageController::class, 'storeMessageTour']);
-            Route::get('/index/{tournamentId}', [SendMessageController::class, 'getMessagesTour']);
+            Route::match(['get', 'post'], '/index/{tournamentId}', [SendMessageController::class, 'getMessagesTour']);
         });
     });
 
     Route::prefix('messages')->group(function () {
-        Route::get('/conversation/{userId}', [MessageController::class, 'getConversation']);
+        Route::match(['get', 'post'], '/conversation/{userId}', [MessageController::class, 'getConversation']);
         Route::post('/store', [MessageController::class, 'store']);
         Route::post('/mark-as-read/{senderId}', [MessageController::class, 'markConversationAsRead']);
     });
@@ -181,14 +179,14 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
     });
 
     Route::prefix('follows')->group(function () {
-        Route::get('/index', [FollowController::class, 'index']);
+        Route::match(['get', 'post'], '/index', [FollowController::class, 'index']);
         Route::post('/store', [FollowController::class, 'store']);
         Route::delete('/delete', [FollowController::class, 'destroy']);
-        Route::get('/list-friends', [FollowController::class, 'getFriends']);
+        Route::match(['get', 'post'], '/list-friends', [FollowController::class, 'getFriends']);
     });
 
     Route::prefix('sports')->group(function () {
-        Route::get('/index', [SportController::class, 'index']);
+        Route::match(['get', 'post'], '/index', [SportController::class, 'index']);
     });
     Route::prefix('facilities')->group(function () {
         Route::get('/index', [FacilityController::class, 'index']);
@@ -198,7 +196,7 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
         Route::get('/index', [CompetitionLocationYardController::class, 'index']);
     });
     Route::prefix('notifications')->group(function () {
-        Route::get('/index', [NotificationController::class, 'index']);
+        Route::match(['get', 'post'], '/index', [NotificationController::class, 'index']);
         Route::post('/mark-as-read', [NotificationController::class, 'markAsRead']);
     });
     Route::prefix('mini-tournament-notifications')->group(function () {

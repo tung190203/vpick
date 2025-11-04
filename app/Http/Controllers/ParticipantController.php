@@ -22,15 +22,27 @@ class ParticipantController extends Controller
             'per_page' => 'nullable|integer|min:1|max:100',
         ]);
 
-        $query = Participant::where('tournament_id', $tournamentId)
-            ->with(['user']);
+        $query = Participant::with(['user'])
+            ->where('tournament_id', $tournamentId);
 
         if (isset($validated['is_confirmed'])) {
             $query->where('is_confirmed', $validated['is_confirmed']);
         }
-        $participants = $query->paginate($validated['per_page'] ?? 15);
 
-        return ResponseHelper::success(ParticipantResource::collection($participants));
+        $participants = $query->paginate($validated['per_page'] ?? Participant::PER_PAGE);
+
+        $data = [
+            'participants' => ParticipantResource::collection($participants),
+        ];
+
+        $meta = [
+            'current_page'   => $participants->currentPage(),
+            'last_page'      => $participants->lastPage(),
+            'per_page'       => $participants->perPage(),
+            'total'          => $participants->total(),
+        ];
+
+        return ResponseHelper::success($data, 'Lấy danh sách người tham gia thành công', 200, $meta);
     }
 
     public function join(Request $request, $tournamentId)
@@ -76,20 +88,20 @@ class ParticipantController extends Controller
                 }
                 break;
         }
-        if($user->gender != null){
+        if ($user->gender != null) {
             switch ($tournament->gender_policy) {
                 case Tournament::MALE:
                     if ($user->gender != Tournament::MALE) {
                         return ResponseHelper::error('Giải này chỉ dành cho Nam.', 422);
                     }
                     break;
-    
+
                 case Tournament::FEMALE:
                     if ($user->gender != Tournament::FEMALE) {
                         return ResponseHelper::error('Giải này chỉ dành cho Nữ.', 422);
                     }
                     break;
-    
+
                 case Tournament::MIXED:
                     break;
             }
@@ -182,15 +194,18 @@ class ParticipantController extends Controller
             ];
         });
 
-        return ResponseHelper::success([
+        $data = [
             'suggestions' => $suggestions,
-            'meta' => [
-                'current_page' => $users->currentPage(),
-                'per_page' => $users->perPage(),
-                'total' => $users->total(),
-                'last_page' => $users->lastPage(),
-            ]
-        ], 'Gợi ý người dùng thành công');
+        ];
+
+        $meta = [
+            'current_page'   => $users->currentPage(),
+            'last_page'      => $users->lastPage(),
+            'per_page'       => $users->perPage(),
+            'total'          => $users->total(),
+        ];
+
+        return ResponseHelper::success($data, 'Lấy danh sách gợi ý người dùng thành công', 200, $meta);
     }
 
     public function inviteFriends(Request $request, $tournamentId)
@@ -263,15 +278,18 @@ class ParticipantController extends Controller
             ];
         });
 
-        return ResponseHelper::success([
+        $data = [
             'invitations' => $suggestions,
-            'meta' => [
-                'current_page' => $friends->currentPage(),
-                'per_page' => $friends->perPage(),
-                'total' => $friends->total(),
-                'last_page' => $friends->lastPage(),
-            ]
-        ], 'Gợi ý bạn bè để mời thành công');
+        ];
+
+        $meta = [
+            'current_page'   => $friends->currentPage(),
+            'last_page'      => $friends->lastPage(),
+            'per_page'       => $friends->perPage(),
+            'total'          => $friends->total(),
+        ];
+
+        return ResponseHelper::success($data, 'Lấy danh sách gợi ý bạn bè thành công', 200, $meta);
     }
 
     public function confirm($participantId)
@@ -393,15 +411,18 @@ class ParticipantController extends Controller
             ];
         });
 
-        return ResponseHelper::success([
+        $data = [
             'invitations' => $suggestions,
-            'meta' => [
-                'current_page' => $users->currentPage(),
-                'per_page' => $users->perPage(),
-                'total' => $users->total(),
-                'last_page' => $users->lastPage(),
-            ]
-        ], 'Gợi ý người chơi để mời thành công');
+        ];
+
+        $meta = [
+            'current_page'   => $users->currentPage(),
+            'last_page'      => $users->lastPage(),
+            'per_page'       => $users->perPage(),
+            'total'          => $users->total(),
+        ];
+
+        return ResponseHelper::success($data, 'Lấy danh sách người dùng thành công', 200, $meta);
     }
 
     public function delete($participantId)

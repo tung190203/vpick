@@ -87,15 +87,16 @@ class TournamentController extends Controller
 
         $data = [
             'tournaments' => TournamentResource::collection($tournaments),
-            'meta' => [
-                'current_page' => $tournaments->currentPage(),
-                'per_page' => $tournaments->perPage(),
-                'total' => $tournaments->total(),
-                'last_page' => $tournaments->lastPage(),
-            ],
         ];
 
-        return ResponseHelper::success($data, 'Lấy danh sách giải đấu thành công');
+        $meta = [
+            'current_page' => $tournaments->currentPage(),
+            'last_page' => $tournaments->lastPage(),
+            'per_page' => $tournaments->perPage(),
+            'total' => $tournaments->total(),
+        ];
+
+        return ResponseHelper::success($data, 'Lấy danh sách giải đấu thành công', 200, $meta);
     }
 
     public function show($id)

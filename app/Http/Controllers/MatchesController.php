@@ -16,8 +16,25 @@ class MatchesController extends Controller
 {
     public function index(Request $request, $tournamenttypeId)
     {
-        $matches = Matches::withFullRelations()->where('tournament_type_id', $tournamenttypeId)->get();
-        return ResponseHelper::success(MatchesResource::collection($matches));
+        $validated = $request->validate([
+            'per_page' => 'sometimes|integer|min:1|max:100',
+        ]);
+        $matches = Matches::withFullRelations()
+        ->where('tournament_type_id', $tournamenttypeId)
+        ->paginate($validated['per_page'] ?? Matches::PER_PAGE);
+
+    $data = [
+        'matches' => MatchesResource::collection($matches),
+    ];
+
+    $meta = [
+        'current_page' => $matches->currentPage(),
+        'last_page'    => $matches->lastPage(),
+        'per_page'     => $matches->perPage(),
+        'total'        => $matches->total(),
+    ];
+
+    return ResponseHelper::success($data, 'Lấy danh sách trận đấu thành công', 200, $meta);
     }
 
     public function detail(Request $request, $matchId)

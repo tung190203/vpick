@@ -30,6 +30,8 @@ class Matches extends Model
         'court',
         'winner_id'
     ];
+
+    const PER_PAGE = 15;
     public function tournamentType()
     {
         return $this->belongsTo(TournamentType::class);
