@@ -15,6 +15,8 @@ class Team extends Model
         'tournament_type_id',
     ];
 
+    const PER_PAGE = 15;
+
     public function tournament()
     {
         return $this->belongsTo(Tournament::class, 'tournament_id');

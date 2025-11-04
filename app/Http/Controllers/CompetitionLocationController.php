@@ -40,20 +40,38 @@ class CompetitionLocationController extends Controller
             'yard_type.*' => 'integer|in:' . implode(',', CompetitionLocationYard::YARD_TYPE),
             'facility_id' => 'nullable|array',
             'facility_id.*' => 'integer|exists:facilities,id',
+            'is_map' => 'sometimes|boolean',
         ]);
 
         $query = CompetitionLocation::withFullRelations();
 
+        // 1. NearBy
         if (!empty($validated['lat']) && !empty($validated['lng']) && !empty($validated['radius'])) {
             $query->nearBy($validated['lat'], $validated['lng'], $validated['radius']);
         }
 
+        // 2. Filter
         $query->filter($validated);
 
-        $hasFilter = collect(['sport_id', 'location_id', 'is_followed', 'keyword', 'lat', 'lng', 'radius', 'number_of_yards', 'yard_type', 'facility_id'])
-            ->some(fn($key) => $request->filled($key));
+        // 3. Bounding Box
+        $hasFilter = collect([
+            'sport_id',
+            'location_id',
+            'is_followed',
+            'keyword',
+            'lat',
+            'lng',
+            'radius',
+            'number_of_yards',
+            'yard_type',
+            'facility_id'
+        ])->some(fn($key) => $request->filled($key));
 
-        if (!$hasFilter && (!empty($validated['minLat']) || !empty($validated['maxLat']) || !empty($validated['minLng']) || !empty($validated['maxLng']))) {
+        if (
+            !$hasFilter &&
+            (!empty($validated['minLat']) || !empty($validated['maxLat']) ||
+                !empty($validated['minLng']) || !empty($validated['maxLng']))
+        ) {
             $query->inBounds(
                 $validated['minLat'],
                 $validated['maxLat'],
@@ -62,8 +80,26 @@ class CompetitionLocationController extends Controller
             );
         }
 
-        $locations = $query->paginate($validated['per_page'] ?? CompetitionLocation::PER_PAGE);
+        // 4. Phân trang hoặc lấy toàn bộ (nếu is_map=true)
+        if (!empty($validated['is_map']) && $validated['is_map']) {
+            $locations = $query->get();
+            $meta = [
+                'current_page' => 1,
+                'last_page' => 1,
+                'per_page' => $locations->count(),
+                'total' => $locations->count(),
+            ];
+        } else {
+            $locations = $query->paginate($validated['per_page'] ?? CompetitionLocation::PER_PAGE);
+            $meta = [
+                'current_page' => $locations->currentPage(),
+                'last_page' => $locations->lastPage(),
+                'per_page' => $locations->perPage(),
+                'total' => $locations->total(),
+            ];
+        }
 
+        // 5. Các dữ liệu bổ sung
         $yardTypes = CompetitionLocationYard::select('yard_type')
             ->distinct()
             ->get()
@@ -78,6 +114,6 @@ class CompetitionLocationController extends Controller
             'facilities' => FacilityResource::collection(Facility::all()),
         ];
 
-        return ResponseHelper::success($data, 'Lấy danh sách địa điểm thi đấu thành công');
+        return ResponseHelper::success($data, 'Lấy danh sách địa điểm thi đấu thành công', 200, $meta);
     }
 }

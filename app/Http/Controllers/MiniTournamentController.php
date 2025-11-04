@@ -86,7 +86,18 @@ class MiniTournamentController extends Controller
         });
         $miniTournaments = $query->paginate($validated['per_page'] ?? MiniTournament::PER_PAGE);
 
-        return ResponseHelper::success(ListMiniTournamentResource::collection($miniTournaments), 'Mini Tournaments retrieved successfully');
+        $data = [
+            'mini_tournaments' => ListMiniTournamentResource::collection($miniTournaments),
+        ];
+
+        $meta = [
+            'current_page' => $miniTournaments->currentPage(),
+            'last_page' => $miniTournaments->lastPage(),
+            'per_page' => $miniTournaments->perPage(),
+            'total' => $miniTournaments->total(),
+        ];
+
+        return ResponseHelper::success($data, 'Mini Tournaments retrieved successfully', 200, $meta);
     }
     /**
      * chi tiết mini tournament

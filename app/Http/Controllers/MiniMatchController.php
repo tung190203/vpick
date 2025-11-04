@@ -28,48 +28,48 @@ class MiniMatchController extends Controller
     {
         $request->validate([
             'filter' => 'nullable|string|in:matches,my_matches,leaderboard',
-            'per_page' => 'nullable|integer',
+            'per_page' => 'nullable|integer|min:1|max:100',
         ]);
 
         $miniTournament = MiniTournament::findOrFail($miniTournamentId);
-
-        $filter = $request->input('filter', 'matches'); // default: matches
-
-        switch ($filter) {
-            case 'my_matches':
-                $query = MiniMatch::withFullRelations()
-                    ->where('mini_tournament_id', $miniTournament->id)
-                    ->orderBy('round')
-                    ->orderBy('scheduled_at');
-
-                $userId = Auth::id();
-                $query->where(function ($q) use ($userId) {
-                    $q->whereHas('participant1', function ($sub) use ($userId) {
-                        $sub->where('user_id', $userId)
-                            ->orWhereHas('team.members', function ($m) use ($userId) {
-                                $m->where('user_id', $userId);
-                            });
-                    })->orWhereHas('participant2', function ($sub) use ($userId) {
-                        $sub->where('user_id', $userId)
-                            ->orWhereHas('team.members', function ($m) use ($userId) {
-                                $m->where('user_id', $userId);
-                            });
-                    });
+        $filter = $request->input('filter', 'matches');
+        $perPage = $request->input('per_page', MiniMatch::PER_PAGE);
+    
+        $query = MiniMatch::withFullRelations()
+            ->where('mini_tournament_id', $miniTournament->id)
+            ->orderBy('round')
+            ->orderBy('scheduled_at');
+    
+        if ($filter === 'my_matches') {
+            $userId = Auth::id();
+    
+            $query->where(function ($q) use ($userId) {
+                $q->whereHas('participant1', function ($sub) use ($userId) {
+                    $sub->where('user_id', $userId)
+                        ->orWhereHas('team.members', fn($m) => $m->where('user_id', $userId));
+                })->orWhereHas('participant2', function ($sub) use ($userId) {
+                    $sub->where('user_id', $userId)
+                        ->orWhereHas('team.members', fn($m) => $m->where('user_id', $userId));
                 });
-
-                $matches = $query->paginate($request->input('per_page', MiniMatch::PER_PAGE));
-                return ResponseHelper::success(MiniMatchResource::collection($matches));
-            case 'matches':
-            default:
-                $query = MiniMatch::withFullRelations()
-                    ->where('mini_tournament_id', $miniTournament->id)
-                    ->orderBy('round')
-                    ->orderBy('scheduled_at');
-
-                $matches = $query->paginate($request->input('per_page', MiniMatch::PER_PAGE));
-                return ResponseHelper::success(MiniMatchResource::collection($matches));
+            });
         }
-    }
+    
+        // Paginate
+        $matches = $query->paginate($perPage);
+    
+        $data = [
+            'matches' => MiniMatchResource::collection($matches),
+        ];
+    
+        $meta = [
+            'current_page' => $matches->currentPage(),
+            'last_page'    => $matches->lastPage(),
+            'per_page'     => $matches->perPage(),
+            'total'        => $matches->total(),
+        ];
+    
+        return ResponseHelper::success($data, 'Lấy danh sách trận đấu thành công', 200, $meta);
+    }    
     /**
      * Tạo trận đấu mới
      * participants nếu là int => user
@@ -572,7 +572,7 @@ class MiniMatchController extends Controller
      */
     public function listMiniMatch(Request $request)
     {
-        $validated = request()->validate([
+        $validated = $request->validate([
             'lat' => 'sometimes',
             'lng' => 'sometimes',
             'radius' => 'sometimes|numeric|min:1',
@@ -580,7 +580,8 @@ class MiniMatchController extends Controller
             'maxLat' => self::VALIDATION_RULE,
             'minLng' => self::VALIDATION_RULE,
             'maxLng' => self::VALIDATION_RULE,
-            'per_page' => 'sometimes|integer',
+            'per_page' => 'sometimes|integer|min:1|max:100',
+            'is_map' => 'sometimes|boolean',
             'date_from' => 'sometimes|date',
             'location_id' => 'sometimes|integer|exists:locations,id',
             'sport_id' => 'sometimes|integer|exists:sports,id',
@@ -598,11 +599,15 @@ class MiniMatchController extends Controller
             'min_price' => 'sometimes|numeric|min:0',
             'max_price' => 'sometimes|numeric|min:0',
         ]);
+    
         $query = MiniMatch::withFullRelations()->filter($validated);
-
-        $hasFilter = collect(['sport_id', 'location_id', 'date_from', 'keyword', 'lat', 'lng', 'radius', 'type', 'rating', 'fee', 'min_price', 'max_price', 'time_of_day', 'slot_status'])
-            ->some(fn($key) => $request->filled($key));
-
+    
+        $hasFilter = collect([
+            'sport_id', 'location_id', 'date_from', 'keyword',
+            'lat', 'lng', 'radius', 'type', 'rating', 'fee',
+            'min_price', 'max_price', 'time_of_day', 'slot_status'
+        ])->some(fn($key) => $request->filled($key));
+    
         if (!$hasFilter && (!empty($validated['minLat']) || !empty($validated['maxLat']) || !empty($validated['minLng']) || !empty($validated['maxLng']))) {
             $query->inBounds(
                 $validated['minLat'],
@@ -611,13 +616,36 @@ class MiniMatchController extends Controller
                 $validated['maxLng']
             );
         }
-
+    
         if (!empty($validated['lat']) && !empty($validated['lng']) && !empty($validated['radius'])) {
             $query->nearBy($validated['lat'], $validated['lng'], $validated['radius']);
         }
 
-        $matches = $query->paginate($validated['per_page'] ?? MiniMatch::PER_PAGE);
-
-        return ResponseHelper::success(MiniMatchResource::collection($matches));
-    }
+        $isMap = filter_var($validated['is_map'] ?? false, FILTER_VALIDATE_BOOLEAN);
+    
+        if ($isMap) {
+            $matches = $query->get();
+            $paginationMeta = [
+                'current_page' => 1,
+                'last_page' => 1,
+                'per_page' => $matches->count(),
+                'total' => $matches->count(),
+            ];
+        } else {
+            $matches = $query->paginate($validated['per_page'] ?? MiniMatch::PER_PAGE);
+            $paginationMeta = [
+                'current_page' => $matches->currentPage(),
+                'last_page' => $matches->lastPage(),
+                'per_page' => $matches->perPage(),
+                'total' => $matches->total(),
+            ];
+        }
+    
+        return ResponseHelper::success(
+            ['matches' => MiniMatchResource::collection($matches)],
+            'Lấy danh sách Mini Match thành công',
+            200,
+            $paginationMeta
+        );
+    }    
 }

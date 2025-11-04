@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Notifications\FollowNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class FollowController extends Controller
 {
@@ -21,18 +22,58 @@ class FollowController extends Controller
     {
         $userId = Auth::id();
 
+        $validated = $request->validate([
+            'per_page' => 'sometimes|integer|min:1|max:100',
+            'is_map' => 'sometimes|boolean',
+        ]);
+
+        $perPage = $validated['per_page'] ?? Follow::PER_PAGE;
+        $isMap = $validated['is_map'] ?? false;
+
+        // Lấy toàn bộ follow, group theo loại
         $follows = Follow::where('user_id', $userId)
             ->with('followable')
             ->get()
             ->groupBy(fn($f) => strtolower(class_basename($f->followable_type)));
 
         $result = [];
+        $meta = [];
 
         foreach ($follows as $shortType => $items) {
-            $result[$shortType] = FollowResource::collection($items);
+            $items = $items->values();
+
+            if ($isMap) {
+                // Nếu là chế độ bản đồ → load tất cả, không phân trang
+                $result[$shortType] = FollowResource::collection($items);
+                $meta[$shortType] = [
+                    'current_page' => 1,
+                    'last_page' => 1,
+                    'per_page' => $items->count(),
+                    'total' => $items->count(),
+                ];
+            } else {
+                // Ngược lại: phân trang từng nhóm riêng
+                $page = LengthAwarePaginator::resolveCurrentPage();
+                $paginator = new LengthAwarePaginator(
+                    $items->forPage($page, $perPage),
+                    $items->count(),
+                    $perPage,
+                    $page,
+                    ['path' => request()->url(), 'query' => request()->query()]
+                );
+
+                $result[$shortType] = FollowResource::collection($paginator);
+
+                $meta[$shortType] = [
+                    'current_page' => $paginator->currentPage(),
+                    'last_page' => $paginator->lastPage(),
+                    'per_page' => $paginator->perPage(),
+                    'total' => $paginator->total(),
+                ];
+            }
         }
 
-        return ResponseHelper::success($result, 'Lấy danh sách theo dõi thành công');
+        return ResponseHelper::success($result, 'Lấy danh sách theo dõi thành công', 200, $meta);
     }
     /**
      * Theo dõi một đối tượng
@@ -50,7 +91,7 @@ class FollowController extends Controller
             return ResponseHelper::error('Theo dõi thất bại', 400);
         }
 
-        if(!$follow->wasRecentlyCreated) {
+        if (!$follow->wasRecentlyCreated) {
             return ResponseHelper::error('Bạn đã theo dõi rồi', 400);
         }
 
@@ -96,7 +137,7 @@ class FollowController extends Controller
     {
         $validated = $request->validate([
             'followable_type' => 'required|string',
-            'followable_id'   => 'required|integer',
+            'followable_id' => 'required|integer',
         ]);
 
         $deleted = $this->unfollow(Auth::id(), $validated['followable_type'], $validated['followable_id']);
@@ -107,12 +148,12 @@ class FollowController extends Controller
 
         return ResponseHelper::success([], 'Hủy theo dõi thành công');
     }
-    
+
     protected function unfollow(int $userId, string $type, int $id): bool
     {
         $map = [
             'competition' => CompetitionLocation::class,
-            'user'        => User::class,
+            'user' => User::class,
         ];
 
         $model = $map[strtolower($type)] ?? null;
@@ -127,38 +168,57 @@ class FollowController extends Controller
     }
 
     /**
- * Lấy danh sách bạn bè (mutual follows)
- */
-public function getFriends(Request $request)
-{
-    $validated = $request->validate([
-        'per_page' => 'sometimes|integer|min:1|max:100',
-    ]);
+     * Lấy danh sách bạn bè (mutual follows)
+     */
+    public function getFriends(Request $request)
+    {
+        $validated = $request->validate([
+            'per_page' => 'sometimes|integer|min:1|max:100',
+            'is_map' => 'sometimes|boolean',
+        ]);
 
-    $userId = Auth::id();
-    $perPage = $validated['per_page'] ?? 15;
+        $userId = Auth::id();
+        $perPage = $validated['per_page'] ?? 15;
 
-    // Lấy danh sách user mà current user đang follow
-    $following = Follow::where('user_id', $userId)
-        ->where('followable_type', User::class)
-        ->pluck('followable_id')
-        ->toArray();
+        // Lấy danh sách user mà current user đang follow
+        $followingIds = Follow::where('user_id', $userId)
+            ->where('followable_type', User::class)
+            ->pluck('followable_id');
 
-    // Lấy danh sách user đang follow current user
-    $followers = Follow::where('followable_id', $userId)
-        ->where('followable_type', User::class)
-        ->pluck('user_id')
-        ->toArray();
+        // Lấy danh sách user đang follow current user
+        $followerIds = Follow::where('followable_type', User::class)
+            ->where('followable_id', $userId)
+            ->pluck('user_id');
 
-    // Tìm giao = bạn bè
-    $friendIds = array_intersect($following, $followers);
+        // Tìm giao = bạn bè
+        $friendIds = $followingIds->intersect($followerIds)->values();
 
-    // Lấy thông tin user
-    $friends = User::whereIn('id', $friendIds)->paginate($perPage);
+        $query = User::whereIn('id', $friendIds);
 
-    return ResponseHelper::success(
-        UserListResource::collection($friends),
-        'Lấy danh sách bạn bè thành công'
-    );
-}
+        // Nếu is_map = true → load toàn bộ (không phân trang)
+        if ($validated['is_map'] ?? false) {
+            $friends = $query->get();
+            $meta = [
+                'current_page' => 1,
+                'last_page' => 1,
+                'per_page' => $friends->count(),
+                'total' => $friends->count(),
+            ];
+        } else {
+            $friends = $query->paginate($perPage);
+            $meta = [
+                'current_page' => $friends->currentPage(),
+                'last_page' => $friends->lastPage(),
+                'per_page' => $friends->perPage(),
+                'total' => $friends->total(),
+            ];
+        }
+
+        // Chuẩn hóa data
+        $data = [
+            'friends' => UserListResource::collection($friends),
+        ];
+
+        return ResponseHelper::success($data, 'Lấy danh sách bạn bè thành công', 200, $meta);
+    }
 }

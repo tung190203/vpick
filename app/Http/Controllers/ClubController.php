@@ -19,15 +19,30 @@ class ClubController extends Controller
             'perPage' => 'sometimes|integer|min:1|max:100',
         ]);
         $query = Club::withFullRelations()->orderBy('created_at', 'desc');
-        if ($validated['name'] ?? false) {
+    
+        if (!empty($validated['name'])) {
             $query->search(['name'], $validated['name']);
         }
-        if ($validated['location'] ?? false) {
+    
+        if (!empty($validated['location'])) {
             $query->search(['location'], $validated['location']);
         }
-        $clubs = $query->take($validated['perPage'] ?? Club::PER_PAGE)->get();
-
-        return ResponseHelper::success(ClubResource::collection($clubs), 'Lấy danh sách câu lạc bộ thành công');
+    
+        $perPage = $validated['perPage'] ?? Club::PER_PAGE;
+        $clubs = $query->paginate($perPage);
+    
+        $data = [
+            'clubs' => ClubResource::collection($clubs),
+        ];
+    
+        $meta = [
+            'current_page' => $clubs->currentPage(),
+            'last_page'    => $clubs->lastPage(),
+            'per_page'     => $clubs->perPage(),
+            'total'        => $clubs->total(),
+        ];
+    
+        return ResponseHelper::success($data, 'Lấy danh sách câu lạc bộ thành công', 200, $meta);
     }
     public function store(Request $request)
     {

@@ -20,6 +20,7 @@ class Message extends Model
         'read_at',
     ];
 
+    const PER_PAGE = 20;
     public function sender()
     {
         return $this->belongsTo(User::class, 'sender_id');

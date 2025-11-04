@@ -16,6 +16,8 @@ class Follow extends Model
         'followable_type',
     ];
 
+    const PER_PAGE = 15;
+
     public function followable()
     {
         return $this->morphTo();

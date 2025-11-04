@@ -15,6 +15,8 @@ class Participant extends Model
         'is_confirmed',
     ];
 
+    const PER_PAGE = 15;
+
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');

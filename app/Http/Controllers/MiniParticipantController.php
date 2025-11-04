@@ -44,7 +44,18 @@ class MiniParticipantController extends Controller
 
         $participants = $query->paginate($validated['per_page'] ?? MiniParticipant::PER_PAGE);
 
-        return ResponseHelper::success(MiniParticipantResource::collection($participants));
+        $data = [
+            'participants' => MiniParticipantResource::collection($participants),
+        ];
+
+        $meta = [
+            'current_page' => $participants->currentPage(),
+            'last_page' => $participants->lastPage(),
+            'per_page' => $participants->perPage(),
+            'total' => $participants->total(),
+        ];
+
+        return ResponseHelper::success($data, 'Danh sách người tham gia mini tournament.', 200, $meta);
     }
 
     /**
@@ -244,36 +255,37 @@ class MiniParticipantController extends Controller
     
         $validated = $request->validate([
             'scope' => 'required|in:club,friends,area',
-            'club_id' => 'required_if:scope,club|exists:clubs,id'
+            'club_id' => 'required_if:scope,club|exists:clubs,id',
+            'per_page' => 'sometimes|integer|min:1|max:100',
         ]);
     
+        $perPage = $validated['per_page'] ?? 20;
         $scope = $validated['scope'];
-        $candidates = collect();
     
         switch ($scope) {
             case 'club':
-                $candidates = User::whereHas(
-                    'clubs',
-                    fn($q) => $q->where('clubs.id', $validated['club_id'])
-                )->get();
+                $query = User::whereHas('clubs', fn($q) => $q->where('clubs.id', $validated['club_id']));
                 break;
     
             case 'friends':
-                $candidates = $user->friends()->get();
+                $query = $user->friends();
                 break;
     
             case 'area':
-                $candidates = User::where('location_id', $user->location_id)
-                    ->where('id', '!=', $user->id)
-                    ->get();
+                $query = User::where('location_id', $user->location_id)
+                    ->where('id', '!=', $user->id);
                 break;
+
+            default:
+                $query = User::query()->whereRaw('0 = 1');
         }
     
-        // lấy danh sách id participant trong giải này
+        // Phân trang
+        $paginated = $query->paginate($perPage);
+    
         $participantUserIds = $miniTournament->participants->pluck('user_id')->toArray();
     
-        // map theo format UI
-        $result = $candidates->map(function ($u) use ($user, $participantUserIds) {
+        $candidates = $paginated->getCollection()->map(function ($u) use ($user, $participantUserIds) {
             $visibility = 'open';
             if ($u->invite_mode === 'friend_only') {
                 $visibility = 'friend_only';
@@ -289,12 +301,23 @@ class MiniParticipantController extends Controller
                 'avatar' => $u->avatar_url,
                 'visibility' => $visibility,
                 'is_friend' => $user->isFriendWith($u),
-                'is_participant' => in_array($u->id, $participantUserIds), // 👈 thêm cờ này
+                'is_participant' => in_array($u->id, $participantUserIds),
             ];
-        })->values();
+        });
     
-        return ResponseHelper::success($result, 'Danh sách ứng viên');
-    }
+        $data = [
+            'result' => $candidates,
+        ];
+    
+        $meta = [
+            'current_page' => $paginated->currentPage(),
+            'last_page'    => $paginated->lastPage(),
+            'per_page'     => $paginated->perPage(),
+            'total'        => $paginated->total(),
+        ];
+    
+        return ResponseHelper::success($data, 'Danh sách ứng viên', 200, $meta);
+    }    
     
     /**
      * Xóa một participant khỏi mini tournament.

@@ -31,15 +31,16 @@ class NotificationController extends Controller
 
         $data = [
             'notifications' => NotificationResource::collection($notifications),
-            'meta' => [
-                'current_page' => $notifications->currentPage(),
-                'last_page' => $notifications->lastPage(),
-                'per_page' => $notifications->perPage(),
-                'total' => $notifications->total(),
-            ],
+        ];
+
+        $meta = [
+            'current_page' => $notifications->currentPage(),
+            'per_page' => $notifications->perPage(),
+            'total' => $notifications->total(),
+            'last_page' => $notifications->lastPage(),
         ];
     
-        return ResponseHelper::success($data, 'Lấy danh sách thông báo thành công');
+        return ResponseHelper::success($data, 'Lấy danh sách thông báo thành công', 200, $meta);
     }    
 
     public function markAsRead(Request $request)
