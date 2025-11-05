@@ -248,9 +248,6 @@ class MiniMatchController extends Controller
         );
     }
 
-
-
-
     /**
      * Cập nhật thông tin trận đấu trong kèo đấu
      */

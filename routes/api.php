@@ -18,6 +18,7 @@ use App\Http\Controllers\CompetitionLocationYardController;
 use App\Http\Controllers\FacilityController;
 use App\Http\Controllers\FollowController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\MapController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MiniTournamentController;
 use App\Http\Controllers\SendMessageController;
@@ -202,5 +203,9 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
     Route::prefix('mini-tournament-notifications')->group(function () {
         Route::post('/subscribe/{miniTournamentId}', [MiniTournamentNotificationController::class, 'subscribe']);
         Route::post('/unsubscribe/{miniTournamentId}', [MiniTournamentNotificationController::class, 'unsubscribe']);
+    });
+
+    Route::prefix('map')->group(function () {
+        Route::match(['get', 'post'], '/match', [MapController::class, 'getMatch']);
     });
 });
