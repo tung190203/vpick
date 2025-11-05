@@ -35,6 +35,13 @@
                     <PlusCircleIcon class="w-5 h-5" />
                     Tạo kèo đấu
                 </RouterLink>
+                <RouterLink
+                    to="/tournament/create"
+                    :class="linkClass('/tournament')"
+                >
+                    <PlusCircleIcon class="w-5 h-5" />
+                    Tạo giải đấu
+                </RouterLink>
 
                 <RouterLink to="/tools" :class="linkClass('/tools')">
                     <BriefcaseIcon class="w-5 h-5" />

@@ -10,7 +10,9 @@ use App\Http\Resources\ListTournamentResource;
 use App\Models\Banner;
 use App\Models\Club;
 use App\Models\MiniTournament;
+use App\Models\MiniTournamentStaff;
 use App\Models\Tournament;
+use App\Models\TournamentStaff;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
@@ -19,30 +21,36 @@ class HomeController extends Controller
     public function index(Request $request)
     {
         $validated = $request->validate([
-            'mini_tournament_per_page' => 'sometimes|integer|min:1|max:100',
-            'tournament_per_page' => 'sometimes|integer|min:1|max:100',
-            'banner_per_page' => 'sometimes|integer|min:1|max:100',
-            'club_per_page' => 'sometimes|integer|min:1|max:100',
-            'leaderboard_per_page' => 'sometimes|integer|min:1|max:100',
+            'mini_tournament_per_page' => 'sometimes|integer|min:1|max:200',
+            'tournament_per_page' => 'sometimes|integer|min:1|max:200',
+            'banner_per_page' => 'sometimes|integer|min:1|max:200',
+            'club_per_page' => 'sometimes|integer|min:1|max:200',
+            'leaderboard_per_page' => 'sometimes|integer|min:1|max:200',
         ]);
         $userId = auth()->user()->id;
         $userInfo = [
-            'vndupr_score' =>  auth()->user()->load('vnduprScores')->vnduprScores->max('score_value') ?? 0,
+            'vndupr_score' => auth()->user()->load('vnduprScores')->vnduprScores->max('score_value') ?? 0,
             'win_rate' => 60,
             'performance' => 80
         ];
         $upcomingMiniTournaments = MiniTournament::withFullRelations()
             ->where('starts_at', '>', Carbon::now())
-            ->where('status', MiniTournament::STATUS_OPEN)
             ->where(function ($query) use ($userId) {
-                $query->where('is_private', false) // công khai => luôn hiển thị
+                $query->whereHas('miniTournamentStaffs', function ($staffQuery) use ($userId) {
+                    $staffQuery->where('user_id', $userId)
+                        ->where('role', MiniTournamentStaff::ROLE_ORGANIZER);
+                })
                     ->orWhere(function ($q) use ($userId) {
-                        $q->where('is_private', true)
-                            ->where(function ($sub) use ($userId) {
-                                // nếu là participant
-                                $sub->whereHas('participants', fn($p) => $p->where('user_id', $userId))
-                                    // hoặc nếu là staff
-                                    ->orWhereHas('staff', fn($s) => $s->where('user_id', $userId));
+                        $q->where('status', MiniTournament::STATUS_OPEN)
+                            ->where(function ($subQuery) use ($userId) {
+                                $subQuery->where('is_private', false)
+                                    ->orWhere(function ($privateQuery) use ($userId) {
+                                        $privateQuery->where('is_private', true)
+                                            ->where(function ($subSubQuery) use ($userId) {
+                                                $subSubQuery->whereHas('participants', fn($p) => $p->where('user_id', $userId))
+                                                    ->orWhereHas('staff', fn($s) => $s->where('user_id', $userId));
+                                            });
+                                    });
                             });
                     });
             })
@@ -53,19 +61,25 @@ class HomeController extends Controller
 
         $upcomingTournaments = Tournament::withFullRelations()
             ->where('start_date', '>', Carbon::now())
-            ->where('status', Tournament::OPEN)
             ->where(function ($query) use ($userId) {
-                $query->where('is_private', false) // công khai => luôn thấy
+                $query->whereHas('tournamentStaffs', function ($staffQuery) use ($userId) {
+                    $staffQuery->where('user_id', $userId)
+                        ->where('role', TournamentStaff::ROLE_ORGANIZER);
+                })
                     ->orWhere(function ($q) use ($userId) {
-                        $q->where('is_private', true)
-                            ->where(function ($sub) use ($userId) {
-                                // điều kiện được xem nếu là participant
-                                $sub->whereHas('participants', function ($p) use ($userId) {
-                                    $p->where('user_id', $userId);
-                                })
-                                    // hoặc nếu là staff
-                                    ->orWhereHas('tournamentStaffs', function ($s) use ($userId) {
-                                        $s->where('user_id', $userId);
+                        $q->where('status', Tournament::OPEN)
+                            ->where(function ($subQuery) use ($userId) {
+                                $subQuery->where('is_private', false)
+                                    ->orWhere(function ($privateQuery) use ($userId) {
+                                        $privateQuery->where('is_private', true)
+                                            ->where(function ($subSubQuery) use ($userId) {
+                                                $subSubQuery->whereHas('participants', function ($p) use ($userId) {
+                                                    $p->where('user_id', $userId);
+                                                })
+                                                    ->orWhereHas('tournamentStaffs', function ($s) use ($userId) {
+                                                        $s->where('user_id', $userId);
+                                                    });
+                                            });
                                     });
                             });
                     });

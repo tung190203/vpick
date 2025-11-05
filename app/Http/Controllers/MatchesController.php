@@ -17,7 +17,7 @@ class MatchesController extends Controller
     public function index(Request $request, $tournamenttypeId)
     {
         $validated = $request->validate([
-            'per_page' => 'sometimes|integer|min:1|max:100',
+            'per_page' => 'sometimes|integer|min:1|max:200',
         ]);
         $matches = Matches::withFullRelations()
         ->where('tournament_type_id', $tournamenttypeId)

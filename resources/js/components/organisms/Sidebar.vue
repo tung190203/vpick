@@ -89,6 +89,22 @@
                             Tạo kèo đấu
                         </span>
                     </RouterLink>
+                    <RouterLink
+                        to="/tournament/create"
+                        :class="mobileLinkClass('/tournament/create')"
+                    >
+                        <PlusCircleIcon class="w-5 h-5 flex-shrink-0" />
+                        <span
+                            class="font-medium whitespace-nowrap overflow-hidden transition-all duration-300"
+                            :class="
+                                isExpanded
+                                    ? 'opacity-100 ml-3 max-w-xs'
+                                    : 'opacity-0 ml-0 max-w-0'
+                            "
+                        >
+                            Tạo giải đấu
+                        </span>
+                    </RouterLink>
 
                     <RouterLink to="/tools" :class="mobileLinkClass('/tools')">
                         <BriefcaseIcon class="w-5 h-5 flex-shrink-0" />

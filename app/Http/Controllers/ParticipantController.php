@@ -19,7 +19,7 @@ class ParticipantController extends Controller
     {
         $validated = $request->validate([
             'is_confirmed' => 'nullable|boolean',
-            'per_page' => 'nullable|integer|min:1|max:100',
+            'per_page' => 'nullable|integer|min:1|max:200',
         ]);
 
         $query = Participant::with(['user'])
@@ -130,7 +130,7 @@ class ParticipantController extends Controller
     public function suggestUsers(Request $request, $tournamentId)
     {
         $validated = $request->validate([
-            'per_page' => 'nullable|integer|min:1|max:100',
+            'per_page' => 'nullable|integer|min:1|max:200',
         ]);
 
         $tournament = Tournament::findOrFail($tournamentId);
@@ -211,7 +211,7 @@ class ParticipantController extends Controller
     public function inviteFriends(Request $request, $tournamentId)
     {
         $validated = $request->validate([
-            'per_page' => 'nullable|integer|min:1|max:100',
+            'per_page' => 'nullable|integer|min:1|max:200',
         ]);
 
         $tournament = Tournament::findOrFail($tournamentId);
@@ -343,7 +343,7 @@ class ParticipantController extends Controller
     public function invite(Request $request, $tournamentId)
     {
         $validated = $request->validate([
-            'per_page' => 'nullable|integer|min:1|max:100',
+            'per_page' => 'nullable|integer|min:1|max:200',
         ]);
 
         $tournament = Tournament::findOrFail($tournamentId);

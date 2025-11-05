@@ -15,7 +15,7 @@ class TeamController extends Controller
     public function listTeams(Request $request, $tournamentId)
     {
         $validated = $request->validate([
-            'per_page' => 'nullable|integer|min:1|max:100',
+            'per_page' => 'nullable|integer|min:1|max:200',
         ]);
     
         $perPage = $validated['per_page'] ?? Team::PER_PAGE;

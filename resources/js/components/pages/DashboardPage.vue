@@ -141,7 +141,7 @@
                 <div class="text-sm font-bold text-gray-900 mb-2 cursor-pointer">{{ t.name }}</div>
                 <div class="text-xs text-[#004D99] flex items-center">
                   <MapPinIcon class="w-4 h-4 mr-1 flex-shrink-0 mt-0.5 text-[#4392E0]" />
-                  <span class="line-clamp-1">{{ t.location }}</span>
+                  <span class="line-clamp-1">{{ t.competition_location?.name ?? 'Không rõ' }}</span>
                 </div>
                 <div class="text-xs text-[#004D99] flex items-center my-2">
                   <CalendarDaysIcon class="w-4 h-4 mr-1 flex-shrink-0 mt-0.5 text-[#4392E0]" />

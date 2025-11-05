@@ -81,10 +81,12 @@
                                     :class="{ 'rotate-180': openDate }" />
                             </button>
 
-                            <div v-if="openDate"
-                                class="absolute top-full left-0 right-0 mt-2 p-4 z-50 bg-white rounded-lg shadow-lg">
-                                <VueDatePicker v-model="date" :locale="vi" inline auto-apply enable-time-picker />
-                            </div>
+                            <Transition name="fade">
+                                <div v-if="openDate"
+                                    class="absolute top-full left-0 right-0 mt-2 p-4 z-50 bg-white rounded-lg shadow-lg">
+                                    <VueDatePicker v-model="date" :locale="vi" inline auto-apply enable-time-picker />
+                                </div>
+                            </Transition>
                         </div>
 
                         <div class="bg-[#EDEEF2] rounded-[4px] overflow-visible relative" @click.stop>
@@ -103,15 +105,17 @@
                                     :class="{ 'rotate-180': openTime }" />
                             </button>
 
-                            <div v-if="openTime"
-                                class="absolute top-full left-0 right-0 mt-2 p-2 z-40 bg-white rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                <button v-for="option in durationOptions" :key="option.value"
-                                    @click="selectDuration(option)"
-                                    class="px-4 py-2 w-full text-sm text-left hover:bg-gray-100 rounded block whitespace-nowrap"
-                                    :class="{ 'bg-gray-50 font-medium': durationMinutes === option.value }">
-                                    {{ option.label }}
-                                </button>
-                            </div>
+                            <Transition name="fade">
+                                <div v-if="openTime"
+                                    class="absolute top-full left-0 right-0 mt-2 p-2 z-40 bg-white rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                    <button v-for="option in durationOptions" :key="option.value"
+                                        @click="selectDuration(option)"
+                                        class="px-4 py-2 w-full text-sm text-left hover:bg-gray-100 rounded block whitespace-nowrap"
+                                        :class="{ 'bg-gray-50 font-medium': durationMinutes === option.value }">
+                                        {{ option.label }}
+                                    </button>
+                                </div>
+                            </Transition>
                         </div>
 
                         <div class="relative flex items-center" @click.stop>
@@ -550,7 +554,21 @@ import { Swiper, SwiperSlide } from 'swiper/vue'
 import { FreeMode, Mousewheel } from 'swiper/modules'
 import 'swiper/css'
 import 'swiper/css/free-mode'
+import { genderOptions } from '@/constants/genderOption';
+import { feeOptions } from '@/constants/feeOption';
+import { matchTypes } from '@/constants/matchTypes';
+import { levels } from '@/constants/levels';
+import { setOptions } from '@/constants/setOption';
+import { winRuleOptions } from '@/constants/winRuleOption';
+import { ageGroupOptions } from '@/constants/ageGroupOption';
+import { repeatOptions } from '@/constants/repeatOption';
+import { roleOptions } from '@/constants/roleOption';
+import { lockCancellationOptions } from '@/constants/lockCancellationOption';
+import { durationOptions } from '@/constants/durationOption';
+import { useFormattedDate } from '@/composables/formatedDate'
+import { useRouter } from 'vue-router'
 const modules = [FreeMode, Mousewheel]
+const router = useRouter()
 
 // =================================================================================
 // Refs and State (Existing)
@@ -579,52 +597,11 @@ const vnduprEnabled = ref(true)
 
 const minLevel = ref('Không giới hạn')
 const maxLevel = ref('Không giới hạn')
-
-const levels = ['Không giới hạn', '1.0', '2.0', '3.0', '4.0', '5.0']
-
-const feeOptions = [
-    { value: 'none', label: 'Không có', smallText: '' },
-    { value: 'free', label: 'Miễn phí', smallText: '' },
-    { value: 'auto_split', label: 'Tự động chia phí', smallText: 'Số tiền chia đều dựa trên số người tham gia' },
-    { value: 'per_person', label: 'Phí mỗi người', smallText: 'Số tiền mỗi người cần đóng' }
-]
-
-const durationOptions = [
-    { value: 30, label: '30 phút' },
-    { value: 60, label: '1 tiếng' },
-    { value: 90, label: '1,5 tiếng' },
-    { value: 120, label: '2 tiếng' },
-    { value: 150, label: '2,5 tiếng' },
-    { value: 180, label: '3 tiếng' },
-    { value: 210, label: '3,5 tiếng' },
-    { value: 240, label: '4 tiếng' },
-    { value: 270, label: '4,5 tiếng' },
-    { value: 300, label: '5 tiếng' },
-    { value: 330, label: '5,5 tiếng' },
-    { value: 360, label: '6 tiếng' },
-    { value: 390, label: '6,5 tiếng' },
-    { value: 420, label: '7 tiếng' },
-    { value: 450, label: '7,5 tiếng' },
-    { value: 480, label: '8 tiếng' },
-    { value: 1440, label: '1 ngày' },
-    { value: 2880, label: '2 ngày' },
-    { value: 4320, label: '3 ngày' }
-]
-
-const matchTypes = [
-    { id: 1, name: 'Giao hữu' },
-    { id: 2, name: 'Vòng tròn' },
-    { id: 3, name: 'Đánh Đơn' },
-    { id: 4, name: 'Đánh Đôi' },
-    { id: 5, name: 'Tập luyện' },
-    { id: 6, name: 'Buổi học' },
-    { id: 7, name: 'Họp mặt' }
-]
-
 const selectedType = ref(1)
 const autoApprove = ref(true)
 const allowParticipantAddFriends = ref(true)
 const sendNotification = ref(true)
+const { formattedDate } = useFormattedDate(date)
 
 // =================================================================================
 // REFS CHO PHẦN TÌM KIẾM ĐỊA ĐIỂM
@@ -647,18 +624,6 @@ const courtSwitchPoints = ref(1)
 
 const openSet = ref(false)
 const openWinRule = ref(false)
-
-const setOptions = [
-    { value: 1, label: '1 Set' },
-    { value: 2, label: '2 Set' },
-    { value: 3, label: '3 Set' },
-]
-
-const winRuleOptions = [
-    { value: 1, label: 'Cách biệt 1 điểm' },
-    { value: 2, label: 'Cách biệt 2 điểm' },
-]
-
 const winRuleLabel = computed(() => {
     return winRuleOptions.find(r => r.value === pointsDifference.value)?.label || 'Cách biệt 2 điểm'
 })
@@ -689,44 +654,10 @@ const openRepeat = ref(false)
 const openRole = ref(false)
 const openLock = ref(false)
 
-const genderOptions = [
-    { value: 1, label: 'Nam' },
-    { value: 2, label: 'Nữ' },
-    { value: 3, label: 'Không giới hạn' },
-]
 const genderLabel = computed(() => genderOptions.find(g => g.value === genderPolicy.value)?.label || 'Không giới hạn')
-
-const ageGroupOptions = [
-    { value: 1, label: 'Không giới hạn' },
-    { value: 2, label: 'Thiếu niên (Dưới 18)' },
-    { value: 3, label: 'Người lớn (18 - 55)' },
-    { value: 4, label: 'Cao tuổi (Trên 55)' },
-]
 const ageGroupLabel = computed(() => ageGroupOptions.find(a => a.value === ageGroup.value)?.label || 'Không giới hạn')
-
-const repeatOptions = [
-    { value: 1, label: '1 tuần' },
-    { value: 2, label: '2 tuần' },
-    { value: 3, label: '3 tuần' },
-    { value: 4, label: '4 tuần' },
-]
 const repeatLabel = computed(() => repeatOptions.find(r => r.value === repeatType.value)?.label || '1 tuần')
-
-const roleOptions = [
-    { value: 1, label: 'Chỉ tổ chức' },
-    { value: 2, label: 'Tổ chức và tham gia' },
-]
 const roleLabel = computed(() => roleOptions.find(r => r.value === roleType.value)?.label || 'Tổ chức và tham gia')
-
-const lockCancellationOptions = [
-    { value: 1, label: '1 giờ' },
-    { value: 2, label: '2 giờ' },
-    { value: 3, label: '4 giờ' },
-    { value: 4, label: '6 giờ' },
-    { value: 5, label: '8 giờ' },
-    { value: 6, label: '12 giờ' },
-    { value: 7, label: '24 giờ' },
-]
 const lockCancellationLabel = computed(() => {
     return lockCancellation.value === 0
         ? 'Không có'
@@ -735,19 +666,15 @@ const lockCancellationLabel = computed(() => {
 
 // Định nghĩa trạng thái ban đầu để reset form
 const initialStates = {
-    // UI States
     openDate: false, openTime: false, openPrivacy: false, openFee: false, openMinLevel: false, openMaxLevel: false,
     openSet: false, openWinRule: false, openGender: false, openAge: false, openRepeat: false, openRole: false, openLock: false,
     isLocationDropdownOpen: false, isPointModalOpen: false,
-    // Data States
     date: null, durationMinutes: null, selectedDuration: '', playerCount: 1, privacy: 'Công khai',
     fee: 'none', feeAmount: 0, formattedFeeAmount: '',
     tournamentName: '', tournamentNote: '', selectedType: 1, selectedSportId: null,
     duprEnabled: true, vnduprEnabled: true, minLevel: 'Không giới hạn', maxLevel: 'Không giới hạn',
     locationKeyword: '', selectedLocation: null, competitionLocations: [],
-    // Rule States
     setNumber: 1, gamesPerSet: 11, pointsDifference: 2, maxPoints: 11, courtSwitchPoints: 1,
-    // Advanced Settings
     genderPolicy: 3, ageGroup: 1, repeatType: 1, roleType: 2, lockCancellation: 1,
     autoApprove: true, allowParticipantAddFriends: true, sendNotification: true,
 };
@@ -1052,15 +979,15 @@ const handlePointConfirm = () => {
 // Computed and Submit
 // =================================================================================
 
-const formattedDate = computed(() => {
-    if (!date.value) return ''
-    const d = new Date(date.value)
-    const day = d.getDate().toString().padStart(2, '0')
-    const month = (d.getMonth() + 1).toString().padStart(2, '0')
-    const hour = d.getHours().toString().padStart(2, '0')
-    const minute = d.getMinutes().toString().padStart(2, '0')
-    return `T${d.getDay() + 1} ${day} Tháng ${month} lúc ${hour}:${minute}`
-})
+// const formattedDate = computed(() => {
+//     if (!date.value) return ''
+//     const d = new Date(date.value)
+//     const day = d.getDate().toString().padStart(2, '0')
+//     const month = (d.getMonth() + 1).toString().padStart(2, '0')
+//     const hour = d.getHours().toString().padStart(2, '0')
+//     const minute = d.getMinutes().toString().padStart(2, '0')
+//     return `T${d.getDay() + 1} ${day} Tháng ${month} lúc ${hour}:${minute}`
+// })
 
 const handleSubmit = async () => {
     let startsAt = null
@@ -1115,9 +1042,14 @@ const handleSubmit = async () => {
 
 const createMiniTournament = async (data) => {
     try {
-        const response = await MiniTournamentService.storeMiniTournament(data)
+        const res = await MiniTournamentService.storeMiniTournament(data)
         toast.success('Tạo kèo đấu thành công!')
-        resetFormState() // GỌI HÀM RESET DATA KHI THÀNH CÔNG
+        resetFormState()
+        if(res && res.id) {
+            setTimeout(() => {
+                router.push({ name: 'mini-tournament-detail', params: { id: res.id } })
+            }, 1000)
+        }
     } catch (error) {
         console.error('Error creating mini tournament:', error)
         toast.error('Tạo kèo đấu thất bại. Vui lòng kiểm tra lại thông tin.')
@@ -1187,5 +1119,14 @@ onBeforeUnmount(() => {
 
 .scrollbar-hide::-webkit-scrollbar {
     display: none;
+}
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.1s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
 }
 </style>

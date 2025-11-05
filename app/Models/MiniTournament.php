@@ -256,6 +256,11 @@ class MiniTournament extends Model
         return $this->belongsTo(CompetitionLocation::class);
     }
 
+    public function miniTournamentStaffs()
+    {
+        return $this->hasMany(MiniTournamentStaff::class, 'mini_tournament_id');
+    }
+
     public function staff()
     {
         return $this->belongsToMany(User::class, 'mini_tournament_staff')
@@ -273,6 +278,8 @@ class MiniTournament extends Model
             'participants.team',
             'participants.team.members.user',
             'participants.user.sports.scores',
+            'miniTournamentStaffs',
+            'miniTournamentStaffs.user',
             'staff',
         ]);
     }
@@ -284,6 +291,8 @@ class MiniTournament extends Model
             'competitionLocation',
             'participants.user',
             'participants.team.members.user',
+            'miniTournamentStaffs',
+            'miniTournamentStaffs.user',
             'staff',
         ]);
     }

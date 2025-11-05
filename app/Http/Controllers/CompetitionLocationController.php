@@ -35,7 +35,7 @@ class CompetitionLocationController extends Controller
             'number_of_yards.*' => 'integer|min:1',
             'keyword' => 'sometimes|string|max:255',
             'is_followed' => 'sometimes|boolean',
-            'per_page' => 'sometimes|integer|min:1|max:100',
+            'per_page' => 'sometimes|integer|min:1|max:200',
             'yard_type' => 'nullable|array',
             'yard_type.*' => 'integer|in:' . implode(',', CompetitionLocationYard::YARD_TYPE),
             'facility_id' => 'nullable|array',

@@ -23,7 +23,7 @@ class FollowController extends Controller
         $userId = Auth::id();
 
         $validated = $request->validate([
-            'per_page' => 'sometimes|integer|min:1|max:100',
+            'per_page' => 'sometimes|integer|min:1|max:200',
             'is_map' => 'sometimes|boolean',
         ]);
 
@@ -173,7 +173,7 @@ class FollowController extends Controller
     public function getFriends(Request $request)
     {
         $validated = $request->validate([
-            'per_page' => 'sometimes|integer|min:1|max:100',
+            'per_page' => 'sometimes|integer|min:1|max:200',
             'is_map' => 'sometimes|boolean',
         ]);
 

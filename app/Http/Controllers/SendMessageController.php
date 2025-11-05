@@ -70,7 +70,7 @@ class SendMessageController extends Controller
     public function getMessagesMiniTour(Request $request, $tournamentId)
     {
         $validate = $request->validate([
-            'per_page' => 'sometimes|integer|min:1|max:100'
+            'per_page' => 'sometimes|integer|min:1|max:200'
         ]);
         $tournament = MiniTournament::withFullRelations()->findOrFail($tournamentId);
         $allStaffIds = $tournament->staff->pluck('id');
@@ -136,7 +136,7 @@ class SendMessageController extends Controller
     public function getMessagesTour(Request $request, $tournamentId)
     {
         $validate = $request->validate([
-            'per_page' => 'sometimes|integer|min:1|max:100'
+            'per_page' => 'sometimes|integer|min:1|max:200'
         ]);
         $tournament = Tournament::withFullRelations()->findOrFail($tournamentId);
         $allStaffIds = $tournament->staff->pluck('id');

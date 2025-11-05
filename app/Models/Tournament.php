@@ -34,7 +34,7 @@ class Tournament extends Model
         'is_private',
         'auto_approve',
         'end_date',
-        'location',
+        'competition_location_id',
         'club_id',
         'created_by',
         'description',
@@ -125,6 +125,11 @@ class Tournament extends Model
             ->withTimestamps();
     }
 
+    public function competitionLocation()
+    {
+        return $this->belongsTo(CompetitionLocation::class);
+    }
+
     public function teams()
     {
         return $this->hasMany(Team::class, 'tournament_id');
@@ -143,12 +148,13 @@ class Tournament extends Model
             'tournamentStaffs',
             'tournamentStaffs.user',
             'participants',
+            'competitionLocation'
         ]);
     }
 
     public function scopeWithBasicRelations($query)
     {
-        return $query->with(['createdBy', 'club', 'sport', 'tournamentStaffs'] );
+        return $query->with(['createdBy', 'club', 'sport', 'tournamentStaffs', 'competitionLocation'] );
     }
     public function scopeUpcoming($query)
     {

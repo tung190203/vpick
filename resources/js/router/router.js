@@ -16,6 +16,7 @@ import TournamentDetail from '@/components/pages/TournamentDetail.vue'
 import MiniTournamentDetail from '@/components/pages/MiniTournamentDetail.vue'
 import TermsPage from '@/components/pages/TermsPage.vue'
 import CreateMiniTournamentPage from '@/components/pages/CreateMiniTournamentPage.vue'
+import CreateTournamentPage from '@/components/pages/CreateTournamentPage.vue'
 import ForbiddenPage from '@/components/pages/ForbiddenPage.vue'
 import AdminDashboard from '@/components/pages/admin/AdminDashboard.vue'
 import RefereeDashboard from '@/components/pages/referee/RefereeDashboard.vue'
@@ -113,6 +114,11 @@ export const route = [
           role: [ROLE.PLAYER]
         },
         children: [
+          {
+            path: 'create',
+            name: 'create-tournament',
+            component: CreateTournamentPage
+          },
           {
             path: '',
             name: 'tournament',

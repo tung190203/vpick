@@ -28,7 +28,7 @@ class MiniMatchController extends Controller
     {
         $request->validate([
             'filter' => 'nullable|string|in:matches,my_matches,leaderboard',
-            'per_page' => 'nullable|integer|min:1|max:100',
+            'per_page' => 'nullable|integer|min:1|max:200',
         ]);
 
         $miniTournament = MiniTournament::findOrFail($miniTournamentId);
@@ -580,7 +580,7 @@ class MiniMatchController extends Controller
             'maxLat' => self::VALIDATION_RULE,
             'minLng' => self::VALIDATION_RULE,
             'maxLng' => self::VALIDATION_RULE,
-            'per_page' => 'sometimes|integer|min:1|max:100',
+            'per_page' => 'sometimes|integer|min:1|max:200',
             'is_map' => 'sometimes|boolean',
             'date_from' => 'sometimes|date',
             'location_id' => 'sometimes|integer|exists:locations,id',
