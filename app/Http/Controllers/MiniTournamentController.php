@@ -67,7 +67,7 @@ class MiniTournamentController extends Controller
         $validated = $request->validate([
             'sport_id' => 'sometimes|integer|exists:sports,id',
             'status' => 'sometimes|in:upcoming,ongoing,completed,cancelled',
-            'per_page' => 'sometimes|integer|min:1|max:100',
+            'per_page' => 'sometimes|integer|min:1|max:200',
         ]);
         $query = MiniTournament::withFullRelations();
 

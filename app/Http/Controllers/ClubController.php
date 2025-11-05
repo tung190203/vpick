@@ -16,7 +16,7 @@ class ClubController extends Controller
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
             'location' => 'sometimes|string|max:255',
-            'perPage' => 'sometimes|integer|min:1|max:100',
+            'perPage' => 'sometimes|integer|min:1|max:200',
         ]);
         $query = Club::withFullRelations()->orderBy('created_at', 'desc');
     

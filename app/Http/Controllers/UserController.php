@@ -26,7 +26,7 @@ class UserController extends Controller
             'maxLng' => self::VALIDATION_RULE,
             'keyword' => 'nullable|string|max:255',
             'sport_id' => 'sometimes|exists:sports,id',
-            'per_page' => 'sometimes|integer|min:1|max:100',
+            'per_page' => 'sometimes|integer|min:1|max:200',
             'location_id' => 'sometimes|exists:locations,id',
             'favourite_player' => 'nullable|boolean',
             'is_connected' => 'nullable|boolean',

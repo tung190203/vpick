@@ -15,7 +15,7 @@ class SportController extends Controller
     public function index(Request $request)
     {
         $validated = $request->validate([
-            'per_page' => 'sometimes|integer|min:1|max:100',
+            'per_page' => 'sometimes|integer|min:1|max:200',
             'name' => 'sometimes|string|max:255',
             'is_map' => 'sometimes|boolean', // 👈 thêm cờ is_map
         ]);

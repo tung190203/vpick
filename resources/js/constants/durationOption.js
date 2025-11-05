@@ -1,0 +1,21 @@
+export const durationOptions = [
+    { value: 30, label: '30 phút' },
+    { value: 60, label: '1 tiếng' },
+    { value: 90, label: '1,5 tiếng' },
+    { value: 120, label: '2 tiếng' },
+    { value: 150, label: '2,5 tiếng' },
+    { value: 180, label: '3 tiếng' },
+    { value: 210, label: '3,5 tiếng' },
+    { value: 240, label: '4 tiếng' },
+    { value: 270, label: '4,5 tiếng' },
+    { value: 300, label: '5 tiếng' },
+    { value: 330, label: '5,5 tiếng' },
+    { value: 360, label: '6 tiếng' },
+    { value: 390, label: '6,5 tiếng' },
+    { value: 420, label: '7 tiếng' },
+    { value: 450, label: '7,5 tiếng' },
+    { value: 480, label: '8 tiếng' },
+    { value: 1440, label: '1 ngày' },
+    { value: 2880, label: '2 ngày' },
+    { value: 4320, label: '3 ngày' }
+]

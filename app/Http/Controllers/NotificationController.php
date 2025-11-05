@@ -13,7 +13,7 @@ class NotificationController extends Controller
     {
         $validated = $request->validate([
             'type' => 'nullable|in:all,unread,read',
-            'per_page' => 'integer|min:1|max:100',
+            'per_page' => 'integer|min:1|max:200',
         ]);
 
         $type = $validated['type'] ?? 'all';

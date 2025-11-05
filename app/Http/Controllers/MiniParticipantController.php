@@ -27,7 +27,7 @@ class MiniParticipantController extends Controller
         $validated = $request->validate([
             'is_confirmed' => 'nullable|boolean',
             'type' => 'nullable|in:user,team',
-            'per_page' => 'nullable|integer|min:1|max:100',
+            'per_page' => 'nullable|integer|min:1|max:200',
         ]);
 
         $query = MiniParticipant::query()
@@ -256,7 +256,7 @@ class MiniParticipantController extends Controller
         $validated = $request->validate([
             'scope' => 'required|in:club,friends,area',
             'club_id' => 'required_if:scope,club|exists:clubs,id',
-            'per_page' => 'sometimes|integer|min:1|max:100',
+            'per_page' => 'sometimes|integer|min:1|max:200',
         ]);
     
         $perPage = $validated['per_page'] ?? 20;

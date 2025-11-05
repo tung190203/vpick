@@ -13,7 +13,7 @@ class LocationController extends Controller
     {
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
-            'per_page' => 'sometimes|integer|min:1|max:100',
+            'per_page' => 'sometimes|integer|min:1|max:200',
         ]);
         $query = Location::query();
         if($validated['name'] ?? false) {

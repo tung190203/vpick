@@ -71,7 +71,7 @@ class MessageController extends Controller
     public function getConversation(Request $request, $userId)
     {
         $validated = $request->validate([
-            'per_page' => 'nullable|integer|min:1|max:100',
+            'per_page' => 'nullable|integer|min:1|max:200',
         ]);
     
         $perPage = $validated['per_page'] ?? Message::PER_PAGE;

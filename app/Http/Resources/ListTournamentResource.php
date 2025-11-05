@@ -21,7 +21,7 @@ class ListTournamentResource extends JsonResource
             'start_date' => $this->start_date,
             'end_date' => $this->end_date,
             'status' => $this->status,
-            'location' => $this->location,
+            'competition_location' => new CompetitionLocationResource($this->whenLoaded('competitionLocation')),
             'description' => $this->description,
             'created_by' => $this->whenLoaded('createdBy', function () {
                 return [
