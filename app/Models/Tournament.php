@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -245,5 +246,174 @@ class Tournament extends Model
             (int) $staff->pivot->user_id === $userId
             && (int) $staff->pivot->role === TournamentStaff::ROLE_ORGANIZER
         );
+    }
+
+    public function scopeFilter($query, $filters)
+    {
+        return $query
+            ->when(
+                !empty($filters['sport_id']),
+                fn($q) => $q->whereHas(
+                    'sport',
+                    fn($sq) => $sq->where('id', $filters['sport_id'])
+                )
+            )
+            ->when(
+                !empty($filters['location_id']),
+                fn($q) => $q->whereHas(
+                    'competitionLocation',
+                    fn($lq) => $lq->where('id', $filters['location_id'])
+                )
+            )
+            ->when(
+                !empty($filters['keyword']),
+                fn($q) => $q->where(function ($kq) use ($filters){
+                    $kq->where('name', 'like', '%' . $filters['keyword'] . '%')
+                    ->orWhereHas('competitionLocation', function ($clq) use ($filters) {
+                        $clq->where('name', 'like', '%' . $filters['keyword'] . '%')
+                            ->orWhere('address', 'like', '%' . $filters['keyword'] . '%')
+                            ->orWhereHas(
+                                'location',
+                                fn($llq) => $llq->where('name', 'like', '%' . $filters['keyword'] . '%')
+                            );
+                    });
+                })
+            )
+            ->when(
+                !empty($filters['date_from']),
+                fn($q) => $q->whereBetween('start_date', [
+                    Carbon::parse($filters['date_from'])->startOfDay(),
+                    Carbon::parse($filters['date_from'])->endOfDay(),
+                ])
+            )
+            ->when(!empty($filters['rating']), function ($q) use ($filters) {
+                $minRating = (int) min($filters['rating']);
+                $maxRating = (int) max($filters['rating']);
+            
+                $q->where(function ($rq) use ($minRating, $maxRating) {
+                    $rq->where(function ($c) use ($minRating) {
+                        $c->whereNull('max_level')
+                          ->orWhere('max_level', '>=', $minRating);
+                    })
+                    ->where(function ($c) use ($maxRating) {
+                        $c->whereNull('min_level')
+                          ->orWhere('min_level', '<=', $maxRating);
+                    });
+                });
+            })
+            ->when(
+                !empty($filters['fee']) && is_array($filters['fee']),
+                function ($q) use ($filters) {
+                    $q->where(function ($subQuery) use ($filters){
+                        foreach($filters['fee'] as $fee){
+                            if($fee === 'free') {
+                                $subQuery->orWhere('fee', 'free');
+                            } elseif($fee === 'paid') {
+                                $min = $filters['min_price'] ?? 0;
+                                $max = $filters['max_price'] ?? PHP_INT_MAX;
+
+                                $subQuery->orWhere(function ($paid) use ($min, $max){
+                                    $paid->where('fee', 'paid')
+                                         ->whereBetween('standard_fee_amount', [$min, $max]);
+                                });
+                            }
+                        }
+                    });
+                }
+            )
+            ->when(
+                !empty($filters['time_of_day']) && is_array($filters['time_of_day']),
+                function ($q) use ($filters) {
+                    $q->where(function ($subQuery) use ($filters){
+                        foreach($filters['time_of_day'] as $timeOfDay){
+                            if($timeOfDay === 'morning') {
+                                $subQuery->orWhereTime('start_date', '<', '11:00:00');
+                            } elseif($timeOfDay === 'afternoon') {
+                               $subQuery->orWhere(function ($timeQuery){
+                                $timeQuery->whereTime('start_date', '>=', '11:00:00')
+                                          ->whereTime('start_date', '<', '16:00:00');
+                               });
+                            } elseif($timeOfDay === 'evening') {
+                                $subQuery->orWhereTime('start_date', '>=', '16:00:00');
+                            }
+                        }
+                    });
+                }
+            )
+            ->when(
+                !empty($filters['slot_status']) && is_array($filters['slot_status']),
+                function ($q) use ($filters) {
+                    $q->where(function ($subQuery) use ($filters) {
+                        foreach($filters['slot_status'] as $slotStatus){
+                            if($slotStatus === 'one_slot') {
+                                $subQuery->orWhereRaw('(
+                                    COALESCE(max_player, 0) - (
+                                        SELECT COUNT(*) 
+                                        FROM participants 
+                                        WHERE participants.tournament_id = tournaments.id
+                                    )
+                                ) >= 1');
+                            } elseif($slotStatus === 'two_slot') {
+                                $subQuery->orWhereRaw('(
+                                    COALESCE(max_player, 0) - (
+                                        SELECT COUNT(*) 
+                                        FROM participants 
+                                        WHERE participants.tournament_id = tournaments.id
+                                    )
+                                ) >= 2');
+                            } elseif($slotStatus === 'full_slot') {
+                                $subQuery->orWhereRaw('(
+                                    COALESCE(max_player, 0) - (
+                                        SELECT COUNT(*) 
+                                        FROM participants 
+                                        WHERE participants.tournament_id = tournaments.id
+                                    )
+                                ) = 0');
+                            }
+                        }
+                    });
+                }
+            )
+            ->when(true, function ($q){
+                $userId = auth()->id();
+
+                $q->where(function ($sub) use ($userId) {
+                    $sub->where('is_private', '!=', self::DRAFT)
+                        ->whereNotIn('status', [self::DRAFT, self::CLOSED, self::CANCELLED]);
+
+                    if($userId) {
+                        $sub->orWhere(function ($visible) use ($userId){
+                            $visible->orWhereHas('tournamentStaffs', function ($staffQuery) use ($userId){
+                                $staffQuery->where('user_id', $userId)
+                                    ->where('role', TournamentStaff::ROLE_ORGANIZER);
+                            })
+                            ->orWhereHas('participants', function ($participantQuery) use ($userId){
+                                $participantQuery->where('user_id', $userId);
+                            });
+                        });
+                    }
+                });
+            });
+    }
+
+    public function scopeInBounds($query, $minLat, $maxLat, $minLng, $maxLng)
+    {
+        return $query->whereHas('competitionLocation', function ($q) use ($minLat, $maxLat, $minLng, $maxLng) {
+            $q->whereBetween('latitude', [$minLat, $maxLat])
+              ->whereBetween('longitude', [$minLng, $maxLng]);
+        });
+    }
+    public function scopeNearBy($query, $lat, $lng, $radius)
+    {
+        $haversine = "(6371 * acos(cos(radians($lat)) 
+                        * cos(radians(competition_locations.latitude)) 
+                        * cos(radians(competition_locations.longitude) 
+                        - radians($lng)) 
+                        + sin(radians($lat)) 
+                        * sin(radians(competition_locations.latitude))))";
+
+        return $query->whereHas('competitionLocation', function ($q) use ($haversine, $radius) {
+            $q->havingRaw("$haversine < ?", [$radius]);
+        });
     }
 }

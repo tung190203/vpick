@@ -34,59 +34,33 @@ class HomeController extends Controller
             'performance' => 80
         ];
         $upcomingMiniTournaments = MiniTournament::withFullRelations()
-            ->where('starts_at', '>', Carbon::now())
-            ->where(function ($query) use ($userId) {
-                $query->whereHas('miniTournamentStaffs', function ($staffQuery) use ($userId) {
-                    $staffQuery->where('user_id', $userId)
-                        ->where('role', MiniTournamentStaff::ROLE_ORGANIZER);
-                })
-                    ->orWhere(function ($q) use ($userId) {
-                        $q->where('status', MiniTournament::STATUS_OPEN)
-                            ->where(function ($subQuery) use ($userId) {
-                                $subQuery->where('is_private', false)
-                                    ->orWhere(function ($privateQuery) use ($userId) {
-                                        $privateQuery->where('is_private', true)
-                                            ->where(function ($subSubQuery) use ($userId) {
-                                                $subSubQuery->whereHas('participants', fn($p) => $p->where('user_id', $userId))
-                                                    ->orWhereHas('staff', fn($s) => $s->where('user_id', $userId));
-                                            });
-                                    });
-                            });
-                    });
+        ->where('starts_at', '>', now())
+        ->where(function ($query) use ($userId) {
+            $query->whereHas('participants', function ($p) use ($userId) {
+                $p->where('user_id', $userId);
             })
-            ->orderBy('starts_at', 'asc')
-            ->take($validated['mini_tournament_per_page'] ?? MiniTournament::PER_PAGE)
-            ->get();
+            ->orWhereHas('staff', function ($s) use ($userId) {
+                $s->where('user_id', $userId);
+            });
+        })
+        ->orderBy('starts_at', 'asc')
+        ->take($validated['mini_tournament_per_page'] ?? MiniTournament::PER_PAGE)
+        ->get();
 
 
         $upcomingTournaments = Tournament::withFullRelations()
-            ->where('start_date', '>', Carbon::now())
-            ->where(function ($query) use ($userId) {
-                $query->whereHas('tournamentStaffs', function ($staffQuery) use ($userId) {
-                    $staffQuery->where('user_id', $userId)
-                        ->where('role', TournamentStaff::ROLE_ORGANIZER);
-                })
-                    ->orWhere(function ($q) use ($userId) {
-                        $q->where('status', Tournament::OPEN)
-                            ->where(function ($subQuery) use ($userId) {
-                                $subQuery->where('is_private', false)
-                                    ->orWhere(function ($privateQuery) use ($userId) {
-                                        $privateQuery->where('is_private', true)
-                                            ->where(function ($subSubQuery) use ($userId) {
-                                                $subSubQuery->whereHas('participants', function ($p) use ($userId) {
-                                                    $p->where('user_id', $userId);
-                                                })
-                                                    ->orWhereHas('tournamentStaffs', function ($s) use ($userId) {
-                                                        $s->where('user_id', $userId);
-                                                    });
-                                            });
-                                    });
-                            });
-                    });
+        ->where('start_date', '>', now())
+        ->where(function ($query) use ($userId) {
+            $query->whereHas('participants', function ($p) use ($userId) {
+                $p->where('user_id', $userId);
             })
-            ->orderBy('start_date', 'asc')
-            ->take($validated['tournament_per_page'] ?? Tournament::PER_PAGE)
-            ->get();
+            ->orWhereHas('tournamentStaffs', function ($s) use ($userId) {
+                $s->where('user_id', $userId);
+            });
+        })
+        ->orderBy('start_date', 'asc')
+        ->take($validated['tournament_per_page'] ?? Tournament::PER_PAGE)
+        ->get();
 
         $banners = Banner::where('is_active', true)
             ->orderBy('order', 'asc')

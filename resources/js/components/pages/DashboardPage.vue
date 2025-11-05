@@ -14,7 +14,7 @@
               <div class="mb-6 md:mb-0">
                 <div class="text-sm opacity-90 mb-1 text-[32px]">VNDUPR</div>
                 <div class="text-6xl font-bold leading-none mb-4 text-[100px]">{{ homeData.user_info?.vndupr_scor ?? 0
-                  }}
+                }}
                 </div>
                 <div class="text-sm opacity-90 mb-1 text-[32px]">DUPR</div>
                 <div class="text-5xl font-bold leading-none text-[100px]">3.65</div>
@@ -81,17 +81,19 @@
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div v-for="(mini, i) in homeData?.upcoming_mini_tournament" :key="i"
-              class="bg-white rounded-[8px] shadow hover:shadow-lg p-4 transition-all relative">
+              class="bg-white rounded-[8px] shadow hover:shadow-lg p-4 transition-all relative cursor-pointer">
               <!-- Bell notification icon -->
               <div class="absolute top-4 right-4 text-red-500 cursor-pointer hover:text-red-600">
                 <BellAlertIcon class="w-5 h-5" />
               </div>
 
-              <div class="text-base text-gray-700 font-semibold">{{ formatTime(mini.starts_at) }}</div>
-              <div class="text-sm text-gray-500 mt-0.5">{{ formatDate(mini.starts_at) }}</div>
-              <div class="text-base text-gray-900 font-bold mt-2 line-clamp-1 cursor-pointer">{{ mini.name }}</div>
+              <div @click="goToMiniTournamentDetail(mini.id)">
+                <div class="text-base text-gray-700 font-semibold">{{ formatTime(mini.starts_at) }}</div>
+                <div class="text-sm text-gray-500 mt-0.5">{{ formatDate(mini.starts_at) }}</div>
+                <div class="text-base text-gray-900 font-bold mt-2 line-clamp-1 cursor-pointer">{{ mini.name }}</div>
+              </div>
 
-              <div class="pt-4 border-gray-100">
+              <div class="pt-4 border-gray-100" @click="goToMiniTournamentDetail(mini.id)">
                 <div class="flex justify-start space-x-4">
                   <!-- Cột 1: Người tạo -->
                   <div class="flex flex-col items-start pr-4 border-r">
@@ -133,11 +135,11 @@
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div v-for="(t, i) in homeData.upcoming_tournaments" :key="i"
-              class="bg-white rounded-[8px] shadow hover:shadow-lg overflow-hidden transition-all p-[16px]">
-              <div class="relative h-40">
+              class="bg-white rounded-[8px] shadow hover:shadow-lg overflow-hidden transition-all p-[16px] cursor-pointer">
+              <div class="relative h-40" @click="goToTournamentDetail(t.id)">
                 <img :src="t.poster" alt="" class="w-full h-full object-cover rounded-[4px] cursor-pointer" />
               </div>
-              <div class="py-4">
+              <div class="py-4" @click="goToTournamentDetail(t.id)">
                 <div class="text-sm font-bold text-gray-900 mb-2 cursor-pointer">{{ t.name }}</div>
                 <div class="text-xs text-[#004D99] flex items-center">
                   <MapPinIcon class="w-4 h-4 mr-1 flex-shrink-0 mt-0.5 text-[#4392E0]" />
@@ -152,13 +154,6 @@
                     {{ t.description }}
                   </p>
                 </div>
-              </div>
-              <div class="flex justify-end w-full">
-                <button
-                  class="bg-[#D72D36] text-white text-sm font-semibold px-2 py-1 rounded-[4px] hover:bg-[#D72D37] transition-colors flex items-center justify-center gap-2">
-                  <ArrowUpRightIcon class="w-4 h-4" />
-                  Đăng ký ngay
-                </button>
               </div>
             </div>
           </div>
@@ -233,6 +228,9 @@ import Background from "@/assets/images/dashboard-bg.svg";
 import { onMounted, ref, computed } from "vue";
 import * as HomeService from "@/service/home";
 import * as FollowService from "@/service/follow";
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const homeData = ref([]);
 const friendList = ref([]);
@@ -305,6 +303,13 @@ const features = [
   { label: "Tìm sân", icon: MapPinIconOutline },
   { label: "Xếp hạng", icon: ChartBarIcon },
 ];
+function goToMiniTournamentDetail(id) {
+  router.push({ name: 'mini-tournament-detail', params: { id } })
+}
+
+function goToTournamentDetail(id) {
+  router.push({ name: 'tournament-detail', params: { id } })
+}
 
 </script>
 
