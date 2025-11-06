@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\MiniTournamentResource;
+use App\Http\Resources\TournamentResource;
 use App\Models\MiniTournament;
 use App\Models\Tournament;
 use Illuminate\Http\Request;
@@ -115,7 +116,7 @@ class MapController extends Controller
                 'total' => $tournament->count(),
             ];
             $tournamentData = [
-                'data' => MiniTournamentResource::collection($tournament),
+                'data' => TournamentResource::collection($tournament),
                 'meta' => $tournamentMeta,
             ];
         } else {
@@ -138,7 +139,7 @@ class MapController extends Controller
                 'total' => $tournament->total(),
             ];
             $tournamentData = [
-                'data' => MiniTournamentResource::collection($tournament->items()),
+                'data' => TournamentResource::collection($tournament->items()),
                 'meta' => $tournamentMeta,
             ];
         }

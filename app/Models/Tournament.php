@@ -111,7 +111,7 @@ class Tournament extends Model
 
     Public function sport()
     {
-        return $this->belongsTo(Sport::class, 'sports_id');
+        return $this->belongsTo(Sport::class, 'sport_id');
     }
 
     public function tournamentStaffs()
