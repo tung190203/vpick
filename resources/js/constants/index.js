@@ -24,6 +24,7 @@ export const API_ENDPOINT = {
   FOLLOW: '/follows',
   MINI_TOURNAMENT: '/mini-tournaments',
   COMPETITION_LOCATION: '/competition-locations',
+  TOURNAMENT_TYPE: '/tournament-types',
 };
 
 export const TOURNAMENT_STATUS = {

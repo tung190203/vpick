@@ -4,11 +4,8 @@
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-baseline gap-3">
           <label class="relative flex items-baseline cursor-pointer group">
-            <span>{{ label }}</span>
-            
             <input 
               type="checkbox" 
-              v-model="isChecked"
               class="sr-only peer"
             >
             <span 

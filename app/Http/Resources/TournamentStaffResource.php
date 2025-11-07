@@ -20,7 +20,8 @@ class TournamentStaffResource extends JsonResource
                 return [
                     'id' => $this->user->id,
                     'name' => $this->user->full_name,
-                    'avatar' => $this->user->avatar,
+                    'avatar' => $this->user->avatar_url,
+                    'sports' => UserSportResource::collection($this->user?->sports ?? [])
                 ];
             }),
             'role' => $this->role,

@@ -32,7 +32,8 @@
                                 <h3 class="font-semibold text-gray-900 text-[20px]">
                                     {{ mini.name }}
                                 </h3>
-                                <LockClosedIcon class="w-5 h-5" />
+                                <LockClosedIcon v-if="mini.is_private" class="w-5 h-5" />
+                                <LockOpenIcon v-else class="w-5 h-5" />
                             </div>
 
                             <!-- Time + Location -->
@@ -71,8 +72,12 @@
                                     class="border rounded p-3 flex items-center gap-3 hover:shadow-md transition cursor-pointer">
                                     <CircleStackIcon class="w-6 h-6 text-red-600" />
                                     <div>
-                                        <p class="font-medium text-gray-800">{{ mini.min_rating }} - {{ mini.max_rating
-                                        }} </p>
+                                        <p class="font-medium text-gray-800">
+                                            {{ mini.min_rating != null && mini.max_rating != null
+                                                ? `${mini.min_rating} - ${mini.max_rating}`
+                                                : 'Không giới hạn'
+                                            }}
+                                        </p>
                                         <p class="text-sm text-gray-500">Trung bình điểm DUPR</p>
                                     </div>
                                 </div>
@@ -146,8 +151,8 @@
                                 <div v-if="mini?.staff?.organizer?.length">
                                     <div class="grid grid-cols-2 sm:grid-cols-6 lg:grid-cols-6 gap-4">
                                         <UserCard v-for="(item, index) in mini.staff.organizer" :key="index"
-                                            :name="item.user.full_name" :avatar="item.user.avatar_url" :rating="getUserScore(item.user)"
-                                            status="approved" />
+                                            :name="item.user.full_name" :avatar="item.user.avatar_url"
+                                            :rating="getUserScore(item.user)" status="approved" />
                                         <UserCard :empty="true" />
                                     </div>
                                 </div>
@@ -164,8 +169,9 @@
                                 <div v-if="mini?.participants?.users?.length">
                                     <div class="grid grid-cols-2 sm:grid-cols-6 lg:grid-cols-6 gap-4">
                                         <UserCard v-for="(item, index) in mini.participants.users" :key="index"
-                                            :name="item.user.full_name" :avatar="item.user.avatar_url" :rating="getUserScore(item.user)"
-                                            :status="item.is_confirmed == true ? 'approved': 'pending'" />
+                                            :name="item.user.full_name" :avatar="item.user.avatar_url"
+                                            :rating="getUserScore(item.user)"
+                                            :status="item.is_confirmed == true ? 'approved' : 'pending'" />
                                         <UserCard v-if="mini?.participants?.users?.length < mini.max_players"
                                             :empty="true" />
                                     </div>
@@ -439,8 +445,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div
-                                class="flex-shrink-0 border-t border-gray-200 flex justify-between items-center px-4 py-4">
+                            <div class="flex-shrink-0 border-gray-200 flex justify-between items-center px-4 py-4">
                                 <PhotoIcon class="w-8 h-8 text-[#3E414C] mr-3 cursor-pointer" />
                                 <div class="flex-1 flex items-center relative">
                                     <input type="text" placeholder="Viết tin nhắn"
@@ -455,45 +460,13 @@
             </div>
 
             <!-- Sidebar -->
-            <div class="lg:col-span-1 space-y-6">
-                <div class="bg-white rounded-[8px] p-5 sticky top-4">
-                    <div class="flex items-center justify-center mt-5 rounded-full bg-[#FFF5F5] w-20 h-20 mx-auto">
-                        <UserGroupIcon class="w-10 h-10 text-[#D72D36]" />
-                    </div>
-                    <div class="flex flex-col items-center p-5 space-y-2">
-                        <h3 class="text-gray-800 font-medium text-center text-[20px]">Chia sẻ thông tin</h3>
-                        <p class="text-[#3E414C] text-sm text-center">Hãy chia sẻ thông tin tới bạn bè để cùng tham gia
-                            kèo đấu</p>
-                    </div>
-                    <div class="flex flex-col item-center space-y-3">
-                        <button
-                            class="flex items-center justify-center gap-2 w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium px-2 py-2 rounded transition">
-                            Gửi link
-                            <LinkIcon class="w-4 h-4 inline-block ml-1" />
-                        </button>
-                        <button
-                            class="flex items-center justify-center gap-2 w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium px-2 py-2 rounded transition">
-                            Quét mã QR
-                            <QrCodeIcon class="w-4 h-4 inline-block ml-1" />
-                        </button>
-                        <button
-                            class="flex items-center justify-center gap-2 w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium px-2 py-2 rounded transition">
-                            Mời người chơi
-                            <UsersIcon class="w-4 h-4 inline-block ml-1" />
-                        </button>
-                        <button @click="showInviteModal = true"
-                            class="flex items-center justify-center gap-2 w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium px-2 py-2 rounded transition">
-                            Mời nhóm
-                            <UserMultiple class="w-4 h-4 inline-block ml-1" />
-                        </button>
-                        <button
-                            class="flex items-center justify-center gap-2 w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium px-2 py-2 rounded transition">
-                            Yêu cầu xác nhận KQ
-                            <ClipboardDocumentCheckIcon class="w-4 h-4 inline-block ml-1" />
-                        </button>
-                    </div>
-                </div>
-            </div>
+            <ShareAction :buttons="[
+                { label: 'Gửi link', icon: LinkIcon },
+                { label: 'Quét mã QR', icon: QrCodeIcon },
+                { label: 'Mời người chơi', icon: UsersIcon },
+                { label: 'Mời nhóm', icon: UserMultiple, onClick: () => showInviteModal = true },
+                { label: 'Yêu cầu xác nhận KQ', icon: ClipboardDocumentCheckIcon }
+            ]" :subtitle="'Hãy chia sẻ thông tin tới bạn bè để cùng tham gia kèo đấu'" />
         </div>
 
         <!-- Invite Group Modal -->
@@ -503,14 +476,13 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
-import { ArrowTrendingUpIcon, ChevronRightIcon, LinkIcon, LockClosedIcon, PaperAirplaneIcon, PhotoIcon, QrCodeIcon, UserGroupIcon } from '@heroicons/vue/24/solid'
+import { onMounted, ref } from 'vue'
+import { ArrowTrendingUpIcon, ChevronRightIcon, LinkIcon, LockClosedIcon, LockOpenIcon, PaperAirplaneIcon, PhotoIcon, QrCodeIcon } from '@heroicons/vue/24/solid'
 import {
     CalendarDaysIcon,
     MapPinIcon,
     CircleStackIcon,
     UserIcon,
-    CalendarIcon,
     PencilIcon,
     XCircleIcon,
     UserGroupIcon as UserMultiple,
@@ -524,32 +496,20 @@ import InviteGroup from '@/components/molecules/InviteGroup.vue'
 import MatchCard from '@/components/molecules/MatchCard.vue'
 import CreateMatch from '@/components/molecules/CreateMatch.vue'
 import * as MiniTournamnetService from '@/service/miniTournament.js'
-import { useRouter, useRoute } from 'vue-router'
-
-const router = useRouter()
+import { useRoute } from 'vue-router'
+import ShareAction from '@/components/molecules/ShareAction.vue'
+import { formatEventDate } from '@/composables/formatDatetime.js'
+import { TABS, SUB_TABS } from '@/data/mini/index.js'
 const route = useRoute()
-
 const id = route.params.id
 const mini = ref([])
-
-const tabs = [
-    { name: 'detail', label: 'Chi tiết' },
-    { name: 'participants', label: 'Người tham gia' },
-    { name: 'matches', label: 'Trận đấu' },
-    { name: 'chat', label: 'Trò chuyện' }
-]
-
-const subtabs = [
-    { id: 'ranking', label: 'Xếp hạng' },
-    { id: 'match', label: 'Trận đấu' },
-    { id: 'your-match', label: 'Trận đấu của bạn' }
-]
-
 const activeTab = ref('detail')
 const subActiveTab = ref('ranking')
 const autoApprove = ref(false)
 const showInviteModal = ref(false)
 const showCreateMatchModal = ref(false)
+const tabs = TABS
+const subtabs = SUB_TABS
 
 const handleInvite = (user) => {
     console.log('Invited user:', user)
@@ -559,59 +519,43 @@ const handleCreateMatch = (match) => {
     console.log('Created match:', match)
 }
 
-function formatEventDate(dateString) {
-    const date = new Date(dateString);
+const getUserScore = (user) => {
+    if (!user?.sports?.length || !mini.value?.sport?.id) {
+        return '0'
+    }
 
-    const daysOfWeek = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+    const matchedSport = user.sports.find(s => s.sport_id === mini.value.sport.id)
 
-    const months = [
-        'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
-        'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'
-    ];
+    if (!matchedSport?.scores?.length) {
+        return '0'
+    }
 
-    const dayOfWeek = daysOfWeek[date.getDay()];
-    const day = date.getDate();
-    const month = months[date.getMonth()];
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const vnduprScore = matchedSport.scores.find(sc => sc.score_type === 'vndupr_score')
+    if (vnduprScore) {
+        return parseFloat(vnduprScore.score_value).toFixed(1)
+    }
 
-    return `${dayOfWeek} ${day} ${month} lúc ${hours}:${minutes}`;
+    const personalScore = matchedSport.scores.find(sc => sc.score_type === 'personal_score')
+    if (personalScore) {
+        return parseFloat(personalScore.score_value).toFixed(1)
+    }
+
+    return '0'
 }
 
-const getUserScore = (user) => {
-  if (!user?.sports?.length || !mini.value?.sport?.id) {
-    return '0'
-  }
-
-  const matchedSport = user.sports.find(s => s.sport_id === mini.value.sport.id)
-  
-  if (!matchedSport?.scores?.length) {
-    return '0'
-  }
-
-  const vnduprScore = matchedSport.scores.find(sc => sc.score_type === 'vndupr_score')
-  if (vnduprScore) {
-    return parseFloat(vnduprScore.score_value).toFixed(1)
-  }
-
-  const personalScore = matchedSport.scores.find(sc => sc.score_type === 'personal_score')
-  if (personalScore) {
-    return parseFloat(personalScore.score_value).toFixed(1)
-  }
-
-  return '0'
+const detailMiniTournament = async (id) => {
+    try {
+        const response = await MiniTournamnetService.getMiniTournamentById(id)
+        mini.value = response
+        autoApprove.value = response.auto_approve
+    } catch (error) {
+        console.error('Error fetching mini tournament:', error)
+    }
 }
 
 onMounted(async () => {
     if (id) {
-        try {
-            const response = await MiniTournamnetService.getMiniTournamentById(id)
-            console.log('Mini Tournament Data:', response)
-            mini.value = response
-            autoApprove.value = response.auto_approve
-        } catch (error) {
-            console.error('Error fetching mini tournament:', error)
-        }
+        await detailMiniTournament(id)
     }
 })
 </script>

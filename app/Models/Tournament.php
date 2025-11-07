@@ -40,6 +40,7 @@ class Tournament extends Model
         'created_by',
         'description',
         'status',
+        'is_public_branch',
     ];
 
     protected $appends = ['poster_url'];
@@ -147,8 +148,9 @@ class Tournament extends Model
             'tournamentTypes.groups.matches.participant2.user',
             'tournamentTypes.groups.matches.participant2.team.members',
             'tournamentStaffs',
-            'tournamentStaffs.user',
+            'tournamentStaffs.user.sports.scores',
             'participants',
+            'participants.user.sports.scores',
             'competitionLocation'
         ]);
     }

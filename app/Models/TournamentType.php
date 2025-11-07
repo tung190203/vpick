@@ -153,6 +153,7 @@ class TournamentType extends Model
         switch ($format) {
             case self::FORMAT_MIXED:
                 $baseConfig['format_specific_config'] = [
+                    'seeding_rules' => [self::SEED_LEVEL, self::SEED_SAME_CLUB_AVOID, self::SEED_RANDOM],
                     'ranking' => [
                         self::RANKING_WIN_DRAW_LOSE_POINTS,
                         self::RANKING_WIN_RATE,

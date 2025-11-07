@@ -45,7 +45,7 @@
             <nav class="lg:hidden flex flex-col space-y-1 px-2 flex-1 mt-6 overflow-y-auto">
                 <!-- Player -->
                 <template v-if="getRole === ROLE.PLAYER">
-                    <RouterLink to="/dashboard" :class="mobileLinkClass('/')">
+                    <RouterLink to="/" :class="mobileLinkClass('/')">
                         <HomeIcon class="w-5 h-5 flex-shrink-0" />
                         <span
                             class="font-medium whitespace-nowrap overflow-hidden transition-all duration-300"

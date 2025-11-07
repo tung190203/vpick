@@ -113,7 +113,7 @@ class TournamentController extends Controller
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
-            'poster' => 'nullable|image|max:350',
+            'poster' => 'nullable|image|max:5120',
             'sport_id' => 'nullable|exists:sports,id',
             'name' => 'nullable|string',
             'competition_location_id' => 'nullable|exists:competition_locations,id',
@@ -139,6 +139,7 @@ class TournamentController extends Controller
             'auto_approve' => 'nullable|boolean',
             'description' => 'nullable|string',
             'club_id' => 'nullable|exists:clubs,id',
+            'is_public_branch' => 'nullable|boolean',
         ]);
     
         $tournament = Tournament::findOrFail($id);
@@ -176,6 +177,9 @@ class TournamentController extends Controller
                 });
                 $type->delete();
             });
+            $tournament->tournamentStaffs()->delete();
+            $tournament->teams()->delete();
+            $tournament->participants()->delete();
             $tournament->delete();
         });
 
