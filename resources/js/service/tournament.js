@@ -17,3 +17,14 @@ export const storeTournament = async (tournamentData) => {
   return axiosInstance.post(`${tournamentEndpoint}/store`, tournamentData)
     .then((response) => response.data.data);
 }
+
+export const updateTournament = async (id, tournamentData) => {
+  return axiosInstance.post(`${tournamentEndpoint}/update/${id}`, tournamentData)
+    .then((response) => response.data.data);
+}
+
+export const deleteTournament = async (id) => {
+  console.log("Deleting tournament with ID:", id);
+  return axiosInstance.post(`${tournamentEndpoint}/delete`, { id })
+    .then((response) => response.data.data);
+}

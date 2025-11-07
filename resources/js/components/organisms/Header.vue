@@ -15,10 +15,10 @@
         </div>
 
         <!-- Navigation (Desktop only >= 1024px) -->
-        <nav class="hidden lg:flex items-center space-x-4 lg:gap-4 sm:gap-2">
+        <nav class="hidden lg:flex items-center space-x-1 lg:gap-4 sm:gap-2">
             <!-- Player -->
             <template v-if="getRole === ROLE.PLAYER">
-                <RouterLink to="/dashboard" :class="linkClass('/')">
+                <RouterLink to="/" :class="linkClass('/')">
                     <HomeIcon class="w-5 h-5" />
                     Trang chủ
                 </RouterLink>

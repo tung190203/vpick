@@ -25,6 +25,7 @@ import CompleteRegistrationPage from '@/components/pages/CompleteRegistrationPag
 import VerifyChangePasswordPage from '@/components/pages/VerifyChangePasswordPage.vue'
 import CompleteProfilePage from '@/components/pages/CompleteProfilePage.vue'
 import UpdateProfilePage from '@/components/pages/UpdateProfilePage.vue'
+import NotFoundPage from '@/components/pages/NotFoundPage.vue'
 import { ROLE } from '@/constants/index.js'
 
 export const route = [
@@ -254,12 +255,17 @@ export const route = [
     }
   },
   {
+    path: '/not-found',
+    name: 'not-found',
+    component: NotFoundPage
+  },
+  {
     path: '/forbidden',
     name: 'forbidden',
     component: ForbiddenPage,
   },
   {
     path: '/:pathMatch(.*)*',
-    redirect: '/'
+    redirect: '/not-found'
   }
 ]
