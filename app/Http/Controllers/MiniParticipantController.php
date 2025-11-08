@@ -156,12 +156,6 @@ class MiniParticipantController extends Controller
     {
         $participant = MiniParticipant::with('miniTournament')->findOrFail($participantId);
 
-        $miniTournamentWithStaff = $participant->miniTournament->load('staff');
-        $isOrganizer = $miniTournamentWithStaff->hasOrganizer(Auth::id());
-        if (!$isOrganizer) {
-            return ResponseHelper::error('Bạn không có quyền duyệt người tham gia này.', 403);
-        }
-
         if ($participant->is_confirmed) {
             return ResponseHelper::success(new MiniParticipantResource($participant), 'Bạn đã chấp nhận lời mời trước đó.', 200);
         }
