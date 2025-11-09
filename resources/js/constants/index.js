@@ -25,6 +25,8 @@ export const API_ENDPOINT = {
   MINI_TOURNAMENT: '/mini-tournaments',
   COMPETITION_LOCATION: '/competition-locations',
   TOURNAMENT_TYPE: '/tournament-types',
+  TEAMS: '/teams',
+  PARTICIPANT: '/participants',
 };
 
 export const TOURNAMENT_STATUS = {

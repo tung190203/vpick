@@ -49,6 +49,7 @@ class TournamentResource extends JsonResource
             'is_private' => $this->is_private,
             'is_public_branch' => $this->is_public_branch,
             'auto_approve' => $this->auto_approve,
+            'status' => $this->status,
             'status_text' => $this->status_text,
             'description' => $this->description,
             'created_by' => $this->whenLoaded('createdBy', function () {

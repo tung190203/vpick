@@ -19,6 +19,7 @@ class TeamResource extends JsonResource
             'name' => $this->name,
             'tournament_id' => $this->tournament_id,
             'tournament_type_id' => $this->tournament_type_id,
+            'avatar' => $this->avatar,
             'members' => $this->members->map(function ($member) {
                 return [
                     'id' => $member->id,

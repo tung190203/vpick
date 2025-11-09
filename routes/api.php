@@ -101,6 +101,7 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
         Route::post('/confirm/{participantId}', [ParticipantController::class, 'confirm']);
         Route::post('/accept/{participantId}', [ParticipantController::class, 'acceptInvite']);
         Route::match(['get', 'post'], '/invite/{tournamentId}', [ParticipantController::class, 'invite']);
+        Route::post('/invite-user/{tournamentId}', [ParticipantController::class, 'inviteUsers']);
         Route::post('/delete/{participantId}', [ParticipantController::class, 'delete']);
     });
 

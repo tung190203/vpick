@@ -40,14 +40,17 @@ class TeamController extends Controller
 
     public function createTeam(Request $request, $tournamentId)
     {
-        $request->validate(
+        $validated = $request->validate(
             [
                 'name' => 'required|string|max:255',
+                'avatar' => 'nullable|image|max:2048',
             ],
             [
                 'name.required' => 'Vui lòng nhập tên đội',
                 'name.string' => 'Tên đội phải là chuỗi ký tự',
                 'name.max' => 'Tên đội không được vượt quá 255 ký tự',
+                'avatar.image' => 'Ảnh đại diện phải là một tệp hình ảnh',
+                'avatar.max' => 'Ảnh đại diện không được vượt quá 2MB',
             ]
         );
 
@@ -55,10 +58,15 @@ class TeamController extends Controller
         if ($tournament->max_team && $tournament->teams()->count() >= $tournament->max_team) {
             return ResponseHelper::error('Đã đạt số lượng đội tối đa cho giải đấu', 400);
         }
+        $avatarPath = null;
+        if ($request->hasFile('avatar')) {
+            $avatarPath = $request->file('avatar')->store('team_avatars', 'public');
+        }
 
         $team = Team::create([
-            'name' => $request->name,
-            'tournament_id' => $tournamentId,
+            'name' => $validated['name'],
+            'tournament_id' => $tournament->id,
+            'avatar' => $avatarPath,
         ]);
 
 
@@ -127,7 +135,7 @@ class TeamController extends Controller
         $teams = [];
         for ($i = 0; $i < $maxTeams; $i++) {
             $teams[] = Team::create([
-                'name' => 'Đội ' . ($i + 1),
+                'name' => 'Đội số ' . ($i + 1),
                 'tournament_id' => $tournamentId,
             ]);
         }

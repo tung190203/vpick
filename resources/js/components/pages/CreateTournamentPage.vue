@@ -7,7 +7,7 @@
                         <h3 class="font-semibold text-gray-900 text-[20px]">Môn thể thao</h3>
                     </div>
                     <p class="text-[#838799]">Môn thể thao của tôi • {{ sports.length }}</p>
-                    <Swiper :slides-per-view="'auto'" :space-between="8" :freeMode="true"
+                    <Swiper :slides-per-view="'auto'" :space-between="8" :freeMode="true" @swiper="onSwiperInit"
                         :mousewheel="{ forceToAxis: true }" :modules="modules" class="mt-2 !pb-2">
                         <SwiperSlide v-for="sport in sports" :key="sport.id" class="!w-32">
                             <div @click="selectedSportId = sport.id" :class="[
@@ -392,10 +392,14 @@
                         </div>
                     </div>
                 </div>
-                <div>
+                <div class="flex items-center justify-start gap-4">
                     <button @click="handleSubmit"
                         class="w-full max-w-[228px] py-3 bg-[#D72D36] text-white rounded font-semibold hover:bg-red-700 transition-colors">
-                        Tạo giải đấu
+                        {{ btnTitle }}
+                    </button>
+                    <button @click="router.back()" v-if="isEditMode"
+                        class="w-fit px-4 py-3 bg-gray-200 text-gray-700 rounded font-semibold hover:bg-gray-300 transition-colors">
+                        Quay lại
                     </button>
                 </div>
             </div>
@@ -422,10 +426,15 @@ import { genderOptions } from '@/constants/genderOption';
 import { levels } from '@/constants/levels';
 import { ageGroupOptions } from '@/constants/ageGroupOption';
 import { useFormattedDate } from '@/composables/formatedDate'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import { watch } from 'vue';
 
 const router = useRouter()
+const route = useRoute()
 const modules = [FreeMode, Mousewheel]
+const tournamentId = route.params.id || null
+const isEditMode = computed(() => !!tournamentId)
+const btnTitle = computed(() => isEditMode.value ? 'Chỉnh sửa giải đấu' : 'Tạo giải đấu');
 
 // Constants
 const durationOptions = [
@@ -513,6 +522,17 @@ const { formattedDate: formattedRegistrationClosedAt } = useFormattedDate(regist
 const durationLabel = computed(() => durationOptions.find(d => d.value === duration.value)?.label || 'Chọn thời lượng')
 const durationInMinutes = computed(() => duration.value)
 
+const swiperInstance = ref(null);
+const onSwiperInit = (swiper) => {
+  swiperInstance.value = swiper;
+};
+
+watch(selectedSportId, (id) => {
+  const index = sports.value.findIndex(s => s.id === id);
+  if (index !== -1 && swiperInstance.value) {
+    swiperInstance.value.slideTo(index);
+  }
+});
 
 // =================================================================================
 // REFS CHO PHẦN PHÍ GIẢI ĐẤU
@@ -791,7 +811,6 @@ const handleSubmit = async () => {
     const earlyDeadline = formatToISOString(earlyRegistrationDeadline.value)
     const closedDeadline = formatToISOString(registrationClosedAt.value)
 
-
     const getNumericLevel = (level) => {
         if (level === 'Không giới hạn') return null
         return parseFloat(level)
@@ -821,7 +840,25 @@ const handleSubmit = async () => {
         description: tournamentNote.value || null,
     }
 
-    await createTournament(data)
+    if(isEditMode.value) {
+        await updateTournament(tournamentId, data)
+        return
+    } else {
+        await createTournament(data)
+    }
+}
+
+const updateTournament = async (id, data) => {
+    try {
+        await TournamentService.updateTournament(id, data)
+        toast.success('Chỉnh sửa giải đấu thành công!')
+        setTimeout(() => {
+            router.push({ name: 'tournament-detail', params: { id: id } })
+        }, 1000)
+    } catch (error) {
+        console.error('Error updating tournament:', error)
+        toast.error('Chỉnh sửa giải đấu thất bại. Vui lòng kiểm tra lại thông tin.')
+    }
 }
 
 const createTournament = async (data) => {
@@ -877,9 +914,96 @@ const fetchCompetitionLocations = async (keyword) => {
         isLocationDropdownOpen.value = false
     }
 }
+const prefillForm = (data) => {
+    if (!data) return;
+
+    // Thông tin cơ bản
+    selectedSportId.value = data.sport_id || null;
+    tournamentName.value = data.name || '';
+    tournamentNote.value = data.description || '';
+
+    // Địa điểm - nếu có competition_location
+    if (data.competition_location) {
+        selectedLocation.value = data.competition_location;
+        locationKeyword.value = data.competition_location.name || '';
+    }
+
+    // Thời gian dự kiến bắt đầu
+    if (data.start_date) {
+        date.value = new Date(data.start_date);
+    }
+
+    // Thời gian đăng ký
+    if (data.registration_open_at) {
+        registrationOpenAt.value = new Date(data.registration_open_at);
+    }
+    if (data.early_registration_deadline) {
+        earlyRegistrationDeadline.value = new Date(data.early_registration_deadline);
+    }
+    if (data.registration_closed_at) {
+        registrationClosedAt.value = new Date(data.registration_closed_at);
+    }
+
+    // Thời lượng
+    if (data.duration) {
+        duration.value = data.duration;
+    }
+
+    // DUPR
+    duprEnabled.value = data.enable_dupr ?? true;
+    vnduprEnabled.value = data.enable_vndupr ?? true;
+    
+    // Min/Max Level
+    if (data.min_level !== null && data.min_level !== undefined) {
+        minLevel.value = data.min_level.toString();
+    } else {
+        minLevel.value = 'Không giới hạn';
+    }
+    
+    if (data.max_level !== null && data.max_level !== undefined) {
+        maxLevel.value = data.max_level.toString();
+    } else {
+        maxLevel.value = 'Không giới hạn';
+    }
+
+    // Giới hạn người chơi
+    ageGroup.value = data.age_group ?? 1;
+    genderPolicy.value = data.gender_policy ?? 3;
+
+    // Người tham gia
+    teamCount.value = data.max_team || 1;
+    playerPerTeam.value = data.player_per_team || 2;
+
+    // Phí giải đấu
+    if (data.fee === 'free') {
+        feeType.value = 'free';
+        standardFeeAmount.value = 0;
+        feeAmountInput.value = 0;
+    } else {
+        feeType.value = 'pair';
+        standardFeeAmount.value = Number(data.standard_fee_amount) || standardFeeAmount.value;
+        feeAmountInput.value = Number(data.standard_fee_amount) || standardFeeAmount.value;
+    }
+
+    // Quyền riêng tư
+    isPrivate.value = !!data.is_private ?? false;
+};
+
+const detailTournament = async (id) => {
+    try {
+        const data = await TournamentService.getTournamentById(id);
+        prefillForm(data);
+    } catch (error) {
+        console.error('Error fetching tournament details:', error);
+        throw error;
+    }
+};
 
 onMounted(async () => {
     await fetchSports()
+    if (isEditMode.value) {
+        await detailTournament(tournamentId)
+    }
     // Thêm listener cho sự kiện click toàn cục
     document.addEventListener('click', handleClickOutside)
 })

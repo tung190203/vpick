@@ -1,5 +1,5 @@
 <template>
-    <button @click="$emit('click')" class="w-full flex items-center justify-between py-3">
+    <button @click="$emit('click')" class="w-full flex items-start justify-between py-3">
         <div class="text-left flex-1">
             <div class="text-sm text-gray-900">{{ label }}</div>
             <div v-if="subtitle" class="text-xs text-gray-500 mt-1">{{ subtitle }}</div>

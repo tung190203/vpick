@@ -122,6 +122,22 @@ class MiniTournamentController extends Controller
             $posterPath = $request->file('poster')->store('posters', 'public');
             $miniTournament->update(['poster' => $posterPath]);
         }
+        if($request->has('role_type')){
+            $roleType = $request->input('role_type');
+            if($roleType === MiniTournament::ROLE_ORGANIZER){
+                $miniTournament->participants()->where('user_id', Auth::id())->delete();
+            } else {
+                $existingParticipant = $miniTournament->participants()->where('user_id', Auth::id())->first();
+                if (!$existingParticipant) {
+                    MiniParticipant::create([
+                        'mini_tournament_id' => $miniTournament->id,
+                        'type' => 'user',
+                        'user_id' => Auth::id(),
+                        'is_confirmed' => true,
+                    ]);
+                }
+            }
+        }
         $miniTournament->loadFullRelations();
 
         return ResponseHelper::success(new MiniTournamentResource($miniTournament), 'Mini Tournament updated successfully');

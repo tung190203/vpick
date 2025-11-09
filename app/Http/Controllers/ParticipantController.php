@@ -7,11 +7,9 @@ use App\Http\Resources\ParticipantResource;
 use App\Models\Participant;
 use App\Models\Tournament;
 use App\Models\User;
-use Google\Service\Docs\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class ParticipantController extends Controller
 {
@@ -139,6 +137,7 @@ class ParticipantController extends Controller
         $midLevel = ($tournament->min_level + $tournament->max_level) / 2;
 
         $query = User::query()
+        ->whereIn('visibility', [User::VISIBILITY_PUBLIC])
             // 1. Có môn thể thao phù hợp
             ->whereHas(
                 'sports',
@@ -212,16 +211,18 @@ class ParticipantController extends Controller
     {
         $validated = $request->validate([
             'per_page' => 'nullable|integer|min:1|max:200',
+            'name' => 'nullable|string|max:255',
         ]);
 
         $tournament = Tournament::findOrFail($tournamentId);
-        $perPage = $validated['per_page'] ?? 20;
+        $perPage = $validated['per_page'] ?? Participant::PER_PAGE;
         $midLevel = ($tournament->min_level + $tournament->max_level) / 2;
 
         $user = Auth::user();
 
         // Bắt đầu query từ danh sách bạn bè
         $query = $user->friends()
+            ->whereIn('visibility', [User::VISIBILITY_PUBLIC, User::VISIBILITY_FRIEND_ONLY])
             // 1. Có môn thể thao phù hợp
             ->whereHas(
                 'sports',
@@ -232,8 +233,8 @@ class ParticipantController extends Controller
             ->whereHas(
                 'vnduprScores',
                 fn($q) =>
-                $q->where('score_value', '>=', $tournament->min_level)
-                    ->where('score_value', '<=', $tournament->max_level)
+                $q->where('score_value', '>=', $tournament->min_level ?? 0)
+                    ->where('score_value', '<=', $tournament->max_level ?? 0)
                     ->where('score_type', 'vndupr_score')
             )
             // 3. Tuổi
@@ -261,6 +262,9 @@ class ParticipantController extends Controller
             ->selectRaw('CASE WHEN users.location_id = ? THEN 1 ELSE 0 END as same_location', [$tournament->location_id])
             ->orderByDesc('same_location')
             ->orderBy('level_diff');
+            if (!empty($validated['name'])) {
+                $query->where('users.full_name', 'like', '%' . $validated['name'] . '%');
+            }
 
         $friends = $query->paginate($perPage);
 
@@ -269,10 +273,12 @@ class ParticipantController extends Controller
                 'id' => $user->id,
                 'name' => $user->full_name,
                 'avatar' => $user->avatar_url,
-                'gender' => $user->gender_text,
+                'gender' => $user->gender,
+                'gender_text' => $user->gender_text,
                 'age' => $user->age_years,
                 'location_id' => $user->location_id,
                 'level' => $user->level,
+                'visibility' => $user->visibility,
                 'same_location' => (bool) $user->same_location,
                 'match_score' => $this->calculateMatchScore($user, $tournament),
             ];
@@ -347,13 +353,14 @@ class ParticipantController extends Controller
         ]);
 
         $tournament = Tournament::findOrFail($tournamentId);
-        $perPage = $validated['per_page'] ?? 20;
+        $perPage = $validated['per_page'] ?? Participant::PER_PAGE;
         $midLevel = ($tournament->min_level + $tournament->max_level) / 2;
 
         $user = Auth::user();
 
         // Bắt đầu query từ toàn bộ user (trừ chính mình)
         $query = User::query()
+        ->whereIn('visibility', [User::VISIBILITY_PUBLIC])
             ->where('users.id', '!=', $user->id)
             // 1. Có môn thể thao phù hợp
             ->whereHas(
@@ -425,6 +432,51 @@ class ParticipantController extends Controller
         return ResponseHelper::success($data, 'Lấy danh sách người dùng thành công', 200, $meta);
     }
 
+    public function inviteUsers(Request $request, $tournamentId)
+    {
+        $validated = $request->validate([
+            'user_ids' => 'required|array|min:1',
+            'user_ids.*' => 'exists:users,id',
+        ]);
+    
+        $tournament = Tournament::findOrFail($tournamentId);
+        $organizer = Auth::user();
+
+        if (!$tournament->hasOrganizer($organizer->id)) {
+            return ResponseHelper::error('Bạn không có quyền mời người chơi.', 403);
+        }
+    
+        $existingUserIds = Participant::where('tournament_id', $tournament->id)
+            ->whereIn('user_id', $validated['user_ids'])
+            ->pluck('user_id')
+            ->toArray();
+    
+        $newUserIds = array_diff($validated['user_ids'], $existingUserIds);
+    
+        if (empty($newUserIds)) {
+            return ResponseHelper::error('Tất cả người chơi đã được mời hoặc đã tham gia.', 422);
+        }
+    
+        $insertData = array_map(fn($id) => [
+            'tournament_id' => $tournament->id,
+            'user_id' => $id,
+            'is_confirmed' => false,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ], $newUserIds);
+    
+        $tournament->participants()->insert($insertData);
+    
+        $participants = Participant::where('tournament_id', $tournament->id)
+            ->whereIn('user_id', $newUserIds)
+            ->get();
+        // event(new UsersInvitedToTournament($tournament, $newUserIds));
+        return ResponseHelper::success(
+            ParticipantResource::collection($participants),
+            'Đã gửi lời mời thành công cho ' . count($newUserIds) . ' người chơi.'
+        );
+    }
+    
     public function delete($participantId)
     {
         $participant = Participant::with('tournament')->findOrFail($participantId);
