@@ -13,6 +13,7 @@ class Team extends Model
         'name',
         'tournament_id',
         'tournament_type_id',
+        'avatar',
     ];
 
     const PER_PAGE = 15;

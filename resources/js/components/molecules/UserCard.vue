@@ -3,7 +3,7 @@
     <!-- Avatar Container -->
     <div class="relative">
       <!-- Empty State -->
-      <div v-if="empty"
+      <div v-if="empty" @click="handleClick"
         :class="[
           `w-${computedSize} h-${computedSize}`,
           'border-2 border-dashed border-gray-400 rounded-full flex items-center justify-center bg-white cursor-pointer hover:border-blue-500 transition-colors'
@@ -43,7 +43,7 @@
       </div>
 
       <!-- Edit Button (for empty state) -->
-      <button v-if="empty"
+      <button v-if="empty" @click="handleClick"
         :class="[
           `absolute -bottom-1 -right-1 w-${badgeSize} h-${badgeSize}`,
           'bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors flex items-center justify-center border-2 border-white'
@@ -97,6 +97,12 @@ const props = defineProps({
     default: 11,
   },
 })
+
+const emit = defineEmits(['clickEmpty'])
+
+const handleClick = () => {
+  if (props.empty) emit('clickEmpty')
+}
 
 const computedSize = computed(() => `${props.size}`)
 const iconSize = computed(() => `${Math.floor(props.size / 2)}`)

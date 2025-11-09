@@ -77,6 +77,15 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         self::EVENING
     ];
 
+    const VISIBILITY_PUBLIC = 'open';
+    const VISIBILITY_FRIEND_ONLY = 'friend-only';
+    const VISIBILITY_PRIVATE = 'private';
+    const VISIBILITY_OPTIONS = [
+        self::VISIBILITY_PUBLIC,
+        self::VISIBILITY_FRIEND_ONLY,
+        self::VISIBILITY_PRIVATE
+    ];
+
     const LOW_RATING = 'low';
     const MEDIUM_RATING = 'medium';
     const HIGH_RATING = 'high';
@@ -473,6 +482,14 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
                 ->where('followable_type', User::class)
                 ->exists();
     }
+
+    public function isFollowing(User $otherUser): bool
+    {
+        return $this->followings()
+            ->where('followable_id', $otherUser->id)
+            ->where('followable_type', User::class)
+            ->exists();
+    }    
 
     public function friends()
     {

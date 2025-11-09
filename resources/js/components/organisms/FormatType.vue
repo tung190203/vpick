@@ -2,7 +2,7 @@
     <div class="min-h-screen">
         <div class="flex items-center gap-4 p-4 bg-white">
             <ArrowLeftIcon class="w-6 h-6 text-gray-600 hover:text-[#D72D36] cursor-pointer" @click="goBack" />
-            <h1 class="text-lg font-semibold">{{ title }}</h1>
+            <h1 class="text-lg font-semibold">{{ data.name }}</h1>
         </div>
 
         <div class="bg-white px-4 pt-4">
@@ -47,11 +47,11 @@
                                 :is-open="openSettingId === `seeding-${index}`"
                                 @click="toggleDropdown(`seeding-${index}`)" />
                             <div v-if="openSettingId === `seeding-${index}`"
-                                class="absolute right-0 top-28 -translate-y-1/2 z-20 w-auto min-w-[200px] p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
+                                class="absolute right-0 top-28 -translate-y-1/2 z-20 w-auto p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
                                 <div class="space-y-1">
                                     <button v-for="(option, id) in SEEDING_RULES_MAP" :key="id"
                                         @click="selectRankingRule(`seeding-${index}`, index, id)"
-                                        class="w-full text-left px-3 py-2 text-sm rounded-lg transition-colors"
+                                        class="block w-full text-left px-3 py-2 text-sm rounded-lg transition-colors"
                                         :class="{ 'font-semibold bg-red-50 text-[#D72D36]': seedingRules[index] === parseInt(id), 'hover:bg-gray-100': seedingRules[index] !== parseInt(id) }">
                                         {{ option.label }}
                                     </button>
@@ -68,11 +68,11 @@
                                 :subtitle="method.subtitle" :is-open="openSettingId === `ranking-${index}`"
                                 @click="toggleDropdown(`ranking-${index}`)" />
                             <div v-if="openSettingId === `ranking-${index}`"
-                                class="absolute right-0 top-44 -translate-y-1/2 z-20 w-auto min-w-[200px] p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
+                                class="absolute right-0 top-44 -translate-y-1/2 z-20 w-auto p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
                                 <div class="space-y-1">
                                     <button v-for="(option, id) in RANKING_RULES_MAP" :key="id"
                                         @click="selectRankingRule(`ranking-${index}`, index, id)"
-                                        class="w-full text-left px-3 py-2 text-sm rounded-lg transition-colors"
+                                        class="w-full block text-left px-3 py-2 text-sm rounded-lg transition-colors"
                                         :class="{ 'font-semibold bg-red-50 text-[#D72D36]': calculationMethods[index] === parseInt(id), 'hover:bg-gray-100': calculationMethods[index] !== parseInt(id) }">
                                         {{ option.label }}
                                     </button>
@@ -106,10 +106,10 @@
                         <SettingItem label="Số set đấu" :value="`${setsPerMatch} Set`"
                             :is-open="openSettingId === 'set'" @click="toggleDropdown('set')" />
                         <div v-if="openSettingId === 'set'"
-                            class="absolute right-0 top-28 -translate-y-1/2 z-20 w-auto min-w-[150px] p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
+                            class="absolute right-0 top-28 -translate-y-1/2 z-20 w-auto p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
                             <div class="space-y-1">
                                 <button v-for="n in 3" :key="n" @click="selectMatchRule('set', n)"
-                                    class="w-full text-left px-3 py-2 text-sm rounded-lg transition-colors"
+                                    class="w-full block text-left px-3 py-2 text-sm rounded-lg transition-colors"
                                     :class="{ 'font-semibold bg-red-50 text-[#D72D36]': setsPerMatch === n, 'hover:bg-gray-100': setsPerMatch !== n }">
                                     {{ n }} Set
                                 </button>
@@ -123,7 +123,7 @@
                         <div v-if="openSettingId === 'point'"
                             class="absolute right-0 top-16 -translate-y-1/2 z-20 w-auto min-w-[150px] p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
                             <input type="number" :value="pointsToWinSet"
-                                @input="selectMatchRule('point', $event.target.value)" min="1"
+                                @input="updateMatchPoint('point', $event.target.value)" min="1"
                                 class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-[#D72D36] focus:border-[#D72D36]"
                                 placeholder="Nhập số điểm" />
                         </div>
@@ -134,11 +134,11 @@
                             :value="winningRule === 1 ? 'Cách biệt 1 điểm' : 'Cách biệt 2 điểm'"
                             :is-open="openSettingId === 'winrule'" @click="toggleDropdown('winrule')" />
                         <div v-if="openSettingId === 'winrule'"
-                            class="absolute right-0 top-24 -translate-y-1/2 z-20 w-auto min-w-[200px] p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
+                            class="absolute right-0 top-24 -translate-y-1/2 z-20 w-auto p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
                             <div class="space-y-1">
                                 <button v-for="option in winningRuleOptions" :key="option.id"
                                     @click="selectMatchRule('winrule', option.id)"
-                                    class="w-full text-left px-3 py-2 text-sm rounded-lg transition-colors"
+                                    class="w-full block text-left px-3 py-2 text-sm rounded-lg transition-colors"
                                     :class="{ 'font-semibold bg-red-50 text-[#D72D36]': winningRule === option.id, 'hover:bg-gray-100': winningRule !== option.id }">
                                     {{ option.label }}
                                 </button>
@@ -152,7 +152,7 @@
                         <div v-if="openSettingId === 'maxpoint'"
                             class="absolute right-0 top-20 -translate-y-1/2 z-20 w-auto min-w-[200px] p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
                             <input type="number" :value="maxPoints"
-                                @input="selectMatchRule('maxpoint', $event.target.value)" :min="pointsToWinSet"
+                                @input="updateMatchPoint('maxpoint', $event.target.value)" :min="pointsToWinSet"
                                 class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-[#D72D36] focus:border-[#D72D36]"
                                 placeholder="Nhập điểm tối đa" />
                             <div class="text-xs text-gray-500 mt-2 p-1">Điểm tối đa phải ≥ Điểm kết thúc ({{
@@ -167,15 +167,11 @@
                             subtitle="Hệ thống sẽ tự động đổi sân ở set cuối dựa trên điểm đạp nhập"
                             :is-open="openSettingId === 'serve'" @click="toggleDropdown('serve')" />
                         <div v-if="openSettingId === 'serve'"
-                            class="absolute right-0 top-36 -translate-y-1/2 z-20 w-auto min-w-[200px] p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
-                            <div class="space-y-1">
-                                <button v-for="option in serveOptions" :key="option.id"
-                                    @click="selectMatchRule('serve', option.id)"
-                                    class="w-full text-left px-3 py-2 text-sm rounded-lg transition-colors"
-                                    :class="{ 'font-semibold bg-red-50 text-[#D72D36]': serveChangeInterval === option.id, 'hover:bg-gray-100': serveChangeInterval !== option.id }">
-                                    {{ option.label }}
-                                </button>
-                            </div>
+                            class="absolute right-0 top-24 -translate-y-1/2 z-20 w-auto min-w-[200px] p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
+                            <input type="number" :value="serveChangeInterval"
+                                @input="updateMatchPoint('serve', $event.target.value)" :min="0"
+                                class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-[#D72D36] focus:border-[#D72D36]"
+                                placeholder="Nhập số điểm (0 = Không có)" />
                             <div class="text-xs text-gray-500 mt-2 p-1">Phải nhỏ hơn Điểm kết thúc ({{ pointsToWinSet }}
                                 Điểm).</div>
                         </div>
@@ -196,11 +192,11 @@
                                 :is-open="openSettingId === `seeding-${index}`"
                                 @click="toggleDropdown(`seeding-${index}`)" />
                             <div v-if="openSettingId === `seeding-${index}`"
-                                class="absolute right-0 top-28 -translate-y-1/2 z-20 w-auto min-w-[200px] p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
+                                class="absolute right-0 top-28 -translate-y-1/2 z-20 w-auto p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
                                 <div class="space-y-1">
                                     <button v-for="(option, id) in SEEDING_RULES_MAP" :key="id"
                                         @click="selectRankingRule(`seeding-${index}`, index, id)"
-                                        class="w-full text-left px-3 py-2 text-sm rounded-lg transition-colors"
+                                        class="block w-full text-left px-3 py-2 text-sm rounded-lg transition-colors"
                                         :class="{ 'font-semibold bg-red-50 text-[#D72D36]': seedingRules[index] === parseInt(id), 'hover:bg-gray-100': seedingRules[index] !== parseInt(id) }">
                                         {{ option.label }}
                                     </button>
@@ -217,11 +213,11 @@
                                 :subtitle="method.subtitle" :is-open="openSettingId === `ranking-${index}`"
                                 @click="toggleDropdown(`ranking-${index}`)" />
                             <div v-if="openSettingId === `ranking-${index}`"
-                                class="absolute right-0 top-44 -translate-y-1/2 z-20 w-auto min-w-[200px] p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
+                                class="absolute right-0 top-44 -translate-y-1/2 z-20 w-auto p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
                                 <div class="space-y-1">
                                     <button v-for="(option, id) in RANKING_RULES_MAP" :key="id"
                                         @click="selectRankingRule(`ranking-${index}`, index, id)"
-                                        class="w-full text-left px-3 py-2 text-sm rounded-lg transition-colors"
+                                        class="w-full block text-left px-3 py-2 text-sm rounded-lg transition-colors"
                                         :class="{ 'font-semibold bg-red-50 text-[#D72D36]': calculationMethods[index] === parseInt(id), 'hover:bg-gray-100': calculationMethods[index] !== parseInt(id) }">
                                         {{ option.label }}
                                     </button>
@@ -244,10 +240,10 @@
                         <SettingItem label="Số set đấu" :value="`${setsPerMatch} Set`"
                             :is-open="openSettingId === 'set'" @click="toggleDropdown('set')" />
                         <div v-if="openSettingId === 'set'"
-                            class="absolute right-0 top-28 -translate-y-1/2 z-20 w-auto min-w-[150px] p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
+                            class="absolute right-0 top-28 -translate-y-1/2 z-20 w-auto p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
                             <div class="space-y-1">
                                 <button v-for="n in 3" :key="n" @click="selectMatchRule('set', n)"
-                                    class="w-full text-left px-3 py-2 text-sm rounded-lg transition-colors"
+                                    class="w-full block text-left px-3 py-2 text-sm rounded-lg transition-colors"
                                     :class="{ 'font-semibold bg-red-50 text-[#D72D36]': setsPerMatch === n, 'hover:bg-gray-100': setsPerMatch !== n }">
                                     {{ n }} Set
                                 </button>
@@ -260,7 +256,7 @@
                         <div v-if="openSettingId === 'point'"
                             class="absolute right-0 top-20 -translate-y-1/2 z-20 w-auto min-w-[150px] p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
                             <input type="number" :value="pointsToWinSet"
-                                @input="selectMatchRule('point', $event.target.value)" min="1"
+                                @input="updateMatchPoint('point', $event.target.value)" min="1"
                                 class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-[#D72D36] focus:border-[#D72D36]"
                                 placeholder="Nhập số điểm" />
                         </div>
@@ -270,11 +266,11 @@
                             :value="winningRule === 1 ? 'Cách biệt 1 điểm' : 'Cách biệt 2 điểm'"
                             :is-open="openSettingId === 'winrule'" @click="toggleDropdown('winrule')" />
                         <div v-if="openSettingId === 'winrule'"
-                            class="absolute right-0 top-24 -translate-y-1/2 z-20 w-auto min-w-[200px] p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
+                            class="absolute right-0 top-24 -translate-y-1/2 z-20 w-auto p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
                             <div class="space-y-1">
                                 <button v-for="option in winningRuleOptions" :key="option.id"
                                     @click="selectMatchRule('winrule', option.id)"
-                                    class="w-full text-left px-3 py-2 text-sm rounded-lg transition-colors"
+                                    class="w-full block text-left px-3 py-2 text-sm rounded-lg transition-colors"
                                     :class="{ 'font-semibold bg-red-50 text-[#D72D36]': winningRule === option.id, 'hover:bg-gray-100': winningRule !== option.id }">
                                     {{ option.label }}
                                 </button>
@@ -287,7 +283,7 @@
                         <div v-if="openSettingId === 'maxpoint'"
                             class="absolute right-0 top-24 -translate-y-1/2 z-20 w-auto min-w-[200px] p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
                             <input type="number" :value="maxPoints"
-                                @input="selectMatchRule('maxpoint', $event.target.value)" :min="pointsToWinSet"
+                                @input="updateMatchPoint('maxpoint', $event.target.value)" :min="pointsToWinSet"
                                 class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-[#D72D36] focus:border-[#D72D36]"
                                 placeholder="Nhập điểm tối đa" />
                             <div class="text-xs text-gray-500 mt-2 p-1">Điểm tối đa phải ≥ Điểm kết thúc ({{
@@ -301,15 +297,11 @@
                             subtitle="Hệ thống sẽ tự động đổi sân ở set cuối dựa trên điểm đạp nhập"
                             :is-open="openSettingId === 'serve'" @click="toggleDropdown('serve')" />
                         <div v-if="openSettingId === 'serve'"
-                            class="absolute right-0 top-36 -translate-y-1/2 z-20 w-auto min-w-[200px] p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
-                            <div class="space-y-1">
-                                <button v-for="option in serveOptions" :key="option.id"
-                                    @click="selectMatchRule('serve', option.id)"
-                                    class="w-full text-left px-3 py-2 text-sm rounded-lg transition-colors"
-                                    :class="{ 'font-semibold bg-red-50 text-[#D72D36]': serveChangeInterval === option.id, 'hover:bg-gray-100': serveChangeInterval !== option.id }">
-                                    {{ option.label }}
-                                </button>
-                            </div>
+                            class="absolute right-0 top-24 -translate-y-1/2 z-20 w-auto min-w-[200px] p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
+                            <input type="number" :value="serveChangeInterval"
+                                @input="updateMatchPoint('serve', $event.target.value)" :min="0"
+                                class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-[#D72D36] focus:border-[#D72D36]"
+                                placeholder="Nhập số điểm (0 = Không có)" />
                             <div class="text-xs text-gray-500 mt-2 p-1">Phải nhỏ hơn Điểm kết thúc ({{ pointsToWinSet }}
                                 Điểm).</div>
                         </div>
@@ -330,11 +322,11 @@
                                 :subtitle="method.subtitle" :is-open="openSettingId === `ranking-${index}`"
                                 @click="toggleDropdown(`ranking-${index}`)" />
                             <div v-if="openSettingId === `ranking-${index}`"
-                                class="absolute right-0 top-44 -translate-y-1/2 z-20 w-auto min-w-[200px] p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
+                                class="absolute right-0 top-44 -translate-y-1/2 z-20 w-auto p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
                                 <div class="space-y-1">
                                     <button v-for="(option, id) in RANKING_RULES_MAP" :key="id"
                                         @click="selectRankingRule(`ranking-${index}`, index, id)"
-                                        class="w-full text-left px-3 py-2 text-sm rounded-lg transition-colors"
+                                        class="w-full block text-left px-3 py-2 text-sm rounded-lg transition-colors"
                                         :class="{ 'font-semibold bg-red-50 text-[#D72D36]': calculationMethods[index] === parseInt(id), 'hover:bg-gray-100': calculationMethods[index] !== parseInt(id) }">
                                         {{ option.label }}
                                     </button>
@@ -349,10 +341,10 @@
                         <SettingItem label="Số set đấu" :value="`${setsPerMatch} Set`"
                             :is-open="openSettingId === 'set'" @click="toggleDropdown('set')" />
                         <div v-if="openSettingId === 'set'"
-                            class="absolute right-0 top-28 -translate-y-1/2 z-20 w-auto min-w-[150px] p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
+                            class="absolute right-0 top-28 -translate-y-1/2 z-20 w-auto p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
                             <div class="space-y-1">
                                 <button v-for="n in 3" :key="n" @click="selectMatchRule('set', n)"
-                                    class="w-full text-left px-3 py-2 text-sm rounded-lg transition-colors"
+                                    class="w-full block text-left px-3 py-2 text-sm rounded-lg transition-colors"
                                     :class="{ 'font-semibold bg-red-50 text-[#D72D36]': setsPerMatch === n, 'hover:bg-gray-100': setsPerMatch !== n }">
                                     {{ n }} Set
                                 </button>
@@ -365,7 +357,7 @@
                         <div v-if="openSettingId === 'point'"
                             class="absolute right-0 top-20 -translate-y-1/2 z-20 w-auto min-w-[150px] p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
                             <input type="number" :value="pointsToWinSet"
-                                @input="selectMatchRule('point', $event.target.value)" min="1"
+                                @input="updateMatchPoint('point', $event.target.value)" min="1"
                                 class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-[#D72D36] focus:border-[#D72D36]"
                                 placeholder="Nhập số điểm" />
                         </div>
@@ -375,11 +367,11 @@
                             :value="winningRule === 1 ? 'Cách biệt 1 điểm' : 'Cách biệt 2 điểm'"
                             :is-open="openSettingId === 'winrule'" @click="toggleDropdown('winrule')" />
                         <div v-if="openSettingId === 'winrule'"
-                            class="absolute right-0 top-24 -translate-y-1/2 z-20 w-auto min-w-[200px] p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
+                            class="absolute right-0 top-24 -translate-y-1/2 z-20 w-auto p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
                             <div class="space-y-1">
                                 <button v-for="option in winningRuleOptions" :key="option.id"
                                     @click="selectMatchRule('winrule', option.id)"
-                                    class="w-full text-left px-3 py-2 text-sm rounded-lg transition-colors"
+                                    class="w-full block text-left px-3 py-2 text-sm rounded-lg transition-colors"
                                     :class="{ 'font-semibold bg-red-50 text-[#D72D36]': winningRule === option.id, 'hover:bg-gray-100': winningRule !== option.id }">
                                     {{ option.label }}
                                 </button>
@@ -392,7 +384,7 @@
                         <div v-if="openSettingId === 'maxpoint'"
                             class="absolute right-0 top-24 -translate-y-1/2 z-20 w-auto min-w-[200px] p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
                             <input type="number" :value="maxPoints"
-                                @input="selectMatchRule('maxpoint', $event.target.value)" :min="pointsToWinSet"
+                                @input="updateMatchPoint('maxpoint', $event.target.value)" :min="pointsToWinSet"
                                 class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-[#D72D36] focus:border-[#D72D36]"
                                 placeholder="Nhập điểm tối đa" />
                             <div class="text-xs text-gray-500 mt-2 p-1">Điểm tối đa phải ≥ Điểm kết thúc ({{
@@ -406,15 +398,11 @@
                             subtitle="Hệ thống sẽ tự động đổi sân ở set cuối dựa trên điểm đạp nhập"
                             :is-open="openSettingId === 'serve'" @click="toggleDropdown('serve')" />
                         <div v-if="openSettingId === 'serve'"
-                            class="absolute right-0 top-36 -translate-y-1/2 z-20 w-auto min-w-[200px] p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
-                            <div class="space-y-1">
-                                <button v-for="option in serveOptions" :key="option.id"
-                                    @click="selectMatchRule('serve', option.id)"
-                                    class="w-full text-left px-3 py-2 text-sm rounded-lg transition-colors"
-                                    :class="{ 'font-semibold bg-red-50 text-[#D72D36]': serveChangeInterval === option.id, 'hover:bg-gray-100': serveChangeInterval !== option.id }">
-                                    {{ option.label }}
-                                </button>
-                            </div>
+                            class="absolute right-0 top-24 -translate-y-1/2 z-20 w-auto min-w-[200px] p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
+                            <input type="number" :value="serveChangeInterval"
+                                @input="updateMatchPoint('serve', $event.target.value)" :min="0"
+                                class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-[#D72D36] focus:border-[#D72D36]"
+                                placeholder="Nhập số điểm (0 = Không có)" />
                             <div class="text-xs text-gray-500 mt-2 p-1">Phải nhỏ hơn Điểm kết thúc ({{ pointsToWinSet }}
                                 Điểm).</div>
                         </div>
@@ -457,7 +445,7 @@
                 </div>
                 <div class="text-sm text-gray-600">
                     <div>Số Đội</div>
-                    <div class="font-semibold text-gray-900">{{ totalTeams }}</div>
+                    <div class="font-semibold text-gray-900">{{ data.max_team ?? 0 }}</div>
                 </div>
                 <button @click="handleSubmit"
                     class="bg-[#D72D36] text-white px-11 py-2 rounded font-medium hover:bg-red-600 transition-colors">
@@ -480,9 +468,9 @@ import directIcon from '@/assets/images/direct.svg';
 import roundRobinIcon from '@/assets/images/round-robin.svg';
 
 const props = defineProps({
-    title: {
-        type: String,
-        default: 'Pickleball Giao hữu nội bộ ABC'
+    data: {
+        type: Object,
+        required: true
     }
 });
 const emit = defineEmits(['update:config', 'submit']);
@@ -556,11 +544,14 @@ const selectMatchRule = (id, value) => {
     const numValue = Number(value);
 
     if (id === 'set') setsPerMatch.value = numValue;
-    else if (id === 'point') pointsToWinSet.value = numValue;
     else if (id === 'winrule') winningRule.value = numValue;
-    else if (id === 'maxpoint') maxPoints.value = numValue;
     else if (id === 'serve') serveChangeInterval.value = numValue;
 
+    openSettingId.value = null;
+};
+
+const updateMatchPoint = (id, value) => {
+    const numValue = Number(value);
     if (id === 'point' && numValue > 0) {
         pointsToWinSet.value = numValue;
 
@@ -573,8 +564,6 @@ const selectMatchRule = (id, value) => {
     } else if (id === 'maxpoint' && numValue >= pointsToWinSet.value) {
         maxPoints.value = numValue;
     }
-
-    openSettingId.value = null;
 };
 
 const selectRankingRule = (id, index, value) => {
@@ -607,16 +596,70 @@ const displayCalculationMethods = computed(() => {
     }));
 });
 
+const FORMAT_MIXED = 1;
+const FORMAT_ELIMINATION = 2;
+const FORMAT_ROUND_ROBIN = 3;
+const totalTeams = computed(() => props.data.max_team ?? 0);
 const totalMatches = computed(() => {
-    if (activeTab.value === 'mixed') {
-        return format.value === '1' ? 13 : 7;
+    const numLegs = parseInt(format.value);
+    const teams = totalTeams.value;
+
+    if (!teams || teams < 2) {
+        return 0;
+    }
+
+    let currentFormat;
+    if (activeTab.value === 'roundRobin') {
+        currentFormat = FORMAT_ROUND_ROBIN;
     } else if (activeTab.value === 'direct') {
-        return 7;
+        currentFormat = FORMAT_ELIMINATION;
     } else {
-        return 28;
+        currentFormat = FORMAT_MIXED;
+    }
+
+    let matches = 0;
+
+    switch (currentFormat) {
+        case FORMAT_ROUND_ROBIN:
+            matches = (teams * (teams - 1) / 2);
+            return Math.floor(matches * numLegs);
+
+        case FORMAT_ELIMINATION:
+            const hasThirdDirect = thirdPlaceMatch.value;
+            matches = teams - 1;
+            if (hasThirdDirect) {
+                matches += 1;
+            }
+            return Math.floor(matches * numLegs);
+
+        case FORMAT_MIXED:
+        default:
+            const numGroups = tables.value;
+            const groupSize = numGroups ? Math.floor(teams / numGroups) : 0;
+
+            if (groupSize < 2) {
+                return 0;
+            }
+
+            const groupMatches = (groupSize * (groupSize - 1) / 2) * numGroups * numLegs;
+
+            const numAdvancingTeamsPerGroup = teamsToKnockout.value;
+
+            const qualifiedTeams = numAdvancingTeamsPerGroup * numGroups;
+
+            let knockoutMatches = 0;
+            if (qualifiedTeams >= 2) {
+                const hasThirdMixed = thirdPlaceMatch.value;
+                knockoutMatches = qualifiedTeams - 1;
+
+                if (hasThirdMixed) {
+                    knockoutMatches += 1;
+                }
+            }
+
+            return Math.floor(groupMatches + (knockoutMatches * numLegs));
     }
 });
-const totalTeams = computed(() => 8);
 
 const tournamentConfigJson = computed(() => {
     const baseConfig = {

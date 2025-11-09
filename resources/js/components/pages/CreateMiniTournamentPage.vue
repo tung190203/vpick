@@ -7,7 +7,7 @@
                         <h3 class="font-semibold text-gray-900 text-[20px]">Môn thể thao</h3>
                     </div>
                     <p class="text-[#838799]">Môn thể thao của tôi • {{ sports.length }}</p>
-                    <Swiper :slides-per-view="'auto'" :space-between="8" :freeMode="true"
+                    <Swiper :slides-per-view="'auto'" :space-between="8" :freeMode="true" @swiper="onSwiperInit"
                         :mousewheel="{ forceToAxis: true }" :modules="modules" class="mt-2 !pb-2">
                         <SwiperSlide v-for="sport in sports" :key="sport.id" class="!w-32">
                             <div @click="selectedSportId = sport.id" :class="[
@@ -491,10 +491,14 @@
                     </div>
                 </div>
 
-                <div>
+                <div class="flex items-center justify-start gap-4">
                     <button @click="handleSubmit"
                         class="w-full max-w-[228px] py-3 bg-[#D72D36] text-white rounded font-semibold hover:bg-red-700 transition-colors">
-                        Tạo kèo đấu
+                        {{ btnTitle }}
+                    </button>
+                    <button @click="router.back()" v-if="isEditMode"
+                        class="w-fit px-4 py-3 bg-gray-200 text-gray-700 rounded font-semibold hover:bg-gray-300 transition-colors">
+                        Quay lại
                     </button>
                 </div>
             </div>
@@ -540,7 +544,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import VueDatePicker from '@vuepic/vue-datepicker'
 import '@vuepic/vue-datepicker/dist/main.css'
 import { vi } from 'date-fns/locale'
@@ -566,9 +570,13 @@ import { roleOptions } from '@/constants/roleOption';
 import { lockCancellationOptions } from '@/constants/lockCancellationOption';
 import { durationOptions } from '@/constants/durationOption';
 import { useFormattedDate } from '@/composables/formatedDate'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 const modules = [FreeMode, Mousewheel]
 const router = useRouter()
+const route = useRoute()
+const miniTournamentId = route.params.id || null
+const isEditMode = computed(() => !!miniTournamentId)
+const btnTitle = computed(() => isEditMode.value ? 'Chỉnh sửa kèo đấu' : 'Tạo kèo đấu');
 
 // =================================================================================
 // Refs and State (Existing)
@@ -640,6 +648,18 @@ const minPointValue = computed(() => {
     }
     return 1
 })
+
+const swiperInstance = ref(null);
+const onSwiperInit = (swiper) => {
+  swiperInstance.value = swiper;
+};
+
+watch(selectedSportId, (id) => {
+  const index = sports.value.findIndex(s => s.id === id);
+  if (index !== -1 && swiperInstance.value) {
+    swiperInstance.value.slideTo(index);
+  }
+});
 
 
 const genderPolicy = ref(3)
@@ -979,16 +999,6 @@ const handlePointConfirm = () => {
 // Computed and Submit
 // =================================================================================
 
-// const formattedDate = computed(() => {
-//     if (!date.value) return ''
-//     const d = new Date(date.value)
-//     const day = d.getDate().toString().padStart(2, '0')
-//     const month = (d.getMonth() + 1).toString().padStart(2, '0')
-//     const hour = d.getHours().toString().padStart(2, '0')
-//     const minute = d.getMinutes().toString().padStart(2, '0')
-//     return `T${d.getDay() + 1} ${day} Tháng ${month} lúc ${hour}:${minute}`
-// })
-
 const handleSubmit = async () => {
     let startsAt = null
     if (date.value) {
@@ -1037,7 +1047,25 @@ const handleSubmit = async () => {
         invite_user: []
     }
 
-    await createMiniTournament(data)
+    if(isEditMode.value) {
+        await updateMiniTournament(miniTournamentId, data)
+        return
+    } else {
+        await createMiniTournament(data)   
+    }
+}
+
+const updateMiniTournament = async (id, data) => {
+    try {
+        const res = await MiniTournamentService.updateMiniTournament(id, data)
+        toast.success('Chỉnh sửa kèo đấu thành công!')
+        setTimeout(() => {
+            router.push({ name: 'mini-tournament-detail', params: { id: miniTournamentId } })
+        }, 1000)
+    } catch (error) {
+        console.error('Error updating mini tournament:', error)
+        toast.error('Cập nhật kèo đấu thất bại. Vui lòng kiểm tra lại thông tin.')
+    }
 }
 
 const createMiniTournament = async (data) => {
@@ -1094,8 +1122,73 @@ const fetchCompetitionLocations = async (keyword) => {
     }
 }
 
+const prefillForm = (data) => {
+    if(!data) return;
+    // Thông tin cơ bản
+    selectedSportId.value = data?.sport.id || null;
+    tournamentName.value = data?.name || '';
+    tournamentNote.value = data?.description || '';
+    selectedType.value = data?.match_type || 1;
+    // Ngày giờ - địa điểm  - người chơi
+    if(data?.starts_at) {
+        date.value = new Date(data.starts_at);
+    }
+    if(data?.duration_minutes) {
+        durationMinutes.value = data.duration_minutes;
+        const durationOption = durationOptions.find(option => option.value === data.duration_minutes);
+        selectedDuration.value = durationOption ? durationOption.label : '';
+    }
+    if(data?.competition_location) {
+        selectedLocation.value = data.competition_location;
+        locationKeyword.value = data.competition_location.name || '';
+    }
+    playerCount.value = data?.max_players || 1;
+    privacy.value = data?.is_private ? 'Riêng tư' : 'Công khai';
+    // Phí
+    fee.value = data?.fee || 'none';
+    feeAmount.value = data?.fee_amount || 0;
+    if(feeAmount.value) {
+        formattedFeeAmount.value = feeAmount.value.toLocaleString('vi-VN');
+    } else {
+        formattedFeeAmount.value = '';
+    }
+    // điểm DUPR và VNDUPR
+    duprEnabled.value = data?.enable_dupr || false;
+    vnduprEnabled.value = data?.enable_vndupr || false;
+    minLevel.value = data?.min_rating ? data.min_rating.toString() : 'Không giới hạn';
+    maxLevel.value = data?.max_rating ? data.max_rating.toString() : 'Không giới hạn';
+    // Luật thi đấu
+    setNumber.value = data?.set_number || 1;
+    gamesPerSet.value = data?.games_per_set || 11;
+    pointsDifference.value = data?.points_difference || 2;
+    maxPoints.value = data?.max_points || 11;
+    courtSwitchPoints.value = data?.court_switch_points || 1;
+    // Cài đặt nâng cao
+    genderPolicy.value = data?.gender_policy
+    ageGroup.value = data?.age_group
+    repeatType.value = data?.repeat_type
+    roleType.value = data?.role_type
+    lockCancellation.value = data?.lock_cancellation === 'unlock' ? 0 : data?.lock_cancellation
+    autoApprove.value = data?.auto_approve || false
+    allowParticipantAddFriends.value = data?.allow_participant_add_friends || false
+    sendNotification.value = data?.send_notification || false
+}
+
+const detailMiniTournament = async (id) => {
+    try {
+        const data = await MiniTournamentService.getMiniTournamentById(id);
+        prefillForm(data);
+    } catch (error) {
+        console.error('Error fetching mini tournament details:', error);
+        throw error;
+    }
+};
+
 onMounted(async () => {
     await fetchSports()
+    if(isEditMode.value) {
+        await detailMiniTournament(miniTournamentId);
+    }
     // Thêm listener cho sự kiện click toàn cục
     document.addEventListener('click', handleClickOutside)
 })

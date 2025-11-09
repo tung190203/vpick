@@ -105,7 +105,7 @@
 
                             <!-- Buttons -->
                             <div class="flex flex-wrap gap-3">
-                                <button
+                                <button @click="goToEditPage"
                                     class="flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium px-4 py-2 rounded-md transition">
                                     Chỉnh sửa
                                     <PencilIcon class="w-4 h-4" />
@@ -496,11 +496,12 @@ import InviteGroup from '@/components/molecules/InviteGroup.vue'
 import MatchCard from '@/components/molecules/MatchCard.vue'
 import CreateMatch from '@/components/molecules/CreateMatch.vue'
 import * as MiniTournamnetService from '@/service/miniTournament.js'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import ShareAction from '@/components/molecules/ShareAction.vue'
 import { formatEventDate } from '@/composables/formatDatetime.js'
 import { TABS, SUB_TABS } from '@/data/mini/index.js'
 const route = useRoute()
+const router = useRouter()
 const id = route.params.id
 const mini = ref([])
 const activeTab = ref('detail')
@@ -518,6 +519,13 @@ const handleInvite = (user) => {
 const handleCreateMatch = (match) => {
     console.log('Created match:', match)
 }
+
+const goToEditPage = () => {
+  router.push({ 
+    name: 'edit-mini-tournament', 
+    params: { id: mini.value.id } 
+  });
+};
 
 const getUserScore = (user) => {
     if (!user?.sports?.length || !mini.value?.sport?.id) {

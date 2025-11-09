@@ -24,6 +24,7 @@
         "canvas-confetti": "^1.9.3",
         "chart.js": "^4.5.0",
         "date-fns": "^4.1.0",
+        "lodash.debounce": "^4.0.8",
         "lottie-web": "^5.13.0",
         "pinia": "^3.0.3",
         "swiper": "^11.2.10",

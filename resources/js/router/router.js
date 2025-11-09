@@ -121,6 +121,11 @@ export const route = [
             component: CreateTournamentPage
           },
           {
+            path: ':id/edit',
+            name: 'edit-tournament',
+            component: CreateTournamentPage
+          },
+          {
             path: '',
             name: 'tournament',
             component: TournamentPage
@@ -142,6 +147,11 @@ export const route = [
           {
             path: 'create',
             name: 'create-mini-tournament',
+            component: CreateMiniTournamentPage
+          },
+          {
+            path: ':id/edit',
+            name: 'edit-mini-tournament',
             component: CreateMiniTournamentPage
           },
           {

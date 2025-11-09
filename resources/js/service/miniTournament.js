@@ -12,3 +12,8 @@ export const getMiniTournamentById = async (id) => {
   return axiosInstance.get(`${miniTournamentEndpoint}/${id}`)
     .then((response) => response.data.data);
 }
+
+export const updateMiniTournament = async (id, data) => {
+  return axiosInstance.post(`${miniTournamentEndpoint}/update/${id}`, data)
+    .then((response) => response.data.data);
+}

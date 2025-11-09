@@ -179,11 +179,11 @@
                 </div>
               </div>
               <div class="flex flex-wrap gap-3">
-                <button
+                <button @click="publicTournament"
                   class="flex items-center justify-center gap-2 bg-[#D72D36] hover:bg-white text-white hover:text-[#D72D36] border hover:border-[#D72D36] font-medium px-6 py-2 rounded-md transition">
-                  Công bố giải
+                  {{ tournament?.status == 1 ? 'Công bố giải' : 'Huỷ công bố' }}
                 </button>
-                <button
+                <button @click="goToEditPage"
                   class="flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium px-4 py-2 rounded-md transition">
                   Chỉnh sửa
                   <PencilIcon class="w-4 h-4" />
@@ -200,7 +200,7 @@
             <div v-else-if="activeTab === 'list'" key="list">
               <div class="flex items-center justify-between border-b border-[#BBBFCC] px-3 py-4 mb-4">
                 <p class="font-semibold uppercase">Duyệt yêu cầu tham gia tự động</p>
-                <button @click="autoApprove = !autoApprove"
+                <button @click="toggleAutoApprove"
                   class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
                   :class="autoApprove ? 'bg-[#D72D36]' : 'bg-gray-300'">
                   <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
@@ -242,7 +242,7 @@
                         tournament.max_team * tournament.player_per_team
                       }}
                     </h4>
-                    <span class="text-[#207AD5] text-xs font-semibold cursor-pointer">Mời bạn bè</span>
+                    <span class="text-[#207AD5] text-xs font-semibold cursor-pointer" @click="showInviteFriendModal = true">Mời bạn bè</span>
                   </div>
                   <div v-if="tournament?.tournamnet_participants?.length">
                     <div class="grid grid-cols-2 sm:grid-cols-6 lg:grid-cols-6 gap-4">
@@ -251,7 +251,7 @@
                         :status="item.is_confirmed == true ? 'approved' : 'pending'" />
                       <UserCard
                         v-if="tournament?.tournamnet_participants?.length < (tournament.max_team * tournament.player_per_team)"
-                        :empty="true" />
+                        :empty="true" @clickEmpty="showInviteFriendModal = true" />
                     </div>
                   </div>
                 </div>
@@ -278,34 +278,13 @@
                   <div class="grid grid-cols-2 gap-4">
                     <UserCard :empty="true" />
                     <UserCard :empty="true" />
-                    <UserCard :empty="true" />
-                    <UserCard :empty="true" />
-                  </div>
-                </div>
-                <div class="border border-[#BBBFCC] rounded flex items-center justify-between p-4 mb-4">
-                  <div class="flex items-center gap-3">
-                    <div class="relative w-[4.875rem] h-[4.875rem]">
-                      <div class="w-full h-full rounded-lg overflow-hidden">
-                        <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100" alt="User"
-                          class="w-full h-full object-cover" />
-                      </div>
-                      <button
-                        class="absolute bottom-0 right-0 translate-x-1/4 translate-y-1/4 bg-blue-500 hover:bg-blue-600 text-white rounded-full p-1 shadow-md transition">
-                        <PencilIcon class="w-4 h-4" />
-                      </button>
-                    </div>
-                    <p class="font-medium text-gray-900">Nguyễn Văn A</p>
-                  </div>
-                  <div class="grid grid-cols-2 gap-4">
-                    <UserCard :empty="true" />
-                    <UserCard :empty="true" />
                   </div>
                 </div>
                 <div class="flex items-center justify-start mb-2 mt-28 gap-4">
                   <button
                     class="flex items-center justify-center gap-2 bg-[#D72D36] hover:bg-red-500 text-white font-medium px-4 py-2 rounded-md transition">
                     (+) Thêm đội</button>
-                  <button
+                  <button @click="autoAssign"
                     class="flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium px-4 py-2 rounded-md transition">
                     Tự động chia đội
                   </button>
@@ -347,7 +326,7 @@
                 </template>
 
                 <template v-else>
-                  <FormatType :title="tournament.name" @update:config="handleConfigUpdate" @submit="handleFormSubmit"
+                  <FormatType :data="tournament" @update:config="handleConfigUpdate" @submit="handleFormSubmit"
                     @back="showFormatType = false" />
                 </template>
 
@@ -524,6 +503,7 @@
     <CreateMatch v-model="showCreateMatchModal" @create="handleCreateMatch" />
     <DeleteConfirmationModal v-model="showDeleteModal" title="Xác nhận hủy bỏ giải đấu"
       message="Thao tác này không thể hoàn tác." confirmButtonText="Xác nhận" @confirm="removeTournament" />
+    <InviteFriendModal v-model="showInviteFriendModal" :data="friendList" @invite="handleInviteFriend" @loadMore="loadMoreFriends" :hasMore="hasMore" @search="handleSearch" />
   </div>
 </template>
 
@@ -545,8 +525,11 @@ import {
 import UserCard from '@/components/molecules/UserCard.vue'
 import InviteGroup from '@/components/molecules/InviteGroup.vue'
 import CreateMatch from '@/components/molecules/CreateMatch.vue'
+import InviteFriendModal from '@/components/molecules/InviteFriendModal.vue'
 import * as TournamnetService from '@/service/tournament.js'
 import * as TournamentTypeService from '@/service/tournamentType.js'
+import * as TeamService from '@/service/team.js'
+import * as ParticipantService from '@/service/participant.js'
 import { useRoute, useRouter } from 'vue-router'
 import ShareAction from '@/components/molecules/ShareAction.vue'
 import { toast } from 'vue3-toastify'
@@ -558,7 +541,8 @@ import directIcon from '@/assets/images/direct.svg';
 import roundRobinIcon from '@/assets/images/round-robin.svg';
 import { TABS, LIST_TABS } from '@/data/tournament/index.js'
 import DeleteConfirmationModal from '@/components/molecules/DeleteConfirmationModal.vue'
-import { set } from 'date-fns'
+import debounce from 'lodash.debounce'
+import { de } from 'date-fns/locale'
 
 const { formatDateTime } = useFormatDate()
 const route = useRoute()
@@ -578,10 +562,14 @@ const listActiveTab = ref('staffs')
 const autoApprove = ref(false)
 const publicBracket = ref(false)
 const showInviteModal = ref(false)
+const showInviteFriendModal = ref(false)
 const showCreateMatchModal = ref(false)
 const showDeleteModal = ref(false);
 const isEditingDescription = ref(false);
 const descriptionModel = ref('');
+const friendList = ref([]);
+const meta = ref({})
+const searchTerm = ref('')
 const isDescriptionChanged = computed(() => {
   return descriptionModel.value !== tournament.value.description;
 });
@@ -713,6 +701,11 @@ const handleInvite = (user) => {
   console.log('Invited user:', user)
 }
 
+const handleInviteFriend = async(friend) => {
+  await invite(friend.id);
+  await detailTournament(id);
+}
+
 const handleCreateMatch = (match) => {
   console.log('Created match:', match)
 }
@@ -761,7 +754,11 @@ const updateTournament = async (id, payload) => {
   try {
     const formData = new FormData()
     for (const key in payload) {
-      formData.append(key, payload[key])
+      let value = payload[key]
+    if (typeof value === 'boolean') {
+      value = value ? '1' : '0'
+    }
+    formData.append(key, value)
     }
     await TournamnetService.updateTournament(id, formData)
     toast.success('Cập nhật thông tin giải đấu thành công!')
@@ -771,11 +768,48 @@ const updateTournament = async (id, payload) => {
   }
 }
 
+const toggleAutoApprove = async () => {
+  autoApprove.value = !autoApprove.value
+  await updateAutoApprove(autoApprove.value)
+}
+
+const updateAutoApprove = async (value) => {
+  try {
+    await updateTournament(tournament.value.id, { auto_approve: value })
+    autoApprove.value = value
+  } catch (error) {
+    console.error('Lỗi khi cập nhật chế độ duyệt tự động:', error)
+  }
+}
+
+const goToEditPage = () => {
+  router.push({ 
+    name: 'edit-tournament', 
+    params: { id: tournament.value.id } 
+  });
+};
+
 const saveDescription = async () => {
   await updateTournament(tournament.value.id, { description: descriptionModel.value });
   tournament.value.description = descriptionModel.value;
   isEditingDescription.value = false;
 };
+
+const publicTournament = async () => {
+  const newStatus = tournament.value.status === 1 ? 2 : 1;
+  let res = null;
+
+  try {
+    res = await updateTournament(tournament.value.id, { status: newStatus });
+    if (res && res.status) {
+      tournament.value.status = res.status;
+    } else {
+      tournament.value.status = newStatus;
+    }
+  } catch (error) {
+    console.error("Lỗi khi cập nhật trạng thái:", error);
+  }
+}
 
 const removeTournament = async () => {
   const id = tournament.value.id
@@ -791,9 +825,67 @@ const removeTournament = async () => {
   }
 }
 
+const autoAssign = async () => {
+  try {
+    const teamsResponse = await TeamService.autoAssignTeams(id)
+    const teams = teamsResponse || []
+    if (teams.length === 0) {
+      toast.info('Không có đội nào để phân chia tự động.')
+      return
+    }
+    toast.success('Đã phân chia đội tự động thành công!')
+  } catch (error) {
+    console.error('Lỗi khi phân chia đội tự động:', error)
+    toast.error('Đã xảy ra lỗi khi phân chia đội tự động.')
+  }
+}
+
+const getFriendList = async (page = 1) => {
+  try {
+    const response = await ParticipantService.inviteFriends(id, {
+      page,
+      name: searchTerm.value
+    })
+    if (page === 1) {
+      friendList.value = response.invitations || []
+    } else {
+      friendList.value.push(...response.invitations)
+    }
+    meta.value = response.meta || {}
+  } catch (error) {
+    console.error('Lỗi khi lấy danh sách bạn bè:', error)
+  }
+}
+
+const invite = async (friendId) => {
+  try {
+    await ParticipantService.sendInvitation(id, [friendId]);
+    toast.success('Đã gửi lời mời thành công!');
+  } catch (error) {
+    console.error('Lỗi khi gửi lời mời:', error);
+    toast.error('Đã xảy ra lỗi khi gửi lời mời.');
+  }
+};
+
+const handleSearch = debounce(async (query) => {
+  searchTerm.value = query
+  await getFriendList(1)
+}, 300)
+
+const hasMore = computed(() => {
+  return meta.value.current_page < meta.value.last_page
+})
+
+const loadMoreFriends = async () => {
+  if (hasMore.value) {
+    await getFriendList(meta.value.current_page + 1)
+  }
+}
+
 onMounted(async () => {
   if (id) {
     await detailTournament(id)
+    await getFriendList()
   }
 })
 </script>

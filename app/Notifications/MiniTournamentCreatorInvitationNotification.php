@@ -29,8 +29,8 @@ class MiniTournamentCreatorInvitationNotification extends Notification implement
         return [
             'participant_id' => $this->participant->id,
             'tournament_id' => $this->participant->mini_tournament_id,
-            'title' => 'Bạn được mời tham gia giải đấu',
-            'message' => "Bạn được mời tham gia giải đấu '{$this->participant->miniTournament->name}'",
+            'title' => 'Bạn được mời tham gia kèo đấu',
+            'message' => "Bạn được mời tham gia kèo đấu '{$this->participant->miniTournament->name}'",
             'invited_by' => auth()->id(),
         ];
     }
@@ -40,8 +40,8 @@ class MiniTournamentCreatorInvitationNotification extends Notification implement
         return new BroadcastMessage([
             'participant_id' => $this->participant->id,
             'tournament_id' => $this->participant->mini_tournament_id,
-            'title' => 'Bạn được mời tham gia giải đấu',
-            'message' => "Bạn được mời tham gia giải đấu '{$this->participant->miniTournament->name}'",
+            'title' => 'Bạn được mời tham gia kèo đấu',
+            'message' => "Bạn được mời tham gia kèo đấu '{$this->participant->miniTournament->name}'",
             'invited_by' => auth()->id(),
         ]);
     }
@@ -50,7 +50,7 @@ class MiniTournamentCreatorInvitationNotification extends Notification implement
     {
         return [
             'participant_id' => $this->participant->id,
-            'message' => "Bạn được mời tham gia giải đấu: {$this->participant->miniTournament->name}",
+            'message' => "Bạn được mời tham gia kèo đấu: {$this->participant->miniTournament->name}",
             'invited_by' => auth()->id(),
         ];
     }

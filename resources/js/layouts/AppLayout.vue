@@ -7,7 +7,7 @@
         >
             <Header />
             <main class="flex-1 overflow-y-auto">
-                <router-view />
+                <router-view :key="$route.fullPath" />
             </main>
             <ChatGroup />
         </div>
