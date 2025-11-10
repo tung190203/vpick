@@ -27,6 +27,7 @@ export const API_ENDPOINT = {
   TOURNAMENT_TYPE: '/tournament-types',
   TEAMS: '/teams',
   PARTICIPANT: '/participants',
+  TOURNAMENT_STAFF: '/tournament-staff',
 };
 
 export const TOURNAMENT_STATUS = {

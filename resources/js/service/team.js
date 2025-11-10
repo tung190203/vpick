@@ -7,3 +7,23 @@ export const autoAssignTeams = async (tournamentId) => {
   return axiosInstance.post(`${teamEndPoint}/auto-assign/${tournamentId}`)
     .then((response) => response?.data?.data || null);
 }
+
+export const getTeamsByTournamentId = async (tournamentId) => {
+  return axiosInstance.get(`${teamEndPoint}/index/${tournamentId}`)
+    .then((response) => response?.data?.data || []);
+}
+
+export const updateTeam = async (teamId, teamData) => {
+  return axiosInstance.post(`${teamEndPoint}/update/${teamId}`, teamData)
+    .then((response) => response?.data?.data || null);
+}
+
+export const createTeam = async (tournamentId, teamData) => {
+  return axiosInstance.post(`${teamEndPoint}/create/${tournamentId}`, teamData)
+    .then((response) => response?.data?.data || null);
+}
+
+export const deleteTeam = async (teamId) => {
+  return axiosInstance.delete(`${teamEndPoint}/delete/${teamId}`)
+    .then((response) => response?.data?.data || null);
+}

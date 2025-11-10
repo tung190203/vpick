@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class Team extends Model
 {
@@ -26,5 +27,18 @@ class Team extends Model
     public function members()
     {
         return $this->belongsToMany(User::class, 'team_members', 'team_id', 'user_id');
+    }
+
+    protected function avatar(): Attribute
+    {
+        return Attribute::make(
+            get: fn (string $value = null) => $value
+                ? (
+                    str_starts_with($value, 'http') 
+                        ? $value 
+                        : config('app.frontend_url') . '/storage/' . $value
+                  )
+                : null,
+        );
     }
 }
