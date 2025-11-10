@@ -73,6 +73,37 @@ class TeamController extends Controller
         return ResponseHelper::success(new TeamResource($team->load('members')), 'Tạo đội thành công');
     }
 
+    public function updateTeam(Request $request) {
+        $validated = $request->validate(
+            [
+                'name' => 'sometimes|required|string|max:255',
+                'avatar' => 'nullable|image|max:2048',
+            ],
+            [
+                'name.required' => 'Vui lòng nhập tên đội',
+                'name.string' => 'Tên đội phải là chuỗi ký tự',
+                'name.max' => 'Tên đội không được vượt quá 255 ký tự',
+                'avatar.image' => 'Ảnh đại diện phải là một tệp hình ảnh',
+                'avatar.max' => 'Ảnh đại diện không được vượt quá 2MB',
+            ]
+        );
+
+        $team = Team::findOrFail($request->route('teamId'));
+
+        if (isset($validated['name'])) {
+            $team->name = $validated['name'];
+        }
+
+        if ($request->hasFile('avatar')) {
+            $avatarPath = $request->file('avatar')->store('team_avatars', 'public');
+            $team->avatar = $avatarPath;
+        }
+
+        $team->save();
+
+        return ResponseHelper::success(new TeamResource($team->load('members')), 'Cập nhật đội thành công');
+    }
+
     public function addMember(Request $request, $teamId)
     {
         $request->validate(
@@ -193,5 +224,14 @@ class TeamController extends Controller
         $team->members()->detach($request->user_id);
 
         return ResponseHelper::success($team->load('members'), 'Xóa thành viên khỏi đội thành công');
+    }
+
+    public function deleteTeam($teamId)
+    {
+        $team = Team::findOrFail($teamId);
+        $team->members()->detach();
+        $team->delete();
+
+        return ResponseHelper::success(null, 'Xóa đội thành công');
     }
 }

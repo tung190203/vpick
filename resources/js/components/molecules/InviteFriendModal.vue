@@ -7,13 +7,13 @@
                 <div class="bg-white rounded-lg shadow-xl w-full max-w-lg h-[90%] flex flex-col">
                     <!-- Header -->
                     <div class="flex items-center justify-between p-6">
-                        <h2 class="text-xl font-semibold text-gray-800">Mời bạn bè</h2>
+                        <h2 class="text-xl font-semibold text-gray-800">{{ title }}</h2>
                         <button @click="closeModal" class="text-gray-400 hover:text-gray-600 transition-colors">
                             <XMarkIcon class="w-6 h-6" />
                         </button>
                     </div>
                     <!-- Search and Filter -->
-                    <div class="grid grid-cols-1 gap-3 px-6 py-4">
+                    <div class="grid grid-cols-1 gap-3 px-6">
                         <div class="relative flex items-center">
                             <MagnifyingGlassIcon class="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2" />
                             <input v-model="searchQuery" type="text" placeholder="Tìm kiếm" @input="onSearch"
@@ -22,7 +22,7 @@
                     </div>
 
                     <!-- User List -->
-                    <div class="flex-1 overflow-y-auto px-6 pb-6">
+                    <div class="flex-1 overflow-y-auto px-6 pb-6" v-if="filteredUsers.length > 0">
                         <div v-for="user in filteredUsers" :key="user.id"
                             class="flex items-center gap-3 py-3 border-b border-gray-100 last:border-b-0 cursor-pointer hover:bg-gray-50">
                             <!-- Avatar -->
@@ -44,15 +44,17 @@
                                     <span class="font-semibold text-gray-800">{{ user.name }}</span>
                                     <span :class="[
                                         'px-2 py-0.5 rounded text-xs font-medium',
-                                        user.status === 'open'
+                                        user.visibility === 'open'
                                             ? 'bg-blue-100 text-blue-700'
                                             : 'bg-green-100 text-green-700'
                                     ]">
                                         {{ user.visibility === 'open' ? 'Open' : 'Friend-Only' }}
                                     </span>
                                 </div>
-                                <div class="flex items-center gap-2 text-sm text-gray-500 mt-0.5">
-                                    <img :src="maleIcon" alt="male icon" class="w-4 h-4" />
+                                <div class="flex items-center gap-1 text-sm text-gray-500 mt-0.5">
+                                    <img :src="maleIcon" alt="male icon" class="w-4 h-4" v-if="user.gender == 1"/>
+                                    <img :src="femaleIcon" alt="male icon" class="w-4 h-4" v-else-if="user.gender == 2"/>
+                                    <img src="" alt="" v-else>
                                     <span>{{ user.gender_text }}</span>
                                 </div>
                             </div>
@@ -76,6 +78,11 @@
                             </button>
                         </div>
                     </div>
+                    <div v-else class="flex-1 flex items-center justify-center px-6 pb-6">
+                        <span class="text-gray-500">
+                            {{ emptyText }}
+                        </span>
+                    </div>
                 </div>
             </div>
         </Transition>
@@ -86,6 +93,7 @@
 import { ref, computed } from 'vue'
 import { XMarkIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
 import maleIcon from '@/assets/images/male.svg';
+import femaleIcon from '@/assets/images/female.svg';
 
 const props = defineProps({
     modelValue: {
@@ -97,12 +105,27 @@ const props = defineProps({
         default: () => ({})
     },
     hasMore: Boolean,
+    title: {
+        type: String,
+        default: 'Mời bạn bè'
+    },
+    emptyText: {
+        type: String,
+        default: 'Không tìm thấy bạn bè phù hợp với cài đặt giải đấu hiện tại.'
+    }
 })
 
 const emit = defineEmits(['update:modelValue', 'invite', 'loadMore', 'search'])
 
 const convertLevel = (level) => {
-    return parseFloat(level).toFixed(1)
+    if (level === null || level === undefined || level === '') {
+        return '0';
+    }
+    const floatValue = parseFloat(level);
+    if (isNaN(floatValue)) {
+        return '0';
+    }
+    return floatValue.toFixed(1);
 }
 
 const loadMore = () => {

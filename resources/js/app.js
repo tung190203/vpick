@@ -6,6 +6,8 @@ import App from './App.vue'
 import router from './router'
 import Vue3Toastify from 'vue3-toastify'
 import 'vue3-toastify/dist/index.css'
+import FloatingVue from 'floating-vue';
+import 'floating-vue/dist/style.css';
 
 const pinia = createPinia();
 
@@ -20,5 +22,6 @@ app.use(Vue3Toastify, {
     draggable: true,
     progress: undefined,
 })
+app.use(FloatingVue);
 app.use(router)
 app.mount('#app')

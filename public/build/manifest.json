@@ -1,17 +1,17 @@
 {
   "resources/css/app.css": {
-    "file": "assets/app-CrDSvTCt.css",
+    "file": "assets/app-Cz5N9Fpo.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-Bsvs8zva.js",
+    "file": "assets/app-DeR9H-0O.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "css": [
-      "assets/app-Cz7q8eUT.css",
-      "assets/app-CrDSvTCt.css"
+      "assets/app-PwqBkjrt.css",
+      "assets/app-Cz5N9Fpo.css"
     ],
     "assets": [
       "assets/logo-splash-DOuQK6QO.svg",
@@ -25,6 +25,7 @@
       "assets/default-avatar-Dk-5jadl.png",
       "assets/branch-BNleCFR1.svg",
       "assets/male-gQsu98hE.svg",
+      "assets/female-BwdMQ4_1.svg",
       "assets/mixed-CGHxHovp.svg",
       "assets/direct-DtKxnT17.svg",
       "assets/round-robin-BIBoWfnl.svg",
@@ -56,6 +57,10 @@
   "resources/js/assets/images/facebook-icon.svg": {
     "file": "assets/facebook-icon-Bc72ncmI.svg",
     "src": "resources/js/assets/images/facebook-icon.svg"
+  },
+  "resources/js/assets/images/female.svg": {
+    "file": "assets/female-BwdMQ4_1.svg",
+    "src": "resources/js/assets/images/female.svg"
   },
   "resources/js/assets/images/google-icon.svg": {
     "file": "assets/google-icon-Db3x1qGV.svg",

@@ -24,6 +24,7 @@ use App\Http\Controllers\MiniTournamentController;
 use App\Http\Controllers\SendMessageController;
 use App\Http\Controllers\SportController;
 use App\Http\Controllers\TeamController;
+use App\Http\Controllers\TournamentStaffController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -77,6 +78,10 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
         Route::post('/delete', [TournamentController::class, 'destroy']);
     });
 
+    Route::prefix('tournament-staff')->group(function () {
+        Route::post('/add/{tournamentId}', [TournamentStaffController::class, 'addStaff']);
+    });
+
     Route::prefix('tournament-types')->group(function () {
         Route::post('/store', [TournamentTypeController::class, 'store']);
         Route::match(['put', 'patch'], '/{tournamentType}', [TournamentTypeController::class, 'update']);
@@ -101,16 +106,20 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
         Route::post('/confirm/{participantId}', [ParticipantController::class, 'confirm']);
         Route::post('/accept/{participantId}', [ParticipantController::class, 'acceptInvite']);
         Route::match(['get', 'post'], '/invite/{tournamentId}', [ParticipantController::class, 'invite']);
+        Route::match(['get', 'post'], '/invite-staff/{tournamentId}', [ParticipantController::class, 'inviteStaff']);
         Route::post('/invite-user/{tournamentId}', [ParticipantController::class, 'inviteUsers']);
         Route::post('/delete/{participantId}', [ParticipantController::class, 'delete']);
+        Route::match(['get', 'post'], '/list-invite/{tournamentId}', [ParticipantController::class, 'listInvite']);
     });
 
     Route::prefix('teams')->group(function () {
         Route::match(['get', 'post'], '/index/{tournamentId}', [TeamController::class, 'listTeams']);
         Route::post('/create/{tournamentId}', [TeamController::class, 'createTeam']);
+        Route::post('/update/{teamId}', [TeamController::class, 'updateTeam']);
         Route::post('/add-member/{teamId}', [TeamController::class, 'addMember']);
         Route::post('/remove-member/{teamId}', [TeamController::class, 'removeMember']);
         Route::post('/auto-assign/{tournamentId}', [TeamController::class, 'autoAssignTeams']);
+        Route::delete('/delete/{teamId}', [TeamController::class, 'deleteTeam']);
     });
 
     Route::prefix('club')->group(function () {

@@ -25,6 +25,7 @@ class ListTeamResource extends JsonResource
                     'id' => $member->id,
                     'full_name' => $member->full_name,
                     'avatar' => $member->avatar_url,
+                    'is_confirmed' => true,
                 ];
             }),
         ];

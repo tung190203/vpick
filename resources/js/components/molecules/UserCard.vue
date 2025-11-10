@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col items-center gap-2">
+  <div class="flex flex-col items-center gap-2 max-w-[80px]">
     <!-- Avatar Container -->
     <div class="relative">
       <!-- Empty State -->
@@ -53,7 +53,7 @@
     </div>
 
     <!-- Name -->
-    <div v-if="name" class="text-sm font-medium text-gray-700 text-center">
+    <div v-if="name" class="text-sm font-medium text-gray-700 text-center" v-tooltip="name">
       {{ name }}
     </div>
   </div>
