@@ -222,20 +222,42 @@ class TournamentTypeController extends Controller
     {
         $teamCount = count($teams);
         if ($teamCount < 2) return;
+        $scheduleTeams = collect($teams)->pluck('id')->toArray();
+        $isOdd = $teamCount % 2 !== 0;
+        if ($isOdd) {
+            $scheduleTeams[] = 'BYE';
+            $teamCount++;
+        }
+        $totalRounds = $teamCount - 1; 
+        for ($leg = 1; $leg <= $numLegs; $leg++) {
+            for ($round = 1; $round <= $totalRounds; $round++) {
+                $halfSize = $teamCount / 2;
+                $homeTeams = array_slice($scheduleTeams, 0, $halfSize);
+                $awayTeams = array_slice($scheduleTeams, $halfSize);
+                $awayTeams = array_reverse($awayTeams);
 
-        for ($i = 0; $i < $teamCount; $i++) {
-            for ($j = $i + 1; $j < $teamCount; $j++) {
-                for ($leg = 1; $leg <= $numLegs; $leg++) {
-                    $isReturnLeg = ($leg % 2 == 0);
-                    $home = $isReturnLeg ? $teams[$j]->id : $teams[$i]->id;
-                    $away = $isReturnLeg ? $teams[$i]->id : $teams[$j]->id;
+                for ($i = 0; $i < $halfSize; $i++) {
+                    $homeId = $homeTeams[$i];
+                    $awayId = $awayTeams[$i];
+
+                    if ($homeId === 'BYE' || $awayId === 'BYE') {
+                        continue; 
+                    }
+                    $isReturnLeg = ($leg % 2 === 0);
+                    $finalHomeId = ($isReturnLeg) ? $awayId : $homeId;
+                    $finalAwayId = ($isReturnLeg) ? $homeId : $awayId;
+
                     $type->matches()->create([
-                        'home_team_id' => $home,
-                        'away_team_id' => $away,
+                        'home_team_id' => $finalHomeId,
+                        'away_team_id' => $finalAwayId,
                         'tournament_type_id' => $type->id,
                         'leg' => $leg,
+                        'round' => $round,
                     ]);
                 }
+                $firstTeam = array_shift($scheduleTeams);
+                $lastTeam = array_pop($scheduleTeams);
+                array_unshift($scheduleTeams, $firstTeam, $lastTeam);
             }
         }
     }
@@ -793,6 +815,8 @@ class TournamentTypeController extends Controller
                 return [
                     'id' => $match->id,
                     'leg' => $match->leg,
+                    'round' => $match->round,
+                    'court' => $match->court,
                     'home_team' => $this->formatTeam($match->homeTeam),
                     'away_team' => $this->formatTeam($match->awayTeam),
                     'home_score' => $match->home_score,
@@ -804,7 +828,8 @@ class TournamentTypeController extends Controller
             });
 
         return ResponseHelper::success([
-            'format' => 'round_robin',
+            'format' => TournamentType::FORMAT_ROUND_ROBIN,
+            'format_type_text' => 'round_robin',
             'matches' => $matches,
             'total_matches' => $matches->count(),
         ]);
@@ -859,7 +884,8 @@ class TournamentTypeController extends Controller
         })->values();
 
         return ResponseHelper::success([
-            'format' => 'elimination',
+            'format' => TournamentType::FORMAT_ELIMINATION,
+            'format_type_text' => 'elimination',
             'bracket' => $bracket,
             'total_rounds' => $bracket->count(),
         ]);
@@ -956,7 +982,8 @@ class TournamentTypeController extends Controller
         })->values();
 
         return ResponseHelper::success([
-            'format' => 'mixed',
+            'format' => TournamentType::FORMAT_MIXED,
+            'format_type_text' => 'mixed',
             'pool_stage' => $poolStage,
             'knockout_stage' => $knockoutStage,
         ]);
@@ -1114,16 +1141,11 @@ class TournamentTypeController extends Controller
      */
     private function getRoundName($round, $matchCount)
     {
-        if ($round === 1) return 'Vòng bảng';
+        if ($round === 1) {
+            return 'Vòng bảng';
+        }
         
-        // Dựa vào số trận để xác định tên
-        if ($matchCount === 1) return 'Chung kết';
-        if ($matchCount === 2) return 'Bán kết';
-        if ($matchCount === 4) return 'Tứ kết';
-        if ($matchCount === 8) return 'Vòng 1/8';
-        if ($matchCount === 16) return 'Vòng 1/16';
-        
-        return "Round {$round}";
+        return "Vòng {$round}";
     }
 
     public function getRank($tournament_id)
