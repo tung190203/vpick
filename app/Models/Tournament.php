@@ -41,6 +41,7 @@ class Tournament extends Model
         'description',
         'status',
         'is_public_branch',
+        'is_own_score'
     ];
 
     protected $appends = ['poster_url'];
@@ -143,10 +144,10 @@ class Tournament extends Model
             'createdBy',
             'club',
             'sport',
-            'tournamentTypes.groups.matches.participant1.user',
-            'tournamentTypes.groups.matches.participant1.team.members',
-            'tournamentTypes.groups.matches.participant2.user',
-            'tournamentTypes.groups.matches.participant2.team.members',
+            'tournamentTypes.groups.matches.homeTeam',
+            'tournamentTypes.groups.matches.homeTeam.members',
+            'tournamentTypes.groups.matches.awayTeam',
+            'tournamentTypes.groups.matches.awayTeam.members',
             'tournamentStaffs',
             'tournamentStaffs.user.sports.scores',
             'participants',

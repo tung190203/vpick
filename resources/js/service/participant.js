@@ -30,3 +30,8 @@ export const confirmParticipants = async (participantId) => {
   return axiosInstance.post(`${participantEndpoint}/confirm/${participantId}`)
     .then((response) => response.data.data);
 }
+
+export const getParticipantsNonTeam = async(tournamentId) => {
+  return axiosInstance.post(`${participantEndpoint}/list-member/${tournamentId}`)
+  .then((response) => response?.data?.data);
+}

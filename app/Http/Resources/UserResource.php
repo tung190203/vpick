@@ -38,7 +38,7 @@ class UserResource extends JsonResource
             'play_times' => UserPlayTimeResource::collection($this->whenLoaded('playTimes')),
             'sports' => UserSportResource::collection($this->whenLoaded('sports')),
             'clubs' => ClubResource::collection($this->whenLoaded('clubs')),
-            'is_followed' => $this->isFollowing(auth()->user()),
+            'is_followed' => auth()->check() && $this->isFollowing(auth()->user()),
         ];
     }
 }

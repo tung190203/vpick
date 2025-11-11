@@ -160,10 +160,12 @@ class MiniParticipantController extends Controller
             return ResponseHelper::success(new MiniParticipantResource($participant), 'Bạn đã chấp nhận lời mời trước đó.', 200);
         }
 
-        $miniTournament = MiniTournament::findOrFail($participant->mini_tournament_id);
-
-        if ($miniTournament->max_players && $miniTournament->participants()->where('is_confirmed', true)->count() >= $miniTournament->max_players) {
-            return ResponseHelper::error('Giải đấu đã đạt số lượng người chơi tối đa.', 400);
+        $miniTournament = $participant->miniTournament;
+        if ($miniTournament && $miniTournament->max_players) {
+            $confirmedCount = $miniTournament->participants()->where('is_confirmed', true)->count();
+            if ($confirmedCount >= $miniTournament->max_players) {
+                return ResponseHelper::error('Giải đấu đã đạt số lượng người chơi tối đa.', 400);
+            }
         }
 
         $participant->is_confirmed = true;

@@ -634,17 +634,21 @@ const totalMatches = computed(() => {
 
         case FORMAT_MIXED:
         default:
-            const numGroups = tables.value;
-            const groupSize = numGroups ? Math.floor(teams / numGroups) : 0;
+            const numGroups = parseInt(tables.value);
+            const baseTeamsPerGroup = Math.floor(teams / numGroups);
+            const remainder = teams % numGroups;
+            let totalPoolMatches = 0;
 
-            if (groupSize < 2) {
-                return 0;
+            for (let i = 0; i < numGroups; i++) {
+                const groupSize = baseTeamsPerGroup + (i < remainder ? 1 : 0);
+
+                if (groupSize >= 2) {
+                    const matchesInGroup = (groupSize * (groupSize - 1) / 2);
+                    totalPoolMatches += matchesInGroup;
+                }
             }
-
-            const groupMatches = (groupSize * (groupSize - 1) / 2) * numGroups * numLegs;
-
-            const numAdvancingTeamsPerGroup = teamsToKnockout.value;
-
+            totalPoolMatches = totalPoolMatches * numLegs;
+            const numAdvancingTeamsPerGroup = parseInt(teamsToKnockout.value) || 0;
             const qualifiedTeams = numAdvancingTeamsPerGroup * numGroups;
 
             let knockoutMatches = 0;
@@ -656,8 +660,9 @@ const totalMatches = computed(() => {
                     knockoutMatches += 1;
                 }
             }
+            const totalKnockoutMatches = knockoutMatches * numLegs;
 
-            return Math.floor(groupMatches + (knockoutMatches * numLegs));
+            return Math.floor(totalPoolMatches + totalKnockoutMatches);
     }
 });
 

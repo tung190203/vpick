@@ -26,6 +26,7 @@ import VerifyChangePasswordPage from '@/components/pages/VerifyChangePasswordPag
 import CompleteProfilePage from '@/components/pages/CompleteProfilePage.vue'
 import UpdateProfilePage from '@/components/pages/UpdateProfilePage.vue'
 import NotFoundPage from '@/components/pages/NotFoundPage.vue'
+import TournamentBracketPage from '@/components/pages/TournamentBracketPage.vue'
 import { ROLE } from '@/constants/index.js'
 
 export const route = [
@@ -135,6 +136,11 @@ export const route = [
             name: 'tournament-detail',
             component: TournamentDetail,
             props: true
+          },
+          {
+            path: ':id/branket',
+            name: 'tournament-branket',
+            component: TournamentBracketPage,
           }
         ]
       },      

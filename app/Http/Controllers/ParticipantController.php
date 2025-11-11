@@ -10,6 +10,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class ParticipantController extends Controller
 {
@@ -604,6 +605,36 @@ class ParticipantController extends Controller
         return ResponseHelper::success(null, 'Xoá người tham gia thành công', 200);
     }
 
+    public function getParticipantsNonTeam(Request $request, $tournamentId)
+    {
+        $validated = $request->validate([
+            'per_page' => 'nullable|integer|min:1|max:200',
+        ]);
+        $user_ids_in_teams = DB::table('team_members')
+            ->join('teams', 'team_members.team_id', '=', 'teams.id')
+            ->where('teams.tournament_id', $tournamentId)
+            ->pluck('team_members.user_id')
+            ->unique();
+    
+        $nonTeamParticipants = Participant::with('user.sports')
+            ->where('tournament_id', $tournamentId)
+            ->where('is_confirmed', 1)
+            ->whereNotIn('user_id', $user_ids_in_teams)
+            ->paginate($validated['per_page'] ?? Participant::PER_PAGE);
+
+        $data = [
+            'participants' => $nonTeamParticipants->items()
+        ];
+
+        $meta = [
+            'current_page' => $nonTeamParticipants->currentPage(),
+            'last_page' => $nonTeamParticipants->lastPage(),
+            'total' => $nonTeamParticipants->total(),
+            'per_page' => $nonTeamParticipants->perPage(),
+        ];
+
+        return ResponseHelper::success($data, 'Lấy danh sách người chơi thành công', 200, $meta);
+    }
     /**
      * Lọc theo độ tuổi
      */
