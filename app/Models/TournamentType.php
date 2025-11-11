@@ -263,29 +263,40 @@ class TournamentType extends Model
     
         switch ($this->format) {
             case self::FORMAT_ROUND_ROBIN:
-                $matches = ($totalTeams * ($totalTeams - 1) / 2);
+                $matches = ($totalTeams * ($totalTeams - 1)) / 2;
                 return intval($matches * $numLegs);
-    
             case self::FORMAT_ELIMINATION:
-                $hasThird = !empty($config['has_third_place_match']);
-                $matches = $totalTeams - 1;
-                if ($hasThird) {
+                $hasThird = filter_var($config['has_third_place_match'] ?? false, FILTER_VALIDATE_BOOLEAN);
+                $matches = max(0, $totalTeams - 1);
+                if ($hasThird && $totalTeams >= 3) {
                     $matches += 1;
                 }
                 return intval($matches * $numLegs);
     
             case self::FORMAT_MIXED:
             default:
-                $groupSize = $config['pool_stage']['number_competing_teams'] ?? 0;
-                $numGroups = $groupSize ? intval($totalTeams / $groupSize) : 1;
-                $groupMatches = ($groupSize * ($groupSize - 1) / 2) * $numGroups * $numLegs;
-                $qualified = ($config['pool_stage']['num_advancing_teams'] ?? 0) * $numGroups;
-                $hasThird = !empty($config['has_third_place_match']);
-    
+                $configItem = $config[0] ?? [];
+                $numGroups = max(1, intval($configItem['pool_stage']['number_competing_teams'] ?? 1));
+                $numAdvancing = max(0, intval($configItem['pool_stage']['num_advancing_teams'] ?? 0));
+                $hasThird = filter_var($configItem['has_third_place_match'] ?? false, FILTER_VALIDATE_BOOLEAN);
+                $totalTeams = max(0, intval($totalTeams));
+                $numLegs = max(1, intval($numLegs));
+                $base = intdiv($totalTeams, $numGroups);
+                $rem = $totalTeams % $numGroups;
+                $groupMatches = 0;
+                for ($i = 0; $i < $numGroups; $i++) {
+                    $teamsInGroup = $base + ($i < $rem ? 1 : 0);
+                    if ($teamsInGroup >= 2) {
+                        $groupMatches += ($teamsInGroup * ($teamsInGroup - 1)) / 2;
+                    }
+                }
+                $groupMatches = intval($groupMatches * $numLegs);
+                $qualified = $numAdvancing * $numGroups;
+                $qualified = min($qualified, $totalTeams);
                 $knockoutMatches = 0;
                 if ($qualified >= 2) {
                     $knockoutMatches = $qualified - 1;
-                    if ($hasThird) {
+                    if ($hasThird && $qualified >= 3) {
                         $knockoutMatches += 1;
                     }
                 }
@@ -311,32 +322,43 @@ class TournamentType extends Model
                 $min = ($totalTeams - 1) * $numLegs;
                 $max = $min;
                 break;
-    
             case self::FORMAT_ELIMINATION:
-                $hasThird = !empty($config['has_third_place_match']);
+                $hasThird = filter_var($config['has_third_place_match'] ?? false, FILTER_VALIDATE_BOOLEAN);
                 $min = 1 * $numLegs;
                 $max = ceil(log($totalTeams, 2)) * $numLegs;
-                if ($hasThird) $max += (1 * $numLegs);
+                if ($hasThird && $totalTeams >= 3) {
+                    $max += (1 * $numLegs);
+                }
                 break;
     
             case self::FORMAT_MIXED:
             default:
-                $groupSize = $config['pool_stage']['number_competing_teams'] ?? 0;
-                $numGroups = $groupSize ? intval($totalTeams / $groupSize) : 1;
-                $groupMatchesPerTeam = $groupSize > 1 ? ($groupSize - 1) * $numLegs : 0;
-                $qualified = ($config['pool_stage']['num_advancing_teams'] ?? 0) * $numGroups;
-                $hasThird = !empty($config['has_third_place_match']);
+                $configItem = $config[0] ?? [];
+
+                $numGroups = max(1, intval($configItem['pool_stage']['number_competing_teams'] ?? 1));
+                $numAdvancing = max(0, intval($configItem['pool_stage']['num_advancing_teams'] ?? 0));
+                $hasThird = filter_var($configItem['has_third_place_match'] ?? false, FILTER_VALIDATE_BOOLEAN);
     
+                $totalTeams = max(2, intval($totalTeams));
+                $numLegs = max(1, intval($numLegs));
+                $base = intdiv($totalTeams, $numGroups);
+                $rem = $totalTeams % $numGroups;
+                $minGroupSize = $base;
+                $maxGroupSize = $base + ($rem > 0 ? 1 : 0);
+                $minGroupMatchesPerTeam = max(0, ($minGroupSize - 1) * $numLegs);
+                $maxGroupMatchesPerTeam = max(0, ($maxGroupSize - 1) * $numLegs);
+                $qualified = min($numAdvancing * $numGroups, $totalTeams);
+    
+                $minKO = $maxKO = 0;
                 if ($qualified >= 2) {
                     $minKO = 1 * $numLegs;
                     $maxKO = ceil(log($qualified, 2)) * $numLegs;
-                    if ($hasThird) $maxKO += (1 * $numLegs);
-                } else {
-                    $minKO = $maxKO = 0;
+                    if ($hasThird && $qualified >= 3) {
+                        $maxKO += (1 * $numLegs);
+                    }
                 }
-    
-                $min = $groupMatchesPerTeam + $minKO;
-                $max = $groupMatchesPerTeam + $maxKO;
+                $min = $minGroupMatchesPerTeam + $minKO;
+                $max = $maxGroupMatchesPerTeam + $maxKO;
                 break;
         }
     

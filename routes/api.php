@@ -161,7 +161,7 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
         Route::post('/update/{matchId}', [MiniMatchController::class, 'update']);
         Route::post('/add-set/{matchId}', [MiniMatchController::class, 'addSetResult']);
         Route::delete('/delete-set/{matchId}/{setNumber}', [MiniMatchController::class, 'deleteSetResult']);
-        Route::delete('/delete/{matchId}', [MiniMatchController::class, 'destroy']);
+        Route::match(['delete', 'post'], '/delete', [MiniMatchController::class, 'destroy']);
         // Xác nhận kết quả (QR Code)
         Route::get('/{matchId}/generate-qr', [MiniMatchController::class, 'generateQr']);
         Route::post('/confirm-result/{matchId}', [MiniMatchController::class, 'confirmResult']);
