@@ -483,13 +483,16 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
                 ->exists();
     }
 
-    public function isFollowing(User $otherUser): bool
+    public function isFollowing(?User $otherUser): bool
     {
+        if (!$otherUser) {
+            return false;
+        }
         return $this->followings()
             ->where('followable_id', $otherUser->id)
             ->where('followable_type', User::class)
             ->exists();
-    }    
+    }
 
     public function friends()
     {

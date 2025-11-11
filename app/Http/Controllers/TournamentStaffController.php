@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Tournament;
+use App\Models\TournamentStaff;
 use Illuminate\Http\Request;
 
 class TournamentStaffController extends Controller
@@ -21,7 +22,9 @@ class TournamentStaffController extends Controller
             ], 409);
         }
 
-        $tournament->staff()->attach($staffId);
+        $tournament->staff()->attach($staffId, [
+            'role' => TournamentStaff::ROLE_REFEREE
+        ]);
     
         return response()->json(['message' => 'Thêm người tổ chức thành công'], 201);
     }

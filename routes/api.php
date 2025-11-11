@@ -110,6 +110,7 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
         Route::post('/invite-user/{tournamentId}', [ParticipantController::class, 'inviteUsers']);
         Route::post('/delete/{participantId}', [ParticipantController::class, 'delete']);
         Route::match(['get', 'post'], '/list-invite/{tournamentId}', [ParticipantController::class, 'listInvite']);
+        Route::match(['get', 'post'], '/list-member/{tournamentId}', [ParticipantController::class, 'getParticipantsNonTeam']);
     });
 
     Route::prefix('teams')->group(function () {

@@ -26,14 +26,13 @@
                 <h3 class="font-semibold text-gray-900 text-[20px]">
                   {{ tournament.name }}
                 </h3>
-                <LockClosedIcon v-if="tournament.is_private" class="w-5 h-5" />
-                <LockOpenIcon v-else class="w-5 h-5" />
+                <component :is="tournament.is_private ? LockClosedIcon : LockOpenIcon" class="w-5 h-5" />
               </div>
               <div class="py-4">
                 <div v-if="preview" class="relative">
                   <div class="relative rounded-xl overflow-hidden h-72">
                     <img :src="preview" alt="Preview" class="w-full h-full object-cover" />
-                    <button @click="handleRemove" v-if="tournament?.created_by?.id == getUser.id"
+                    <button @click="handleRemove" v-if="isCreator"
                       class="absolute top-2 right-2 bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-100 transition-colors">
                       <XMarkIcon class="w-5 h-5 text-gray-700" />
                     </button>
@@ -88,7 +87,7 @@
                       <p class="text-gray-500 text-sm">{{ tournament.competition_location?.address }}</p>
                     </div>
                   </div>
-                  <a href="#" class="text-blue-600 text-sm font-medium hover:underline">Hiển thị
+                  <a href="#" class="text-blue-600 text-sm font-medium hover:underline whitespace-nowrap">Hiển thị
                     trên bản đồ</a>
                 </div>
               </div>
@@ -165,7 +164,7 @@
                   <label class="block font-medium text-gray-700 mb-2">Ghi chú về giải đấu</label>
                   <textarea rows="4" placeholder="Ghi chú về giải đấu..." v-model="descriptionModel"
                     class="w-full border border-gray-300 rounded-md p-3 resize-none focus:outline-none focus:ring-1 focus:ring-red-500 placeholder:text-gray-400"
-                    :class="tournament?.created_by?.id == getUser.id ? '' : 'bg-gray-100 cursor-not-allowed'"
+                    :class="isCreator ? '' : 'bg-gray-100 cursor-not-allowed'"
                     :readonly="tournament?.created_by?.id != getUser.id"></textarea>
                   <Transition name="fade">
                     <button v-if="isDescriptionChanged" @click="saveDescription" :disabled="!isDescriptionChanged"
@@ -180,7 +179,7 @@
                   </Transition>
                 </div>
               </div>
-              <div class="flex flex-wrap gap-3" v-if="tournament?.created_by?.id == getUser.id">
+              <div class="flex flex-wrap gap-3" v-if="isCreator">
                 <button @click="publicTournament"
                   class="flex items-center justify-center gap-2 bg-[#D72D36] hover:bg-white text-white hover:text-[#D72D36] border hover:border-[#D72D36] font-medium px-6 py-2 rounded-md transition">
                   {{ tournament?.status == 1 ? 'Công bố giải' : 'Huỷ công bố' }}
@@ -201,7 +200,7 @@
 
             <div v-else-if="activeTab === 'list'" key="list">
               <div class="flex items-center justify-between border-b border-[#BBBFCC] px-3 py-4 mb-4"
-                v-if="tournament?.created_by?.id == getUser.id">
+                v-if="isCreator">
                 <p class="font-semibold uppercase">Duyệt yêu cầu tham gia tự động</p>
                 <button @click="toggleAutoApprove"
                   class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
@@ -233,7 +232,7 @@
                         :name="item.staff.name" :avatar="item.staff.avatar" :rating="getUserScore(item.staff)"
                         status="approved" />
                       <UserCard :empty="true" @click="showInviteStaffModal = true"
-                        v-if="tournament?.created_by?.id == getUser.id" />
+                        v-if="isCreator" />
                     </div>
                   </div>
                 </div>
@@ -247,7 +246,7 @@
                       }}
                     </h4>
                     <span class="text-[#207AD5] text-xs font-semibold cursor-pointer"
-                      v-if="tournament?.created_by?.id == getUser.id" @click="showInviteFriendModal = true">Mời bạn
+                      v-if="isCreator" @click="showInviteFriendModal = true">Mời bạn
                       bè</span>
                   </div>
                   <div v-if="tournament?.tournamnet_participants?.length">
@@ -256,8 +255,18 @@
                         :name="item.user.name" :avatar="item.user.avatar" :rating="getUserScore(item.user)"
                         :status="item.is_confirmed == true ? 'approved' : 'pending'" />
                       <UserCard
-                        v-if="tournament?.tournamnet_participants?.length < (tournament.max_team * tournament.player_per_team) && tournament?.created_by?.id == getUser.id"
+                        v-if="tournament?.tournamnet_participants?.length < (tournament.max_team * tournament.player_per_team) && isCreator"
                         :empty="true" @clickEmpty="showInviteFriendModal = true" />
+                    </div>
+                  </div>
+                  <div v-else>
+                    <div class="flex flex-col justify-center items-center gap-6 p-7">
+                      <div class="flex items-center justify-center my-4 rounded-full bg-[#FFF5F5] w-20 h-20 mx-auto">
+                        <UserMultiple class="w-10 h-10 text-[#D72D36]" />
+                      </div>
+                      <p class="text-gray-700">
+                        Chưa có người tham gia nào trong giải đấu này.
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -293,12 +302,18 @@
                         :status="member.is_confirmed == true ? 'approved' : 'pending'" />
 
                       <UserCard v-for="n in getRemainingSlots(team.members)" :key="`empty-${team.id}-${n}`"
-                        :empty="true" />
+                        :empty="true" @clickEmpty="openInviteUserToTeamModal(team)"/>
                     </div>
                   </div>
                 </template>
+                <template v-else>
+                    <div class="flex flex-col items-center justify-center h-64 text-center text-gray-500 border border-dashed border-gray-300 rounded-lg p-6 mt-8">
+                        <p class="text-lg font-medium">Chưa có đội nào được tạo.</p>
+                        <p class="text-sm">Hãy tạo đội đầu tiên để bắt đầu sắp xếp giải đấu.</p>
+                    </div>
+                </template>
                 <div class="flex items-center justify-start mb-2 mt-28 gap-4"
-                  v-if="tournament?.created_by?.id == getUser.id">
+                  v-if="isCreator">
                   <button @click="openCreateTeamModal"
                     class="flex items-center justify-center gap-2 bg-[#D72D36] hover:bg-red-500 text-white font-medium px-4 py-2 rounded-md transition">
                     (+) Thêm đội</button>
@@ -346,7 +361,7 @@
                         </p>
                       </div>
                       </div>
-                      <button v-if="item.is_confirmed== 0 || tournament?.created_by?.id == getUser.id" @click="confirm(item.participant_id)"
+                      <button v-if="item.is_confirmed== 0 && isCreator" @click="confirm(item.participant_id)"
                       class="px-6 py-2 bg-[#D72D36] text-white font-medium rounded-lg hover:bg-red-700 transition-colors shadow-md">
                       Duyệt
                     </button>
@@ -368,7 +383,7 @@
                       Chưa có thể thức thi đấu nào được thiết lập cho giải đấu này.
                     </p>
 
-                    <button @click="startSetup" v-if="tournament?.created_by?.id == getUser.id"
+                    <button @click="startSetup" v-if="isCreator"
                       class="px-6 py-2 bg-[#D72D36] text-white font-medium rounded-lg hover:bg-red-700 transition-colors shadow-md">
                       Bắt đầu cài đặt thể thức
                     </button>
@@ -383,7 +398,7 @@
               </template>
               <template v-else>
                 <div class="flex items-center justify-between border-b border-[#BBBFCC] px-3 py-4 mb-4"
-                  v-if="tournament?.created_by?.id == getUser.id">
+                  v-if="isCreator">
                   <p class="font-semibold uppercase">Công khai bảng đấu</p>
                   <button @click="togglePublicBranch"
                     class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
@@ -404,12 +419,12 @@
                     <p class="text-gray-700 mb-1 text-xs">
                       {{ displayFormat.description }}
                     </p>
-                    <p class="text-xs underline text-[#4392E0] cursor-pointer"
-                      v-if="tournament?.created_by?.id == getUser.id">Thay đổi thể thức</p>
+                    <p class="text-xs underline text-[#4392E0] cursor-pointer" @click="confirmChangeType"
+                      v-if="isCreator">Thay đổi thể thức</p>
                   </div>
                 </div>
-                <div v-if="publicBracket == true || tournament?.created_by?.id == getUser.id"
-                  class="border border-[#BBBFCC] rounded my-4 px-4 py-3 flex justify-between items-center cursor-pointer hover:shadow-md transition">
+                <div v-if="publicBracket == true || isCreator"
+                  class="border border-[#BBBFCC] rounded my-4 px-4 py-3 flex justify-between items-center cursor-pointer hover:shadow-md transition" @click="openBranketPage">
                   <div class="flex items-center gap-3">
                     <img src="@/assets/images/branch.svg" class="w-5 h-5" alt="">
                     <p>Sơ đồ thi đấu</p>
@@ -452,7 +467,7 @@
                   </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 my-4 pb-4"
-                  :class="tournament?.created_by?.id == getUser.id ? 'border-b' : ''">
+                  :class="isCreator ? 'border-b' : ''">
                   <div>
                     <p class="text-sm font-semibold uppercase">Giá trị điểm</p>
                     <ul class="mt-4 space-y-3">
@@ -485,12 +500,12 @@
                   </div>
                 </div>
                 <p class="text-[#D72D36] text-sm cursor-pointer hover:underline"
-                  v-if="tournament?.created_by?.id == getUser.id">Chia lại cặp đấu</p>
+                  v-if="isCreator">Chia lại cặp đấu</p>
               </template>
             </div>
 
             <div v-else-if="activeTab === 'schedule'" key="schedule" class="flex flex-col h-[70vh]">
-              <p>Lịch thi đấu sẽ được hiển thị ở đây.</p>
+              <ScheduleTab  :isCreator="isCreator" :toggle="isHandleOwnScore" @handle-toggle="handleUpdateOwnScore"/>
             </div>
             <div v-else-if="activeTab === 'discuss'" key="discuss" class="flex flex-col h-[70vh]">
               <div class="flex-1 overflow-y-auto p-4 mx-10 space-y-4 ">
@@ -558,6 +573,8 @@
     <CreateMatch v-model="showCreateMatchModal" @create="handleCreateMatch" />
     <DeleteConfirmationModal v-model="showDeleteModal" title="Xác nhận hủy bỏ giải đấu"
       message="Thao tác này không thể hoàn tác." confirmButtonText="Xác nhận" @confirm="removeTournament" />
+      <DeleteConfirmationModal v-model="showDeleteTournamentTypeModal" title="Xác nhận thay đổi thể thức"
+      message="Thao tác này sẽ xoá toàn bộ các trận đấu và các cài đặt thể thức trước đó" confirmButtonText="Xác nhận" @confirm="removeTournamentType" />
     <InviteFriendModal v-model="showInviteFriendModal" :data="friendList" @invite="handleInviteFriend"
       @loadMore="loadMoreFriends" :hasMore="hasMoreFriend" @search="handleSearchFriends" title="Mời vận động viên"
       emptyText="Không có vận động viên phù hợp với yêu cầu" />
@@ -567,6 +584,14 @@
     <EditTeamModal v-model="isOpenUpdateTeamModal" :data="selectedTeamDetail || {}" :isSaving="isSavingTeam"
       @update-info="handleUpdateInfo" @delete="handleDeleteTeam" />
     <CreateTeamModal v-model="isOpenCreateTeamModal" :isCreating="isLoading" @create-team="handleCreateInfo" />
+    <AddMemberModal
+      v-model="showInviteUserToTeamModal" 
+      :data="nonTeamParticipants" 
+      @add="handleAddUserToTeam"
+      title="Thêm Thành Viên Vào Đội"
+      emptyText="Không có vận động viên nào chưa có đội"
+      :isLoading="isFetchingNonTeamUsers"
+    />
   </div>
 </template>
 
@@ -603,7 +628,7 @@ import FormatType from '@/components/organisms/FormatType.vue'
 import mixedIcon from '@/assets/images/mixed.svg';
 import directIcon from '@/assets/images/direct.svg';
 import roundRobinIcon from '@/assets/images/round-robin.svg';
-import { TABS, LIST_TABS, BACKGROUND_COLORS } from '@/data/tournament/index.js'
+import { TABS, LIST_TABS, BACKGROUND_COLORS, FORMAT_DETAILS } from '@/data/tournament/index.js'
 import DeleteConfirmationModal from '@/components/molecules/DeleteConfirmationModal.vue'
 import EditTeamModal from '@/components/molecules/EditTeamModal.vue'
 import CreateTeamModal from '@/components/molecules/CreateTeamModal.vue'
@@ -612,6 +637,8 @@ import maleIcon from '@/assets/images/male.svg';
 import femaleIcon from '@/assets/images/female.svg';
 import { useUserStore } from '@/store/auth'
 import { storeToRefs } from 'pinia'
+import AddMemberModal from '@/components/molecules/AddMemberModal.vue'
+import ScheduleTab from '@/components/molecules/ScheduleTab.vue'
 
 const userStore = useUserStore()
 const { getUser } = storeToRefs(userStore)
@@ -637,6 +664,7 @@ const showInviteFriendModal = ref(false)
 const showInviteStaffModal = ref(false)
 const showCreateMatchModal = ref(false)
 const showDeleteModal = ref(false);
+const showDeleteTournamentTypeModal = ref(false);
 const isEditingDescription = ref(false);
 const descriptionModel = ref('');
 const friendList = ref([]);
@@ -651,36 +679,75 @@ const selectedTeamDetail = ref(null)
 const isSavingTeam = ref(false);
 const isLoading = ref(false);
 const listHasInvite = ref([])
+const showInviteUserToTeamModal = ref(false);
+const selectedTeam = ref(null);
+const nonTeamParticipants = ref([]);
+const isFetchingNonTeamUsers = ref(false);
+const isHandleOwnScore = ref(false);
 const isDescriptionChanged = computed(() => {
   return descriptionModel.value !== tournament.value.description;
 });
+const isCreator = computed(() => tournament.value?.created_by?.id === getUser.value.id)
 const setupDescription = () => {
   descriptionModel.value = tournament.value.description || '';
   isEditingDescription.value = true;
 };
 
+const handleUpdateOwnScore = debounce(async() => {
+  isHandleOwnScore.value = !isHandleOwnScore.value
+  await updateTournament(tournament.value.id, {is_own_score: isHandleOwnScore.value})
+})
+
+const openBranketPage = () => {
+  router.push({ name: 'tournament-branket', param: { id: id } });
+};
+
+const openInviteUserToTeamModal = async (team) => {
+  if (!isCreator.value) {
+    toast.error('Bạn không có quyền thực hiện thay đổi này')
+    return
+  }
+  selectedTeam.value = team;
+  showInviteUserToTeamModal.value = true;
+  await getNonTeamParticipants();
+};
+
+const getNonTeamParticipants = async () => {
+    isFetchingNonTeamUsers.value = true;
+    try {
+      const res = await ParticipantService.getParticipantsNonTeam(id)
+      if(res) {
+        nonTeamParticipants.value = res?.participants || [];
+      }
+    } catch (error) {
+        toast.error('Đã xảy ra lỗi khi tải danh sách người chơi.');
+    } finally {
+        isFetchingNonTeamUsers.value = false;
+    }
+};
+
+const handleAddUserToTeam = async (user) => {
+    if (!selectedTeam.value || !user.id) return;
+    try {
+        await TeamService.addUserToTeam(selectedTeam.value.id, user.user.id); 
+        toast.success(`Đã thêm ${user.user.name} vào đội ${selectedTeam.value.name}!`);
+        showInviteUserToTeamModal.value = false;
+        await getTeams();
+        await getNonTeamParticipants();
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Đã xảy ra lỗi khi thêm người dùng vào đội.');
+    }
+}
+
 const confirmRemoval = () => {
   showDeleteModal.value = true;
 };
+
+const confirmChangeType = () => {
+  showDeleteTournamentTypeModal.value = true;
+};
 const startSetup = () => {
   showFormatType.value = true;
-};
-const FORMAT_DETAILS = {
-  1: {
-    icon: mixedIcon,
-    title: 'Hỗn hợp',
-    description: 'Bao gồm vòng đấu bảng để chọn đội, sau đó đấu loại trực tiếp để tìm ra đội vô địch.'
-  },
-  2: {
-    icon: directIcon,
-    title: 'Loại trực tiếp',
-    description: 'Đấu loại trực tiếp theo nhánh. Đội thắng sẽ đi tiếp vào vòng trong, đội thua bị loại khỏi nhánh đấu.'
-  },
-  3: {
-    icon: roundRobinIcon,
-    title: 'Vòng tròn',
-    description: 'Các đội thi đấu với nhau một hoặc nhiều lần. Đội có thành tích tốt nhất sẽ vô địch.'
-  }
 };
 
 const backgroundClasses = BACKGROUND_COLORS;
@@ -696,7 +763,6 @@ const getRemainingSlots = (members) => {
   const maxPlayers = tournament.value.player_per_team || 0;
   const currentCount = members ? members.length : 0;
 
-  // Trả về số lượng còn thiếu, đảm bảo không âm
   return Math.max(0, maxPlayers - currentCount);
 };
 
@@ -737,7 +803,6 @@ const storeTournamentType = async (payload) => {
     const response = await TournamnetService.getTournamentById(tournament.value.id);
     tournament.value.tournament_types = response.tournament_types;
   } catch (error) {
-    console.error('Lỗi khi lưu thể thức thi đấu:', error);
     toast.error('Đã xảy ra lỗi khi lưu thể thức thi đấu.');
   }
 };
@@ -771,7 +836,7 @@ const handleFileInputChange = (e) => {
 };
 
 const handleDragOver = () => {
-  if (tournament.value?.created_by?.id !== getUser.value.id) {
+  if (!isCreator.value) {
     toast.error('Bạn không có quyền thực hiện thay đổi này')
     return
   }
@@ -779,7 +844,7 @@ const handleDragOver = () => {
 };
 
 const handleDragLeave = () => {
-  if (tournament.value?.created_by?.id !== getUser.value.id) {
+  if (!isCreator.value) {
     toast.error('Bạn không có quyền thực hiện thay đổi này')
     return
   }
@@ -793,7 +858,7 @@ const handleDrop = (e) => {
 };
 
 const handleClick = () => {
-  if (tournament.value?.created_by?.id !== getUser.value.id) {
+  if (!isCreator.value) {
     toast.error('Bạn không có quyền thực hiện thay đổi này')
     return
   }
@@ -855,13 +920,13 @@ const detailTournament = async (tournamentId) => {
     tournament.value = response
     autoApprove.value = response.auto_approve
     publicBracket.value = response.is_public_branch
+    isHandleOwnScore.value = response.is_own_score
     preview.value = response.poster || null
     if (response.description) {
       isEditingDescription.value = true;
     }
     descriptionModel.value = response.description || '';
   } catch (error) {
-    console.error('Error fetching tournament details:', error)
   }
 }
 
@@ -878,7 +943,6 @@ const updateTournament = async (id, payload) => {
     await TournamnetService.updateTournament(id, formData)
     toast.success('Cập nhật thông tin giải đấu thành công!')
   } catch (error) {
-    console.error('Lỗi khi cập nhật thông tin giải đấu:', error)
     toast.error('Đã xảy ra lỗi khi cập nhật thông tin giải đấu.')
   }
 }
@@ -893,7 +957,6 @@ const updateAutoApprove = async (value) => {
     await updateTournament(tournament.value.id, { auto_approve: value })
     autoApprove.value = value
   } catch (error) {
-    console.error('Lỗi khi cập nhật chế độ duyệt tự động:', error)
   }
 }
 
@@ -907,7 +970,6 @@ const updatePublicBranch = async (value) => {
     await updateTournament(tournament.value.id, { is_public_branch: value })
     publicBracket.value = value
   } catch (error) {
-    console.error('Lỗi khi cập nhật chế độ duyệt tự động:', error)
   }
 }
 
@@ -918,7 +980,6 @@ const confirm = async (participantId) => {
     await detailTournament(id);
     await getListHasInvite();
   } catch (error) {
-    console.error('Lỗi khi xác nhận thành viên:', error)
     toast.error(error.response?.data?.message || 'Đã xảy ra lỗi khi xác nhận thành viên.')
   }
 }
@@ -948,7 +1009,6 @@ const publicTournament = async () => {
       tournament.value.status = newStatus;
     }
   } catch (error) {
-    console.error("Lỗi khi cập nhật trạng thái:", error);
   }
 }
 
@@ -961,8 +1021,24 @@ const removeTournament = async () => {
       router.push('/')
     }, 1500)
   } catch (error) {
-    console.error('Lỗi khi xoá giải đấu:', error)
     toast.error('Đã xảy ra lỗi khi xoá giải đấu.')
+  }
+}
+
+const removeTournamentType = async () => {
+  const tournamentType = tournament.value?.tournament_types?.[0];
+  if (!tournamentType || !tournamentType.id) {
+    toast.error('Không tìm thấy thể thức thi đấu để xoá. Vui lòng thử lại.');
+    return;
+  }
+  try {
+    await TournamentTypeService.deleteTournamentType(tournamentType.id)
+    toast.success('Thể thức thi đấu đã được xoá thành công!')
+    showDeleteTournamentTypeModal.value = false;
+    showFormatType.value = true;
+    await detailTournament(id);
+  } catch (error) {
+    toast.error('Đã xảy ra lỗi khi xoá thể thức thi đấu.')
   }
 }
 
@@ -978,7 +1054,6 @@ const autoAssign = async () => {
     await getTeams();
     toast.success('Đã phân chia đội tự động thành công!')
   } catch (error) {
-    console.error('Lỗi khi phân chia đội tự động:', error)
     toast.error('Đã xảy ra lỗi khi phân chia đội tự động.')
   }
 }
@@ -996,7 +1071,6 @@ const getFriendList = async (page = 1) => {
     }
     meta.value = response.meta || {}
   } catch (error) {
-    console.error('Lỗi khi lấy danh sách bạn bè:', error)
   }
 }
 
@@ -1013,7 +1087,6 @@ const getUserList = async (page = 1) => {
     }
     meta.value = response.meta || {}
   } catch (error) {
-    console.error('Lỗi khi lấy danh sách người dùng:', error)
   }
 }
 
@@ -1022,7 +1095,6 @@ const invite = async (friendId) => {
     await ParticipantService.sendInvitation(id, [friendId]);
     toast.success('Đã gửi lời mời thành công!');
   } catch (error) {
-    console.error('Lỗi khi gửi lời mời:', error);
     toast.error('Đã xảy ra lỗi khi gửi lời mời.');
   }
 };
@@ -1032,7 +1104,6 @@ const inviteStaff = async (userId) => {
     await TournamentStaffService.addTournamentStaff(id, userId);
     toast.success('Thêm thành công');
   } catch (error) {
-    console.error('Lỗi khi thêm:', error);
     toast.error(error.response?.data?.message || 'Đã xảy ra lỗi khi thêm.');
   }
 };
@@ -1072,13 +1143,12 @@ const getTeams = async () => {
     const response = await TeamService.getTeamsByTournamentId(id)
     listTeams.value = response.teams || []
   } catch (error) {
-    console.error('Lỗi khi lấy danh sách đội:', error)
     return []
   }
 }
 
 const openEditTeamModal = (team) => {
-  if (tournament.value?.created_by?.id !== getUser.id) {
+  if (!isCreator.value) {
     return
   }
   isOpenUpdateTeamModal.value = true
@@ -1103,7 +1173,6 @@ const handleUpdateInfo = async (payload) => {
     toast.success('Cập nhật đội thành công!');
     await getTeams();
   } catch (error) {
-    console.error("Lỗi khi cập nhật đội:", error);
     toast.error(error.response?.data?.message || 'Đã xảy ra lỗi khi cập nhật đội.');
   } finally {
     isSavingTeam.value = false;
@@ -1117,7 +1186,6 @@ const handleDeleteTeam = async (teamId) => {
     isOpenUpdateTeamModal.value = false;
     await getTeams();
   } catch (error) {
-    console.error("Lỗi khi xoá đội:", error);
     toast.error(error.response?.data?.message || 'Đã xảy ra lỗi khi xoá đội.');
   } finally {
     isSavingTeam.value = false;
@@ -1137,7 +1205,6 @@ const handleCreateInfo = async (payload) => {
     toast.success('Tạo đội thành công!');
     await getTeams();
   } catch (error) {
-    console.error("Lỗi khi tạo đội:", error);
     toast.error(error.response?.data?.message || 'Đã xảy ra lỗi khi tạo đội.');
   } finally {
     isLoading.value = false;
@@ -1153,16 +1220,17 @@ const getListHasInvite = async (page = 1) => {
       listHasInvite.value = response.invitations || []; 
     }
   } catch (error) {
-    console.error('Lỗi khi lấy danh sách đã mời:', error);
   }
 };
 onMounted(async () => {
   if (id) {
-    await detailTournament(id)
-    await getFriendList()
-    await getUserList()
-    await getTeams()
-    await getListHasInvite()
+    await Promise.all([
+      detailTournament(id),
+      getFriendList(),
+      getUserList(),
+      getTeams(),
+      getListHasInvite()
+    ])
   }
 })
 </script>
