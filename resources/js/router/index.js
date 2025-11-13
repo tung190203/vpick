@@ -24,7 +24,7 @@ router.beforeEach((to, from, next) => {
 
   if (!loginToken) {
     if (!hasSeenOnboarding && to.name !== "onboarding") {
-      return next({ name: "onboarding" }); // show onboarding trước
+      return next({ name: "onboarding", query: { redirect: to.fullPath } });
     }
 
     if (!publicPages.includes(to.name)) {

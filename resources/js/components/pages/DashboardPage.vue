@@ -136,8 +136,9 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div v-for="(t, i) in homeData.upcoming_tournaments" :key="i"
               class="bg-white rounded-[8px] shadow hover:shadow-lg overflow-hidden transition-all p-[16px] cursor-pointer">
-              <div class="relative h-40" @click="goToTournamentDetail(t.id)">
-                <img :src="t.poster" alt="" class="w-full h-full object-cover rounded-[4px] cursor-pointer" />
+              <div class="relative h-40 rounded-[4px] cursor-pointer overflow-hidden"
+                @click="goToTournamentDetail(t.id)" :style="!t.poster ? { backgroundColor: getRandomColor(t.id) } : {}">
+                <img v-if="t.poster" :src="t.poster" alt="" class="w-full h-full object-cover rounded-[4px]" />
               </div>
               <div class="py-4" @click="goToTournamentDetail(t.id)">
                 <div class="text-sm font-bold text-gray-900 mb-2 cursor-pointer">{{ t.name }}</div>
@@ -234,6 +235,11 @@ const router = useRouter()
 
 const homeData = ref([]);
 const friendList = ref([]);
+
+const getRandomColor = (seed) => {
+  const colors = ['#E57373', '#64B5F6', '#81C784', '#FFD54F', '#BA68C8', '#4DD0E1'];
+  return colors[seed % colors.length];
+};
 
 const getHomeData = async () => {
   try {

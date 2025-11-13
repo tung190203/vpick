@@ -17,3 +17,13 @@ export const getBracketByTournamentTypeId = async (tournamentTypeId) => {
   return axiosInstance.get(`${tournamentTypeEndpoint}/${tournamentTypeId}/bracket`)
     .then((response) => response.data.data);
 }
+
+export const getRanks = async (tournamentId) => {
+  return axiosInstance.get(`${tournamentTypeEndpoint}/${tournamentId}/rank`)
+    .then((response) => response.data.data);
+}
+
+export const reGenerateMatches = async (tournamentTypeId) => {
+  return axiosInstance.post(`${tournamentTypeEndpoint}/${tournamentTypeId}/regenerate-matches`)
+    .then((response) => response.data.data);
+}

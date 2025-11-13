@@ -461,7 +461,7 @@
 
             <!-- Sidebar -->
             <ShareAction :buttons="[
-                { label: 'Gửi link', icon: LinkIcon },
+                { label: 'Gửi link', icon: LinkIcon, onClick: copyLink },
                 { label: 'Quét mã QR', icon: QrCodeIcon },
                 { label: 'Mời người chơi', icon: UsersIcon },
                 { label: 'Mời nhóm', icon: UserMultiple, onClick: () => showInviteModal = true },
@@ -514,6 +514,24 @@ const subtabs = SUB_TABS
 
 const handleInvite = (user) => {
     console.log('Invited user:', user)
+}
+
+const copyLink = () => {
+  const miniTournamentLink = window.location.href;
+  if (navigator.share) {
+    navigator.share({
+      title: 'Hãy tham gia kèo đấu ' + mini.value.name + ' của tôi!',
+      url: miniTournamentLink
+    }).then(() => {
+      toast.success('Đã sao chép link kèo đấu vào clipboard!');
+    }).catch(console.error);
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(miniTournamentLink).then(() => {
+      toast.success('Đã sao chép link kèo đấu vào clipboard!');
+    }).catch(console.error);
+  } else {
+    alert(`Link kèo đấu: ${miniTournamentLink}`);
+  }
 }
 
 const handleCreateMatch = (match) => {

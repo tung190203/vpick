@@ -12,34 +12,66 @@
         <button v-for="tab in scheduleTabs" :key="tab.id" @click="scheduleActiveTab = tab.id" :class="[
             'px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
             scheduleActiveTab === tab.id
-                ? 'bg-red-500 text-white'
+                ? 'bg-[#D72D36] text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
         ]">
             {{ tab.label }}
         </button>
     </div>
     <template v-if="scheduleActiveTab === 'ranking'">
-        <div class="rounded-md bg-[#dcdee6] border border-[#dcdee6]">
-            <div class="flex justify-between items-center px-4 py-2">
-                <p class="font-semibold text-sm">Đội</p>
-                <div>Điểm</div>
-            </div>
-
-            <div class="bg-[#EDEEF2] rounded-md px-4 py-2 flex justify-between items-center">
-                <div class="flex items-center gap-3">
-                    <span class="text-sm">1</span>
-                    <div class="flex items-center gap-2">
-                        <img src="https://placehold.co/400x400" class="w-8 h-8 rounded-full" alt="logo team" />
-                        <p class="font-medium text-sm">Team A</p>
+        <template v-if="data.tournament_types?.[0]?.format === 2 || data.tournament_types?.[0]?.format === 3">
+            <div class="rounded-md bg-[#dcdee6] shadow-md border border-[#dcdee6] mx-2" v-if="rank && rank.rankings">
+                <div class="flex justify-between items-center px-4 py-2 text-[#838799]">
+                    <p class="font-semibold text-sm">Đội</p>
+                    <p class="font-semibold text-sm">Điểm</p>
+                </div>
+                <div class="rounded-md bg-[#EDEEF2]">
+                    <div v-for="(team, index) in rank.rankings" :key="team.team_id"
+                        class="px-4 py-2 flex justify-between items-center text-[#6B6F80] hover:text-[#4392E0] hover:bg-blue-100 cursor-pointer"
+                        :class="{ 'rounded-tl-md rounded-tr-md': index === 0 }">
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm">{{ index + 1 }}</span>
+                            <div class="flex items-center gap-2">
+                                <img :src="team.logo || 'https://placehold.co/400x400'" class="w-8 h-8 rounded-full"
+                                    alt="logo team" />
+                                <p class="font-medium text-sm">{{ team.team_name }}</p>
+                            </div>
+                        </div>
+                        <p class="font-semibold text-[20px]">{{ team.total_set_points }}</p>
                     </div>
                 </div>
-
-                <p class="font-semibold text-[20px] text-[#4392E0]">10</p>
             </div>
-        </div>
+        </template>
+        <template v-else-if="data.tournament_types?.[0]?.format === 1">
+            <div v-for="group in rank.group_rankings" :key="group.group_id"
+                class="rounded-md bg-[#dcdee6] shadow-md border border-[#dcdee6] mx-2 mb-4">
+                <div class="flex justify-between items-center px-4 py-2 text-[#838799]">
+                    <p class="font-semibold text-sm">{{ group.group_name }}</p>
+                    <p class="font-semibold text-sm">Điểm</p>
+                </div>
+                <div class="rounded-md bg-[#EDEEF2]">
+                    <div v-for="(team, index) in group.rankings" :key="team.team_id"
+                        class="px-4 py-2 flex justify-between items-center text-[#6B6F80] hover:text-[#4392E0] hover:bg-blue-100 cursor-pointer"
+                        :class="{ 'rounded-tl-md rounded-tr-md': index === 0 }">
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm">{{ index + 1 }}</span>
+                            <div class="flex items-center gap-2">
+                                <img :src="team.logo || 'https://placehold.co/400x400'" class="w-8 h-8 rounded-full"
+                                    alt="logo team" />
+                                <p class="font-medium text-sm">{{ team.team_name }}</p>
+                            </div>
+                        </div>
+                        <p class="font-semibold text-[20px]">{{ team.total_set_points }}</p>
+                    </div>
+                </div>
+            </div>
+        </template>
+        <template v-else>
+            <p class="text-center text-gray-500">Không có dữ liệu bảng xếp hạng.</p>
+        </template>
     </template>
-    <template v-else-if="scheduleActiveTab === 'match'">
-        <slot name="match"></slot>
+    <template v-else-if="scheduleActiveTab === 'matches'">
+        <p class="text-center text-gray-500">Chức năng lịch thi đấu đang được phát triển.</p>
     </template>
 </template>
 
@@ -57,6 +89,14 @@ const props = defineProps({
     },
     toggle: {
         type: Boolean,
+        required: true
+    },
+    rank: {
+        type: Object,
+        required: true
+    },
+    data: {
+        type: Object,
         required: true
     }
 })

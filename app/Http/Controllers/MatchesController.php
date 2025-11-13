@@ -11,6 +11,8 @@ use App\Models\TeamRanking;
 use App\Models\TournamentType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\PoolAdvancementRule;
+use App\Services\TournamentService;
 
 class MatchesController extends Controller
 {
@@ -203,23 +205,116 @@ class MatchesController extends Controller
 
     private function advanceWinnerToNextRound($match, $winnerTeamId)
     {
-        // Nếu không có next_match_id => đây là trận chung kết, không cần chuyển tiếp
+        $tournamentType = $match->tournamentType;
+        if ((int) $match->round === 1 && $tournamentType->format === TournamentType::FORMAT_MIXED) {
+            $this->checkAndAdvanceFromPool($match);
+            return;
+        }
+
         if (!$match->next_match_id) {
             return;
         }
-
-        // Lấy trận kế tiếp
+    
         $nextMatch = Matches::find($match->next_match_id);
-
         if (!$nextMatch) {
             return;
         }
-
-        // Gán đội thắng vào vị trí được chỉ định (home hoặc away)
+    
         if ($match->next_position === 'home') {
-            $nextMatch->update(['home_team_id' => $winnerTeamId]);
+            $nextMatch->update([
+                'home_team_id' => $winnerTeamId,
+                'status' => Matches::STATUS_PENDING,
+            ]);
         } elseif ($match->next_position === 'away') {
-            $nextMatch->update(['away_team_id' => $winnerTeamId]);
+            $nextMatch->update([
+                'away_team_id' => $winnerTeamId,
+                'status' => Matches::STATUS_PENDING,
+            ]);
+        }
+    }
+    
+    private function checkAndAdvanceFromPool($completedMatch)
+    {
+        $groupId = $completedMatch->group_id;
+        if (!$groupId) {
+            return;
+        }
+        
+        $tournamentTypeId = $completedMatch->tournament_type_id;
+        $allGroupMatches = Matches::where('group_id', $groupId)
+            ->where('round', 1)
+            ->with(['homeTeam.members', 'awayTeam.members'])
+            ->get();
+        
+        $totalMatches = $allGroupMatches->count();
+        $completedMatches = $allGroupMatches->where('status', 'completed')->count();
+        $allCompleted = $allGroupMatches->every(fn($m) => $m->status === 'completed');
+        
+        if (!$allCompleted) {
+            return;
+        }
+        $standings = TournamentService::calculateGroupStandings($allGroupMatches);
+        $rules = PoolAdvancementRule::where('group_id', $groupId)
+            ->orderBy('rank')
+            ->get();
+        
+        if ($rules->isEmpty()) {
+            return;
+        }
+        foreach ($rules as $rule) {
+            $teamAtRank = $standings->get($rule->rank - 1);
+            
+            if (!$teamAtRank) {
+                continue;
+            }
+            
+            $teamId = $teamAtRank['team']['id'];
+            $teamName = $teamAtRank['team']['name'];
+            
+            // Lấy trận knockout tương ứng
+            $nextMatch = Matches::find($rule->next_match_id);
+            
+            if (!$nextMatch) {
+                continue;
+            }
+            $updateData = ['status' => Matches::STATUS_PENDING];
+            
+            if ($rule->next_position === 'home') {
+                $updateData['home_team_id'] = $teamId;
+                $positionText = 'home';
+            } else {
+                $updateData['away_team_id'] = $teamId;
+                $positionText = 'away';
+            }
+            
+            $nextMatch->update($updateData);
+        }
+        $this->checkAllPoolsCompleted($tournamentTypeId);
+    }  
+    
+    private function checkAllPoolsCompleted($tournamentTypeId)
+    {
+        $allPoolMatches = Matches::where('tournament_type_id', $tournamentTypeId)
+            ->where('round', 1)
+            ->get();
+        
+        if ($allPoolMatches->isEmpty()) {
+            return;
+        }
+        
+        $totalMatches = $allPoolMatches->count();
+        $completedMatches = $allPoolMatches->where('status', 'completed')->count();
+        $allCompleted = $allPoolMatches->every(fn($m) => $m->status === 'completed');
+        
+        if ($allCompleted) {
+            $knockoutMatches = Matches::where('tournament_type_id', $tournamentTypeId)
+                ->where('round', '>', 1)
+                ->where('status', Matches::STATUS_PENDING)
+                ->get();
+        } else {
+            $remainingGroups = $allPoolMatches->groupBy('group_id')
+                ->filter(fn($matches) => $matches->some(fn($m) => $m->status !== 'completed'))
+                ->count();
         }
     }
 

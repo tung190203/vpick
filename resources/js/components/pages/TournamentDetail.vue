@@ -431,31 +431,34 @@
                   </div>
                   <ChevronRightIcon class="w-5 h-5 text-gray-400" />
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 border-b pb-4"
+                <template v-for="type in tournament?.tournament_types" :key="type.id">
+                  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 border-b pb-4"
                   :class="publicBracket == true ? 'mt-0' : 'mt-4'">
-                  <div
+                  <div v-if="type.format == 1"
                     class="w-full h-[140px] bg-[#FFF5F5] hover:shadow-md transition rounded-md p-4 flex flex-col space-y-2 items-center justify-center">
-                    <p class="font-semibold">2</p>
+                    <p class="font-semibold">{{ type.format_specific_config[0]?.pool_stage?.number_competing_teams }}</p>
                     <p class="text-xs">Bảng đấu</p>
                   </div>
-                  <div
+                  <div v-if="type.format == 1"
                     class="w-full h-[140px] bg-[#FFF5F5] hover:shadow-md transition rounded-md p-4 flex flex-col space-y-2 items-center justify-center">
-                    <p class="font-semibold">2</p>
+                    <p class="font-semibold">{{ type.format_specific_config[0]?.pool_stage?.num_advancing_teams }}</p>
                     <p class="text-xs">Đội vào vòng loại mỗi bảng</p>
                   </div>
                   <div
                     class="w-full h-[140px] bg-[#FFF5F5] hover:shadow-md transition rounded-md p-4 flex flex-col space-y-2 items-center justify-center">
-                    <p class="font-semibold">1-2</p>
+                    <p class="font-semibold">{{ formatMatchCount(type.total_matches_per_team) }}</p>
                     <p class="text-xs">Số trận đấu mỗi đội</p>
                   </div>
                   <div
                     class="w-full h-[140px] bg-[#FFF5F5] hover:shadow-md transition rounded-md p-4 flex flex-col space-y-2 items-center justify-center">
-                    <p class="font-semibold">2</p>
+                    <p class="font-semibold">{{ JSON.parse(type.format_specific_config[0]?.has_third_place_match || 'false') ? 1 : 0 }}</p>
                     <p class="text-xs">Trận tranh hạng ba</p>
                   </div>
                   <div
                     class="w-full h-[140px] bg-[#FFF5F5] hover:shadow-md transition rounded-md p-4 flex flex-col space-y-2 items-center justify-center">
-                    <p class="font-semibold">Thắng - Thua</p>
+                    <p class="font-semibold" v-for="rank in type.format_specific_config[0]?.ranking" :key="rank">
+                      {{ getRankingLabel(rank) }}
+                    </p>
                     <p class="text-xs">Cách tính xếp hạng</p>
                   </div>
                   <div
@@ -463,9 +466,10 @@
                     <p class="font-semibold">H2H thắng</p>
                     <p class="font-semibold">Hiệu số</p>
                     <p class="font-semibold">H2H hiệu số</p>
-                    <p class="text-xs">Ưu tiên gỡ hoà</p>
+                    <p class="text-xs">Nhánh thua thi đấu</p>
                   </div>
                 </div>
+                </template>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 my-4 pb-4"
                   :class="isCreator ? 'border-b' : ''">
                   <div>
@@ -490,22 +494,22 @@
                     <ul class="mt-4 space-y-3">
                       <li class="flex justify-between items-center">
                         <p>Tổng số trận đấu</p>
-                        <span class="text-[#4392E0]">120</span>
+                        <span class="text-[#4392E0]">{{ totalMatches }}</span>
                       </li>
                       <li class="flex justify-between items-center">
                         <p>Thời lượng giải đấu</p>
-                        <span class="text-[#4392E0]">120 * 15</span>
+                        <span class="text-[#4392E0]">{{ totalTime }} phút ~ {{ totalTimeInHours }} giờ</span>
                       </li>
                     </ul>
                   </div>
                 </div>
-                <p class="text-[#D72D36] text-sm cursor-pointer hover:underline"
+                <p class="text-[#D72D36] text-sm cursor-pointer hover:underline" @click="showReGenerateBracketModal = true"
                   v-if="isCreator">Chia lại cặp đấu</p>
               </template>
             </div>
 
             <div v-else-if="activeTab === 'schedule'" key="schedule" class="flex flex-col h-[70vh]">
-              <ScheduleTab  :isCreator="isCreator" :toggle="isHandleOwnScore" @handle-toggle="handleUpdateOwnScore"/>
+              <ScheduleTab  :isCreator="isCreator" :toggle="isHandleOwnScore" @handle-toggle="handleUpdateOwnScore" :rank="ranks" :data="tournament"/>
             </div>
             <div v-else-if="activeTab === 'discuss'" key="discuss" class="flex flex-col h-[70vh]">
               <div class="flex-1 overflow-y-auto p-4 mx-10 space-y-4 ">
@@ -559,22 +563,25 @@
           </Transition>
         </div>
       </div>
+       <QRcodeModal v-if="showQRCodeModal" :value="tournamentLink" @close="showQRCodeModal = false" />
 
       <ShareAction :buttons="[
-        { label: 'Gửi link', icon: LinkIcon },
-        { label: 'Quét mã QR', icon: QrCodeIcon },
-        { label: 'Mời người chơi', icon: UsersIcon },
-        { label: 'Mời nhóm', icon: UserMultiple, onClick: () => showInviteModal = true },
+        { label: 'Gửi link', icon: LinkIcon, onClick: copyLink },
+        { label: 'Quét mã QR', icon: QrCodeIcon, onClick: showQRCode },
+        isCreator ? { label: 'Mời người chơi', icon: UsersIcon, onClick: () => showInviteFriendModal = true } : null,
+        isCreator ? { label: 'Mời nhóm', icon: UserMultiple, onClick: () => showInviteModal = true } : null,
         { label: 'Yêu cầu xác nhận KQ', icon: ClipboardDocumentCheckIcon }
-      ]" :subtitle="'Hãy chia sẻ thông tin tới bạn bè để cùng tham gia giải đấu'" />
+      ].filter(Boolean)" :subtitle="'Hãy chia sẻ thông tin tới bạn bè để cùng tham gia giải đấu'" />
     </div>
 
-    <InviteGroup v-model="showInviteModal" @invite="handleInvite" />
+    <InviteGroup v-model="showInviteModal" @invite="handleInvite" :data="inviteGroupData" />
     <CreateMatch v-model="showCreateMatchModal" @create="handleCreateMatch" />
     <DeleteConfirmationModal v-model="showDeleteModal" title="Xác nhận hủy bỏ giải đấu"
       message="Thao tác này không thể hoàn tác." confirmButtonText="Xác nhận" @confirm="removeTournament" />
       <DeleteConfirmationModal v-model="showDeleteTournamentTypeModal" title="Xác nhận thay đổi thể thức"
       message="Thao tác này sẽ xoá toàn bộ các trận đấu và các cài đặt thể thức trước đó" confirmButtonText="Xác nhận" @confirm="removeTournamentType" />
+      <DeleteConfirmationModal v-model="showReGenerateBracketModal" title="Xác nhận chia lại cặp đấu"
+      message="Thao tác này sẽ xoá toàn bộ các trận đấu và các kết quả" confirmButtonText="Xác nhận" @confirm="reGenerateMatches" />
     <InviteFriendModal v-model="showInviteFriendModal" :data="friendList" @invite="handleInviteFriend"
       @loadMore="loadMoreFriends" :hasMore="hasMoreFriend" @search="handleSearchFriends" title="Mời vận động viên"
       emptyText="Không có vận động viên phù hợp với yêu cầu" />
@@ -611,6 +618,7 @@ import {
   FaceSmileIcon
 } from '@heroicons/vue/24/outline'
 import UserCard from '@/components/molecules/UserCard.vue'
+import QRcodeModal from '@/components/molecules/QRcodeModal.vue'
 import InviteGroup from '@/components/molecules/InviteGroup.vue'
 import CreateMatch from '@/components/molecules/CreateMatch.vue'
 import InviteFriendModal from '@/components/molecules/InviteFriendModal.vue'
@@ -665,10 +673,12 @@ const showInviteStaffModal = ref(false)
 const showCreateMatchModal = ref(false)
 const showDeleteModal = ref(false);
 const showDeleteTournamentTypeModal = ref(false);
+const showReGenerateBracketModal = ref(false);
 const isEditingDescription = ref(false);
 const descriptionModel = ref('');
 const friendList = ref([]);
 const listUsers = ref([]);
+const inviteGroupData = ref([]);
 const meta = ref({})
 const searchFriendTerm = ref('')
 const searchUserTerm = ref('')
@@ -684,6 +694,8 @@ const selectedTeam = ref(null);
 const nonTeamParticipants = ref([]);
 const isFetchingNonTeamUsers = ref(false);
 const isHandleOwnScore = ref(false);
+const ranks = ref([])
+const showQRCodeModal = ref(false);
 const isDescriptionChanged = computed(() => {
   return descriptionModel.value !== tournament.value.description;
 });
@@ -693,6 +705,15 @@ const setupDescription = () => {
   isEditingDescription.value = true;
 };
 
+const getRanks = async () => {
+    try {
+        const response = await TournamentTypeService.getRanks(id);
+        ranks.value = response || [];
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Lấy bảng xếp hạng thất bại');
+    }
+}
+
 const handleUpdateOwnScore = debounce(async() => {
   isHandleOwnScore.value = !isHandleOwnScore.value
   await updateTournament(tournament.value.id, {is_own_score: isHandleOwnScore.value})
@@ -701,6 +722,101 @@ const handleUpdateOwnScore = debounce(async() => {
 const openBranketPage = () => {
   router.push({ name: 'tournament-branket', param: { id: id } });
 };
+
+function formatMatchCount(matches) {
+  if (!matches) return "-";
+  const { min, max } = matches;
+  return min === max ? `${min}` : `${min}-${max}`;
+}
+const tournamentLink = window.location.href;
+const copyLink = () => {
+  if (navigator.share) {
+    navigator.share({
+      title: 'Hãy tham gia giải đấu ' + tournament.value.name + ' của tôi!',
+      url: tournamentLink
+    }).then(() => {
+      toast.success('Đã sao chép link giải đấu vào clipboard!');
+    }).catch(console.error);
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(tournamentLink).then(() => {
+      toast.success('Đã sao chép link giải đấu vào clipboard!');
+    }).catch(console.error);
+  } else {
+    alert(`Link giải đấu: ${tournamentLink}`);
+  }
+}
+
+const showQRCode = () => {
+  showQRCodeModal.value = true;
+}
+
+function getRankingLabel(value) {
+  const map = {
+    1: "Thắng / Hòa / Thua",
+    2: "% Thắng",
+    3: "Số hiệp thắng",
+    4: "Số điểm thắng",
+    5: "Đối đầu",
+    6: "Bốc thăm",
+  };
+  return map[value] || "-";
+}
+
+const FORMAT_MIXED = 1;
+const FORMAT_ELIMINATION = 2;
+const FORMAT_ROUND_ROBIN = 3;
+
+const totalMatches = computed(() => {
+  const numLegs = parseInt(tournament.value?.tournament_types?.[0]?.num_legs) || 1;
+  const teams = parseInt(tournament.value?.max_team) || 0;
+  const tournamentType = tournament.value?.tournament_types?.[0];
+
+  if(!teams || teams < 2) return 0;
+  let currentFormat = tournamentType?.format;
+
+  let matches = 0;
+  switch(currentFormat) {
+    case FORMAT_ROUND_ROBIN:
+      matches = (teams * (teams - 1) / 2);
+      return Math.floor(matches * numLegs);
+    case FORMAT_ELIMINATION:
+      const hasThirdDirect = JSON.parse(tournamentType?.format_specific_config?.[0]?.has_third_place_match || 'false');
+      matches = teams - 1 + (hasThirdDirect ? 1 : 0);
+      return Math.floor(matches * numLegs);
+    case FORMAT_MIXED:
+      default:
+        const numGroups = parseInt(tournamentType?.format_specific_config?.[0]?.pool_stage?.number_competing_teams) || 1;
+        const teamsPerGroup = Math.floor(teams / numGroups);
+        const remainder = teams % numGroups;
+        let totalGroupMatches = 0;
+        for (let i = 0; i < numGroups; i++) {
+          const groupSize = teamsPerGroup + (i < remainder ? 1 : 0);
+          if(groupSize >= 2) {
+            const matchesInGroup = (groupSize * (groupSize - 1)) / 2;
+            totalGroupMatches += matchesInGroup;
+          }
+        }
+        totalGroupMatches = totalGroupMatches * numLegs;
+        const numAdvancingTeamsPerGroup = parseInt(tournamentType?.format_specific_config?.[0]?.pool_stage?.num_advancing_teams) || 0;
+        const qualifiedTeams = numAdvancingTeamsPerGroup * numGroups;
+        let knockoutMatches = 0;
+        if(qualifiedTeams >= 2) {
+          const hasThirdDirect = JSON.parse(tournamentType?.format_specific_config?.[0]?.has_third_place_match || 'false');
+          knockoutMatches = qualifiedTeams - 1 + (hasThirdDirect ? 1 : 0);
+        }
+        const totalKnockoutMatches = knockoutMatches * numLegs;
+
+        return Math.floor(totalGroupMatches + totalKnockoutMatches);
+  }
+});
+
+const totalTime = computed(() => {
+  return totalMatches.value * 15;
+});
+
+const totalTimeInHours = computed(() => {
+  return Math.ceil(totalTime.value / 60);
+});
 
 const openInviteUserToTeamModal = async (team) => {
   if (!isCreator.value) {
@@ -745,6 +861,10 @@ const confirmRemoval = () => {
 
 const confirmChangeType = () => {
   showDeleteTournamentTypeModal.value = true;
+};
+
+const confirmReGenerateBracket = () => {
+  showReGenerateBracketModal.value = true;
 };
 const startSetup = () => {
   showFormatType.value = true;
@@ -802,6 +922,7 @@ const storeTournamentType = async (payload) => {
     showFormatType.value = false;
     const response = await TournamnetService.getTournamentById(tournament.value.id);
     tournament.value.tournament_types = response.tournament_types;
+    await getRanks();
   } catch (error) {
     toast.error('Đã xảy ra lỗi khi lưu thể thức thi đấu.');
   }
@@ -926,7 +1047,11 @@ const detailTournament = async (tournamentId) => {
       isEditingDescription.value = true;
     }
     descriptionModel.value = response.description || '';
+    if(tournament.value?.tournament_types?.length) {
+      await getRanks();
+    }
   } catch (error) {
+    toast.error(error.response?.data?.message || 'Đã xảy ra lỗi khi tải thông tin giải đấu.')
   }
 }
 
@@ -1039,6 +1164,22 @@ const removeTournamentType = async () => {
     await detailTournament(id);
   } catch (error) {
     toast.error('Đã xảy ra lỗi khi xoá thể thức thi đấu.')
+  }
+}
+
+const reGenerateMatches = async () => {
+  const tournamentType = tournament.value?.tournament_types?.[0];
+  if (!tournamentType || !tournamentType.id) {
+    toast.error('Không tìm thấy thể thức thi đấu để chia lại cặp đấu. Vui lòng thử lại.');
+    return;
+  }
+  try {
+    await resetBracket()
+    showReGenerateBracketModal.value = false;
+    showFormatType.value = true;
+    await detailTournament(id);
+  } catch (error) {
+    toast.error('Đã xảy ra lỗi khi xoá các trận đấu cũ.')
   }
 }
 
@@ -1222,6 +1363,18 @@ const getListHasInvite = async (page = 1) => {
   } catch (error) {
   }
 };
+
+const resetBracket = async () => {
+  const tournamentTypeId = tournament.value?.tournament_types?.[0]?.id;
+  try {
+    await TournamentTypeService.reGenerateMatches(tournamentTypeId);
+    toast.success('Đã chia lại cặp đấu thành công!');
+    showReGenerateBracketModal.value = false;
+    await detailTournament(id);
+  } catch (error) {
+    toast.error(error.response?.data?.message || 'Đã xảy ra lỗi khi chia lại cặp đấu.');
+  }
+};
 onMounted(async () => {
   if (id) {
     await Promise.all([
@@ -1229,7 +1382,7 @@ onMounted(async () => {
       getFriendList(),
       getUserList(),
       getTeams(),
-      getListHasInvite()
+      getListHasInvite(),
     ])
   }
 })
