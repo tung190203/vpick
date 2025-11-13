@@ -365,7 +365,7 @@ class AuthController extends Controller
 
     public function me(Request $request)
     {
-        return ResponseHelper::success(new UserResource($request->user()), 'Lấy thông tin người dùng thành công', 200, ['status_code' => 'SUCCESS']);
+        return ResponseHelper::success(new UserResource($request->user()), 'Lấy thông tin người dùng thành công', 200);
     }
 
     private function responseWithToken(string $accessToken, string $refreshToken, object $user): array

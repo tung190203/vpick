@@ -427,4 +427,8 @@ class TournamentType extends Model
     {
         return $query->where('tournament_id', $tournamentId);
     }
+    public function advancementRules()
+    {
+        return $this->hasMany(PoolAdvancementRule::class);
+    }
 }

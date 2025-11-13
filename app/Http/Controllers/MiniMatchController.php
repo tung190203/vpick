@@ -366,10 +366,17 @@ class MiniMatchController extends Controller
             return ResponseHelper::error("Trận đấu không được vượt quá {$tournament->set_number} set", 400);
         }
 
-        if (!empty($tournament->games_per_set)) {
+        if (!empty($tournament->games_per_set) && !empty($tournament->max_points)) {
             foreach ($validated['results'] as $res) {
-                if ($res['score'] > $tournament->games_per_set) {
-                    return ResponseHelper::error("Điểm số không được vượt quá {$tournament->games_per_set} trong một set", 400);
+                $limit = ($tournament->games_per_set == $tournament->max_points)
+                    ? $tournament->games_per_set
+                    : $tournament->max_points;
+        
+                if ($res['score'] > $limit) {
+                    return ResponseHelper::error(
+                        "Điểm số không được vượt quá {$limit} trong một set",
+                        400
+                    );
                 }
             }
         }

@@ -226,7 +226,7 @@ class MiniParticipantController extends Controller
             'type' => $type,
             'user_id' => $userIdToInvite,
             'team_id' => $teamIdToInvite,
-            'is_confirmed' => $miniTournament->auto_approve && !$miniTournament->is_private,
+            'is_confirmed' => false
         ]);
 
         if ($type === 'user' && $userIdToInvite) {

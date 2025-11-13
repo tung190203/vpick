@@ -4,15 +4,16 @@ import { useRouter } from 'vue-router'
 import { LOCAL_STORAGE_KEY } from "@/constants/index.js"
 
 const router = useRouter()
+const query = router.currentRoute.value.query
 
 function goRegister() {
   localStorage.setItem(LOCAL_STORAGE_KEY.ONBOARDING, 'true')
-  router.push('/register')
+  router.push({ path: '/register', query })
 }
 
 function goLogin() {
   localStorage.setItem(LOCAL_STORAGE_KEY.ONBOARDING, 'true')
-  router.push('/login')
+  router.push({ path: '/login', query })
 }
 </script>
 

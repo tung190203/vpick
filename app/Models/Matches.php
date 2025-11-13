@@ -32,6 +32,10 @@ class Matches extends Model
     ];
 
     const PER_PAGE = 15;
+
+    const STATUS_PENDING = 'pending';
+    const STATUS_COMPLETED = 'completed';
+    const STATUS_DISPUTED = 'disputed';
     public function tournamentType()
     {
         return $this->belongsTo(TournamentType::class);

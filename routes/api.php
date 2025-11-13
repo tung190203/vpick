@@ -88,7 +88,9 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
         Route::get('/{tournamentType}', [TournamentTypeController::class, 'show']);
         Route::delete('/{tournamentType}', [TournamentTypeController::class, 'destroy']);
         Route::get('/{tournamentType}/bracket', [TournamentTypeController::class, 'getBracket']);
-        Route::get('/{tournamentType}/rank', [TournamentTypeController::class, 'getRank']);
+        Route::get('/{tournamentId}/rank', [TournamentTypeController::class, 'getRank']);
+        Route::get('/{tournamentType}/advancement-status', [TournamentTypeController::class, 'getAdvancementStatus']);
+        Route::post('/{tournamentType}/regenerate-matches', [TournamentTypeController::class, 'regenerateMatches']);
     });
 
     Route::prefix('matches')->group(function() {
