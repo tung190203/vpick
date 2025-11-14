@@ -174,6 +174,14 @@ class MiniParticipantController extends Controller
         return ResponseHelper::success(new MiniParticipantResource($participant), 'Bạn đã chấp nhận lời mời thành công.', 200);
     }
 
+    public function declineInvite($participantId)
+    {
+        $participant = MiniParticipant::with('miniTournament')->findOrFail($participantId);
+        $participant->delete();
+
+        return ResponseHelper::success(null, 'Bạn đã từ chối lời mời thành công.', 200);
+    }
+
     /**
      * Creator mời user hoặc team vào giải đấu.
      * - Chỉ creator mới có quyền mời

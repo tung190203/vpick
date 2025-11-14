@@ -107,12 +107,15 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
         Route::match(['get', 'post'], '/invite-friend/{tournamentId}', [ParticipantController::class, 'inviteFriends']);
         Route::post('/confirm/{participantId}', [ParticipantController::class, 'confirm']);
         Route::post('/accept/{participantId}', [ParticipantController::class, 'acceptInvite']);
+        Route::post('/decline/{participantId}', [ParticipantController::class, 'declineInvite']);
         Route::match(['get', 'post'], '/invite/{tournamentId}', [ParticipantController::class, 'invite']);
         Route::match(['get', 'post'], '/invite-staff/{tournamentId}', [ParticipantController::class, 'inviteStaff']);
         Route::post('/invite-user/{tournamentId}', [ParticipantController::class, 'inviteUsers']);
         Route::post('/delete/{participantId}', [ParticipantController::class, 'delete']);
+        Route::post('/delete-staff/{staffId}', [ParticipantController::class, 'deleteStaff']);
         Route::match(['get', 'post'], '/list-invite/{tournamentId}', [ParticipantController::class, 'listInvite']);
         Route::match(['get', 'post'], '/list-member/{tournamentId}', [ParticipantController::class, 'getParticipantsNonTeam']);
+        Route::post('/candidates/{tournamentId}', [ParticipantController::class, 'getCandidates']);
     });
 
     Route::prefix('teams')->group(function () {
@@ -128,6 +131,7 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
     Route::prefix('club')->group(function () {
         Route::match(['get', 'post'], '/index', [ClubController::class, 'index']);
         Route::post('/store', [ClubController::class, 'store']);
+        Route::get('/my-clubs', [ClubController::class, 'myClubs']);
         Route::get('/{id}', [ClubController::class, 'show']);
         Route::post('/update/{id}', [ClubController::class, 'update']);
         Route::post('/delete', [ClubController::class, 'destroy']);
@@ -152,6 +156,7 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
         Route::post('/join/{miniTournamentId}', [MiniParticipantController::class, 'join']);
         Route::post('/confirm/{participantId}', [MiniParticipantController::class, 'confirm']);
         Route::post('accept/{participantId}', [MiniParticipantController::class, 'acceptInvite']);
+        Route::post('decline/{participantId}', [MiniParticipantController::class, 'declineInvite']);
         Route::post('/invite/{miniTournamentId}', [MiniParticipantController::class, 'invite']);
         Route::match(['get', 'post'], '/{id}/candidates', [MiniParticipantController::class, 'getCandidates']);
         Route::post('/delete/{participantId}', [MiniParticipantController::class, 'delete']);

@@ -36,10 +36,10 @@ class MiniTournamentJoinRequestNotification extends Notification implements Shou
         return [
             'mini_tournament_id' => $this->participant->mini_tournament_id,
             'participant_id' => $this->participant->id,
-            'title' => 'Có yêu cầu tham gia giải đấu',
+            'title' => 'Có yêu cầu tham gia kèo đấu',
             'message' => $this->participant->type === 'user'
-                ? "{$this->participant->user->full_name} muốn tham gia giải đấu {$this->participant->miniTournament->name}"
-                : "{$this->participant->team->name} muốn tham gia giải đấu {$this->participant->miniTournament->name}",
+                ? "{$this->participant->user->full_name} muốn tham gia kèo đấu {$this->participant->miniTournament->name}"
+                : "{$this->participant->team->name} muốn tham gia kèo đấu {$this->participant->miniTournament->name}",
         ];
     }
 
@@ -56,8 +56,8 @@ class MiniTournamentJoinRequestNotification extends Notification implements Shou
             'mini_tournament_id' => $this->participant->mini_tournament_id,
             'participant_id' => $this->participant->id,
             'message' => $this->participant->type === 'user'
-                ? "{$this->participant->user->full_name} muốn tham gia giải đấu {$this->participant->miniTournament->name}"
-                : "{$this->participant->team->name} muốn tham gia giải đấu {$this->participant->miniTournament->name}",
+                ? "{$this->participant->user->full_name} muốn tham gia kèo đấu {$this->participant->miniTournament->name}"
+                : "{$this->participant->team->name} muốn tham gia kèo đấu {$this->participant->miniTournament->name}",
         ];
     }
 }

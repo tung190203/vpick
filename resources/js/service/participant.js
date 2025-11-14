@@ -35,3 +35,18 @@ export const getParticipantsNonTeam = async(tournamentId) => {
   return axiosInstance.post(`${participantEndpoint}/list-member/${tournamentId}`)
   .then((response) => response?.data?.data);
 }
+
+export const getTournamentInviteGroups = async(tournamentId, payload) => {
+  return axiosInstance.post(`${participantEndpoint}/candidates/${tournamentId}`, payload)
+  .then((response) => response?.data?.data);
+}
+
+export const deleteParticipant = async(participantId) => {
+  return axiosInstance.post(`${participantEndpoint}/delete/${participantId}`)
+  .then((response) => response?.data?.data);
+}
+
+export const deleteStaff = async(staffId) => {
+  return axiosInstance.post(`${participantEndpoint}/delete-staff/${staffId}`)
+  .then((response) => response?.data?.data);
+}

@@ -32,3 +32,8 @@ export const addUserToTeam = async (teamId, userId) => {
   return axiosInstance.post(`${teamEndPoint}/add-member/${teamId}`, {user_id: userId})
   .then((response) => response?.data?.data || []);
 }
+
+export const removeMember = async (memberId, teamId) => {
+  return axiosInstance.post(`${teamEndPoint}/remove-member/${teamId}`, {user_id: memberId})
+  .then((response) => response?.data?.data || []);
+}

@@ -29,8 +29,8 @@ class MiniTournamentRemovedNotification extends Notification implements ShouldQu
         return [
             'participant_id' => $this->participant->id,
             'tournament_id' => $this->participant->mini_tournament_id,
-            'title' => 'Bạn đã bị xóa khỏi giải đấu',
-            'message' => "Bạn đã bị xóa khỏi giải đấu '{$this->participant->miniTournament->name}'",
+            'title' => 'Bạn đã bị xóa khỏi kèo đấu',
+            'message' => "Bạn đã bị xóa khỏi kèo đấu '{$this->participant->miniTournament->name}'",
             'removed_by' => auth()->id(),
         ];
     }
@@ -40,8 +40,8 @@ class MiniTournamentRemovedNotification extends Notification implements ShouldQu
         return new BroadcastMessage([
             'participant_id' => $this->participant->id,
             'tournament_id' => $this->participant->mini_tournament_id,
-            'title' => 'Bạn đã bị xóa khỏi giải đấu',
-            'message' => "Bạn đã bị xóa khỏi giải đấu '{$this->participant->miniTournament->name}'",
+            'title' => 'Bạn đã bị xóa khỏi kèo đấu',
+            'message' => "Bạn đã bị xóa khỏi kèo đấu '{$this->participant->miniTournament->name}'",
             'removed_by' => auth()->id(),
         ]);
     }
@@ -50,7 +50,7 @@ class MiniTournamentRemovedNotification extends Notification implements ShouldQu
     {
         return [
             'participant_id' => $this->participant->id,
-            'message' => "Bạn đã bị xóa khỏi giải đấu: {$this->participant->miniTournament->name}",
+            'message' => "Bạn đã bị xóa khỏi kèo đấu: {$this->participant->miniTournament->name}",
             'removed_by' => auth()->id(),
         ];
     }

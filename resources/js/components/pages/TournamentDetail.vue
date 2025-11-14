@@ -228,9 +228,9 @@
                   </div>
                   <div v-if="tournament?.tournament_staff?.length">
                     <div class="grid grid-cols-2 sm:grid-cols-6 lg:grid-cols-6 gap-4">
-                      <UserCard v-for="(item, index) in tournament.tournament_staff" :key="index"
+                      <UserCard v-for="(item, index) in tournament.tournament_staff" :key="index" :id="item.id"
                         :name="item.staff.name" :avatar="item.staff.avatar" :rating="getUserScore(item.staff)"
-                        status="approved" />
+                        status="approved" @removeUser="handleRemoveStaff"/>
                       <UserCard :empty="true" @click="showInviteStaffModal = true"
                         v-if="isCreator" />
                     </div>
@@ -251,9 +251,9 @@
                   </div>
                   <div v-if="tournament?.tournamnet_participants?.length">
                     <div class="grid grid-cols-2 sm:grid-cols-6 lg:grid-cols-6 gap-4">
-                      <UserCard v-for="(item, index) in tournament.tournamnet_participants" :key="index"
-                        :name="item.user.name" :avatar="item.user.avatar" :rating="getUserScore(item.user)"
-                        :status="item.is_confirmed == true ? 'approved' : 'pending'" />
+                      <UserCard v-for="(item, index) in tournament.tournamnet_participants" :key="index" :id="item.id"
+                        :name="item.user.name" :avatar="item.avatar" :rating="getUserScore(item.user)"
+                        :status="item.is_confirmed == true ? 'approved' : 'pending'" @removeUser="handleRemoveUser"/>
                       <UserCard
                         v-if="tournament?.tournamnet_participants?.length < (tournament.max_team * tournament.player_per_team) && isCreator"
                         :empty="true" @clickEmpty="showInviteFriendModal = true" />
@@ -297,9 +297,9 @@
                     </div>
 
                     <div class="grid grid-cols-2 gap-2">
-                      <UserCard v-for="(member, index) in team.members" :key="index" :name="member.full_name"
+                      <UserCard v-for="(member, index) in team.members" :key="index" :name="member.full_name" :id="member.id"
                         :avatar="member.avatar" :rating="getUserScore(member)"
-                        :status="member.is_confirmed == true ? 'approved' : 'pending'" />
+                        :status="member.is_confirmed == true ? 'approved' : 'pending'" @removeUser="handleRemoveMember($event, team.id)"/>
 
                       <UserCard v-for="n in getRemainingSlots(team.members)" :key="`empty-${team.id}-${n}`"
                         :empty="true" @clickEmpty="openInviteUserToTeamModal(team)"/>
@@ -343,7 +343,7 @@
                     <div v-for="item in listHasInvite" :key="item.id"
                       class="border p-4 flex justify-between items-center gap-4 rounded cursor-pointer hover:shadow-md transition">
                       <div class="flex justify-start items-center gap-4">
-                        <UserCard :avatar="item.avatar" :status="item.is_confirmed == 1 ? 'approved' : 'pending'" />
+                        <UserCard :avatar="item.avatar" :status="item.is_confirmed == 1 ? 'approved' : 'pending'" :show-hover-delete="false" />
                       <div>
                         <p>{{ item.name }}</p>
                         <p class="flex items-center gap-1 text-sm text-gray-500">
@@ -574,7 +574,18 @@
       ].filter(Boolean)" :subtitle="'Hãy chia sẻ thông tin tới bạn bè để cùng tham gia giải đấu'" />
     </div>
 
-    <InviteGroup v-model="showInviteModal" @invite="handleInvite" :data="inviteGroupData" />
+    <InviteGroup
+        v-model="showInviteModal"
+        :data="inviteGroupData"
+        :clubs="clubs"
+        :active-scope="activeScope"
+        :selected-club="selectedClub"
+        :search-query="searchQuery"
+        @update:searchQuery="onSearchChange"
+        @change-scope="onScopeChange"
+        @change-club="onClubChange"
+        @invite="handleInvite"
+    />
     <CreateMatch v-model="showCreateMatchModal" @create="handleCreateMatch" />
     <DeleteConfirmationModal v-model="showDeleteModal" title="Xác nhận hủy bỏ giải đấu"
       message="Thao tác này không thể hoàn tác." confirmButtonText="Xác nhận" @confirm="removeTournament" />
@@ -627,6 +638,7 @@ import * as TournamentTypeService from '@/service/tournamentType.js'
 import * as TeamService from '@/service/team.js'
 import * as ParticipantService from '@/service/participant.js'
 import * as TournamentStaffService from '@/service/tournamentStaff.js'
+import * as ClubService from '@/service/club.js'
 import { useRoute, useRouter } from 'vue-router'
 import ShareAction from '@/components/molecules/ShareAction.vue'
 import { toast } from 'vue3-toastify'
@@ -647,6 +659,7 @@ import { useUserStore } from '@/store/auth'
 import { storeToRefs } from 'pinia'
 import AddMemberModal from '@/components/molecules/AddMemberModal.vue'
 import ScheduleTab from '@/components/molecules/ScheduleTab.vue'
+import { de } from 'date-fns/locale'
 
 const userStore = useUserStore()
 const { getUser } = storeToRefs(userStore)
@@ -695,6 +708,10 @@ const nonTeamParticipants = ref([]);
 const isFetchingNonTeamUsers = ref(false);
 const isHandleOwnScore = ref(false);
 const ranks = ref([])
+const clubs = ref([])
+const activeScope = ref('club');
+const selectedClub = ref(null);
+const searchQuery = ref('')
 const showQRCodeModal = ref(false);
 const isDescriptionChanged = computed(() => {
   return descriptionModel.value !== tournament.value.description;
@@ -703,6 +720,93 @@ const isCreator = computed(() => tournament.value?.created_by?.id === getUser.va
 const setupDescription = () => {
   descriptionModel.value = tournament.value.description || '';
   isEditingDescription.value = true;
+};
+
+const getMyClubs = async () => {
+    try {
+        const response = await ClubService.myClubs();
+        clubs.value = response || [];
+
+        if (clubs.value.length === 0) {
+            selectedClub.value = null;
+            // Không có CLB → scope club vô hiệu → chuyển sang friends
+            activeScope.value = 'friends';
+        } else {
+            selectedClub.value = clubs.value[0].id;
+        }
+    } catch (e) {
+        clubs.value = [];
+        selectedClub.value = null;
+        activeScope.value = 'friends';
+    }
+};
+
+const handleRemoveUser = async (participantId) => {
+    try {
+        await ParticipantService.deleteParticipant(participantId);
+        toast.success('Đã xóa người chơi khỏi giải đấu');
+        await detailTournament(id);
+        await getTeams();
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Xóa người chơi thất bại');
+    }
+};
+
+const handleRemoveStaff = async (staffId) => {
+    try {
+        await ParticipantService.deleteStaff(staffId);
+        toast.success('Đã xóa người tổ chức khỏi giải đấu');
+        await detailTournament(id);
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Xóa người tổ chức thất bại');
+    }
+};
+
+const handleRemoveMember = async (memberId, teamId) => {
+    try {
+        await TeamService.removeMember(memberId, teamId);
+        toast.success('Đã xóa thành viên khỏi đội');
+        await getTeams();
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Xóa thành viên thất bại');
+    }
+};
+
+const getInviteGroupData = async () => {
+    if (activeScope.value === 'club' && !selectedClub.value) {
+        inviteGroupData.value = [];
+        return;
+    }
+
+    const payload = {
+        scope: activeScope.value,
+        per_page: 50,
+        ...(activeScope.value === 'club' ? { club_id: selectedClub.value } : {}),
+        ...(searchQuery.value ? { search: searchQuery.value } : {})
+    };
+
+    try {
+        const resp = await ParticipantService.getTournamentInviteGroups(id, payload);
+        inviteGroupData.value = resp || [];
+    } catch (e) {
+        inviteGroupData.value = [];
+    }
+};
+
+const onSearchChange = debounce(async (query) => {
+  searchQuery.value = query;
+  await getInviteGroupData();
+}, 300);
+
+const onScopeChange = async (scope) => {
+    activeScope.value = scope;
+    await getInviteGroupData();
+};
+
+// Khi user đổi CLB trong component con
+const onClubChange = async (clubId) => {
+    selectedClub.value = clubId;
+    await getInviteGroupData();
 };
 
 const getRanks = async () => {
@@ -993,8 +1097,9 @@ const handleRemove = () => {
   }
 };
 
-const handleInvite = (user) => {
-  console.log('Invited user:', user)
+const handleInvite = async (user) => {
+  await invite(user.id);
+  await detailTournament(id);
 }
 
 const handleInviteFriend = async (friend) => {
@@ -1384,6 +1489,8 @@ onMounted(async () => {
       getTeams(),
       getListHasInvite(),
     ])
+    await getMyClubs();
+    await getInviteGroupData();
   }
 })
 </script>

@@ -40,8 +40,8 @@ class MiniTournamentInvitationNotification extends Notification implements Shoul
     {
         return [
             'mini_tournament_id' => $this->miniTournament->id,
-            'title' => 'Bạn được mời tham gia giải đấu',
-            'message' => "Bạn được mời tham gia giải đấu: {$this->miniTournament->name}",
+            'title' => 'Bạn được mời tham gia kèo đấu',
+            'message' => "Bạn được mời tham gia kèo đấu: {$this->miniTournament->name}",
             'invited_by' => auth()->id(),
         ];
     }
@@ -50,8 +50,8 @@ class MiniTournamentInvitationNotification extends Notification implements Shoul
     {
         return new BroadcastMessage([
             'mini_tournament_id' => $this->miniTournament->id,
-            'title' => 'Bạn được mời tham gia giải đấu',
-            'message' => "Bạn được mời tham gia giải đấu: {$this->miniTournament->name}",
+            'title' => 'Bạn được mời tham gia kèo đấu',
+            'message' => "Bạn được mời tham gia kèo đấu: {$this->miniTournament->name}",
             'invited_by' => auth()->id(),
             'created_at' => now()->toDateTimeString(),
         ]);
@@ -61,7 +61,7 @@ class MiniTournamentInvitationNotification extends Notification implements Shoul
     {
         return [
             'mini_tournament_id' => $this->miniTournament->id,
-            'message' => "Bạn được mời tham gia giải đấu: {$this->miniTournament->name}",
+            'message' => "Bạn được mời tham gia kèo đấu: {$this->miniTournament->name}",
             'invited_by' => auth()->id(),
         ];
     }

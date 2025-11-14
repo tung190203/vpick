@@ -1,8 +1,6 @@
 <template>
   <div class="flex flex-col items-center gap-2 max-w-[80px]">
-    <!-- Avatar Container -->
-    <div class="relative">
-      <!-- Empty State -->
+    <div class="relative group">
       <div v-if="empty" @click="handleClick"
         :class="[
           `w-${computedSize} h-${computedSize}`,
@@ -11,13 +9,19 @@
         <PlusIcon :class="`w-${iconSize} h-${iconSize} text-gray-400`" />
       </div>
 
-      <!-- Avatar Image -->
       <div v-else :class="`w-${computedSize} h-${computedSize} rounded-full overflow-hidden`">
         <img :src="avatar" :alt="name"
           class="w-full h-full object-cover cursor-pointer hover:scale-110 transition-transform duration-300" />
       </div>
 
-      <!-- Rating Badge (Bottom Left) -->
+      <button 
+        v-if="!empty && showHoverDelete"
+        @click="$emit('removeUser', props.id)"
+        class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center border-2 border-white
+              opacity-0 group-hover:opacity-100 transition-opacity">
+        <XMarkIcon class="w-3 h-3" />
+      </button>
+
       <div v-if="!empty && rating"
         :class="[
           `absolute -bottom-1 -left-1 w-${badgeSize} h-${badgeSize}`,
@@ -28,21 +32,16 @@
         {{ rating }}
       </div>
 
-      <!-- Status Badge (Bottom Right) -->
       <div v-if="!empty && status"
         :class="[
           `absolute -bottom-1 -right-1 w-${badgeSize} h-${badgeSize} rounded-full flex items-center justify-center border-2 border-white`,
           statusColor
         ]">
-        <!-- Approved Check -->
         <CheckIcon v-if="status === 'approved'" :class="`w-${iconInnerSize} h-${iconInnerSize} text-white`" />
-        <!-- Pending Question -->
         <QuestionMarkCircleIcon v-else-if="status === 'pending'" :class="`w-${iconInnerSize} h-${iconInnerSize} text-white`" />
-        <!-- Rejected Cross -->
-         <XMarkIcon v-else-if="status === 'rejected'" :class="`w-${iconInnerSize} h-${iconInnerSize} text-white`" />
+        <XMarkIcon v-else-if="status === 'rejected'" :class="`w-${iconInnerSize} h-${iconInnerSize} text-white`" />
       </div>
 
-      <!-- Edit Button (for empty state) -->
       <button v-if="empty" @click="handleClick"
         :class="[
           `absolute -bottom-1 -right-1 w-${badgeSize} h-${badgeSize}`,
@@ -52,7 +51,6 @@
       </button>
     </div>
 
-    <!-- Name -->
     <div v-if="name" class="text-sm font-medium text-gray-700 text-center" v-tooltip="name">
       {{ name }}
     </div>
@@ -64,6 +62,10 @@ import { computed } from 'vue'
 import { PlusIcon, PencilIcon, CheckIcon, QuestionMarkCircleIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
+  id: {
+    type: [Number, String],
+    required: true,
+  },
   name: {
     type: String,
     default: '',
@@ -96,9 +98,13 @@ const props = defineProps({
     type: Number,
     default: 11,
   },
+  showHoverDelete: {
+    type: Boolean,
+    default: true,
+  }
 })
 
-const emit = defineEmits(['clickEmpty'])
+const emit = defineEmits(['clickEmpty', 'removeUser'])
 
 const handleClick = () => {
   if (props.empty) emit('clickEmpty')

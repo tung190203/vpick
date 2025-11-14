@@ -20,7 +20,6 @@ class NotificationResource extends JsonResource
             'data' => $this->data,
             'read_at' => $this->read_at,
             'created_at' => $this->created_at,
-            'unread' => auth()->user()->unreadNotifications()->count(),
         ];
     }
 }
