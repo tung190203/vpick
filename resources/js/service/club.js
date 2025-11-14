@@ -8,3 +8,7 @@ export const getAllClubs = async () => {
 export const joinClub = async (clubId) => {
     return axiosInstance.post(`${API_ENDPOINT.CLUB}/join/${clubId}`).then((response) => response.data);
 }
+
+export const myClubs = async () => {
+    return axiosInstance.get(`${API_ENDPOINT.CLUB}/my-clubs`).then((response) => response.data.data);
+}

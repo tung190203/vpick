@@ -33,7 +33,7 @@ class MiniTournamentJoinConfirmedNotification extends Notification implements Sh
             'participant_id' => $this->participant->id,
             'tournament_id' => $this->participant->mini_tournament_id,
             'title' => 'Yêu cầu tham gia được duyệt',
-            'message' => "Yêu cầu tham gia giải đấu '{$this->participant->miniTournament->name}' của bạn đã được duyệt.",
+            'message' => "Yêu cầu tham gia kèo đấu '{$this->participant->miniTournament->name}' của bạn đã được duyệt.",
             'confirmed_by' => auth()->id(),
         ];
     }
@@ -44,7 +44,7 @@ class MiniTournamentJoinConfirmedNotification extends Notification implements Sh
             'participant_id' => $this->participant->id,
             'tournament_id' => $this->participant->mini_tournament_id,
             'title' => 'Yêu cầu tham gia được duyệt',
-            'message' => "Yêu cầu tham gia giải đấu '{$this->participant->miniTournament->name}' của bạn đã được duyệt.",
+            'message' => "Yêu cầu tham gia kèo đấu '{$this->participant->miniTournament->name}' của bạn đã được duyệt.",
             'confirmed_by' => auth()->id(),
             'created_at' => now()->toDateTimeString(),
         ]);

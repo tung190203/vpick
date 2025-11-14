@@ -16,19 +16,20 @@ class NotificationController extends Controller
             'per_page' => 'integer|min:1|max:200',
         ]);
 
+        $user = auth()->user();
         $type = $validated['type'] ?? 'all';
-        $query = auth()->user()->notifications()->latest();
+        $query = $user->notifications()->latest();
 
         if ($type === 'unread') {
-            $query = auth()->user()->unreadNotifications()->latest();
+            $query = $user->unreadNotifications()->latest();
         } elseif ($type === 'read') {
-            $query = auth()->user()->notifications()
+            $query = $user->notifications()
                 ->whereNotNull('read_at')
                 ->latest();
         }
 
         $notifications = $query->paginate($validated['per_page'] ?? self::DEFAULT_PER_PAGE);
-
+        $unreadCount = $user->unreadNotifications()->count();
         $data = [
             'notifications' => NotificationResource::collection($notifications),
         ];
@@ -38,10 +39,11 @@ class NotificationController extends Controller
             'per_page' => $notifications->perPage(),
             'total' => $notifications->total(),
             'last_page' => $notifications->lastPage(),
+            'unread_count' => $unreadCount,
         ];
     
         return ResponseHelper::success($data, 'Lấy danh sách thông báo thành công', 200, $meta);
-    }    
+    }
 
     public function markAsRead(Request $request)
     {

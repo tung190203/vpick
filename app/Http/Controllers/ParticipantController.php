@@ -410,6 +410,17 @@ class ParticipantController extends Controller
         return ResponseHelper::success(new ParticipantResource($participant), 'Xác nhận lời mời tham gia thành công');
     }
 
+    public function declineInvite($participantId)
+    {
+        $participant = Participant::with('tournament')->findOrFail($participantId);
+        if ($participant->is_confirmed) {
+            return ResponseHelper::error('Người tham gia đã được xác nhận, không thể từ chối', 400);
+        }
+        $participant->delete();
+
+        return ResponseHelper::success(null, 'Từ chối lời mời tham gia thành công', 200);
+    }
+
     public function invite(Request $request, $tournamentId)
     {
         $validated = $request->validate([
@@ -595,14 +606,45 @@ class ParticipantController extends Controller
     public function delete($participantId)
     {
         $participant = Participant::with('tournament')->findOrFail($participantId);
+        $tournamentId = $participant->tournament_id;
         $tournamentWithStaff = $participant->tournament->load('staff');
         $isOrganizer = $tournamentWithStaff->hasOrganizer(Auth::id());
         if (!$isOrganizer) {
             return ResponseHelper::error('Bạn không có quyền xoá người tham gia này', 403);
         }
+        $userNeedRemove = $participant->user_id;
+        $teamIdsInTournament = DB::table('teams')
+        ->where('tournament_id', $tournamentId)
+        ->pluck('id');
+        DB::table('team_members')
+        ->where('user_id', $userNeedRemove)
+        ->whereIn('team_id', $teamIdsInTournament)
+        ->delete();
         $participant->delete();
 
         return ResponseHelper::success(null, 'Xoá người tham gia thành công', 200);
+    }
+
+    public function deleteStaff($staffId)
+    {
+        $tournamentStaff = DB::table('tournament_staff')->where('id', $staffId)->first();
+        if (!$tournamentStaff) {
+            return ResponseHelper::error('Nhân viên không tồn tại', 404);
+        }
+        $tournament = Tournament::with('staff')->findOrFail($tournamentStaff->tournament_id);
+        $isOrganizer = $tournament->hasOrganizer(Auth::id());
+        if (!$isOrganizer) {
+            return ResponseHelper::error('Bạn không có quyền xoá nhân viên này', 403);
+        }
+        if( $tournamentStaff->role === 'organizer') {
+            return ResponseHelper::error('Không thể xoá nhân viên với vai trò tổ chức', 400);
+        }
+        if ($tournamentStaff->user_id === Auth::id()) {
+            return ResponseHelper::error('Bạn không thể tự xoá chính mình', 400);
+        }
+        DB::table('tournament_staff')->where('id', $staffId)->delete();
+
+        return ResponseHelper::success(null, 'Xoá nhân viên thành công', 200);
     }
 
     public function getParticipantsNonTeam(Request $request, $tournamentId)
@@ -732,5 +774,80 @@ class ParticipantController extends Controller
         }
 
         return round($score, 2);
+    }
+
+    public function getCandidates(Request $request, $tournamentId)
+    {
+        $tournament = Tournament::with('participants')->findOrFail($tournamentId);
+        $user = Auth::user();
+
+        $validated = $request->validate([
+            'scope' => 'required|in:club,friends,area',
+            'club_id' => 'required_if:scope,club|exists:clubs,id',
+            'search' => 'sometimes|string|max:255',
+            'per_page' => 'sometimes|integer|min:1|max:200',
+        ]);
+
+        $perPage = $validated['per_page'] ?? 20;
+        $scope = $validated['scope'];
+
+        // 🎯 Tùy theo phạm vi (scope)
+        switch ($scope) {
+            case 'club':
+                $query = User::whereHas('clubs', fn($q) => $q->where('clubs.id', $validated['club_id']))
+                    ->where('id', '!=', $user->id);
+                break;
+
+            case 'friends':
+                $query = $user->friends();
+                break;
+
+            case 'area':
+                $query = User::where('location_id', $user->location_id)
+                    ->where('id', '!=', $user->id);
+                break;
+        }
+
+        // 🔍 Tìm kiếm tên người dùng (nếu có)
+        if (!empty($validated['search'])) {
+            $query->where('full_name', 'like', '%' . $validated['search'] . '%');
+        }
+
+        // 🚫 Loại người đã tham gia
+        $participantUserIds = $tournament->participants->pluck('user_id')->toArray();
+        $query->whereNotIn('id', $participantUserIds);
+        $query->where('visibility', '!=', User::VISIBILITY_PRIVATE);
+
+        // 🧮 Phân trang
+        $paginated = $query->paginate($perPage);
+
+        // ✨ Map dữ liệu
+        $candidates = $paginated->getCollection()->map(function ($u) use ($user, $participantUserIds) {
+            $visibility = match ($u->visibility) {
+                'friend_only' => 'friend_only',
+                'private' => 'private',
+                default => 'open',
+            };
+
+            return [
+                'id' => $u->id,
+                'name' => $u->full_name,
+                'gender' => $u->gender,
+                'age_group' => $u->age_group,
+                'avatar' => $u->avatar_url,
+                'visibility' => $visibility,
+                'is_friend' => $user->isFriendWith($u),
+                'is_participant' => in_array($u->id, $participantUserIds),
+            ];
+        });
+
+        return ResponseHelper::success([
+            'result' => $candidates,
+        ], 'Danh sách ứng viên', 200, [
+            'current_page' => $paginated->currentPage(),
+            'last_page'    => $paginated->lastPage(),
+            'per_page'     => $paginated->perPage(),
+            'total'        => $paginated->total(),
+        ]);
     }
 }

@@ -126,4 +126,14 @@ class ClubController extends Controller
 
         return ResponseHelper::success(new ClubResource($club->load('members')), 'Tham gia câu lạc bộ thành công');
     }
+
+    public function myClubs(Request $request)
+    {
+        $userId = auth()->id();
+        $clubs = Club::whereHas('members', function ($query) use ($userId) {
+            $query->where('user_id', $userId);
+        })->withFullRelations()->get();
+
+        return ResponseHelper::success(ClubResource::collection($clubs), 'Lấy danh sách câu lạc bộ của tôi thành công');
+    }
 }
