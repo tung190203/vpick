@@ -1,0 +1,154 @@
+<?php
+
+namespace App\Services;
+
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
+use Illuminate\Support\Facades\Storage;
+
+class ImageOptimizationService
+{
+    protected $manager;
+
+    public function __construct()
+    {
+        // Khởi tạo ImageManager với GD driver
+        $this->manager = new ImageManager(new Driver());
+    }
+
+    /**
+     * Tối ưu và lưu ảnh với nhiều kích thước
+     */
+    public function optimizeAndSave($file, $path, $sizes = [])
+    {
+        $filename = time() . '_' . $file->getClientOriginalName();
+        $image = $this->manager->read($file);
+
+        // Nếu không có sizes, chỉ lưu ảnh gốc đã tối ưu
+        if (empty($sizes)) {
+            $optimized = $image->scaleDown(width: 1920);
+            $encoded = $optimized->toJpeg(quality: 80);
+            Storage::put($path . '/' . $filename, $encoded);
+
+            return [
+                'original' => $path . '/' . $filename
+            ];
+        }
+
+        // Lưu nhiều kích thước
+        $paths = [];
+        foreach ($sizes as $sizeName => $dimensions) {
+            $sizeFilename = $sizeName . '_' . $filename;
+
+            if (isset($dimensions['width']) && isset($dimensions['height'])) {
+                // Resize và crop
+                $resized = $image->cover($dimensions['width'], $dimensions['height']);
+            } else {
+                // Chỉ scale theo chiều rộng
+                $resized = $image->scaleDown(width: $dimensions['width']);
+            }
+
+            $encoded = $resized->toJpeg(quality: $dimensions['quality'] ?? 80);
+            Storage::put($path . '/' . $sizeFilename, $encoded);
+
+            $paths[$sizeName] = $path . '/' . $sizeFilename;
+        }
+
+        return $paths;
+    }
+
+    /**
+     * Tối ưu ảnh đơn giản
+     */
+    public function optimize($file, $path, $maxWidth = 1920, $quality = 80)
+    {
+        $filename = time() . '_' . $file->getClientOriginalName();
+        $image = $this->manager->read($file);
+
+        // Resize nếu ảnh lớn hơn maxWidth
+        $optimized = $image->scaleDown(width: $maxWidth);
+
+        // Encode với quality được chỉ định
+        $encoded = $optimized->toJpeg(quality: $quality);
+
+        // Lưu vào storage
+        Storage::put($path . '/' . $filename, $encoded);
+
+        return $path . '/' . $filename;
+    }
+
+    /**
+     * Chuyển đổi sang WebP
+     */
+    public function convertToWebP($file, $path, $quality = 80)
+    {
+        $filename = time() . '_' . pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME) . '.webp';
+        $image = $this->manager->read($file);
+
+        $optimized = $image->scaleDown(width: 1920);
+        $encoded = $optimized->toWebp(quality: $quality);
+
+        Storage::put($path . '/' . $filename, $encoded);
+
+        return $path . '/' . $filename;
+    }
+
+    /**
+     * Tạo thumbnail
+     */
+    public function createThumbnail($file, $path, $width = 300, $height = 300)
+    {
+        $filename = 'thumb_' . time() . '_' . $file->getClientOriginalName();
+        $image = $this->manager->read($file);
+
+        // Cover sẽ crop ảnh theo tỉ lệ
+        $thumbnail = $image->cover($width, $height);
+        $encoded = $thumbnail->toJpeg(quality: 85);
+
+        Storage::put($path . '/' . $filename, $encoded);
+
+        return $path . '/' . $filename;
+    }
+
+    /**
+     * Xóa ảnh cũ từ storage
+     */
+    public function deleteOldImage($url)
+    {
+        if (empty($url)) {
+            return;
+        }
+
+        $path = str_replace(asset('storage/') . '/', '', $url);
+        if (Storage::disk('public')->exists($path)) {
+            Storage::disk('public')->delete($path);
+        }
+    }
+    /**
+     * Tối ưu avatar với nhiều size
+     */
+    public function optimizeAvatar($file, $folder = 'avatars')
+    {
+        $filename = time() . '_' . uniqid() . '.jpg';
+        $image = $this->manager->read($file);
+
+        $sizes = [
+            'original' => ['size' => 800, 'quality' => 90],
+            'medium' => ['size' => 400, 'quality' => 85],
+            'thumbnail' => ['size' => 150, 'quality' => 85],
+        ];
+
+        $paths = [];
+        foreach ($sizes as $key => $config) {
+            $sizeFilename = $key === 'original' ? $filename : "{$key}_{$filename}";
+            $resized = $image->cover($config['size'], $config['size']);
+            $encoded = $resized->toJpeg(quality: $config['quality']);
+
+            $fullPath = "{$folder}/{$sizeFilename}";
+            Storage::disk('public')->put($fullPath, $encoded);
+            $paths[$key] = asset('storage/' . $fullPath);
+        }
+
+        return $paths;
+    }
+}

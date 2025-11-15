@@ -7,12 +7,19 @@ use App\Http\Resources\ClubResource;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\GeocodingService;
+use App\Services\ImageOptimizationService;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
+    protected $imageService;
+
+    public function __construct(ImageOptimizationService $imageService)
+    {
+        $this->imageService = $imageService;
+    }
     private const VALIDATION_RULE = 'sometimes';
     public function index(Request $request)
     {
@@ -186,27 +193,25 @@ class UserController extends Controller
             $data['password'] = $validated['password'];
         }
         if ($request->hasFile('avatar_url')) {
-            if ($user->avatar_url) {
-                $oldPath = str_replace(asset('storage/') . '/', '', $user->avatar_url);
-                if (Storage::disk('public')->exists($oldPath)) {
-                    Storage::disk('public')->delete($oldPath);
-                }
-            }
+            $this->imageService->deleteOldImage($user->avatar_url);
+            $avatarPaths = $this->imageService->optimizeAvatar(
+                $request->file('avatar_url'),
+                'avatars'
+            );
 
-            $path = $request->file('avatar_url')->store('avatars', 'public');
-            $data['avatar_url'] = asset('storage/' . $path);
+            $data['avatar_url'] = $avatarPaths['original'];
         }
 
         if ($request->hasFile('thumbnail')) {
-            if ($user->thumbnail) {
-                $oldPath = str_replace(asset('storage/') . '/', '', $user->thumbnail);
-                if (Storage::disk('public')->exists($oldPath)) {
-                    Storage::disk('public')->delete($oldPath);
-                }
-            }
+            $this->imageService->deleteOldImage($user->thumbnail);
+            $thumbnailPath = $this->imageService->optimize(
+                $request->file('thumbnail'),
+                'thumbnails',
+                800,
+                85
+            );
 
-            $path = $request->file('thumbnail')->store('thumbnails', 'public');
-            $data['thumbnail'] = asset('storage/' . $path);
+            $data['thumbnail'] = asset('storage/' . $thumbnailPath);
         }
 
         if (!empty($validated['is_profile_completed']) && !$user->is_profile_completed) {
