@@ -6,7 +6,10 @@ use App\Helpers\ResponseHelper;
 use App\Http\Resources\ParticipantResource;
 use App\Models\Participant;
 use App\Models\Tournament;
+use App\Models\TournamentStaff;
 use App\Models\User;
+use App\Notifications\TournamentJoinConfirmedNotification;
+use App\Notifications\TournamentJoinRequestNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -185,6 +188,15 @@ class ParticipantController extends Controller
             'user_id' => $user->id,
             'is_confirmed' => $tournament->auto_approve && !$tournament->is_private,
         ]);
+
+        if(!$participant->is_confirmed){
+            $organizers = $tournament->staff()->wherePivot('role', TournamentStaff::ROLE_ORGANIZER)->get();
+            foreach($organizers as $organizer){
+                if($organizer->id != Auth::id()){
+                    $organizer->notify( new TournamentJoinRequestNotification($participant));                    
+                }
+            }
+        }
 
         return ResponseHelper::success(ParticipantResource::collection($participant), 201);
     }
@@ -375,6 +387,8 @@ class ParticipantController extends Controller
         }
         $participant->is_confirmed = true;
         $participant->save();
+
+        $participant->user->notify(new TournamentJoinConfirmedNotification($participant));
 
         return ResponseHelper::success(new ParticipantResource($participant), 'Xác nhận người tham gia thành công');
     }
@@ -596,7 +610,7 @@ class ParticipantController extends Controller
         $participants = Participant::where('tournament_id', $tournament->id)
             ->whereIn('user_id', $newUserIds)
             ->get();
-        // event(new UsersInvitedToTournament($tournament, $newUserIds));
+
         return ResponseHelper::success(
             ParticipantResource::collection($participants),
             'Đã gửi lời mời thành công cho ' . count($newUserIds) . ' người chơi.'
