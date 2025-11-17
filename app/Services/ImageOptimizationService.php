@@ -151,4 +151,24 @@ class ImageOptimizationService
 
         return $paths;
     }
+
+    public function optimizeThumbnail($file, $folder = 'thumbnails', $quality = 85)
+    {
+        // Tạo tên file duy nhất
+        $filename = time() . '_' . uniqid() . '.jpg';
+
+        // Đọc ảnh
+        $image = $this->manager->read($file);
+
+        // Encode JPEG với chất lượng
+        $encoded = $image->toJpeg(quality: $quality);
+
+        // Lưu vào storage public
+        $fullPath = "{$folder}/{$filename}";
+        Storage::disk('public')->put($fullPath, $encoded);
+
+        // Trả về URL public
+        return asset('storage/' . $fullPath);
+    }
+
 }
