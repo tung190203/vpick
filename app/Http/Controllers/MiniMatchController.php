@@ -69,7 +69,16 @@ class MiniMatchController extends Controller
         ];
     
         return ResponseHelper::success($data, 'Lấy danh sách trận đấu thành công', 200, $meta);
-    }    
+    }
+    /**
+     * Lấy thông tin chi tiết trận đấu
+     */
+    public function show($matchId)
+    {
+        $match = MiniMatch::withFullRelations()->findOrFail($matchId);
+
+        return ResponseHelper::success(new MiniMatchResource($match), 'Lấy thông tin trận đấu thành công');
+    }
     /**
      * Tạo trận đấu mới
      * participants nếu là int => user
