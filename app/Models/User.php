@@ -62,10 +62,13 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
 
     const OTHER = 0;
 
+    const NO_PUBLIC = 3;
+
     const GENDER = [
         self::MALE,
         self::FEMALE,
-        self::OTHER
+        self::OTHER,
+        self::NO_PUBLIC
     ];
 
     const MORNING = 'morning';
@@ -116,6 +119,7 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         return match ($this->gender) {
             self::MALE => 'Nam',
             self::FEMALE => 'Nữ',
+            self::NO_PUBLIC => 'Không tiết lộ',
             default => 'Khác',
         };
     }
