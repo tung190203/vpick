@@ -1,17 +1,17 @@
 {
   "resources/css/app.css": {
-    "file": "assets/app-BLKtraNd.css",
+    "file": "assets/app-DYOl8bEz.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-DJpB0iC3.js",
+    "file": "assets/app-CP_BD7SE.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "css": [
-      "assets/app-BC4tK_ix.css",
-      "assets/app-BLKtraNd.css"
+      "assets/app-CNBw1V5R.css",
+      "assets/app-DYOl8bEz.css"
     ],
     "assets": [
       "assets/logo-splash-DOuQK6QO.svg",
@@ -22,10 +22,9 @@
       "assets/logo-explain-uBrkVQw0.svg",
       "assets/splash-bg-hSO4uccQ.png",
       "assets/email-sent-DLgpSAAS.svg",
-      "assets/default-avatar-Dk-5jadl.png",
-      "assets/branch-BNleCFR1.svg",
       "assets/male-gQsu98hE.svg",
       "assets/female-BwdMQ4_1.svg",
+      "assets/branch-BNleCFR1.svg",
       "assets/mixed-CGHxHovp.svg",
       "assets/direct-DtKxnT17.svg",
       "assets/round-robin-BIBoWfnl.svg",
@@ -41,10 +40,6 @@
   "resources/js/assets/images/dashboard-bg.svg": {
     "file": "assets/dashboard-bg-j02aDZD4.svg",
     "src": "resources/js/assets/images/dashboard-bg.svg"
-  },
-  "resources/js/assets/images/default-avatar.png": {
-    "file": "assets/default-avatar-Dk-5jadl.png",
-    "src": "resources/js/assets/images/default-avatar.png"
   },
   "resources/js/assets/images/direct.svg": {
     "file": "assets/direct-DtKxnT17.svg",

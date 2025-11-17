@@ -105,7 +105,7 @@
         </nav>
 
         <!-- User Info (Desktop only >= 1024px) -->
-        <div class="hidden lg:flex items-center space-x-3 cursor-pointer">
+        <div class="hidden lg:flex items-center space-x-3 cursor-pointer" @click="goToProfile">
             <div class="relative">
                 <img
                     :src="getUser.avatar_url"
@@ -139,9 +139,10 @@ import {
 import { useUserStore } from "@/store/auth";
 import { storeToRefs } from "pinia";
 import { ROLE } from "@/constants/index";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 const route = useRoute();
+const router = useRouter();
 const userStore = useUserStore();
 const { getUser } = storeToRefs(userStore);
 const { getRole } = storeToRefs(userStore);
@@ -156,5 +157,9 @@ const linkClass = (path) => {
         path === "/" ? route.path === "/" : route.path.startsWith(path);
 
     return isActive ? `${base} ${active}` : `${base} ${normal}`;
+};
+
+const goToProfile = () => {
+    router.push("/profile");
 };
 </script>

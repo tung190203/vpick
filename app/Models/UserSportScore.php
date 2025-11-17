@@ -15,6 +15,10 @@ class UserSportScore extends Model
         'score_value'
     ];
 
+    const PERSONAL_SCORE = 'personal_score';
+    const VNDUPR_SCORE = 'vndupr_score';
+    const DUPR_SCORE = 'dupr_score';
+
     public function userSport()
     {
         return $this->belongsTo(UserSport::class);
