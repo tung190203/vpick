@@ -204,10 +204,9 @@ class UserController extends Controller
 
         if ($request->hasFile('thumbnail')) {
             $this->imageService->deleteOldImage($user->thumbnail);
-            $thumbnailPath = $this->imageService->optimize(
+            $thumbnailPath = $this->imageService->optimizeThumbnail(
                 $request->file('thumbnail'),
                 'thumbnails',
-                800,
                 85
             );
 
