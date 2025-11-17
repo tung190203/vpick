@@ -276,7 +276,7 @@
                   <p class="text-sm font-semibold">Xác nhận tham gia • {{ listTeams.length ?? 0 }}</p>
                   <p class="text-sm font-semibold">Chờ xác nhận • 0</p>
                 </div>
-                <template v-if="listTeams">
+                <template v-if="listTeams && listTeams.length">
                   <div class="border border-[#BBBFCC] rounded flex items-center justify-between p-4 mb-4"
                     v-for="team in listTeams" :key="team.id">
                     <div class="flex items-center gap-3">
@@ -307,7 +307,7 @@
                   </div>
                 </template>
                 <template v-else>
-                    <div class="flex flex-col items-center justify-center h-64 text-center text-gray-500 border border-dashed border-gray-300 rounded-lg p-6 mt-8">
+                    <div class="flex flex-col items-center justify-center h-64 text-center text-gray-500 border-gray-300 rounded-lg p-6 mt-8">
                         <p class="text-lg font-medium">Chưa có đội nào được tạo.</p>
                         <p class="text-sm">Hãy tạo đội đầu tiên để bắt đầu sắp xếp giải đấu.</p>
                     </div>
