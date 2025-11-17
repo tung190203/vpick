@@ -168,8 +168,8 @@ class UserController extends Controller
     {
         $validated = $request->validate([
             'full_name' => 'required|string|max:255',
-            'avatar_url' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'avatar_url' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
+            'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
             'location_id' => 'nullable|exists:locations,id',
             'about' => 'nullable|string|max:300',
             'password' => 'nullable|string|min:8',
