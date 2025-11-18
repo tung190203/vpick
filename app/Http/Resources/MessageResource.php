@@ -17,6 +17,7 @@ class MessageResource extends JsonResource
         return [
             'id' => $this->id,
             'tournament_id' => $this->mini_tournament_id ?? $this->tournament_id,
+            'user_id' => $this->user_id,
             'user' => new UserListResource($this->whenLoaded('user')),
             'type' => $this->type,
             'content' => $this->content,

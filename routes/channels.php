@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\MiniTournament;
+use App\Models\Tournament;
 use Illuminate\Support\Facades\Broadcast;
 
 /*
@@ -23,6 +24,17 @@ Broadcast::channel('mini-tournament.{tournamentId}', function ($user, $tournamen
     if (!$tournament) return false;
 
     return $tournament?->all_users->pluck('id')->contains($user->id);
+});
+
+Broadcast::channel('tournament.{tournamentId}', function ($user, $tournamentId) {
+    $tournament = Tournament::find($tournamentId);
+    if (!$tournament) {
+        return false;
+    }
+
+    $hasAccess = $tournament->all_users->pluck('id')->contains($user->id);
+    
+    return $hasAccess;
 });
 
 Broadcast::channel('chat.{userId}', function ($user, $userId) {

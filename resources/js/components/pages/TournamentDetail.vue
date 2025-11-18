@@ -512,53 +512,7 @@
               <ScheduleTab  :isCreator="isCreator" :toggle="isHandleOwnScore" @handle-toggle="handleUpdateOwnScore" :rank="ranks" :data="tournament"/>
             </div>
             <div v-else-if="activeTab === 'discuss'" key="discuss" class="flex flex-col h-[70vh]">
-              <div class="flex-1 overflow-y-auto p-4 mx-10 space-y-4 ">
-                <div class="flex items-start gap-3 mb-4">
-                  <div class="flex-1 max-w-[60%]">
-                    <div class="bg-[#EDEEF2] rounded-md px-4 py-3 grid grid-cols-[auto_1fr] gap-3 items-start">
-                      <div class="w-10 h-10 rounded-full overflow-hidden">
-                        <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100" alt="User"
-                          class="w-full h-full object-cover" />
-                      </div>
-                      <p class="text-gray-800 text-sm leading-relaxed">
-                        Chào bạn! Mình có thể tham gia trận đấu lúc 17:00 được không?
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="flex items-start gap-3 flex-row-reverse mb-4">
-                  <div class="flex-1 max-w-[60%] flex flex-col items-end">
-                    <div class="bg-[#f8f5ff] rounded-md border border-1 border-[#5422C6] px-4 py-3">
-                      <p class="text-[#3E414C] text-sm leading-relaxed">
-                        Được chứ! Mình đang cần thêm 1 người nữa.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div class="flex items-start gap-3 mb-4">
-                  <div class="flex-1 max-w-[60%]">
-                    <div class="bg-[#EDEEF2] rounded-md px-4 py-3 grid grid-cols-[auto_1fr] gap-3 items-start">
-                      <div class="w-10 h-10 rounded-full overflow-hidden">
-                        <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100" alt="User"
-                          class="w-full h-full object-cover" />
-                      </div>
-                      <p class="text-gray-800 text-sm leading-relaxed">
-                        Chào bạn! Mình có thể tham gia trận đấu lúc 17:00 được không?
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="flex-shrink-0 border-gray-200 flex justify-between items-center px-4 py-4">
-                <PhotoIcon class="w-8 h-8 text-[#3E414C] mr-3 cursor-pointer" />
-                <div class="flex-1 flex items-center relative">
-                  <input type="text" placeholder="Viết tin nhắn"
-                    class="w-full border border-gray-300 bg-[#edeef2] rounded-full pl-4 pr-12 py-2 focus:outline-none focus:ring-1 focus:ring-red-500 placeholder:text-[#BBBFCC] placeholder:text-sm" />
-                  <FaceSmileIcon class="w-6 h-6 text-[#3E414C] cursor-pointer absolute right-3" />
-                </div>
-                <PaperAirplaneIcon class="w-8 h-8 text-[#3E414C] ml-3 cursor-pointer" />
-              </div>
+              <ChatForm :tournamentId="tournament.id" />
             </div>
           </Transition>
         </div>
@@ -615,7 +569,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { AdjustmentsVerticalIcon, ArrowUpTrayIcon, ChevronRightIcon, EnvelopeIcon, LinkIcon, LockClosedIcon, LockOpenIcon, PaperAirplaneIcon, PhotoIcon, QrCodeIcon, XMarkIcon } from '@heroicons/vue/24/solid'
+import { AdjustmentsVerticalIcon, ArrowUpTrayIcon, ChevronRightIcon, EnvelopeIcon, LinkIcon, LockClosedIcon, LockOpenIcon, QrCodeIcon, XMarkIcon } from '@heroicons/vue/24/solid'
 import {
   CalendarDaysIcon,
   MapPinIcon,
@@ -625,8 +579,7 @@ import {
   XCircleIcon,
   UserGroupIcon as UserMultiple,
   UsersIcon,
-  ClipboardDocumentCheckIcon,
-  FaceSmileIcon
+  ClipboardDocumentCheckIcon
 } from '@heroicons/vue/24/outline'
 import UserCard from '@/components/molecules/UserCard.vue'
 import QRcodeModal from '@/components/molecules/QRcodeModal.vue'
@@ -660,6 +613,7 @@ import { storeToRefs } from 'pinia'
 import AddMemberModal from '@/components/molecules/AddMemberModal.vue'
 import ScheduleTab from '@/components/molecules/ScheduleTab.vue'
 import { de } from 'date-fns/locale'
+import ChatForm from '@/components/organisms/ChatForm.vue'
 
 const userStore = useUserStore()
 const { getUser } = storeToRefs(userStore)

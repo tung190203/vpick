@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\MiniTournamentMessageSent;
+use App\Events\TournamentMessageSent;
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\MessageResource;
 use App\Models\MiniTournament;
@@ -11,6 +12,7 @@ use App\Models\Tournament;
 use App\Models\TournamentMessage;
 use App\Models\User;
 use App\Notifications\MiniTournamentMessageNotification;
+use App\Notifications\TournamentMessageNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -130,6 +132,17 @@ class SendMessageController extends Controller
             'meta' => $meta,
         ])->load('user');
 
+        foreach ($allUserIds as $userId) {
+            if ($userId != Auth::id()) {
+                $user = User::find($userId);
+                if ($user) {
+                    $user->notify(new TournamentMessageNotification($message));
+                }
+            }
+        }
+
+        broadcast(new TournamentMessageSent(new MessageResource($message->load('user'))))->toOthers();
+
         return ResponseHelper::success(new MessageResource($message->load('user')), 'Gửi tin nhắn thành công');
     }
 
@@ -150,7 +163,7 @@ class SendMessageController extends Controller
 
         $messages = TournamentMessage::where('tournament_id', $tournamentId)
             ->with('user')
-            ->orderBy('created_at', 'asc')
+            ->orderBy('created_at', 'desc')
             ->paginate($validate['per_page'] ?? TournamentMessage::PER_PAGE);
 
         $meta = [
@@ -160,6 +173,11 @@ class SendMessageController extends Controller
             'total' => $messages->total(),
         ];
 
-        return ResponseHelper::success(MessageResource::collection($messages), 'Lấy tin nhắn thành công', 200, $meta);
+        return ResponseHelper::success(
+            MessageResource::collection($messages->reverse()->values()), 
+            'Lấy tin nhắn thành công', 
+            200, 
+            $meta
+        );
     }
 }

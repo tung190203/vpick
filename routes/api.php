@@ -26,6 +26,7 @@ use App\Http\Controllers\SportController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TournamentStaffController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Broadcast;
 
 /*
 ------------------------------------------------
@@ -37,6 +38,10 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+
+Route::post('/broadcasting/auth', function () {
+    return Broadcast::auth(request());
+})->middleware('auth:api');
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);

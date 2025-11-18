@@ -8,6 +8,8 @@ import Vue3Toastify from 'vue3-toastify'
 import 'vue3-toastify/dist/index.css'
 import FloatingVue from 'floating-vue';
 import 'floating-vue/dist/style.css';
+import EmojiPicker from 'vue3-emoji-picker'
+import 'vue3-emoji-picker/css'
 
 const pinia = createPinia();
 
@@ -22,6 +24,7 @@ app.use(Vue3Toastify, {
     draggable: true,
     progress: undefined,
 })
+app.component('EmojiPicker', EmojiPicker)
 app.use(FloatingVue);
 app.use(router)
 app.mount('#app')

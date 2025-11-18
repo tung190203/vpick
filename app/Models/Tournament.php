@@ -226,20 +226,11 @@ class Tournament extends Model
     public function getAllUsersAttribute(): Collection
     {
         $directUsers = $this->participants
-            ->where('type', 'user')
-            ->pluck('user')
+            ->map(fn($p) => $p->user)
             ->filter();
+        $staffUsers = $this->staff ?? collect();
 
-        $teamUsers = collect();
-        foreach ($this->participants->where('type', 'team') as $teamParticipant) {
-            if ($teamParticipant->team && $teamParticipant->team->members) {
-                $teamUsers = $teamUsers->merge(
-                    $teamParticipant->team->members->pluck('user')->filter()
-                );
-            }
-        }
-
-        return $directUsers->merge($teamUsers)->unique('id')->values();
+        return $directUsers->merge($staffUsers)->unique('id')->values();
     }
 
     public function hasOrganizer(int $userId): bool
