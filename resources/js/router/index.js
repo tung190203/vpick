@@ -32,7 +32,7 @@ router.beforeEach((to, from, next) => {
     }
   }
 
-  if (loginToken && publicPages.includes(to.name)) {
+  if (loginToken && publicPages.includes(to.name) && to.name !== "terms") {
     switch (userRole) {
       case ROLE.ADMIN:
         return next({ name: "admin.dashboard" });
