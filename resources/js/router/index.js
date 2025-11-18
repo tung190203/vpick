@@ -23,14 +23,16 @@ router.beforeEach((to, from, next) => {
   ];
 
   if (!loginToken) {
-    if (!hasSeenOnboarding && to.name !== "onboarding") {
+    const onboardingWhitelist = ["onboarding", "terms"];
+  
+    if (!hasSeenOnboarding && !onboardingWhitelist.includes(to.name)) {
       return next({ name: "onboarding", query: { redirect: to.fullPath } });
     }
-
+  
     if (!publicPages.includes(to.name)) {
       return next({ name: "login", query: { redirect: to.fullPath } });
     }
-  }
+  }  
 
   if (loginToken && publicPages.includes(to.name) && to.name !== "terms") {
     switch (userRole) {
