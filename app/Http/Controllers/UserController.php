@@ -210,7 +210,7 @@ class UserController extends Controller
                 85
             );
 
-            $data['thumbnail'] = asset('storage/' . $thumbnailPath);
+            $data['thumbnail'] = $thumbnailPath;
         }
 
         if (!empty($validated['is_profile_completed']) && !$user->is_profile_completed) {
