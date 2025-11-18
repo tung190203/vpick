@@ -265,10 +265,7 @@ export const route = [
   {
     path: '/terms',
     name: 'terms',
-    component: TermsPage,
-    meta: {
-      role: [ROLE.PLAYER, ROLE.ADMIN, ROLE.REFEREE]
-    }
+    component: TermsPage
   },
   {
     path: '/not-found',
