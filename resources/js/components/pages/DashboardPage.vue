@@ -79,48 +79,54 @@
               <ArrowUpRightIcon class="w-4 h-4 text-gray-[#838799]" />
             </div>
           </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div v-for="(mini, i) in homeData?.upcoming_mini_tournament" :key="i"
-              class="bg-white rounded-[8px] shadow hover:shadow-lg p-4 transition-all relative cursor-pointer">
-              <!-- Bell notification icon -->
-              <div class="absolute top-4 right-4 text-red-500 cursor-pointer hover:text-red-600">
-                <BellAlertIcon class="w-5 h-5" />
+          <div class="min-h-[220px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <template v-if="!homeData?.upcoming_mini_tournament?.length">
+              <div class="col-span-3 flex items-center justify-center text-gray-500 text-sm">
+                Không có kèo đấu nào sắp tới
               </div>
+            </template>
+            <template v-else>
+              <div v-for="(mini, i) in homeData.upcoming_mini_tournament" :key="i"
+                class="bg-white rounded-[8px] shadow hover:shadow-lg p-4 transition-all relative cursor-pointer">
+                <!-- Bell icon -->
+                <div class="absolute top-4 right-4 text-red-500 cursor-pointer hover:text-red-600">
+                  <BellAlertIcon class="w-5 h-5" />
+                </div>
 
-              <div @click="goToMiniTournamentDetail(mini.id)">
-                <div class="text-base text-gray-700 font-semibold">{{ formatTime(mini.starts_at) }}</div>
-                <div class="text-sm text-gray-500 mt-0.5">{{ formatDate(mini.starts_at) }}</div>
-                <div class="text-base text-gray-900 font-bold mt-2 line-clamp-1 cursor-pointer">{{ mini.name }}</div>
-              </div>
+                <div @click="goToMiniTournamentDetail(mini.id)">
+                  <div class="text-base text-gray-700 font-semibold">{{ formatTime(mini.starts_at) }}</div>
+                  <div class="text-sm text-gray-500 mt-0.5">{{ formatDate(mini.starts_at) }}</div>
+                  <div class="text-base text-gray-900 font-bold mt-2 line-clamp-1 cursor-pointer">{{ mini.name }}</div>
+                </div>
 
-              <div class="pt-4 border-gray-100" @click="goToMiniTournamentDetail(mini.id)">
-                <div class="flex justify-start space-x-4">
-                  <!-- Cột 1: Người tạo -->
-                  <div class="flex flex-col items-start pr-4 border-r">
-                    <span class="text-xs text-gray-500 font-medium mb-2">Người tạo</span>
-                    <div class="flex -space-x-2">
-                      <img v-for="(organizer, idx) in mini.staff?.organizer" :key="'creator-' + idx"
-                        :src="organizer.user.avatar_url" :alt="organizer.user.full_name"
-                        class="w-8 h-8 rounded-full border-2 border-white object-cover" />
+                <div class="pt-4 border-gray-100" @click="goToMiniTournamentDetail(mini.id)">
+                  <div class="flex justify-start space-x-4">
+                    <!-- Người tạo -->
+                    <div class="flex flex-col items-start pr-4 border-r">
+                      <span class="text-xs text-gray-500 font-medium mb-2">Người tạo</span>
+                      <div class="flex -space-x-2">
+                        <img v-for="(organizer, idx) in mini.staff?.organizer" :key="'creator-' + idx"
+                          :src="organizer.user.avatar_url" :alt="organizer.user.full_name"
+                          class="w-8 h-8 rounded-full border-2 border-white object-cover" />
+                      </div>
                     </div>
-                  </div>
 
-                  <!-- Cột 2: Người tham gia -->
-                  <div class="flex flex-col items-start">
-                    <span class="text-xs text-gray-500 font-medium mb-2">Người tham gia</span>
-                    <div class="flex items-center -space-x-2">
-                      <img v-for="(user, idx) in mini.all_users.slice(0, 3)" :key="'participant-' + idx"
-                        :src="user.avatar_url" :alt="user.full_name"
-                        class="w-8 h-8 rounded-full border-2 border-white object-cover" />
-                      <div v-if="mini.all_users.length > 3"
-                        class="w-8 h-8 rounded-full border-2 border-white bg-gray-200 flex items-center justify-center text-xs font-semibold text-gray-600">
-                        +{{ mini.all_users.length - 3 }}
+                    <div class="flex flex-col items-start">
+                      <span class="text-xs text-gray-500 font-medium mb-2">Người tham gia</span>
+                      <div class="flex items-center -space-x-2">
+                        <img v-for="(user, idx) in mini.all_users.slice(0, 3)" :key="'participant-' + idx"
+                          :src="user.avatar_url" :alt="user.full_name"
+                          class="w-8 h-8 rounded-full border-2 border-white object-cover" />
+                        <div v-if="mini.all_users.length > 3"
+                          class="w-8 h-8 rounded-full border-2 border-white bg-gray-200 flex items-center justify-center text-xs font-semibold text-gray-600">
+                          +{{ mini.all_users.length - 3 }}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </template>
           </div>
         </section>
 
@@ -133,30 +139,37 @@
               <ArrowUpRightIcon class="w-4 h-4 text-gray-[#838799]" />
             </div>
           </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div v-for="(t, i) in homeData.upcoming_tournaments" :key="i"
-              class="bg-white rounded-[8px] shadow hover:shadow-lg overflow-hidden transition-all p-[16px] cursor-pointer">
-              <div class="relative h-40 rounded-[4px] cursor-pointer overflow-hidden"
-                @click="goToTournamentDetail(t.id)" :style="!t.poster ? { backgroundColor: getRandomColor(t.id) } : {}">
-                <img v-if="t.poster" :src="t.poster" alt="" class="w-full h-full object-cover rounded-[4px]" />
+          <div class="min-h-[220px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <template v-if="!homeData?.upcoming_tournaments?.length">
+              <div class="col-span-3 flex items-center justify-center text-gray-500 text-sm">
+                Không có giải đấu nào sắp tới
               </div>
-              <div class="py-4" @click="goToTournamentDetail(t.id)">
-                <div class="text-sm font-bold text-gray-900 mb-2 cursor-pointer">{{ t.name }}</div>
-                <div class="text-xs text-[#004D99] flex items-center">
-                  <MapPinIcon class="w-4 h-4 mr-1 flex-shrink-0 mt-0.5 text-[#4392E0]" />
-                  <span class="line-clamp-1">{{ t.competition_location?.name ?? 'Không rõ' }}</span>
+            </template>
+
+            <template v-else>
+              <div v-for="(t, i) in homeData.upcoming_tournaments" :key="i"
+                class="bg-white rounded-[8px] shadow hover:shadow-lg overflow-hidden transition-all p-[16px] cursor-pointer">
+                <div class="relative h-40 rounded-[4px] cursor-pointer overflow-hidden"
+                  @click="goToTournamentDetail(t.id)"
+                  :style="!t.poster ? { backgroundColor: getRandomColor(t.id) } : {}">
+                  <img v-if="t.poster" :src="t.poster" alt="" class="w-full h-full object-cover rounded-[4px]" />
                 </div>
-                <div class="text-xs text-[#004D99] flex items-center my-2">
-                  <CalendarDaysIcon class="w-4 h-4 mr-1 flex-shrink-0 mt-0.5 text-[#4392E0]" />
-                  <span class="line-clamp-1">{{ formatDate(t.start_date) }}</span>
-                </div>
-                <div>
+                <div class="py-4" @click="goToTournamentDetail(t.id)">
+                  <div class="text-sm font-bold text-gray-900 mb-2 cursor-pointer">{{ t.name }}</div>
+                  <div class="text-xs text-[#004D99] flex items-center">
+                    <MapPinIcon class="w-4 h-4 mr-1 flex-shrink-0 mt-0.5 text-[#4392E0]" />
+                    <span class="line-clamp-1">{{ t.competition_location?.name ?? 'Không rõ' }}</span>
+                  </div>
+                  <div class="text-xs text-[#004D99] flex items-center my-2">
+                    <CalendarDaysIcon class="w-4 h-4 mr-1 flex-shrink-0 mt-0.5 text-[#4392E0]" />
+                    <span class="line-clamp-1">{{ formatDate(t.start_date) }}</span>
+                  </div>
                   <p class="text-sm line-clamp-2">
                     {{ t.description }}
                   </p>
                 </div>
               </div>
-            </div>
+            </template>
           </div>
         </section>
       </div>
@@ -256,7 +269,7 @@ const getHomeData = async () => {
 const getFriendLists = async () => {
   try {
     const response = await FollowService.getFriendList();
-    friendList.value = response;
+    friendList.value = response.friends;
   } catch (error) {
     console.error("Error fetching friend list:", error);
   }

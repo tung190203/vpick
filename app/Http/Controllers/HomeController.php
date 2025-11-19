@@ -34,7 +34,7 @@ class HomeController extends Controller
             'performance' => 80
         ];
         $upcomingMiniTournaments = MiniTournament::withFullRelations()
-        ->where('starts_at', '>', now())
+        ->whereDate('starts_at', '>', now()->toDateString())
         ->where(function ($query) use ($userId) {
             $query->whereHas('participants', function ($p) use ($userId) {
                 $p->where('user_id', $userId);
@@ -49,7 +49,7 @@ class HomeController extends Controller
 
 
         $upcomingTournaments = Tournament::withFullRelations()
-        ->where('start_date', '>', now())
+        ->whereDate('start_date', '>', now()->toDateString())
         ->where(function ($query) use ($userId) {
             $query->whereHas('participants', function ($p) use ($userId) {
                 $p->where('user_id', $userId);
