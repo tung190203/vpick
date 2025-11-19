@@ -371,7 +371,7 @@
               </template>
             </div>
 
-            <div v-else-if="activeTab === 'type'" key="type">
+            <div v-else-if="activeTab === 'type'" key="type" class="min-h-[70vh]">
               <template v-if="!tournament.tournament_types || !tournament.tournament_types.length">
 
                 <template v-if="!showFormatType">
@@ -508,7 +508,7 @@
               </template>
             </div>
 
-            <div v-else-if="activeTab === 'schedule'" key="schedule" class="flex flex-col h-[70vh]">
+            <div v-else-if="activeTab === 'schedule'" key="schedule" class="flex flex-col min-h-[70vh]">
               <ScheduleTab  :isCreator="isCreator" :toggle="isHandleOwnScore" @handle-toggle="handleUpdateOwnScore" :rank="ranks" :data="tournament"/>
             </div>
             <div v-else-if="activeTab === 'discuss'" key="discuss" class="flex flex-col h-[70vh]">

@@ -961,14 +961,19 @@ class TournamentTypeController extends Controller
             ->orderBy('leg')
             ->get();
     
-        $bracket = $matches->groupBy('round')->map(function ($roundMatches, $round) use ($calculateLegDetails) {
+        $bracket = $matches->groupBy('round')->map(function ($roundMatches, $round) use ($calculateLegDetails, $type) {
             $grouped = $roundMatches->groupBy(function ($match) {
+                // Nếu cả 2 team đều null, group theo chính id của match
+                if ($match->home_team_id === null && $match->away_team_id === null) {
+                    return 'match_' . $match->id;
+                }
+                // Nếu có team, group theo cặp team (cho trường hợp 2 legs)
                 return $match->home_team_id . '_' . $match->away_team_id;
             })->values();
     
             return [
                 'round' => $round,
-                'round_name' => $this->getRoundName($round, $roundMatches->count()),
+                'round_name' => $this->getRoundName($round, $roundMatches->count(), $type->format),
                 'matches' => $grouped->map(function ($matchGroup) use ($calculateLegDetails) {
                     $firstMatch = $matchGroup->first();
     
@@ -983,8 +988,9 @@ class TournamentTypeController extends Controller
                             return [
                                 'id' => $leg->id,
                                 'leg' => $leg->leg,
-                                'home_score' => $details['home_score_calculated'], 
-                                'away_score' => $details['away_score_calculated'], 
+                                'court' => $leg->court,
+                                'home_score' => $details['home_score_calculated'],
+                                'away_score' => $details['away_score_calculated'],
                                 'status' => $leg->status,
                                 'scheduled_at' => $leg->scheduled_at,
                                 'is_completed' => $leg->status === 'completed',
@@ -1007,7 +1013,6 @@ class TournamentTypeController extends Controller
             'total_rounds' => $bracket->count(),
         ]);
     }
-    
 
     private function getMixedBracket(TournamentType $type)
     {
@@ -1114,12 +1119,19 @@ class TournamentTypeController extends Controller
             ->orderBy('leg')
             ->get();
     
-        $knockoutStage = $knockoutMatches->groupBy('round')->map(function ($roundMatches, $round) use ($calculateLegDetails) {
-            $grouped = $roundMatches->groupBy(fn($match) => $match->home_team_id . '_' . $match->away_team_id)->values();
+        $knockoutStage = $knockoutMatches->groupBy('round')->map(function ($roundMatches, $round) use ($calculateLegDetails, $type) {
+            $grouped = $roundMatches->groupBy(function ($match) {
+                // Nếu cả 2 team đều null, group theo chính id của match
+                if ($match->home_team_id === null && $match->away_team_id === null) {
+                    return 'match_' . $match->id;
+                }
+                // Nếu có team, group theo cặp team (cho trường hợp 2 legs)
+                return $match->home_team_id . '_' . $match->away_team_id;
+            })->values();
     
             return [
                 'round' => $round,
-                'round_name' => $this->getRoundName($round, $grouped->count()),
+                'round_name' => $this->getRoundName($round, $roundMatches->count(), $type->format),
                 'matches' => $grouped->map(function ($matchGroup) use ($calculateLegDetails) {
                     $firstMatch = $matchGroup->first();
     
@@ -1221,10 +1233,29 @@ class TournamentTypeController extends Controller
     /**
      * Lấy tên round
      */
-    private function getRoundName($round, $matchCount)
+    private function getRoundName($round, $matchCount, $format, $hasThirdPlace = false)
     {
-        if ($round === 1) {
+        if ($round === 1 && $format == TournamentType::FORMAT_MIXED) {
             return 'Vòng bảng';
+        }
+        
+        if ($matchCount) {
+            switch ($matchCount) {
+                case 1:
+                    return 'Chung kết';
+                case 2:
+                    return 'Bán kết';
+                case 4:
+                    return 'Tứ kết';
+                case 8:
+                    return 'Vòng 1/8';
+                case 16:
+                    return 'Vòng 1/16';
+                case 32:
+                    return 'Vòng 1/32';
+                default:
+                    return "Vòng {$round}";
+            }
         }
         
         return "Vòng {$round}";

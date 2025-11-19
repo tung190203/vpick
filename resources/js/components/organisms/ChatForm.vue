@@ -82,7 +82,7 @@
     </div>
 
     <!-- Input Area -->
-    <div class="flex-shrink-0 border-t border-gray-200 flex justify-between items-center px-4 py-4">
+    <div class="flex-shrink-0 border-gray-200 flex justify-between items-center px-4 py-4">
       <!-- Photo Upload -->
       <label for="photoInput" class="cursor-pointer">
         <PhotoIcon class="w-8 h-8 text-[#3E414C] mr-3 hover:text-[#5422C6]" />

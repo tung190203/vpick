@@ -47,7 +47,7 @@
                                 {{ group.group_name }}
                             </h2>
                             <div class="flex items-center gap-2">
-                                <span class="text-sm text-[#838799]">20 Th7 - 8:00</span>
+                                <span class="text-sm text-[#838799]">Chưa xác định</span>
                                 <button
                                     class="w-9 h-9 rounded-full flex items-center justify-center border border-[#BBBFCC] transition-colors duration-200 hover:bg-gray-100 hover:border-[#838799]">
                                     <PencilIcon
@@ -114,11 +114,11 @@
 
                         <div :class="roundHeaderClass(roundData.round_name, false)"
                             class="flex justify-between items-center w-full mb-4 bg-[#EDEEF2] p-4">
-                            <h2 class="font-bold text-[#3E414C] whitespace-nowrap">
-                                {{ roundData.round_name }}
+                            <h2 class="font-bold text-[#3E414C] whitespace-nowrap" v-for="item in roundData.matches">
+                                {{ item.is_third_place ==1 ? 'Tranh hạng 3' : roundData.round_name }}
                             </h2>
                             <div class="flex items-center gap-2">
-                                <span class="text-sm text-[#838799]">20 Th7 - 8:00</span>
+                                <span class="text-sm text-[#838799]">Chưa xác định</span>
                                 <button
                                     class="w-9 h-9 rounded-full flex items-center justify-center border border-[#BBBFCC] transition-colors duration-200 hover:bg-gray-100 hover:border-[#838799]">
                                     <PencilIcon
@@ -256,14 +256,14 @@ const getTeamInitials = (name) => {
 };
 
 const formatTime = (scheduledAt) => {
-    if (!scheduledAt) return "8:00";
+    if (!scheduledAt) return "Chưa xác định";
     try {
         const date = new Date(scheduledAt);
         const hours = date.getHours().toString().padStart(2, '0');
         const minutes = date.getMinutes().toString().padStart(2, '0');
         return `${hours}:${minutes}`;
     } catch {
-        return "8:00";
+        return "Chưa xác định";
     }
 };
 </script>
