@@ -19,7 +19,7 @@
             ]"
           >
             <h2 class="font-bold text-[#3E414C] whitespace-nowrap">
-              {{ getRoundName(round.round) }}
+              {{ round.round_name }}
             </h2>
             <div class="flex items-center gap-2">
               <span class="text-sm text-[#838799]">20 Th7 - 8:00</span>
@@ -50,17 +50,21 @@
                 <!-- Header sân và thời gian -->
                 <div
                   :class="[
-                    'flex justify-between items-center text-xs font-medium px-4 py-2 bg-[#dcdee6] rounded-t-lg',
+                    'flex justify-between items-center text-xs font-medium px-4 py-2 rounded-t-lg',
                     match.legs[0].status === 'in_progress'
-                      ? 'text-red-500'
-                      : 'text-[#838799]',
+                      ? 'bg-red-500 text-white'
+                      : match.is_third_place
+                      ? 'bg-amber-500 text-white'
+                      : 'bg-[#dcdee6] text-[#838799]',
                   ]"
                 >
-                  <span class="uppercase">SÂN 1</span>
+                  <span class="uppercase">
+                    {{ match.match_label || 'SÂN 1' }}
+                  </span>
                   <div class="flex items-center gap-2">
                     <span
                       v-if="match.legs[0].status === 'in_progress'"
-                      class="text-white font-bold text-xs flex items-center bg-red-500 rounded-full px-2 py-0.5"
+                      class="text-white font-bold text-xs flex items-center bg-red-600 rounded-full px-2 py-0.5"
                     >
                       <VideoCameraIcon class="w-3 h-3 mr-1" />
                       Trực tiếp
@@ -69,7 +73,7 @@
                       {{
                         match.legs[0].scheduled_at
                           ? formatTime(match.legs[0].scheduled_at)
-                          : "8:00"
+                          : "Chưa xác định"
                       }}
                     </span>
                   </div>
@@ -97,15 +101,22 @@
                           {{ match.home_team.name }}
                         </p>
                       </div>
-                      <span class="font-bold text-lg text-[#3E414C]">
-                        {{ match.legs[0].home_score !== null ? match.legs[0].home_score : "-" }}
+                      <span 
+                        :class="[
+                          'font-bold text-lg',
+                          match.winner_team_id === match.home_team.id
+                            ? 'text-[#D72D36]'
+                            : 'text-[#3E414C]'
+                        ]"
+                      >
+                        {{ match.aggregate_score?.home ?? 0 }}
                       </span>
                     </div>
 
                     <!-- Sets của Home -->
-                    <div class="flex gap-1 text-xs text-[#838799]">
+                    <div v-if="match.legs[0].sets && Object.keys(match.legs[0].sets).length > 0" class="flex gap-1 text-xs text-[#838799]">
                       <span
-                        v-for="(set, index) in match.legs[0].sets ? Object.values(match.legs[0].sets).map(s => s.find(r => r.team_id === match.home_team.id).score) : []"
+                        v-for="(set, index) in getTeamSets(match.legs[0].sets, match.home_team.id)"
                         :key="index"
                         class="px-2 py-0.5 bg-gray-200 rounded"
                       >
@@ -132,15 +143,22 @@
                           {{ match.away_team.name }}
                         </p>
                       </div>
-                      <span class="font-bold text-lg text-[#3E414C]">
-                        {{ match.legs[0].away_score !== null ? match.legs[0].away_score : "-" }}
+                      <span 
+                        :class="[
+                          'font-bold text-lg',
+                          match.winner_team_id === match.away_team.id
+                            ? 'text-[#D72D36]'
+                            : 'text-[#3E414C]'
+                        ]"
+                      >
+                        {{ match.aggregate_score?.away ?? 0 }}
                       </span>
                     </div>
 
                     <!-- Sets của Away -->
-                    <div class="flex gap-1 text-xs text-[#838799]">
+                    <div v-if="match.legs[0].sets && Object.keys(match.legs[0].sets).length > 0" class="flex gap-1 text-xs text-[#838799]">
                       <span
-                        v-for="(set, index) in match.legs[0].sets ? Object.values(match.legs[0].sets).map(s => s.find(r => r.team_id === match.away_team.id).score) : []"
+                        v-for="(set, index) in getTeamSets(match.legs[0].sets, match.away_team.id)"
                         :key="index"
                         class="px-2 py-0.5 bg-gray-200 rounded"
                       >
@@ -159,82 +177,82 @@
 </template>
 
   
-  <script setup>
-  import { computed } from "vue";
-  import { PencilIcon, VideoCameraIcon } from "@heroicons/vue/24/solid";
+<script setup>
+import { computed } from "vue";
+import { PencilIcon, VideoCameraIcon } from "@heroicons/vue/24/solid";
+
+const props = defineProps({
+  bracket: {
+    type: Object,
+    required: true,
+  },
+});
+
+const MATCH_HEIGHT = 140;
+const BASE_SPACING = 20;
+
+const bracket = computed(() => props.bracket.bracket || []);
+const totalRounds = computed(() => bracket.value.length);
+
+const getTeamInitials = (name) => {
+  if (!name) return "??";
+  const parts = name.split(" ");
+  if (parts.length > 1) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+  return name.substring(0, 2).toUpperCase();
+};
+
+const getTeamSets = (sets, teamId) => {
+  if (!sets) return [];
   
-  const props = defineProps({
-    bracket: {
-      type: Object,
-      required: true,
-    },
+  return Object.values(sets).map(setData => {
+    const teamResult = setData.find(r => r.team_id === teamId);
+    return teamResult ? teamResult.score : 0;
   });
+};
+
+const getMatchStyle = (roundIndex, matchIndex, totalMatches) => {
+  // Logic giữ nguyên để đảm bảo khoảng cách giữa các trận trong mỗi vòng
+  const spacing = BASE_SPACING * Math.pow(2, roundIndex);
+  const topOffset = roundIndex > 0 ? spacing * Math.pow(2, roundIndex - 1) : 0;
   
-  const MATCH_HEIGHT = 140;
-  const BASE_SPACING = 20;
-  
-  const bracket = computed(() => props.bracket.bracket || []);
-  const totalRounds = computed(() => bracket.value.length);
-  
-  const getRoundName = (roundNumber) => {
-    const roundMap = {
-      1: "Vòng 1",
-      2: "Vòng 2",
-      3: "Vòng 3",
-    };
-    return roundMap[roundNumber] || `Vòng ${roundNumber}`;
+  return {
+    marginBottom: matchIndex < totalMatches - 1 ? `${spacing}px` : '0',
+    marginTop: matchIndex === 0 && roundIndex > 0 ? `${topOffset}px` : '0',
   };
-  
-  const getTeamInitials = (name) => {
-    if (!name) return "??";
-    const parts = name.split(" ");
-    if (parts.length > 1) {
-      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    }
-    return name.substring(0, 2).toUpperCase();
-  };
-  
-  const getMatchStyle = (roundIndex, matchIndex, totalMatches) => {
-    // Logic giữ nguyên để đảm bảo khoảng cách giữa các trận trong mỗi vòng
-    const spacing = BASE_SPACING * Math.pow(2, roundIndex);
-    const topOffset = roundIndex > 0 ? spacing * Math.pow(2, roundIndex - 1) : 0;
-    
-    return {
-      marginBottom: matchIndex < totalMatches - 1 ? `${spacing}px` : '0',
-      marginTop: matchIndex === 0 && roundIndex > 0 ? `${topOffset}px` : '0',
-    };
-  };
-  
-  const formatTime = (scheduledAt) => {
-    if (!scheduledAt) return "8:00";
-    try {
-      const date = new Date(scheduledAt);
-      const hours = date.getHours().toString().padStart(2, "0");
-      const minutes = date.getMinutes().toString().padStart(2, "0");
-      return `${hours}:${minutes}`;
-    } catch {
-      return "8:00";
-    }
-  };
-  </script>
-  
-  <style scoped>
-  /* Giữ nguyên style cho thanh cuộn */
-  .overflow-x-auto::-webkit-scrollbar {
-    height: 8px;
+};
+
+const formatTime = (scheduledAt) => {
+  if (!scheduledAt) return "Chưa xác định";
+  try {
+    const date = new Date(scheduledAt);
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    return `${hours}:${minutes}`;
+  } catch {
+    return "Chưa xác định";
   }
-  
-  .overflow-x-auto::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 10px;
-  }
-  
-  .overflow-x-auto::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 10px;
-  }
-  
-  .overflow-x-auto::-webkit-scrollbar-thumb:hover {
-    background: #555;
-  }
-  </style>
+};
+</script>
+
+<style scoped>
+/* Giữ nguyên style cho thanh cuộn */
+.overflow-x-auto::-webkit-scrollbar {
+  height: 8px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+</style>
