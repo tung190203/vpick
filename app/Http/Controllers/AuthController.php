@@ -433,13 +433,13 @@ class AuthController extends Controller
         try {
             $appleUser = Socialite::driver('sign-in-with-apple')->stateless()->user();
     
-            $name = $appleUser->user['name'] ?? null;
+            $name = $appleUser->user['name'] ?? ('PickiUser' . $appleUser->getId());
             $email = $appleUser->getEmail();
 
             $user = User::firstOrCreate(
                 ['email' => $email],
                 [
-                    'full_name' => $name ?: ('PickiUser' . $appleUser->getId()),
+                    'full_name' => $name,
                     'apple_id' => $appleUser->getId(),
                     'password' => Hash::make(Str::random(16)),
                     'email_verified_at' => now(),
