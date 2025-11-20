@@ -19,6 +19,8 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Google_Client;
 use Illuminate\Support\Facades\Http;
+use Firebase\JWT\JWT;
+use Firebase\JWT\JWK;
 
 class AuthController extends Controller
 {
@@ -432,7 +434,7 @@ class AuthController extends Controller
     {
         try {
             $appleUser = Socialite::driver('sign-in-with-apple')->stateless()->user();
-    
+
             $name = $appleUser->user['name'] ?? ('PickiUser' . $appleUser->getId());
             $email = $appleUser->getEmail();
 
@@ -464,7 +466,64 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             return ResponseHelper::error('Không thể đăng nhập bằng Apple', 500, ['status_code' => 'OAUTH_FAILED']);
         }
-    }    
+    }
+
+    public function loginWithApple(Request $request)
+    {
+        $request->validate(['id_token' => 'required|string']);
+        $idToken = $request->input('id_token');
+        try {
+            $jwks = Http::get('https://appleid.apple.com/auth/keys')->json();
+            $keys = JWK::parseKeySet($jwks);
+            $payload = null;
+            foreach ($keys as $key) {
+                try {
+                    $payload = JWT::decode($idToken, $key);
+                    break;
+                } catch (\Throwable $e) {
+                }
+            }
+            if (!$payload) {
+                return response()->json(['message' => 'Invalid id_token'], 400);
+            }
+            $data = json_decode(json_encode($payload), true);
+            $appleId = $data['sub'];
+            $email = $data['email'] ?? null;
+            $name = $request->input('name');
+            if (!$email) {
+                $email = $appleId . '@privaterelay.appleid.com';
+            }
+            if (!$name) {
+                $name = 'PickiUser' . $appleId;
+            }
+            $user = User::where('apple_id', $appleId)->first();
+
+            if (!$user) {
+                $user = User::firstOrCreate(
+                    ['email' => $email],
+                    [
+                        'full_name' => $name,
+                        'apple_id' => $appleId,
+                        'password' => Hash::make(Str::random(16)),
+                        'email_verified_at' => now(),
+                    ]
+                );
+            }
+
+            Auth::login($user);
+
+            $accessToken = JWTAuth::claims(['type' => 'access'])->fromUser($user);
+            $refreshToken = JWTAuth::claims(['type' => 'refresh', 'exp' => now()->addDays(30)->timestamp])->fromUser($user);
+            $user->last_login = now();
+            $user->save();
+
+            $response = $this->responseWithToken($accessToken, $refreshToken, $user);
+
+            return ResponseHelper::success($response, 'Đăng nhập bằng Apple thành công');
+        } catch (\Exception $e) {
+            return ResponseHelper::error('Không thể đăng nhập bằng Apple', 500, ['status_code' => 'OAUTH_FAILED']);
+        }
+    }
 
     public function me(Request $request)
     {
