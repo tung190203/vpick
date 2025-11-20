@@ -18,6 +18,7 @@ use Illuminate\Support\Str;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Google_Client;
+use Illuminate\Support\Facades\Http;
 
 class AuthController extends Controller
 {
@@ -36,7 +37,7 @@ class AuthController extends Controller
                 'status_code' => 'USER_NOT_FOUND'
             ]);
         }
-        if(!$exits->email_verified_at) {
+        if (!$exits->email_verified_at) {
             $exits->notify(new VerifyEmailNotification($loginField, $request->login));
             return ResponseHelper::error('Vui lòng xác minh email trước khi đăng nhập', 403, [
                 'status_code' => 'OTP_PENDING'
@@ -323,6 +324,65 @@ class AuthController extends Controller
         return Socialite::driver('facebook')->stateless()->redirect();
     }
 
+    public function loginWithFacebook(Request $request)
+    {
+        $request->validate(['access_token' => 'required|string']);
+        $accessToken = $request->input('access_token');
+
+        try {
+            $fbResponse = Http::get('https://graph.facebook.com/me', [
+                'fields' => 'id,name,email,picture',
+                'access_token' => $accessToken,
+            ])->json();
+
+            if (!isset($fbResponse['id'])) {
+                return ResponseHelper::error('Token Facebook không hợp lệ', 401, ['status_code' => 'INVALID_TOKEN']);
+            }
+
+            if (empty($fbResponse['email'])) {
+                return ResponseHelper::error('Facebook account không có email', 400, ['status_code' => 'NO_EMAIL']);
+            }
+
+            // Lưu avatar về storage giống web
+            $avatarUrl = $fbResponse['picture']['data']['url'] ?? null;
+            $avatarName = null;
+            if ($avatarUrl) {
+                $avatarContent = file_get_contents($avatarUrl);
+                $avatarName = 'avatars/' . uniqid() . '.jpg';
+                Storage::disk('public')->put($avatarName, $avatarContent);
+            }
+
+            // Tạo hoặc lấy user
+            $user = User::firstOrCreate(
+                ['email' => $fbResponse['email']],
+                [
+                    'full_name' => $fbResponse['name'] ?? null,
+                    'facebook_id' => $fbResponse['id'],
+                    'avatar_url' => $avatarName ? asset('storage/' . $avatarName) : null,
+                    'password' => Hash::make(Str::random(16)),
+                    'email_verified_at' => now(),
+                ]
+            );
+
+            // JWT Token
+            $accessTokenJWT = JWTAuth::claims(['type' => 'access'])->fromUser($user);
+            $refreshTokenJWT = JWTAuth::claims(['type' => 'refresh', 'exp' => now()->addDays(30)->timestamp])->fromUser($user);
+
+            // Cập nhật last_login
+            $user->last_login = now();
+            $user->save();
+
+            // Response
+            $response = $this->responseWithToken($accessTokenJWT, $refreshTokenJWT, $user);
+            $response['platform'] = 'mobile';
+            $response['status_code'] = 'VERIFIED';
+
+            return ResponseHelper::success($response, 'Đăng nhập bằng Facebook thành công');
+        } catch (\Exception $e) {
+            return ResponseHelper::error('Không thể đăng nhập bằng Facebook', 500, ['status_code' => 'OAUTH_FAILED']);
+        }
+    }
+
     public function handleFacebookCallback(Request $request)
     {
         try {
@@ -362,6 +422,55 @@ class AuthController extends Controller
             return ResponseHelper::error('Không thể đăng nhập bằng Facebook', 500, ['status_code' => 'OAUTH_FAILED']);
         }
     }
+
+    public function redirectToApple()
+    {
+        return Socialite::driver('sign-in-with-apple')->scopes(['name', 'email'])->stateless()->redirect();
+    }
+
+    public function handleAppleCallback(Request $request)
+    {
+        try {
+            $appleUser = Socialite::driver('sign-in-with-apple')->stateless()->user();
+    
+            $name = $appleUser->user['name'] ?? null;
+            $email = $appleUser->getEmail();
+
+            $user = User::firstOrCreate(
+                ['email' => $email],
+                [
+                    'full_name' => $name,
+                    'apple_id' => $appleUser->getId(),
+                    'password' => Hash::make(Str::random(16)),
+                    'email_verified_at' => now(),
+                ]
+            );
+            Auth::login($user);
+            $accessToken = JWTAuth::claims(['type' => 'access'])->fromUser($user);
+            $refreshToken = JWTAuth::claims(['type' => 'refresh', 'exp' => now()->addDays(30)->timestamp])->fromUser($user);
+            $user->last_login = now();
+            $user->save();
+            \Log::info('APPLE USER', [
+                'id' => $appleUser->getId(),
+                'email' => $email,
+                'name' => $name,
+                'raw' => $appleUser,
+            ]);
+
+            if ($request->header('User-Agent') && strpos($request->header('User-Agent'), 'MobileApp') !== false) {
+                return ResponseHelper::success(array_merge($this->responseWithToken($accessToken, $refreshToken, $user), ['status_code' => 'VERIFIED']), 'Đăng nhập bằng Apple thành công');
+            } else {
+                return redirect(config('app.redirect_success_url') . '/login-success?' . http_build_query([
+                    'access_token' => $accessToken,
+                    'refresh_token' => $refreshToken,
+                    'token_type' => 'Bearer',
+                    'expires_in' => 3600,
+                ]));
+            }
+        } catch (\Exception $e) {
+            return ResponseHelper::error('Không thể đăng nhập bằng Apple', 500, ['status_code' => 'OAUTH_FAILED']);
+        }
+    }    
 
     public function me(Request $request)
     {
