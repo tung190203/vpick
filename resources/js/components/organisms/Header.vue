@@ -108,7 +108,7 @@
         <div class="hidden lg:flex items-center space-x-3 cursor-pointer" @click="goToProfile">
             <div class="relative">
                 <img
-                    :src="getUser.avatar_url"
+                    :src="getUser.avatar_url || defaultAvatar"
                     alt="avatar"
                     class="w-10 h-10 rounded-full"
                 />
@@ -120,7 +120,7 @@
             </div>
             <div class="text-left">
                 <p class="text-[13px] text-gray-600">Xin chào,</p>
-                <p class="font-semibold text-gray-800">
+                <p class="font-semibold text-gray-800 truncate w-40">
                     {{ getUser.full_name }}
                 </p>
             </div>
@@ -146,6 +146,7 @@ const router = useRouter();
 const userStore = useUserStore();
 const { getUser } = storeToRefs(userStore);
 const { getRole } = storeToRefs(userStore);
+const defaultAvatar = "/images/default-avatar.png";
 
 const linkClass = (path) => {
     const base =

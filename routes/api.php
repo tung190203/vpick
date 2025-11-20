@@ -65,6 +65,7 @@ Route::prefix('auth')->group(function () {
     // Mobile login with Google
     Route::post('/google', [AuthController::class, 'loginWithGoogle']);
     Route::post('/facebook', [AuthController::class, 'loginWithFacebook']);
+    Route::post('/apple',[AuthController::class, 'loginWithApple']);
 });
 
 Route::get('/verify-email', [VerificationController::class, 'verify']);
