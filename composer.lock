@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3b22a55bb06f73d2075df13704cedb5f",
+    "content-hash": "21d5a7eafaadd86a337ba0631b76b5de",
     "packages": [
         {
             "name": "brick/math",
@@ -643,6 +643,73 @@
                 }
             ],
             "time": "2023-10-12T05:21:21+00:00"
+        },
+        {
+            "name": "genealabs/laravel-sign-in-with-apple",
+            "version": "12.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/mikebronner/laravel-sign-in-with-apple.git",
+                "reference": "5e7a6e19388bc78cec434edc6b9e64af90026dc3"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/mikebronner/laravel-sign-in-with-apple/zipball/5e7a6e19388bc78cec434edc6b9e64af90026dc3",
+                "reference": "5e7a6e19388bc78cec434edc6b9e64af90026dc3",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/support": "^10.0|^11.0|^12.0",
+                "laravel/socialite": "^5.6",
+                "php": "^8.1"
+            },
+            "require-dev": {
+                "orchestra/testbench": "^8.0|^9.0|^10.0",
+                "orchestra/testbench-browser-kit": "^7.12|^8.5|^10.0",
+                "orchestra/testbench-dusk": "^7.20|^8.22|^10.0",
+                "phpunit/phpunit": "^9.5.10|^10.5|^11.5.3",
+                "predis/predis": "^2.1"
+            },
+            "suggest": {
+                "genealabs/laravel-socialiter": "Automatic user resolution and persistence for any Laravel Socialite driver."
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "\\GeneaLabs\\LaravelSignInWithApple\\Providers\\ServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "GeneaLabs\\LaravelSignInWithApple\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Mike Bronner",
+                    "email": "hello@genealabs.com",
+                    "homepage": "https://genealabs.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Add Apple's new single-signon feature to your site with ease.",
+            "support": {
+                "issues": "https://github.com/mikebronner/laravel-sign-in-with-apple/issues",
+                "source": "https://github.com/mikebronner/laravel-sign-in-with-apple/tree/12.0.0"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/mikebronner",
+                    "type": "github"
+                }
+            ],
+            "time": "2025-02-27T00:58:02+00:00"
         },
         {
             "name": "google/apiclient",

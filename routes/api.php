@@ -59,9 +59,12 @@ Route::prefix('auth')->group(function () {
     Route::get('/google/callback', [AuthController::class, 'handleGoogleCallback']);
     Route::get('/facebook/redirect', [AuthController::class, 'redirectToFacebook']);
     Route::get('/facebook/callback', [AuthController::class, 'handleFacebookCallback']);
+    Route::get('/apple/redirect', [AuthController::class, 'redirectToApple']);
+    Route::get('/apple/callback', [AuthController::class, 'handleAppleCallback']);
 
     // Mobile login with Google
     Route::post('/google', [AuthController::class, 'loginWithGoogle']);
+    Route::post('/facebook', [AuthController::class, 'loginWithFacebook']);
 });
 
 Route::get('/verify-email', [VerificationController::class, 'verify']);

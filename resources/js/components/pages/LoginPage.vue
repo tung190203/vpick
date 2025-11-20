@@ -89,6 +89,9 @@ const loginWithGoogle = () => {
 const loginWithFacebook = () => {
   window.location.href = import.meta.env.VITE_BASE_URL + '/auth/facebook/redirect'
 }
+const loginWithApple = () => {
+  window.location.href = import.meta.env.VITE_BASE_URL + '/auth/apple/redirect'
+}
 </script>
 
 <template>
@@ -168,6 +171,12 @@ const loginWithFacebook = () => {
         @click="loginWithFacebook"
       >
         <img src="@/assets/images/facebook-icon.svg" class="w-5 h-5" alt="Google" />
+      </Button>
+      <Button
+        class="w-full flex items-center justify-center gap-2 bg-white !text-gray-800 border border-gray-300 hover:bg-gray-50"
+        @click="loginWithApple"
+      >
+        <img src="@/assets/images/apple-icon.svg" class="w-5 h-5" alt="Google" />
       </Button>
       </div>
 

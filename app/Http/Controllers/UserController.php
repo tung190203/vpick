@@ -10,6 +10,7 @@ use App\Services\GeocodingService;
 use App\Services\ImageOptimizationService;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
@@ -231,11 +232,16 @@ class UserController extends Controller
                         'tier' => null
                     ]);
 
-                    if (!empty($validated['score_value'][$index])) {
-                        $userSport->scores()->create([
-                            'score_type' => 'personal_score',
-                            'score_value' => $validated['score_value'][$index]
-                        ]);
+                    $value = $validated['score_value'][$index] ?? null;
+                    if (!empty($value)) {
+                        DB::transaction(function () use ($userSport, $value) {
+                            foreach (['scores' => 'personal_score', 'scopes' => 'vndupr_score'] as $relation => $type) {
+                                $userSport->$relation()->create([
+                                    'score_type' => $type,
+                                    'score_value' => $value
+                                ]);
+                            }
+                        });
                     }
                 }
             }
