@@ -60,7 +60,7 @@ Route::prefix('auth')->group(function () {
     Route::get('/facebook/redirect', [AuthController::class, 'redirectToFacebook']);
     Route::get('/facebook/callback', [AuthController::class, 'handleFacebookCallback']);
     Route::get('/apple/redirect', [AuthController::class, 'redirectToApple']);
-    Route::get('/apple/callback', [AuthController::class, 'handleAppleCallback']);
+    Route::post('/apple/callback', [AuthController::class, 'handleAppleCallback']);
 
     // Mobile login with Google
     Route::post('/google', [AuthController::class, 'loginWithGoogle']);

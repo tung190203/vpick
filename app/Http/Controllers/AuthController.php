@@ -439,7 +439,7 @@ class AuthController extends Controller
             $user = User::firstOrCreate(
                 ['email' => $email],
                 [
-                    'full_name' => $name,
+                    'full_name' => $name ?: ('PickiUser' . $appleUser->getId()),
                     'apple_id' => $appleUser->getId(),
                     'password' => Hash::make(Str::random(16)),
                     'email_verified_at' => now(),
@@ -450,12 +450,6 @@ class AuthController extends Controller
             $refreshToken = JWTAuth::claims(['type' => 'refresh', 'exp' => now()->addDays(30)->timestamp])->fromUser($user);
             $user->last_login = now();
             $user->save();
-            \Log::info('APPLE USER', [
-                'id' => $appleUser->getId(),
-                'email' => $email,
-                'name' => $name,
-                'raw' => $appleUser,
-            ]);
 
             if ($request->header('User-Agent') && strpos($request->header('User-Agent'), 'MobileApp') !== false) {
                 return ResponseHelper::success(array_merge($this->responseWithToken($accessToken, $refreshToken, $user), ['status_code' => 'VERIFIED']), 'Đăng nhập bằng Apple thành công');
