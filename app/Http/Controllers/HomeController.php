@@ -10,11 +10,8 @@ use App\Http\Resources\ListTournamentResource;
 use App\Models\Banner;
 use App\Models\Club;
 use App\Models\MiniTournament;
-use App\Models\MiniTournamentStaff;
 use App\Models\Tournament;
-use App\Models\TournamentStaff;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 
 class HomeController extends Controller
 {
