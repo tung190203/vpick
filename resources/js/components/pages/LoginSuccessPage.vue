@@ -32,6 +32,12 @@ async function fetchUser(token, type) {
     })
     localStorage.setItem(LOCAL_STORAGE_USER.USER, JSON.stringify(res.data.data))
     if(res && res.data.data) {
+      if(res.data.data.is_profile_completed == 0){
+        setTimeout(() => {
+          router.push({ path: '/complete-profile' })
+        }, 1000)
+        return
+      }
       switch (res.data.data.role) {
         case ROLE.ADMIN:
           router.replace({ name: 'admin.dashboard' })

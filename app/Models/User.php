@@ -42,6 +42,7 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         'visibility',
         'phone',
         'self_score',
+        'apple_id'
     ];
 
     const PER_PAGE = 15;
