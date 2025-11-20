@@ -232,16 +232,15 @@ class UserController extends Controller
                         'tier' => null
                     ]);
 
-                    $value = $validated['score_value'][$index] ?? null;
-                    if (!empty($value)) {
-                        DB::transaction(function () use ($userSport, $value) {
-                            foreach (['scores' => 'personal_score', 'scopes' => 'vndupr_score'] as $relation => $type) {
-                                $userSport->$relation()->create([
-                                    'score_type' => $type,
-                                    'score_value' => $value
-                                ]);
-                            }
-                        });
+                    if (!empty($validated['score_value'][$index])) {
+                        $userSport->scores()->create([
+                            'score_type' => 'personal_score',
+                            'score_value' => $validated['score_value'][$index]
+                        ]);
+                        $userSport->scores()->create([
+                            'score_type' => 'vndupr_score',
+                            'score_value' => $validated['score_value'][$index]
+                        ]);
                     }
                 }
             }

@@ -13,7 +13,7 @@
               <!-- Left side - Ratings -->
               <div class="mb-6 md:mb-0">
                 <div class="text-sm opacity-90 mb-1 text-[32px]">VNDUPR</div>
-                <div class="text-6xl font-bold leading-none mb-4 text-[100px]">{{ homeData.user_info?.vndupr_scor ?? 0
+                <div class="text-6xl font-bold leading-none mb-4 text-[100px]">{{ homeData.user_info?.vndupr_score ?? 0
                 }}
                 </div>
                 <div class="text-sm opacity-90 mb-1 text-[32px]">DUPR</div>
