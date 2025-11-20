@@ -298,7 +298,7 @@ class UserController extends Controller
         $user->referee()->delete();
         $user->playTimes()->delete();
         $user->badges()->delete();
-        $user->sport()->delete();
+        $user->sport()->detach();
         $user->sports()->delete();
         $user->vnduprScores()->delete();
         $user->clubs()->detach();
