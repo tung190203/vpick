@@ -44,7 +44,9 @@ return [
     ],
     'apple' => [
         'client_id' => env('APPLE_CLIENT_ID'),
-        'client_secret' => env('APPLE_CLIENT_SECRET'),
+        'team_id' => env('APPLE_TEAM_ID'),
+        'key_id' => env('APPLE_KEY_ID'),
         'redirect' => env('APPLE_REDIRECT_URI'),
+        'private_key_path' => storage_path('app/apple/AuthKey_X3ZC56G9YN.p8'),
     ],
 ];
