@@ -123,7 +123,7 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mx-10 mb-10 items-start">
                     <SportLevelCard v-for="(item, index) in mappedSports" :key="index"
-                        :icon="item.icon || '/images/basketball.png'" :title="item.sport_name"
+                        :icon="item.sport_icon || '/images/basketball.png'" :title="item.sport_name"
                         :subtitle="item.dupr == 0 ? 'VNDUPR ' + item.vndupr : 'DUPR ' + item.dupr"
                         :selfScore="item.selfScore" :dupr="item.dupr" :vndupr="item.vndupr"
                         :is-open="openIndex === index" @toggle="toggleCard(index)" />
