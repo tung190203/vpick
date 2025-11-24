@@ -87,7 +87,7 @@ export const route = [
         }
       },
       {
-        path: '/profile',
+        path: '/profile/:id',
         name: 'profile',
         component: ProfilePage,
         meta: {

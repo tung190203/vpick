@@ -15,27 +15,27 @@
         </div>
 
         <!-- Navigation (Desktop only >= 1024px) -->
-        <nav class="hidden lg:flex items-center space-x-1 lg:gap-4 sm:gap-2">
+        <nav class="hidden lg:flex items-center space-x-1 xl:gap-8 sm:gap-2">
             <!-- Player -->
             <template v-if="getRole === ROLE.PLAYER">
-                <RouterLink to="/" :class="linkClass('/')">
+                <RouterLink class="whitespace-nowrap" to="/" :class="linkClass('/')">
                     <HomeIcon class="w-5 h-5" />
                     Trang chủ
                 </RouterLink>
 
-                <RouterLink to="/friends" :class="linkClass('/friends')">
+                <RouterLink class="whitespace-nowrap" to="/friends" :class="linkClass('/friends')">
                     <UsersIcon class="w-5 h-5" />
                     Bạn bè
                 </RouterLink>
 
-                <RouterLink
+                <RouterLink class="whitespace-nowrap"
                     to="/mini-tournament/create"
                     :class="linkClass('/mini-tournament')"
                 >
                     <PlusCircleIcon class="w-5 h-5" />
                     Tạo kèo đấu
                 </RouterLink>
-                <RouterLink
+                <RouterLink class="whitespace-nowrap"
                     to="/tournament/create"
                     :class="linkClass('/tournament')"
                 >
@@ -43,7 +43,7 @@
                     Tạo giải đấu
                 </RouterLink>
 
-                <RouterLink to="/tools" :class="linkClass('/tools')">
+                <RouterLink class="whitespace-nowrap" to="/tools" :class="linkClass('/tools')">
                     <BriefcaseIcon class="w-5 h-5" />
                     Công cụ
                 </RouterLink>
@@ -78,7 +78,7 @@
 
             <!-- Admin -->
             <template v-else-if="getRole === ROLE.ADMIN">
-                <RouterLink
+                <RouterLink class="whitespace-nowrap"
                     to="/admin/dashboard"
                     :class="linkClass('/admin/dashboard')"
                 >
@@ -86,7 +86,7 @@
                     Trang chủ
                 </RouterLink>
 
-                <RouterLink
+                <RouterLink class="whitespace-nowrap"
                     to="/admin/tournament"
                     :class="linkClass('/admin/tournament')"
                 >
@@ -94,7 +94,7 @@
                     Quản lý giải
                 </RouterLink>
 
-                <RouterLink
+                <RouterLink class="whitespace-nowrap"
                     to="/admin/users"
                     :class="linkClass('/admin/users')"
                 >
@@ -105,8 +105,8 @@
         </nav>
 
         <!-- User Info (Desktop only >= 1024px) -->
-        <div class="hidden lg:flex items-center space-x-3 cursor-pointer" @click="goToProfile">
-            <div class="relative">
+        <div class="hidden lg:flex items-center space-x-3 cursor-pointer" @click="goToProfile(getUser.id)">
+            <div class="relative w-10 h-10">
                 <img
                     :src="getUser.avatar_url || defaultAvatar"
                     alt="avatar"
@@ -120,7 +120,7 @@
             </div>
             <div class="text-left">
                 <p class="text-[13px] text-gray-600">Xin chào,</p>
-                <p class="font-semibold text-gray-800 truncate w-40">
+                <p class="font-semibold text-gray-800 truncate xl:w-40 w-32" v-tooltip="getUser.full_name">
                     {{ getUser.full_name }}
                 </p>
             </div>
@@ -160,7 +160,7 @@ const linkClass = (path) => {
     return isActive ? `${base} ${active}` : `${base} ${normal}`;
 };
 
-const goToProfile = () => {
-    router.push("/profile");
+const goToProfile = (id) => {
+    router.push({ name: 'profile', params: { id } });
 };
 </script>

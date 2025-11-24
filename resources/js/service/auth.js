@@ -43,3 +43,7 @@ export const resetPassword = async (data) => {
 export const updateUser = async (data) => {
   return axiosInstance.post(`${userEndpoint}/update`, data).then((response) => response.data.data);
 }
+
+export const detailUser = async (id) => {
+  return axiosInstance.get(`${userEndpoint}/${id}`).then((response) => response.data.data);
+}

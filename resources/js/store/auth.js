@@ -88,6 +88,10 @@ export const useUserStore = defineStore("user", () => {
     fillUserData(response.user);
   }
 
+  const detailUser = async (id) => {
+    return AuthService.detailUser(id)
+  }
+
   return {
     getUser,
     getRole,
@@ -102,5 +106,6 @@ export const useUserStore = defineStore("user", () => {
     fillPassword,
     verifyOtpPassword,
     resendOtpPassword,
+    detailUser
   }  
 });
