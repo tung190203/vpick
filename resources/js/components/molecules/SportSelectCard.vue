@@ -89,7 +89,7 @@
                     </div>
 
                     <div class="p-6 flex justify-center">
-                        <button @click="saveSports"
+                        <button @click="showConfirmModal = true"
                             class="bg-red-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors shadow-lg">
                             Lưu thay đổi
                         </button>
@@ -126,6 +126,35 @@
                 </div>
             </div>
         </Transition>
+
+        <Transition name="modal">
+            <div v-if="showConfirmModal" class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black bg-opacity-50"
+                @click.self="closeConfirmModal">
+                <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 text-center">
+
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">
+                        Xác nhận lưu thay đổi
+                    </h2>
+
+                    <p class="text-gray-600 mb-6">
+                        Bạn có chắc chắn muốn lưu các thay đổi môn thể thao?
+                    </p>
+
+                    <div class="flex gap-3">
+                        <button @click="closeConfirmModal"
+                            class="flex-1 border-2 border-gray-300 rounded-xl py-3 font-semibold text-gray-900 hover:bg-gray-50">
+                            Hủy
+                        </button>
+
+                        <button @click="confirmSave"
+                            class="flex-1 bg-red-600 text-white rounded-xl py-3 font-semibold hover:bg-red-700">
+                            Xác nhận
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </Transition>
     </Teleport>
 </template>
 
@@ -142,21 +171,21 @@ const props = defineProps({
 const emit = defineEmits(['close', 'save']);
 
 const searchQuery = ref('');
-// Lưu array của objects: { sport_id, score_value }
 const selectedSportsWithLevel = ref([]);
 const showLevelModal = ref(false);
 const selectedSportForLevel = ref(null);
 const selectedLevel = ref(null);
+const showConfirmModal = ref(false);
 const levels = [1, 2, 3, 4, 5];
 
 // Khởi tạo từ mySports (bao gồm cả score hiện tại)
 watch(() => props.isOpen, (newVal) => {
     if (newVal) {
         selectedSportsWithLevel.value = props.mySports.map(s => {
-            // Lấy personal_score từ scores array
-            const personalScore = s.scores?.find(x => x.personal_score?.score_value)?.personal_score?.score_value 
-                || s.scores?.find(x => x.score_type === 'personal_score')?.score_value 
-                || 1;
+            const personalScore = 
+                s.scores?.find(x => x.personal_score?.score_value)?.personal_score?.score_value ||
+                s.scores?.find(x => x.score_type === 'personal_score')?.score_value ||
+                1;
             return {
                 sport_id: s.sport_id || s.id,
                 score_value: personalScore
@@ -216,12 +245,16 @@ const closeLevelModal = () => {
     selectedLevel.value = null;
 };
 
-const saveSports = () => {
-    // Emit data theo format API cần: { sport_ids: [], score_value: [] }
+const closeConfirmModal = () => {
+    showConfirmModal.value = false;
+};
+
+const confirmSave = () => {
     const sportIds = selectedSportsWithLevel.value.map(s => s.sport_id);
     const scoreValues = selectedSportsWithLevel.value.map(s => s.score_value);
     
     emit('save', { sport_ids: sportIds, score_value: scoreValues });
+    showConfirmModal.value = false;
     closeModal();
 };
 </script>

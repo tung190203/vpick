@@ -62,7 +62,7 @@ class ImageOptimizationService
      */
     public function optimize($file, $path, $maxWidth = 1920, $quality = 80)
     {
-        $filename = time() . '_' . $file->getClientOriginalName();
+        $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
         $image = $this->manager->read($file);
 
         // Resize nếu ảnh lớn hơn maxWidth
@@ -72,7 +72,7 @@ class ImageOptimizationService
         $encoded = $optimized->toJpeg(quality: $quality);
 
         // Lưu vào storage
-        Storage::put($path . '/' . $filename, $encoded);
+        Storage::disk('public')->put($path . '/' . $filename, $encoded);
 
         return $path . '/' . $filename;
     }
