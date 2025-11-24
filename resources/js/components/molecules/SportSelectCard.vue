@@ -29,7 +29,7 @@
                                         
                                         <div class="w-12 h-12 mb-2 flex items-center justify-center">
                                             <img v-if="item.sport.icon" :src="item.sport.icon" alt=""
-                                                class="w-full h-full object-contain" />
+                                                class="w-full h-full object-contain filter invert" />
                                             <svg v-else class="w-10 h-10" viewBox="0 0 24 24" fill="none"
                                                 stroke="currentColor">
                                                 <circle cx="12" cy="12" r="10" stroke-width="2" />
