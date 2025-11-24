@@ -216,6 +216,7 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
 
     Route::prefix('sports')->group(function () {
         Route::match(['get', 'post'], '/index', [SportController::class, 'index']);
+        Route::post('/update/{id}', [SportController::class, 'update']);
     });
     Route::prefix('facilities')->group(function () {
         Route::get('/index', [FacilityController::class, 'index']);
