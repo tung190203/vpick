@@ -495,7 +495,7 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         }
         return $this->followings()
             ->where('followable_id', $otherUser->id)
-            ->orWhere('followable_type', User::class)
+            ->where('followable_type', User::class)
             ->exists();
     }
 

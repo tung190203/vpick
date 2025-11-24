@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -38,7 +39,7 @@ class UserResource extends JsonResource
             'play_times' => UserPlayTimeResource::collection($this->whenLoaded('playTimes')),
             'sports' => UserSportResource::collection($this->whenLoaded('sports')),
             'clubs' => ClubResource::collection($this->whenLoaded('clubs')),
-            'is_followed' => auth()->check() && $this->isFollowing(auth()->user()),
+            'is_followed' => $request->user() ? $request->user()->isFollowing($this->resource) : false,
         ];
     }
 }

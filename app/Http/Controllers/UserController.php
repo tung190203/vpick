@@ -183,7 +183,7 @@ class UserController extends Controller
             'sport_ids' => 'nullable|array',
             'sport_ids.*' => 'exists:sports,id',
             'score_value' => 'nullable|array',
-            'score_value.*' => 'integer|min:0',
+            'score_value.*' => 'min:0',
             'visibility' => 'nullable|in:open,friend-only,private',
             'self_score' => 'nullable|string|max:255',
         ]);

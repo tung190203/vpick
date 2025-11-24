@@ -299,10 +299,10 @@
                 </button>
 
                 <!-- User Info (Mobile only) - Đưa xuống dưới cùng -->
-                <div class="lg:hidden flex items-center h-12 px-3 rounded-xl bg-gray-50 mt-2">
+                <div class="lg:hidden flex items-center h-12 px-3 rounded-xl bg-gray-50 mt-2 cursor-pointer"  @click="goToProfile(getUser.id)">
                     <div class="relative flex-shrink-0">
                         <img
-                            :src="getUser.avatar_url"
+                            :src="getUser.avatar_url || defaultAvatar"
                             alt="avatar"
                             class="w-8 h-8 rounded-full"
                         />
@@ -353,6 +353,7 @@ const router = useRouter();
 const route = useRoute();
 const userStore = useUserStore();
 const { getRole, getUser } = storeToRefs(userStore);
+const defaultAvatar = "/images/default-avatar.png";
 
 const isExpanded = ref(false);
 const hasNotification = ref(true);
@@ -399,6 +400,10 @@ const mobileLinkClass = (path) => {
     const isActive = path === "/" ? route.path === "/" : route.path.startsWith(path);
 
     return isActive ? `${base} ${active}` : `${base} ${normal}`;
+};
+
+const goToProfile = (id) => {
+    router.push({ name: 'profile', params: { id } });
 };
 </script>
 
