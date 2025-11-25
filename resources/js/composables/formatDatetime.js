@@ -46,3 +46,33 @@ export function formatEventDate(dateString) {
 
   return `${dayOfWeek} ${day} ${month} lúc ${hours}:${minutes}`;
 }
+
+export const formatDateForDB = (date) => {
+  if (!date) return "";
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+export const convertToDateObject = (dateStr) => {
+  if (!dateStr) return null;
+  
+  // Nếu đã là Date object thì return luôn
+  if (dateStr instanceof Date) return dateStr;
+  
+  // Nếu là string DD-MM-YYYY thì chuyển sang Date object
+  if (typeof dateStr === 'string' && dateStr.includes('-')) {
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+          // Kiểm tra xem có phải DD-MM-YYYY không
+          if (parts[0].length <= 2) {
+              // DD-MM-YYYY
+              return new Date(parts[2], parts[1] - 1, parts[0]);
+          }
+      }
+  }
+  
+  return dateStr;
+};
