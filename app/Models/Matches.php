@@ -50,6 +50,17 @@ class Matches extends Model
     {
         return $this->hasMany(MatchResult::class, 'match_id');
     }
+
+    public function poolAdvancementRules()
+    {
+        return $this->hasMany(PoolAdvancementRule::class, 'next_match_id');
+    }
+
+    public function vnduprHistory()
+    {
+        return $this->hasMany(VnduprHistory::class, 'match_id');
+    }
+
     public function homeTeam()
     {
         return $this->belongsTo(Team::class, 'home_team_id');
@@ -62,6 +73,17 @@ class Matches extends Model
     public function referee()
     {
         return $this->belongsTo(User::class, 'referee_id');
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::deleting(function ($match) {
+            $match->results()->delete();
+            $match->poolAdvancementRules()->delete();
+            $match->vnduprHistory()->delete();
+        });
     }
 
     public function scopeWithFullRelations($query)

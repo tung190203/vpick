@@ -228,6 +228,30 @@ class TournamentType extends Model
     {
         return $this->hasMany(TeamRanking::class);
     }
+    public function advancementRules()
+    {
+        return $this->hasMany(PoolAdvancementRule::class);
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::deleting(function ($tournamentType) {
+            // Xoá matches và tất cả liên quan
+            $tournamentType->matches->each(function ($match) {
+                $match->delete();
+            });
+
+            // Xoá các liên quan khác
+            $tournamentType->teamRankings()->delete();
+            $tournamentType->advancementRules()->delete();
+
+            if ($tournamentType->format == 1) {
+                $tournamentType->groups()->delete();
+            }
+        });
+    }
 
     // ============================================
     // HELPER METHODS
@@ -426,9 +450,5 @@ class TournamentType extends Model
     public function scopeByTournament($query, $tournamentId)
     {
         return $query->where('tournament_id', $tournamentId);
-    }
-    public function advancementRules()
-    {
-        return $this->hasMany(PoolAdvancementRule::class);
     }
 }

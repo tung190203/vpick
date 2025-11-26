@@ -2,3 +2,12 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.vtb-item-players {
+    background-color: transparent !important;
+}
+
+.vtb-item p {
+    background-color: transparent !important;
+    padding: 15px !important;
+}
