@@ -114,8 +114,11 @@
 
                         <div :class="roundHeaderClass(roundData.round_name, false)"
                             class="flex justify-between items-center w-full mb-4 bg-[#EDEEF2] p-4">
-                            <h2 class="font-bold text-[#3E414C] whitespace-nowrap" v-for="item in roundData.matches">
-                                {{ item.is_third_place ==1 ? 'Tranh hạng 3' : roundData.round_name }}
+                            <h2 class="font-bold text-[#3E414C] whitespace-nowrap">
+                                {{ roundData.matches.some(m => m.is_third_place == 1) 
+                                    ? 'Tranh hạng 3' 
+                                    : roundData.round_name 
+                                }}
                             </h2>
                             <div class="flex items-center gap-2">
                                 <span class="text-sm text-[#838799]">Chưa xác định</span>

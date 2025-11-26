@@ -179,15 +179,6 @@ class TournamentTypeController extends Controller
      */
     public function destroy(TournamentType $tournamentType)
     {
-        $tournamentType->matches()->each(function ($match) {
-            $match->results()->delete();
-            $match->delete();
-        });        
-        $tournamentType->teamRankings()->delete();
-        $tournamentType->advancementRules()->delete();
-        if($tournamentType->format == 1) {
-            $tournamentType->groups()->delete();
-        }
         $tournamentType->delete();
 
         return ResponseHelper::success('Xoá thể thức thành công');
