@@ -102,8 +102,8 @@
                             <h3 class="font-bold text-[#3E414C]">{{ group.group_name }}</h3>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 px-2">
-                            <div v-for="match in group.matches" :key="match.match_id">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 px-2 cursor-pointer">
+                            <div v-for="match in group.matches" :key="match.match_id" @click="getDetailMatches(match.match_id)">
                                 <div v-for="leg in match.legs" :key="leg.id"
                                     class="match-card bg-[#dcdee6] rounded-lg w-full flex flex-col mb-3">
                                     <div
@@ -148,7 +148,7 @@
 
                 <!-- Knockout Stage -->
                 <template v-if="currentMixedStage === 'knockout' && mixedBracket.knockout_stage">
-                    <div v-if="currentKnockoutRound" class="mb-6">
+                    <div v-if="currentKnockoutRound" class="mb-6 cursor-pointer">
                         <div class="grid grid-cols-2 items-center mb-4 uppercase px-2">
                             <p v-if="currentKnockoutRound.matches.length === 1" class="text-sm font-semibold">
                             {{ currentKnockoutRound.matches[0].is_third_place == 1 ? 'Tranh hạng 3' : currentKnockoutRound.round_name }} •
@@ -165,7 +165,7 @@
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 px-2">
-                            <div v-for="match in currentKnockoutRound.matches" :key="match.match_id"
+                            <div v-for="match in currentKnockoutRound.matches" :key="match.match_id" @click="getDetailMatches(match.match_id)"
                                 :class="[
                                     'match-card rounded-lg w-full flex flex-col bg-[#dcdee6]'
                                 ]">
@@ -254,7 +254,7 @@
         <!-- Elimination Format (format === 2) -->
         <template v-else-if="data.tournament_types?.[0]?.format === 2">
             <template v-if="eliminationBracket && eliminationBracket.length > 0">
-                <div v-if="currentEliminationRound" class="mb-6">
+                <div v-if="currentEliminationRound" class="mb-6 cursor-pointer">
                     <div class="grid grid-cols-2 items-center mb-4 uppercase px-2">
                         <p class="text-sm font-semibold">{{ currentEliminationRound.round_name }} • {{
                             currentEliminationRound.matches.length }} trận đấu</p>
@@ -264,7 +264,7 @@
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 px-2">
-                        <div v-for="match in currentEliminationRound.matches" :key="match.match_id"
+                        <div v-for="match in currentEliminationRound.matches" :key="match.match_id" @click="getDetailMatches(match.match_id)"
                             :class="[
                                 'match-card rounded-lg w-full flex flex-col',
                                 match.is_third_place ? 'bg-amber-100 border-2 border-amber-500' : 'bg-[#dcdee6]'
@@ -358,9 +358,9 @@
                         </p>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 px-2">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 px-2 cursor-pointer">
                         <div v-for="match in currentRoundMatches" :key="match.id"
-                            class="match-card bg-[#dcdee6] rounded-lg w-full flex flex-col">
+                            class="match-card bg-[#dcdee6] rounded-lg w-full flex flex-col" @click="getDetailMatches(match.id)">
                             <div
                                 class="flex justify-between items-center text-xs font-medium text-[#838799] px-4 py-2 bg-[#dcdee6] rounded-tl-lg rounded-tr-lg">
                                 <span class="uppercase">SÂN {{ match.court }}</span>
@@ -433,19 +433,24 @@
             </template>
         </template>
     </template>
+    <CreateMatch v-model="showCreateMatchModal" @create="handleCreateMatch" :data="detailData" :tournament="data" />
 </template>
 
 <script setup>
+import CreateMatch from '@/components/molecules/CreateMatch.vue'
 import { ref, watch, computed } from 'vue'
 import { SCHEDULE_TABS } from '@/data/tournament/index.js'
 import { VideoCameraIcon } from "@heroicons/vue/24/solid";
 import { toast } from 'vue3-toastify';
 import * as TournamentTypeService from '@/service/tournamentType.js'
+import * as MatchesService from '@/service/match.js'
 
 const scheduleTabs = SCHEDULE_TABS
 const scheduleActiveTab = ref('ranking')
 const matches = ref([])
 const currentRound = ref('1')
+const showCreateMatchModal = ref(false)
+const detailData = ref({});
 
 // Elimination bracket data
 const eliminationBracket = ref([])
@@ -517,6 +522,22 @@ const getMatches = async (tournamentTypeId) => {
     } catch (error) {
         toast.error(error.response?.data?.message || 'Lấy trận thi đấu thất bại');
     }
+}
+
+const getDetailMatches = async (id) => {
+    try {
+        const res = await MatchesService.detailMatches(id);
+        if(res) {
+            detailData.value = res
+            showCreateMatchModal.value = true;
+        }
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi thực hiện thao tác này');
+    }
+}
+
+const handleCreateMatch = (match) => {
+  console.log('Created match:', match)
 }
 
 // ========== MIXED FORMAT COMPUTED PROPERTIES ==========
