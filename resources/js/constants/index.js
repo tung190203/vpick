@@ -32,7 +32,8 @@ export const API_ENDPOINT = {
     BASE: '/send-message',
     MINITOURNAMENT: () => `${API_ENDPOINT.MESSAGE.BASE}/mini-tournament`,
     TOURNAMENT: () => `${API_ENDPOINT.MESSAGE.BASE}/tournament`,
-  }
+  },
+  MATCHES: '/matches'
 };
 
 export const TOURNAMENT_STATUS = {

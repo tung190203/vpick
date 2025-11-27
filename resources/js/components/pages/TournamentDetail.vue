@@ -540,7 +540,6 @@
         @change-club="onClubChange"
         @invite="handleInvite"
     />
-    <CreateMatch v-model="showCreateMatchModal" @create="handleCreateMatch" />
     <DeleteConfirmationModal v-model="showDeleteModal" title="Xác nhận hủy bỏ giải đấu"
       message="Thao tác này không thể hoàn tác." confirmButtonText="Xác nhận" @confirm="removeTournament" />
       <DeleteConfirmationModal v-model="showDeleteTournamentTypeModal" title="Xác nhận thay đổi thể thức"
@@ -584,7 +583,6 @@ import {
 import UserCard from '@/components/molecules/UserCard.vue'
 import QRcodeModal from '@/components/molecules/QRcodeModal.vue'
 import InviteGroup from '@/components/molecules/InviteGroup.vue'
-import CreateMatch from '@/components/molecules/CreateMatch.vue'
 import InviteFriendModal from '@/components/molecules/InviteFriendModal.vue'
 import * as TournamnetService from '@/service/tournament.js'
 import * as TournamentTypeService from '@/service/tournamentType.js'
@@ -612,7 +610,6 @@ import { useUserStore } from '@/store/auth'
 import { storeToRefs } from 'pinia'
 import AddMemberModal from '@/components/molecules/AddMemberModal.vue'
 import ScheduleTab from '@/components/molecules/ScheduleTab.vue'
-import { de } from 'date-fns/locale'
 import ChatForm from '@/components/organisms/ChatForm.vue'
 
 const userStore = useUserStore()
@@ -637,7 +634,6 @@ const publicBracket = ref(false)
 const showInviteModal = ref(false)
 const showInviteFriendModal = ref(false)
 const showInviteStaffModal = ref(false)
-const showCreateMatchModal = ref(false)
 const showDeleteModal = ref(false);
 const showDeleteTournamentTypeModal = ref(false);
 const showReGenerateBracketModal = ref(false);
@@ -1064,10 +1060,6 @@ const handleInviteFriend = async (friend) => {
 const handleInviteUser = async (user) => {
   await inviteStaff(user.id);
   await detailTournament(id);
-}
-
-const handleCreateMatch = (match) => {
-  console.log('Created match:', match)
 }
 
 const getUserScore = (user) => {
