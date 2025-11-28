@@ -540,6 +540,10 @@ class MiniMatchController extends Controller
             $winners = $wins->filter(fn($count) => $count === $wins->max())->keys();
             $match->participant_win_id = $winners->count() === 1 ? $winners->first() : null;
             $match->status = MiniMatch::STATUS_COMPLETED;
+            foreach ($match->results as $result) {
+                $result->status = MiniMatchResult::STATUS_APPROVED;
+                $result->save();
+            }
             // Tính toán S cho từng participants
             $scores = $match->results
                 ->groupBy('participant_id')
