@@ -538,4 +538,17 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
 
         return $query;
     }
+
+    // User.php
+    public function scores()
+    {
+        return $this->hasManyThrough(
+            UserSportScore::class,
+            UserSport::class,
+            'user_id',       // khóa ngoại ở bảng trung gian (user_sport)
+            'user_sport_id', // khóa ngoại ở bảng cuối cùng (user_sport_score)
+            'id',            // local key của User
+            'id'             // local key của UserSport
+        );
+    }
 }
