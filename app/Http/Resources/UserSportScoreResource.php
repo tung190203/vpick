@@ -15,21 +15,9 @@ class UserSportScoreResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $types = [
-            UserSportScore::PERSONAL_SCORE,
-            UserSportScore::DUPR_SCORE,
-            UserSportScore::VNDUPR_SCORE,
+        return [
+            'score_type' => $this->score_type,
+            'score_value' => $this->score_value,
         ];
-
-        $result = [];
-
-        foreach ($types as $type) {
-            $result[$type] = [
-                'score_type' => $type,
-                'score_value' => $this->score_type === $type ? $this->score_value : null,
-            ];
-        }
-
-        return $result;
     }
 }

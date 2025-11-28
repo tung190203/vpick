@@ -122,11 +122,17 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mx-10 mb-10 items-start">
-                    <SportLevelCard v-for="(item, index) in mappedSports" :key="index"
-                        :icon="item.sport_icon || '/images/basketball.png'" :title="item.sport_name"
+                    <SportLevelCard
+                        v-for="(item, index) in mappedSports" :key="index"
+                        :icon="item.sport_icon || '/images/basketball.png'"
+                        :title="item.sport_name"
                         :subtitle="item.dupr == 0 ? 'VNDUPR ' + item.vndupr : 'DUPR ' + item.dupr"
-                        :selfScore="item.selfScore" :dupr="item.dupr" :vndupr="item.vndupr"
-                        :is-open="openIndex === index" @toggle="toggleCard(index)" />
+                        :selfScore="item.selfScore"
+                        :dupr="item.dupr"
+                        :vndupr="item.vndupr"
+                        :is-open="openIndex === index"
+                        @toggle="toggleCard(index)"
+                    />
                 </div>
             </section>
 
@@ -227,9 +233,9 @@ const isOwner = computed(() => user.value.id === getUser.value.id);
 const mappedSports = computed(() =>
     sports.value.map(s => ({
         ...s,
-        selfScore: s.scores.find(x => x.personal_score?.score_value)?.personal_score.score_value ?? 0,
-        dupr: s.scores.find(x => x.dupr_score?.score_value)?.dupr_score.score_value ?? 0,
-        vndupr: s.scores.find(x => x.vndupr_score?.score_value)?.vndupr_score.score_value ?? 0
+        selfScore: s.scores.personal_score ?? 0,
+        dupr: s.scores.dupr_score ?? 0,
+        vndupr: s.scores.vndupr_score ?? 0
     }))
 );
 

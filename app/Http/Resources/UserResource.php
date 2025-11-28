@@ -2,7 +2,8 @@
 
 namespace App\Http\Resources;
 
-use App\Models\User;
+use App\Models\Sport;
+use App\Models\UserSportScore;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -16,6 +17,18 @@ class UserResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $sport = Sport::where('slug', 'pickleball')->first();
+        $sportId = $sport->id;
+
+        $user = auth()->user();
+        $userScore = $user->vnduprScoresBySport($sportId)->max('score_value') ?? 0;
+        $vnRank = UserSportScore::query()
+        ->join('user_sport', 'user_sport_scores.user_sport_id', '=', 'user_sport.id')
+        ->where('user_sport.sport_id', $sportId)
+        ->where('user_sport_scores.score_type', 'vndupr_score')
+        ->where('user_sport_scores.score_value', '>', $userScore)
+        ->count() + 1;
+
         return [
             'id' => $this->id,
             'full_name' => $this->full_name,
@@ -40,6 +53,7 @@ class UserResource extends JsonResource
             'sports' => UserSportResource::collection($this->whenLoaded('sports')),
             'clubs' => ClubResource::collection($this->whenLoaded('clubs')),
             'is_followed' => $request->user() ? $request->user()->isFollowing($this->resource) : false,
+            'vn_rank' => $vnRank
         ];
     }
 }
