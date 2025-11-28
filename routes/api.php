@@ -107,6 +107,9 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
         Route::get('/detail/{matchId}', [MatchesController::class, 'detail']);
         Route::post('/update/{matchId}', [MatchesController::class, 'update']);
         Route::post('/{match}/swap', [MatchesController::class, 'swapTeams']);
+        // Xác nhận kết quả (QR Code)
+        Route::get('/{matchId}/generate-qr', [MatchesController::class, 'generateQr']);
+        Route::post('/confirm-result/{matchId}', [MatchesController::class, 'confirmResult']);
     });
 
     Route::prefix('participants')->group(function () {

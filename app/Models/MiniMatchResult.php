@@ -15,7 +15,12 @@ class MiniMatchResult extends Model
         'score',
         'won_set',
         'set_number',
+        'status'
     ];
+
+    const STATUS_PENDING = 'pending';
+    const STATUS_APPROVED = 'approved';
+    const STATUS_REJECTED = 'rejected';
 
     public function miniMatch()
     {
