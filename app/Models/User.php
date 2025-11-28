@@ -521,4 +521,21 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
             });
     }
 
+    public function vnduprScoresBySport($sportId = null)
+    {
+        $query = $this->hasManyThrough(
+            UserSportScore::class,
+            UserSport::class,
+            'user_id',
+            'user_sport_id',
+            'id',
+            'id'
+        )->where('score_type', 'vndupr_score');
+
+        if ($sportId) {
+            $query->where('user_sport.sport_id', $sportId);
+        }
+
+        return $query;
+    }
 }

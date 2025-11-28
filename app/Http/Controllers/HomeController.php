@@ -10,6 +10,7 @@ use App\Http\Resources\ListTournamentResource;
 use App\Models\Banner;
 use App\Models\Club;
 use App\Models\MiniTournament;
+use App\Models\Sport;
 use App\Models\Tournament;
 use Illuminate\Http\Request;
 
@@ -25,8 +26,18 @@ class HomeController extends Controller
             'leaderboard_per_page' => 'sometimes|integer|min:1|max:200',
         ]);
         $userId = auth()->user()->id;
+        $sport = Sport::where('slug', 'pickleball')->first();
+
+        if (!$sport) {
+            return ResponseHelper::error('Sport không tồn tại.', 404);
+        }
+
+        $sportId = $sport->id;
+
+        $user = auth()->user();
+
         $userInfo = [
-            'vndupr_score' => auth()->user()->load('vnduprScores')->vnduprScores->max('score_value') ?? 0,
+            'vndupr_score' => $user->vnduprScoresBySport($sportId)->max('score_value') ?? 0,
             'win_rate' => 60,
             'performance' => 80
         ];
