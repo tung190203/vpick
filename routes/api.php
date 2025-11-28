@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\UserMatchStatsController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CompetitionLocationController;
 use App\Http\Controllers\LocationController;
@@ -78,6 +79,7 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
         Route::get('/{id}', [UserController::class, 'show']);
         Route::post('/update', [UserController::class, 'update']);
         Route::delete('/delete/{id}', [UserController::class, 'destroy']);
+        Route::get('/matches/dataset', [UserMatchStatsController::class, 'dataset']);
     });
     Route::prefix('tournaments')->group(function () {
         Route::get('/index', [TournamentController::class, 'index']);
