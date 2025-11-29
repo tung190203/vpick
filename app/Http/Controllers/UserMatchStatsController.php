@@ -40,8 +40,8 @@ class UserMatchStatsController extends Controller
         // Matches + filter sport_id
         $matches = Matches::with('tournamentType.tournament')
             ->whereIn('id', $matchIds)
-            ->get()
-            ->filter(fn($m) => $m->tournamentType && $m->tournamentType->tournament && $m->tournamentType->tournament->sport_id == $sportId)
+            ->get();
+        $matches = $matches->filter(fn($m) => $m->tournamentType && $m->tournamentType->tournament && $m->tournamentType->tournament->sport_id == $sportId)
             ->keyBy('id');
 
         // MiniMatches + filter sport_id
@@ -95,7 +95,7 @@ class UserMatchStatsController extends Controller
                 
                 $isHome = in_array($userId, $homeMembers);
                 $isAway = in_array($userId, $awayMembers);
-                
+
                 // So sánh với winner_id - winner_id là team_id
                 if ($isHome && $match->winner_id == $match->home_team_id) return true;
                 if ($isAway && $match->winner_id == $match->away_team_id) return true;
@@ -122,11 +122,56 @@ class UserMatchStatsController extends Controller
             return false;
         };
 
+        // Helper function tính win_rate và performance
+        $calculateStats = function($historiesCollection) use ($checkWin) {
+            // Lấy 10 trận gần nhất
+            $recentMatches = $historiesCollection->sortByDesc('created_at')->take(10)->values();
+            $totalMatches = $recentMatches->count();
+            
+            if ($totalMatches == 0) {
+                return ['win_rate' => 0, 'performance' => 0];
+            }
+            
+            // Tính win_rate
+            $winCount = $recentMatches->filter($checkWin)->count();
+            $win_rate = round(($winCount / $totalMatches) * 100, 2);
+            
+            // Tính performance
+            $points = 0;
+            foreach ($recentMatches as $index => $match) {
+                if ($checkWin($match)) {
+                    // 3 trận mới nhất (index 0, 1, 2) có hệ số 1.5
+                    $multiplier = $index < 3 ? 1.5 : 1.0;
+                    $points += 10 * $multiplier;
+                }
+            }
+            
+            // Tính max points
+            $recent3Max = min(3, $totalMatches) * 10 * 1.5; // 3 trận mới nhất
+            $older7Max = max(0, $totalMatches - 3) * 10 * 1.0; // 7 trận còn lại
+            $maxPoints = $recent3Max + $older7Max;
+            
+            $performance = $maxPoints > 0 ? round(($points / $maxPoints) * 100, 2) : 0;
+            
+            return ['win_rate' => $win_rate, 'performance' => $performance];
+        };
+        
         // Dataset các period
         $chart = [];
 
-        // 1. TUẦN (7 ngày gần nhất) - Trả về tất cả trận đấu với điểm số
+        // 1. TUẦN (7 ngày gần nhất)
         $weekHistories = $histories->filter(fn($h) => Carbon::parse($h->created_at)->gte(now()->subDays(7)));
+        
+        // Loại trùng lặp match_id/mini_match_id cho tuần
+        $uniqueWeekMatchesForStats = collect();
+        foreach ($weekHistories as $history) {
+            $key = $history->match_id ? 'match_'.$history->match_id : 'mini_'.$history->mini_match_id;
+            if (!$uniqueWeekMatchesForStats->has($key)) {
+                $uniqueWeekMatchesForStats->put($key, $history);
+            }
+        }
+        
+        $weekStats = $calculateStats($uniqueWeekMatchesForStats);
         
         // Group và loại trùng lặp match_id/mini_match_id
         $uniqueWeekMatches = [];
@@ -138,15 +183,13 @@ class UserMatchStatsController extends Controller
         }
         
         $weekData = [];
+        $weekLabels = [];
         foreach ($uniqueWeekMatches as $history) {
-            
-            $my_score = 0;
-            $opponent_score = 0;
             
             if ($history->match_id && $matches->has($history->match_id)) {
                 $match = $matches->get($history->match_id);
                 
-                // Xác định team của user - dùng home_team_id và away_team_id
+                // Xác định team của user
                 $homeMembers = $teamMembersByTeam->get($match->home_team_id, []);
                 $awayMembers = $teamMembersByTeam->get($match->away_team_id, []);
                 
@@ -154,28 +197,40 @@ class UserMatchStatsController extends Controller
                 $myTeamId = $isHome ? $match->home_team_id : $match->away_team_id;
                 $opponentTeamId = $isHome ? $match->away_team_id : $match->home_team_id;
                 
+                $scores = [];
+                $is_win = false;
+                
                 if ($matchResults->has($history->match_id)) {
-                    foreach ($matchResults[$history->match_id] as $r) {
-                        // Check xem user này thuộc team nào
-                        $inHome = in_array($r->user_id, $homeMembers);
-                        $inAway = in_array($r->user_id, $awayMembers);
+                    // Group results by set_number - trả ra từng set
+                    $resultsBySet = $matchResults[$history->match_id]->groupBy('set_number');
+                    
+                    foreach ($resultsBySet as $setNumber => $setResults) {
+                        $my_set_score = 0;
+                        $opponent_set_score = 0;
                         
-                        if ($inHome && $match->home_team_id == $myTeamId) {
-                            $my_score += $r->score;
-                        } elseif ($inAway && $match->away_team_id == $myTeamId) {
-                            $my_score += $r->score;
-                        } elseif ($inHome && $match->home_team_id == $opponentTeamId) {
-                            $opponent_score += $r->score;
-                        } elseif ($inAway && $match->away_team_id == $opponentTeamId) {
-                            $opponent_score += $r->score;
+                        foreach ($setResults as $r) {
+                            // Chỉ check team_id, KHÔNG check user_id
+                            if ($r->team_id == $myTeamId) {
+                                $my_set_score += $r->score;
+                            } elseif ($r->team_id == $opponentTeamId) {
+                                $opponent_set_score += $r->score;
+                            }
                         }
+                        
+                        $scores[] = [
+                            'my_score' => $my_set_score,
+                            'opponent_score' => $opponent_set_score
+                        ];
                     }
+                    
+                    // Check win
+                    $is_win = $match->winner_id == $myTeamId;
                 }
                 
+                $weekLabels[] = Carbon::parse($history->created_at)->toDateString();
                 $weekData[] = [
-                    'my_score' => $my_score,
-                    'opponent_score' => $opponent_score,
-                    'date' => Carbon::parse($history->created_at)->toDateString()
+                    'scores' => $scores,
+                    'is_win' => $is_win
                 ];
                 
             } elseif ($history->mini_match_id && $minis->has($history->mini_match_id)) {
@@ -190,6 +245,10 @@ class UserMatchStatsController extends Controller
                 
                 // Xác định user nào là mình, user nào là đối thủ
                 $isParticipant1 = ($userId == $user1Id);
+                
+                $my_score = 0;
+                $opponent_score = 0;
+                $is_win = false;
                 
                 if ($miniResults->has($history->mini_match_id)) {
                     foreach ($miniResults[$history->mini_match_id] as $r) {
@@ -206,21 +265,46 @@ class UserMatchStatsController extends Controller
                     }
                 }
                 
+                // Check win - mini_match chỉ có 1 "set"
+                if ($isParticipant1) {
+                    $is_win = $mini->participant_win_id == $mini->participant1_id;
+                } else {
+                    $is_win = $mini->participant_win_id == $mini->participant2_id;
+                }
+                
+                $weekLabels[] = Carbon::parse($history->created_at)->toDateString();
                 $weekData[] = [
-                    'my_score' => $my_score,
-                    'opponent_score' => $opponent_score,
-                    'date' => Carbon::parse($history->created_at)->toDateString()
+                    'scores' => [
+                        [
+                            'my_score' => $my_score,
+                            'opponent_score' => $opponent_score
+                        ]
+                    ],
+                    'is_win' => $is_win
                 ];
             }
         }
 
         $chart['week'] = [
-            'labels' => array_column($weekData, 'date'),
-            'datasets' => $weekData
+            'labels' => $weekLabels,
+            'datasets' => $weekData,
+            'win_rate' => $weekStats['win_rate'],
+            'performance' => $weekStats['performance']
         ];
 
         // 2. THÁNG (30 ngày) - Tỉ lệ thắng theo ngày
         $monthHistories = $histories->filter(fn($h) => Carbon::parse($h->created_at)->gte(now()->subDays(30)));
+        
+        // Loại trùng lặp cho tháng
+        $uniqueMonthMatchesForStats = collect();
+        foreach ($monthHistories as $history) {
+            $key = $history->match_id ? 'match_'.$history->match_id : 'mini_'.$history->mini_match_id;
+            if (!$uniqueMonthMatchesForStats->has($key)) {
+                $uniqueMonthMatchesForStats->put($key, $history);
+            }
+        }
+        
+        $monthStats = $calculateStats($uniqueMonthMatchesForStats);
         
         // Group theo ngày, loại trùng lặp match
         $dayGroups = [];
@@ -250,11 +334,24 @@ class UserMatchStatsController extends Controller
 
         $chart['30days'] = [
             'labels' => array_keys($monthData),
-            'datasets' => array_values($monthData)
+            'datasets' => array_values($monthData),
+            'win_rate' => $monthStats['win_rate'],
+            'performance' => $monthStats['performance']
         ];
 
         // 3. QUÝ (90 ngày) - Tỉ lệ thắng theo tuần
         $quarterHistories = $histories->filter(fn($h) => Carbon::parse($h->created_at)->gte(now()->subDays(90)));
+        
+        // Loại trùng lặp cho quý
+        $uniqueQuarterMatchesForStats = collect();
+        foreach ($quarterHistories as $history) {
+            $key = $history->match_id ? 'match_'.$history->match_id : 'mini_'.$history->mini_match_id;
+            if (!$uniqueQuarterMatchesForStats->has($key)) {
+                $uniqueQuarterMatchesForStats->put($key, $history);
+            }
+        }
+        
+        $quarterStats = $calculateStats($uniqueQuarterMatchesForStats);
         
         $weekGroups = [];
         foreach ($quarterHistories as $h) {
@@ -283,10 +380,23 @@ class UserMatchStatsController extends Controller
 
         $chart['90days'] = [
             'labels' => array_keys($quarterData),
-            'datasets' => array_values($quarterData)
+            'datasets' => array_values($quarterData),
+            'win_rate' => $quarterStats['win_rate'],
+            'performance' => $quarterStats['performance']
         ];
 
         // 4. NĂM (365 ngày) - Tỉ lệ thắng theo tháng
+        
+        // Loại trùng lặp cho năm
+        $uniqueYearMatchesForStats = collect();
+        foreach ($histories as $history) {
+            $key = $history->match_id ? 'match_'.$history->match_id : 'mini_'.$history->mini_match_id;
+            if (!$uniqueYearMatchesForStats->has($key)) {
+                $uniqueYearMatchesForStats->put($key, $history);
+            }
+        }
+        
+        $yearStats = $calculateStats($uniqueYearMatchesForStats);
         $monthGroups = [];
         foreach ($histories as $h) {
             $month = Carbon::parse($h->created_at)->format('Y-m');
@@ -314,7 +424,9 @@ class UserMatchStatsController extends Controller
 
         $chart['365days'] = [
             'labels' => array_keys($yearData),
-            'datasets' => array_values($yearData)
+            'datasets' => array_values($yearData),
+            'win_rate' => $yearStats['win_rate'],
+            'performance' => $yearStats['performance']
         ];
 
         return response()->json(['data' => $chart]);

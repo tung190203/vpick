@@ -37,11 +37,6 @@ class HomeController extends Controller
         if (!$sport) {
             return ResponseHelper::error('Sport không tồn tại.', 404);
         }
-        $sportId = $sport->id;
-    
-        // Lấy điểm vndupr_score
-        $userScore = $user->vnduprScoresBySport($sportId)->max('score_value') ?? 0;
-    
         // Lấy 10 trận gần nhất
         $histories = VnduprHistory::where('user_id', $userId)
             ->latest()
@@ -115,7 +110,7 @@ class HomeController extends Controller
                 'scores'     => [
                     'personal_score' => number_format($user->scores->where('score_type','personal_score')->max('score_value') ?? 0, 2),
                     'dupr_score'     => number_format($user->scores->where('score_type','dupr_score')->max('score_value') ?? 0, 2),
-                    'vndupr_score'   => number_format($userScore, 2),
+                    'vndupr_score'   => number_format($user->scores->where('score_type', 'vndupr_score')->max('score_value') ?? 0, 2),
                 ],
             ]
         ];
