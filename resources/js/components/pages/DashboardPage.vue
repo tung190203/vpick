@@ -13,11 +13,14 @@
               <!-- Left side - Ratings -->
               <div class="mb-6 md:mb-0">
                 <div class="text-sm opacity-90 mb-1 text-[32px]">VNDUPR</div>
-                <div class="text-6xl font-bold leading-none mb-4 text-[100px]">{{ homeData.user_info?.vndupr_score ?? 0
-                }}
+                <div class="text-6xl font-bold leading-none mb-4 text-[100px]">{{
+                  homeData.user_info?.sports[0]?.scores.vndupr_score
+                  }}
                 </div>
                 <div class="text-sm opacity-90 mb-1 text-[32px]">DUPR</div>
-                <div class="text-5xl font-bold leading-none text-[100px]">3.65</div>
+                <div class="text-5xl font-bold leading-none text-[100px]">{{
+                  homeData.user_info?.sports[0]?.scores.dupr_score
+                  }}</div>
               </div>
 
               <!-- Right side - Stats & QR -->
@@ -207,7 +210,7 @@
               <ArrowUpRightIcon class="w-4 h-4 text-gray-[#838799]" />
             </div>
           </div>
-          <ul class="space-y-3">
+          <ul v-if="friendList.length > 0" class="space-y-3">
             <li v-for="(f, i) in friendList" :key="i"
               class="flex items-center justify-between py-1 cursor-pointer hover:bg-gray-100 rounded-md px-2">
               <div class="flex items-center space-x-3">
@@ -220,6 +223,9 @@
               </div>
             </li>
           </ul>
+          <div v-else class="text-center text-sm text-gray-500 py-3">
+            Chưa có bạn bè nào
+          </div>
         </div>
       </div>
     </div>
