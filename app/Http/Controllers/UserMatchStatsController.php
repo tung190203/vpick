@@ -246,26 +246,38 @@ class UserMatchStatsController extends Controller
                 // Xác định user nào là mình, user nào là đối thủ
                 $isParticipant1 = ($userId == $user1Id);
                 
-                $my_score = 0;
-                $opponent_score = 0;
+                $scores = [];
                 $is_win = false;
                 
                 if ($miniResults->has($history->mini_match_id)) {
-                    foreach ($miniResults[$history->mini_match_id] as $r) {
-                        // r->participant_id là participant id, cần so sánh với participant1_id/participant2_id
-                        if ($r->participant_id == $mini->participant1_id && $isParticipant1) {
-                            $my_score += $r->score;
-                        } elseif ($r->participant_id == $mini->participant2_id && !$isParticipant1) {
-                            $my_score += $r->score;
-                        } elseif ($r->participant_id == $mini->participant1_id && !$isParticipant1) {
-                            $opponent_score += $r->score;
-                        } elseif ($r->participant_id == $mini->participant2_id && $isParticipant1) {
-                            $opponent_score += $r->score;
+                    // Group results by set_number - giống như match
+                    $resultsBySet = $miniResults[$history->mini_match_id]->groupBy('set_number');
+                    
+                    foreach ($resultsBySet as $setNumber => $setResults) {
+                        $my_set_score = 0;
+                        $opponent_set_score = 0;
+                        
+                        foreach ($setResults as $r) {
+                            // r->participant_id là participant id
+                            if ($r->participant_id == $mini->participant1_id && $isParticipant1) {
+                                $my_set_score += $r->score;
+                            } elseif ($r->participant_id == $mini->participant2_id && !$isParticipant1) {
+                                $my_set_score += $r->score;
+                            } elseif ($r->participant_id == $mini->participant1_id && !$isParticipant1) {
+                                $opponent_set_score += $r->score;
+                            } elseif ($r->participant_id == $mini->participant2_id && $isParticipant1) {
+                                $opponent_set_score += $r->score;
+                            }
                         }
+                        
+                        $scores[] = [
+                            'my_score' => $my_set_score,
+                            'opponent_score' => $opponent_set_score
+                        ];
                     }
                 }
                 
-                // Check win - mini_match chỉ có 1 "set"
+                // Check win
                 if ($isParticipant1) {
                     $is_win = $mini->participant_win_id == $mini->participant1_id;
                 } else {
@@ -274,12 +286,7 @@ class UserMatchStatsController extends Controller
                 
                 $weekLabels[] = Carbon::parse($history->created_at)->toDateString();
                 $weekData[] = [
-                    'scores' => [
-                        [
-                            'my_score' => $my_score,
-                            'opponent_score' => $opponent_score
-                        ]
-                    ],
+                    'scores' => $scores,
                     'is_win' => $is_win
                 ];
             }
@@ -331,9 +338,14 @@ class UserMatchStatsController extends Controller
             
             $monthData[$date] = $totalCount > 0 ? round(($winCount / $totalCount) * 100, 2) : 0;
         }
-
+    
+        // Format labels theo dd/MM
+        $formattedMonthLabels = array_map(function($date) {
+            return Carbon::parse($date)->format('d/m');
+        }, array_keys($monthData));
+        
         $chart['30days'] = [
-            'labels' => array_keys($monthData),
+            'labels' => $formattedMonthLabels,
             'datasets' => array_values($monthData),
             'win_rate' => $monthStats['win_rate'],
             'performance' => $monthStats['performance']
@@ -377,9 +389,16 @@ class UserMatchStatsController extends Controller
             
             $quarterData[$week] = $totalCount > 0 ? round(($winCount / $totalCount) * 100, 2) : 0;
         }
-
+    
+        // Format labels theo Tuần/2025
+        $formattedQuarterLabels = array_map(function($week) {
+            // $week format: Y-W (VD: 2025-48)
+            $parts = explode('-', $week);
+            return ltrim($parts[1], '0') . '/' . $parts[0];
+        }, array_keys($quarterData));
+        
         $chart['90days'] = [
-            'labels' => array_keys($quarterData),
+            'labels' => $formattedQuarterLabels,
             'datasets' => array_values($quarterData),
             'win_rate' => $quarterStats['win_rate'],
             'performance' => $quarterStats['performance']
@@ -421,9 +440,16 @@ class UserMatchStatsController extends Controller
             
             $yearData[$month] = $totalCount > 0 ? round(($winCount / $totalCount) * 100, 2) : 0;
         }
-
+    
+        // Format labels theo MM/2025
+        $formattedYearLabels = array_map(function($month) {
+            // $month format: Y-m (VD: 2025-01)
+            $parts = explode('-', $month);
+            return $parts[1] . '/' . $parts[0];
+        }, array_keys($yearData));
+        
         $chart['365days'] = [
-            'labels' => array_keys($yearData),
+            'labels' => $formattedYearLabels,
             'datasets' => array_values($yearData),
             'win_rate' => $yearStats['win_rate'],
             'performance' => $yearStats['performance']
