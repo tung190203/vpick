@@ -1000,10 +1000,18 @@ const handlePointConfirm = () => {
 // =================================================================================
 
 const handleSubmit = async () => {
-    let startsAt = null
+    let startsAt = null;
     if (date.value) {
-        const d = new Date(date.value)
-        startsAt = d.toISOString().slice(0, 19).replace('T', ' ')
+        const d = new Date(date.value);
+
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const hours = String(d.getHours()).padStart(2, '0');
+        const minutes = String(d.getMinutes()).padStart(2, '0');
+        const seconds = String(d.getSeconds()).padStart(2, '0');
+
+        startsAt = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
     }
 
     const getNumericLevel = (level) => {

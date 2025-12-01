@@ -17,6 +17,7 @@ use App\Models\Tournament;
 use App\Models\VnduprHistory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class HomeController extends Controller
 {
@@ -121,10 +122,11 @@ class HomeController extends Controller
             'performance' => round($performance, 2),
             'sports'      => $sports,
         ];
+        $nowVN = Carbon::now('Asia/Ho_Chi_Minh')->toDateString();
     
         // Lấy upcoming mini tournaments
         $upcomingMiniTournaments = MiniTournament::withFullRelations()
-            ->whereDate('starts_at', '>', now()->toDateString())
+            ->whereDate('starts_at', '>=', $nowVN)
             ->where(function ($query) use ($userId) {
                 $query->whereHas('participants', fn($p) => $p->where('user_id', $userId))
                       ->orWhereHas('staff', fn($s) => $s->where('user_id', $userId));
@@ -135,7 +137,7 @@ class HomeController extends Controller
     
         // Lấy upcoming tournaments
         $upcomingTournaments = Tournament::withFullRelations()
-            ->whereDate('start_date', '>', now()->toDateString())
+            ->whereDate('start_date', '>=', $nowVN)
             ->where(function ($query) use ($userId) {
                 $query->whereHas('participants', fn($p) => $p->where('user_id', $userId))
                       ->orWhereHas('tournamentStaffs', fn($s) => $s->where('user_id', $userId));
