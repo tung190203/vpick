@@ -11,6 +11,7 @@ use App\Models\Banner;
 use App\Models\Club;
 use App\Models\Matches;
 use App\Models\MiniMatch;
+use App\Models\MiniParticipant;
 use App\Models\MiniTournament;
 use App\Models\Sport;
 use App\Models\Tournament;
@@ -79,7 +80,8 @@ class HomeController extends Controller
                 // mini_match_id: winner là user trực tiếp
                 elseif ($history->mini_match_id) {
                     $mini = $minis->get($history->mini_match_id);
-                    if ($mini && $mini->participant_win_id == $userId) {
+                    $participants = MiniParticipant::where('id', $mini->participant_win_id)->first();
+                    if ($mini && $mini->participant_win_id && $participants->user_id == $userId) {
                         $isWin = true;
                     }
                 }
@@ -103,19 +105,70 @@ class HomeController extends Controller
         $performance = $maxPoint > 0 ? ($totalPoint / $maxPoint) * 100 : 0;
     
         // Build sports array
+        $scores = [
+            'personal_score' => number_format(
+                $user->scores->where('score_type','personal_score')
+                             ->sortByDesc('created_at')
+                             ->first()->score_value ?? 0, 2
+            ),
+            'dupr_score' => number_format(
+                $user->scores->where('score_type','dupr_score')
+                             ->sortByDesc('created_at')
+                             ->first()->score_value ?? 0, 2
+            ),
+            'vndupr_score' => number_format(
+                $user->scores->where('score_type','vndupr_score')
+                             ->sortByDesc('created_at')
+                             ->first()->score_value ?? 0, 2
+            ),
+        ];        
+        // A. Matches
+        $matchCount = DB::table('vndupr_history')
+            ->join('matches', 'vndupr_history.match_id', '=', 'matches.id')
+            ->join('tournament_types', 'matches.tournament_type_id', '=', 'tournament_types.id')
+            ->join('tournaments', 'tournament_types.tournament_id', '=', 'tournaments.id')
+            ->where('vndupr_history.user_id', $userId)
+            ->where('tournaments.sport_id', $sport->id)
+            ->count();
+
+        // B. Mini matches
+        $miniMatchCount = DB::table('vndupr_history')
+            ->join('mini_matches', 'vndupr_history.mini_match_id', '=', 'mini_matches.id')
+            ->join('mini_tournaments', 'mini_matches.mini_tournament_id', '=', 'mini_tournaments.id')
+            ->where('vndupr_history.user_id', $userId)
+            ->where('mini_tournaments.sport_id', $sport->id)
+            ->count();
+
+        $totalMatches = $matchCount + $miniMatchCount;
+
+        $matchIds = DB::table('vndupr_history')
+            ->where('user_id', $userId)
+            ->whereNotNull('match_id')
+            ->pluck('match_id')
+            ->toArray();
+
+        $tournamentsCount = 0;
+        if (!empty($matchIds)) {
+            $tournamentsCount = DB::table('matches as m')
+                ->join('tournament_types as tt', 'm.tournament_type_id', '=', 'tt.id')
+                ->join('tournaments as t', 'tt.tournament_id', '=', 't.id')
+                ->whereIn('m.id', $matchIds)
+                ->where('t.sport_id', $sport->id)
+                ->distinct()
+                ->count('t.id');
+        }
+
         $sports = [
             [
                 'sport_id'   => $sport->id,
                 'sport_icon' => $sport->icon,
                 'sport_name' => $sport->name,
-                'scores'     => [
-                    'personal_score' => number_format($user->scores->where('score_type','personal_score')->max('score_value') ?? 0, 2),
-                    'dupr_score'     => number_format($user->scores->where('score_type','dupr_score')->max('score_value') ?? 0, 2),
-                    'vndupr_score'   => number_format($user->scores->where('score_type', 'vndupr_score')->max('score_value') ?? 0, 2),
-                ],
+                'scores' => $scores,
+                'total_matches' => $totalMatches,
+                'total_tournament' => $tournamentsCount,
+                'total_prizes' => 0
             ]
         ];
-    
         // User info
         $userInfo = [
             'win_rate'    => round($winRate, 2),
