@@ -19,9 +19,7 @@ class UserResource extends JsonResource
     {
         $sport = Sport::where('slug', 'pickleball')->first();
         $sportId = $sport->id;
-
-        $user = auth()->user();
-        $userScore = $user->vnduprScoresBySport($sportId)->max('score_value') ?? 0;
+        $userScore = $this->vnduprScoresBySport($sportId)->max('score_value') ?? 0;
         $vnRank = UserSportScore::query()
         ->join('user_sport', 'user_sport_scores.user_sport_id', '=', 'user_sport.id')
         ->where('user_sport.sport_id', $sportId)
