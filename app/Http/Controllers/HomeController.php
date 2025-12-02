@@ -233,6 +233,12 @@ class HomeController extends Controller
 
         $leaderboard = User::query()
             ->withFullRelations()
+            ->with([
+                'sports' => function($query) use ($sportId) {
+                    $query->where('sport_id', $sportId)
+                          ->with('scores', 'sport');
+                },
+            ])
             ->addSelect([
                 'vndupr_score' => UserSportScore::query()
                     ->select(DB::raw('COALESCE(MAX(score_value), 0)'))
