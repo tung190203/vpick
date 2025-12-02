@@ -7,6 +7,7 @@ use App\Http\Resources\BannerResource;
 use App\Http\Resources\ListClubResource;
 use App\Http\Resources\ListMiniTournamentResource;
 use App\Http\Resources\ListTournamentResource;
+use App\Http\Resources\UserListResource;
 use App\Models\Banner;
 use App\Models\Club;
 use App\Models\Matches;
@@ -15,6 +16,7 @@ use App\Models\MiniParticipant;
 use App\Models\MiniTournament;
 use App\Models\Sport;
 use App\Models\Tournament;
+use App\Models\User;
 use App\Models\VnduprHistory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -29,7 +31,8 @@ class HomeController extends Controller
             'tournament_per_page'      => 'sometimes|integer|min:1|max:200',
             'banner_per_page'          => 'sometimes|integer|min:1|max:200',
             'club_per_page'            => 'sometimes|integer|min:1|max:200',
-            'leaderboard_per_page'     => 'sometimes|integer|min:1|max:200',
+            'leaderboard_club_per_page'     => 'sometimes|integer|min:1|max:200',
+            'leaderboard_per_page' => 'sometimes|integer|min:1|max:200',
         ]);
     
         $user = auth()->user();
@@ -109,17 +112,17 @@ class HomeController extends Controller
             'personal_score' => number_format(
                 $user->scores->where('score_type','personal_score')
                              ->sortByDesc('created_at')
-                             ->first()->score_value ?? 0, 2
+                             ->first()->score_value ?? 0, 3
             ),
             'dupr_score' => number_format(
                 $user->scores->where('score_type','dupr_score')
                              ->sortByDesc('created_at')
-                             ->first()->score_value ?? 0, 2
+                             ->first()->score_value ?? 0, 3
             ),
             'vndupr_score' => number_format(
                 $user->scores->where('score_type','vndupr_score')
                              ->sortByDesc('created_at')
-                             ->first()->score_value ?? 0, 2
+                             ->first()->score_value ?? 0, 3
             ),
         ];        
         // A. Matches
@@ -211,8 +214,8 @@ class HomeController extends Controller
             ->take($validated['club_per_page'] ?? Club::PER_PAGE)
             ->get();
     
-        // Leaderboard
-        $leaderboard = Club::with(['members.vnduprScores' => fn($q) => $q->where('score_type', 'vndupr_score')])
+        // Leaderboard club
+        $leaderboardClub = Club::with(['members.vnduprScores' => fn($q) => $q->where('score_type', 'vndupr_score')])
             ->get()
             ->map(function ($club) {
                 $club->members_max_vndupr_score = $club->members
@@ -221,8 +224,20 @@ class HomeController extends Controller
                 return $club;
             })
             ->sortByDesc('members_max_vndupr_score')
-            ->take($validated['leaderboard_per_page'] ?? Club::PER_PAGE);
-    
+            ->take($validated['leaderboard_club_per_page'] ?? Club::PER_PAGE);
+
+        // Leaderboard
+        $leaderboard = User::withFullRelations()->get()
+        ->map(function($user) {
+            $user->vndupr_score = $user->scores
+                ->where('score_type', 'vndupr_score')
+                ->max('score_value') ?? 0;
+            return $user;
+        })
+        ->sortByDesc('vndupr_score')
+        ->take($validated['leaderboard_per_page'] ?? User::PER_PAGE)
+        ->values();
+
         // Trả về data
         $data = [
             'user_info'              => $userInfo,
@@ -230,10 +245,10 @@ class HomeController extends Controller
             'upcoming_tournaments'     => ListTournamentResource::collection($upcomingTournaments),
             'banners'                   => BannerResource::collection($banners),
             'my_club'                   => ListClubResource::collection($myClub),
-            'leaderboard'               => ListClubResource::collection($leaderboard),
+            'leaderboard_club'               => ListClubResource::collection($leaderboardClub),
+            'leaderboard' => UserListResource::collection($leaderboard),
         ];
     
         return ResponseHelper::success($data, 'Lấy dữ liệu thành công');
     }
-    
 }

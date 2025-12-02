@@ -19,7 +19,7 @@ class UserSportResource extends JsonResource
         $formattedScores = [];
         foreach ($types as $type) {
             $score = $scoresByType->get($type);
-            $formattedScores[$type] = number_format($score?->score_value ?? 0, 2);
+            $formattedScores[$type] = number_format($score?->score_value ?? 0, 3);
         }
 
         // Tính total_matches
