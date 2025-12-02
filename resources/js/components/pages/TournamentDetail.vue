@@ -252,7 +252,7 @@
                   <div v-if="tournament?.tournamnet_participants?.length">
                     <div class="grid grid-cols-2 sm:grid-cols-6 lg:grid-cols-6 gap-4">
                       <UserCard v-for="(item, index) in tournament.tournamnet_participants" :key="index" :id="item.id"
-                        :name="item.user.name" :avatar="item.avatar" :rating="getUserScore(item.user)"
+                        :name="item.user.name" :avatar="item.avatar" :rating="getUserScore(item)"
                         :status="item.is_confirmed == true ? 'approved' : 'pending'" @removeUser="handleRemoveUser"/>
                       <UserCard
                         v-if="tournament?.tournamnet_participants?.length < (tournament.max_team * tournament.player_per_team) && isCreator"
@@ -1063,28 +1063,23 @@ const handleInviteUser = async (user) => {
 }
 
 const getUserScore = (user) => {
-  if (!user?.sports?.length || !tournament.value?.sport_id) {
-    return '0'
+  if (!user || !user.sports || user.sports.length === 0 || !tournament?.value?.sport_id) {
+    return '0';
+  }
+  const requiredSportId = tournament.value.sport_id;
+
+  const matchedSport = user.sports.find(s => s.sport_id === requiredSportId);
+  if (!matchedSport) {
+    return '0';
   }
 
-  const matchedSport = user.sports.find(s => s.sport_id === tournament.value.sport_id)
-
-  if (!matchedSport?.scores?.length) {
-    return '0'
+  if (matchedSport.scores.vndupr_score) {
+    const score = parseFloat(matchedSport.scores.vndupr_score);
+    return isNaN(score) ? '0' : score.toFixed(1);
   }
 
-  const vnduprScore = matchedSport.scores.find(sc => sc.score_type === 'vndupr_score')
-  if (vnduprScore) {
-    return parseFloat(vnduprScore.score_value).toFixed(1)
-  }
-
-  const personalScore = matchedSport.scores.find(sc => sc.score_type === 'personal_score')
-  if (personalScore) {
-    return parseFloat(personalScore.score_value).toFixed(1)
-  }
-
-  return '0'
-}
+  return '0';
+};
 
 const detailTournament = async (tournamentId) => {
   try {

@@ -26,6 +26,7 @@ class ListTeamResource extends JsonResource
                     'full_name' => $member->full_name,
                     'avatar' => $member->avatar_url,
                     'is_confirmed' => true,
+                    'sports' => UserSportResource::collection($member->sports ?? []),
                 ];
             }),
         ];
