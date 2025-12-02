@@ -680,6 +680,9 @@ class UserMatchStatsController extends Controller
         
         $offset = ($currentPage - 1) * $perPage;
         $paginatedData = $allMatches->slice($offset, $perPage)->values();
+        $matches = [
+            'matches' => $paginatedData
+        ];
         $meta = [
             'current_page' => $currentPage,
             'last_page' => $lastPage,
@@ -687,6 +690,6 @@ class UserMatchStatsController extends Controller
             'total' => $total
         ];
 
-        return ResponseHelper::success($paginatedData, 'Lấy danh sách trận đấu thành công', 200,  $meta);
+        return ResponseHelper::success($matches, 'Lấy danh sách trận đấu thành công', 200,  $meta);
     }
 }
