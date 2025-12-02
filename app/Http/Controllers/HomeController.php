@@ -229,12 +229,14 @@ class HomeController extends Controller
         // Leaderboard
         $leaderboard = User::withFullRelations()->get()
         ->map(function($user) {
-            $user->vndupr_score = $user->scores
+            $user->vndupr_score = (float) ($user->scores
                 ->where('score_type', 'vndupr_score')
-                ->max('score_value') ?? 0;
+                ->max('score_value') ?? 0);
             return $user;
         })
-        ->sortByDesc('vndupr_score')
+        ->sortByDesc(function($user) {
+            return $user->vndupr_score;
+        })
         ->take($validated['leaderboard_per_page'] ?? User::PER_PAGE)
         ->values();
 
