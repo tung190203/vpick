@@ -17,6 +17,7 @@ use App\Models\MiniTournament;
 use App\Models\Sport;
 use App\Models\Tournament;
 use App\Models\User;
+use App\Models\UserSportScore;
 use App\Models\VnduprHistory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -227,18 +228,22 @@ class HomeController extends Controller
             ->take($validated['leaderboard_club_per_page'] ?? Club::PER_PAGE);
 
         // Leaderboard
-        $leaderboard = User::withFullRelations()->get()
-        ->map(function($user) {
-            $user->vndupr_score = (float) ($user->scores
-                ->where('score_type', 'vndupr_score')
-                ->max('score_value') ?? 0);
-            return $user;
-        })
-        ->sortByDesc(function($user) {
-            return $user->vndupr_score;
-        })
-        ->take($validated['leaderboard_per_page'] ?? User::PER_PAGE)
-        ->values();
+        $sportId = $sport->id;
+        $perPage = $validated['leaderboard_per_page'] ?? User::PER_PAGE;
+
+        $leaderboard = User::query()
+            ->withFullRelations()
+            ->addSelect([
+                'vndupr_score' => UserSportScore::query()
+                    ->select(DB::raw('COALESCE(MAX(score_value), 0)'))
+                    ->join('user_sport', 'user_sport_scores.user_sport_id', '=', 'user_sport.id')
+                    ->whereColumn('user_sport.user_id', 'users.id')
+                    ->where('user_sport.sport_id', $sportId)
+                    ->where('user_sport_scores.score_type', 'vndupr_score')
+            ])
+            ->orderByDesc('vndupr_score')
+            ->limit($perPage)
+            ->get();
 
         // Trả về data
         $data = [
