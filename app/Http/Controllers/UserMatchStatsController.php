@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\TeamResource;
+use App\Http\Resources\UserListResource;
 use Illuminate\Http\Request;
 use App\Models\VnduprHistory;
 use App\Models\Matches;
@@ -11,6 +13,7 @@ use App\Models\MiniMatch;
 use App\Models\MatchResult;
 use App\Models\MiniMatchResult;
 use App\Models\MiniParticipant;
+use App\Models\Team;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
@@ -547,7 +550,12 @@ class UserMatchStatsController extends Controller
             $awayMembers = $teamMembersByTeam->get($match->away_team_id, []);
             
             $isHome = in_array($userId, $homeMembers);
+            
+            // Swap để user luôn ở vị trí "home" (participant 1)
+            $myTeam = $isHome ? $match->homeTeam : $match->awayTeam;
+            $opponentTeam = $isHome ? $match->awayTeam : $match->homeTeam;
             $myTeamId = $isHome ? $match->home_team_id : $match->away_team_id;
+            $opponentTeamId = $isHome ? $match->away_team_id : $match->home_team_id;
             
             // Tính điểm số
             $scores = [];
@@ -580,11 +588,13 @@ class UserMatchStatsController extends Controller
     
             $allMatches->push([
                 'type' => 'match',
+                'format' => 'team',
                 'id' => $match->id,
                 'tournament_name' => $match->tournamentType->tournament->name ?? null,
-                'home_team' => $match->homeTeam->name ?? null,
-                'away_team' => $match->awayTeam->name ?? null,
+                'my_team' => new TeamResource($myTeam),           // User team (luôn ở vị trí 1)
+                'opponent_team' => new TeamResource($opponentTeam), // Đối thủ (luôn ở vị trí 2)
                 'my_team_id' => $myTeamId,
+                'opponent_team_id' => $opponentTeamId,
                 'scores' => $scores,
                 'is_win' => $is_win,
                 'status' => $match->status,
@@ -593,7 +603,7 @@ class UserMatchStatsController extends Controller
             ]);
         }
     
-        // Xử lý MiniMatches
+        // ========== XỬ LÝ MINI MATCHES - SWAP ĐỂ USER LUÔN Ở PARTICIPANT1, ĐỐI THỦ Ở PARTICIPANT2 ==========
         foreach ($minis as $mini) {
             $history = $histories->where('mini_match_id', $mini->id)->first();
             if (!$history) continue;
@@ -604,6 +614,12 @@ class UserMatchStatsController extends Controller
             if (!$participant1 || !$participant2) continue;
             
             $isParticipant1 = ($userId == $participant1->user_id);
+            
+            // Swap để user luôn ở vị trí "participant1"
+            $myParticipant = $isParticipant1 ? $participant1 : $participant2;
+            $opponentParticipant = $isParticipant1 ? $participant2 : $participant1;
+            $myParticipantId = $isParticipant1 ? $mini->participant1_id : $mini->participant2_id;
+            $opponentParticipantId = $isParticipant1 ? $mini->participant2_id : $mini->participant1_id;
             
             // Tính điểm số
             $scores = [];
@@ -639,11 +655,13 @@ class UserMatchStatsController extends Controller
     
             $allMatches->push([
                 'type' => 'mini_match',
+                'format' => $myParticipant->user_id == null ? 'team' : 'user',
                 'id' => $mini->id,
                 'tournament_name' => $mini->miniTournament->name ?? null,
-                'participant1' => $participant1->user->name ?? null,
-                'participant2' => $participant2->user->name ?? null,
-                'my_participant_id' => $isParticipant1 ? $mini->participant1_id : $mini->participant2_id,
+                'my_participant' => new UserListResource($myParticipant->user),        // User (luôn ở vị trí 1)
+                'opponent_participant' => new UserListResource($opponentParticipant->user), // Đối thủ (luôn ở vị trí 2)
+                'my_participant_id' => $myParticipantId,
+                'opponent_participant_id' => $opponentParticipantId,
                 'scores' => $scores,
                 'is_win' => $is_win,
                 'status' => $mini->status,
