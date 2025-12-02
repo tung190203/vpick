@@ -524,14 +524,16 @@ class MiniMatchController extends Controller
             return ResponseHelper::error('Kết quả trận đấu đã được xác nhận trước đó', 400);
         }
 
-        if ($userParticipant && $userParticipant->id == $match->participant1_id) {
-            $match->participant1_confirm = true;
-        } elseif ($userParticipant && $userParticipant->id == $match->participant2_id) {
-            $match->participant2_confirm = true;
-        } elseif ($isOrganizer) {
+        if ($isOrganizer) {
             $match->participant1_confirm = true;
             $match->participant2_confirm = true;
-        }        
+        } else {
+            if ($userParticipant && $userParticipant->id == $match->participant1_id) {
+                $match->participant1_confirm = true;
+            } elseif ($userParticipant && $userParticipant->id == $match->participant2_id) {
+                $match->participant2_confirm = true;
+            }
+        }      
 
         if ($match->participant1_confirm && $match->participant2_confirm) {
             $wins = $match->results->groupBy('participant_id')->map(function ($results) {

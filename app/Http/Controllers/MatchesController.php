@@ -611,13 +611,15 @@ class MatchesController extends Controller
         if ($match->status === Matches::STATUS_COMPLETED) {
             return ResponseHelper::error('Kết quả trận đấu đã được xác nhận trước đó', 400);
         }
-        if ($userTeam && $userTeam->id == $match->home_team_id) {
-            $match->home_team_confirm = true;
-        } elseif ($userTeam && $userTeam->id == $match->away_team_id) {
-            $match->away_team_confirm = true;
-        } elseif ($isOrganizer) {
+        if ($isOrganizer) {
             $match->home_team_confirm = true;
             $match->away_team_confirm = true;
+        } else {
+            if ($userTeam && $userTeam->id == $match->home_team_id) {
+                $match->home_team_confirm = true;
+            } elseif ($userTeam && $userTeam->id == $match->away_team_id) {
+                $match->away_team_confirm = true;
+            }
         }
 
         if($match->home_team_confirm && $match->away_team_confirm) {
