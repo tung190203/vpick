@@ -82,6 +82,7 @@ class MatchDetailResource extends JsonResource
 
         return [
             'id' => $this->id,
+            'name_of_match' => $this->name_of_match,
             'round' => $roundNumber,
             'round_name' => $roundName,
             'home_team' => $homeTeam ? [

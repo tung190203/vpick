@@ -28,7 +28,8 @@ class Matches extends Model
         'is_third_place',
         'scheduled_at',
         'court',
-        'winner_id'
+        'winner_id',
+        'name_of_match'
     ];
 
     const PER_PAGE = 15;

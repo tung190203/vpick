@@ -17,6 +17,7 @@ class MatchesResource extends JsonResource
         return [
             'id' => $this->id,
             'group' => $this->group?->name,
+            'name_of_match' => $this->name_of_match,
             'round' => $this->round,
             'next_match_id' => $this->next_match_id,
             'next_position' => $this->next_position,

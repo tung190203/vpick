@@ -223,6 +223,9 @@ class TournamentTypeController extends Controller
             $teamCount++;
         }
         $totalRounds = $teamCount - 1; 
+        $matches = [];
+        $matchNumber = 0;
+
         for ($leg = 1; $leg <= $numLegs; $leg++) {
             for ($round = 1; $round <= $totalRounds; $round++) {
                 $halfSize = $teamCount / 2;
@@ -237,22 +240,34 @@ class TournamentTypeController extends Controller
                     if ($homeId === 'BYE' || $awayId === 'BYE') {
                         continue; 
                     }
+                    
+                    $matchNumber++;
+                    
                     $isReturnLeg = ($leg % 2 === 0);
                     $finalHomeId = ($isReturnLeg) ? $awayId : $homeId;
                     $finalAwayId = ($isReturnLeg) ? $homeId : $awayId;
 
-                    $type->matches()->create([
+                    $matches[] = [
+                        'name_of_match' => "Trận đấu số {$matchNumber}",
                         'home_team_id' => $finalHomeId,
                         'away_team_id' => $finalAwayId,
                         'tournament_type_id' => $type->id,
                         'leg' => $leg,
                         'round' => $round,
-                    ]);
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
                 }
+                
                 $firstTeam = array_shift($scheduleTeams);
                 $lastTeam = array_pop($scheduleTeams);
                 array_unshift($scheduleTeams, $firstTeam, $lastTeam);
             }
+        }
+
+        // Insert tất cả một lần
+        if (!empty($matches)) {
+            Matches::insert($matches);
         }
     }
 
@@ -329,14 +344,17 @@ class TournamentTypeController extends Controller
             $byeTeam = $hasOdd ? array_pop($currentTeams) : null;
 
             // tạo match cho các cặp
+            $matchNumber = 0;
             for($i=0;$i<count($currentTeams);$i+=2){
                 $home = $currentTeams[$i];
                 $away = $currentTeams[$i+1] ?? null;
+                $matchNumber ++;
 
                 for ($leg = 1; $leg <= $numLegs; $leg++) {
                     $isReturn = ($leg % 2 === 0);
                     $match = $type->matches()->create([
                         'tournament_type_id'=>$type->id,
+                        'name_of_match'=> "Trận đấu số {$matchNumber}",
                         'home_team_id'=> $isReturn ? ($away->id??null) : ($home->id??null),
                         'away_team_id'=> $isReturn ? ($home->id??null) : ($away->id??null),
                         'round'=>$round,
@@ -435,6 +453,7 @@ class TournamentTypeController extends Controller
     {
         $teamCount = $teams->count();
         if ($teamCount < 2) return;
+        $matchNumber = 0;
 
         $mainConfig = is_array($config) && isset($config[0]) ? $config[0] : [];        
         $poolConfig = $mainConfig['pool_stage'] ?? [];
@@ -478,6 +497,7 @@ class TournamentTypeController extends Controller
                     'leg' => 1,
                     'is_bye' => true,
                     'status' => 'pending',
+                    'name_of_match' => "Trận đấu số {$matchNumber}",
                 ]);
                 
                 // Đội này sẽ tự động đi tiếp
@@ -502,6 +522,7 @@ class TournamentTypeController extends Controller
                 for ($j = $i + 1; $j < $count; $j++) {
                     for ($leg = 1; $leg <= $numLegs; $leg++) {
                         $isReturn = ($leg % 2 === 0);
+                        $matchNumber++; 
                         $match = $type->matches()->create([
                             'group_id' => $group->id,
                             'tournament_type_id' => $type->id,
@@ -511,6 +532,7 @@ class TournamentTypeController extends Controller
                             'leg' => $leg,
                             'is_bye' => false,
                             'status' => 'pending',
+                            'name_of_match' => "Trận đấu số {$matchNumber}"
                         ]);
                         $groupMatchMap[$group->id]->push($match);
                     }
@@ -526,11 +548,11 @@ class TournamentTypeController extends Controller
                 ]);
             }
         }
-        $knockoutRounds = $this->generateKnockoutStage($type, $advancing, $hasThirdPlace, $advancedToNext, $numLegs);
+        $knockoutRounds = $this->generateKnockoutStage($type, $advancing, $hasThirdPlace, $advancedToNext, $numLegs, $matchNumber);
         $this->createPoolAdvancementRules($type, $knockoutRounds, $advancing, $groupObjects);
     }
 
-    private function generateKnockoutStage(TournamentType $type, $teams, $hasThirdPlace, $advancedToNext = false, $numLegs = 1)
+    private function generateKnockoutStage(TournamentType $type, $teams, $hasThirdPlace, $advancedToNext = false, $numLegs = 1, &$matchNumber = 0)
     {
         $teamList = is_array($teams) ? collect($teams) : $teams->values();
         $roundIndex = 2;
@@ -551,6 +573,7 @@ class TournamentTypeController extends Controller
                 $firstMatchId = null;
                 for ($leg = 1; $leg <= $numLegs; $leg++) {
                     $isReturn = ($leg % 2 === 0);
+                    $matchNumber++;
                     
                     $match = $type->matches()->create([
                         'tournament_type_id' => $type->id,
@@ -560,6 +583,7 @@ class TournamentTypeController extends Controller
                         'leg' => $leg,
                         'status' => 'pending',
                         'is_bye' => false,
+                        'name_of_match' => "Trận đấu số {$matchNumber}",
                     ]);
 
                     if ($leg === 1) {
@@ -584,6 +608,7 @@ class TournamentTypeController extends Controller
                     // Tạo trận với best loser
                     $firstByeMatchId = null;
                     for ($leg = 1; $leg <= $numLegs; $leg++) {
+                        $matchNumber++;
                         $byeMatch = $type->matches()->create([
                             'tournament_type_id' => $type->id,
                             'home_team_id' => $byeTeamId,
@@ -593,6 +618,7 @@ class TournamentTypeController extends Controller
                             'status' => 'pending',
                             'is_bye' => true,
                             'best_loser_source_round' => $roundIndex - 1,
+                            'name_of_match' => "Trận đấu số {$matchNumber}",
                         ]);
                         if ($leg === 1) {
                             $firstByeMatchId = $byeMatch->id;
@@ -606,6 +632,7 @@ class TournamentTypeController extends Controller
                         '_from_match' => $firstByeMatchId,
                     ]);
                 } else {
+                    $matchNumber++;
                     $byeMatch = $type->matches()->create([
                         'tournament_type_id' => $type->id,
                         'home_team_id' => $byeTeamId,
@@ -614,6 +641,7 @@ class TournamentTypeController extends Controller
                         'leg' => 1,
                         'status' => 'pending',
                         'is_bye' => true,
+                        'name_of_match' => "Trận đấu số {$matchNumber}",
                     ]);
 
                     $matchIds->push($byeMatch->id);
@@ -679,12 +707,14 @@ class TournamentTypeController extends Controller
                     $firstThirdPlaceId = null;
                     
                     for ($leg = 1; $leg <= $numLegs; $leg++) {
+                        $matchNumber++; 
                         $third = $type->matches()->create([
                             'tournament_type_id' => $type->id,
                             'round' => $finalRound + 1,
                             'leg' => $leg,
                             'is_third_place' => true,
                             'status' => 'pending',
+                            'name_of_match' => "Trận đấu số {$matchNumber}",
                         ]);
                     
                         if ($leg === 1) {
