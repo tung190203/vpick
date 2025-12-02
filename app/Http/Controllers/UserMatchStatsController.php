@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\VnduprHistory;
@@ -21,7 +22,7 @@ class UserMatchStatsController extends Controller
         $sportId = $request->query('sport_id');
 
         if (!$sportId) {
-            return response()->json(['error' => 'sport_id required'], 400);
+            return ResponseHelper::error('Có lỗi xảy ra trong quá trình thực thi', 400);
         }
 
         // Lấy VnduprHistory 365 ngày
@@ -455,6 +456,223 @@ class UserMatchStatsController extends Controller
             'performance' => $yearStats['performance']
         ];
 
-        return response()->json(['data' => $chart]);
+        return ResponseHelper::success($chart, 'Lấy dữ liệu thành công');
+    }
+
+    public function matchesBySportId(Request $request) {
+        $userId = auth()->id();
+        $sportId = $request->query('sport_id');
+        $perPage = $request->query('per_page', 15); // Mặc định 15 items/page
+        
+        if (!$sportId) {
+            return ResponseHelper::error('Có lỗi xảy ra trong quá trình thực thi', 400);
+        }
+    
+        // Lấy tất cả VnduprHistory của user
+        $histories = VnduprHistory::where('user_id', $userId)
+            ->orderBy('created_at', 'desc')
+            ->get();
+    
+        if ($histories->isEmpty()) {
+            return response()->json([
+                'data' => [],
+                'current_page' => 1,
+                'per_page' => $perPage,
+                'total' => 0,
+                'last_page' => 1
+            ]);
+        }
+    
+        $matchIds = $histories->pluck('match_id')->filter()->unique();
+        $miniIds = $histories->pluck('mini_match_id')->filter()->unique();
+    
+        // Lấy Matches với filter sport_id
+        $matches = Matches::with(['tournamentType.tournament', 'homeTeam', 'awayTeam'])
+            ->whereIn('id', $matchIds)
+            ->get()
+            ->filter(fn($m) => $m->tournamentType && 
+                              $m->tournamentType->tournament && 
+                              $m->tournamentType->tournament->sport_id == $sportId);
+    
+        // Lấy MiniMatches với filter sport_id
+        $minis = MiniMatch::with('miniTournament')
+            ->whereIn('id', $miniIds)
+            ->get()
+            ->filter(fn($m) => $m->miniTournament && 
+                              $m->miniTournament->sport_id == $sportId);
+    
+        // Lấy kết quả
+        $matchResults = MatchResult::whereIn('match_id', $matches->pluck('id'))
+            ->get()
+            ->groupBy('match_id');
+            
+        $miniResults = MiniMatchResult::whereIn('mini_match_id', $minis->pluck('id'))
+            ->get()
+            ->groupBy('mini_match_id');
+    
+        // Lấy participants cho mini_match
+        $participantIds = $minis->pluck('participant1_id')
+            ->concat($minis->pluck('participant2_id'))
+            ->filter()
+            ->unique();
+            
+        $participants = collect();
+        if ($participantIds->isNotEmpty()) {
+            $participants = MiniParticipant::with('user')->whereIn('id', $participantIds)->get()->keyBy('id');
+        }
+    
+        // Lấy team members
+        $allTeamIds = $matches->pluck('home_team_id')
+            ->concat($matches->pluck('away_team_id'))
+            ->filter()
+            ->unique();
+            
+        $teamMembersByTeam = collect();
+        if ($allTeamIds->isNotEmpty()) {
+            $members = DB::table('team_members')->whereIn('team_id', $allTeamIds)->get();
+            $teamMembersByTeam = $members->groupBy('team_id')
+                ->map(fn($rows) => $rows->pluck('user_id')->all());
+        }
+    
+        // Merge matches và mini matches với thông tin đầy đủ
+        $allMatches = collect();
+    
+        // Xử lý Matches
+        foreach ($matches as $match) {
+            $history = $histories->where('match_id', $match->id)->first();
+            if (!$history) continue;
+    
+            // Xác định team của user
+            $homeMembers = $teamMembersByTeam->get($match->home_team_id, []);
+            $awayMembers = $teamMembersByTeam->get($match->away_team_id, []);
+            
+            $isHome = in_array($userId, $homeMembers);
+            $myTeamId = $isHome ? $match->home_team_id : $match->away_team_id;
+            
+            // Tính điểm số
+            $scores = [];
+            $is_win = false;
+            
+            if ($matchResults->has($match->id)) {
+                $resultsBySet = $matchResults[$match->id]->groupBy('set_number');
+                
+                foreach ($resultsBySet as $setNumber => $setResults) {
+                    $myScore = 0;
+                    $opponentScore = 0;
+                    
+                    foreach ($setResults as $r) {
+                        if ($r->team_id == $myTeamId) {
+                            $myScore += $r->score;
+                        } else {
+                            $opponentScore += $r->score;
+                        }
+                    }
+                    
+                    $scores[] = [
+                        'my_score' => $myScore,
+                        'opponent_score' => $opponentScore,
+                        'set_number' => $setNumber
+                    ];
+                }
+                
+                $is_win = $match->winner_id == $myTeamId;
+            }
+    
+            $allMatches->push([
+                'type' => 'match',
+                'id' => $match->id,
+                'tournament_name' => $match->tournamentType->tournament->name ?? null,
+                'home_team' => $match->homeTeam->name ?? null,
+                'away_team' => $match->awayTeam->name ?? null,
+                'my_team_id' => $myTeamId,
+                'scores' => $scores,
+                'is_win' => $is_win,
+                'status' => $match->status,
+                'match_date' => $match->match_date,
+                'created_at' => $history->created_at
+            ]);
+        }
+    
+        // Xử lý MiniMatches
+        foreach ($minis as $mini) {
+            $history = $histories->where('mini_match_id', $mini->id)->first();
+            if (!$history) continue;
+    
+            $participant1 = $participants->get($mini->participant1_id);
+            $participant2 = $participants->get($mini->participant2_id);
+            
+            if (!$participant1 || !$participant2) continue;
+            
+            $isParticipant1 = ($userId == $participant1->user_id);
+            
+            // Tính điểm số
+            $scores = [];
+            $is_win = false;
+            
+            if ($miniResults->has($mini->id)) {
+                $resultsBySet = $miniResults[$mini->id]->groupBy('set_number');
+                
+                foreach ($resultsBySet as $setNumber => $setResults) {
+                    $myScore = 0;
+                    $opponentScore = 0;
+                    
+                    foreach ($setResults as $r) {
+                        if (($r->participant_id == $mini->participant1_id && $isParticipant1) ||
+                            ($r->participant_id == $mini->participant2_id && !$isParticipant1)) {
+                            $myScore += $r->score;
+                        } else {
+                            $opponentScore += $r->score;
+                        }
+                    }
+                    
+                    $scores[] = [
+                        'my_score' => $myScore,
+                        'opponent_score' => $opponentScore,
+                        'set_number' => $setNumber
+                    ];
+                }
+            }
+            
+            $is_win = $isParticipant1 
+                ? $mini->participant_win_id == $mini->participant1_id
+                : $mini->participant_win_id == $mini->participant2_id;
+    
+            $allMatches->push([
+                'type' => 'mini_match',
+                'id' => $mini->id,
+                'tournament_name' => $mini->miniTournament->name ?? null,
+                'participant1' => $participant1->user->name ?? null,
+                'participant2' => $participant2->user->name ?? null,
+                'my_participant_id' => $isParticipant1 ? $mini->participant1_id : $mini->participant2_id,
+                'scores' => $scores,
+                'is_win' => $is_win,
+                'status' => $mini->status,
+                'match_date' => $mini->match_date,
+                'created_at' => $history->created_at
+            ]);
+        }
+    
+        // Sort theo created_at giảm dần
+        $allMatches = $allMatches->sortByDesc('created_at')->values();
+    
+        // Phân trang thủ công
+        $total = $allMatches->count();
+        $lastPage = ceil($total / $perPage);
+        $currentPage = max(1, min($request->query('page', 1), $lastPage));
+        
+        $offset = ($currentPage - 1) * $perPage;
+        $paginatedData = $allMatches->slice($offset, $perPage)->values();
+    
+        return ResponseHelper::success([
+            'data' => $paginatedData,
+            'pagination' => [
+                'current_page' => $currentPage,
+                'per_page' => $perPage,
+                'total' => $total,
+                'last_page' => $lastPage,
+                'from' => $offset + 1,
+                'to' => min($offset + $perPage, $total)
+            ]
+        ], 'Lấy danh sách trận đấu thành công');
     }
 }

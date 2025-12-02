@@ -80,6 +80,7 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
         Route::post('/update', [UserController::class, 'update']);
         Route::delete('/delete/{id}', [UserController::class, 'destroy']);
         Route::get('/matches/dataset', [UserMatchStatsController::class, 'dataset']);
+        Route::get('/matches/list',[UserMatchStatsController::class, 'matchesBySportId']);
     });
     Route::prefix('tournaments')->group(function () {
         Route::get('/index', [TournamentController::class, 'index']);
