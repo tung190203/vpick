@@ -591,6 +591,7 @@ class UserMatchStatsController extends Controller
                 'format' => 'team',
                 'id' => $match->id,
                 'tournament_name' => $match->tournamentType->tournament->name ?? null,
+                'match_name' => $match->name_of_match,
                 'my_team' => new TeamResource($myTeam),           // User team (luôn ở vị trí 1)
                 'opponent_team' => new TeamResource($opponentTeam), // Đối thủ (luôn ở vị trí 2)
                 'my_team_id' => $myTeamId,
@@ -658,6 +659,7 @@ class UserMatchStatsController extends Controller
                 'format' => $myParticipant->user_id == null ? 'team' : 'user',
                 'id' => $mini->id,
                 'tournament_name' => $mini->miniTournament->name ?? null,
+                'match_name' => $mini->name_of_match,
                 'my_participant' => new UserListResource($myParticipant->user),        // User (luôn ở vị trí 1)
                 'opponent_participant' => new UserListResource($opponentParticipant->user), // Đối thủ (luôn ở vị trí 2)
                 'my_participant_id' => $myParticipantId,
