@@ -1,7 +1,8 @@
 <template>
   <div class="min-h-screen bg-gray-50 flex animate-fadeIn">
 
-    <aside class="w-72 bg-white shadow-xl border-r border-gray-100 p-6 h-screen sticky top-0 overflow-y-auto flex flex-col justify-between">
+    <aside
+      class="w-72 bg-white shadow-xl border-r border-gray-100 p-6 h-screen sticky top-0 overflow-y-auto flex flex-col justify-between">
       <div>
         <h2 class="text-xl font-bold text-primary mb-6">Danh mục</h2>
 
@@ -123,29 +124,21 @@
 
             <transition name="fade">
               <div v-if="activeMainTab === 'privacy'" class="ml-4 mt-2 space-y-1 border-l border-gray-200 pl-3">
+                <button @click="scrollTo('p-intro')" :class="[
+                  'block w-full text-left px-3 py-2 rounded-md text-sm transition',
+                  activeSub === 'p-intro'
+                    ? 'bg-secondary text-white'
+                    : 'text-gray-700 hover:bg-red-100'
+                ]">
+                  Giới thiệu
+                </button>
                 <button @click="scrollTo('p-collect')" :class="[
                   'block w-full text-left px-3 py-2 rounded-md text-sm transition',
                   activeSub === 'p-collect'
                     ? 'bg-secondary text-white'
                     : 'text-gray-700 hover:bg-red-100'
                 ]">
-                  Mục đích thu thập dữ liệu
-                </button>
-                <button @click="scrollTo('p-types')" :class="[
-                  'block w-full text-left px-3 py-2 rounded-md text-sm transition',
-                  activeSub === 'p-types'
-                    ? 'bg-secondary text-white'
-                    : 'text-gray-700 hover:bg-red-100'
-                ]">
-                  Loại dữ liệu được thu thập
-                </button>
-                <button @click="scrollTo('p-method')" :class="[
-                  'block w-full text-left px-3 py-2 rounded-md text-sm transition',
-                  activeSub === 'p-method'
-                    ? 'bg-secondary text-white'
-                    : 'text-gray-700 hover:bg-red-100'
-                ]">
-                  Phương thức thu thập
+                  Dữ liệu chúng tôi thu thập
                 </button>
                 <button @click="scrollTo('p-purpose')" :class="[
                   'block w-full text-left px-3 py-2 rounded-md text-sm transition',
@@ -194,6 +187,14 @@
                     : 'text-gray-700 hover:bg-red-100'
                 ]">
                   Thay đổi chính sách
+                </button>
+                <button @click="scrollTo('p-contact')" :class="[
+                  'block w-full text-left px-3 py-2 rounded-md text-sm transition',
+                  activeSub === 'p-contact'
+                    ? 'bg-secondary text-white'
+                    : 'text-gray-700 hover:bg-red-100'
+                ]">
+                  Thông tin liên hệ
                 </button>
               </div>
             </transition>
@@ -279,19 +280,21 @@
             </transition>
 
           </div>
-          </div>
+        </div>
       </div>
-      
+
       <div class="mt-8 pt-4 border-t border-gray-200">
-        <router-link to="/" class="flex items-center space-x-3 px-4 py-3 rounded-lg font-semibold transition text-gray-700 hover:bg-red-100">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round"
-            stroke-linejoin="round">
-            <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0v-4a1 1 0 011-1h2a1 1 0 011 1v4" />
+        <router-link to="/"
+          class="flex items-center space-x-3 px-4 py-3 rounded-lg font-semibold transition text-gray-700 hover:bg-red-100">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path
+              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0v-4a1 1 0 011-1h2a1 1 0 011 1v4" />
           </svg>
           <span>Quay lại Trang chủ</span>
         </router-link>
       </div>
-      </aside>
+    </aside>
 
     <main class="flex-1 p-10">
       <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-md p-8 border border-gray-100">
@@ -307,7 +310,8 @@
             </h2>
             <p class="text-gray-600 leading-relaxed text-sm mb-4">
               Quy chế sử dụng dịch vụ này (“Quy chế”) quy định các điều khoản, quyền và nghĩa vụ của khách hàng khi sử
-              dụng dịch vụ do <strong>Công ty TNHH Dịch vụ Phần mềm VRPLUS</strong> (sau đây gọi là “Công ty”, “chúng tôi”) cung cấp.
+              dụng dịch vụ do <strong>Công ty TNHH Dịch vụ Phần mềm VRPLUS</strong> (sau đây gọi là “Công ty”, “chúng
+              tôi”) cung cấp.
             </p>
             <p class="text-gray-600 leading-relaxed text-sm">
               Khi truy cập hoặc sử dụng dịch vụ, người dùng (“Bạn”) được xem là đã đồng ý với toàn bộ Quy chế này.
@@ -340,8 +344,10 @@
             <h3 class="text-xl font-semibold text-gray-800 mb-2 mt-4">2. Sử dụng dịch vụ </h3>
             <ul class="list-disc list-inside text-gray-600 leading-relaxed text-sm ml-4 space-y-1">
               <li>Dịch vụ chỉ được sử dụng cho mục đích hợp pháp, phù hợp quy định pháp luật và đạo đức xã hội.</li>
-              <li>Người dùng không được phép đăng tải hoặc phát tán nội dung xấu, giả mạo, lừa đảo hoặc gây gián đoạn hệ thống.</li>
-              <li>Mọi hành vi gian lận, xâm nhập trái phép hoặc lạm dụng dịch vụ sẽ bị xử lý theo Quy chế và pháp luật.</li>
+              <li>Người dùng không được phép đăng tải hoặc phát tán nội dung xấu, giả mạo, lừa đảo hoặc gây gián đoạn hệ
+                thống.</li>
+              <li>Mọi hành vi gian lận, xâm nhập trái phép hoặc lạm dụng dịch vụ sẽ bị xử lý theo Quy chế và pháp luật.
+              </li>
             </ul>
             <h3 class="text-xl font-semibold text-gray-800 mb-2 mt-4">3. Quyền và nghĩa vụ của người dùng </h3>
             <p class="font-medium mt-3">Người dùng có quyền:</p>
@@ -372,8 +378,10 @@
               IV. Giới hạn trách nhiệm
             </h2>
             <ul class="list-disc list-inside text-gray-600 leading-relaxed text-sm ml-4 space-y-1">
-              <li>Công ty không chịu trách nhiệm cho các thiệt hại phát sinh từ lỗi phía người dùng hoặc sự kiện bất khả kháng (thiên tai, sự cố kỹ thuật, tấn công mạng, v.v.).</li>
-              <li>Dịch vụ được cung cấp theo nguyên tắc “như hiện trạng” và Công ty không cam kết hoạt động liên tục 100%.</li>
+              <li>Công ty không chịu trách nhiệm cho các thiệt hại phát sinh từ lỗi phía người dùng hoặc sự kiện bất khả
+                kháng (thiên tai, sự cố kỹ thuật, tấn công mạng, v.v.).</li>
+              <li>Dịch vụ được cung cấp theo nguyên tắc “như hiện trạng” và Công ty không cam kết hoạt động liên tục
+                100%.</li>
             </ul>
           </section>
           <section id="violations" class="mb-12 scroll-mt-24">
@@ -382,7 +390,8 @@
             </h2>
             <ul class="list-disc list-inside text-gray-600 leading-relaxed text-sm ml-4 space-y-1">
               <li>Công ty có quyền tạm ngưng hoặc chấm dứt quyền truy cập nếu người dùng vi phạm Quy chế.</li>
-              <li>Hành vi vi phạm nghiêm trọng có thể dẫn đến khóa tài khoản, hủy dịch vụ và yêu cầu bồi thường thiệt hại (nếu có).</li>
+              <li>Hành vi vi phạm nghiêm trọng có thể dẫn đến khóa tài khoản, hủy dịch vụ và yêu cầu bồi thường thiệt
+                hại (nếu có).</li>
             </ul>
           </section>
           <section id="security" class="mb-12 scroll-mt-24">
@@ -390,8 +399,10 @@
               VI. Bảo mật và quyền riêng tư
             </h2>
             <ul class="list-disc list-inside text-gray-600 leading-relaxed text-sm ml-4 space-y-1">
-              <li>Thông tin cá nhân của người dùng sẽ được thu thập, sử dụng và bảo vệ theo Chính sách bảo mật của Công ty.</li>
-              <li>Thông tin người dùng sẽ không được chia sẻ cho bên thứ ba nếu không có sự đồng ý, trừ trường hợp pháp luật yêu cầu.</li>
+              <li>Thông tin cá nhân của người dùng sẽ được thu thập, sử dụng và bảo vệ theo Chính sách bảo mật của Công
+                ty.</li>
+              <li>Thông tin người dùng sẽ không được chia sẻ cho bên thứ ba nếu không có sự đồng ý, trừ trường hợp pháp
+                luật yêu cầu.</li>
             </ul>
           </section>
           <section id="dispute" class="mb-12 scroll-mt-24">
@@ -417,7 +428,8 @@
             <h2 class="text-2xl font-semibold text-primary mb-4 flex items-center">
               IX. Thông tin liên hệ
             </h2>
-            <h6 class="text-base font-semibold text-gray-800 mb-2 mt-4">Mọi thắc mắc hoặc yêu cầu hỗ trợ, vui lòng liên hệ: </h6>
+            <h6 class="text-base font-semibold text-gray-800 mb-2 mt-4">Mọi thắc mắc hoặc yêu cầu hỗ trợ, vui lòng liên
+              hệ: </h6>
             <p class="text-sm font-semibold text-gray-600 mb-2">Công ty TNHH Dịch vụ Phần mềm VRPLUS</p>
             <ul class="text-gray-600 leading-relaxed text-sm ml-4 space-y-1">
               <li>📍 <strong>Địa chỉ:</strong> Số 27, ngõ 41 Phùng Chí Kiên, Phường Nghĩa Đô, Thành phố Hà Nội</li>
@@ -432,119 +444,167 @@
             Chính sách bảo mật
           </h1>
 
+          <section id="p-intro" class="mb-12 scroll-mt-24">
+            <h2 class="text-2xl font-semibold text-primary mb-4 flex items-center">
+              I. Giới thiệu
+            </h2>
+            <p class="text-gray-600 leading-relaxed text-sm mb-4">
+              Ứng dụng Picki ("Ứng dụng") được vận hành bởi Công ty TNHH Dịch vụ Phần mềm VRPLUS. Chính sách này mô tả
+              cách chúng tôi thu thập, sử dụng và bảo vệ dữ liệu cá nhân của người dùng.
+            </p>
+          </section>
+
           <section id="p-collect" class="mb-12 scroll-mt-24">
             <h2 class="text-2xl font-semibold text-primary mb-4 flex items-center">
-              I. Mục đích thu thập dữ liệu
+              II. Dữ liệu chúng tôi thu thập
             </h2>
+
+            <h3 class="text-xl font-semibold text-gray-800 mb-2 mt-4">2.1 Dữ liệu vị trí (Location)</h3>
             <p class="text-gray-600 leading-relaxed text-sm mb-2">
-              Chúng tôi thu thập và xử lý thông tin cá nhân nhằm:
+              Ứng dụng có thể truy cập vị trí gần đúng hoặc chính xác của bạn để:
             </p>
             <ul class="list-disc list-inside text-gray-600 leading-relaxed text-sm ml-4 space-y-1">
-              <li>Xác thực người dùng và vận hành các tính năng trong hệ thống.</li>
-              <li>Duy trì chất lượng dịch vụ, tối ưu trải nghiệm và cải thiện sản phẩm theo thời gian.</li>
-              <li>Liên lạc với người dùng trong các trường hợp cần thiết: hỗ trợ kỹ thuật, thông báo thay đổi, cảnh báo bảo mật.</li>
-              <li>Phân tích thống kê, đo lường hành vi để cải thiện hiệu suất sản phẩm.</li>
-              <li>Thực hiện các nghĩa vụ pháp lý theo quy định.</li>
+              <li>Gợi ý sân chơi hoặc đối thủ gần bạn</li>
+              <li>Hiển thị bản đồ và các tính năng định vị</li>
+              <li>Tối ưu hóa trải nghiệm người dùng</li>
+            </ul>
+            <p class="text-gray-600 leading-relaxed text-sm mt-2">
+              ✓ Chúng tôi <strong>không bán</strong>, lưu trữ hoặc chia sẻ dữ liệu vị trí cho bên thứ ba không được ủy
+              quyền.
+            </p>
+
+            <h3 class="text-xl font-semibold text-gray-800 mb-2 mt-4">2.2 Camera & Ảnh / Media</h3>
+            <p class="text-gray-600 leading-relaxed text-sm mb-2">
+              Ứng dụng có thể truy cập:
+            </p>
+            <ul class="list-disc list-inside text-gray-600 leading-relaxed text-sm ml-4 space-y-1">
+              <li>Camera: chụp avatar, quét mã QR</li>
+              <li>Thư viện ảnh: tải ảnh đại diện</li>
+            </ul>
+            <p class="text-gray-600 leading-relaxed text-sm mt-2">
+              Quyền truy cập chỉ hoạt động khi bạn cho phép.
+            </p>
+
+            <h3 class="text-xl font-semibold text-gray-800 mb-2 mt-4">2.3 Dữ liệu tài khoản</h3>
+            <p class="text-gray-600 leading-relaxed text-sm mb-2">
+              Chúng tôi có thể thu thập:
+            </p>
+            <ul class="list-disc list-inside text-gray-600 leading-relaxed text-sm ml-4 space-y-1">
+              <li>Email</li>
+              <li>Họ tên</li>
+              <li>Số điện thoại</li>
+              <li>Hồ sơ vận động viên & thành tích thể thao</li>
+            </ul>
+
+            <h3 class="text-xl font-semibold text-gray-800 mb-2 mt-4">2.4 Dữ liệu thiết bị & phân tích (Analytics)</h3>
+            <p class="text-gray-600 leading-relaxed text-sm mb-2">
+              Bao gồm:
+            </p>
+            <ul class="list-disc list-inside text-gray-600 leading-relaxed text-sm ml-4 space-y-1">
+              <li>Loại thiết bị</li>
+              <li>Phiên bản hệ điều hành</li>
+              <li>Firebase Analytics</li>
+              <li>ID quảng cáo (nếu được sử dụng)</li>
             </ul>
           </section>
 
-          <section id="p-types" class="mb-12 scroll-mt-24">
-            <h2 class="text-2xl font-semibold text-primary mb-4 flex items-center">
-              II. Loại dữ liệu được thu thập
-            </h2>
-            <p class="text-gray-600 leading-relaxed text-sm mb-2">
-              Tùy theo tính năng, chúng tôi có thể thu thập:
-            </p>
-            <ul class="list-disc list-inside text-gray-600 leading-relaxed text-sm ml-4 space-y-1">
-              <li>Thông tin định danh: họ tên, email, số điện thoại, mật khẩu (đã mã hóa).</li>
-              <li>Thông tin kỹ thuật: địa chỉ IP, loại thiết bị, trình duyệt, thời gian truy cập, cookie, log hệ thống.</li>
-              <li>Thông tin tương tác: hành vi sử dụng dịch vụ, lịch sử thao tác, phản hồi và yêu cầu hỗ trợ.</li>
-              <li>Dữ liệu do người dùng tự cung cấp: nội dung upload, form đăng ký, tài liệu dự án.</li>
-            </ul>
-          </section>
-
-          <section id="p-method" class="mb-12 scroll-mt-24">
-            <h2 class="text-2xl font-semibold text-primary mb-4 flex items-center">
-              III. Phương thức thu thập
-            </h2>
-            <ul class="list-disc list-inside text-gray-600 leading-relaxed text-sm ml-4 space-y-1">
-              <li>Người dùng nhập trực tiếp khi đăng ký hoặc cập nhật hồ sơ.</li>
-              <li>Hệ thống tự động thu thập qua cookie, pixel, công cụ analytics.</li>
-              <li>Dữ liệu gửi qua API hoặc tích hợp với bên thứ ba (nếu có).</li>
-            </ul>
-          </section>
           <section id="p-purpose" class="mb-12 scroll-mt-24">
             <h2 class="text-2xl font-semibold text-primary mb-4 flex items-center">
-              IV. Mục đích sử dụng dữ liệu
+              III. Mục đích sử dụng dữ liệu
             </h2>
             <p class="text-gray-600 leading-relaxed text-sm mb-2">
               Thông tin cá nhân chỉ được dùng để:
             </p>
             <ul class="list-disc list-inside text-gray-600 leading-relaxed text-sm ml-4 space-y-1">
-              <li>Cung cấp đúng dịch vụ người dùng yêu cầu.</li>
-              <li>Bảo mật tài khoản và kiểm soát gian lận.</li>
-              <li>Gửi email/SMS thông báo, bản cập nhật sản phẩm hoặc thay đổi chính sách.</li>
-              <li>Phát triển tính năng mới dựa trên phân tích dữ liệu.</li>
-              <li>Tuân thủ yêu cầu từ cơ quan nhà nước khi có văn bản hợp lệ.</li>
+              <li>Cung cấp đúng dịch vụ người dùng yêu cầu</li>
+              <li>Bảo mật tài khoản và kiểm soát gian lận</li>
+              <li>Gửi thông báo quan trọng về ứng dụng</li>
+              <li>Cải thiện trải nghiệm người dùng</li>
+              <li>Phát triển tính năng mới dựa trên phân tích dữ liệu</li>
+              <li>Tuân thủ yêu cầu từ cơ quan nhà nước khi có văn bản hợp lệ</li>
             </ul>
           </section>
+
           <section id="p-share" class="mb-12 scroll-mt-24">
             <h2 class="text-2xl font-semibold text-primary mb-4 flex items-center">
-              V. Chia sẻ dữ liệu với bên thứ ba
+              IV. Chia sẻ dữ liệu với bên thứ ba
             </h2>
             <p class="text-gray-600 leading-relaxed text-sm mb-2">
               Chúng tôi không bán, không cho thuê, không trao đổi thông tin cá nhân. Chúng tôi chỉ chia sẻ dữ liệu khi:
             </p>
             <ul class="list-disc list-inside text-gray-600 leading-relaxed text-sm ml-4 space-y-1">
               <li>Có sự đồng ý rõ ràng của người dùng</li>
-              <li>Đối tác kỹ thuật tham gia vận hành hệ thống (hosting, email service, analytic tool) – nhưng chỉ trong phạm vi tối thiểu để thực hiện dịch vụ.</li>
-              <li>Cơ quan có thẩm quyền yêu cầu theo đúng quy định pháp luật.</li>
+              <li>Đối tác kỹ thuật tham gia vận hành hệ thống (hosting, email service, Firebase, analytic tool) – nhưng
+                chỉ trong phạm vi tối thiểu để thực hiện dịch vụ</li>
+              <li>Cơ quan có thẩm quyền yêu cầu theo đúng quy định pháp luật</li>
             </ul>
             <p class="text-gray-600 leading-relaxed text-sm mt-2">
               Tất cả bên thứ ba đều phải tuân thủ cam kết bảo mật của chúng tôi.
             </p>
           </section>
+
           <section id="p-security" class="mb-12 scroll-mt-24">
             <h2 class="text-2xl font-semibold text-primary mb-4 flex items-center">
-              VI. Lưu trữ & bảo mật dữ liệu
+              V. Lưu trữ & bảo mật dữ liệu
             </h2>
             <ul class="list-disc list-inside text-gray-600 leading-relaxed text-sm ml-4 space-y-1">
-              <li>Dữ liệu được lưu trữ tại máy chủ đạt chuẩn bảo mật quốc tế (VD: ISO 27001).</li>
-              <li>Mật khẩu được mã hóa; thông tin nhạy cảm được xử lý bằng các giao thức bảo mật (SSL/TLS).</li>
-              <li>Hệ thống có cơ chế sao lưu và phục hồi dữ liệu định kỳ.</li>
-              <li>Chúng tôi thường xuyên rà soát lỗ hổng, cập nhật bản vá và triển khai biện pháp phòng chống tấn công</li>
+              <li>Dữ liệu được lưu trữ tại máy chủ đạt chuẩn bảo mật quốc tế</li>
+              <li>Mật khẩu được mã hóa; thông tin nhạy cảm được xử lý bằng các giao thức bảo mật (SSL/TLS)</li>
+              <li>Hệ thống có cơ chế sao lưu và phục hồi dữ liệu định kỳ</li>
+              <li>Chúng tôi thường xuyên rà soát lỗ hổng, cập nhật bản vá và triển khai biện pháp phòng chống tấn công
+              </li>
             </ul>
           </section>
+
           <section id="p-user" class="mb-12 scroll-mt-24">
             <h2 class="text-2xl font-semibold text-primary mb-4 flex items-center">
-              VII. Quyền của người dùng
+              VI. Quyền của người dùng
             </h2>
             <p class="text-gray-600 leading-relaxed text-sm mb-2">
-              Người dùng có quyền
+              Người dùng có quyền:
             </p>
             <ul class="list-disc list-inside text-gray-600 leading-relaxed text-sm ml-4 space-y-1">
-              <li>Yêu cầu xem, chỉnh sửa hoặc cập nhật thông tin cá nhân.</li>
-              <li>Yêu cầu xóa tài khoản và dữ liệu liên quan (trừ dữ liệu cần lưu theo pháp luật).</li>
-              <li>Từ chối nhận thông báo marketing.</li>
-              <li>Khiếu nại nếu thấy thông tin bị thu thập hoặc sử dụng sai mục đích.</li>
+              <li>Yêu cầu xem, chỉnh sửa hoặc cập nhật thông tin cá nhân</li>
+              <li>Yêu cầu xóa tài khoản và dữ liệu liên quan (trừ dữ liệu cần lưu theo pháp luật)</li>
+              <li>Thu hồi quyền truy cập Camera, Vị trí, Thư viện ảnh bất cứ lúc nào trong cài đặt thiết bị</li>
+              <li>Từ chối nhận thông báo marketing</li>
+              <li>Khiếu nại nếu thấy thông tin bị thu thập hoặc sử dụng sai mục đích</li>
             </ul>
           </section>
+
           <section id="p-storage" class="mb-12 scroll-mt-24">
             <h2 class="text-2xl font-semibold text-primary mb-4 flex items-center">
-              VIII. Thời gian lưu trữ
+              VII. Thời gian lưu trữ
             </h2>
             <ul class="list-disc list-inside text-gray-600 leading-relaxed text-sm ml-4 space-y-1">
-              <li>Dữ liệu được lưu trong suốt thời gian tài khoản hoạt động.</li>
-              <li>Sau khi xóa tài khoản, dữ liệu sẽ được xử lý xoá trong vòng X ngày, trừ trường hợp cần giữ lại theo luật định.</li>
+              <li>Dữ liệu được lưu trong suốt thời gian tài khoản hoạt động</li>
+              <li>Sau khi xóa tài khoản, dữ liệu sẽ được xử lý xóa trong vòng 30 ngày, trừ trường hợp cần giữ lại theo
+                luật định</li>
             </ul>
           </section>
+
           <section id="p-policy" class="mb-12 scroll-mt-24">
             <h2 class="text-2xl font-semibold text-primary mb-4 flex items-center">
-              IX. Thay đổi chính sách
+              VIII. Thay đổi chính sách
             </h2>
             <p class="text-gray-600 leading-relaxed text-sm">
-              Khi có thay đổi, chúng tôi sẽ cập nhật tại trang này và/hoặc gửi thông báo qua email. Việc tiếp tục sử dụng dịch vụ đồng nghĩa với việc đồng ý các thay đổi mới.
+              Khi có thay đổi, chúng tôi sẽ cập nhật tại trang này và/hoặc gửi thông báo qua email hoặc ứng dụng. Việc
+              tiếp tục sử dụng dịch vụ đồng nghĩa với việc đồng ý các thay đổi mới.
             </p>
+          </section>
+
+          <section id="p-contact" class="mb-12 scroll-mt-24">
+            <h2 class="text-2xl font-semibold text-primary mb-4 flex items-center">
+              IX. Thông tin liên hệ
+            </h2>
+            <h6 class="text-base font-semibold text-gray-800 mb-2 mt-4">Mọi thắc mắc về chính sách bảo mật, vui lòng
+              liên hệ:</h6>
+            <p class="text-sm font-semibold text-gray-600 mb-2">Công ty TNHH Dịch vụ Phần mềm VRPLUS</p>
+            <ul class="text-gray-600 leading-relaxed text-sm ml-4 space-y-1">
+              <li>📍 <strong>Địa chỉ:</strong> Số 27, ngõ 41 Phùng Chí Kiên, Phường Nghĩa Đô, Thành phố Hà Nội</li>
+              <li>📧 <strong>Email:</strong> hello@vrplus.vn</li>
+              <li>📞 <strong>Hotline:</strong> (+84) 963.186.388</li>
+            </ul>
           </section>
         </template>
 
@@ -558,7 +618,8 @@
               I. Cookie là gì?
             </h2>
             <p class="text-gray-600 leading-relaxed text-sm mb-4">
-              Cookie là các tệp nhỏ được lưu trên thiết bị (điện thoại, máy tính, tablet) khi người dùng truy cập ứng dụng hoặc website Picki. Cookie giúp nhận diện người dùng, lưu cài đặt và tối ưu trải nghiệm sử dụng.
+              Cookie là các tệp nhỏ được lưu trên thiết bị (điện thoại, máy tính, tablet) khi người dùng truy cập ứng
+              dụng hoặc website Picki. Cookie giúp nhận diện người dùng, lưu cài đặt và tối ưu trải nghiệm sử dụng.
             </p>
             <p class="text-gray-600 leading-relaxed text-sm">
               <strong>Nói đơn giản:</strong> Cookie giúp Picki nhớ bạn là ai và để app chạy mượt hơn.
@@ -572,7 +633,8 @@
             <p class="text-gray-600 leading-relaxed text-sm">
               Picki sử dụng Cookie cho các mục đích sau:
             </p>
-            <h3 class="text-xl font-semibold text-gray-800 mb-2 mt-4">1. Cookie cần thiết (Strictly Necessary Cookies) </h3>
+            <h3 class="text-xl font-semibold text-gray-800 mb-2 mt-4">1. Cookie cần thiết (Strictly Necessary Cookies)
+            </h3>
             <p class="text-gray-600 leading-relaxed text-sm mb-2">
               Giúp ứng dụng hoạt động đúng chức năng:
             </p>
@@ -600,7 +662,8 @@
               <li>Cài đặt cá nhân hoá</li>
               <li>Tùy chọn hiển thị. Nhờ đó, mỗi lần mở app lại không phải thiết lập từ đầu</li>
             </ul>
-            <h3 class="text-xl font-semibold text-gray-800 mb-2 mt-4">4. Cookie phân tích & marketing (Analytics & Marketing Cookies)</h3>
+            <h3 class="text-xl font-semibold text-gray-800 mb-2 mt-4">4. Cookie phân tích & marketing (Analytics &
+              Marketing Cookies)</h3>
             <p class="text-gray-600 leading-relaxed text-sm mb-2">
               Chỉ được bật khi người dùng đồng ý. Dùng để:
             </p>
@@ -642,7 +705,8 @@
               <li>Meta SDK (nếu chạy quảng cáo)</li>
             </ul>
             <p class="text-gray-600 leading-relaxed text-sm mt-2">
-              Các bên này chỉ thu thập dữ liệu theo đúng chức năng đo lường và không có quyền truy cập dữ liệu cá nhân nhạy cảm của người dùng.
+              Các bên này chỉ thu thập dữ liệu theo đúng chức năng đo lường và không có quyền truy cập dữ liệu cá nhân
+              nhạy cảm của người dùng.
             </p>
           </section>
           <section id="c-storage" class="mb-12 scroll-mt-24">
@@ -674,7 +738,8 @@
               VII. Thay đổi Chính sách Cookie
             </h2>
             <p class="text-gray-600 leading-relaxed text-sm">
-              Chính sách cookie có thể được cập nhật theo nhu cầu vận hành hoặc theo quy định pháp luật. Mọi thay đổi sẽ được thông báo rõ ràng trên website hoặc ứng dụng.
+              Chính sách cookie có thể được cập nhật theo nhu cầu vận hành hoặc theo quy định pháp luật. Mọi thay đổi sẽ
+              được thông báo rõ ràng trên website hoặc ứng dụng.
             </p>
           </section>
         </template>
