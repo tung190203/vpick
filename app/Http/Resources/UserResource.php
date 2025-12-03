@@ -23,7 +23,7 @@ class UserResource extends JsonResource
         $sportId = $sport->id;
         $userScore = $this->vnduprScoresBySport($sportId)->max('score_value') ?? 0;
         $vnRank = User::query()
-            ->select(DB::raw('COUNT(DISTINCT users.id) as rank'))
+            ->select(DB::raw('COUNT(DISTINCT users.id) + 1 as rank'))
             ->join('user_sport', 'users.id', '=', 'user_sport.user_id')
             ->join('user_sport_scores', 'user_sport.id', '=', 'user_sport_scores.user_sport_id')
             ->where('user_sport.sport_id', $sportId)
