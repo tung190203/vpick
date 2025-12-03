@@ -1,16 +1,13 @@
 <template>
   <div class="min-h-screen bg-gray-100 p-4 lg:p-6">
     <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
-      <!-- Left column -->
       <div class="lg:col-span-2 space-y-6">
-        <!-- VN/DUPR Card -->
         <div class="bg-red-custom text-white rounded-[8px] shadow-lg p-6 relative overflow-hidden"
           :style="{ backgroundImage: `url(${Background})` }">
           <div class="absolute top-0 left-0 w-full h-full opacity-10 bg-gradient-to-br from-red-500 to-red-700"></div>
 
           <div class="relative z-10">
             <div class="flex flex-col md:flex-row md:justify-between md:items-start">
-              <!-- Left side - Ratings -->
               <div class="mb-6 md:mb-0">
                 <div class="text-sm opacity-90 mb-1 text-[32px]">VNDUPR</div>
                 <div class="text-6xl font-bold leading-none mb-4 text-[100px]">{{
@@ -23,21 +20,15 @@
                   }}</div>
               </div>
 
-              <!-- Right side - Stats & QR -->
               <div class="flex flex-col items-end justify-between h-[264px]">
-                <!-- QR Icon ở trên cùng -->
                 <QrCodeIcon class="w-12 h-12 mb-6 text-white" />
 
-                <!-- Hai vòng tròn nằm dưới cùng -->
                 <div class="flex items-center space-x-8">
-                  <!-- Vòng cung 1 - Chiến thắng -->
                   <div class="flex flex-col items-center">
                     <div class="relative w-32 h-32">
                       <svg class="w-32 h-32 transform rotate-[225deg]" viewBox="0 0 140 140">
-                        <!-- Vòng nền mờ (270 độ - 3/4 vòng tròn) -->
                         <path d="M 70 10 A 60 60 0 1 1 10 70" stroke="white" stroke-width="16" fill="none"
                           opacity="0.25" />
-                        <!-- Vòng cung progress -->
                         <path d="M 70 10 A 60 60 0 1 1 10 70" stroke="white" stroke-width="16" fill="none"
                           :stroke-dasharray="`${282.74 * (homeData.user_info?.win_rate || 0) / 100} 282.74`"
                           class="transition-all duration-1000 ease-out" />
@@ -49,14 +40,11 @@
                     <p class="text-[24px] font-medium">Chiến thắng</p>
                   </div>
 
-                  <!-- Vòng cung 2 - Phong độ -->
                   <div class="flex flex-col items-center">
                     <div class="relative w-32 h-32">
                       <svg class="w-32 h-32 transform rotate-[225deg]" viewBox="0 0 140 140">
-                        <!-- Vòng nền mờ (270 độ - 3/4 vòng tròn) -->
                         <path d="M 70 10 A 60 60 0 1 1 10 70" stroke="white" stroke-width="16" fill="none"
                           opacity="0.25" />
-                        <!-- Vòng cung progress -->
                         <path d="M 70 10 A 60 60 0 1 1 10 70" stroke="white" stroke-width="16" fill="none"
                           :stroke-dasharray="`${282.74 * (homeData.user_info?.performance || 0) / 100} 282.74`"
                           class="transition-all duration-1000 ease-out" />
@@ -73,7 +61,6 @@
           </div>
         </div>
 
-        <!-- Kèo đấu sắp tới -->
         <section>
           <div class="flex items-center justify-start mb-4">
             <h2 class="text-xl font-semibold text-gray-800">Kèo đấu sắp tới</h2>
@@ -91,7 +78,6 @@
             <template v-else>
               <div v-for="(mini, i) in homeData.upcoming_mini_tournament" :key="i"
                 class="bg-white rounded-[8px] shadow hover:shadow-lg p-4 transition-all relative cursor-pointer">
-                <!-- Bell icon -->
                 <div class="absolute top-4 right-4 text-red-500 cursor-pointer hover:text-red-600">
                   <BellAlertIcon class="w-5 h-5" />
                 </div>
@@ -104,7 +90,6 @@
 
                 <div class="pt-4 border-gray-100" @click="goToMiniTournamentDetail(mini.id)">
                   <div class="flex justify-start space-x-4">
-                    <!-- Người tạo -->
                     <div class="flex flex-col items-start pr-4 border-r">
                       <span class="text-xs text-gray-500 font-medium mb-2">Người tạo</span>
                       <div class="flex -space-x-2">
@@ -133,7 +118,6 @@
           </div>
         </section>
 
-        <!-- Giải đấu sắp tới -->
         <section>
           <div class="flex items-center justify-start mb-4">
             <h2 class="text-xl font-semibold text-gray-800">Giải đấu sắp tới</h2>
@@ -177,9 +161,7 @@
         </section>
       </div>
 
-      <!-- Right column -->
       <div class="space-y-6">
-        <!-- Favorite Features -->
         <div class="bg-white rounded-[8px] shadow p-5">
           <div class="flex items-center justify-between mb-4">
             <h3 class="font-semibold text-gray-900 text-base">Tính năng ưu thích</h3>
@@ -197,11 +179,43 @@
           </div>
         </div>
 
-        <!-- Green banner -->
-        <div
-          class="bg-green-400 rounded-[8px] h-[133px] flex items-center justify-center text-white font-semibold text-lg shadow">
+        <div class="rounded-[8px] h-[133px] shadow relative overflow-hidden">
+            <Swiper
+                v-if="homeData.banners && homeData.banners.length > 0"
+                :modules="modules"
+                :slides-per-view="1"
+                :space-between="0"
+                :loop="homeData.banners.length > 1"
+                :pagination="{ clickable: true }"
+                :autoplay="{
+                    delay: 5000,
+                    disableOnInteraction: false,
+                }"
+                class="w-full h-[133px] rounded-[8px]"
+            >
+                <SwiperSlide 
+                    v-for="banner in homeData.banners" 
+                    :key="banner.id"
+                    class="h-full"
+                >
+                    <a 
+                        :href="banner.link" 
+                        :target="banner.link ? '_blank' : '_self'" 
+                        :class="{'cursor-pointer': banner.link}"
+                        class="block w-full h-full"
+                    >
+                        <img 
+                            :src="getBannerUrl(banner.image_url)" 
+                            :alt="banner.title || 'Banner'"
+                            class="w-full h-full object-cover" 
+                        >
+                    </a>
+                </SwiperSlide>
+            </Swiper>
+            <div v-else class="w-full h-full flex items-center justify-center font-semibold text-lg bg-white text-gray-500">
+                Không có banner
+            </div>
         </div>
-        <!-- Friends -->
         <div class="bg-white rounded-[8px] shadow p-5">
           <div class="flex items-center justify-between mb-4">
             <h3 class="font-semibold text-gray-900 text-base">Bạn bè</h3>
@@ -244,6 +258,17 @@ import {
   PencilIcon,
 } from "@heroicons/vue/24/outline";
 import { MapPinIcon, CalendarDaysIcon } from "@heroicons/vue/24/solid";
+
+// --------------------------- SWIPER IMPORTS START ---------------------------
+import { Swiper, SwiperSlide } from 'swiper/vue';
+import { Autoplay, Pagination } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/pagination';
+
+const modules = [Autoplay, Pagination];
+
+// --------------------------- SWIPER IMPORTS END -----------------------------
+
 import Background from "@/assets/images/dashboard-bg.svg";
 import { onMounted, ref, computed } from "vue";
 import * as HomeService from "@/service/home";
@@ -252,8 +277,20 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-const homeData = ref([]);
+const homeData = ref({}); // Khởi tạo là object rỗng
 const friendList = ref([]);
+
+// Thay thế bằng URL cơ sở thực tế của bạn
+const BASE_STORAGE_URL = 'http://localhost:8000/storage/';
+
+const getBannerUrl = (url) => {
+    // Kiểm tra nếu url là đường dẫn tuyệt đối
+    if (url && (url.startsWith('http') || url.startsWith('https'))) {
+        return url;
+    }
+    // Xử lý đường dẫn tương đối
+    return url ? BASE_STORAGE_URL + url : '';
+};
 
 const getRandomColor = (seed) => {
   const colors = ['#E57373', '#64B5F6', '#81C784', '#FFD54F', '#BA68C8', '#4DD0E1'];
@@ -282,6 +319,7 @@ const getFriendLists = async () => {
 };
 
 const getPerformanceLevel = computed(() => {
+  // Đảm bảo homeData.value và user_info tồn tại
   const performance = homeData.value?.user_info?.performance || 0;
 
   if (performance >= 76) return 'Xuất <br/> sắc';
@@ -291,10 +329,7 @@ const getPerformanceLevel = computed(() => {
 });
 
 onMounted(async () => {
-  await getHomeData({
-    mini_tournament_per_page: 3,
-    tournament_per_page: 3
-  });
+  await getHomeData(); // Gọi hàm không cần truyền params nữa
   await getFriendLists();
 });
 
@@ -328,6 +363,7 @@ const features = [
   { label: "Tìm sân", icon: MapPinIconOutline },
   { label: "Xếp hạng", icon: ChartBarIcon },
 ];
+
 function goToMiniTournamentDetail(id) {
   router.push({ name: 'mini-tournament-detail', params: { id } })
 }
@@ -342,5 +378,11 @@ function goToTournamentDetail(id) {
 .bg-red-custom {
   background-size: cover;
   background-position: center;
+}
+
+/* Tùy chỉnh cho pagination dots của Swiper */
+/* Đảm bảo style này áp dụng đúng nếu Swiper inject các dots */
+.swiper-pagination-bullet-active {
+    background-color: white !important; /* Ví dụ: đổi màu dots khi active */
 }
 </style>

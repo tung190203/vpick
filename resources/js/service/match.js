@@ -6,3 +6,7 @@ const matchEndpoint = API_ENDPOINT.MATCHES;
 export const detailMatches = async(id) => {
     return axiosInstance.get(`${matchEndpoint}/detail/${id}`).then((response) => response.data.data);
 }
+
+export const updateMatches = async(match_id, data) => {
+    return axiosInstance.post(`${matchEndpoint}/update/${match_id}`, data).then((response) => response.data.data);
+}

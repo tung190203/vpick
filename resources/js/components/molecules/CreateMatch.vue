@@ -50,7 +50,7 @@
                                 <!-- Location -->
                                 <div class="flex items-center gap-2 text-gray-700">
                                     <MapPinIcon class="w-5 h-5" />
-                                    <span class="truncate w-64">{{ tournament.competition_location.name }}</span>
+                                    <span class="truncate w-64">{{ tournament.competition_location?.name }}</span>
                                 </div>
 
                                 <!-- QR Code Info -->
@@ -58,9 +58,8 @@
                                     <p class="text-sm text-gray-600 mb-3">
                                         Kết quả kèo đấu được ghi nhận khi tất cả người chơi đã quét mã QR
                                     </p>
-                                    <div
-                                        class="w-full h-auto p-3 rounded-lg flex items-center justify-center">
-                                        <qrcode-vue value="https:://google.com" :size="250" level="H" />
+                                    <div class="w-full h-auto p-3 rounded-lg flex items-center justify-center">
+                                        <qrcode-vue :value="qrCodeUrl" :size="250" level="H" />
                                     </div>
                                 </div>
                             </div>
@@ -115,9 +114,13 @@
                                             </button>
                                         </div>
                                         
-                                        <!-- Set Label -->
-                                        <div class="flex justify-center">
+                                        <!-- Set Label & Delete Button -->
+                                        <div class="flex flex-col items-center gap-2">
                                             <span class="text-sm font-semibold">Set {{ index + 1 }}</span>
+                                            <button v-if="scores.length > 1" @click="removeSet(index)"
+                                                class="text-red-500 hover:text-red-700 transition-colors">
+                                                <XMarkIcon class="w-5 h-5" />
+                                            </button>
                                         </div>
                                         
                                         <!-- Team B Score -->
@@ -136,29 +139,27 @@
                                 </div>
                                 
                                 <!-- Thêm set -->
-                                <button @click="addSet"
-                                    class="w-full flex justify-center items-center gap-2 border p-3 rounded-lg text-[#838799] hover:bg-gray-100 transition-colors mb-6">
+                                <button @click="addSet" :disabled="isMaxSets"
+                                    class="w-full flex justify-center items-center gap-2 border p-3 rounded-lg text-[#838799] hover:bg-gray-100 transition-colors mb-6 disabled:opacity-50 disabled:cursor-not-allowed">
                                     <PlusIcon class="w-5 h-5" />
-                                    <span class="text-sm font-semibold">Thêm set</span>
+                                    <span class="text-sm font-semibold">
+                                        Thêm set {{ isMaxSets ? `(Tối đa ${maxSets} sets)` : '' }}
+                                    </span>
                                 </button>
                             </div>
                         </div>
-
-                        <!-- Action Buttons -->
-                        <!-- <div class="flex gap-3 mt-6">
-                            <button @click="addMatch"
-                                class="px-4 bg-red-500 text-white py-3 rounded font-medium hover:bg-red-600 transition-colors">
-                                Thêm trận đấu
-                            </button>
-                        </div> -->
                     </div>
                     
                     <!-- Footer - Sticky -->
-                    <div class="px-4 py-4 bg-white rounded-b-lg">
+                    <div class="px-4 py-4 bg-white rounded-b-lg border-t">
                         <div class="flex gap-3">
-                            <button @click="addMatch"
-                                class="px-12 py-3 bg-red-500 text-white rounded font-medium hover:bg-red-600 transition-colors">
-                                Lưu
+                            <button @click="saveMatch" :disabled="isSaving"
+                                class="px-12 py-3 bg-red-500 text-white rounded font-medium hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                {{ isSaving ? 'Đang lưu...' : 'Lưu' }}
+                            </button>
+                            <button @click="closeModal" :disabled="isSaving"
+                                class="px-12 py-3 bg-gray-200 text-gray-700 rounded font-medium hover:bg-gray-300 transition-colors disabled:opacity-50">
+                                Hủy
                             </button>
                         </div>
                     </div>
@@ -175,6 +176,8 @@ import { ClipboardIcon, CalendarDaysIcon, MapPinIcon } from '@heroicons/vue/24/o
 import UserCard from './UserCard.vue'
 import { formatEventDate } from '@/composables/formatDatetime.js'
 import QrcodeVue from 'qrcode.vue'
+import { toast } from 'vue3-toastify'
+import * as MatchesServices from '@/service/match.js'
 
 const props = defineProps({
     modelValue: { type: Boolean, default: false },
@@ -182,16 +185,27 @@ const props = defineProps({
     tournament: { type: Object, default: () => ({ player_per_team: 0 }) }
 })
 
-const emit = defineEmits(['update:modelValue', 'create'])
+const emit = defineEmits(['update:modelValue', 'updated'])
 
 const isOpen = computed({
     get: () => props.modelValue,
     set: val => emit('update:modelValue', val)
 })
 
-const closeModal = () => { isOpen.value = false }
-
+const isSaving = ref(false)
 const courtNumber = ref(props.data.court || 1)
+
+// Lấy số set tối đa từ tournament rules
+const maxSets = computed(() => {
+    return props.tournament?.tournament_type?.match_rules?.sets_per_match || 3
+})
+
+const isMaxSets = computed(() => scores.value.length >= maxSets.value)
+
+// URL cho QR Code
+const qrCodeUrl = computed(() => {
+    return `${window.location.origin}/match/${props.data.id}/verify`
+})
 
 watch(() => props.data.court, (newCourt) => {
     courtNumber.value = newCourt || 1
@@ -199,6 +213,12 @@ watch(() => props.data.court, (newCourt) => {
 
 const incrementCourt = () => { courtNumber.value++ }
 const decrementCourt = () => { if (courtNumber.value > 1) courtNumber.value-- }
+
+const closeModal = () => { 
+    if (!isSaving.value) {
+        isOpen.value = false 
+    }
+}
 
 // Khởi tạo scores từ data.legs hoặc tạo set mặc định
 const initializeScores = () => {
@@ -231,12 +251,14 @@ const scores = ref(initializeScores())
 // Cập nhật scores khi data thay đổi
 watch(() => props.data, () => {
     scores.value = initializeScores()
+    courtNumber.value = props.data.court || 1
 }, { deep: true })
 
 const incrementScore = (setIndex, team) => {
-    if (team === 'A') {
+    const maxPoints = props.tournament?.tournament_type?.match_rules?.max_points || 11
+    if (team === 'A' && scores.value[setIndex].teamA < maxPoints) {
         scores.value[setIndex].teamA++
-    } else {
+    } else if (team === 'B' && scores.value[setIndex].teamB < maxPoints) {
         scores.value[setIndex].teamB++
     }
 }
@@ -250,20 +272,70 @@ const decrementScore = (setIndex, team) => {
 }
 
 const addSet = () => {
-    scores.value.push({ teamA: 0, teamB: 0 })
+    if (!isMaxSets.value) {
+        scores.value.push({ teamA: 0, teamB: 0 })
+    }
 }
 
-const addPlayer = () => { emit('create', { action: 'add-player' }) }
-const addMatch = () => {
-    emit('create', {
-        action: 'add-match',
-        data: { courtNumber: courtNumber.value, scores: scores.value }
+const removeSet = (index) => {
+    if (scores.value.length > 1) {
+        scores.value.splice(index, 1)
+    }
+}
+
+// Chuyển đổi scores thành format API
+const formatResultsForAPI = () => {
+    const results = []
+    
+    scores.value.forEach((score, index) => {
+        // Kết quả cho team A (home_team)
+        results.push({
+            set_number: index + 1,
+            team_id: props.data.home_team.id,
+            score: score.teamA
+        })
+        
+        // Kết quả cho team B (away_team)
+        results.push({
+            set_number: index + 1,
+            team_id: props.data.away_team.id,
+            score: score.teamB
+        })
     })
+    
+    return results
+}
+
+const saveMatch = async () => {
+    if (isSaving.value) return
+    
+    try {
+        isSaving.value = true
+        
+        const payload = {
+            court: courtNumber.value,
+            results: formatResultsForAPI()
+        }
+        
+        const response = await MatchesServices.updateMatches(props.data.id, payload)
+        
+        toast.success('Cập nhật kết quả trận đấu thành công!')
+        emit('updated', response.data)
+        isOpen.value = false;
+        
+    } catch (error) {
+        console.error('Error updating match:', error)
+        toast.error(error.response?.data?.message || 'Lỗi khi cập nhật trận đấu')
+    } finally {
+        isSaving.value = false
+    }
 }
 
 // Hàm tính số slot trống
 const emptySlots = (team) => {
-    const members = team === 'home' ? props.data.home_team?.members?.length || 0 : props.data.away_team?.members?.length || 0
+    const members = team === 'home' 
+        ? props.data.home_team?.members?.length || 0 
+        : props.data.away_team?.members?.length || 0
     const slots = props.tournament.player_per_team - members
     return slots > 0 ? Array.from({ length: slots }, (_, i) => i + 1) : []
 }

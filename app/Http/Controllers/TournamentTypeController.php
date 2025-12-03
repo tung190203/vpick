@@ -1210,8 +1210,13 @@ class TournamentTypeController extends Controller
 
         foreach ($matchGroup as $match) {
             if ($match->status === 'completed') {
-                $homeTotal += $match->home_score ?? 0;
-                $awayTotal += $match->away_score ?? 0;
+                // $homeTotal += $match->home_score ?? 0;
+                // $awayTotal += $match->away_score ?? 0;
+                if($match->winner_id === $match->away_team_id){
+                    $awayTotal += 3;
+                }else {
+                    $homeTotal += 3;
+                }
             }
         }
 
