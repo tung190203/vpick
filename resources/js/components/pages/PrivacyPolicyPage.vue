@@ -469,7 +469,7 @@
               <li>Tối ưu hóa trải nghiệm người dùng</li>
             </ul>
             <p class="text-gray-600 leading-relaxed text-sm mt-2">
-              ✓ Chúng tôi <strong>không bán</strong>, lưu trữ hoặc chia sẻ dữ liệu vị trí cho bên thứ ba không được ủy
+              ✓ Chúng tôi không bán, lưu trữ hoặc chia sẻ dữ liệu vị trí cho bên thứ ba không được ủy
               quyền.
             </p>
 
