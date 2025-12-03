@@ -19,11 +19,11 @@ router.beforeEach((to, from, next) => {
 
   const publicPages = [
     "login", "register", "verify-email", "verify",
-    "forgot-password", "reset-password", "login-success", "terms", "onboarding", 'complete-registration', 'verify-change-password', 'reset-password'
+    "forgot-password", "reset-password", "login-success", "privacy-policy", "onboarding", 'complete-registration', 'verify-change-password', 'reset-password'
   ];
 
   if (!loginToken) {
-    const onboardingWhitelist = ["onboarding", "terms", "login", "register"];
+    const onboardingWhitelist = ["onboarding", "privacy-policy", "login", "register"];
 
     if (!hasSeenOnboarding && !onboardingWhitelist.includes(to.name)) {
       return next({ name: "onboarding" });
@@ -34,7 +34,7 @@ router.beforeEach((to, from, next) => {
     }
   }  
 
-  if (loginToken && publicPages.includes(to.name) && to.name !== "terms") {
+  if (loginToken && publicPages.includes(to.name) && to.name !== "privacy-policy") {
     switch (userRole) {
       case ROLE.ADMIN:
         return next({ name: "admin.dashboard" });

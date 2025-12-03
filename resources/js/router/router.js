@@ -14,7 +14,7 @@ import ClubPage from '@/components/pages/ClubPage.vue'
 import TournamentPage from '@/components/pages/TournamentPage.vue'
 import TournamentDetail from '@/components/pages/TournamentDetail.vue'
 import MiniTournamentDetail from '@/components/pages/MiniTournamentDetail.vue'
-import TermsPage from '@/components/pages/TermsPage.vue'
+import PrivacyPolicyPage from '@/components/pages/PrivacyPolicyPage.vue'
 import CreateMiniTournamentPage from '@/components/pages/CreateMiniTournamentPage.vue'
 import CreateTournamentPage from '@/components/pages/CreateTournamentPage.vue'
 import ForbiddenPage from '@/components/pages/ForbiddenPage.vue'
@@ -263,9 +263,9 @@ export const route = [
     ]
   },
   {
-    path: '/terms',
-    name: 'terms',
-    component: TermsPage
+    path: '/privacy-policy',
+    name: 'privacy-policy',
+    component: PrivacyPolicyPage
   },
   {
     path: '/not-found',
