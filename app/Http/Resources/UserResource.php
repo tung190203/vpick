@@ -3,10 +3,12 @@
 namespace App\Http\Resources;
 
 use App\Models\Sport;
+use App\Models\User;
 use App\Models\UserSportScore;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\DB;
 
 class UserResource extends JsonResource
 {
@@ -20,12 +22,14 @@ class UserResource extends JsonResource
         $sport = Sport::where('slug', 'pickleball')->first();
         $sportId = $sport->id;
         $userScore = $this->vnduprScoresBySport($sportId)->max('score_value') ?? 0;
-        $vnRank = UserSportScore::query()
-        ->join('user_sport', 'user_sport_scores.user_sport_id', '=', 'user_sport.id')
-        ->where('user_sport.sport_id', $sportId)
-        ->where('user_sport_scores.score_type', 'vndupr_score')
-        ->where('user_sport_scores.score_value', '>', $userScore)
-        ->count() + 1;
+        $vnRank = User::query()
+            ->select(DB::raw('COUNT(DISTINCT users.id) + 1 as rank'))
+            ->join('user_sport', 'users.id', '=', 'user_sport.user_id')
+            ->join('user_sport_scores', 'user_sport.id', '=', 'user_sport_scores.user_sport_id')
+            ->where('user_sport.sport_id', $sportId)
+            ->where('user_sport_scores.score_type', 'vndupr_score')
+            ->where('user_sport_scores.score_value', '>', $userScore)
+            ->value('rank');
 
         return [
             'id' => $this->id,
