@@ -8,6 +8,8 @@ use App\Http\Resources\ListClubResource;
 use App\Http\Resources\ListMiniTournamentResource;
 use App\Http\Resources\ListTournamentResource;
 use App\Http\Resources\UserListResource;
+use App\Http\Resources\UserPlayTimeResource;
+use App\Http\Resources\UserSportResource;
 use App\Models\Banner;
 use App\Models\Club;
 use App\Models\Matches;
@@ -232,24 +234,36 @@ class HomeController extends Controller
         $perPage = $validated['leaderboard_per_page'] ?? User::PER_PAGE;
 
         $leaderboard = User::query()
-            ->withFullRelations()
-            ->with([
-                'sports' => function($query) use ($sportId) {
-                    $query->where('sport_id', $sportId)
-                          ->with('scores', 'sport');
-                },
-            ])
-            ->addSelect([
-                'vndupr_score' => UserSportScore::query()
-                    ->select(DB::raw('COALESCE(MAX(score_value), 0)'))
-                    ->join('user_sport', 'user_sport_scores.user_sport_id', '=', 'user_sport.id')
-                    ->whereColumn('user_sport.user_id', 'users.id')
-                    ->where('user_sport.sport_id', $sportId)
-                    ->where('user_sport_scores.score_type', 'vndupr_score')
-            ])
-            ->orderByDesc('vndupr_score')
-            ->limit($perPage)
-            ->get();
+        ->withFullRelations()
+        ->with([
+            'sports' => function($query) use ($sportId) {
+                $query->where('sport_id', $sportId)
+                      ->with('scores', 'sport');
+            },
+        ])
+        ->addSelect([
+            'vndupr_score' => UserSportScore::query()
+                ->select(DB::raw('COALESCE(MAX(score_value), 0)'))
+                ->join('user_sport', 'user_sport_scores.user_sport_id', '=', 'user_sport.id')
+                ->whereColumn('user_sport.user_id', 'users.id')
+                ->where('user_sport.sport_id', $sportId)
+                ->where('user_sport_scores.score_type', 'vndupr_score')
+        ])
+        ->orderByDesc('vndupr_score')
+        ->limit($perPage)
+        ->get();
+    
+    // Gán rank dense ranking
+    $currentRank = 0;
+    $prevScore = null;
+    $leaderboard->transform(function ($user) use (&$currentRank, &$prevScore) {
+        if ($prevScore !== $user->vndupr_score) {
+            $currentRank++;
+            $prevScore = $user->vndupr_score;
+        }
+        $user->rank = $currentRank;
+        return $user;
+    });    
 
         // Trả về data
         $data = [
@@ -259,7 +273,15 @@ class HomeController extends Controller
             'banners'                   => BannerResource::collection($banners),
             'my_club'                   => ListClubResource::collection($myClub),
             'leaderboard_club'               => ListClubResource::collection($leaderboardClub),
-            'leaderboard' => UserListResource::collection($leaderboard),
+            'leaderboard' => $leaderboard->map(function($user) {
+                return [
+                    'id' => $user->id,
+                    'full_name' => $user->full_name,
+                    'visibility' => $user->visibility,
+                    'avatar_url' => $user->avatar_url,
+                    'rank' => $user->rank
+                ];
+            }),
         ];
     
         return ResponseHelper::success($data, 'Lấy dữ liệu thành công');
