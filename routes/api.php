@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\UserMatchStatsController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BannerController;
 use App\Http\Controllers\CompetitionLocationController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\MatchesController;
@@ -242,5 +243,9 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
 
     Route::prefix('map')->group(function () {
         Route::match(['get', 'post'], '/match', [MapController::class, 'getMatch']);
+    });
+
+    Route::prefix('banners')->group(function () {
+        Route::post('/store', [BannerController::class, 'store']);
     });
 });

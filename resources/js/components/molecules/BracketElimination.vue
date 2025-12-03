@@ -85,11 +85,6 @@
                   {{ player.score ?? 0 }}
                 </span>
               </div>
-
-              <div v-if="player.sets?.length" class="flex gap-1 text-xs text-[#838799]">
-                <span v-for="(s, i) in player.sets" :key="i"
-                  class="px-2 py-0.5 bg-gray-200 rounded">{{ s }}</span>
-              </div>
             </div>
 
             <!-- AWAY TEAM -->
@@ -104,11 +99,6 @@
                   :class="player.opponent.id === player.winnerId ? 'text-[#D72D36]' : 'text-[#3E414C]'">
                   {{ player.opponent.score ?? 0 }}
                 </span>
-              </div>
-
-              <div v-if="player.opponent.sets?.length" class="flex gap-1 text-xs text-[#838799]">
-                <span v-for="(s, i) in player.opponent.sets" :key="i"
-                  class="px-2 py-0.5 bg-gray-200 rounded">{{ s }}</span>
               </div>
             </div>
 

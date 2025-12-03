@@ -67,6 +67,10 @@ class MatchesController extends Controller
             return ResponseHelper::error('Không tìm thấy trận đấu.', 404);
         }
 
+        if ($match->status === Matches::STATUS_COMPLETED || $match->home_team_confirm == 1 || $match->away_team_confirm == 1) {
+            return ResponseHelper::error('Kết quả trận đấu đã được xác nhận không thể thay đổi điểm số', 400);
+        }
+
         $match->update(['court' => $validated['court'] ?? $match->court]);
 
         $rules = $match->tournamentType->match_rules ?? null;
