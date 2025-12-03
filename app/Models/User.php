@@ -297,7 +297,7 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
 
     public function scopeWithFullRelations($query)
     {
-        return $query->with(['referee', 'follows', 'playTimes', 'sports', 'sports.sport', 'sports.scores', 'clubs']);
+        return $query->with(['referee', 'follows', 'playTimes', 'sports', 'sports.sport', 'sports.scores', 'clubs.members']);
     }
 
     public function scopeLoadFullRelations()
