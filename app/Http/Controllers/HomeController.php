@@ -279,7 +279,8 @@ class HomeController extends Controller
                     'full_name' => $user->full_name,
                     'visibility' => $user->visibility,
                     'avatar_url' => $user->avatar_url,
-                    'rank' => $user->rank
+                    'rank' => $user->rank,
+                    'sports' => $user->relationLoaded('sports') && $user->sports ? UserSportResource::collection($user->sports) : [],
                 ];
             }),
         ];
