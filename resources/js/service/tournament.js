@@ -24,7 +24,6 @@ export const updateTournament = async (id, tournamentData) => {
 }
 
 export const deleteTournament = async (id) => {
-  console.log("Deleting tournament with ID:", id);
   return axiosInstance.post(`${tournamentEndpoint}/delete`, { id })
     .then((response) => response.data.data);
 }

@@ -83,6 +83,9 @@ class TournamentResource extends JsonResource
                 });
             }),
             'tournament_types' => TournamentTypeResource::collection($this->whenLoaded('tournamentTypes')) ?? [],
+            'is_joined' => $this->participants
+                ? $this->participants->contains('user_id', auth()->id())
+                : false,
         ];
     }
 }

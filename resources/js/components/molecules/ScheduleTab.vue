@@ -577,7 +577,7 @@ const getKnockoutStatusText = (matches) => {
     const pendingCount = matches.filter(m => m.legs.every(leg => leg.status === 'pending')).length
     
     if (completedCount === matches.length) {
-        return `Hoàn thành • ${completedCount}`
+        return `Chờ xác nhận • ${pendingCount}`
     }
     return `Chờ xác nhận • ${pendingCount}`
 }
@@ -647,7 +647,7 @@ const getStatusText = (roundMatches) => {
     const pendingCount = roundMatches.filter(m => m.status === 'pending').length
 
     if (completedCount === roundMatches.length) {
-        return `Hoàn thành • ${completedCount}`
+        return `Chờ xác nhận • ${pendingCount}`
     }
     return `Chờ xác nhận • ${pendingCount}`
 }
@@ -689,7 +689,7 @@ const getEliminationStatusText = (matches) => {
     const pendingCount = matches.filter(m => m.legs.every(leg => leg.status === 'pending')).length
     
     if (completedCount === matches.length) {
-        return `Hoàn thành • ${completedCount}`
+        return `Chờ xác nhận • ${pendingCount}`
     }
     return `Chờ xác nhận • ${pendingCount}`
 }

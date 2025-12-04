@@ -154,7 +154,7 @@
               </div>
 
               <div class="mb-4">
-                <div v-if="!tournament.description && !isEditingDescription">
+                <div v-if="!tournament.description && !isEditingDescription && isCreator">
                   <a href="javascript:void(0)" @click="setupDescription"
                     class="text-blue-600 text-sm font-medium hover:underline mt-2 inline-block">Thêm ghi
                     chú</a>
@@ -196,11 +196,19 @@
                   <XCircleIcon class="w-5 h-5" />
                 </button>
               </div>
+              <template v-else>
+                <div v-if="!tournament.is_joined">
+                <button
+                  class="flex items-center justify-center gap-2 bg-[#D72D36] hover:bg-white text-white hover:text-[#D72D36] border hover:border-[#D72D36] font-medium px-6 py-2 rounded-md transition"
+                  @click="joinerTournament">
+                  Tham gia giải đấu
+                </button>
+              </div>
+              </template>
             </div>
 
             <div v-else-if="activeTab === 'list'" key="list">
-              <div class="flex items-center justify-between border-b border-[#BBBFCC] px-3 py-4 mb-4"
-                v-if="isCreator">
+              <div class="flex items-center justify-between border-b border-[#BBBFCC] px-3 py-4 mb-4" v-if="isCreator">
                 <p class="font-semibold uppercase">Duyệt yêu cầu tham gia tự động</p>
                 <button @click="toggleAutoApprove"
                   class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
@@ -230,9 +238,8 @@
                     <div class="grid grid-cols-2 sm:grid-cols-6 lg:grid-cols-6 gap-4">
                       <UserCard v-for="(item, index) in tournament.tournament_staff" :key="index" :id="item.id"
                         :name="item.staff.name" :avatar="item.staff.avatar" :rating="getUserScore(item.staff)"
-                        status="approved" @removeUser="handleRemoveStaff"/>
-                      <UserCard :empty="true" @click="showInviteStaffModal = true"
-                        v-if="isCreator" />
+                        status="approved" @removeUser="handleRemoveStaff" />
+                      <UserCard :empty="true" @click="showInviteStaffModal = true" v-if="isCreator" />
                     </div>
                   </div>
                 </div>
@@ -245,15 +252,16 @@
                         tournament.max_team * tournament.player_per_team
                       }}
                     </h4>
-                    <span class="text-[#207AD5] text-xs font-semibold cursor-pointer"
-                      v-if="isCreator" @click="showInviteFriendModal = true">Mời bạn
+                    <span class="text-[#207AD5] text-xs font-semibold cursor-pointer" v-if="isCreator"
+                      @click="showInviteFriendModal = true">Mời bạn
                       bè</span>
                   </div>
                   <div v-if="tournament?.tournamnet_participants?.length">
                     <div class="grid grid-cols-2 sm:grid-cols-6 lg:grid-cols-6 gap-4">
                       <UserCard v-for="(item, index) in tournament.tournamnet_participants" :key="index" :id="item.id"
                         :name="item.user.name" :avatar="item.avatar" :rating="getUserScore(item)"
-                        :status="item.is_confirmed == true ? 'approved' : 'pending'" @removeUser="handleRemoveUser" @click="openActionModal(item)"/>
+                        :status="item.is_confirmed == true ? 'approved' : 'pending'" @removeUser="handleRemoveUser"
+                        @click="openActionModal(item)" />
                       <UserCard
                         v-if="tournament?.tournamnet_participants?.length < (tournament.max_team * tournament.player_per_team) && isCreator"
                         :empty="true" @clickEmpty="showInviteFriendModal = true" />
@@ -297,23 +305,24 @@
                     </div>
 
                     <div class="grid grid-cols-2 gap-2">
-                      <UserCard v-for="(member, index) in team.members" :key="index" :name="member.full_name" :id="member.id"
-                        :avatar="member.avatar" :rating="getUserScore(member)"
-                        :status="member.is_confirmed == true ? 'approved' : 'pending'" @removeUser="handleRemoveMember($event, team.id)"/>
+                      <UserCard v-for="(member, index) in team.members" :key="index" :name="member.full_name"
+                        :id="member.id" :avatar="member.avatar" :rating="getUserScore(member)"
+                        :status="member.is_confirmed == true ? 'approved' : 'pending'"
+                        @removeUser="handleRemoveMember($event, team.id)" />
 
                       <UserCard v-for="n in getRemainingSlots(team.members)" :key="`empty-${team.id}-${n}`"
-                        :empty="true" @clickEmpty="openInviteUserToTeamModal(team)"/>
+                        :empty="true" @clickEmpty="openInviteUserToTeamModal(team)" />
                     </div>
                   </div>
                 </template>
                 <template v-else>
-                    <div class="flex flex-col items-center justify-center h-64 text-center text-gray-500 border-gray-300 rounded-lg p-6 mt-8">
-                        <p class="text-lg font-medium">Chưa có đội nào được tạo.</p>
-                        <p class="text-sm">Hãy tạo đội đầu tiên để bắt đầu sắp xếp giải đấu.</p>
-                    </div>
+                  <div
+                    class="flex flex-col items-center justify-center h-64 text-center text-gray-500 border-gray-300 rounded-lg p-6 mt-8">
+                    <p class="text-lg font-medium">Chưa có đội nào được tạo.</p>
+                    <p class="text-sm">Hãy tạo đội đầu tiên để bắt đầu sắp xếp giải đấu.</p>
+                  </div>
                 </template>
-                <div class="flex items-center justify-start mb-2 mt-28 gap-4"
-                  v-if="isCreator">
+                <div class="flex items-center justify-start mb-2 mt-28 gap-4" v-if="isCreator">
                   <button @click="openCreateTeamModal"
                     class="flex items-center justify-center gap-2 bg-[#D72D36] hover:bg-red-500 text-white font-medium px-4 py-2 rounded-md transition">
                     (+) Thêm đội</button>
@@ -343,23 +352,24 @@
                     <div v-for="item in listHasInvite" :key="item.id"
                       class="border p-4 flex justify-between items-center gap-4 rounded cursor-pointer hover:shadow-md transition">
                       <div class="flex justify-start items-center gap-4">
-                        <UserCard :avatar="item.avatar" :status="item.is_confirmed == 1 ? 'approved' : 'pending'" :show-hover-delete="false" />
-                      <div>
-                        <p>{{ item.name }}</p>
-                        <p class="flex items-center gap-1 text-sm text-gray-500">
-                          <img :src="maleIcon" alt="male icon" class="w-4 h-4" v-if="item.gender == 1" />
-                          <img :src="femaleIcon" alt="male icon" class="w-4 h-4" v-else-if="item.gender == 2" />
-                          {{ item.gender_text }}
-                          <span :class="[
-                            'px-2 py-0.5 rounded text-xs font-medium',
-                            item.visibility === 'open'
-                              ? 'bg-blue-100 text-blue-700'
-                              : 'bg-green-100 text-green-700'
-                          ]">
-                            {{ item.visibility === 'open' ? 'Open' : 'Friend-Only' }}
-                          </span>
-                        </p>
-                      </div>
+                        <UserCard :avatar="item.avatar" :status="item.is_confirmed == 1 ? 'approved' : 'pending'"
+                          :show-hover-delete="false" />
+                        <div>
+                          <p>{{ item.name }}</p>
+                          <p class="flex items-center gap-1 text-sm text-gray-500">
+                            <img :src="maleIcon" alt="male icon" class="w-4 h-4" v-if="item.gender == 1" />
+                            <img :src="femaleIcon" alt="male icon" class="w-4 h-4" v-else-if="item.gender == 2" />
+                            {{ item.gender_text }}
+                            <span :class="[
+                              'px-2 py-0.5 rounded text-xs font-medium',
+                              item.visibility === 'open'
+                                ? 'bg-blue-100 text-blue-700'
+                                : 'bg-green-100 text-green-700'
+                            ]">
+                              {{ item.visibility === 'open' ? 'Open' : 'Friend-Only' }}
+                            </span>
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -420,7 +430,8 @@
                   </div>
                 </div>
                 <div v-if="publicBracket == true || isCreator"
-                  class="border border-[#BBBFCC] rounded my-4 px-4 py-3 flex justify-between items-center cursor-pointer hover:shadow-md transition" @click="openBranketPage">
+                  class="border border-[#BBBFCC] rounded my-4 px-4 py-3 flex justify-between items-center cursor-pointer hover:shadow-md transition"
+                  @click="openBranketPage">
                   <div class="flex items-center gap-3">
                     <img src="@/assets/images/branch.svg" class="w-5 h-5" alt="">
                     <p>Sơ đồ thi đấu</p>
@@ -429,42 +440,44 @@
                 </div>
                 <template v-for="type in tournament?.tournament_types" :key="type.id">
                   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 border-b pb-4"
-                  :class="publicBracket == true ? 'mt-0' : 'mt-4'">
-                  <div v-if="type.format == 1"
-                    class="w-full h-[140px] bg-[#FFF5F5] hover:shadow-md transition rounded-md p-4 flex flex-col space-y-2 items-center justify-center">
-                    <p class="font-semibold">{{ type.format_specific_config[0]?.pool_stage?.number_competing_teams }}</p>
-                    <p class="text-xs">Bảng đấu</p>
+                    :class="publicBracket == true ? 'mt-0' : 'mt-4'">
+                    <div v-if="type.format == 1"
+                      class="w-full h-[140px] bg-[#FFF5F5] hover:shadow-md transition rounded-md p-4 flex flex-col space-y-2 items-center justify-center">
+                      <p class="font-semibold">{{ type.format_specific_config[0]?.pool_stage?.number_competing_teams }}
+                      </p>
+                      <p class="text-xs">Bảng đấu</p>
+                    </div>
+                    <div v-if="type.format == 1"
+                      class="w-full h-[140px] bg-[#FFF5F5] hover:shadow-md transition rounded-md p-4 flex flex-col space-y-2 items-center justify-center">
+                      <p class="font-semibold">{{ type.format_specific_config[0]?.pool_stage?.num_advancing_teams }}</p>
+                      <p class="text-xs">Đội vào vòng loại mỗi bảng</p>
+                    </div>
+                    <div
+                      class="w-full h-[140px] bg-[#FFF5F5] hover:shadow-md transition rounded-md p-4 flex flex-col space-y-2 items-center justify-center">
+                      <p class="font-semibold">{{ formatMatchCount(type.total_matches_per_team) }}</p>
+                      <p class="text-xs">Số trận đấu mỗi đội</p>
+                    </div>
+                    <div
+                      class="w-full h-[140px] bg-[#FFF5F5] hover:shadow-md transition rounded-md p-4 flex flex-col space-y-2 items-center justify-center">
+                      <p class="font-semibold">{{ JSON.parse(type.format_specific_config[0]?.has_third_place_match ||
+                        'false') ? 1 : 0 }}</p>
+                      <p class="text-xs">Trận tranh hạng ba</p>
+                    </div>
+                    <div
+                      class="w-full h-[140px] bg-[#FFF5F5] hover:shadow-md transition rounded-md p-4 flex flex-col space-y-2 items-center justify-center">
+                      <p class="font-semibold" v-for="rank in type.format_specific_config[0]?.ranking" :key="rank">
+                        {{ getRankingLabel(rank) }}
+                      </p>
+                      <p class="text-xs">Cách tính xếp hạng</p>
+                    </div>
+                    <div
+                      class="w-full h-[140px] bg-[#FFF5F5] hover:shadow-md transition rounded-md p-4 flex flex-col items-center justify-center">
+                      <p class="font-semibold">H2H thắng</p>
+                      <p class="font-semibold">Hiệu số</p>
+                      <p class="font-semibold">H2H hiệu số</p>
+                      <p class="text-xs">Nhánh thua thi đấu</p>
+                    </div>
                   </div>
-                  <div v-if="type.format == 1"
-                    class="w-full h-[140px] bg-[#FFF5F5] hover:shadow-md transition rounded-md p-4 flex flex-col space-y-2 items-center justify-center">
-                    <p class="font-semibold">{{ type.format_specific_config[0]?.pool_stage?.num_advancing_teams }}</p>
-                    <p class="text-xs">Đội vào vòng loại mỗi bảng</p>
-                  </div>
-                  <div
-                    class="w-full h-[140px] bg-[#FFF5F5] hover:shadow-md transition rounded-md p-4 flex flex-col space-y-2 items-center justify-center">
-                    <p class="font-semibold">{{ formatMatchCount(type.total_matches_per_team) }}</p>
-                    <p class="text-xs">Số trận đấu mỗi đội</p>
-                  </div>
-                  <div
-                    class="w-full h-[140px] bg-[#FFF5F5] hover:shadow-md transition rounded-md p-4 flex flex-col space-y-2 items-center justify-center">
-                    <p class="font-semibold">{{ JSON.parse(type.format_specific_config[0]?.has_third_place_match || 'false') ? 1 : 0 }}</p>
-                    <p class="text-xs">Trận tranh hạng ba</p>
-                  </div>
-                  <div
-                    class="w-full h-[140px] bg-[#FFF5F5] hover:shadow-md transition rounded-md p-4 flex flex-col space-y-2 items-center justify-center">
-                    <p class="font-semibold" v-for="rank in type.format_specific_config[0]?.ranking" :key="rank">
-                      {{ getRankingLabel(rank) }}
-                    </p>
-                    <p class="text-xs">Cách tính xếp hạng</p>
-                  </div>
-                  <div
-                    class="w-full h-[140px] bg-[#FFF5F5] hover:shadow-md transition rounded-md p-4 flex flex-col items-center justify-center">
-                    <p class="font-semibold">H2H thắng</p>
-                    <p class="font-semibold">Hiệu số</p>
-                    <p class="font-semibold">H2H hiệu số</p>
-                    <p class="text-xs">Nhánh thua thi đấu</p>
-                  </div>
-                </div>
                 </template>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 my-4 pb-4"
                   :class="isCreator ? 'border-b' : ''">
@@ -499,13 +512,14 @@
                     </ul>
                   </div>
                 </div>
-                <p class="text-[#D72D36] text-sm cursor-pointer hover:underline" @click="showReGenerateBracketModal = true"
-                  v-if="isCreator">Chia lại cặp đấu</p>
+                <p class="text-[#D72D36] text-sm cursor-pointer hover:underline"
+                  @click="showReGenerateBracketModal = true" v-if="isCreator">Chia lại cặp đấu</p>
               </template>
             </div>
 
             <div v-else-if="activeTab === 'schedule'" key="schedule" class="flex flex-col min-h-[70vh]">
-              <ScheduleTab  :isCreator="isCreator" :toggle="isHandleOwnScore" @handle-toggle="handleUpdateOwnScore" :rank="ranks" :data="tournament"/>
+              <ScheduleTab :isCreator="isCreator" :toggle="isHandleOwnScore" @handle-toggle="handleUpdateOwnScore"
+                :rank="ranks" :data="tournament" />
             </div>
             <div v-else-if="activeTab === 'discuss'" key="discuss" class="flex flex-col h-[70vh]">
               <ChatForm :tournamentId="tournament.id" />
@@ -513,7 +527,7 @@
           </Transition>
         </div>
       </div>
-       <QRcodeModal v-if="showQRCodeModal" :value="tournamentLink" @close="showQRCodeModal = false" />
+      <QRcodeModal v-if="showQRCodeModal" :value="tournamentLink" @close="showQRCodeModal = false" />
 
       <ShareAction :buttons="[
         { label: 'Gửi link', icon: LinkIcon, onClick: copyLink },
@@ -524,24 +538,17 @@
       ].filter(Boolean)" :subtitle="'Hãy chia sẻ thông tin tới bạn bè để cùng tham gia giải đấu'" />
     </div>
 
-    <InviteGroup
-        v-model="showInviteModal"
-        :data="inviteGroupData"
-        :clubs="clubs"
-        :active-scope="activeScope"
-        :selected-club="selectedClub"
-        :search-query="searchQuery"
-        @update:searchQuery="onSearchChange"
-        @change-scope="onScopeChange"
-        @change-club="onClubChange"
-        @invite="handleInvite"
-    />
+    <InviteGroup v-model="showInviteModal" :data="inviteGroupData" :clubs="clubs" :active-scope="activeScope"
+      :selected-club="selectedClub" :search-query="searchQuery" @update:searchQuery="onSearchChange"
+      @change-scope="onScopeChange" @change-club="onClubChange" @invite="handleInvite" />
     <DeleteConfirmationModal v-model="showDeleteModal" title="Xác nhận hủy bỏ giải đấu"
       message="Thao tác này không thể hoàn tác." confirmButtonText="Xác nhận" @confirm="removeTournament" />
-      <DeleteConfirmationModal v-model="showDeleteTournamentTypeModal" title="Xác nhận thay đổi thể thức"
-      message="Thao tác này sẽ xoá toàn bộ các trận đấu và các cài đặt thể thức trước đó" confirmButtonText="Xác nhận" @confirm="removeTournamentType" />
-      <DeleteConfirmationModal v-model="showReGenerateBracketModal" title="Xác nhận chia lại cặp đấu"
-      message="Thao tác này sẽ xoá toàn bộ các trận đấu và các kết quả" confirmButtonText="Xác nhận" @confirm="reGenerateMatches" />
+    <DeleteConfirmationModal v-model="showDeleteTournamentTypeModal" title="Xác nhận thay đổi thể thức"
+      message="Thao tác này sẽ xoá toàn bộ các trận đấu và các cài đặt thể thức trước đó" confirmButtonText="Xác nhận"
+      @confirm="removeTournamentType" />
+    <DeleteConfirmationModal v-model="showReGenerateBracketModal" title="Xác nhận chia lại cặp đấu"
+      message="Thao tác này sẽ xoá toàn bộ các trận đấu và các kết quả" confirmButtonText="Xác nhận"
+      @confirm="reGenerateMatches" />
     <InviteFriendModal v-model="showInviteFriendModal" :data="friendList" @invite="handleInviteFriend"
       @loadMore="loadMoreFriends" :hasMore="hasMoreFriend" @search="handleSearchFriends" title="Mời vận động viên"
       emptyText="Không có vận động viên phù hợp với yêu cầu" />
@@ -551,20 +558,11 @@
     <EditTeamModal v-model="isOpenUpdateTeamModal" :data="selectedTeamDetail || {}" :isSaving="isSavingTeam"
       @update-info="handleUpdateInfo" @delete="handleDeleteTeam" />
     <CreateTeamModal v-model="isOpenCreateTeamModal" :isCreating="isLoading" @create-team="handleCreateInfo" />
-    <AddMemberModal
-      v-model="showInviteUserToTeamModal" 
-      :data="nonTeamParticipants" 
-      @add="handleAddUserToTeam"
-      title="Thêm Thành Viên Vào Đội"
-      emptyText="Không có vận động viên nào chưa có đội"
-      :isLoading="isFetchingNonTeamUsers"
-    />
-    <PlayerActionModal
-    v-model="showActionModal"
-    :user="selectedUser"
-    @view-profile="viewProfile"
-    @confirm="confirmUser"
-/>
+    <AddMemberModal v-model="showInviteUserToTeamModal" :data="nonTeamParticipants" @add="handleAddUserToTeam"
+      title="Thêm Thành Viên Vào Đội" emptyText="Không có vận động viên nào chưa có đội"
+      :isLoading="isFetchingNonTeamUsers" />
+    <PlayerActionModal v-model="showActionModal" :user="selectedUser" @view-profile="viewProfile"
+      @confirm="confirmUser" />
   </div>
 </template>
 
@@ -678,87 +676,87 @@ const showActionModal = ref(false)
 const selectedUser = ref(null)
 
 function openActionModal(user) {
-    selectedUser.value = user
-    showActionModal.value = true
+  selectedUser.value = user
+  showActionModal.value = true
 }
 
 function viewProfile() {
-    router.push(`/profile/${selectedUser.value.user.id}`)
+  router.push(`/profile/${selectedUser.value.user.id}`)
 }
 
 function confirmUser() {
-    confirm(selectedUser.value.id)
+  confirm(selectedUser.value.id)
 }
 
 const getMyClubs = async () => {
-    try {
-        const response = await ClubService.myClubs();
-        clubs.value = response || [];
+  try {
+    const response = await ClubService.myClubs();
+    clubs.value = response || [];
 
-        if (clubs.value.length === 0) {
-            selectedClub.value = null;
-            // Không có CLB → scope club vô hiệu → chuyển sang friends
-            activeScope.value = 'friends';
-        } else {
-            selectedClub.value = clubs.value[0].id;
-        }
-    } catch (e) {
-        clubs.value = [];
-        selectedClub.value = null;
-        activeScope.value = 'friends';
+    if (clubs.value.length === 0) {
+      selectedClub.value = null;
+      // Không có CLB → scope club vô hiệu → chuyển sang friends
+      activeScope.value = 'friends';
+    } else {
+      selectedClub.value = clubs.value[0].id;
     }
+  } catch (e) {
+    clubs.value = [];
+    selectedClub.value = null;
+    activeScope.value = 'friends';
+  }
 };
 
 const handleRemoveUser = async (participantId) => {
-    try {
-        await ParticipantService.deleteParticipant(participantId);
-        toast.success('Đã xóa người chơi khỏi giải đấu');
-        await detailTournament(id);
-        await getTeams();
-    } catch (error) {
-        toast.error(error.response?.data?.message || 'Xóa người chơi thất bại');
-    }
+  try {
+    await ParticipantService.deleteParticipant(participantId);
+    toast.success('Đã xóa người chơi khỏi giải đấu');
+    await detailTournament(id);
+    await getTeams();
+  } catch (error) {
+    toast.error(error.response?.data?.message || 'Xóa người chơi thất bại');
+  }
 };
 
 const handleRemoveStaff = async (staffId) => {
-    try {
-        await ParticipantService.deleteStaff(staffId);
-        toast.success('Đã xóa người tổ chức khỏi giải đấu');
-        await detailTournament(id);
-    } catch (error) {
-        toast.error(error.response?.data?.message || 'Xóa người tổ chức thất bại');
-    }
+  try {
+    await ParticipantService.deleteStaff(staffId);
+    toast.success('Đã xóa người tổ chức khỏi giải đấu');
+    await detailTournament(id);
+  } catch (error) {
+    toast.error(error.response?.data?.message || 'Xóa người tổ chức thất bại');
+  }
 };
 
 const handleRemoveMember = async (memberId, teamId) => {
-    try {
-        await TeamService.removeMember(memberId, teamId);
-        toast.success('Đã xóa thành viên khỏi đội');
-        await getTeams();
-    } catch (error) {
-        toast.error(error.response?.data?.message || 'Xóa thành viên thất bại');
-    }
+  try {
+    await TeamService.removeMember(memberId, teamId);
+    toast.success('Đã xóa thành viên khỏi đội');
+    await getTeams();
+  } catch (error) {
+    toast.error(error.response?.data?.message || 'Xóa thành viên thất bại');
+  }
 };
 
 const getInviteGroupData = async () => {
-    if (activeScope.value === 'club' && !selectedClub.value) {
-        inviteGroupData.value = [];
-        return;
-    }
+  if (activeScope.value === 'club' && !selectedClub.value) {
+    inviteGroupData.value = [];
+    return;
+  }
 
-    const payload = {
-        scope: activeScope.value,
-        per_page: 50,
-        ...(activeScope.value === 'club' ? { club_id: selectedClub.value } : {}),
-        ...(searchQuery.value ? { search: searchQuery.value } : {})
-    };
+  const payload = {
+    scope: activeScope.value,
+    per_page: 50,
+    ...(activeScope.value === 'club' ? { club_id: selectedClub.value } : {}),
+    ...(searchQuery.value ? { search: searchQuery.value } : {})
+  };
 
-    try {
-        const resp = await ParticipantService.getTournamentInviteGroups(id, payload);
-        inviteGroupData.value = resp || [];
-    } catch (e) {
-        inviteGroupData.value = [];
-    }
+  try {
+    const resp = await ParticipantService.getTournamentInviteGroups(id, payload);
+    inviteGroupData.value = resp || [];
+  } catch (e) {
+    inviteGroupData.value = [];
+  }
 };
 
 const onSearchChange = debounce(async (query) => {
@@ -767,28 +765,28 @@ const onSearchChange = debounce(async (query) => {
 }, 300);
 
 const onScopeChange = async (scope) => {
-    activeScope.value = scope;
-    await getInviteGroupData();
+  activeScope.value = scope;
+  await getInviteGroupData();
 };
 
 // Khi user đổi CLB trong component con
 const onClubChange = async (clubId) => {
-    selectedClub.value = clubId;
-    await getInviteGroupData();
+  selectedClub.value = clubId;
+  await getInviteGroupData();
 };
 
 const getRanks = async () => {
-    try {
-        const response = await TournamentTypeService.getRanks(id);
-        ranks.value = response || [];
-    } catch (error) {
-        toast.error(error.response?.data?.message || 'Lấy bảng xếp hạng thất bại');
-    }
+  try {
+    const response = await TournamentTypeService.getRanks(id);
+    ranks.value = response || [];
+  } catch (error) {
+    toast.error(error.response?.data?.message || 'Lấy bảng xếp hạng thất bại');
+  }
 }
 
-const handleUpdateOwnScore = debounce(async() => {
+const handleUpdateOwnScore = debounce(async () => {
   isHandleOwnScore.value = !isHandleOwnScore.value
-  await updateTournament(tournament.value.id, {is_own_score: isHandleOwnScore.value})
+  await updateTournament(tournament.value.id, { is_own_score: isHandleOwnScore.value })
 })
 
 const openBranketPage = () => {
@@ -843,11 +841,11 @@ const totalMatches = computed(() => {
   const teams = parseInt(tournament.value?.max_team) || 0;
   const tournamentType = tournament.value?.tournament_types?.[0];
 
-  if(!teams || teams < 2) return 0;
+  if (!teams || teams < 2) return 0;
   let currentFormat = tournamentType?.format;
 
   let matches = 0;
-  switch(currentFormat) {
+  switch (currentFormat) {
     case FORMAT_ROUND_ROBIN:
       matches = (teams * (teams - 1) / 2);
       return Math.floor(matches * numLegs);
@@ -856,29 +854,29 @@ const totalMatches = computed(() => {
       matches = teams - 1 + (hasThirdDirect ? 1 : 0);
       return Math.floor(matches * numLegs);
     case FORMAT_MIXED:
-      default:
-        const numGroups = parseInt(tournamentType?.format_specific_config?.[0]?.pool_stage?.number_competing_teams) || 1;
-        const teamsPerGroup = Math.floor(teams / numGroups);
-        const remainder = teams % numGroups;
-        let totalGroupMatches = 0;
-        for (let i = 0; i < numGroups; i++) {
-          const groupSize = teamsPerGroup + (i < remainder ? 1 : 0);
-          if(groupSize >= 2) {
-            const matchesInGroup = (groupSize * (groupSize - 1)) / 2;
-            totalGroupMatches += matchesInGroup;
-          }
+    default:
+      const numGroups = parseInt(tournamentType?.format_specific_config?.[0]?.pool_stage?.number_competing_teams) || 1;
+      const teamsPerGroup = Math.floor(teams / numGroups);
+      const remainder = teams % numGroups;
+      let totalGroupMatches = 0;
+      for (let i = 0; i < numGroups; i++) {
+        const groupSize = teamsPerGroup + (i < remainder ? 1 : 0);
+        if (groupSize >= 2) {
+          const matchesInGroup = (groupSize * (groupSize - 1)) / 2;
+          totalGroupMatches += matchesInGroup;
         }
-        totalGroupMatches = totalGroupMatches * numLegs;
-        const numAdvancingTeamsPerGroup = parseInt(tournamentType?.format_specific_config?.[0]?.pool_stage?.num_advancing_teams) || 0;
-        const qualifiedTeams = numAdvancingTeamsPerGroup * numGroups;
-        let knockoutMatches = 0;
-        if(qualifiedTeams >= 2) {
-          const hasThirdDirect = JSON.parse(tournamentType?.format_specific_config?.[0]?.has_third_place_match || 'false');
-          knockoutMatches = qualifiedTeams - 1 + (hasThirdDirect ? 1 : 0);
-        }
-        const totalKnockoutMatches = knockoutMatches * numLegs;
+      }
+      totalGroupMatches = totalGroupMatches * numLegs;
+      const numAdvancingTeamsPerGroup = parseInt(tournamentType?.format_specific_config?.[0]?.pool_stage?.num_advancing_teams) || 0;
+      const qualifiedTeams = numAdvancingTeamsPerGroup * numGroups;
+      let knockoutMatches = 0;
+      if (qualifiedTeams >= 2) {
+        const hasThirdDirect = JSON.parse(tournamentType?.format_specific_config?.[0]?.has_third_place_match || 'false');
+        knockoutMatches = qualifiedTeams - 1 + (hasThirdDirect ? 1 : 0);
+      }
+      const totalKnockoutMatches = knockoutMatches * numLegs;
 
-        return Math.floor(totalGroupMatches + totalKnockoutMatches);
+      return Math.floor(totalGroupMatches + totalKnockoutMatches);
   }
 });
 
@@ -901,30 +899,30 @@ const openInviteUserToTeamModal = async (team) => {
 };
 
 const getNonTeamParticipants = async () => {
-    isFetchingNonTeamUsers.value = true;
-    try {
-      const res = await ParticipantService.getParticipantsNonTeam(id)
-      if(res) {
-        nonTeamParticipants.value = res?.participants || [];
-      }
-    } catch (error) {
-        toast.error('Đã xảy ra lỗi khi tải danh sách người chơi.');
-    } finally {
-        isFetchingNonTeamUsers.value = false;
+  isFetchingNonTeamUsers.value = true;
+  try {
+    const res = await ParticipantService.getParticipantsNonTeam(id)
+    if (res) {
+      nonTeamParticipants.value = res?.participants || [];
     }
+  } catch (error) {
+    toast.error('Đã xảy ra lỗi khi tải danh sách người chơi.');
+  } finally {
+    isFetchingNonTeamUsers.value = false;
+  }
 };
 
 const handleAddUserToTeam = async (user) => {
-    if (!selectedTeam.value || !user.id) return;
-    try {
-        await TeamService.addUserToTeam(selectedTeam.value.id, user.user.id); 
-        toast.success(`Đã thêm ${user.user.name} vào đội ${selectedTeam.value.name}!`);
-        showInviteUserToTeamModal.value = false;
-        await getTeams();
-        await getNonTeamParticipants();
-    } catch (error) {
-        toast.error(error.response?.data?.message || 'Đã xảy ra lỗi khi thêm người dùng vào đội.');
-    }
+  if (!selectedTeam.value || !user.id) return;
+  try {
+    await TeamService.addUserToTeam(selectedTeam.value.id, user.user.id);
+    toast.success(`Đã thêm ${user.user.name} vào đội ${selectedTeam.value.name}!`);
+    showInviteUserToTeamModal.value = false;
+    await getTeams();
+    await getNonTeamParticipants();
+  } catch (error) {
+    toast.error(error.response?.data?.message || 'Đã xảy ra lỗi khi thêm người dùng vào đội.');
+  }
 }
 
 const confirmRemoval = () => {
@@ -1112,7 +1110,7 @@ const detailTournament = async (tournamentId) => {
       isEditingDescription.value = true;
     }
     descriptionModel.value = response.description || '';
-    if(tournament.value?.tournament_types?.length) {
+    if (tournament.value?.tournament_types?.length) {
       await getRanks();
     }
   } catch (error) {
@@ -1427,7 +1425,7 @@ const getListHasInvite = async (page = 1) => {
     if (page > 1) {
       listHasInvite.value.push(...(response.invitations || []));
     } else {
-      listHasInvite.value = response.invitations || []; 
+      listHasInvite.value = response.invitations || [];
     }
   } catch (error) {
   }
@@ -1444,6 +1442,18 @@ const resetBracket = async () => {
     toast.error(error.response?.data?.message || 'Đã xảy ra lỗi khi chia lại cặp đấu.');
   }
 };
+
+const joinerTournament = async () => {
+  const tournamentId = tournament.value.id;
+  try {
+    const res = await ParticipantService.joinTournament(tournamentId);
+    if (res) {
+      toast.success('Tham gia giải đấu thành công, Bạn có thể cần chờ xác nhận trước khi được bổ nhiệm vào 1 đội')
+    }
+  } catch (error) {
+    toast.error(error.response?.data?.message || 'Lỗi khi thực hiện yêu cầu này')
+  }
+}
 onMounted(async () => {
   if (id) {
     await Promise.all([

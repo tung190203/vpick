@@ -130,8 +130,16 @@ class ParticipantController extends Controller
             return ResponseHelper::error('Bạn chưa có điểm số cho môn thể thao này.', 422);
         }
 
-        if ($score < $tournament->min_level || $score > $tournament->max_level) {
-            return ResponseHelper::error('Điểm số của bạn không nằm trong yêu cầu giải đấu', 422);
+        $min = $tournament->min_level;
+        $max = $tournament->max_level;
+        if ($min == 0 && $max == 0) {
+        } else {
+            if ($min > 0 && $score < $min) {
+                return ResponseHelper::error('Điểm của bạn thấp hơn mức yêu cầu', 422);
+            }
+            if ($max > 0 && $score > $max) {
+                return ResponseHelper::error('Điểm của bạn vượt quá mức cho phép', 422);
+            }
         }
         $age = Carbon::parse($user->date_of_birth)->age;
         switch ($tournament->age_group) {
@@ -381,6 +389,9 @@ class ParticipantController extends Controller
         $isOrganizer = $tournamentWithStaff->hasOrganizer(Auth::id());
         if (!$isOrganizer) {
             return ResponseHelper::error('Bạn không có quyền xác nhận người tham gia này', 403);
+        }
+        if($participant->is_invite_by_organizer == 1) {
+            return ResponseHelper::error('Chỉ người được mời mới có thể xác nhận yêu cầu này', 403);
         }
         if ($participant->is_confirmed) {
             return ResponseHelper::error('Người tham gia đã được xác nhận', 400);
