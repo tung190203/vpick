@@ -221,25 +221,40 @@ class UserController extends Controller
         $user->update($data);
 
         if (isset($validated['sport_ids'])) {
-            $user->sports()->each(function ($userSport) {
-                $userSport->scores()->delete();
-                $userSport->delete();
-            });
-            if (!empty($validated['sport_ids'])) {
-                foreach ($validated['sport_ids'] as $index => $sportId) {
+            $newSportIds = $validated['sport_ids'] ?? [];
+            $newScoreValues = $validated['score_value'] ?? [];
+            $oldSports = $user->sports()->get();
+            foreach ($oldSports as $oldSport) {
+                if (!in_array($oldSport->sport_id, $newSportIds)) {
+                    $oldSport->scores()->delete();
+                    $oldSport->delete();
+                }
+            }
+            foreach ($newSportIds as $index => $sportId) {
+                $scoreValue = $newScoreValues[$index] ?? null;
+                $userSport = $user->sports()->where('sport_id', $sportId)->first();
+                if (!$userSport) {
                     $userSport = $user->sports()->create([
                         'sport_id' => $sportId,
-                        'tier' => null
+                        'tier' => null,
                     ]);
-
-                    if (!empty($validated['score_value'][$index])) {
-                        $userSport->scores()->create([
-                            'score_type' => 'personal_score',
-                            'score_value' => $validated['score_value'][$index]
-                        ]);
+                }
+                if (!empty($scoreValue)) {
+                    $userSport->scores()
+                        ->where('score_type', 'personal_score')
+                        ->delete();
+                    $userSport->scores()->create([
+                        'score_type' => 'personal_score',
+                        'score_value' => $scoreValue,
+                    ]);
+                    $hasDupr = $userSport->scores()
+                        ->where('score_type', 'vndupr_score')
+                        ->exists();
+        
+                    if (!$hasDupr) {
                         $userSport->scores()->create([
                             'score_type' => 'vndupr_score',
-                            'score_value' => $validated['score_value'][$index]
+                            'score_value' => $scoreValue,
                         ]);
                     }
                 }
