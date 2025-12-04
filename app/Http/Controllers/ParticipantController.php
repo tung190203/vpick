@@ -54,8 +54,8 @@ class ParticipantController extends Controller
         ]);
         $tournament = Tournament::findOrFail($tournamentId);
 
-        $participantsIds = Participant::where('tournament_id', $tournamentId)->pluck('user_id');
-        $tournamentStaffIds = $tournament->staff()->pluck('user_id');
+        $participantsIds = Participant::where('tournament_id', $tournamentId)->where('is_invite_by_organizer', true)->pluck('user_id');
+        $tournamentStaffIds = $tournament->staff()->where('is_invite_by_organizer', true)->pluck('user_id');
         $createId = $tournament->created_by;
 
         $listIds = array_values(
@@ -171,7 +171,7 @@ class ParticipantController extends Controller
                     break;
             }
         }
-        if ($tournament->participants()->count() >= $tournament->max_player) {
+        if ($tournament->participants()->where('is_confirmed', true)->count() >= ($tournament->player_per_team * $tournament->max_team)) {
             return ResponseHelper::error('Số lượng người tham gia đã đạt giới hạn.', 422);
         }
 
@@ -385,6 +385,9 @@ class ParticipantController extends Controller
         if ($participant->is_confirmed) {
             return ResponseHelper::error('Người tham gia đã được xác nhận', 400);
         }
+        if($participant->tournament->participants()->where('is_confirmed', true)->count() >= ($participant->tournament->max_team * $participant->tournament->player_per_team)){
+            return ResponseHelper::error('Số lượng người tham gia đã đạt giới hạn.', 422);
+        }
         $participant->is_confirmed = true;
         $participant->save();
 
@@ -410,11 +413,11 @@ class ParticipantController extends Controller
         }
         $participantType = $tournament->participant;
         if ($participantType === 'user') {
-            if ($tournament->participants()->count() >= $tournament->max_player) {
+            if ($tournament->participants()->where('is_confirmed', true)->count() >= ($tournament->player_per_team * $tournament->max_team)) {
                 return ResponseHelper::error('Số lượng người tham gia đã đạt giới hạn.', 422);
             }
         } else {
-            if ($tournament->participants()->count() >= ($tournament->max_team * $tournament->player_per_team)) {
+            if ($tournament->participants()->where('is_confirmed', true)->count() >= ($tournament->max_team * $tournament->player_per_team)) {
                 return ResponseHelper::error('Số lượng người tham gia đã đạt giới hạn.', 422);
             }
         }
@@ -603,6 +606,7 @@ class ParticipantController extends Controller
             'is_confirmed' => false,
             'created_at' => now(),
             'updated_at' => now(),
+            'is_invite_by_organizer' => true
         ], $newUserIds);
 
         $tournament->participants()->insert($insertData);

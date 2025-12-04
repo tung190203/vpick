@@ -13,6 +13,7 @@ class TournamentStaff extends Model
         'tournament_id',
         'user_id',
         'role',
+        'is_invite_by_organizer'
     ];
     const ROLE_ORGANIZER = 1;
     const ROLE_STAFF = 2;

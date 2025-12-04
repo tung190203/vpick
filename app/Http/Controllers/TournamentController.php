@@ -6,12 +6,18 @@ use App\Helpers\ResponseHelper;
 use App\Http\Resources\TournamentResource;
 use App\Models\Tournament;
 use App\Models\TournamentStaff;
+use App\Services\ImageOptimizationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class TournamentController extends Controller
 {
+    protected $imageService;
+
+    public function __construct(ImageOptimizationService $imageService)
+    {
+        $this->imageService = $imageService;
+    }
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -147,11 +153,15 @@ class TournamentController extends Controller
     
         DB::transaction(function () use ($validated, $tournament, $request) {
             if ($request->hasFile('poster')) {
-                if ($tournament->poster && Storage::disk('public')->exists($tournament->poster)) {
-                    Storage::disk('public')->delete($tournament->poster);
-                }
-                $path = $request->file('poster')->store('tournaments/posters', 'public');
-                $validated['poster'] = $path;
+                    $this->imageService->deleteOldImage($tournament->poster);
+                    $path = $this->imageService->optimize(
+                        $validated['poster'],
+                        'tournaments/posters'
+                    );
+                    $validated['poster'] = $path;
+            } else {
+                $this->imageService->deleteOldImage($tournament->poster);
+                $validated['poster'] = null;
             }
             $tournament->fill($validated);
             $tournament->save();

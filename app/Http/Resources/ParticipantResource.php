@@ -18,6 +18,7 @@ class ParticipantResource extends JsonResource
             'id' => $this->id,
             'name' => $this->user?->full_name,
             'avatar' => $this->user?->avatar_url,
+            'is_invite_by_organizer' => $this->is_invite_by_organizer
         ];
     }
 }

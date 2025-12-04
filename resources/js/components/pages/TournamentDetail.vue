@@ -253,7 +253,7 @@
                     <div class="grid grid-cols-2 sm:grid-cols-6 lg:grid-cols-6 gap-4">
                       <UserCard v-for="(item, index) in tournament.tournamnet_participants" :key="index" :id="item.id"
                         :name="item.user.name" :avatar="item.avatar" :rating="getUserScore(item)"
-                        :status="item.is_confirmed == true ? 'approved' : 'pending'" @removeUser="handleRemoveUser"/>
+                        :status="item.is_confirmed == true ? 'approved' : 'pending'" @removeUser="handleRemoveUser" @click="openActionModal(item)"/>
                       <UserCard
                         v-if="tournament?.tournamnet_participants?.length < (tournament.max_team * tournament.player_per_team) && isCreator"
                         :empty="true" @clickEmpty="showInviteFriendModal = true" />
@@ -361,10 +361,6 @@
                         </p>
                       </div>
                       </div>
-                      <button v-if="item.is_confirmed== 0 && isCreator" @click="confirm(item.participant_id)"
-                      class="px-6 py-2 bg-[#D72D36] text-white font-medium rounded-lg hover:bg-red-700 transition-colors shadow-md">
-                      Duyệt
-                    </button>
                     </div>
                   </div>
                 </div>
@@ -563,6 +559,12 @@
       emptyText="Không có vận động viên nào chưa có đội"
       :isLoading="isFetchingNonTeamUsers"
     />
+    <PlayerActionModal
+    v-model="showActionModal"
+    :user="selectedUser"
+    @view-profile="viewProfile"
+    @confirm="confirmUser"
+/>
   </div>
 </template>
 
@@ -611,6 +613,7 @@ import { storeToRefs } from 'pinia'
 import AddMemberModal from '@/components/molecules/AddMemberModal.vue'
 import ScheduleTab from '@/components/molecules/ScheduleTab.vue'
 import ChatForm from '@/components/organisms/ChatForm.vue'
+import PlayerActionModal from '@/components/molecules/PlayerActionModal.vue'
 
 const userStore = useUserStore()
 const { getUser } = storeToRefs(userStore)
@@ -671,6 +674,21 @@ const setupDescription = () => {
   descriptionModel.value = tournament.value.description || '';
   isEditingDescription.value = true;
 };
+const showActionModal = ref(false)
+const selectedUser = ref(null)
+
+function openActionModal(user) {
+    selectedUser.value = user
+    showActionModal.value = true
+}
+
+function viewProfile() {
+    router.push(`/profile/${selectedUser.value.user.id}`)
+}
+
+function confirmUser() {
+    confirm(selectedUser.value.id)
+}
 
 const getMyClubs = async () => {
     try {
@@ -1045,6 +1063,7 @@ const handleRemove = () => {
   if (fileInput.value) {
     fileInput.value.value = '';
   }
+  updateTournament(tournament.value.id)
 };
 
 const handleInvite = async (user) => {
@@ -1230,6 +1249,10 @@ const reGenerateMatches = async () => {
 }
 
 const autoAssign = async () => {
+  // if(tournament.value && tournament.value.tournament_types.length > 0) {
+  //   toast.error('Thể thức đã được cài đặt, các đội đã được chia vào trận đấu không thể chia lại đội');
+  //   return;
+  // }
   try {
     const teamsResponse = await TeamService.autoAssignTeams(id)
     const teams = teamsResponse || []
