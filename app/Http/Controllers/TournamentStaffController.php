@@ -23,7 +23,8 @@ class TournamentStaffController extends Controller
         }
 
         $tournament->staff()->attach($staffId, [
-            'role' => TournamentStaff::ROLE_REFEREE
+            'role' => TournamentStaff::ROLE_REFEREE,
+            'is_invite_by_organizer' => true
         ]);
     
         return response()->json(['message' => 'Thêm người tổ chức thành công'], 201);

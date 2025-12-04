@@ -17,10 +17,10 @@
                             class="w-full mt-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#D72D36]" />
 
                         <label class="block mt-6 text-gray-700 font-medium">Ảnh đội:</label>
-                        
+
                         <div class="group mt-2 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer 
-                                    hover:border-[#D72D36] transition-colors"
-                            @click="fileInput.click()" @dragover="handleDragOver" @dragleave.prevent @drop="handleDrop">
+                                    hover:border-[#D72D36] transition-colors" @click="fileInput.click()"
+                            @dragover="handleDragOver" @dragleave.prevent @drop="handleDrop">
 
                             <input type="file" ref="fileInput" @change="handleFileChange" accept="image/*"
                                 class="hidden" />
@@ -29,15 +29,16 @@
                                 <div class="relative w-24 h-24">
                                     <img :src="previewUrl" alt="Ảnh đội xem trước"
                                         class="w-24 h-24 object-cover rounded shadow-md" />
-                                    
-                                    <button @click.stop="clearAvatar" 
-                                            class="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow-md hover:bg-[#D72D36] hover:text-white transition-colors z-10">
+
+                                    <button @click.stop="clearAvatar"
+                                        class="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow-md hover:bg-[#D72D36] hover:text-white transition-colors z-10">
                                         <XMarkIcon class="w-4 h-4 text-gray-700 hover:text-white" />
                                     </button>
                                 </div>
                             </div>
                             <div v-else>
-                                <ArrowUpTrayIcon class="w-10 h-10 text-gray-400 mx-auto group-hover:text-[#D72D36] transition-colors" />
+                                <ArrowUpTrayIcon
+                                    class="w-10 h-10 text-gray-400 mx-auto group-hover:text-[#D72D36] transition-colors" />
                                 <p class="mt-1 text-sm text-gray-600">Kéo thả ảnh vào đây</p>
                                 <p class="text-xs text-gray-500">hoặc bấm để chọn file</p>
                             </div>
@@ -45,22 +46,25 @@
                     </div>
 
                     <div class="p-4 border-t flex justify-start gap-2">
-                        <button @click="handleUpdate"
-                                :disabled="isSaving" 
-                                :class="[isSaving ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#D72D36] hover:bg-red-700']"
-                                class="px-4 py-2 text-white rounded-lg transition-colors flex items-center">
-                            <svg v-if="isSaving" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        <button @click="handleUpdate" :disabled="isSaving"
+                            :class="[isSaving ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#D72D36] hover:bg-red-700']"
+                            class="px-4 py-2 text-white rounded-lg transition-colors flex items-center">
+                            <svg v-if="isSaving" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                </path>
                             </svg>
                             {{ isSaving ? 'Đang lưu...' : 'Cập nhật' }}
                         </button>
-                        <button @click="deleteTeam(data.id)" 
-                                class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                        <button @click="deleteTeam(data.id)"
+                            class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
                             Xóa đội
                         </button>
-                        <button @click="closeModal" 
-                                class="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors">
+                        <button @click="closeModal"
+                            class="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors">
                             Hủy
                         </button>
                     </div>
@@ -90,7 +94,7 @@ const props = defineProps({
     }
 })
 
-const emit = defineEmits(['update:modelValue','update-info', 'delete'])
+const emit = defineEmits(['update:modelValue', 'update-info', 'delete'])
 
 const isOpen = computed({
     get: () => props.modelValue,
@@ -113,7 +117,7 @@ watch(() => props.data, (newData) => {
     }
     newAvatarFile.value = null;
     if (fileInput.value) {
-        fileInput.value.value = ''; 
+        fileInput.value.value = '';
     }
     previewUrl.value = newData?.avatar || null;
 }, { immediate: true });
@@ -153,12 +157,22 @@ const handleDragOver = (event) => {
 }
 
 const handleUpdate = () => {
-    const updatePayload = {
+    let updatePayload = {
         name: props.data.name,
-        avatar: newAvatarFile.value,
     };
+    if (newAvatarFile.value) {
+        updatePayload.avatar = newAvatarFile.value;
+    }
+
+    else if (previewUrl.value === null) {
+    }
+    else {
+        updatePayload.avatar = props.data.avatar;
+    }
+
     emit('update-info', updatePayload);
-}
+};
+
 
 const deleteTeam = (teamId) => {
     emit('delete', teamId);
@@ -167,7 +181,6 @@ const deleteTeam = (teamId) => {
 </script>
 
 <style scoped>
-
 .modal-enter-active,
 .modal-leave-active {
     transition: opacity 0.3s ease;

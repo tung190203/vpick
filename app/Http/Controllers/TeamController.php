@@ -5,13 +5,22 @@ namespace App\Http\Controllers;
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\ListTeamResource;
 use App\Http\Resources\TeamResource;
+use App\Models\Matches;
+use App\Models\MatchResult;
 use App\Models\Participant;
 use App\Models\Team;
 use App\Models\Tournament;
+use App\Services\ImageOptimizationService;
 use Illuminate\Http\Request;
 
 class TeamController extends Controller
 {
+    protected $imageService;
+
+    public function __construct(ImageOptimizationService $imageService)
+    {
+        $this->imageService = $imageService;
+    }
     public function listTeams(Request $request, $tournamentId)
     {
         $validated = $request->validate([
@@ -60,7 +69,10 @@ class TeamController extends Controller
         }
         $avatarPath = null;
         if ($request->hasFile('avatar')) {
-            $avatarPath = $request->file('avatar')->store('team_avatars', 'public');
+            $avatarPath = $this->imageService->optimize(
+                $validated['avatar'],
+                'team_avatar'
+            );
         }
 
         $team = Team::create([
@@ -77,31 +89,42 @@ class TeamController extends Controller
         $validated = $request->validate(
             [
                 'name' => 'sometimes|required|string|max:255',
-                'avatar' => 'nullable|image|max:2048',
+                'avatar' => 'nullable',
             ],
             [
                 'name.required' => 'Vui lòng nhập tên đội',
                 'name.string' => 'Tên đội phải là chuỗi ký tự',
                 'name.max' => 'Tên đội không được vượt quá 255 ký tự',
-                'avatar.image' => 'Ảnh đại diện phải là một tệp hình ảnh',
-                'avatar.max' => 'Ảnh đại diện không được vượt quá 2MB',
             ]
         );
 
         $team = Team::findOrFail($request->route('teamId'));
-
         if (isset($validated['name'])) {
             $team->name = $validated['name'];
         }
 
         if ($request->hasFile('avatar')) {
-            $avatarPath = $request->file('avatar')->store('team_avatars', 'public');
-            $team->avatar = $avatarPath;
+            $this->imageService->deleteOldImage($team->avatar);
+    
+            $path = $this->imageService->optimize(
+                $request->file('avatar'),
+                'team_avatar'
+            );
+
+            $team->avatar = $path;
+
+        } elseif ($request->has('avatar')) {
+        } else {
+            $this->imageService->deleteOldImage($team->avatar);
+            $team->avatar = null;
         }
 
         $team->save();
-
-        return ResponseHelper::success(new TeamResource($team->load('members')), 'Cập nhật đội thành công');
+    
+        return ResponseHelper::success(
+            new TeamResource($team->load('members')),
+            'Cập nhật đội thành công'
+        );
     }
 
     public function addMember(Request $request, $teamId)
@@ -229,9 +252,31 @@ class TeamController extends Controller
     public function deleteTeam($teamId)
     {
         $team = Team::findOrFail($teamId);
+        $tournament = Tournament::findOrFail($team->tournament_id);
+        $tournamentTypeIds = $tournament->tournamentTypes()->pluck('id');
+        if ($tournamentTypeIds->isEmpty()) {
+            return $this->forceDeleteTeam($team);
+        }
+        $matches = Matches::where('home_team_id', $teamId)
+            ->orWhere('away_team_id', $teamId)
+            ->get();
+        if ($matches->isEmpty()) {
+            return $this->forceDeleteTeam($team);
+        }
+        $hasResult = MatchResult::whereIn('match_id', $matches->pluck('id'))->exists();
+        if ($hasResult) {
+            return ResponseHelper::error(
+                'Đội đã tham gia trận đấu và có kết quả, không thể xoá.',
+                400
+            );
+        }
+        return $this->forceDeleteTeam($team);
+    }
+    private function forceDeleteTeam(Team $team)
+    {
         $team->members()->detach();
         $team->delete();
-
-        return ResponseHelper::success(null, 'Xóa đội thành công');
+    
+        return ResponseHelper::success(null, 'Xoá đội thành công');
     }
 }

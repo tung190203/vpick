@@ -78,6 +78,7 @@ class TournamentResource extends JsonResource
                         'sports' => UserSportResource::collection($participant->user?->sports ?? []),
                         'is_confirmed' => $participant->is_confirmed,
                         'registered_at' => $participant->created_at,
+                        'is_invite_by_organizer' => $participant->is_invite_by_organizer
                     ];
                 });
             }),
