@@ -501,17 +501,23 @@ class MiniTournament extends Model
             });
     }
 
-    public function scopeNearBy($query, $lat, $lng, $radius)
+    public function scopeNearBy($query, $lat, $lng, $radiusKm)
     {
-        $haversine = "(6371 * acos(cos(radians($lat)) 
-                        * cos(radians(competition_locations.latitude)) 
-                        * cos(radians(competition_locations.longitude) 
-                        - radians($lng)) 
-                        + sin(radians($lat)) 
-                        * sin(radians(competition_locations.latitude))))";
-
-        return $query->whereHas('competitionLocation', function ($q) use ($haversine, $radius) {
-            $q->havingRaw("$haversine < ?", [$radius]);
+        $haversine = "(6371 * acos(
+            cos(radians(?)) 
+            * cos(radians(competition_locations.latitude)) 
+            * cos(radians(competition_locations.longitude) - radians(?)) 
+            + sin(radians(?)) 
+            * sin(radians(competition_locations.latitude))
+        ))";
+    
+        return $query->whereHas('competitionLocation', function ($q) use ($haversine, $lat, $lng, $radiusKm) {
+            $q->whereRaw("$haversine < ?", [
+                $lat,
+                $lng,
+                $lat,
+                $radiusKm
+            ]);
         });
     }
 
