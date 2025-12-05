@@ -19,6 +19,7 @@ class GeocodingService
 
     /**
      * Google Autocomplete (Places API New)
+     * Giới hạn kết quả trong Việt Nam
      */
     protected function googleSearch(string $query): array
     {
@@ -33,6 +34,18 @@ class GeocodingService
                 .'suggestions.placePrediction.text',
         ])->post($url, [
             'input' => $query,
+            'locationRestriction' => [
+                'rectangle' => [
+                    'low' => [
+                        'latitude'  => 8.179066,
+                        'longitude' => 102.14441,
+                    ],
+                    'high' => [
+                        'latitude'  => 23.393395,
+                        'longitude' => 109.46918,
+                    ],
+                ],
+            ],
         ])->json();
 
         $suggestions = $response['suggestions'] ?? [];
@@ -42,9 +55,9 @@ class GeocodingService
 
             return [
                 'place_id'    => $p['place'] ?? $p['placeId'] ?? null,
-                'description' => $p['structuredFormat']['mainText']['text']
-                    . ', '
-                    . ($p['structuredFormat']['secondaryText']['text'] ?? ''),
+                'description' =>
+                    ($p['structuredFormat']['mainText']['text'] ?? '') . ', ' .
+                    ($p['structuredFormat']['secondaryText']['text'] ?? ''),
                 'lat' => null,
                 'lng' => null,
             ];
@@ -71,8 +84,8 @@ class GeocodingService
         }
 
         return [
-            'lat' => $response['location']['latitude'],
-            'lng' => $response['location']['longitude'],
+            'lat'     => $response['location']['latitude'],
+            'lng'     => $response['location']['longitude'],
             'address' => $response['formattedAddress']
                 ?? $response['displayName']['text']
                 ?? null,
@@ -80,7 +93,7 @@ class GeocodingService
     }
 
     /**
-     * OSM API
+     * OSM API — Giới hạn tìm kiếm trong Việt Nam
      */
     protected function osmSearch(string $query): array
     {
@@ -93,13 +106,14 @@ class GeocodingService
             'q' => $query,
             'limit' => 5,
             'addressdetails' => 1,
+            'countrycodes' => 'vn',
         ])->json();
 
         return collect($response ?? [])->map(fn($item) => [
-            'id' => $item['place_id'] ?? $item['osm_id'],
+            'id'          => $item['place_id'] ?? $item['osm_id'],
             'description' => $item['display_name'],
-            'lat' => $item['lat'],
-            'lng' => $item['lon'],
+            'lat'         => $item['lat'],
+            'lng'         => $item['lon'],
         ])->all();
     }
 }
