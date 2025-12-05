@@ -18,56 +18,69 @@ class GeocodingService
     }
 
     /**
-     * Google Autocomplete API
-     * Trả về list suggestion (chỉ description + place_id)
+     * Google Autocomplete (Places API New)
      */
     protected function googleSearch(string $query): array
     {
         $apiKey = config('geocoder.google.key');
-        $url = config('geocoder.google.base_url', 'https://maps.googleapis.com/maps/api/place/autocomplete/json');
+        $url = config('geocoder.google.autocomplete_url');
 
-        $response = Http::get($url, [
+        $response = Http::withHeaders([
+            'Content-Type'     => 'application/json',
+            'X-Goog-Api-Key'   => $apiKey,
+            'X-Goog-FieldMask' => 'suggestions.placePrediction.place,'
+                .'suggestions.placePrediction.structuredFormat,'
+                .'suggestions.placePrediction.text',
+        ])->post($url, [
             'input' => $query,
-            'key' => $apiKey,
-            'components' => 'country:vn',
         ])->json();
 
-        $predictions = $response['predictions'] ?? [];
+        $suggestions = $response['suggestions'] ?? [];
 
-        return collect($predictions)->map(fn($item) => [
-            'id' => $item['place_id'],
-            'description' => $item['description'],
-            'lat' => null, // chưa có lat/lng
-            'lng' => null,
-        ])->all();
+        return collect($suggestions)->map(function ($item) {
+            $p = $item['placePrediction'] ?? [];
+
+            return [
+                'place_id'    => $p['place'] ?? $p['placeId'] ?? null,
+                'description' => $p['structuredFormat']['mainText']['text']
+                    . ', '
+                    . ($p['structuredFormat']['secondaryText']['text'] ?? ''),
+                'lat' => null,
+                'lng' => null,
+            ];
+        })->all();
     }
 
     /**
-     * Google Place Detail API
-     * Lấy lat/lng cho 1 place_id
+     * Google Place Details (Places API New)
+     * Lấy lat/lng theo place_id
      */
     public function getGooglePlaceDetail(string $placeId): ?array
     {
         $apiKey = config('geocoder.google.key');
-        $url = config('geocoder.google.details_url', 'https://maps.googleapis.com/maps/api/place/details/json');
+        $cleanId = str_replace('places/', '', $placeId);
+        $url = config('geocoder.google.details_url') . $cleanId;
 
-        $response = Http::get($url, [
-            'place_id' => $placeId,
-            'key'      => $apiKey,
-        ])->json();
+        $response = Http::withHeaders([
+            'X-Goog-Api-Key'   => $apiKey,
+            'X-Goog-FieldMask' => 'id,location,formattedAddress,displayName',
+        ])->get($url)->json();
 
-        $result = $response['result'] ?? null;
-        $location = $result['geometry']['location'] ?? null;
+        if (!isset($response['location'])) {
+            return null;
+        }
 
-        return $location ? [
-            'lat' => $location['lat'],
-            'lng' => $location['lng'],
-            'address' => $result['formatted_address'] ?? null,
-        ] : null;
+        return [
+            'lat' => $response['location']['latitude'],
+            'lng' => $response['location']['longitude'],
+            'address' => $response['formattedAddress']
+                ?? $response['displayName']['text']
+                ?? null,
+        ];
     }
 
     /**
-     * OpenStreetMap Nominatim API
+     * OSM API
      */
     protected function osmSearch(string $query): array
     {
