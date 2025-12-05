@@ -1,5 +1,6 @@
 <template>
     <div class="grid grid-cols-10 gap-4">
+        <CreateMatch v-model="showCreateMatchModal" :data="detailData" :tournament="tournament" />
         <div class="col-span-3 p-4">
             <div class="flex justify-between items-center p-4 mb-4 bg-[#EDEEF2] rounded-md">
                 <h2 class="font-bold text-[#3E414C]">Bảng xếp hạng</h2>
@@ -58,9 +59,13 @@
 
                         <!-- Lặp qua matches, với mỗi match lặp qua legs -->
                         <template v-for="match in group.matches" :key="match.match_id">
-                            <div v-for="leg in match.legs" :key="leg.id" :class="matchCardWrapperClass(leg.status)"
-                                class="match-card bg-[#dcdee6] rounded-lg mb-4 w-64 flex flex-col">
-
+                            <div 
+                                v-for="leg in match.legs" 
+                                :key="leg.id" 
+                                :class="matchCardWrapperClass(leg.status)"
+                                class="match-card bg-[#dcdee6] rounded-lg mb-4 w-64 flex flex-col cursor-pointer hover:shadow-lg transition-all"
+                                @click="handleMatchClick(match.match_id)"
+                            >
                                 <div :class="matchHeaderContentClass(leg.status)"
                                     class="flex justify-between items-center text-xs font-medium text-[#838799] px-4 py-2 bg-[#dcdee6] rounded-tl-lg rounded-tr-lg">
                                     <span class="uppercase">SÂN 1 - Lượt {{ leg.leg == 1 ? 'đi' : 'về' }}</span>
@@ -132,9 +137,13 @@
 
                         <!-- Lặp qua matches, với mỗi match lặp qua legs -->
                         <template v-for="match in roundData.matches" :key="match.match_id">
-                            <div v-for="leg in match.legs" :key="leg.id" :class="matchCardWrapperClass(leg.status)"
-                                class="match-card bg-[#dcdee6] rounded-lg mb-4 w-64 flex flex-col">
-
+                            <div 
+                                v-for="leg in match.legs" 
+                                :key="leg.id" 
+                                :class="matchCardWrapperClass(leg.status)"
+                                class="match-card bg-[#dcdee6] rounded-lg mb-4 w-64 flex flex-col cursor-pointer hover:shadow-lg transition-all"
+                                @click="handleMatchClick(match.match_id)"
+                            >
                                 <div :class="matchHeaderContentClass(leg.status)"
                                     class="flex justify-between items-center text-xs font-medium text-[#838799] px-4 py-2 bg-[#dcdee6] rounded-tl-lg rounded-tr-lg">
                                     <span class="uppercase">SÂN 1 - Lượt {{ leg.leg == 1 ? 'đi' : 'về' }}</span>
@@ -190,8 +199,11 @@
 
 
 <script setup>
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { PencilIcon, VideoCameraIcon } from "@heroicons/vue/24/solid";
+import CreateMatch from '@/components/molecules/CreateMatch.vue';
+import * as MatchesService from '@/service/match.js';
+import { toast } from 'vue3-toastify';
 
 const props = defineProps({
     bracket: {
@@ -202,7 +214,31 @@ const props = defineProps({
         type: Object,
         required: true,
     },
+    tournament: {
+        type: Object,
+        required: true,
+    },
 });
+
+const showCreateMatchModal = ref(false);
+const detailData = ref({});
+
+/* ===========================
+   GET DETAIL MATCH
+=========================== */
+const handleMatchClick = async (matchId) => {
+    if (!matchId) return;
+    
+    try {
+        const res = await MatchesService.detailMatches(matchId);
+        if (res) {
+            detailData.value = res;
+            showCreateMatchModal.value = true;
+        }
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi lấy chi tiết trận đấu');
+    }
+};
 
 const poolStages = computed(() => props.bracket.pool_stage || []);
 const knockoutStages = computed(() => props.bracket.knockout_stage || []);
@@ -270,3 +306,14 @@ const formatTime = (scheduledAt) => {
     }
 };
 </script>
+
+<style>
+.custom-scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+.custom-scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+</style>
