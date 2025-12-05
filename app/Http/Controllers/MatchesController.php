@@ -84,13 +84,13 @@ class MatchesController extends Controller
             return ResponseHelper::error('Thể thức này chưa có luật thi đấu (match_rules).', 400);
         }
 
-        $setsPerMatch = $rules['sets_per_match'] ?? 3;
-        $pointsToWinSet = $rules['points_to_win_set'] ?? 11;
-        $winningRule = $rules['winning_rule'] ?? 2; // cách biệt tối thiểu để win
-        $maxPoints = $rules['max_points'] ?? $pointsToWinSet;
+        $setsPerMatch = $rules[0]['sets_per_match'] ?? 3;
+        $pointsToWinSet = $rules[0]['points_to_win_set'] ?? 11;
+        $winningRule = $rules[0]['winning_rule'] ?? 2; // cách biệt tối thiểu để win
+        $maxPoints = $rules[0]['max_points'] ?? $pointsToWinSet;
 
         if (count($validated['results'] ?? []) > $setsPerMatch * 2) {
-            return ResponseHelper::error("Số sets vượt quá giới hạn ({$setsPerMatch}).", 400);
+            return ResponseHelper::error("Số sets vượt quá giới hạn.", 400);
         }
 
         // 🔄 Gom dữ liệu theo từng set_number
@@ -614,7 +614,17 @@ class MatchesController extends Controller
                 $query->where('user_id', Auth::id());
             })
             ->first();
+        $rules = $match->tournamentType->match_rules ?? null;
+        if (!$rules) {
+            return ResponseHelper::error('Thể thức này chưa có luật thi đấu (match_rules).', 400);
+        }
+        $setsPerMatch = $rules[0]['sets_per_match'] ?? 3;
+        $realSetNeedToPlay = $match->results->groupBy('set_number')->count();
+        $neededToWin = intdiv($setsPerMatch, 2) + 1;
 
+        if ($realSetNeedToPlay < $neededToWin) {
+            return ResponseHelper::error("Cần tối thiểu $neededToWin set mới được xác nhận kết quả.", 400);
+        }            
         if (!$userTeam && !$isOrganizer) {
             return ResponseHelper::error('Bạn không có quyền xác nhận kết quả trận đấu này', 403);
         }

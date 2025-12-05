@@ -1,5 +1,6 @@
 <template>
   <div class="p-4 pt-0 min-h-screen overflow-x-auto">
+    <CreateMatch v-model="showCreateMatchModal" :data="detailData" :tournament="tournament" />
 
     <!-- HEADER CÁC ROUND -->
     <div class="flex w-max min-h-full pb-4">
@@ -44,11 +45,12 @@
       <template #player="{ player }">
         <div
           v-if="player.isPlayer1"
-          class="w-64 rounded-lg shadow-md border bg-[#EDEEF2] relative"
+          class="w-64 rounded-lg shadow-md border bg-[#EDEEF2] relative cursor-pointer hover:shadow-lg transition-all"
           :class="{
             'ring-2 ring-red-500': player.isLive,
             'bg-amber-500 text-white': player.isThirdPlace,
           }"
+          @click="handleMatchClick(player.matchId)"
         >
           <div
             class="flex justify-between items-center text-xs font-medium rounded-t-lg px-4 py-2"
@@ -111,15 +113,39 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import Bracket from "vue-tournament-bracket";
 import { VideoCameraIcon, PencilIcon } from "@heroicons/vue/24/solid";
+import CreateMatch from '@/components/molecules/CreateMatch.vue';
+import * as MatchesService from '@/service/match.js';
+import { toast } from 'vue3-toastify';
 
 const props = defineProps({
   bracket: { type: Object, required: true },
+  tournament: { type: Object, required: true },
 });
 
+const showCreateMatchModal = ref(false);
+const detailData = ref({});
+
 const totalRounds = computed(() => props.bracket.bracket.length);
+
+/* ===========================
+   GET DETAIL MATCH
+=========================== */
+const handleMatchClick = async (matchId) => {
+  if (!matchId) return;
+  
+  try {
+    const res = await MatchesService.detailMatches(matchId);
+    if (res) {
+      detailData.value = res;
+      showCreateMatchModal.value = true;
+    }
+  } catch (error) {
+    toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi lấy chi tiết trận đấu');
+  }
+};
 
 /* ===========================
    FORMAT ROUNDS FOR BRACKET
@@ -139,6 +165,7 @@ const rounds = computed(() => {
         label: match.match_label,
         time: match.legs[0].scheduled_at,
         isPlayer1: true,
+        matchId: match.match_id,
         opponent: {
           id: match.away_team.id,
           name: match.away_team.name,

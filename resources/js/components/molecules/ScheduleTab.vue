@@ -433,7 +433,7 @@
             </template>
         </template>
     </template>
-    <CreateMatch v-model="showCreateMatchModal" @create="handleCreateMatch" :data="detailData" :tournament="data" />
+    <CreateMatch v-model="showCreateMatchModal" :data="detailData" :tournament="data" />
 </template>
 
 <script setup>
@@ -534,10 +534,6 @@ const getDetailMatches = async (id) => {
     } catch (error) {
         toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi thực hiện thao tác này');
     }
-}
-
-const handleCreateMatch = (match) => {
-  console.log('Created match:', match)
 }
 
 // ========== MIXED FORMAT COMPUTED PROPERTIES ==========

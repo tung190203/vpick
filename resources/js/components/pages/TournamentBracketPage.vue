@@ -5,13 +5,13 @@
             <h1 class="text-lg font-semibold">Sơ đồ thi đấu</h1>
         </div>
         <template v-if="bracket && bracket.format == 1">
-            <BracketMixed :bracket="bracket" :rank="ranks" />
+            <BracketMixed :bracket="bracket" :tournament="tournament" :rank="ranks" />
         </template>
         <template v-else-if="bracket && bracket.format == 2">
-            <BracketElimination :bracket="bracket" :rank="ranks" />
+            <BracketElimination :bracket="bracket" :tournament="tournament" :rank="ranks" />
         </template>
         <template v-else>
-            <BracketRounded :bracket="bracket" :rank="ranks" />
+            <BracketRounded :bracket="bracket" :tournament="tournament" :rank="ranks" />
         </template>
     </div>
 </template>
