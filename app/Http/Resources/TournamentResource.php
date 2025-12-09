@@ -86,6 +86,9 @@ class TournamentResource extends JsonResource
             'is_joined' => $this->participants
                 ? $this->participants->contains('user_id', auth()->id())
                 : false,
+            'is_confirmed_by_organizer' =>
+                (bool) $this->participants?->firstWhere('user_id', auth()->id())?->is_confirmed,
+            'is_invite_by_organizer' => (bool) $this->participants?->firstWhere('user_id', auth()->id())?->is_invite_by_organizer
         ];
     }
 }

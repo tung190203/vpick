@@ -67,10 +67,11 @@ class MiniParticipantController extends Controller
     public function join(Request $request, $tournamentId)
     {
         $miniTournament = MiniTournament::findOrFail($tournamentId);
-
-        // Check số lượng slot
-        if ($miniTournament->max_players && $miniTournament->participants()->count() >= $miniTournament->max_players) {
-            return ResponseHelper::error('Đã đạt số lượng người chơi tối đa.', 400);
+        if ($miniTournament && $miniTournament->max_players) {
+            $confirmedCount = $miniTournament->participants()->where('is_confirmed', true)->count();
+            if ($confirmedCount >= $miniTournament->max_players) {
+                return ResponseHelper::error('Giải đấu đã đạt số lượng người chơi tối đa.', 400);
+            }
         }
 
         // Cho phép join bằng user hoặc team
