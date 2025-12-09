@@ -198,12 +198,19 @@
               </div>
               <template v-else>
                 <div v-if="!tournament.is_joined">
-                <button
-                  class="flex items-center justify-center gap-2 bg-[#D72D36] hover:bg-white text-white hover:text-[#D72D36] border hover:border-[#D72D36] font-medium px-6 py-2 rounded-md transition"
-                  @click="joinerTournament">
-                  Tham gia giải đấu
-                </button>
-              </div>
+                  <button
+                    class="flex items-center justify-center gap-2 bg-[#D72D36] hover:bg-white text-white hover:text-[#D72D36] border hover:border-[#D72D36] font-medium px-6 py-2 rounded-md transition"
+                    @click="joinerTournament">
+                    Tham gia giải đấu
+                  </button>
+                </div>
+                <div v-if="tournament.is_joined && !tournament.is_confirmed_by_organizer && tournament.is_invite_by_organizer">
+                  <button
+                    class="flex items-center justify-center gap-2 bg-[#D72D36] hover:bg-white text-white hover:text-[#D72D36] border hover:border-[#D72D36] font-medium px-6 py-2 rounded-md transition"
+                    @click="confirmTournament">
+                    Xác nhận lời mời
+                  </button>
+                </div>
               </template>
             </div>
 
@@ -906,7 +913,7 @@ const getNonTeamParticipants = async () => {
       nonTeamParticipants.value = res?.participants || [];
     }
   } catch (error) {
-    toast.error('Đã xảy ra lỗi khi tải danh sách người chơi.');
+    toast.error( error.response?.data?.message || 'Đã xảy ra lỗi khi tải danh sách người chơi.');
   } finally {
     isFetchingNonTeamUsers.value = false;
   }
@@ -994,7 +1001,7 @@ const storeTournamentType = async (payload) => {
     tournament.value.tournament_types = response.tournament_types;
     await getRanks();
   } catch (error) {
-    toast.error('Đã xảy ra lỗi khi lưu thể thức thi đấu.');
+    toast.error(error.response?.data?.message || 'Đã xảy ra lỗi khi lưu thể thức thi đấu.');
   }
 };
 
@@ -1131,7 +1138,7 @@ const updateTournament = async (id, payload) => {
     await TournamnetService.updateTournament(id, formData)
     toast.success('Cập nhật thông tin giải đấu thành công!')
   } catch (error) {
-    toast.error('Đã xảy ra lỗi khi cập nhật thông tin giải đấu.')
+    toast.error(error.response?.data?.message || 'Đã xảy ra lỗi khi cập nhật thông tin giải đấu.')
   }
 }
 
@@ -1209,7 +1216,7 @@ const removeTournament = async () => {
       router.push('/')
     }, 1500)
   } catch (error) {
-    toast.error('Đã xảy ra lỗi khi xoá giải đấu.')
+    toast.error(error.response?.data?.message || 'Đã xảy ra lỗi khi xoá giải đấu.')
   }
 }
 
@@ -1226,7 +1233,7 @@ const removeTournamentType = async () => {
     showFormatType.value = true;
     await detailTournament(id);
   } catch (error) {
-    toast.error('Đã xảy ra lỗi khi xoá thể thức thi đấu.')
+    toast.error(error.response?.data?.message || 'Đã xảy ra lỗi khi xoá thể thức thi đấu.')
   }
 }
 
@@ -1242,7 +1249,7 @@ const reGenerateMatches = async () => {
     showFormatType.value = true;
     await detailTournament(id);
   } catch (error) {
-    toast.error('Đã xảy ra lỗi khi xoá các trận đấu cũ.')
+    toast.error(error.response?.data?.message || 'Đã xảy ra lỗi khi xoá các trận đấu cũ.')
   }
 }
 
@@ -1262,7 +1269,7 @@ const autoAssign = async () => {
     await getTeams();
     toast.success('Đã phân chia đội tự động thành công!')
   } catch (error) {
-    toast.error('Đã xảy ra lỗi khi phân chia đội tự động.')
+    toast.error(error.response?.data?.message || 'Đã xảy ra lỗi khi phân chia đội tự động.')
   }
 }
 
@@ -1303,7 +1310,7 @@ const invite = async (friendId) => {
     await ParticipantService.sendInvitation(id, [friendId]);
     toast.success('Đã gửi lời mời thành công!');
   } catch (error) {
-    toast.error('Đã xảy ra lỗi khi gửi lời mời.');
+    toast.error(error.response?.data?.message || 'Đã xảy ra lỗi khi gửi lời mời.');
   }
 };
 
@@ -1449,6 +1456,22 @@ const joinerTournament = async () => {
     const res = await ParticipantService.joinTournament(tournamentId);
     if (res) {
       toast.success('Tham gia giải đấu thành công, Bạn có thể cần chờ xác nhận trước khi được bổ nhiệm vào 1 đội')
+    }
+  } catch (error) {
+    toast.error(error.response?.data?.message || 'Lỗi khi thực hiện yêu cầu này')
+  }
+}
+
+const confirmTournament = async () => {
+  const participantId =
+    tournament.value?.tournamnet_participants?.find(
+        p => p.user.id === getUser.value.id
+    )?.id ?? null;
+  try {
+    const res = await ParticipantService.acceptInviteTournament(participantId)
+    if (res) {
+      await detailTournament(id)
+      toast.success('Xác nhận tham gia giải đấu thành công')
     }
   } catch (error) {
     toast.error(error.response?.data?.message || 'Lỗi khi thực hiện yêu cầu này')

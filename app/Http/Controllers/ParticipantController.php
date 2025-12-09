@@ -410,12 +410,7 @@ class ParticipantController extends Controller
     public function acceptInvite($participantId)
     {
         $participant = Participant::with('tournament')->findOrFail($participantId);
-        $tournamentWithStaff = $participant->tournament->load('staff');
-        $isOrganizer = $tournamentWithStaff->hasOrganizer(Auth::id());
-        if (!$isOrganizer) {
-            return ResponseHelper::error('Bạn không có quyền xác nhận người tham gia này', 403);
-        }
-        if ($participant->is_confirmed) {
+        if ($participant && $participant->is_confirmed) {
             return ResponseHelper::error('Người tham gia đã được xác nhận', 400);
         }
         $tournament = Tournament::findOrFail($participant->tournament_id);
@@ -598,6 +593,17 @@ class ParticipantController extends Controller
 
         if (!$tournament->hasOrganizer($organizer->id)) {
             return ResponseHelper::error('Bạn không có quyền mời người chơi.', 403);
+        }
+
+        $participantType = $tournament->participant;
+        if ($participantType === 'user') {
+            if ($tournament->participants()->where('is_confirmed', true)->count() >= ($tournament->player_per_team * $tournament->max_team)) {
+                return ResponseHelper::error('Số lượng người tham gia đã đạt giới hạn.', 422);
+            }
+        } else {
+            if ($tournament->participants()->where('is_confirmed', true)->count() >= ($tournament->max_team * $tournament->player_per_team)) {
+                return ResponseHelper::error('Số lượng người tham gia đã đạt giới hạn.', 422);
+            }
         }
 
         $existingUserIds = Participant::where('tournament_id', $tournament->id)
