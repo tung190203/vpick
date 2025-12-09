@@ -12,12 +12,12 @@
                 <div class="text-sm opacity-90 mb-1 text-[32px]">VNDUPR</div>
                 <div class="text-6xl font-bold leading-none mb-4 text-[100px]">{{
                   homeData.user_info?.sports[0]?.scores.vndupr_score
-                  }}
+                }}
                 </div>
                 <div class="text-sm opacity-90 mb-1 text-[32px]">DUPR</div>
                 <div class="text-5xl font-bold leading-none text-[100px]">{{
                   homeData.user_info?.sports[0]?.scores.dupr_score
-                  }}</div>
+                }}</div>
               </div>
 
               <div class="flex flex-col items-end justify-between h-[264px]">
@@ -316,10 +316,37 @@
   </Transition>
 
   <Transition name="modal">
+    <div v-if="isShowingConfirmation" class="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-black bg-opacity-80 backdrop-blur-sm modal-overlay" @click="rescanQrCode">
+      </div>
+
+      <div class="relative bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden modal-body">
+        <div class="p-6 text-center">
+          <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 text-red-600 mb-4">
+            <QrCodeIcon class="w-6 h-6" />
+          </div>
+          <h3 class="text-lg font-bold leading-6 text-gray-900 mb-2">Mã QR đã được quét</h3>
+          <p class="text-sm text-gray-500 mb-4">
+            Tiếp tục chuyển hướng
+          </p>
+          <div class="mt-4 flex justify-end space-x-3">
+            <button @click="rescanQrCode" type="button"
+              class="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:text-sm">
+              Quét lại
+            </button>
+            <button @click="useScannedCode" type="button"
+              class="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 sm:text-sm">
+              Tiếp tục
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </Transition>
+  <Transition name="modal">
     <QRcodeModal v-if="isShowingMyQr" :value="profileLink" @close="closeMyQrCode" />
   </Transition>
 </template>
-
 <script setup>
 import { onMounted, ref, computed, nextTick } from "vue";
 import { useRouter } from 'vue-router'
@@ -359,6 +386,10 @@ const friendList = ref([]);
 const isChoosingQrAction = ref(false);
 const isShowingScanner = ref(false);
 const isShowingMyQr = ref(false);
+// KHAI BÁO BIẾN TRẠNG THÁI MỚI CHO LOGIC QR
+const isShowingConfirmation = ref(false);
+const decodedQrCode = ref('');
+// KẾT THÚC KHAI BÁO MỚI
 let html5QrCode = null;
 const profileLink = computed(() => {
   return getUser.value ? `${BASE_FRONTEND_URL}/profile/${getUser.value.id}` : '';
@@ -407,14 +438,28 @@ const openQrActionChooser = () => {
 // Đóng tất cả các modal liên quan đến QR
 const closeAllQrModals = () => {
   isChoosingQrAction.value = false;
-  closeScanner();
+  closeScanner(); // Sẽ dừng hoàn toàn nếu đang quét
   closeMyQrCode();
 };
 
+// HÀM XỬ LÝ QUÉT THÀNH CÔNG
+const onScanSuccess = (decodedText) => {
+  if (html5QrCode && html5QrCode.isScanning) {
+    // 1. Tạm dừng quét ngay sau khi phát hiện mã
+    html5QrCode.pause(true);
+
+    // 2. Lưu mã và hiển thị modal xác nhận
+    decodedQrCode.value = decodedText;
+    isShowingConfirmation.value = true;
+  }
+};
+// KẾT THÚC HÀM XỬ LÝ QUÉT THÀNH CÔNG
+
+
 // Mở modal quét mã QR
 const openQrScanner = async () => {
-  isChoosingQrAction.value = false; // Đóng modal lựa chọn
-  isShowingScanner.value = true; // Mở modal quét mã
+  isChoosingQrAction.value = false;
+  isShowingScanner.value = true;
   await nextTick();
   try {
     const cameras = await Html5Qrcode.getCameras();
@@ -438,10 +483,7 @@ const openQrScanner = async () => {
           aspectRatio: 1.0
         }
       },
-      (decodedText) => {
-        window.open(decodedText);
-        closeScanner();
-      },
+      onScanSuccess,
       (err) => console.warn("QR error:", err)
     );
   } catch (err) {
@@ -451,8 +493,11 @@ const openQrScanner = async () => {
   }
 };
 
-// Đóng modal quét mã QR
-const closeScanner = async () => {
+// HÀM SỬ DỤNG MÃ (CHUYỂN HƯỚNG) (ĐÃ SỬA)
+const useScannedCode = async () => {
+  const url = decodedQrCode.value;
+
+  // 1. Dừng hoàn toàn QR reader và xóa đối tượng
   try {
     if (html5QrCode && html5QrCode.isScanning) {
       await html5QrCode.stop();
@@ -460,9 +505,53 @@ const closeScanner = async () => {
       html5QrCode = null;
     }
   } catch (e) {
+    console.error("Error stopping scanner on use:", e);
+  }
+
+  // 2. Đóng modal xác nhận và modal quét chính
+  isShowingConfirmation.value = false;
+  isShowingScanner.value = false;
+
+  // 3. Chuyển hướng
+  if (url) {
+    window.open(url, '_self');
+  }
+};
+// KẾT THÚC HÀM SỬ DỤNG MÃ (CHUYỂN HƯỚNG)
+
+// HÀM QUÉT LẠI (ĐÃ SỬA)
+const rescanQrCode = async () => {
+  isShowingConfirmation.value = false;
+  decodedQrCode.value = '';
+
+  // Tiếp tục quét (resume)
+  if (html5QrCode) {
+    try {
+      await html5QrCode.resume();
+    } catch (e) {
+      console.error("Error resuming scanner:", e);
+    }
+  }
+};
+// KẾT THÚC HÀM QUÉT LẠI
+
+
+// Đóng modal quét mã QR (ĐÃ SỬA)
+const closeScanner = async () => {
+  isShowingScanner.value = false;
+  isShowingConfirmation.value = false;
+
+  // Dừng hoàn toàn HTML5 QR Code khi người dùng đóng modal Quét chính
+  try {
+    if (html5QrCode && html5QrCode.isScanning) {
+      await html5QrCode.stop();
+      await html5QrCode.clear();
+      html5QrCode = null;
+    }
+  } catch (e) {
+    // Bắt lỗi khi cố gắng dừng một thứ đã dừng/null
     console.error(e);
   }
-  isShowingScanner.value = false;
 };
 
 // Mở modal hiển thị QR của tôi

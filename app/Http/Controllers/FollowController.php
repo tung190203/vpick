@@ -119,6 +119,10 @@ class FollowController extends Controller
             return null;
         }
 
+        if ($model === User::class && $userId === $id) {
+            return null;
+        }
+
         if (!$model::whereKey($id)->exists()) {
             return null;
         }
