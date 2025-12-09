@@ -38,3 +38,6 @@ Thay đổi theo ngày tháng năm hiện tại để lấy dữ liệu mới nh
 # -----------------------------------------------
 seeders data
 php artisan db:seed 
+
+# -----------------------------------------------
+php artisan app:import-location-into-competition-location
