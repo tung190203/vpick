@@ -21,8 +21,7 @@
               </div>
 
               <div class="flex flex-col items-end justify-between h-[264px]">
-                <QrCodeIcon class="w-12 h-12 mb-6 text-white" />
-
+                <QrCodeIcon class="w-12 h-12 mb-6 text-white cursor-pointer" @click="openQrActionChooser" />
                 <div class="flex items-center space-x-8">
                   <div class="flex flex-col items-center">
                     <div class="relative w-32 h-32">
@@ -180,41 +179,23 @@
         </div>
 
         <div class="rounded-[8px] h-[133px] shadow relative overflow-hidden">
-            <Swiper
-                v-if="homeData.banners && homeData.banners.length > 0"
-                :modules="modules"
-                :slides-per-view="1"
-                :space-between="0"
-                :loop="homeData.banners.length > 1"
-                :pagination="{ clickable: true }"
-                :autoplay="{
-                    delay: 5000,
-                    disableOnInteraction: false,
-                }"
-                class="w-full h-[133px] rounded-[8px]"
-            >
-                <SwiperSlide 
-                    v-for="banner in homeData.banners" 
-                    :key="banner.id"
-                    class="h-full"
-                >
-                    <a 
-                        :href="banner.link" 
-                        :target="banner.link ? '_blank' : '_self'" 
-                        :class="{'cursor-pointer': banner.link}"
-                        class="block w-full h-full"
-                    >
-                        <img 
-                            :src="getBannerUrl(banner.image_url)" 
-                            :alt="banner.title || 'Banner'"
-                            class="w-full h-full object-cover" 
-                        >
-                    </a>
-                </SwiperSlide>
-            </Swiper>
-            <div v-else class="w-full h-full flex items-center justify-center font-semibold text-lg bg-white text-gray-500">
-                Không có banner
-            </div>
+          <Swiper v-if="homeData.banners && homeData.banners.length > 0" :modules="modules" :slides-per-view="1"
+            :space-between="0" :loop="homeData.banners.length > 1" :pagination="{ clickable: true }" :autoplay="{
+              delay: 5000,
+              disableOnInteraction: false,
+            }" class="w-full h-[133px] rounded-[8px]">
+            <SwiperSlide v-for="banner in homeData.banners" :key="banner.id" class="h-full">
+              <a :href="banner.link" :target="banner.link ? '_blank' : '_self'"
+                :class="{ 'cursor-pointer': banner.link }" class="block w-full h-full">
+                <img :src="getBannerUrl(banner.image_url)" :alt="banner.title || 'Banner'"
+                  class="w-full h-full object-cover">
+              </a>
+            </SwiperSlide>
+          </Swiper>
+          <div v-else
+            class="w-full h-full flex items-center justify-center font-semibold text-lg bg-white text-gray-500">
+            Không có banner
+          </div>
         </div>
         <div class="bg-white rounded-[8px] shadow p-5">
           <div class="flex items-center justify-between mb-4">
@@ -244,9 +225,105 @@
       </div>
     </div>
   </div>
+
+  <Transition name="modal">
+    <div v-if="isChoosingQrAction" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-black bg-opacity-80 backdrop-blur-sm modal-overlay" @click="closeAllQrModals">
+      </div>
+
+      <div class="relative bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden modal-body">
+        <div class="bg-gradient-to-r from-red-500 to-red-600 px-6 py-4 flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+              <QrCodeIcon class="w-6 h-6 text-white" />
+            </div>
+            <h2 class="text-xl font-bold text-white">QR & Quét mã</h2>
+          </div>
+          <button @click="closeAllQrModals"
+            class="w-8 h-8 flex items-center justify-center rounded-full bg-white bg-opacity-20 hover:bg-opacity-30 transition-all text-white">
+            <XMarkIcon class="w-6 h-6" />
+          </button>
+        </div>
+
+        <div class="p-6 space-y-4">
+          <div @click="openQrScanner"
+            class="flex items-center p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-red-50 hover:border-red-300 transition-all cursor-pointer">
+            <div class="rounded-full bg-slate-200 p-2">
+              <QrCodeIcon class="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+            </div>
+            <div class="ml-4">
+              <p class="font-semibold text-gray-800">Quét mã QR</p>
+              <p class="text-xs text-gray-500">Quét mã QR của người khác hoặc CLB / giải đấu</p>
+            </div>
+          </div>
+
+          <div @click="openMyQrCode"
+            class="flex items-center p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-red-50 hover:border-red-300 transition-all cursor-pointer">
+            <div class="rounded-full bg-slate-200 p-2">
+              <QrCodeIcon class="w-6 h-6 flex-shrink-0 mt-0.5" />
+            </div>
+            <div class="ml-4">
+              <p class="font-semibold text-gray-800">QR của tôi</p>
+              <p class="text-xs text-gray-500">Hiển thị mã QR của bạn để người khác quét</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </Transition>
+
+  <Transition name="modal">
+    <div v-if="isShowingScanner" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-black bg-opacity-80 backdrop-blur-sm modal-overlay" @click="closeScanner"></div>
+
+      <div class="relative bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden modal-body">
+
+        <div class="bg-gradient-to-r from-red-500 to-red-600 px-6 py-4 flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+              <QrCodeIcon class="w-6 h-6 text-white" />
+            </div>
+            <h2 class="text-xl font-bold text-white">Quét mã QR</h2>
+          </div>
+          <button @click="closeScanner"
+            class="w-8 h-8 flex items-center justify-center rounded-full bg-white bg-opacity-20 hover:bg-opacity-30 transition-all text-white">
+            <XMarkIcon class="w-6 h-6" />
+          </button>
+        </div>
+
+        <div class="p-6">
+          <div class="relative w-full mx-auto mb-6">
+            <div id="qr-reader" class="w-full h-full rounded-2xl overflow-hidden shadow-inner"></div>
+          </div>
+          <div class="text-center space-y-2">
+            <p class="text-gray-700 font-medium">Đưa mã QR vào khung để quét</p>
+            <p class="text-sm text-gray-500">Đảm bảo mã QR rõ ràng và đủ ánh sáng</p>
+          </div>
+        </div>
+
+        <div class="bg-gray-50 px-6 py-4 border-t border-gray-100">
+          <div class="flex items-start space-x-2 text-xs text-gray-600">
+            <svg class="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                clip-rule="evenodd" />
+            </svg>
+            <p>Camera sẽ tự động quét khi phát hiện mã QR hợp lệ</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </Transition>
+
+  <Transition name="modal">
+    <QRcodeModal v-if="isShowingMyQr" :value="profileLink" @close="closeMyQrCode" />
+  </Transition>
 </template>
 
 <script setup>
+import { onMounted, ref, computed, nextTick } from "vue";
+import { useRouter } from 'vue-router'
+import { toast } from "vue3-toastify";
 import {
   MapPinIcon as MapPinIconOutline,
   UserGroupIcon,
@@ -256,47 +333,51 @@ import {
   BellAlertIcon,
   ArrowUpRightIcon,
   PencilIcon,
+  XMarkIcon,
 } from "@heroicons/vue/24/outline";
+import QRcodeModal from '@/components/molecules/QRcodeModal.vue'
 import { MapPinIcon, CalendarDaysIcon } from "@heroicons/vue/24/solid";
-
-// --------------------------- SWIPER IMPORTS START ---------------------------
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import { Autoplay, Pagination } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/pagination';
-
-const modules = [Autoplay, Pagination];
-
-// --------------------------- SWIPER IMPORTS END -----------------------------
-
-import Background from "@/assets/images/dashboard-bg.svg";
-import { onMounted, ref, computed } from "vue";
+import { Html5Qrcode } from "html5-qrcode";
 import * as HomeService from "@/service/home";
 import * as FollowService from "@/service/follow";
-import { useRouter } from 'vue-router'
+import Background from "@/assets/images/dashboard-bg.svg";
+import { useUserStore } from "@/store/auth";
+import { storeToRefs } from "pinia";
 
+const userStore = useUserStore();
+const { getUser } = storeToRefs(userStore);
 const router = useRouter()
-
-const homeData = ref({}); // Khởi tạo là object rỗng
-const friendList = ref([]);
-
-// Thay thế bằng URL cơ sở thực tế của bạn
+const modules = [Autoplay, Pagination];
 const BASE_STORAGE_URL = 'http://localhost:8000/storage/';
+const BASE_FRONTEND_URL = import.meta.env.VITE_FRONTEND_URL;
+const homeData = ref({});
+const friendList = ref([]);
+const isChoosingQrAction = ref(false);
+const isShowingScanner = ref(false);
+const isShowingMyQr = ref(false);
+let html5QrCode = null;
+const profileLink = computed(() => {
+  return getUser.value ? `${BASE_FRONTEND_URL}/profile/${getUser.value.id}` : '';
+});
 
-const getBannerUrl = (url) => {
-    // Kiểm tra nếu url là đường dẫn tuyệt đối
-    if (url && (url.startsWith('http') || url.startsWith('https'))) {
-        return url;
-    }
-    // Xử lý đường dẫn tương đối
-    return url ? BASE_STORAGE_URL + url : '';
-};
+const features = [
+  { label: "CLB", icon: UserGroupIcon },
+  { label: "Tạo trận", icon: PlusCircleIcon },
+  { label: "Tìm sân", icon: MapPinIconOutline },
+  { label: "Xếp hạng", icon: ChartBarIcon },
+];
+const getPerformanceLevel = computed(() => {
+  const performance = homeData.value?.user_info?.performance || 0;
+  if (performance >= 76) return 'Xuất <br/> sắc';
+  if (performance >= 51) return 'Tốt';
+  if (performance >= 26) return 'Trung <br/> bình';
 
-const getRandomColor = (seed) => {
-  const colors = ['#E57373', '#64B5F6', '#81C784', '#FFD54F', '#BA68C8', '#4DD0E1'];
-  return colors[seed % colors.length];
-};
-
+  return 'Kém';
+});
 const getHomeData = async () => {
   try {
     const response = await HomeService.getHomeData({
@@ -318,20 +399,96 @@ const getFriendLists = async () => {
   }
 };
 
-const getPerformanceLevel = computed(() => {
-  // Đảm bảo homeData.value và user_info tồn tại
-  const performance = homeData.value?.user_info?.performance || 0;
+// Mở modal lựa chọn hành động QR
+const openQrActionChooser = () => {
+  isChoosingQrAction.value = true;
+};
 
-  if (performance >= 76) return 'Xuất <br/> sắc';
-  if (performance >= 51) return 'Tốt';
-  if (performance >= 26) return 'Trung <br/> bình';
-  return 'Kém';
-});
+// Đóng tất cả các modal liên quan đến QR
+const closeAllQrModals = () => {
+  isChoosingQrAction.value = false;
+  closeScanner();
+  closeMyQrCode();
+};
 
-onMounted(async () => {
-  await getHomeData(); // Gọi hàm không cần truyền params nữa
-  await getFriendLists();
-});
+// Mở modal quét mã QR
+const openQrScanner = async () => {
+  isChoosingQrAction.value = false; // Đóng modal lựa chọn
+  isShowingScanner.value = true; // Mở modal quét mã
+  await nextTick();
+  try {
+    const cameras = await Html5Qrcode.getCameras();
+    if (!cameras.length) {
+      toast.error("Không tìm thấy camera trên thiết bị");
+      closeScanner();
+      return;
+    }
+
+    const cameraId = cameras[0].id;
+
+    html5QrCode = new Html5Qrcode("qr-reader");
+
+    await html5QrCode.start(
+      cameraId,
+      {
+        fps: 60,
+        qrbox: 300,
+        videoConstraints: {
+          facingMode: "environment",
+          aspectRatio: 1.0
+        }
+      },
+      (decodedText) => {
+        window.open(decodedText);
+        closeScanner();
+      },
+      (err) => console.warn("QR error:", err)
+    );
+  } catch (err) {
+    console.error("Camera error:", err);
+    toast.error("Không thể khởi động camera: " + err.message);
+    closeScanner();
+  }
+};
+
+// Đóng modal quét mã QR
+const closeScanner = async () => {
+  try {
+    if (html5QrCode && html5QrCode.isScanning) {
+      await html5QrCode.stop();
+      await html5QrCode.clear();
+      html5QrCode = null;
+    }
+  } catch (e) {
+    console.error(e);
+  }
+  isShowingScanner.value = false;
+};
+
+// Mở modal hiển thị QR của tôi
+const openMyQrCode = () => {
+  isChoosingQrAction.value = false; // Đóng modal lựa chọn
+  isShowingMyQr.value = true; // Mở modal QR của tôi
+  // Component QRcodeModal sẽ được hiển thị
+};
+
+// Đóng modal hiển thị QR của tôi
+const closeMyQrCode = () => {
+  isShowingMyQr.value = false;
+};
+
+
+const getBannerUrl = (url) => {
+  if (url && (url.startsWith('http') || url.startsWith('https'))) {
+    return url;
+  }
+  return url ? BASE_STORAGE_URL + url : '';
+};
+
+const getRandomColor = (seed) => {
+  const colors = ['#E57373', '#64B5F6', '#81C784', '#FFD54F', '#BA68C8', '#4DD0E1'];
+  return colors[seed % colors.length];
+};
 
 function formatTime(datetime) {
   const date = new Date(datetime);
@@ -340,7 +497,7 @@ function formatTime(datetime) {
   const ampm = hours >= 12 ? 'PM' : 'AM';
 
   hours = hours % 12;
-  hours = hours ? hours : 12; // 0 giờ thành 12
+  hours = hours ? hours : 12;
 
   const minutesStr = minutes < 10 ? '0' + minutes : minutes;
 
@@ -357,13 +514,6 @@ function formatDate(datetime) {
   return `${dayName}, ${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}`;
 }
 
-const features = [
-  { label: "CLB", icon: UserGroupIcon },
-  { label: "Tạo trận", icon: PlusCircleIcon },
-  { label: "Tìm sân", icon: MapPinIconOutline },
-  { label: "Xếp hạng", icon: ChartBarIcon },
-];
-
 function goToMiniTournamentDetail(id) {
   router.push({ name: 'mini-tournament-detail', params: { id } })
 }
@@ -371,6 +521,10 @@ function goToMiniTournamentDetail(id) {
 function goToTournamentDetail(id) {
   router.push({ name: 'tournament-detail', params: { id } })
 }
+onMounted(async () => {
+  await getHomeData();
+  await getFriendLists();
+});
 
 </script>
 
@@ -380,9 +534,58 @@ function goToTournamentDetail(id) {
   background-position: center;
 }
 
-/* Tùy chỉnh cho pagination dots của Swiper */
-/* Đảm bảo style này áp dụng đúng nếu Swiper inject các dots */
 .swiper-pagination-bullet-active {
-    background-color: white !important; /* Ví dụ: đổi màu dots khi active */
+  background-color: white !important;
+}
+
+#qr-reader video,
+#qr-reader canvas {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+/* ------------------------------------- */
+/* CSS TRANSITIONS CHO MODAL */
+/* ------------------------------------- */
+
+/* 1. Transition cho toàn bộ Modal (Bao gồm lớp phủ và nội dung) */
+/* Lớp phủ (modal-overlay) sẽ mờ dần, nội dung (modal-body) sẽ mờ và scale */
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+
+/* 2. Transition riêng cho lớp phủ (overlay) */
+.modal-enter-active .modal-overlay,
+.modal-leave-active .modal-overlay {
+  transition: opacity 0.3s ease;
+}
+
+.modal-enter-from .modal-overlay,
+.modal-leave-to .modal-overlay {
+  opacity: 0;
+}
+
+/* 3. Transition riêng cho phần nội dung chính của Modal (body) */
+.modal-enter-active .modal-body {
+  /* Hiệu ứng nảy nhẹ khi mở (scale) */
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.modal-leave-active .modal-body {
+  /* Hiệu ứng đóng nhanh hơn */
+  transition: all 0.2s ease-in;
+}
+
+.modal-enter-from .modal-body,
+.modal-leave-to .modal-body {
+  opacity: 0;
+  transform: scale(0.95);
 }
 </style>

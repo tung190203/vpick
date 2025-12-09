@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Notifications\MiniTournamentInvitationNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class MiniTournamentController extends Controller
 {
@@ -57,7 +58,7 @@ class MiniTournamentController extends Controller
         }
         $miniTournament->loadFullRelations();
 
-        return ResponseHelper::success(new MiniTournamentResource($miniTournament), 'Mini Tournament created successfully', 201);
+        return ResponseHelper::success(new MiniTournamentResource($miniTournament), 'Tạo kèo đấu thành công', 201);
     }
     /**
      * danh sách mini tournament
@@ -69,6 +70,7 @@ class MiniTournamentController extends Controller
             'status' => 'sometimes|in:upcoming,ongoing,completed,cancelled',
             'per_page' => 'sometimes|integer|min:1|max:200',
         ]);
+        $nowVN = Carbon::now('Asia/Ho_Chi_Minh')->toDateString();
         $query = MiniTournament::withFullRelations();
 
         if ($request->has('sport_id')) {
@@ -84,6 +86,7 @@ class MiniTournamentController extends Controller
             $q->where('is_private', 0)
                 ->orWhereHas('participants', fn($sub) => $sub->where('user_id', $userId));
         });
+        $query->whereDate('starts_at', '>=', $nowVN);
         $miniTournaments = $query->paginate($validated['per_page'] ?? MiniTournament::PER_PAGE);
 
         $data = [
@@ -97,7 +100,7 @@ class MiniTournamentController extends Controller
             'total' => $miniTournaments->total(),
         ];
 
-        return ResponseHelper::success($data, 'Mini Tournaments retrieved successfully', 200, $meta);
+        return ResponseHelper::success($data, 'Lấy danh sách kèo đấu thành công', 200, $meta);
     }
     /**
      * chi tiết mini tournament
@@ -106,7 +109,7 @@ class MiniTournamentController extends Controller
     {
         $miniTournament = MiniTournament::withFullRelations()->findOrFail($id);
 
-        return ResponseHelper::success(new MiniTournamentResource($miniTournament), 'Mini Tournament retrieved successfully');
+        return ResponseHelper::success(new MiniTournamentResource($miniTournament), 'Lấy thông tin chi tiết kèo đấu thành công');
     }
     /**
      * cập nhật mini tournament
@@ -140,6 +143,6 @@ class MiniTournamentController extends Controller
         }
         $miniTournament->loadFullRelations();
 
-        return ResponseHelper::success(new MiniTournamentResource($miniTournament), 'Mini Tournament updated successfully');
+        return ResponseHelper::success(new MiniTournamentResource($miniTournament), 'Cập nhật thông tin kèo đấu thành công');
     }
 }
