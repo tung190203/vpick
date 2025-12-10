@@ -263,15 +263,23 @@ class HomeController extends Controller
             ->limit($perPage)
             ->get();
 
-        // Rank
-        $currentRank = 0;
-        $prevScore = null;
-        $leaderboard->transform(function ($user) use (&$currentRank, &$prevScore) {
-            if ($prevScore !== $user->vndupr_score) {
-                $currentRank++;
-                $prevScore = $user->vndupr_score;
-            }
-            $user->rank = $currentRank;
+        // Tính rank ĐÚNG - dựa trên toàn bộ database
+        $leaderboard->transform(function ($user) use ($sportId) {
+            $userScore = $user->vndupr_score ?? 0;
+            
+            $rank = User::query()
+                ->addSelect([
+                    'vndupr_score' => UserSportScore::query()
+                        ->select(DB::raw('COALESCE(MAX(score_value), 0)'))
+                        ->join('user_sport', 'user_sport_scores.user_sport_id', '=', 'user_sport.id')
+                        ->whereColumn('user_sport.user_id', 'users.id')
+                        ->where('user_sport.sport_id', $sportId)
+                        ->where('user_sport_scores.score_type', 'vndupr_score')
+                ])
+                ->havingRaw('vndupr_score > ?', [$userScore])
+                ->count() + 1;
+            
+            $user->rank = $rank;
             return $user;
         });
 
