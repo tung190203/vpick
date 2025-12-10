@@ -49,6 +49,7 @@
           :class="{
             'ring-2 ring-red-500': player.isLive,
             'bg-amber-500 text-white': player.isThirdPlace,
+            'opacity-50': isDragging && draggedTeam?.matchId === player.matchId,
           }"
           @click="handleMatchClick(player.matchId)"
         >
@@ -75,7 +76,19 @@
           <div class="px-4 space-y-1">
 
             <!-- HOME TEAM -->
-            <div class="space-y-1">
+            <div 
+              class="space-y-1 rounded transition-colors"
+              :class="{
+                'bg-blue-100': isDropTarget(player.matchId, 'home'),
+                'cursor-move': player.roundNumber === 1 && !player.isLive
+              }"
+              :draggable="player.roundNumber === 1 && !player.isLive"
+              @dragstart="handleDragStart($event, player, 'home')"
+              @dragend="handleDragEnd"
+              @dragover.prevent="handleDragOver($event, player.matchId, 'home')"
+              @dragleave="handleDragLeave"
+              @drop="handleDrop($event, player.matchId, 'home')"
+            >
               <div class="flex justify-between items-center">
                 <div class="flex items-center gap-2">
                   <img :src="player.logo || placeholderFor(player.name)" class="w-8 h-8 rounded-full" />
@@ -90,7 +103,19 @@
             </div>
 
             <!-- AWAY TEAM -->
-            <div class="space-y-1">
+            <div 
+              class="space-y-1 rounded transition-colors"
+              :class="{
+                'bg-blue-100': isDropTarget(player.matchId, 'away'),
+                'cursor-move': player.roundNumber === 1 && !player.isLive
+              }"
+              :draggable="player.roundNumber === 1 && !player.isLive"
+              @dragstart="handleDragStart($event, player, 'away')"
+              @dragend="handleDragEnd"
+              @dragover.prevent="handleDragOver($event, player.matchId, 'away')"
+              @dragleave="handleDragLeave"
+              @drop="handleDrop($event, player.matchId, 'away')"
+            >
               <div class="flex justify-between items-center">
                 <div class="flex items-center gap-2">
                   <img :src="player.opponent.logo || placeholderFor(player.opponent.name)" class="w-8 h-8 rounded-full" />
@@ -124,9 +149,13 @@ const props = defineProps({
   bracket: { type: Object, required: true },
   tournament: { type: Object, required: true },
 });
-
+const emit = defineEmits(['refresh']);
 const showCreateMatchModal = ref(false);
 const detailData = ref({});
+const isDragging = ref(false);
+const draggedTeam = ref(null);
+const dropTargetMatch = ref(null);
+const dropTargetPosition = ref(null);
 
 const totalRounds = computed(() => props.bracket.bracket.length);
 
@@ -134,7 +163,7 @@ const totalRounds = computed(() => props.bracket.bracket.length);
    GET DETAIL MATCH
 =========================== */
 const handleMatchClick = async (matchId) => {
-  if (!matchId) return;
+  if (!matchId || isDragging.value) return;
   
   try {
     const res = await MatchesService.detailMatches(matchId);
@@ -148,10 +177,96 @@ const handleMatchClick = async (matchId) => {
 };
 
 /* ===========================
+   DRAG & DROP HANDLERS
+=========================== */
+const handleDragStart = (event, player, position) => {
+  // Chỉ cho phép drag ở round 1 và khi trận chưa bắt đầu
+  if (player.roundNumber !== 1 || player.isLive) {
+    event.preventDefault();
+    return;
+  }
+
+  isDragging.value = true;
+  draggedTeam.value = {
+    matchId: player.matchId,
+    position: position, // 'home' hoặc 'away'
+    teamId: position === 'home' ? player.id : player.opponent.id,
+    teamName: position === 'home' ? player.name : player.opponent.name,
+  };
+
+  event.dataTransfer.effectAllowed = 'move';
+  event.dataTransfer.setData('text/plain', JSON.stringify(draggedTeam.value));
+};
+
+const handleDragEnd = () => {
+  isDragging.value = false;
+  draggedTeam.value = null;
+  dropTargetMatch.value = null;
+  dropTargetPosition.value = null;
+};
+
+const handleDragOver = (event, matchId, position) => {
+  if (!draggedTeam.value) return;
+  
+  // Không cho drop vào chính vị trí đang drag
+  if (draggedTeam.value.matchId === matchId && draggedTeam.value.position === position) {
+    event.dataTransfer.dropEffect = 'none';
+    return;
+  }
+
+  event.dataTransfer.dropEffect = 'move';
+  dropTargetMatch.value = matchId;
+  dropTargetPosition.value = position;
+};
+
+const handleDragLeave = () => {
+  dropTargetMatch.value = null;
+  dropTargetPosition.value = null;
+};
+
+const handleDrop = async (event, targetMatchId, targetPosition) => {
+  event.preventDefault();
+  
+  if (!draggedTeam.value) return;
+
+  // Không cho swap với chính mình
+  if (draggedTeam.value.matchId === targetMatchId && draggedTeam.value.position === targetPosition) {
+    handleDragEnd();
+    return;
+  }
+
+  try {
+    // Gọi API swap teams
+    const payload = {};
+    if (targetPosition === 'home') {
+      payload.home_team_id = draggedTeam.value.teamId;
+    } else {
+      payload.away_team_id = draggedTeam.value.teamId;
+    }
+
+    const res = await MatchesService.swapTeams(targetMatchId, payload);
+    
+    if (res) {
+      toast.success('Hoán đổi đội thành công!');
+      // Refresh bracket data
+      emit('refresh');
+    }
+  } catch (error) {
+    toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi hoán đổi đội');
+  } finally {
+    handleDragEnd();
+  }
+};
+
+const isDropTarget = (matchId, position) => {
+  return dropTargetMatch.value === matchId && dropTargetPosition.value === position;
+};
+
+/* ===========================
    FORMAT ROUNDS FOR BRACKET
 =========================== */
 const rounds = computed(() => {
-  return props.bracket.bracket.map((round) => ({
+  return props.bracket.bracket.map((round, roundIndex) => ({
     games: round.matches.map((match) => ({
       player1: {
         id: match.home_team.id,
@@ -166,6 +281,7 @@ const rounds = computed(() => {
         time: match.legs[0].scheduled_at,
         isPlayer1: true,
         matchId: match.match_id,
+        roundNumber: roundIndex + 1,
         opponent: {
           id: match.away_team.id,
           name: match.away_team.name,

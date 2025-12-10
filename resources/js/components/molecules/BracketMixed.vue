@@ -62,9 +62,11 @@
                             <div 
                                 v-for="leg in match.legs" 
                                 :key="leg.id" 
-                                :class="matchCardWrapperClass(leg.status)"
-                                class="match-card bg-[#dcdee6] rounded-lg mb-4 w-64 flex flex-col cursor-pointer hover:shadow-lg transition-all"
-                                @click="handleMatchClick(match.match_id)"
+                                :class="[
+                                    matchCardWrapperClass(leg.status),
+                                    { 'opacity-50': isDragging && draggedTeam?.matchId === match.match_id }
+                                ]"
+                                class="match-card bg-[#dcdee6] rounded-lg mb-4 w-64 flex flex-col transition-all"
                             >
                                 <div :class="matchHeaderContentClass(leg.status)"
                                     class="flex justify-between items-center text-xs font-medium text-[#838799] px-4 py-2 bg-[#dcdee6] rounded-tl-lg rounded-tr-lg">
@@ -81,30 +83,60 @@
                                     </div>
                                 </div>
 
-                                <div
-                                    class="flex flex-col gap-3 rounded-lg shadow-md border border-[#dcdee6] bg-[#EDEEF2] px-4 py-3">
-                                    <div class="flex justify-between items-center">
-                                        <div class="flex items-center gap-2">
+                                <div class="flex flex-col gap-3 rounded-lg shadow-md border border-[#dcdee6] bg-[#EDEEF2] px-4 py-3">
+                                    
+                                    <!-- HOME TEAM - DRAGGABLE -->
+                                    <div 
+                                        class="flex justify-between items-center px-2 -mx-2 rounded transition-all"
+                                        :class="{
+                                            'bg-blue-100 ring-2 ring-blue-400': isDropTarget(match.match_id, 'home'),
+                                            'cursor-move hover:bg-gray-100': canDragPoolStage(leg.status),
+                                            'cursor-pointer': !canDragPoolStage(leg.status)
+                                        }"
+                                        :draggable="canDragPoolStage(leg.status) ? 'true' : 'false'"
+                                        @dragstart="handleDragStart($event, match, 'home', leg.status)"
+                                        @dragend="handleDragEnd"
+                                        @dragover.prevent="handleDragOver($event, match.match_id, 'home')"
+                                        @dragleave="handleDragLeave($event)"
+                                        @drop.prevent.stop="handleDrop($event, match.match_id, 'home')"
+                                        @click="!isDragging ? handleMatchClick(match.match_id) : null"
+                                    >
+                                        <div class="flex items-center gap-2 pointer-events-none">
                                             <img :src="match.home_team.logo || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(match.home_team.name)}`"
                                                 class="w-8 h-8 rounded-full" :alt="match.home_team.name" />
                                             <p class="text-sm font-semibold text-[#3E414C]">
                                                 {{ match.home_team.name }}
                                             </p>
                                         </div>
-                                        <span :class="scoreClass(leg.status)" class="font-bold text-lg">
+                                        <span :class="scoreClass(leg.status)" class="font-bold text-lg pointer-events-none">
                                             {{ leg.home_score !== null ? leg.home_score : "-" }}
                                         </span>
                                     </div>
 
-                                    <div class="flex justify-between items-center">
-                                        <div class="flex items-center gap-2">
+                                    <!-- AWAY TEAM - DRAGGABLE -->
+                                    <div 
+                                        class="flex justify-between items-center px-2 -mx-2 rounded transition-all"
+                                        :class="{
+                                            'bg-blue-100 ring-2 ring-blue-400': isDropTarget(match.match_id, 'away'),
+                                            'cursor-move hover:bg-gray-100': canDragPoolStage(leg.status),
+                                            'cursor-pointer': !canDragPoolStage(leg.status)
+                                        }"
+                                        :draggable="canDragPoolStage(leg.status) ? 'true' : 'false'"
+                                        @dragstart="handleDragStart($event, match, 'away', leg.status)"
+                                        @dragend="handleDragEnd"
+                                        @dragover.prevent="handleDragOver($event, match.match_id, 'away')"
+                                        @dragleave="handleDragLeave($event)"
+                                        @drop.prevent.stop="handleDrop($event, match.match_id, 'away')"
+                                        @click="!isDragging ? handleMatchClick(match.match_id) : null"
+                                    >
+                                        <div class="flex items-center gap-2 pointer-events-none">
                                             <img :src="match.away_team.logo || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(match.away_team.name)}`"
                                                 class="w-8 h-8 rounded-full" :alt="match.away_team.name" />
                                             <p class="text-sm font-semibold text-[#3E414C]">
                                                 {{ match.away_team.name }}
                                             </p>
                                         </div>
-                                        <span :class="scoreClass(leg.status)" class="font-bold text-lg">
+                                        <span :class="scoreClass(leg.status)" class="font-bold text-lg pointer-events-none">
                                             {{ leg.away_score !== null ? leg.away_score : "-" }}
                                         </span>
                                     </div>
@@ -219,15 +251,119 @@ const props = defineProps({
         required: true,
     },
 });
+const emit = defineEmits(['refresh']);
 
 const showCreateMatchModal = ref(false);
 const detailData = ref({});
+const isDragging = ref(false);
+const draggedTeam = ref(null);
+const dropTargetMatch = ref(null);
+const dropTargetPosition = ref(null);
+
+/* ===========================
+   DRAG & DROP HANDLERS
+=========================== */
+const canDragPoolStage = (legStatus) => {
+    // Chỉ cho phép drag khi leg chưa bắt đầu
+    return !['in_progress', 'completed', 'finished'].includes(legStatus);
+};
+
+const handleDragStart = (event, match, position, legStatus) => {
+    if (!canDragPoolStage(legStatus)) {
+        event.preventDefault();
+        return;
+    }
+
+    isDragging.value = true;
+    const teamData = position === 'home' ? match.home_team : match.away_team;
+    
+    draggedTeam.value = {
+        matchId: match.match_id,
+        position: position,
+        teamId: teamData.id,
+        teamName: teamData.name,
+    };
+
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', JSON.stringify(draggedTeam.value));
+};
+
+const handleDragEnd = () => {
+    isDragging.value = false;
+    draggedTeam.value = null;
+    dropTargetMatch.value = null;
+    dropTargetPosition.value = null;
+};
+
+const handleDragOver = (event, matchId, position) => {
+    if (!draggedTeam.value) return;
+    
+    // Không cho drop vào chính vị trí đang drag
+    if (draggedTeam.value.matchId === matchId && draggedTeam.value.position === position) {
+        event.dataTransfer.dropEffect = 'none';
+        return;
+    }
+
+    event.dataTransfer.dropEffect = 'move';
+    dropTargetMatch.value = matchId;
+    dropTargetPosition.value = position;
+};
+
+const handleDragLeave = (event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = event.clientX;
+    const y = event.clientY;
+    
+    if (x < rect.left || x >= rect.right || y < rect.top || y >= rect.bottom) {
+        dropTargetMatch.value = null;
+        dropTargetPosition.value = null;
+    }
+};
+
+const handleDrop = async (event, targetMatchId, targetPosition) => {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    if (!draggedTeam.value) return;
+
+    // Không cho swap với chính mình
+    if (draggedTeam.value.matchId === targetMatchId && draggedTeam.value.position === targetPosition) {
+        handleDragEnd();
+        return;
+    }
+
+    try {
+        // Gọi API swap teams
+        const payload = {};
+        if (targetPosition === 'home') {
+            payload.home_team_id = draggedTeam.value.teamId;
+        } else {
+            payload.away_team_id = draggedTeam.value.teamId;
+        }
+
+        const res = await MatchesService.swapTeams(targetMatchId, payload);
+        
+        if (res) {
+            toast.success('Hoán đổi đội thành công!');
+            emit('refresh');
+        }
+    } catch (error) {
+        const errorMsg = error.response?.data?.message || 'Có lỗi xảy ra khi hoán đổi đội';
+        toast.error(errorMsg);
+    } finally {
+        handleDragEnd();
+    }
+};
+
+const isDropTarget = (matchId, position) => {
+    return dropTargetMatch.value === matchId && dropTargetPosition.value === position;
+};
 
 /* ===========================
    GET DETAIL MATCH
 =========================== */
 const handleMatchClick = async (matchId) => {
-    if (!matchId) return;
+    if (!matchId || isDragging.value) return;
     
     try {
         const res = await MatchesService.detailMatches(matchId);
@@ -240,6 +376,9 @@ const handleMatchClick = async (matchId) => {
     }
 };
 
+/* ===========================
+   COMPUTED PROPERTIES
+=========================== */
 const poolStages = computed(() => props.bracket.pool_stage || []);
 const knockoutStages = computed(() => props.bracket.knockout_stage || []);
 
@@ -249,6 +388,9 @@ const allRoundNames = computed(() => {
     return [...poolNames, ...knockoutNames];
 });
 
+/* ===========================
+   STYLING HELPERS
+=========================== */
 const roundHeaderClass = (roundName, isPoolStage) => {
     const keys = allRoundNames.value;
     const index = keys.indexOf(roundName);
@@ -276,7 +418,7 @@ const matchHeaderContentClass = (status) => {
         return 'text-red-500';
     }
     return 'text-[#838799]';
-}
+};
 
 const scoreClass = (status) => {
     if (status === "in_progress") {
@@ -285,6 +427,9 @@ const scoreClass = (status) => {
     return "text-[#3E414C]";
 };
 
+/* ===========================
+   UTILITY FUNCTIONS
+=========================== */
 const getTeamInitials = (name) => {
     if (!name) return "??";
     const parts = name.split(" ");
@@ -307,7 +452,7 @@ const formatTime = (scheduledAt) => {
 };
 </script>
 
-<style>
+<style scoped>
 .custom-scrollbar-hide::-webkit-scrollbar {
     display: none;
 }

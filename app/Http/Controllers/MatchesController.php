@@ -488,7 +488,7 @@ class MatchesController extends Controller
             ->first();
 
         if (!$otherMatch) {
-            return ResponseHelper::error('Không tìm thấy trận chứa đội cần swap.', 404);
+            return ResponseHelper::error('Có lỗi xảy ra khi đổi đội.', 404);
         }
 
         DB::transaction(function () use ($match, $otherMatch, $validated, $targetTeamId) {

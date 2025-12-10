@@ -5,13 +5,13 @@
             <h1 class="text-lg font-semibold">Sơ đồ thi đấu</h1>
         </div>
         <template v-if="bracket && bracket.format == 1">
-            <BracketMixed :bracket="bracket" :tournament="tournament" :rank="ranks" />
+            <BracketMixed :bracket="bracket" :tournament="tournament" :rank="ranks" @refresh="loadBracketData" />
         </template>
         <template v-else-if="bracket && bracket.format == 2">
-            <BracketElimination :bracket="bracket" :tournament="tournament" :rank="ranks" />
+            <BracketElimination :bracket="bracket" :tournament="tournament" :rank="ranks" @refresh="loadBracketData" />
         </template>
         <template v-else>
-            <BracketRounded :bracket="bracket" :tournament="tournament" :rank="ranks" />
+            <BracketRounded :bracket="bracket" :tournament="tournament" :rank="ranks" @refresh="loadBracketData" />
         </template>
     </div>
 </template>
@@ -51,6 +51,13 @@ const getBracket = async (tournamentTypeId) => {
         bracket.value = response
     } catch (error) {
         toast.error(error.response?.data?.message || 'Lấy sơ đồ thi đấu thất bại');
+    }
+}
+
+const loadBracketData = async () => {
+    if (tournament.value && tournament.value.tournament_types) {
+        await getBracket(tournament.value.tournament_types[0]?.id)
+        await getRanks()
     }
 }
 

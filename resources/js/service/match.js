@@ -14,3 +14,7 @@ export const updateMatches = async(match_id, data) => {
 export const confirmResults = async(match_id) => {
     return axiosInstance.post(`${matchEndpoint}/confirm-result/${match_id}`).then((response) => response.data.data);
 }
+
+export const swapTeams = async(match_id, payload) => {
+    return axiosInstance.post(`${matchEndpoint}/${match_id}/swap`, payload).then((response) => response.data.data);
+}
