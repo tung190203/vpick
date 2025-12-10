@@ -15,6 +15,7 @@ class ListMiniTournamentResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $participants = $this->relationLoaded('participants') ? $this->participants : collect();
         return [
             'id' => $this->id,
             'poster' => $this->poster,
@@ -30,6 +31,14 @@ class ListMiniTournamentResource extends JsonResource
                     ->groupBy(fn($staff) => MiniTournamentStaff::getRoleText( $staff->pivot->role))
                     ->map(fn($group) => MiniTournamentStaffResource::collection($group));
             }),
+            'participants' => [
+                'users' => MiniParticipantResource::collection(
+                    $participants->where('type', 'user')
+                ),
+                'teams' => MiniParticipantResource::collection(
+                    $participants->where('type', 'team')
+                ),
+            ],
             'all_users' => UserListResource::collection($this->all_users ?? collect()),
         ];
     }

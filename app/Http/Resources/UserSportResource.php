@@ -11,16 +11,12 @@ class UserSportResource extends JsonResource
     public function toArray(Request $request): array
     {
         $types = ['personal_score', 'dupr_score', 'vndupr_score'];
-
-        $scores = $this->whenLoaded('scores') ?? collect(); // Lấy tất cả scores
+        $scores = $this->relationLoaded('scores') ? $this->scores : collect();
         
         $formattedScores = [];
         foreach ($types as $type) {
-            $scoreValue = $scores->where('score_type', $type)
-                                 ->sortByDesc('created_at') // **Sắp xếp để lấy điểm mới nhất**
-                                 ->first()
-                                 ->score_value ?? 0;
-            
+            $latestScore = $scores->where('score_type', $type)->sortByDesc('created_at')->first();
+            $scoreValue = $latestScore ? $latestScore->score_value : 0;
             $formattedScores[$type] = number_format($scoreValue, 3);
         }
 
