@@ -12,5 +12,5 @@ export const updateMatches = async(match_id, data) => {
 }
 
 export const confirmResults = async(match_id) => {
-    return axiosInstance.post(`${matchEndpoint}/confirm-results/${match_id}`).then((response) => response.data.data);
+    return axiosInstance.post(`${matchEndpoint}/confirm-result/${match_id}`).then((response) => response.data.data);
 }
