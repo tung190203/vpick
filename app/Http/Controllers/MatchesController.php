@@ -703,7 +703,7 @@ class MatchesController extends Controller
                 ],
             ];
 
-            $W = 0.2;
+            $W = 0.6;
 
             foreach ($teams as $teamId => $data) {
                 $team = $data['team'];
