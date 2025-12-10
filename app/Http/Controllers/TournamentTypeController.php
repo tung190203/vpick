@@ -483,6 +483,7 @@ class TournamentTypeController extends Controller
         $groupObjects = collect();
     
         // === PHASE 1: Tạo vòng bảng ===
+        $advancingByRank = collect(); // Thu thập theo hạng
         foreach ($chunks as $index => $chunk) {
             $chunk = $chunk->values();
             $count = $chunk->count();
@@ -500,15 +501,16 @@ class TournamentTypeController extends Controller
                     'name_of_match' => "Trận đấu số {$matchNumber}",
                 ]);
                 
-                // Đội này sẽ tự động đi tiếp
-                for ($k = 0; $k < min($numAdvancing, 1); $k++) {
-                    $advancing->push((object)[
-                        'team_id' => $chunk[0]->id,
-                        '_bye_match' => $byeMatch,
-                        '_group_id' => null,
-                        '_rank' => 1,
-                    ]);
+                if (!isset($advancingByRank[0])) {
+                    $advancingByRank[0] = collect();
                 }
+                $advancingByRank[0]->push((object)[
+                    'team_id' => $chunk[0]->id,
+                    '_bye_match' => $byeMatch,
+                    '_group_id' => null,
+                    '_group_index' => $index,
+                    '_rank' => 1,
+                ]);
                 continue;
             }
     
@@ -539,13 +541,52 @@ class TournamentTypeController extends Controller
                 }
             }
     
-            // Tạo placeholder cho các đội sẽ đi tiếp từ bảng này
+            // Thu thập placeholder theo hạng
             for ($k = 0; $k < min($numAdvancing, $count); $k++) {
-                $advancing->push((object)[
-                    'team_id' => null, // Chưa biết team nào
+                if (!isset($advancingByRank[$k])) {
+                    $advancingByRank[$k] = collect();
+                }
+                
+                $advancingByRank[$k]->push((object)[
+                    'team_id' => null,
                     '_from_group' => $group->id,
-                    '_rank' => $k + 1, // Hạng 1, 2, 3...
+                    '_group_index' => $index,
+                    '_rank' => $k + 1,
                 ]);
+            }
+        }
+    
+        // ✅ Cross-matching pattern: Nhất A vs Nhì B, Nhất B vs Nhì A
+        $advancing = collect();
+        
+        // Lấy tất cả nhất bảng (rank 1)
+        $firstPlaceTeams = $advancingByRank->get(0, collect());
+        // Lấy tất cả nhì bảng (rank 2)
+        $secondPlaceTeams = $advancingByRank->get(1, collect());
+        
+        // Xếp theo pattern: Nhất A, Nhì B, Nhất B, Nhì A, Nhất C, Nhì D, Nhất D, Nhì C...
+        $numFirstPlace = $firstPlaceTeams->count();
+        $numSecondPlace = $secondPlaceTeams->count();
+        
+        for ($i = 0; $i < max($numFirstPlace, $numSecondPlace); $i++) {
+            // Thêm nhất bảng thứ i
+            if ($i < $numFirstPlace) {
+                $advancing->push($firstPlaceTeams->get($i));
+            }
+            
+            // Thêm nhì bảng đối diện (từ cuối lên)
+            $oppositeIndex = $numSecondPlace - 1 - $i;
+            if ($oppositeIndex >= 0 && $oppositeIndex < $numSecondPlace) {
+                $advancing->push($secondPlaceTeams->get($oppositeIndex));
+            }
+        }
+        
+        // Xử lý các hạng còn lại (nếu có hạng 3, 4...)
+        foreach ($advancingByRank as $rank => $teamsAtRank) {
+            if ($rank < 2) continue; // Đã xử lý rank 0, 1
+            
+            foreach ($teamsAtRank as $team) {
+                $advancing->push($team);
             }
         }
         $knockoutRounds = $this->generateKnockoutStage($type, $advancing, $hasThirdPlace, $advancedToNext, $numLegs, $matchNumber);
@@ -1128,6 +1169,7 @@ class TournamentTypeController extends Controller
                             })->values(),
                         ];
                     })->values(),
+                    'standings' => $this->calculateGroupStandings($groupMatches),
             ];
         })->values();
     
