@@ -5,7 +5,6 @@
                 class="fixed inset-0 bg-black backdrop-blur-[1px] bg-opacity-50 flex items-center justify-center z-50 p-4"
                 @click.self="closeModal">
                 <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl h-[95vh] max-h-[95vh] flex flex-col">
-                    <!-- Header -->
                     <div class="flex items-center justify-between p-6 border-b border-gray-200">
                         <h2 class="text-2xl font-semibold text-gray-800">{{ data.round_name || 'Trận đấu' }}</h2>
                         <button @click="closeModal" class="text-gray-400 hover:text-gray-600 transition-colors">
@@ -13,12 +12,9 @@
                         </button>
                     </div>
                     
-                    <!-- Body - Scrollable -->
                     <div class="p-6 overflow-y-auto flex-1">
                         <div class="grid grid-cols-[2fr_3fr] gap-6">
-                            <!-- Left Column -->
                             <div class="space-y-4">
-                                <!-- Court Selection -->
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Chọn sân</label>
                                     <div class="flex items-center justify-between gap-3">
@@ -41,19 +37,16 @@
                                     </div>
                                 </div>
 
-                                <!-- Date and Time -->
                                 <div class="flex items-center gap-2 text-gray-700 mb-1">
                                     <CalendarDaysIcon class="w-5 h-5" />
                                     <span>{{ formatEventDate(tournament.start_date) }}</span>
                                 </div>
 
-                                <!-- Location -->
                                 <div class="flex items-center gap-2 text-gray-700">
                                     <MapPinIcon class="w-5 h-5" />
                                     <span class="truncate w-64">{{ tournament.competition_location?.name }}</span>
                                 </div>
 
-                                <!-- QR Code Info -->
                                 <div>
                                     <p class="text-sm text-gray-600 mb-3">
                                         Kết quả kèo đấu được ghi nhận khi tất cả người chơi đã quét mã QR
@@ -64,11 +57,9 @@
                                 </div>
                             </div>
 
-                            <!-- Right Column -->
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-3">Chọn đội</label>
                                 <div class="grid grid-cols-[2fr_1fr_2fr] gap-4 items-stretch mb-6">
-                                    <!-- Team A -->
                                     <div class="border border-1 border-[#DCDEE6] bg-[#F2F7FC] rounded-lg p-3 flex flex-col">
                                         <p class="text-center mb-4">{{ data.home_team?.name || 'Team A' }}</p>
                                         <div class="flex gap-2 justify-around items-stretch">
@@ -79,12 +70,10 @@
                                         </div>
                                     </div>
 
-                                    <!-- VS -->
                                     <div class="flex justify-center items-center">
                                         <span class="text-sm font-bold">VS</span>
                                     </div>
 
-                                    <!-- Team B -->
                                     <div class="border border-1 border-[#DCDEE6] bg-[#F2F7FC] rounded-lg p-3 flex flex-col">
                                         <p class="text-center mb-4">{{ data.away_team?.name || 'Team B' }}</p>
                                         <div class="flex gap-2 justify-around items-stretch">
@@ -98,10 +87,8 @@
                                 
                                 <label class="block text-sm font-semibold text-gray-700 mb-3">Kết quả</label>
                                 
-                                <!-- Danh sách các set -->
                                 <div v-for="(score, index) in scores" :key="index" class="mb-4">
                                     <div class="grid grid-cols-[2fr_1fr_2fr] gap-4 items-center">
-                                        <!-- Team A Score -->
                                         <div class="border border-1 border-[#DCDEE6] rounded-lg p-3">
                                             <button @click="incrementScore(index, 'A')"
                                                 class="w-full bg-[#EDEEF2] rounded px-3 py-2 text-gray-600 hover:bg-gray-300 transition-colors mb-2 flex items-center justify-center">
@@ -114,7 +101,6 @@
                                             </button>
                                         </div>
                                         
-                                        <!-- Set Label & Delete Button -->
                                         <div class="flex flex-col items-center gap-2">
                                             <span class="text-sm font-semibold">Set {{ index + 1 }}</span>
                                             <button v-if="scores.length > 1" @click="removeSet(index)"
@@ -123,7 +109,6 @@
                                             </button>
                                         </div>
                                         
-                                        <!-- Team B Score -->
                                         <div class="border border-1 border-[#DCDEE6] rounded-lg p-3">
                                             <button @click="incrementScore(index, 'B')"
                                                 class="w-full bg-[#EDEEF2] rounded px-3 py-2 text-gray-600 hover:bg-gray-300 transition-colors mb-2 flex items-center justify-center">
@@ -138,7 +123,6 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Thêm set -->
                                 <button @click="addSet" :disabled="isMaxSets"
                                     class="w-full flex justify-center items-center gap-2 border p-3 rounded-lg text-[#838799] hover:bg-gray-100 transition-colors mb-6 disabled:opacity-50 disabled:cursor-not-allowed">
                                     <PlusIcon class="w-5 h-5" />
@@ -150,13 +134,19 @@
                         </div>
                     </div>
                     
-                    <!-- Footer - Sticky -->
                     <div class="px-4 py-4 bg-white rounded-b-lg border-t">
                         <div class="flex gap-3">
                             <button @click="saveMatch" :disabled="isSaving"
                                 class="px-12 py-3 bg-red-500 text-white rounded font-medium hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                                {{ isSaving ? 'Đang lưu...' : 'Lưu' }}
+                                {{ isSaving && !canConfirmMatch ? 'Đang lưu...' : 'Lưu' }}
                             </button>
+
+                            <button @click="confirmMatchResult" 
+                                :disabled="isSaving || !canConfirmMatch"
+                                class="px-12 py-3 bg-green-500 text-white rounded font-medium hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                {{ isSaving && canConfirmMatch ? 'Đang xác nhận...' : 'Xác nhận kết quả' }}
+                            </button>
+                            
                             <button @click="closeModal" :disabled="isSaving"
                                 class="px-12 py-3 bg-gray-200 text-gray-700 rounded font-medium hover:bg-gray-300 transition-colors disabled:opacity-50">
                                 Hủy
@@ -201,6 +191,39 @@ const maxSets = computed(() => {
 })
 
 const isMaxSets = computed(() => scores.value.length >= maxSets.value)
+
+// *** Computed Property QUAN TRỌNG: Kiểm tra điều kiện để kích hoạt nút Xác nhận ***
+const canConfirmMatch = computed(() => {
+    // 1. Phải có legs (kết quả đã lưu)
+    if (!props.data.legs || props.data.legs.length === 0) {
+        return false
+    }
+
+    // 2. Kiểm tra xem ít nhất một set trong các legs đã lưu có điểm số khác 0-0 hay không
+    const leg = props.data.legs[0]
+    const sets = leg.sets
+
+    let hasNonZeroScore = false
+    
+    // Duyệt qua tất cả các set đã lưu
+    // Ví dụ: sets = { 'set_1': { 'Set 1': [ {team_id: 1, score: 0}, {team_id: 2, score: 0} ] } }
+    Object.keys(sets).forEach(setKey => {
+        const setData = sets[setKey]
+        // Lấy mảng scores (là giá trị của 'Set 1')
+        const scoresArray = Object.values(setData)[0] 
+        
+        // Tìm điểm của team A và team B
+        const homeScore = scoresArray.find(s => s.team_id === props.data.home_team?.id)?.score || 0
+        const awayScore = scoresArray.find(s => s.team_id === props.data.away_team?.id)?.score || 0
+        
+        // Nếu tổng điểm khác 0, coi là đã có kết quả thực tế
+        if (homeScore > 0 || awayScore > 0) {
+            hasNonZeroScore = true
+        }
+    })
+
+    return hasNonZeroScore // Trả về true nếu có ít nhất một set có điểm khác 0-0
+})
 
 // URL cho QR Code
 const qrCodeUrl = computed(() => {
@@ -322,10 +345,30 @@ const saveMatch = async () => {
         toast.success('Cập nhật kết quả trận đấu thành công!')
         emit('updated', response.data)
         isOpen.value = false;
-        
     } catch (error) {
         console.error('Error updating match:', error)
         toast.error(error.response?.data?.message || 'Lỗi khi cập nhật trận đấu')
+    } finally {
+        isSaving.value = false
+    }
+}
+
+// Hàm Xác nhận Kết quả
+const confirmMatchResult = async () => {
+    if (isSaving.value || !canConfirmMatch.value) return
+    
+    try {
+        isSaving.value = true
+        
+        const response = await MatchesServices.confirmResults(props.data.id)
+        
+        toast.success('Xác nhận kết quả trận đấu thành công!')
+        emit('updated', response.data)
+        isOpen.value = false;
+        
+    } catch (error) {
+        console.error('Error confirming match:', error)
+        toast.error(error.response?.data?.message || 'Lỗi khi xác nhận kết quả')
     } finally {
         isSaving.value = false
     }
