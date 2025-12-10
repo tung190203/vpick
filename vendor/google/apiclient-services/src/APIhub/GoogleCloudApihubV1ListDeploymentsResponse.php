@@ -23,12 +23,17 @@ class GoogleCloudApihubV1ListDeploymentsResponse extends \Google\Collection
   protected $deploymentsType = GoogleCloudApihubV1Deployment::class;
   protected $deploymentsDataType = 'array';
   /**
+   * A token, which can be sent as `page_token` to retrieve the next page. If
+   * this field is omitted, there are no subsequent pages.
+   *
    * @var string
    */
   public $nextPageToken;
 
   /**
-   * @param GoogleCloudApihubV1Deployment[]
+   * The deployment resources present in the API hub.
+   *
+   * @param GoogleCloudApihubV1Deployment[] $deployments
    */
   public function setDeployments($deployments)
   {
@@ -42,7 +47,10 @@ class GoogleCloudApihubV1ListDeploymentsResponse extends \Google\Collection
     return $this->deployments;
   }
   /**
-   * @param string
+   * A token, which can be sent as `page_token` to retrieve the next page. If
+   * this field is omitted, there are no subsequent pages.
+   *
+   * @param string $nextPageToken
    */
   public function setNextPageToken($nextPageToken)
   {

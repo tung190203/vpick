@@ -20,30 +20,64 @@ namespace Google\Service\AndroidEnterprise;
 class EnrollmentTokenGoogleAuthenticationOptions extends \Google\Model
 {
   /**
+   * The value is unused.
+   */
+  public const AUTHENTICATION_REQUIREMENT_authenticationRequirementUnspecified = 'authenticationRequirementUnspecified';
+  /**
+   * Google authentication is optional for the user. This means the user can
+   * choose to skip Google authentication during enrollment.
+   */
+  public const AUTHENTICATION_REQUIREMENT_optional = 'optional';
+  /**
+   * Google authentication is required for the user. This means the user must
+   * authenticate with a Google account to proceed.
+   */
+  public const AUTHENTICATION_REQUIREMENT_required = 'required';
+  /**
+   * [Optional] Specifies whether user should authenticate with Google during
+   * enrollment. This setting, if specified,`GoogleAuthenticationSettings`
+   * specified for the enterprise resource is ignored for devices enrolled with
+   * this token.
+   *
    * @var string
    */
   public $authenticationRequirement;
   /**
+   * [Optional] Specifies the managed Google account that the user must use
+   * during enrollment.`AuthenticationRequirement` must be set to`REQUIRED` if
+   * this field is set.
+   *
    * @var string
    */
   public $requiredAccountEmail;
 
   /**
-   * @param string
+   * [Optional] Specifies whether user should authenticate with Google during
+   * enrollment. This setting, if specified,`GoogleAuthenticationSettings`
+   * specified for the enterprise resource is ignored for devices enrolled with
+   * this token.
+   *
+   * Accepted values: authenticationRequirementUnspecified, optional, required
+   *
+   * @param self::AUTHENTICATION_REQUIREMENT_* $authenticationRequirement
    */
   public function setAuthenticationRequirement($authenticationRequirement)
   {
     $this->authenticationRequirement = $authenticationRequirement;
   }
   /**
-   * @return string
+   * @return self::AUTHENTICATION_REQUIREMENT_*
    */
   public function getAuthenticationRequirement()
   {
     return $this->authenticationRequirement;
   }
   /**
-   * @param string
+   * [Optional] Specifies the managed Google account that the user must use
+   * during enrollment.`AuthenticationRequirement` must be set to`REQUIRED` if
+   * this field is set.
+   *
+   * @param string $requiredAccountEmail
    */
   public function setRequiredAccountEmail($requiredAccountEmail)
   {

@@ -12,6 +12,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Removed
 
+## 5.5.0 (25 October 2025)
+### Modified
+- Change shalvah/clara constraint
+
+### Fixed
+- fix: handle rare edge case in base OpenApi spec generator after parallel merge ([#1031](https://github.com/knuckleswtf/scribe/pull/1031))
+
+## 5.4.0 (21 October 2025)
+### Fixed
+- fix: arrays of objects support in OpenAPI response generation ([1021](https://github.com/knuckleswtf/scribe/pull/1021))
+- fix: white space issue with headers displaying in endpoint view ([#1023](https://github.com/knuckleswtf/scribe/pull/1023))
+- fix: crash when API resource __construct enforces type in ResponseFromApiResource ([#1028](https://github.com/knuckleswtf/scribe/pull/1028))
+
+### Modified
+- Replace abandoned spatie/data-transfer-object with own DTO implementation ([#1024](https://github.com/knuckleswtf/scribe/pull/1024))
+
+### Added
+- Support `deprecated:` option for `#[BodyParam]/#[QueryParam]` attributes ([#1022](https://github.com/knuckleswtf/scribe/pull/1022))
+- Support for `sometimes` rule ([958](https://github.com/knuckleswtf/scribe/pull/958))
+- Support for custom response Content-Types (problem+json, etc.) ([#1029](https://github.com/knuckleswtf/scribe/pull/1029))
+- Support strings for the `#[Deprecated]` attribute ([#1019](https://github.com/knuckleswtf/scribe/pull/1019))
+
 ## 5.3.0 (29 July 2025)
 ### Added
 - Support `@deprecated`/`[#Deprecated]` annotations for deprecating endpoints, along with deprecated badge in the included themes ([#994](https://github.com/knuckleswtf/scribe/pull/994))

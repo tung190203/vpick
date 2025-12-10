@@ -21,10 +21,14 @@ class CivicinfoSchemaV2Contest extends \Google\Collection
 {
   protected $collection_key = 'sources';
   /**
+   * A number specifying the position of this contest on the voter's ballot.
+   *
    * @var string
    */
   public $ballotPlacement;
   /**
+   * The official title on the ballot for this contest, only where available.
+   *
    * @var string
    */
   public $ballotTitle;
@@ -33,86 +37,150 @@ class CivicinfoSchemaV2Contest extends \Google\Collection
   protected $districtType = CivicinfoSchemaV2ElectoralDistrict::class;
   protected $districtDataType = '';
   /**
+   * A description of any additional eligibility requirements for voting in this
+   * contest.
+   *
    * @var string
    */
   public $electorateSpecifications;
   /**
+   * The levels of government of the office for this contest. There may be more
+   * than one in cases where a jurisdiction effectively acts at two different
+   * levels of government; for example, the mayor of the District of Columbia
+   * acts at "locality" level, but also effectively at both "administrative-
+   * area-2" and "administrative-area-1".
+   *
    * @var string[]
    */
   public $level;
   /**
+   * The number of candidates that will be elected to office in this contest.
+   *
    * @var string
    */
   public $numberElected;
   /**
+   * The number of candidates that a voter may vote for in this contest.
+   *
    * @var string
    */
   public $numberVotingFor;
   /**
+   * The name of the office for this contest.
+   *
    * @var string
    */
   public $office;
   /**
+   * If this is a partisan election, the name of the party/parties it is for.
+   *
    * @var string[]
    */
   public $primaryParties;
   /**
+   * The set of ballot responses for the referendum. A ballot response
+   * represents a line on the ballot. Common examples might include "yes" or
+   * "no" for referenda. This field is only populated for contests of type
+   * 'Referendum'.
+   *
    * @var string[]
    */
   public $referendumBallotResponses;
   /**
+   * Specifies a short summary of the referendum that is typically on the ballot
+   * below the title but above the text. This field is only populated for
+   * contests of type 'Referendum'.
+   *
    * @var string
    */
   public $referendumBrief;
   /**
+   * A statement in opposition to the referendum. It does not necessarily appear
+   * on the ballot. This field is only populated for contests of type
+   * 'Referendum'.
+   *
    * @var string
    */
   public $referendumConStatement;
   /**
+   * Specifies what effect abstaining (not voting) on the proposition will have
+   * (i.e. whether abstaining is considered a vote against it). This field is
+   * only populated for contests of type 'Referendum'.
+   *
    * @var string
    */
   public $referendumEffectOfAbstain;
   /**
+   * The threshold of votes that the referendum needs in order to pass, e.g.
+   * "two-thirds". This field is only populated for contests of type
+   * 'Referendum'.
+   *
    * @var string
    */
   public $referendumPassageThreshold;
   /**
+   * A statement in favor of the referendum. It does not necessarily appear on
+   * the ballot. This field is only populated for contests of type 'Referendum'.
+   *
    * @var string
    */
   public $referendumProStatement;
   /**
+   * A brief description of the referendum. This field is only populated for
+   * contests of type 'Referendum'.
+   *
    * @var string
    */
   public $referendumSubtitle;
   /**
+   * The full text of the referendum. This field is only populated for contests
+   * of type 'Referendum'.
+   *
    * @var string
    */
   public $referendumText;
   /**
+   * The title of the referendum (e.g. 'Proposition 42'). This field is only
+   * populated for contests of type 'Referendum'.
+   *
    * @var string
    */
   public $referendumTitle;
   /**
+   * A link to the referendum. This field is only populated for contests of type
+   * 'Referendum'.
+   *
    * @var string
    */
   public $referendumUrl;
   /**
+   * The roles which this office fulfills.
+   *
    * @var string[]
    */
   public $roles;
   protected $sourcesType = CivicinfoSchemaV2Source::class;
   protected $sourcesDataType = 'array';
   /**
+   * "Yes" or "No" depending on whether this a contest being held outside the
+   * normal election cycle.
+   *
    * @var string
    */
   public $special;
   /**
+   * The type of contest. Usually this will be 'General', 'Primary', or 'Run-
+   * off' for contests with candidates. For referenda this will be 'Referendum'.
+   * For Retention contests this will typically be 'Retention'.
+   *
    * @var string
    */
   public $type;
 
   /**
-   * @param string
+   * A number specifying the position of this contest on the voter's ballot.
+   *
+   * @param string $ballotPlacement
    */
   public function setBallotPlacement($ballotPlacement)
   {
@@ -126,7 +194,9 @@ class CivicinfoSchemaV2Contest extends \Google\Collection
     return $this->ballotPlacement;
   }
   /**
-   * @param string
+   * The official title on the ballot for this contest, only where available.
+   *
+   * @param string $ballotTitle
    */
   public function setBallotTitle($ballotTitle)
   {
@@ -140,7 +210,9 @@ class CivicinfoSchemaV2Contest extends \Google\Collection
     return $this->ballotTitle;
   }
   /**
-   * @param CivicinfoSchemaV2Candidate[]
+   * The candidate choices for this contest.
+   *
+   * @param CivicinfoSchemaV2Candidate[] $candidates
    */
   public function setCandidates($candidates)
   {
@@ -154,7 +226,9 @@ class CivicinfoSchemaV2Contest extends \Google\Collection
     return $this->candidates;
   }
   /**
-   * @param CivicinfoSchemaV2ElectoralDistrict
+   * Information about the electoral district that this contest is in.
+   *
+   * @param CivicinfoSchemaV2ElectoralDistrict $district
    */
   public function setDistrict(CivicinfoSchemaV2ElectoralDistrict $district)
   {
@@ -168,7 +242,10 @@ class CivicinfoSchemaV2Contest extends \Google\Collection
     return $this->district;
   }
   /**
-   * @param string
+   * A description of any additional eligibility requirements for voting in this
+   * contest.
+   *
+   * @param string $electorateSpecifications
    */
   public function setElectorateSpecifications($electorateSpecifications)
   {
@@ -182,7 +259,13 @@ class CivicinfoSchemaV2Contest extends \Google\Collection
     return $this->electorateSpecifications;
   }
   /**
-   * @param string[]
+   * The levels of government of the office for this contest. There may be more
+   * than one in cases where a jurisdiction effectively acts at two different
+   * levels of government; for example, the mayor of the District of Columbia
+   * acts at "locality" level, but also effectively at both "administrative-
+   * area-2" and "administrative-area-1".
+   *
+   * @param string[] $level
    */
   public function setLevel($level)
   {
@@ -196,7 +279,9 @@ class CivicinfoSchemaV2Contest extends \Google\Collection
     return $this->level;
   }
   /**
-   * @param string
+   * The number of candidates that will be elected to office in this contest.
+   *
+   * @param string $numberElected
    */
   public function setNumberElected($numberElected)
   {
@@ -210,7 +295,9 @@ class CivicinfoSchemaV2Contest extends \Google\Collection
     return $this->numberElected;
   }
   /**
-   * @param string
+   * The number of candidates that a voter may vote for in this contest.
+   *
+   * @param string $numberVotingFor
    */
   public function setNumberVotingFor($numberVotingFor)
   {
@@ -224,7 +311,9 @@ class CivicinfoSchemaV2Contest extends \Google\Collection
     return $this->numberVotingFor;
   }
   /**
-   * @param string
+   * The name of the office for this contest.
+   *
+   * @param string $office
    */
   public function setOffice($office)
   {
@@ -238,7 +327,9 @@ class CivicinfoSchemaV2Contest extends \Google\Collection
     return $this->office;
   }
   /**
-   * @param string[]
+   * If this is a partisan election, the name of the party/parties it is for.
+   *
+   * @param string[] $primaryParties
    */
   public function setPrimaryParties($primaryParties)
   {
@@ -252,7 +343,12 @@ class CivicinfoSchemaV2Contest extends \Google\Collection
     return $this->primaryParties;
   }
   /**
-   * @param string[]
+   * The set of ballot responses for the referendum. A ballot response
+   * represents a line on the ballot. Common examples might include "yes" or
+   * "no" for referenda. This field is only populated for contests of type
+   * 'Referendum'.
+   *
+   * @param string[] $referendumBallotResponses
    */
   public function setReferendumBallotResponses($referendumBallotResponses)
   {
@@ -266,7 +362,11 @@ class CivicinfoSchemaV2Contest extends \Google\Collection
     return $this->referendumBallotResponses;
   }
   /**
-   * @param string
+   * Specifies a short summary of the referendum that is typically on the ballot
+   * below the title but above the text. This field is only populated for
+   * contests of type 'Referendum'.
+   *
+   * @param string $referendumBrief
    */
   public function setReferendumBrief($referendumBrief)
   {
@@ -280,7 +380,11 @@ class CivicinfoSchemaV2Contest extends \Google\Collection
     return $this->referendumBrief;
   }
   /**
-   * @param string
+   * A statement in opposition to the referendum. It does not necessarily appear
+   * on the ballot. This field is only populated for contests of type
+   * 'Referendum'.
+   *
+   * @param string $referendumConStatement
    */
   public function setReferendumConStatement($referendumConStatement)
   {
@@ -294,7 +398,11 @@ class CivicinfoSchemaV2Contest extends \Google\Collection
     return $this->referendumConStatement;
   }
   /**
-   * @param string
+   * Specifies what effect abstaining (not voting) on the proposition will have
+   * (i.e. whether abstaining is considered a vote against it). This field is
+   * only populated for contests of type 'Referendum'.
+   *
+   * @param string $referendumEffectOfAbstain
    */
   public function setReferendumEffectOfAbstain($referendumEffectOfAbstain)
   {
@@ -308,7 +416,11 @@ class CivicinfoSchemaV2Contest extends \Google\Collection
     return $this->referendumEffectOfAbstain;
   }
   /**
-   * @param string
+   * The threshold of votes that the referendum needs in order to pass, e.g.
+   * "two-thirds". This field is only populated for contests of type
+   * 'Referendum'.
+   *
+   * @param string $referendumPassageThreshold
    */
   public function setReferendumPassageThreshold($referendumPassageThreshold)
   {
@@ -322,7 +434,10 @@ class CivicinfoSchemaV2Contest extends \Google\Collection
     return $this->referendumPassageThreshold;
   }
   /**
-   * @param string
+   * A statement in favor of the referendum. It does not necessarily appear on
+   * the ballot. This field is only populated for contests of type 'Referendum'.
+   *
+   * @param string $referendumProStatement
    */
   public function setReferendumProStatement($referendumProStatement)
   {
@@ -336,7 +451,10 @@ class CivicinfoSchemaV2Contest extends \Google\Collection
     return $this->referendumProStatement;
   }
   /**
-   * @param string
+   * A brief description of the referendum. This field is only populated for
+   * contests of type 'Referendum'.
+   *
+   * @param string $referendumSubtitle
    */
   public function setReferendumSubtitle($referendumSubtitle)
   {
@@ -350,7 +468,10 @@ class CivicinfoSchemaV2Contest extends \Google\Collection
     return $this->referendumSubtitle;
   }
   /**
-   * @param string
+   * The full text of the referendum. This field is only populated for contests
+   * of type 'Referendum'.
+   *
+   * @param string $referendumText
    */
   public function setReferendumText($referendumText)
   {
@@ -364,7 +485,10 @@ class CivicinfoSchemaV2Contest extends \Google\Collection
     return $this->referendumText;
   }
   /**
-   * @param string
+   * The title of the referendum (e.g. 'Proposition 42'). This field is only
+   * populated for contests of type 'Referendum'.
+   *
+   * @param string $referendumTitle
    */
   public function setReferendumTitle($referendumTitle)
   {
@@ -378,7 +502,10 @@ class CivicinfoSchemaV2Contest extends \Google\Collection
     return $this->referendumTitle;
   }
   /**
-   * @param string
+   * A link to the referendum. This field is only populated for contests of type
+   * 'Referendum'.
+   *
+   * @param string $referendumUrl
    */
   public function setReferendumUrl($referendumUrl)
   {
@@ -392,7 +519,9 @@ class CivicinfoSchemaV2Contest extends \Google\Collection
     return $this->referendumUrl;
   }
   /**
-   * @param string[]
+   * The roles which this office fulfills.
+   *
+   * @param string[] $roles
    */
   public function setRoles($roles)
   {
@@ -406,7 +535,10 @@ class CivicinfoSchemaV2Contest extends \Google\Collection
     return $this->roles;
   }
   /**
-   * @param CivicinfoSchemaV2Source[]
+   * A list of sources for this contest. If multiple sources are listed, the
+   * data has been aggregated from those sources.
+   *
+   * @param CivicinfoSchemaV2Source[] $sources
    */
   public function setSources($sources)
   {
@@ -420,7 +552,10 @@ class CivicinfoSchemaV2Contest extends \Google\Collection
     return $this->sources;
   }
   /**
-   * @param string
+   * "Yes" or "No" depending on whether this a contest being held outside the
+   * normal election cycle.
+   *
+   * @param string $special
    */
   public function setSpecial($special)
   {
@@ -434,7 +569,11 @@ class CivicinfoSchemaV2Contest extends \Google\Collection
     return $this->special;
   }
   /**
-   * @param string
+   * The type of contest. Usually this will be 'General', 'Primary', or 'Run-
+   * off' for contests with candidates. For referenda this will be 'Referendum'.
+   * For Retention contests this will typically be 'Retention'.
+   *
+   * @param string $type
    */
   public function setType($type)
   {

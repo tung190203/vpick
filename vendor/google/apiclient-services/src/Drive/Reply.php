@@ -17,45 +17,84 @@
 
 namespace Google\Service\Drive;
 
-class Reply extends \Google\Model
+class Reply extends \Google\Collection
 {
+  protected $collection_key = 'mentionedEmailAddresses';
   /**
+   * The action the reply performed to the parent comment. Valid values are: *
+   * `resolve` * `reopen`
+   *
    * @var string
    */
   public $action;
+  /**
+   * Output only. The email of the user who is assigned to this reply, if none
+   * is assigned this will be unset.
+   *
+   * @var string
+   */
+  public $assigneeEmailAddress;
   protected $authorType = User::class;
   protected $authorDataType = '';
   /**
+   * The plain text content of the reply. This field is used for setting the
+   * content, while `htmlContent` should be displayed. This is required on
+   * creates if no `action` is specified.
+   *
    * @var string
    */
   public $content;
   /**
+   * The time at which the reply was created (RFC 3339 date-time).
+   *
    * @var string
    */
   public $createdTime;
   /**
+   * Output only. Whether the reply has been deleted. A deleted reply has no
+   * content.
+   *
    * @var bool
    */
   public $deleted;
   /**
+   * Output only. The content of the reply with HTML formatting.
+   *
    * @var string
    */
   public $htmlContent;
   /**
+   * Output only. The ID of the reply.
+   *
    * @var string
    */
   public $id;
   /**
+   * Output only. Identifies what kind of resource this is. Value: the fixed
+   * string `"drive#reply"`.
+   *
    * @var string
    */
   public $kind;
   /**
+   * Output only. The emails of the users who were mentioned in this reply, if
+   * none were mentioned this will be an empty list.
+   *
+   * @var string[]
+   */
+  public $mentionedEmailAddresses;
+  /**
+   * The last time the reply was modified (RFC 3339 date-time).
+   *
    * @var string
    */
   public $modifiedTime;
 
   /**
-   * @param string
+   * The action the reply performed to the parent comment. Valid values are: *
+   * `resolve` * `reopen`
+   *
+   * @param string $action
    */
   public function setAction($action)
   {
@@ -69,7 +108,27 @@ class Reply extends \Google\Model
     return $this->action;
   }
   /**
-   * @param User
+   * Output only. The email of the user who is assigned to this reply, if none
+   * is assigned this will be unset.
+   *
+   * @param string $assigneeEmailAddress
+   */
+  public function setAssigneeEmailAddress($assigneeEmailAddress)
+  {
+    $this->assigneeEmailAddress = $assigneeEmailAddress;
+  }
+  /**
+   * @return string
+   */
+  public function getAssigneeEmailAddress()
+  {
+    return $this->assigneeEmailAddress;
+  }
+  /**
+   * Output only. The author of the reply. The author's email address and
+   * permission ID will not be populated.
+   *
+   * @param User $author
    */
   public function setAuthor(User $author)
   {
@@ -83,7 +142,11 @@ class Reply extends \Google\Model
     return $this->author;
   }
   /**
-   * @param string
+   * The plain text content of the reply. This field is used for setting the
+   * content, while `htmlContent` should be displayed. This is required on
+   * creates if no `action` is specified.
+   *
+   * @param string $content
    */
   public function setContent($content)
   {
@@ -97,7 +160,9 @@ class Reply extends \Google\Model
     return $this->content;
   }
   /**
-   * @param string
+   * The time at which the reply was created (RFC 3339 date-time).
+   *
+   * @param string $createdTime
    */
   public function setCreatedTime($createdTime)
   {
@@ -111,7 +176,10 @@ class Reply extends \Google\Model
     return $this->createdTime;
   }
   /**
-   * @param bool
+   * Output only. Whether the reply has been deleted. A deleted reply has no
+   * content.
+   *
+   * @param bool $deleted
    */
   public function setDeleted($deleted)
   {
@@ -125,7 +193,9 @@ class Reply extends \Google\Model
     return $this->deleted;
   }
   /**
-   * @param string
+   * Output only. The content of the reply with HTML formatting.
+   *
+   * @param string $htmlContent
    */
   public function setHtmlContent($htmlContent)
   {
@@ -139,7 +209,9 @@ class Reply extends \Google\Model
     return $this->htmlContent;
   }
   /**
-   * @param string
+   * Output only. The ID of the reply.
+   *
+   * @param string $id
    */
   public function setId($id)
   {
@@ -153,7 +225,10 @@ class Reply extends \Google\Model
     return $this->id;
   }
   /**
-   * @param string
+   * Output only. Identifies what kind of resource this is. Value: the fixed
+   * string `"drive#reply"`.
+   *
+   * @param string $kind
    */
   public function setKind($kind)
   {
@@ -167,7 +242,26 @@ class Reply extends \Google\Model
     return $this->kind;
   }
   /**
-   * @param string
+   * Output only. The emails of the users who were mentioned in this reply, if
+   * none were mentioned this will be an empty list.
+   *
+   * @param string[] $mentionedEmailAddresses
+   */
+  public function setMentionedEmailAddresses($mentionedEmailAddresses)
+  {
+    $this->mentionedEmailAddresses = $mentionedEmailAddresses;
+  }
+  /**
+   * @return string[]
+   */
+  public function getMentionedEmailAddresses()
+  {
+    return $this->mentionedEmailAddresses;
+  }
+  /**
+   * The last time the reply was modified (RFC 3339 date-time).
+   *
+   * @param string $modifiedTime
    */
   public function setModifiedTime($modifiedTime)
   {

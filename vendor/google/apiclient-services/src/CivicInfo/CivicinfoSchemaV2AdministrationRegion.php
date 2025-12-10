@@ -28,6 +28,8 @@ class CivicinfoSchemaV2AdministrationRegion extends \Google\Collection
   protected $localJurisdictionType = CivicinfoSchemaV2AdministrationRegion::class;
   protected $localJurisdictionDataType = '';
   /**
+   * The name of the jurisdiction.
+   *
    * @var string
    */
   public $name;
@@ -35,7 +37,9 @@ class CivicinfoSchemaV2AdministrationRegion extends \Google\Collection
   protected $sourcesDataType = 'array';
 
   /**
-   * @param CivicinfoSchemaV2AdministrativeBody
+   * The election administration body for this area.
+   *
+   * @param CivicinfoSchemaV2AdministrativeBody $electionAdministrationBody
    */
   public function setElectionAdministrationBody(CivicinfoSchemaV2AdministrativeBody $electionAdministrationBody)
   {
@@ -49,7 +53,10 @@ class CivicinfoSchemaV2AdministrationRegion extends \Google\Collection
     return $this->electionAdministrationBody;
   }
   /**
-   * @param CivicinfoSchemaV2AdministrationRegion
+   * The city or county that provides election information for this voter. This
+   * object can have the same elements as state.
+   *
+   * @param CivicinfoSchemaV2AdministrationRegion $localJurisdiction
    */
   public function setLocalJurisdiction(CivicinfoSchemaV2AdministrationRegion $localJurisdiction)
   {
@@ -63,7 +70,9 @@ class CivicinfoSchemaV2AdministrationRegion extends \Google\Collection
     return $this->localJurisdiction;
   }
   /**
-   * @param string
+   * The name of the jurisdiction.
+   *
+   * @param string $name
    */
   public function setName($name)
   {
@@ -77,7 +86,10 @@ class CivicinfoSchemaV2AdministrationRegion extends \Google\Collection
     return $this->name;
   }
   /**
-   * @param CivicinfoSchemaV2Source[]
+   * A list of sources for this area. If multiple sources are listed the data
+   * has been aggregated from those sources.
+   *
+   * @param CivicinfoSchemaV2Source[] $sources
    */
   public function setSources($sources)
   {

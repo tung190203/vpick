@@ -23,12 +23,17 @@ class CivicinfoApiprotosV2ElectionsQueryResponse extends \Google\Collection
   protected $electionsType = CivicinfoSchemaV2Election::class;
   protected $electionsDataType = 'array';
   /**
+   * Identifies what kind of resource this is. Value: the fixed string
+   * "civicinfo#electionsQueryResponse".
+   *
    * @var string
    */
   public $kind;
 
   /**
-   * @param CivicinfoSchemaV2Election[]
+   * A list of available elections
+   *
+   * @param CivicinfoSchemaV2Election[] $elections
    */
   public function setElections($elections)
   {
@@ -42,7 +47,10 @@ class CivicinfoApiprotosV2ElectionsQueryResponse extends \Google\Collection
     return $this->elections;
   }
   /**
-   * @param string
+   * Identifies what kind of resource this is. Value: the fixed string
+   * "civicinfo#electionsQueryResponse".
+   *
+   * @param string $kind
    */
   public function setKind($kind)
   {

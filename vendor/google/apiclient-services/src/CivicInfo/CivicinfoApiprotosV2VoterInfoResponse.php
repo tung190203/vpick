@@ -29,10 +29,16 @@ class CivicinfoApiprotosV2VoterInfoResponse extends \Google\Collection
   protected $electionType = CivicinfoSchemaV2Election::class;
   protected $electionDataType = '';
   /**
+   * Identifies what kind of resource this is. Value: the fixed string
+   * "civicinfo#voterInfoResponse".
+   *
    * @var string
    */
   public $kind;
   /**
+   * Specifies whether voters in the precinct vote only by mailing their ballots
+   * (with the possible option of dropping off their ballots as well).
+   *
    * @var bool
    */
   public $mailOnly;
@@ -52,7 +58,9 @@ class CivicinfoApiprotosV2VoterInfoResponse extends \Google\Collection
   protected $stateDataType = 'array';
 
   /**
-   * @param CivicinfoSchemaV2Contest[]
+   * Contests that will appear on the voter's ballot.
+   *
+   * @param CivicinfoSchemaV2Contest[] $contests
    */
   public function setContests($contests)
   {
@@ -66,7 +74,13 @@ class CivicinfoApiprotosV2VoterInfoResponse extends \Google\Collection
     return $this->contests;
   }
   /**
-   * @param CivicinfoSchemaV2PollingLocation[]
+   * Locations where a voter is eligible to drop off a completed ballot. The
+   * voter must have received and completed a ballot prior to arriving at the
+   * location. The location may not have ballots available on the premises.
+   * These locations could be open on or before election day as indicated in the
+   * pollingHours field.
+   *
+   * @param CivicinfoSchemaV2PollingLocation[] $dropOffLocations
    */
   public function setDropOffLocations($dropOffLocations)
   {
@@ -80,7 +94,9 @@ class CivicinfoApiprotosV2VoterInfoResponse extends \Google\Collection
     return $this->dropOffLocations;
   }
   /**
-   * @param CivicinfoSchemaV2PollingLocation[]
+   * Locations where the voter is eligible to vote early, prior to election day.
+   *
+   * @param CivicinfoSchemaV2PollingLocation[] $earlyVoteSites
    */
   public function setEarlyVoteSites($earlyVoteSites)
   {
@@ -94,7 +110,9 @@ class CivicinfoApiprotosV2VoterInfoResponse extends \Google\Collection
     return $this->earlyVoteSites;
   }
   /**
-   * @param CivicinfoSchemaV2Election
+   * The election that was queried.
+   *
+   * @param CivicinfoSchemaV2Election $election
    */
   public function setElection(CivicinfoSchemaV2Election $election)
   {
@@ -108,7 +126,10 @@ class CivicinfoApiprotosV2VoterInfoResponse extends \Google\Collection
     return $this->election;
   }
   /**
-   * @param string
+   * Identifies what kind of resource this is. Value: the fixed string
+   * "civicinfo#voterInfoResponse".
+   *
+   * @param string $kind
    */
   public function setKind($kind)
   {
@@ -122,7 +143,10 @@ class CivicinfoApiprotosV2VoterInfoResponse extends \Google\Collection
     return $this->kind;
   }
   /**
-   * @param bool
+   * Specifies whether voters in the precinct vote only by mailing their ballots
+   * (with the possible option of dropping off their ballots as well).
+   *
+   * @param bool $mailOnly
    */
   public function setMailOnly($mailOnly)
   {
@@ -136,7 +160,9 @@ class CivicinfoApiprotosV2VoterInfoResponse extends \Google\Collection
     return $this->mailOnly;
   }
   /**
-   * @param CivicinfoSchemaV2SimpleAddressType
+   * The normalized version of the requested address
+   *
+   * @param CivicinfoSchemaV2SimpleAddressType $normalizedInput
    */
   public function setNormalizedInput(CivicinfoSchemaV2SimpleAddressType $normalizedInput)
   {
@@ -150,7 +176,18 @@ class CivicinfoApiprotosV2VoterInfoResponse extends \Google\Collection
     return $this->normalizedInput;
   }
   /**
-   * @param CivicinfoSchemaV2Election[]
+   * When there are multiple elections for a voter address, the otherElections
+   * field is populated in the API response and there are two possibilities: 1.
+   * If the earliest election is not the intended election, specify the election
+   * ID of the desired election in a second API request using the electionId
+   * field. 2. If these elections occur on the same day, the API doesn?t return
+   * any polling location, contest, or election official information to ensure
+   * that an additional query is made. For user-facing applications, we
+   * recommend displaying these elections to the user to disambiguate. A second
+   * API request using the electionId field should be made for the election that
+   * is relevant to the user.
+   *
+   * @param CivicinfoSchemaV2Election[] $otherElections
    */
   public function setOtherElections($otherElections)
   {
@@ -164,7 +201,9 @@ class CivicinfoApiprotosV2VoterInfoResponse extends \Google\Collection
     return $this->otherElections;
   }
   /**
-   * @param CivicinfoSchemaV2PollingLocation[]
+   * Locations where the voter is eligible to vote on election day.
+   *
+   * @param CivicinfoSchemaV2PollingLocation[] $pollingLocations
    */
   public function setPollingLocations($pollingLocations)
   {
@@ -178,7 +217,7 @@ class CivicinfoApiprotosV2VoterInfoResponse extends \Google\Collection
     return $this->pollingLocations;
   }
   /**
-   * @param string
+   * @param string $precinctId
    */
   public function setPrecinctId($precinctId)
   {
@@ -192,7 +231,10 @@ class CivicinfoApiprotosV2VoterInfoResponse extends \Google\Collection
     return $this->precinctId;
   }
   /**
-   * @param CivicinfoSchemaV2Precinct[]
+   * The precincts that match this voter's address. Will only be returned for
+   * project IDs which have been allowlisted as "partner projects".
+   *
+   * @param CivicinfoSchemaV2Precinct[] $precincts
    */
   public function setPrecincts($precincts)
   {
@@ -206,7 +248,10 @@ class CivicinfoApiprotosV2VoterInfoResponse extends \Google\Collection
     return $this->precincts;
   }
   /**
-   * @param CivicinfoSchemaV2AdministrationRegion[]
+   * Local Election Information for the state that the voter votes in. For the
+   * US, there will only be one element in this array.
+   *
+   * @param CivicinfoSchemaV2AdministrationRegion[] $state
    */
   public function setState($state)
   {

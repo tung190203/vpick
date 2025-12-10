@@ -20,6 +20,20 @@ namespace Google\Service\CloudVideoIntelligence;
 class GoogleCloudVideointelligenceV1p3beta1ExportToOutputUriStatus extends \Google\Model
 {
   /**
+   * Default value.
+   */
+  public const STATE_STATE_UNSPECIFIED = 'STATE_UNSPECIFIED';
+  /**
+   * Export succeeded.
+   */
+  public const STATE_SUCCEEDED = 'SUCCEEDED';
+  /**
+   * Export failed.
+   */
+  public const STATE_FAILED = 'FAILED';
+  /**
+   * Output only. State of the `output_uri` export.
+   *
    * @var string
    */
   public $state;
@@ -27,21 +41,27 @@ class GoogleCloudVideointelligenceV1p3beta1ExportToOutputUriStatus extends \Goog
   protected $statusDataType = '';
 
   /**
-   * @param string
+   * Output only. State of the `output_uri` export.
+   *
+   * Accepted values: STATE_UNSPECIFIED, SUCCEEDED, FAILED
+   *
+   * @param self::STATE_* $state
    */
   public function setState($state)
   {
     $this->state = $state;
   }
   /**
-   * @return string
+   * @return self::STATE_*
    */
   public function getState()
   {
     return $this->state;
   }
   /**
-   * @param GoogleRpcStatus
+   * Output only. Only set if state is FAILED.
+   *
+   * @param GoogleRpcStatus $status
    */
   public function setStatus(GoogleRpcStatus $status)
   {

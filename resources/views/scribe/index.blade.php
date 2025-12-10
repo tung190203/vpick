@@ -30,9 +30,9 @@
         var useCsrf = Boolean();
         var csrfUrl = "/sanctum/csrf-cookie";
     </script>
-    <script src="{{ asset("/vendor/scribe/js/tryitout-5.3.0.js") }}"></script>
+    <script src="{{ asset("/vendor/scribe/js/tryitout-5.5.0.js") }}"></script>
 
-    <script src="{{ asset("/vendor/scribe/js/theme-default-5.3.0.js") }}"></script>
+    <script src="{{ asset("/vendor/scribe/js/theme-default-5.5.0.js") }}"></script>
 
 </head>
 
@@ -71,7 +71,10 @@
                     <a href="#endpoints">Endpoints</a>
                 </li>
                                     <ul id="tocify-subheader-endpoints" class="tocify-subheader">
-                                                    <li class="tocify-item level-2" data-unique="endpoints-POSTapi-auth-login">
+                                                    <li class="tocify-item level-2" data-unique="endpoints-POSTapi-broadcasting-auth">
+                                <a href="#endpoints-POSTapi-broadcasting-auth">POST api/broadcasting/auth</a>
+                            </li>
+                                                                                <li class="tocify-item level-2" data-unique="endpoints-POSTapi-auth-login">
                                 <a href="#endpoints-POSTapi-auth-login">POST api/auth/login</a>
                             </li>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-POSTapi-auth-register">
@@ -113,8 +116,20 @@
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-GETapi-auth-facebook-callback">
                                 <a href="#endpoints-GETapi-auth-facebook-callback">GET api/auth/facebook/callback</a>
                             </li>
+                                                                                <li class="tocify-item level-2" data-unique="endpoints-GETapi-auth-apple-redirect">
+                                <a href="#endpoints-GETapi-auth-apple-redirect">GET api/auth/apple/redirect</a>
+                            </li>
+                                                                                <li class="tocify-item level-2" data-unique="endpoints-POSTapi-auth-apple-callback">
+                                <a href="#endpoints-POSTapi-auth-apple-callback">POST api/auth/apple/callback</a>
+                            </li>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-POSTapi-auth-google">
                                 <a href="#endpoints-POSTapi-auth-google">POST api/auth/google</a>
+                            </li>
+                                                                                <li class="tocify-item level-2" data-unique="endpoints-POSTapi-auth-facebook">
+                                <a href="#endpoints-POSTapi-auth-facebook">POST api/auth/facebook</a>
+                            </li>
+                                                                                <li class="tocify-item level-2" data-unique="endpoints-POSTapi-auth-apple">
+                                <a href="#endpoints-POSTapi-auth-apple">POST api/auth/apple</a>
                             </li>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-GETapi-verify-email">
                                 <a href="#endpoints-GETapi-verify-email">GET api/verify-email</a>
@@ -136,6 +151,12 @@
                             </li>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-DELETEapi-user-delete--id-">
                                 <a href="#endpoints-DELETEapi-user-delete--id-">DELETE api/user/delete/{id}</a>
+                            </li>
+                                                                                <li class="tocify-item level-2" data-unique="endpoints-GETapi-user-matches-dataset">
+                                <a href="#endpoints-GETapi-user-matches-dataset">GET api/user/matches/dataset</a>
+                            </li>
+                                                                                <li class="tocify-item level-2" data-unique="endpoints-GETapi-user-matches-list">
+                                <a href="#endpoints-GETapi-user-matches-list">GET api/user/matches/list</a>
                             </li>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-GETapi-tournaments-index">
                                 <a href="#endpoints-GETapi-tournaments-index">GET api/tournaments/index</a>
@@ -192,6 +213,12 @@ Trả về cấu trúc phân theo round để hiển thị bracket chart</a>
                             </li>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-POSTapi-matches--match--swap">
                                 <a href="#endpoints-POSTapi-matches--match--swap">POST api/matches/{match}/swap</a>
+                            </li>
+                                                                                <li class="tocify-item level-2" data-unique="endpoints-GETapi-matches--matchId--generate-qr">
+                                <a href="#endpoints-GETapi-matches--matchId--generate-qr">GET api/matches/{matchId}/generate-qr</a>
+                            </li>
+                                                                                <li class="tocify-item level-2" data-unique="endpoints-POSTapi-matches-confirm-result--matchId-">
+                                <a href="#endpoints-POSTapi-matches-confirm-result--matchId-">POST api/matches/confirm-result/{matchId}</a>
                             </li>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-GETapi-participants-index--tournamentId-">
                                 <a href="#endpoints-GETapi-participants-index--tournamentId-">GET api/participants/index/{tournamentId}</a>
@@ -331,6 +358,9 @@ Trả về cấu trúc phân theo round để hiển thị bracket chart</a>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-GETapi-mini-matches-index--miniTournamentId-">
                                 <a href="#endpoints-GETapi-mini-matches-index--miniTournamentId-">Lấy danh sách trận đấu trong mini tournament (theo vòng, thời gian, lọc theo người chơi)</a>
                             </li>
+                                                                                <li class="tocify-item level-2" data-unique="endpoints-GETapi-mini-matches--matchId-">
+                                <a href="#endpoints-GETapi-mini-matches--matchId-">Lấy thông tin chi tiết trận đấu</a>
+                            </li>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-POSTapi-mini-matches-store--miniTournamentId-">
                                 <a href="#endpoints-POSTapi-mini-matches-store--miniTournamentId-">Tạo trận đấu mới
 participants nếu là int => user
@@ -396,6 +426,9 @@ truyền mảng lên là team</a>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-GETapi-sports-index">
                                 <a href="#endpoints-GETapi-sports-index">Danh sách môn thể thao</a>
                             </li>
+                                                                                <li class="tocify-item level-2" data-unique="endpoints-POSTapi-sports-update--id-">
+                                <a href="#endpoints-POSTapi-sports-update--id-">POST api/sports/update/{id}</a>
+                            </li>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-GETapi-facilities-index">
                                 <a href="#endpoints-GETapi-facilities-index">GET api/facilities/index</a>
                             </li>
@@ -417,6 +450,9 @@ truyền mảng lên là team</a>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-GETapi-map-match">
                                 <a href="#endpoints-GETapi-map-match">GET api/map/match</a>
                             </li>
+                                                                                <li class="tocify-item level-2" data-unique="endpoints-POSTapi-banners-store">
+                                <a href="#endpoints-POSTapi-banners-store">POST api/banners/store</a>
+                            </li>
                                                                         </ul>
                             </ul>
             </div>
@@ -428,7 +464,7 @@ truyền mảng lên là team</a>
     </ul>
 
     <ul class="toc-footer" id="last-updated">
-        <li>Last updated: November 17, 2025</li>
+        <li>Last updated: December 3, 2025</li>
     </ul>
 </div>
 
@@ -453,7 +489,132 @@ You can switch the language used with the tabs at the top right (or from the nav
 
     
 
-                                <h2 id="endpoints-POSTapi-auth-login">POST api/auth/login</h2>
+                                <h2 id="endpoints-POSTapi-broadcasting-auth">POST api/broadcasting/auth</h2>
+
+<p>
+<small class="badge badge-darkred">requires authentication</small>
+</p>
+
+
+
+<span id="example-requests-POSTapi-broadcasting-auth">
+<blockquote>Example request:</blockquote>
+
+
+<div class="bash-example">
+    <pre><code class="language-bash">curl --request POST \
+    "https://picki.vn/api/broadcasting/auth" \
+    --header "Authorization: Bearer {YOUR_AUTH_KEY}" \
+    --header "Content-Type: application/json" \
+    --header "Accept: application/json"</code></pre></div>
+
+
+<div class="javascript-example">
+    <pre><code class="language-javascript">const url = new URL(
+    "https://picki.vn/api/broadcasting/auth"
+);
+
+const headers = {
+    "Authorization": "Bearer {YOUR_AUTH_KEY}",
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+};
+
+fetch(url, {
+    method: "POST",
+    headers,
+}).then(response =&gt; response.json());</code></pre></div>
+
+</span>
+
+<span id="example-responses-POSTapi-broadcasting-auth">
+</span>
+<span id="execution-results-POSTapi-broadcasting-auth" hidden>
+    <blockquote>Received response<span
+                id="execution-response-status-POSTapi-broadcasting-auth"></span>:
+    </blockquote>
+    <pre class="json"><code id="execution-response-content-POSTapi-broadcasting-auth"
+      data-empty-response-text="<Empty response>" style="max-height: 400px;"></code></pre>
+</span>
+<span id="execution-error-POSTapi-broadcasting-auth" hidden>
+    <blockquote>Request failed with error:</blockquote>
+    <pre><code id="execution-error-message-POSTapi-broadcasting-auth">
+
+Tip: Check that you&#039;re properly connected to the network.
+If you&#039;re a maintainer of ths API, verify that your API is running and you&#039;ve enabled CORS.
+You can check the Dev Tools console for debugging information.</code></pre>
+</span>
+<form id="form-POSTapi-broadcasting-auth" data-method="POST"
+      data-path="api/broadcasting/auth"
+      data-authed="1"
+      data-hasfiles="0"
+      data-isarraybody="0"
+      autocomplete="off"
+      onsubmit="event.preventDefault(); executeTryOut('POSTapi-broadcasting-auth', this);">
+    <h3>
+        Request&nbsp;&nbsp;&nbsp;
+                    <button type="button"
+                    style="background-color: #8fbcd4; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-tryout-POSTapi-broadcasting-auth"
+                    onclick="tryItOut('POSTapi-broadcasting-auth');">Try it out ⚡
+            </button>
+            <button type="button"
+                    style="background-color: #c97a7e; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-canceltryout-POSTapi-broadcasting-auth"
+                    onclick="cancelTryOut('POSTapi-broadcasting-auth');" hidden>Cancel 🛑
+            </button>&nbsp;&nbsp;
+            <button type="submit"
+                    style="background-color: #6ac174; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-executetryout-POSTapi-broadcasting-auth"
+                    data-initial-text="Send Request 💥"
+                    data-loading-text="⏱ Sending..."
+                    hidden>Send Request 💥
+            </button>
+            </h3>
+            <p>
+            <small class="badge badge-black">POST</small>
+            <b><code>api/broadcasting/auth</code></b>
+        </p>
+                <h4 class="fancy-heading-panel"><b>Headers</b></h4>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Authorization" class="auth-value"               data-endpoint="POSTapi-broadcasting-auth"
+               value="Bearer {YOUR_AUTH_KEY}"
+               data-component="header">
+    <br>
+<p>Example: <code>Bearer {YOUR_AUTH_KEY}</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Content-Type"                data-endpoint="POSTapi-broadcasting-auth"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Accept"                data-endpoint="POSTapi-broadcasting-auth"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                        </form>
+
+                    <h2 id="endpoints-POSTapi-auth-login">POST api/auth/login</h2>
 
 <p>
 <small class="badge badge-darkred">requires authentication</small>
@@ -555,6 +716,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-auth-login"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -566,6 +728,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-auth-login"
                value="application/json"
@@ -576,6 +739,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-auth-login"
@@ -589,6 +753,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>login</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="login"                data-endpoint="POSTapi-auth-login"
                value="consequatur"
@@ -600,6 +765,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>password</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="password"                data-endpoint="POSTapi-auth-login"
                value="O[2UZ5ij-e/dl4m{o,"
@@ -709,6 +875,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-auth-register"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -719,6 +886,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-auth-register"
@@ -731,6 +899,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-auth-register"
                value="application/json"
@@ -742,6 +911,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
         <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>login</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="login"                data-endpoint="POSTapi-auth-register"
@@ -852,6 +1022,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-auth-resend-otp"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -862,6 +1033,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-auth-resend-otp"
@@ -874,6 +1046,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-auth-resend-otp"
                value="application/json"
@@ -885,6 +1058,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
         <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>login</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="login"                data-endpoint="POSTapi-auth-resend-otp"
@@ -997,6 +1171,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-auth-verify-otp"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -1008,6 +1183,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-auth-verify-otp"
                value="application/json"
@@ -1018,6 +1194,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-auth-verify-otp"
@@ -1031,6 +1208,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>login</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="login"                data-endpoint="POSTapi-auth-verify-otp"
                value="consequatur"
@@ -1042,12 +1220,13 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>otp</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="otp"                data-endpoint="POSTapi-auth-verify-otp"
                value="810798"
                data-component="body">
     <br>
-<p>Must be 6 digits. Example: <code>810798</code></p>
+<p>validation.digits. Example: <code>810798</code></p>
         </div>
         </form>
 
@@ -1142,6 +1321,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-auth-refresh-token"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -1153,6 +1333,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-auth-refresh-token"
                value="application/json"
@@ -1163,6 +1344,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-auth-refresh-token"
@@ -1275,6 +1457,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-auth-fill-password"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -1286,6 +1469,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-auth-fill-password"
                value="application/json"
@@ -1296,6 +1480,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-auth-fill-password"
@@ -1309,6 +1494,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>login</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="login"                data-endpoint="POSTapi-auth-fill-password"
                value="consequatur"
@@ -1320,12 +1506,13 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>password</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="password"                data-endpoint="POSTapi-auth-fill-password"
                value="[2UZ5ij-e/dl4"
                data-component="body">
     <br>
-<p>Must be at least 6 characters. Example: <code>[2UZ5ij-e/dl4</code></p>
+<p>validation.min. Example: <code>[2UZ5ij-e/dl4</code></p>
         </div>
         </form>
 
@@ -1429,6 +1616,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-auth-forgot-password"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -1440,6 +1628,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-auth-forgot-password"
                value="application/json"
@@ -1450,6 +1639,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-auth-forgot-password"
@@ -1463,12 +1653,13 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>email</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="email"                data-endpoint="POSTapi-auth-forgot-password"
                value="qkunze@example.com"
                data-component="body">
     <br>
-<p>Must be a valid email address. Example: <code>qkunze@example.com</code></p>
+<p>validation.email. Example: <code>qkunze@example.com</code></p>
         </div>
         </form>
 
@@ -1574,6 +1765,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-auth-verify-otp-password"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -1585,6 +1777,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-auth-verify-otp-password"
                value="application/json"
@@ -1595,6 +1788,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-auth-verify-otp-password"
@@ -1608,23 +1802,25 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>email</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="email"                data-endpoint="POSTapi-auth-verify-otp-password"
                value="qkunze@example.com"
                data-component="body">
     <br>
-<p>Must be a valid email address. Example: <code>qkunze@example.com</code></p>
+<p>validation.email. Example: <code>qkunze@example.com</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>otp</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="otp"                data-endpoint="POSTapi-auth-verify-otp-password"
                value="810798"
                data-component="body">
     <br>
-<p>Must be 6 digits. Example: <code>810798</code></p>
+<p>validation.digits. Example: <code>810798</code></p>
         </div>
         </form>
 
@@ -1728,6 +1924,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-auth-resend-otp-password"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -1739,6 +1936,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-auth-resend-otp-password"
                value="application/json"
@@ -1749,6 +1947,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-auth-resend-otp-password"
@@ -1762,12 +1961,13 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>email</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="email"                data-endpoint="POSTapi-auth-resend-otp-password"
                value="qkunze@example.com"
                data-component="body">
     <br>
-<p>Must be a valid email address. The <code>email</code> of an existing record in the users table. Example: <code>qkunze@example.com</code></p>
+<p>validation.email The <code>email</code> of an existing record in the users table. Example: <code>qkunze@example.com</code></p>
         </div>
         </form>
 
@@ -1873,6 +2073,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-auth-reset-password"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -1884,6 +2085,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-auth-reset-password"
                value="application/json"
@@ -1894,6 +2096,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-auth-reset-password"
@@ -1907,23 +2110,25 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>email</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="email"                data-endpoint="POSTapi-auth-reset-password"
                value="qkunze@example.com"
                data-component="body">
     <br>
-<p>Must be a valid email address. Example: <code>qkunze@example.com</code></p>
+<p>validation.email. Example: <code>qkunze@example.com</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>password</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="password"                data-endpoint="POSTapi-auth-reset-password"
                value="Z5ij-e/dl4m{o,"
                data-component="body">
     <br>
-<p>Must be at least 6 characters. Example: <code>Z5ij-e/dl4m{o,</code></p>
+<p>validation.min. Example: <code>Z5ij-e/dl4m{o,</code></p>
         </div>
         </form>
 
@@ -2046,6 +2251,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-auth-google-redirect"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -2057,6 +2263,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-auth-google-redirect"
                value="application/json"
@@ -2067,6 +2274,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-auth-google-redirect"
@@ -2190,6 +2398,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-auth-google-callback"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -2201,6 +2410,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-auth-google-callback"
                value="application/json"
@@ -2211,6 +2421,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-auth-google-callback"
@@ -2340,6 +2551,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-auth-facebook-redirect"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -2351,6 +2563,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-auth-facebook-redirect"
                value="application/json"
@@ -2361,6 +2574,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-auth-facebook-redirect"
@@ -2484,6 +2698,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-auth-facebook-callback"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -2494,6 +2709,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-auth-facebook-callback"
@@ -2506,8 +2722,287 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-auth-facebook-callback"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                        </form>
+
+                    <h2 id="endpoints-GETapi-auth-apple-redirect">GET api/auth/apple/redirect</h2>
+
+<p>
+<small class="badge badge-darkred">requires authentication</small>
+</p>
+
+
+
+<span id="example-requests-GETapi-auth-apple-redirect">
+<blockquote>Example request:</blockquote>
+
+
+<div class="bash-example">
+    <pre><code class="language-bash">curl --request GET \
+    --get "https://picki.vn/api/auth/apple/redirect" \
+    --header "Authorization: Bearer {YOUR_AUTH_KEY}" \
+    --header "Content-Type: application/json" \
+    --header "Accept: application/json"</code></pre></div>
+
+
+<div class="javascript-example">
+    <pre><code class="language-javascript">const url = new URL(
+    "https://picki.vn/api/auth/apple/redirect"
+);
+
+const headers = {
+    "Authorization": "Bearer {YOUR_AUTH_KEY}",
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+};
+
+fetch(url, {
+    method: "GET",
+    headers,
+}).then(response =&gt; response.json());</code></pre></div>
+
+</span>
+
+<span id="example-responses-GETapi-auth-apple-redirect">
+            <blockquote>
+            <p>Example response (302):</p>
+        </blockquote>
+                <details class="annotation">
+            <summary style="cursor: pointer;">
+                <small onclick="textContent = parentElement.parentElement.open ? 'Show headers' : 'Hide headers'">Show headers</small>
+            </summary>
+            <pre><code class="language-http">cache-control: no-cache, private
+location: https://appleid.apple.com/auth/authorize?client_id=com.vrplus.picki&amp;redirect_uri=https%3A%2F%2Fpicki.vn%2Fapi%2Fauth%2Fapple%2Fcallback&amp;scope=name%20email&amp;response_type=code&amp;response_mode=form_post
+content-type: text/html; charset=utf-8
+x-ratelimit-limit: 60
+x-ratelimit-remaining: 55
+access-control-allow-origin: *
+ </code></pre></details>         <pre>
+
+<code class="language-json" style="max-height: 300px;">&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+    &lt;head&gt;
+        &lt;meta charset=&quot;UTF-8&quot; /&gt;
+        &lt;meta http-equiv=&quot;refresh&quot; content=&quot;0;url=&#039;https://appleid.apple.com/auth/authorize?client_id=com.vrplus.picki&amp;amp;redirect_uri=https%3A%2F%2Fpicki.vn%2Fapi%2Fauth%2Fapple%2Fcallback&amp;amp;scope=name%20email&amp;amp;response_type=code&amp;amp;response_mode=form_post&#039;&quot; /&gt;
+
+        &lt;title&gt;Redirecting to https://appleid.apple.com/auth/authorize?client_id=com.vrplus.picki&amp;amp;redirect_uri=https%3A%2F%2Fpicki.vn%2Fapi%2Fauth%2Fapple%2Fcallback&amp;amp;scope=name%20email&amp;amp;response_type=code&amp;amp;response_mode=form_post&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+        Redirecting to &lt;a href=&quot;https://appleid.apple.com/auth/authorize?client_id=com.vrplus.picki&amp;amp;redirect_uri=https%3A%2F%2Fpicki.vn%2Fapi%2Fauth%2Fapple%2Fcallback&amp;amp;scope=name%20email&amp;amp;response_type=code&amp;amp;response_mode=form_post&quot;&gt;https://appleid.apple.com/auth/authorize?client_id=com.vrplus.picki&amp;amp;redirect_uri=https%3A%2F%2Fpicki.vn%2Fapi%2Fauth%2Fapple%2Fcallback&amp;amp;scope=name%20email&amp;amp;response_type=code&amp;amp;response_mode=form_post&lt;/a&gt;.
+    &lt;/body&gt;
+&lt;/html&gt;</code>
+ </pre>
+    </span>
+<span id="execution-results-GETapi-auth-apple-redirect" hidden>
+    <blockquote>Received response<span
+                id="execution-response-status-GETapi-auth-apple-redirect"></span>:
+    </blockquote>
+    <pre class="json"><code id="execution-response-content-GETapi-auth-apple-redirect"
+      data-empty-response-text="<Empty response>" style="max-height: 400px;"></code></pre>
+</span>
+<span id="execution-error-GETapi-auth-apple-redirect" hidden>
+    <blockquote>Request failed with error:</blockquote>
+    <pre><code id="execution-error-message-GETapi-auth-apple-redirect">
+
+Tip: Check that you&#039;re properly connected to the network.
+If you&#039;re a maintainer of ths API, verify that your API is running and you&#039;ve enabled CORS.
+You can check the Dev Tools console for debugging information.</code></pre>
+</span>
+<form id="form-GETapi-auth-apple-redirect" data-method="GET"
+      data-path="api/auth/apple/redirect"
+      data-authed="1"
+      data-hasfiles="0"
+      data-isarraybody="0"
+      autocomplete="off"
+      onsubmit="event.preventDefault(); executeTryOut('GETapi-auth-apple-redirect', this);">
+    <h3>
+        Request&nbsp;&nbsp;&nbsp;
+                    <button type="button"
+                    style="background-color: #8fbcd4; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-tryout-GETapi-auth-apple-redirect"
+                    onclick="tryItOut('GETapi-auth-apple-redirect');">Try it out ⚡
+            </button>
+            <button type="button"
+                    style="background-color: #c97a7e; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-canceltryout-GETapi-auth-apple-redirect"
+                    onclick="cancelTryOut('GETapi-auth-apple-redirect');" hidden>Cancel 🛑
+            </button>&nbsp;&nbsp;
+            <button type="submit"
+                    style="background-color: #6ac174; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-executetryout-GETapi-auth-apple-redirect"
+                    data-initial-text="Send Request 💥"
+                    data-loading-text="⏱ Sending..."
+                    hidden>Send Request 💥
+            </button>
+            </h3>
+            <p>
+            <small class="badge badge-green">GET</small>
+            <b><code>api/auth/apple/redirect</code></b>
+        </p>
+                <h4 class="fancy-heading-panel"><b>Headers</b></h4>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Authorization" class="auth-value"               data-endpoint="GETapi-auth-apple-redirect"
+               value="Bearer {YOUR_AUTH_KEY}"
+               data-component="header">
+    <br>
+<p>Example: <code>Bearer {YOUR_AUTH_KEY}</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Content-Type"                data-endpoint="GETapi-auth-apple-redirect"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Accept"                data-endpoint="GETapi-auth-apple-redirect"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                        </form>
+
+                    <h2 id="endpoints-POSTapi-auth-apple-callback">POST api/auth/apple/callback</h2>
+
+<p>
+<small class="badge badge-darkred">requires authentication</small>
+</p>
+
+
+
+<span id="example-requests-POSTapi-auth-apple-callback">
+<blockquote>Example request:</blockquote>
+
+
+<div class="bash-example">
+    <pre><code class="language-bash">curl --request POST \
+    "https://picki.vn/api/auth/apple/callback" \
+    --header "Authorization: Bearer {YOUR_AUTH_KEY}" \
+    --header "Content-Type: application/json" \
+    --header "Accept: application/json"</code></pre></div>
+
+
+<div class="javascript-example">
+    <pre><code class="language-javascript">const url = new URL(
+    "https://picki.vn/api/auth/apple/callback"
+);
+
+const headers = {
+    "Authorization": "Bearer {YOUR_AUTH_KEY}",
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+};
+
+fetch(url, {
+    method: "POST",
+    headers,
+}).then(response =&gt; response.json());</code></pre></div>
+
+</span>
+
+<span id="example-responses-POSTapi-auth-apple-callback">
+</span>
+<span id="execution-results-POSTapi-auth-apple-callback" hidden>
+    <blockquote>Received response<span
+                id="execution-response-status-POSTapi-auth-apple-callback"></span>:
+    </blockquote>
+    <pre class="json"><code id="execution-response-content-POSTapi-auth-apple-callback"
+      data-empty-response-text="<Empty response>" style="max-height: 400px;"></code></pre>
+</span>
+<span id="execution-error-POSTapi-auth-apple-callback" hidden>
+    <blockquote>Request failed with error:</blockquote>
+    <pre><code id="execution-error-message-POSTapi-auth-apple-callback">
+
+Tip: Check that you&#039;re properly connected to the network.
+If you&#039;re a maintainer of ths API, verify that your API is running and you&#039;ve enabled CORS.
+You can check the Dev Tools console for debugging information.</code></pre>
+</span>
+<form id="form-POSTapi-auth-apple-callback" data-method="POST"
+      data-path="api/auth/apple/callback"
+      data-authed="1"
+      data-hasfiles="0"
+      data-isarraybody="0"
+      autocomplete="off"
+      onsubmit="event.preventDefault(); executeTryOut('POSTapi-auth-apple-callback', this);">
+    <h3>
+        Request&nbsp;&nbsp;&nbsp;
+                    <button type="button"
+                    style="background-color: #8fbcd4; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-tryout-POSTapi-auth-apple-callback"
+                    onclick="tryItOut('POSTapi-auth-apple-callback');">Try it out ⚡
+            </button>
+            <button type="button"
+                    style="background-color: #c97a7e; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-canceltryout-POSTapi-auth-apple-callback"
+                    onclick="cancelTryOut('POSTapi-auth-apple-callback');" hidden>Cancel 🛑
+            </button>&nbsp;&nbsp;
+            <button type="submit"
+                    style="background-color: #6ac174; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-executetryout-POSTapi-auth-apple-callback"
+                    data-initial-text="Send Request 💥"
+                    data-loading-text="⏱ Sending..."
+                    hidden>Send Request 💥
+            </button>
+            </h3>
+            <p>
+            <small class="badge badge-black">POST</small>
+            <b><code>api/auth/apple/callback</code></b>
+        </p>
+                <h4 class="fancy-heading-panel"><b>Headers</b></h4>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Authorization" class="auth-value"               data-endpoint="POSTapi-auth-apple-callback"
+               value="Bearer {YOUR_AUTH_KEY}"
+               data-component="header">
+    <br>
+<p>Example: <code>Bearer {YOUR_AUTH_KEY}</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Content-Type"                data-endpoint="POSTapi-auth-apple-callback"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Accept"                data-endpoint="POSTapi-auth-apple-callback"
                value="application/json"
                data-component="header">
     <br>
@@ -2615,6 +3110,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-auth-google"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -2626,6 +3122,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-auth-google"
                value="application/json"
@@ -2636,6 +3133,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-auth-google"
@@ -2649,8 +3147,303 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>id_token</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="id_token"                data-endpoint="POSTapi-auth-google"
+               value="consequatur"
+               data-component="body">
+    <br>
+<p>Example: <code>consequatur</code></p>
+        </div>
+        </form>
+
+                    <h2 id="endpoints-POSTapi-auth-facebook">POST api/auth/facebook</h2>
+
+<p>
+<small class="badge badge-darkred">requires authentication</small>
+</p>
+
+
+
+<span id="example-requests-POSTapi-auth-facebook">
+<blockquote>Example request:</blockquote>
+
+
+<div class="bash-example">
+    <pre><code class="language-bash">curl --request POST \
+    "https://picki.vn/api/auth/facebook" \
+    --header "Authorization: Bearer {YOUR_AUTH_KEY}" \
+    --header "Content-Type: application/json" \
+    --header "Accept: application/json" \
+    --data "{
+    \"access_token\": \"consequatur\"
+}"
+</code></pre></div>
+
+
+<div class="javascript-example">
+    <pre><code class="language-javascript">const url = new URL(
+    "https://picki.vn/api/auth/facebook"
+);
+
+const headers = {
+    "Authorization": "Bearer {YOUR_AUTH_KEY}",
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+};
+
+let body = {
+    "access_token": "consequatur"
+};
+
+fetch(url, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+}).then(response =&gt; response.json());</code></pre></div>
+
+</span>
+
+<span id="example-responses-POSTapi-auth-facebook">
+</span>
+<span id="execution-results-POSTapi-auth-facebook" hidden>
+    <blockquote>Received response<span
+                id="execution-response-status-POSTapi-auth-facebook"></span>:
+    </blockquote>
+    <pre class="json"><code id="execution-response-content-POSTapi-auth-facebook"
+      data-empty-response-text="<Empty response>" style="max-height: 400px;"></code></pre>
+</span>
+<span id="execution-error-POSTapi-auth-facebook" hidden>
+    <blockquote>Request failed with error:</blockquote>
+    <pre><code id="execution-error-message-POSTapi-auth-facebook">
+
+Tip: Check that you&#039;re properly connected to the network.
+If you&#039;re a maintainer of ths API, verify that your API is running and you&#039;ve enabled CORS.
+You can check the Dev Tools console for debugging information.</code></pre>
+</span>
+<form id="form-POSTapi-auth-facebook" data-method="POST"
+      data-path="api/auth/facebook"
+      data-authed="1"
+      data-hasfiles="0"
+      data-isarraybody="0"
+      autocomplete="off"
+      onsubmit="event.preventDefault(); executeTryOut('POSTapi-auth-facebook', this);">
+    <h3>
+        Request&nbsp;&nbsp;&nbsp;
+                    <button type="button"
+                    style="background-color: #8fbcd4; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-tryout-POSTapi-auth-facebook"
+                    onclick="tryItOut('POSTapi-auth-facebook');">Try it out ⚡
+            </button>
+            <button type="button"
+                    style="background-color: #c97a7e; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-canceltryout-POSTapi-auth-facebook"
+                    onclick="cancelTryOut('POSTapi-auth-facebook');" hidden>Cancel 🛑
+            </button>&nbsp;&nbsp;
+            <button type="submit"
+                    style="background-color: #6ac174; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-executetryout-POSTapi-auth-facebook"
+                    data-initial-text="Send Request 💥"
+                    data-loading-text="⏱ Sending..."
+                    hidden>Send Request 💥
+            </button>
+            </h3>
+            <p>
+            <small class="badge badge-black">POST</small>
+            <b><code>api/auth/facebook</code></b>
+        </p>
+                <h4 class="fancy-heading-panel"><b>Headers</b></h4>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Authorization" class="auth-value"               data-endpoint="POSTapi-auth-facebook"
+               value="Bearer {YOUR_AUTH_KEY}"
+               data-component="header">
+    <br>
+<p>Example: <code>Bearer {YOUR_AUTH_KEY}</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Content-Type"                data-endpoint="POSTapi-auth-facebook"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Accept"                data-endpoint="POSTapi-auth-facebook"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <h4 class="fancy-heading-panel"><b>Body Parameters</b></h4>
+        <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>access_token</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="access_token"                data-endpoint="POSTapi-auth-facebook"
+               value="consequatur"
+               data-component="body">
+    <br>
+<p>Example: <code>consequatur</code></p>
+        </div>
+        </form>
+
+                    <h2 id="endpoints-POSTapi-auth-apple">POST api/auth/apple</h2>
+
+<p>
+<small class="badge badge-darkred">requires authentication</small>
+</p>
+
+
+
+<span id="example-requests-POSTapi-auth-apple">
+<blockquote>Example request:</blockquote>
+
+
+<div class="bash-example">
+    <pre><code class="language-bash">curl --request POST \
+    "https://picki.vn/api/auth/apple" \
+    --header "Authorization: Bearer {YOUR_AUTH_KEY}" \
+    --header "Content-Type: application/json" \
+    --header "Accept: application/json" \
+    --data "{
+    \"id_token\": \"consequatur\"
+}"
+</code></pre></div>
+
+
+<div class="javascript-example">
+    <pre><code class="language-javascript">const url = new URL(
+    "https://picki.vn/api/auth/apple"
+);
+
+const headers = {
+    "Authorization": "Bearer {YOUR_AUTH_KEY}",
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+};
+
+let body = {
+    "id_token": "consequatur"
+};
+
+fetch(url, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+}).then(response =&gt; response.json());</code></pre></div>
+
+</span>
+
+<span id="example-responses-POSTapi-auth-apple">
+</span>
+<span id="execution-results-POSTapi-auth-apple" hidden>
+    <blockquote>Received response<span
+                id="execution-response-status-POSTapi-auth-apple"></span>:
+    </blockquote>
+    <pre class="json"><code id="execution-response-content-POSTapi-auth-apple"
+      data-empty-response-text="<Empty response>" style="max-height: 400px;"></code></pre>
+</span>
+<span id="execution-error-POSTapi-auth-apple" hidden>
+    <blockquote>Request failed with error:</blockquote>
+    <pre><code id="execution-error-message-POSTapi-auth-apple">
+
+Tip: Check that you&#039;re properly connected to the network.
+If you&#039;re a maintainer of ths API, verify that your API is running and you&#039;ve enabled CORS.
+You can check the Dev Tools console for debugging information.</code></pre>
+</span>
+<form id="form-POSTapi-auth-apple" data-method="POST"
+      data-path="api/auth/apple"
+      data-authed="1"
+      data-hasfiles="0"
+      data-isarraybody="0"
+      autocomplete="off"
+      onsubmit="event.preventDefault(); executeTryOut('POSTapi-auth-apple', this);">
+    <h3>
+        Request&nbsp;&nbsp;&nbsp;
+                    <button type="button"
+                    style="background-color: #8fbcd4; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-tryout-POSTapi-auth-apple"
+                    onclick="tryItOut('POSTapi-auth-apple');">Try it out ⚡
+            </button>
+            <button type="button"
+                    style="background-color: #c97a7e; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-canceltryout-POSTapi-auth-apple"
+                    onclick="cancelTryOut('POSTapi-auth-apple');" hidden>Cancel 🛑
+            </button>&nbsp;&nbsp;
+            <button type="submit"
+                    style="background-color: #6ac174; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-executetryout-POSTapi-auth-apple"
+                    data-initial-text="Send Request 💥"
+                    data-loading-text="⏱ Sending..."
+                    hidden>Send Request 💥
+            </button>
+            </h3>
+            <p>
+            <small class="badge badge-black">POST</small>
+            <b><code>api/auth/apple</code></b>
+        </p>
+                <h4 class="fancy-heading-panel"><b>Headers</b></h4>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Authorization" class="auth-value"               data-endpoint="POSTapi-auth-apple"
+               value="Bearer {YOUR_AUTH_KEY}"
+               data-component="header">
+    <br>
+<p>Example: <code>Bearer {YOUR_AUTH_KEY}</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Content-Type"                data-endpoint="POSTapi-auth-apple"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Accept"                data-endpoint="POSTapi-auth-apple"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <h4 class="fancy-heading-panel"><b>Body Parameters</b></h4>
+        <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>id_token</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="id_token"                data-endpoint="POSTapi-auth-apple"
                value="consequatur"
                data-component="body">
     <br>
@@ -2707,7 +3500,7 @@ fetch(url, {
             <pre><code class="language-http">cache-control: no-cache, private
 content-type: application/json
 x-ratelimit-limit: 60
-x-ratelimit-remaining: 55
+x-ratelimit-remaining: 54
 access-control-allow-origin: *
  </code></pre></details>         <pre>
 
@@ -2769,6 +3562,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-verify-email"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -2780,6 +3574,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-verify-email"
                value="application/json"
@@ -2790,6 +3585,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-verify-email"
@@ -2891,6 +3687,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-resend-email"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -2902,6 +3699,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-resend-email"
                value="application/json"
@@ -2912,6 +3710,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-resend-email"
@@ -3029,6 +3828,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-me"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -3040,6 +3840,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-me"
                value="application/json"
@@ -3050,6 +3851,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-me"
@@ -3125,7 +3927,7 @@ fetch(url, {
 
 <span id="example-responses-GETapi-user-index">
             <blockquote>
-            <p>Example response (500):</p>
+            <p>Example response (401):</p>
         </blockquote>
                 <details class="annotation">
             <summary style="cursor: pointer;">
@@ -3137,7 +3939,7 @@ access-control-allow-origin: *
  </code></pre></details>         <pre>
 
 <code class="language-json" style="max-height: 300px;">{
-    &quot;message&quot;: &quot;Server Error&quot;
+    &quot;message&quot;: &quot;Unauthenticated.&quot;
 }</code>
  </pre>
     </span>
@@ -3196,6 +3998,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-user-index"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -3207,6 +4010,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-user-index"
                value="application/json"
@@ -3217,6 +4021,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-user-index"
@@ -3230,6 +4035,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>lat</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="lat"                data-endpoint="GETapi-user-index"
                value=""
@@ -3241,6 +4047,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>lng</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="lng"                data-endpoint="GETapi-user-index"
                value=""
@@ -3252,17 +4059,19 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>radius</code></b>&nbsp;&nbsp;
 <small>number</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="radius"                data-endpoint="GETapi-user-index"
                value="73"
                data-component="body">
     <br>
-<p>Must be at least 1. Example: <code>73</code></p>
+<p>validation.min. Example: <code>73</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>minLat</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="minLat"                data-endpoint="GETapi-user-index"
                value=""
@@ -3274,6 +4083,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>maxLat</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="maxLat"                data-endpoint="GETapi-user-index"
                value=""
@@ -3285,6 +4095,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>minLng</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="minLng"                data-endpoint="GETapi-user-index"
                value=""
@@ -3296,6 +4107,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>maxLng</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="maxLng"                data-endpoint="GETapi-user-index"
                value=""
@@ -3307,17 +4119,19 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>keyword</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="keyword"                data-endpoint="GETapi-user-index"
                value="mqeopfuudtdsufvyvddqa"
                data-component="body">
     <br>
-<p>Must not be greater than 255 characters. Example: <code>mqeopfuudtdsufvyvddqa</code></p>
+<p>validation.max. Example: <code>mqeopfuudtdsufvyvddqa</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>sport_id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="sport_id"                data-endpoint="GETapi-user-index"
                value=""
@@ -3329,17 +4143,19 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>per_page</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="per_page"                data-endpoint="GETapi-user-index"
                value="13"
                data-component="body">
     <br>
-<p>Must be at least 1. Must not be greater than 200. Example: <code>13</code></p>
+<p>validation.min validation.max. Example: <code>13</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>location_id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="location_id"                data-endpoint="GETapi-user-index"
                value=""
@@ -3351,6 +4167,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>favourite_player</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="GETapi-user-index" style="display: none">
             <input type="radio" name="favourite_player"
                    value="true"
@@ -3372,6 +4189,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>is_connected</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="GETapi-user-index" style="display: none">
             <input type="radio" name="is_connected"
                    value="true"
@@ -3393,6 +4211,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>gender</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="gender"                data-endpoint="GETapi-user-index"
                value=""
@@ -3404,6 +4223,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>time_of_day</code></b>&nbsp;&nbsp;
 <small>string[]</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="time_of_day[0]"                data-endpoint="GETapi-user-index"
                data-component="body">
@@ -3417,6 +4237,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>rating</code></b>&nbsp;&nbsp;
 <small>string[]</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="rating[0]"                data-endpoint="GETapi-user-index"
                data-component="body">
@@ -3430,6 +4251,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>online_recently</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="GETapi-user-index" style="display: none">
             <input type="radio" name="online_recently"
                    value="true"
@@ -3451,17 +4273,19 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>online_before_minutes</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="online_before_minutes"                data-endpoint="GETapi-user-index"
                value="26"
                data-component="body">
     <br>
-<p>Must be at least 1. Example: <code>26</code></p>
+<p>validation.min. Example: <code>26</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>recent_matches</code></b>&nbsp;&nbsp;
 <small>string[]</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="recent_matches[0]"                data-endpoint="GETapi-user-index"
                data-component="body">
@@ -3475,6 +4299,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>same_club_id</code></b>&nbsp;&nbsp;
 <small>string[]</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="same_club_id[0]"                data-endpoint="GETapi-user-index"
                data-component="body">
@@ -3488,6 +4313,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>verify_profile</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="GETapi-user-index" style="display: none">
             <input type="radio" name="verify_profile"
                    value="true"
@@ -3509,6 +4335,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>achievement</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="achievement"                data-endpoint="GETapi-user-index"
                value=""
@@ -3520,6 +4347,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>is_map</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="GETapi-user-index" style="display: none">
             <input type="radio" name="is_map"
                    value="true"
@@ -3579,7 +4407,7 @@ fetch(url, {
 
 <span id="example-responses-GETapi-user--id-">
             <blockquote>
-            <p>Example response (500):</p>
+            <p>Example response (401):</p>
         </blockquote>
                 <details class="annotation">
             <summary style="cursor: pointer;">
@@ -3591,7 +4419,7 @@ access-control-allow-origin: *
  </code></pre></details>         <pre>
 
 <code class="language-json" style="max-height: 300px;">{
-    &quot;message&quot;: &quot;Server Error&quot;
+    &quot;message&quot;: &quot;Unauthenticated.&quot;
 }</code>
  </pre>
     </span>
@@ -3646,6 +4474,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-user--id-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -3656,6 +4485,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-user--id-"
@@ -3668,6 +4498,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-user--id-"
                value="application/json"
@@ -3679,6 +4510,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="id"                data-endpoint="GETapi-user--id-"
@@ -3714,12 +4546,12 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --form "latitude=consequatur"\
     --form "longitude=consequatur"\
     --form "address=mqeopfuudtdsufvyvddqa"\
-    --form "date_of_birth=2025-11-17"\
-    --form "score_value[]=45"\
-    --form "visibility=private"\
-    --form "self_score=iihfqcoynlazghdtqtqxb"\
-    --form "avatar_url=@/tmp/phpo3g3VZ" \
-    --form "thumbnail=@/tmp/phprTIxwq" </code></pre></div>
+    --form "date_of_birth=2025-12-03"\
+    --form "score_value[]=mniihfqcoynlazghdtqtqxbajwbpilpmufinllwloauydlsmsjuryvojcybzvrbyickznkygl"\
+    --form "visibility=open"\
+    --form "self_score=igmkwxphlvazjrcnfbaqy"\
+    --form "avatar_url=@/tmp/phphZFLDr" \
+    --form "thumbnail=@/tmp/phpjlndCt" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -3741,10 +4573,10 @@ body.append('is_profile_completed', '');
 body.append('latitude', 'consequatur');
 body.append('longitude', 'consequatur');
 body.append('address', 'mqeopfuudtdsufvyvddqa');
-body.append('date_of_birth', '2025-11-17');
-body.append('score_value[]', '45');
-body.append('visibility', 'private');
-body.append('self_score', 'iihfqcoynlazghdtqtqxb');
+body.append('date_of_birth', '2025-12-03');
+body.append('score_value[]', 'mniihfqcoynlazghdtqtqxbajwbpilpmufinllwloauydlsmsjuryvojcybzvrbyickznkygl');
+body.append('visibility', 'open');
+body.append('self_score', 'igmkwxphlvazjrcnfbaqy');
 body.append('avatar_url', document.querySelector('input[name="avatar_url"]').files[0]);
 body.append('thumbnail', document.querySelector('input[name="thumbnail"]').files[0]);
 
@@ -3809,6 +4641,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-user-update"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -3820,6 +4653,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-user-update"
                value="multipart/form-data"
@@ -3830,6 +4664,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-user-update"
@@ -3843,39 +4678,43 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>full_name</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="full_name"                data-endpoint="POSTapi-user-update"
                value="vmqeopfuudtdsufvyvddq"
                data-component="body">
     <br>
-<p>Must not be greater than 255 characters. Example: <code>vmqeopfuudtdsufvyvddq</code></p>
+<p>validation.max. Example: <code>vmqeopfuudtdsufvyvddq</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>avatar_url</code></b>&nbsp;&nbsp;
 <small>file</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="file" style="display: none"
                               name="avatar_url"                data-endpoint="POSTapi-user-update"
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/tmp/phpo3g3VZ</code></p>
+<p>validation.image validation.max. Example: <code>/tmp/phphZFLDr</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>thumbnail</code></b>&nbsp;&nbsp;
 <small>file</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="file" style="display: none"
                               name="thumbnail"                data-endpoint="POSTapi-user-update"
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/tmp/phprTIxwq</code></p>
+<p>validation.image validation.max. Example: <code>/tmp/phpjlndCt</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>location_id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="location_id"                data-endpoint="POSTapi-user-update"
                value=""
@@ -3887,28 +4726,31 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>about</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="about"                data-endpoint="POSTapi-user-update"
                value="amniihfqcoynlazghdtqt"
                data-component="body">
     <br>
-<p>Must not be greater than 300 characters. Example: <code>amniihfqcoynlazghdtqt</code></p>
+<p>validation.max. Example: <code>amniihfqcoynlazghdtqt</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>password</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="password"                data-endpoint="POSTapi-user-update"
                value="t(!Cs'YAKYLk4>S"
                data-component="body">
     <br>
-<p>Must be at least 8 characters. Example: <code>t(!Cs'YAKYLk4&gt;S</code></p>
+<p>validation.min. Example: <code>t(!Cs'YAKYLk4&gt;S</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>is_profile_completed</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="POSTapi-user-update" style="display: none">
             <input type="radio" name="is_profile_completed"
                    value="true"
@@ -3930,6 +4772,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>latitude</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="latitude"                data-endpoint="POSTapi-user-update"
                value="consequatur"
@@ -3941,6 +4784,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>longitude</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="longitude"                data-endpoint="POSTapi-user-update"
                value="consequatur"
@@ -3952,17 +4796,19 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>address</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="address"                data-endpoint="POSTapi-user-update"
                value="mqeopfuudtdsufvyvddqa"
                data-component="body">
     <br>
-<p>Must not be greater than 255 characters. Example: <code>mqeopfuudtdsufvyvddqa</code></p>
+<p>validation.max. Example: <code>mqeopfuudtdsufvyvddqa</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>gender</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="gender"                data-endpoint="POSTapi-user-update"
                value=""
@@ -3974,17 +4820,19 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>date_of_birth</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="date_of_birth"                data-endpoint="POSTapi-user-update"
-               value="2025-11-17"
+               value="2025-12-03"
                data-component="body">
     <br>
-<p>Must be a valid date in the format <code>Y-m-d</code>. Example: <code>2025-11-17</code></p>
+<p>Must be a valid date in the format <code>Y-m-d</code>. Example: <code>2025-12-03</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>sport_ids</code></b>&nbsp;&nbsp;
 <small>string[]</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="sport_ids[0]"                data-endpoint="POSTapi-user-update"
                data-component="body">
@@ -3996,27 +4844,29 @@ You can check the Dev Tools console for debugging information.</code></pre>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>score_value</code></b>&nbsp;&nbsp;
-<small>integer[]</small>&nbsp;
+<small>string[]</small>&nbsp;
 <i>optional</i> &nbsp;
-                <input type="number" style="display: none"
-               step="any"               name="score_value[0]"                data-endpoint="POSTapi-user-update"
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="score_value[0]"                data-endpoint="POSTapi-user-update"
                data-component="body">
-        <input type="number" style="display: none"
+        <input type="text" style="display: none"
                name="score_value[1]"                data-endpoint="POSTapi-user-update"
                data-component="body">
     <br>
-<p>Must be at least 0.</p>
+<p>validation.min.</p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>visibility</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="visibility"                data-endpoint="POSTapi-user-update"
-               value="private"
+               value="open"
                data-component="body">
     <br>
-<p>Example: <code>private</code></p>
+<p>Example: <code>open</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>open</code></li> <li><code>friend-only</code></li> <li><code>private</code></li></ul>
         </div>
@@ -4024,12 +4874,13 @@ Must be one of:
             <b style="line-height: 2;"><code>self_score</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="self_score"                data-endpoint="POSTapi-user-update"
-               value="iihfqcoynlazghdtqtqxb"
+               value="igmkwxphlvazjrcnfbaqy"
                data-component="body">
     <br>
-<p>Must not be greater than 255 characters. Example: <code>iihfqcoynlazghdtqtqxb</code></p>
+<p>validation.max. Example: <code>igmkwxphlvazjrcnfbaqy</code></p>
         </div>
         </form>
 
@@ -4124,6 +4975,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="DELETEapi-user-delete--id-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -4135,6 +4987,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="DELETEapi-user-delete--id-"
                value="application/json"
@@ -4145,6 +4998,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="DELETEapi-user-delete--id-"
@@ -4158,6 +5012,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="id"                data-endpoint="DELETEapi-user-delete--id-"
                value="consequatur"
@@ -4166,6 +5021,288 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <p>The ID of the delete. Example: <code>consequatur</code></p>
             </div>
                     </form>
+
+                    <h2 id="endpoints-GETapi-user-matches-dataset">GET api/user/matches/dataset</h2>
+
+<p>
+<small class="badge badge-darkred">requires authentication</small>
+</p>
+
+
+
+<span id="example-requests-GETapi-user-matches-dataset">
+<blockquote>Example request:</blockquote>
+
+
+<div class="bash-example">
+    <pre><code class="language-bash">curl --request GET \
+    --get "https://picki.vn/api/user/matches/dataset" \
+    --header "Authorization: Bearer {YOUR_AUTH_KEY}" \
+    --header "Content-Type: application/json" \
+    --header "Accept: application/json"</code></pre></div>
+
+
+<div class="javascript-example">
+    <pre><code class="language-javascript">const url = new URL(
+    "https://picki.vn/api/user/matches/dataset"
+);
+
+const headers = {
+    "Authorization": "Bearer {YOUR_AUTH_KEY}",
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+};
+
+fetch(url, {
+    method: "GET",
+    headers,
+}).then(response =&gt; response.json());</code></pre></div>
+
+</span>
+
+<span id="example-responses-GETapi-user-matches-dataset">
+            <blockquote>
+            <p>Example response (401):</p>
+        </blockquote>
+                <details class="annotation">
+            <summary style="cursor: pointer;">
+                <small onclick="textContent = parentElement.parentElement.open ? 'Show headers' : 'Hide headers'">Show headers</small>
+            </summary>
+            <pre><code class="language-http">cache-control: no-cache, private
+content-type: application/json
+access-control-allow-origin: *
+ </code></pre></details>         <pre>
+
+<code class="language-json" style="max-height: 300px;">{
+    &quot;message&quot;: &quot;Unauthenticated.&quot;
+}</code>
+ </pre>
+    </span>
+<span id="execution-results-GETapi-user-matches-dataset" hidden>
+    <blockquote>Received response<span
+                id="execution-response-status-GETapi-user-matches-dataset"></span>:
+    </blockquote>
+    <pre class="json"><code id="execution-response-content-GETapi-user-matches-dataset"
+      data-empty-response-text="<Empty response>" style="max-height: 400px;"></code></pre>
+</span>
+<span id="execution-error-GETapi-user-matches-dataset" hidden>
+    <blockquote>Request failed with error:</blockquote>
+    <pre><code id="execution-error-message-GETapi-user-matches-dataset">
+
+Tip: Check that you&#039;re properly connected to the network.
+If you&#039;re a maintainer of ths API, verify that your API is running and you&#039;ve enabled CORS.
+You can check the Dev Tools console for debugging information.</code></pre>
+</span>
+<form id="form-GETapi-user-matches-dataset" data-method="GET"
+      data-path="api/user/matches/dataset"
+      data-authed="1"
+      data-hasfiles="0"
+      data-isarraybody="0"
+      autocomplete="off"
+      onsubmit="event.preventDefault(); executeTryOut('GETapi-user-matches-dataset', this);">
+    <h3>
+        Request&nbsp;&nbsp;&nbsp;
+                    <button type="button"
+                    style="background-color: #8fbcd4; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-tryout-GETapi-user-matches-dataset"
+                    onclick="tryItOut('GETapi-user-matches-dataset');">Try it out ⚡
+            </button>
+            <button type="button"
+                    style="background-color: #c97a7e; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-canceltryout-GETapi-user-matches-dataset"
+                    onclick="cancelTryOut('GETapi-user-matches-dataset');" hidden>Cancel 🛑
+            </button>&nbsp;&nbsp;
+            <button type="submit"
+                    style="background-color: #6ac174; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-executetryout-GETapi-user-matches-dataset"
+                    data-initial-text="Send Request 💥"
+                    data-loading-text="⏱ Sending..."
+                    hidden>Send Request 💥
+            </button>
+            </h3>
+            <p>
+            <small class="badge badge-green">GET</small>
+            <b><code>api/user/matches/dataset</code></b>
+        </p>
+                <h4 class="fancy-heading-panel"><b>Headers</b></h4>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Authorization" class="auth-value"               data-endpoint="GETapi-user-matches-dataset"
+               value="Bearer {YOUR_AUTH_KEY}"
+               data-component="header">
+    <br>
+<p>Example: <code>Bearer {YOUR_AUTH_KEY}</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Content-Type"                data-endpoint="GETapi-user-matches-dataset"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Accept"                data-endpoint="GETapi-user-matches-dataset"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                        </form>
+
+                    <h2 id="endpoints-GETapi-user-matches-list">GET api/user/matches/list</h2>
+
+<p>
+<small class="badge badge-darkred">requires authentication</small>
+</p>
+
+
+
+<span id="example-requests-GETapi-user-matches-list">
+<blockquote>Example request:</blockquote>
+
+
+<div class="bash-example">
+    <pre><code class="language-bash">curl --request GET \
+    --get "https://picki.vn/api/user/matches/list" \
+    --header "Authorization: Bearer {YOUR_AUTH_KEY}" \
+    --header "Content-Type: application/json" \
+    --header "Accept: application/json"</code></pre></div>
+
+
+<div class="javascript-example">
+    <pre><code class="language-javascript">const url = new URL(
+    "https://picki.vn/api/user/matches/list"
+);
+
+const headers = {
+    "Authorization": "Bearer {YOUR_AUTH_KEY}",
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+};
+
+fetch(url, {
+    method: "GET",
+    headers,
+}).then(response =&gt; response.json());</code></pre></div>
+
+</span>
+
+<span id="example-responses-GETapi-user-matches-list">
+            <blockquote>
+            <p>Example response (401):</p>
+        </blockquote>
+                <details class="annotation">
+            <summary style="cursor: pointer;">
+                <small onclick="textContent = parentElement.parentElement.open ? 'Show headers' : 'Hide headers'">Show headers</small>
+            </summary>
+            <pre><code class="language-http">cache-control: no-cache, private
+content-type: application/json
+access-control-allow-origin: *
+ </code></pre></details>         <pre>
+
+<code class="language-json" style="max-height: 300px;">{
+    &quot;message&quot;: &quot;Unauthenticated.&quot;
+}</code>
+ </pre>
+    </span>
+<span id="execution-results-GETapi-user-matches-list" hidden>
+    <blockquote>Received response<span
+                id="execution-response-status-GETapi-user-matches-list"></span>:
+    </blockquote>
+    <pre class="json"><code id="execution-response-content-GETapi-user-matches-list"
+      data-empty-response-text="<Empty response>" style="max-height: 400px;"></code></pre>
+</span>
+<span id="execution-error-GETapi-user-matches-list" hidden>
+    <blockquote>Request failed with error:</blockquote>
+    <pre><code id="execution-error-message-GETapi-user-matches-list">
+
+Tip: Check that you&#039;re properly connected to the network.
+If you&#039;re a maintainer of ths API, verify that your API is running and you&#039;ve enabled CORS.
+You can check the Dev Tools console for debugging information.</code></pre>
+</span>
+<form id="form-GETapi-user-matches-list" data-method="GET"
+      data-path="api/user/matches/list"
+      data-authed="1"
+      data-hasfiles="0"
+      data-isarraybody="0"
+      autocomplete="off"
+      onsubmit="event.preventDefault(); executeTryOut('GETapi-user-matches-list', this);">
+    <h3>
+        Request&nbsp;&nbsp;&nbsp;
+                    <button type="button"
+                    style="background-color: #8fbcd4; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-tryout-GETapi-user-matches-list"
+                    onclick="tryItOut('GETapi-user-matches-list');">Try it out ⚡
+            </button>
+            <button type="button"
+                    style="background-color: #c97a7e; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-canceltryout-GETapi-user-matches-list"
+                    onclick="cancelTryOut('GETapi-user-matches-list');" hidden>Cancel 🛑
+            </button>&nbsp;&nbsp;
+            <button type="submit"
+                    style="background-color: #6ac174; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-executetryout-GETapi-user-matches-list"
+                    data-initial-text="Send Request 💥"
+                    data-loading-text="⏱ Sending..."
+                    hidden>Send Request 💥
+            </button>
+            </h3>
+            <p>
+            <small class="badge badge-green">GET</small>
+            <b><code>api/user/matches/list</code></b>
+        </p>
+                <h4 class="fancy-heading-panel"><b>Headers</b></h4>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Authorization" class="auth-value"               data-endpoint="GETapi-user-matches-list"
+               value="Bearer {YOUR_AUTH_KEY}"
+               data-component="header">
+    <br>
+<p>Example: <code>Bearer {YOUR_AUTH_KEY}</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Content-Type"                data-endpoint="GETapi-user-matches-list"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Accept"                data-endpoint="GETapi-user-matches-list"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                        </form>
 
                     <h2 id="endpoints-GETapi-tournaments-index">GET api/tournaments/index</h2>
 
@@ -4274,6 +5411,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-tournaments-index"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -4285,6 +5423,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-tournaments-index"
                value="application/json"
@@ -4295,6 +5434,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-tournaments-index"
@@ -4325,11 +5465,11 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Accept: application/json" \
     --form "sport_id=consequatur"\
     --form "name=consequatur"\
-    --form "start_date=2025-11-17T03:16:20"\
-    --form "end_date=2025-11-17T03:16:20"\
-    --form "registration_open_at=2025-11-17T03:16:20"\
-    --form "registration_closed_at=2025-11-17T03:16:20"\
-    --form "early_registration_deadline=2025-11-17T03:16:20"\
+    --form "start_date=2025-12-03T21:07:10"\
+    --form "end_date=2025-12-03T21:07:10"\
+    --form "registration_open_at=2025-12-03T21:07:10"\
+    --form "registration_closed_at=2025-12-03T21:07:10"\
+    --form "early_registration_deadline=2025-12-03T21:07:10"\
     --form "duration=17"\
     --form "enable_dupr="\
     --form "enable_vndupr=1"\
@@ -4342,7 +5482,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --form "is_private=1"\
     --form "auto_approve=1"\
     --form "description=Dolores dolorum amet iste laborum eius est dolor."\
-    --form "poster=@/tmp/phpyqz1SX" </code></pre></div>
+    --form "poster=@/tmp/phpp2GIvz" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -4359,11 +5499,11 @@ const headers = {
 const body = new FormData();
 body.append('sport_id', 'consequatur');
 body.append('name', 'consequatur');
-body.append('start_date', '2025-11-17T03:16:20');
-body.append('end_date', '2025-11-17T03:16:20');
-body.append('registration_open_at', '2025-11-17T03:16:20');
-body.append('registration_closed_at', '2025-11-17T03:16:20');
-body.append('early_registration_deadline', '2025-11-17T03:16:20');
+body.append('start_date', '2025-12-03T21:07:10');
+body.append('end_date', '2025-12-03T21:07:10');
+body.append('registration_open_at', '2025-12-03T21:07:10');
+body.append('registration_closed_at', '2025-12-03T21:07:10');
+body.append('early_registration_deadline', '2025-12-03T21:07:10');
 body.append('duration', '17');
 body.append('enable_dupr', '');
 body.append('enable_vndupr', '1');
@@ -4439,6 +5579,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-tournaments-store"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -4450,6 +5591,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-tournaments-store"
                value="multipart/form-data"
@@ -4460,6 +5602,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-tournaments-store"
@@ -4473,16 +5616,18 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>poster</code></b>&nbsp;&nbsp;
 <small>file</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="file" style="display: none"
                               name="poster"                data-endpoint="POSTapi-tournaments-store"
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 350 kilobytes. Example: <code>/tmp/phpyqz1SX</code></p>
+<p>validation.image validation.max. Example: <code>/tmp/phpp2GIvz</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>sport_id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="sport_id"                data-endpoint="POSTapi-tournaments-store"
@@ -4495,6 +5640,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>name</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="name"                data-endpoint="POSTapi-tournaments-store"
                value="consequatur"
@@ -4506,6 +5652,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>competition_location_id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="competition_location_id"                data-endpoint="POSTapi-tournaments-store"
                value=""
@@ -4517,61 +5664,67 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>start_date</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="start_date"                data-endpoint="POSTapi-tournaments-store"
-               value="2025-11-17T03:16:20"
+               value="2025-12-03T21:07:10"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-11-17T03:16:20</code></p>
+<p>validation.date. Example: <code>2025-12-03T21:07:10</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>end_date</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="end_date"                data-endpoint="POSTapi-tournaments-store"
-               value="2025-11-17T03:16:20"
+               value="2025-12-03T21:07:10"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-11-17T03:16:20</code></p>
+<p>validation.date. Example: <code>2025-12-03T21:07:10</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>registration_open_at</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="registration_open_at"                data-endpoint="POSTapi-tournaments-store"
-               value="2025-11-17T03:16:20"
+               value="2025-12-03T21:07:10"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-11-17T03:16:20</code></p>
+<p>validation.date. Example: <code>2025-12-03T21:07:10</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>registration_closed_at</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="registration_closed_at"                data-endpoint="POSTapi-tournaments-store"
-               value="2025-11-17T03:16:20"
+               value="2025-12-03T21:07:10"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-11-17T03:16:20</code></p>
+<p>validation.date. Example: <code>2025-12-03T21:07:10</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>early_registration_deadline</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="early_registration_deadline"                data-endpoint="POSTapi-tournaments-store"
-               value="2025-11-17T03:16:20"
+               value="2025-12-03T21:07:10"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-11-17T03:16:20</code></p>
+<p>validation.date. Example: <code>2025-12-03T21:07:10</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>duration</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="duration"                data-endpoint="POSTapi-tournaments-store"
                value="17"
@@ -4583,6 +5736,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>enable_dupr</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="POSTapi-tournaments-store" style="display: none">
             <input type="radio" name="enable_dupr"
                    value="true"
@@ -4604,6 +5758,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>enable_vndupr</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="POSTapi-tournaments-store" style="display: none">
             <input type="radio" name="enable_vndupr"
                    value="true"
@@ -4625,6 +5780,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>min_level</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="min_level"                data-endpoint="POSTapi-tournaments-store"
                value=""
@@ -4636,6 +5792,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>max_level</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="max_level"                data-endpoint="POSTapi-tournaments-store"
                value=""
@@ -4647,6 +5804,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>age_group</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="age_group"                data-endpoint="POSTapi-tournaments-store"
                value=""
@@ -4658,6 +5816,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>gender_policy</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="gender_policy"                data-endpoint="POSTapi-tournaments-store"
                value=""
@@ -4669,6 +5828,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>participant</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="participant"                data-endpoint="POSTapi-tournaments-store"
                value="user"
@@ -4682,6 +5842,7 @@ Must be one of:
             <b style="line-height: 2;"><code>max_team</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="max_team"                data-endpoint="POSTapi-tournaments-store"
                value="17"
@@ -4693,6 +5854,7 @@ Must be one of:
             <b style="line-height: 2;"><code>player_per_team</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="player_per_team"                data-endpoint="POSTapi-tournaments-store"
                value="17"
@@ -4704,6 +5866,7 @@ Must be one of:
             <b style="line-height: 2;"><code>max_player</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="max_player"                data-endpoint="POSTapi-tournaments-store"
                value="17"
@@ -4715,6 +5878,7 @@ Must be one of:
             <b style="line-height: 2;"><code>fee</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="fee"                data-endpoint="POSTapi-tournaments-store"
                value="pair"
@@ -4728,6 +5892,7 @@ Must be one of:
             <b style="line-height: 2;"><code>standard_fee_amount</code></b>&nbsp;&nbsp;
 <small>number</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="standard_fee_amount"                data-endpoint="POSTapi-tournaments-store"
                value="11613.31890586"
@@ -4739,6 +5904,7 @@ Must be one of:
             <b style="line-height: 2;"><code>is_private</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="POSTapi-tournaments-store" style="display: none">
             <input type="radio" name="is_private"
                    value="true"
@@ -4760,6 +5926,7 @@ Must be one of:
             <b style="line-height: 2;"><code>auto_approve</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="POSTapi-tournaments-store" style="display: none">
             <input type="radio" name="auto_approve"
                    value="true"
@@ -4781,6 +5948,7 @@ Must be one of:
             <b style="line-height: 2;"><code>description</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="description"                data-endpoint="POSTapi-tournaments-store"
                value="Dolores dolorum amet iste laborum eius est dolor."
@@ -4792,6 +5960,7 @@ Must be one of:
             <b style="line-height: 2;"><code>club_id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="club_id"                data-endpoint="POSTapi-tournaments-store"
                value=""
@@ -4908,6 +6077,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-tournaments--id-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -4918,6 +6088,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-tournaments--id-"
@@ -4930,6 +6101,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-tournaments--id-"
                value="application/json"
@@ -4941,6 +6113,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="id"                data-endpoint="GETapi-tournaments--id-"
@@ -4970,11 +6143,11 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Content-Type: multipart/form-data" \
     --header "Accept: application/json" \
     --form "name=consequatur"\
-    --form "start_date=2025-11-17T03:16:20"\
-    --form "end_date=2025-11-17T03:16:20"\
-    --form "registration_open_at=2025-11-17T03:16:20"\
-    --form "registration_closed_at=2025-11-17T03:16:20"\
-    --form "early_registration_deadline=2025-11-17T03:16:20"\
+    --form "start_date=2025-12-03T21:07:10"\
+    --form "end_date=2025-12-03T21:07:10"\
+    --form "registration_open_at=2025-12-03T21:07:10"\
+    --form "registration_closed_at=2025-12-03T21:07:10"\
+    --form "early_registration_deadline=2025-12-03T21:07:10"\
     --form "duration=17"\
     --form "enable_dupr="\
     --form "enable_vndupr=1"\
@@ -4989,7 +6162,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --form "description=Dolores dolorum amet iste laborum eius est dolor."\
     --form "is_public_branch="\
     --form "is_own_score="\
-    --form "poster=@/tmp/php71vJZg" </code></pre></div>
+    --form "poster=@/tmp/phpvUBcLK" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -5005,11 +6178,11 @@ const headers = {
 
 const body = new FormData();
 body.append('name', 'consequatur');
-body.append('start_date', '2025-11-17T03:16:20');
-body.append('end_date', '2025-11-17T03:16:20');
-body.append('registration_open_at', '2025-11-17T03:16:20');
-body.append('registration_closed_at', '2025-11-17T03:16:20');
-body.append('early_registration_deadline', '2025-11-17T03:16:20');
+body.append('start_date', '2025-12-03T21:07:10');
+body.append('end_date', '2025-12-03T21:07:10');
+body.append('registration_open_at', '2025-12-03T21:07:10');
+body.append('registration_closed_at', '2025-12-03T21:07:10');
+body.append('early_registration_deadline', '2025-12-03T21:07:10');
 body.append('duration', '17');
 body.append('enable_dupr', '');
 body.append('enable_vndupr', '1');
@@ -5087,6 +6260,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-tournaments-update--id-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -5098,6 +6272,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-tournaments-update--id-"
                value="multipart/form-data"
@@ -5108,6 +6283,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-tournaments-update--id-"
@@ -5121,6 +6297,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="id"                data-endpoint="POSTapi-tournaments-update--id-"
                value="consequatur"
@@ -5133,17 +6310,19 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>poster</code></b>&nbsp;&nbsp;
 <small>file</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="file" style="display: none"
                               name="poster"                data-endpoint="POSTapi-tournaments-update--id-"
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 5120 kilobytes. Example: <code>/tmp/php71vJZg</code></p>
+<p>validation.image validation.max. Example: <code>/tmp/phpvUBcLK</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>sport_id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="sport_id"                data-endpoint="POSTapi-tournaments-update--id-"
                value=""
@@ -5155,6 +6334,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>name</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="name"                data-endpoint="POSTapi-tournaments-update--id-"
                value="consequatur"
@@ -5166,6 +6346,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>competition_location_id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="competition_location_id"                data-endpoint="POSTapi-tournaments-update--id-"
                value=""
@@ -5177,61 +6358,67 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>start_date</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="start_date"                data-endpoint="POSTapi-tournaments-update--id-"
-               value="2025-11-17T03:16:20"
+               value="2025-12-03T21:07:10"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-11-17T03:16:20</code></p>
+<p>validation.date. Example: <code>2025-12-03T21:07:10</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>end_date</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="end_date"                data-endpoint="POSTapi-tournaments-update--id-"
-               value="2025-11-17T03:16:20"
+               value="2025-12-03T21:07:10"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-11-17T03:16:20</code></p>
+<p>validation.date. Example: <code>2025-12-03T21:07:10</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>registration_open_at</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="registration_open_at"                data-endpoint="POSTapi-tournaments-update--id-"
-               value="2025-11-17T03:16:20"
+               value="2025-12-03T21:07:10"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-11-17T03:16:20</code></p>
+<p>validation.date. Example: <code>2025-12-03T21:07:10</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>registration_closed_at</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="registration_closed_at"                data-endpoint="POSTapi-tournaments-update--id-"
-               value="2025-11-17T03:16:20"
+               value="2025-12-03T21:07:10"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-11-17T03:16:20</code></p>
+<p>validation.date. Example: <code>2025-12-03T21:07:10</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>early_registration_deadline</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="early_registration_deadline"                data-endpoint="POSTapi-tournaments-update--id-"
-               value="2025-11-17T03:16:20"
+               value="2025-12-03T21:07:10"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-11-17T03:16:20</code></p>
+<p>validation.date. Example: <code>2025-12-03T21:07:10</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>duration</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="duration"                data-endpoint="POSTapi-tournaments-update--id-"
                value="17"
@@ -5243,6 +6430,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>enable_dupr</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="POSTapi-tournaments-update--id-" style="display: none">
             <input type="radio" name="enable_dupr"
                    value="true"
@@ -5264,6 +6452,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>enable_vndupr</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="POSTapi-tournaments-update--id-" style="display: none">
             <input type="radio" name="enable_vndupr"
                    value="true"
@@ -5285,6 +6474,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>min_level</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="min_level"                data-endpoint="POSTapi-tournaments-update--id-"
                value=""
@@ -5296,6 +6486,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>max_level</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="max_level"                data-endpoint="POSTapi-tournaments-update--id-"
                value=""
@@ -5307,6 +6498,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>age_group</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="age_group"                data-endpoint="POSTapi-tournaments-update--id-"
                value=""
@@ -5318,6 +6510,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>gender_policy</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="gender_policy"                data-endpoint="POSTapi-tournaments-update--id-"
                value=""
@@ -5329,6 +6522,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>participant</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="participant"                data-endpoint="POSTapi-tournaments-update--id-"
                value="user"
@@ -5342,6 +6536,7 @@ Must be one of:
             <b style="line-height: 2;"><code>max_team</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="max_team"                data-endpoint="POSTapi-tournaments-update--id-"
                value="17"
@@ -5353,6 +6548,7 @@ Must be one of:
             <b style="line-height: 2;"><code>player_per_team</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="player_per_team"                data-endpoint="POSTapi-tournaments-update--id-"
                value="17"
@@ -5364,6 +6560,7 @@ Must be one of:
             <b style="line-height: 2;"><code>max_player</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="max_player"                data-endpoint="POSTapi-tournaments-update--id-"
                value="17"
@@ -5375,6 +6572,7 @@ Must be one of:
             <b style="line-height: 2;"><code>fee</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="fee"                data-endpoint="POSTapi-tournaments-update--id-"
                value="pair"
@@ -5388,6 +6586,7 @@ Must be one of:
             <b style="line-height: 2;"><code>standard_fee_amount</code></b>&nbsp;&nbsp;
 <small>number</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="standard_fee_amount"                data-endpoint="POSTapi-tournaments-update--id-"
                value="11613.31890586"
@@ -5399,6 +6598,7 @@ Must be one of:
             <b style="line-height: 2;"><code>is_private</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="POSTapi-tournaments-update--id-" style="display: none">
             <input type="radio" name="is_private"
                    value="true"
@@ -5420,6 +6620,7 @@ Must be one of:
             <b style="line-height: 2;"><code>auto_approve</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="POSTapi-tournaments-update--id-" style="display: none">
             <input type="radio" name="auto_approve"
                    value="true"
@@ -5441,6 +6642,7 @@ Must be one of:
             <b style="line-height: 2;"><code>description</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="description"                data-endpoint="POSTapi-tournaments-update--id-"
                value="Dolores dolorum amet iste laborum eius est dolor."
@@ -5452,6 +6654,7 @@ Must be one of:
             <b style="line-height: 2;"><code>club_id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="club_id"                data-endpoint="POSTapi-tournaments-update--id-"
                value=""
@@ -5463,6 +6666,7 @@ Must be one of:
             <b style="line-height: 2;"><code>is_public_branch</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="POSTapi-tournaments-update--id-" style="display: none">
             <input type="radio" name="is_public_branch"
                    value="true"
@@ -5484,6 +6688,7 @@ Must be one of:
             <b style="line-height: 2;"><code>is_own_score</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="POSTapi-tournaments-update--id-" style="display: none">
             <input type="radio" name="is_own_score"
                    value="true"
@@ -5594,6 +6799,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-tournaments-delete"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -5605,6 +6811,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-tournaments-delete"
                value="application/json"
@@ -5615,6 +6822,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-tournaments-delete"
@@ -5725,6 +6933,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-tournament-staff-add--tournamentId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -5736,6 +6945,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-tournament-staff-add--tournamentId-"
                value="application/json"
@@ -5746,6 +6956,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-tournament-staff-add--tournamentId-"
@@ -5759,6 +6970,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>tournamentId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="tournamentId"                data-endpoint="POSTapi-tournament-staff-add--tournamentId-"
                value="consequatur"
@@ -5770,6 +6982,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
         <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>staff_id</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="staff_id"                data-endpoint="POSTapi-tournament-staff-add--tournamentId-"
@@ -5884,6 +7097,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-tournament-types-store"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -5895,6 +7109,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-tournament-types-store"
                value="application/json"
@@ -5905,6 +7120,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-tournament-types-store"
@@ -5918,6 +7134,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>tournament_id</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="tournament_id"                data-endpoint="POSTapi-tournament-types-store"
                value="17"
@@ -5929,6 +7146,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>format</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="format"                data-endpoint="POSTapi-tournament-types-store"
                value=""
@@ -5940,6 +7158,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>num_legs</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="num_legs"                data-endpoint="POSTapi-tournament-types-store"
                value=""
@@ -5951,6 +7170,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>match_rules</code></b>&nbsp;&nbsp;
 <small>object</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="match_rules"                data-endpoint="POSTapi-tournament-types-store"
                value=""
@@ -5962,6 +7182,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>format_specific_config</code></b>&nbsp;&nbsp;
 <small>object</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="format_specific_config"                data-endpoint="POSTapi-tournament-types-store"
                value=""
@@ -5973,6 +7194,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>rules</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="rules"                data-endpoint="POSTapi-tournament-types-store"
                value="consequatur"
@@ -5984,6 +7206,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>rules_file_path</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="rules_file_path"                data-endpoint="POSTapi-tournament-types-store"
                value="consequatur"
@@ -6008,7 +7231,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request PUT \
-    "https://picki.vn/api/tournament-types/4" \
+    "https://picki.vn/api/tournament-types/9" \
     --header "Authorization: Bearer {YOUR_AUTH_KEY}" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json" \
@@ -6021,7 +7244,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "https://picki.vn/api/tournament-types/4"
+    "https://picki.vn/api/tournament-types/9"
 );
 
 const headers = {
@@ -6100,6 +7323,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="PUTapi-tournament-types--tournamentType_id-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -6111,6 +7335,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="PUTapi-tournament-types--tournamentType_id-"
                value="application/json"
@@ -6121,6 +7346,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="PUTapi-tournament-types--tournamentType_id-"
@@ -6134,18 +7360,20 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>tournamentType_id</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="tournamentType_id"                data-endpoint="PUTapi-tournament-types--tournamentType_id-"
-               value="4"
+               value="9"
                data-component="url">
     <br>
-<p>The ID of the tournamentType. Example: <code>4</code></p>
+<p>The ID of the tournamentType. Example: <code>9</code></p>
             </div>
                             <h4 class="fancy-heading-panel"><b>Body Parameters</b></h4>
         <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>match_rules</code></b>&nbsp;&nbsp;
 <small>object</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="match_rules"                data-endpoint="PUTapi-tournament-types--tournamentType_id-"
                value=""
@@ -6157,6 +7385,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>format_specific_config</code></b>&nbsp;&nbsp;
 <small>object</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="format_specific_config"                data-endpoint="PUTapi-tournament-types--tournamentType_id-"
                value=""
@@ -6168,6 +7397,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>rules</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="rules"                data-endpoint="PUTapi-tournament-types--tournamentType_id-"
                value="consequatur"
@@ -6179,6 +7409,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>rules_file_path</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="rules_file_path"                data-endpoint="PUTapi-tournament-types--tournamentType_id-"
                value="consequatur"
@@ -6190,6 +7421,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>num_legs</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="num_legs"                data-endpoint="PUTapi-tournament-types--tournamentType_id-"
                value=""
@@ -6213,7 +7445,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request GET \
-    --get "https://picki.vn/api/tournament-types/4" \
+    --get "https://picki.vn/api/tournament-types/9" \
     --header "Authorization: Bearer {YOUR_AUTH_KEY}" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json"</code></pre></div>
@@ -6221,7 +7453,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "https://picki.vn/api/tournament-types/4"
+    "https://picki.vn/api/tournament-types/9"
 );
 
 const headers = {
@@ -6306,6 +7538,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-tournament-types--tournamentType_id-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -6317,6 +7550,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-tournament-types--tournamentType_id-"
                value="application/json"
@@ -6327,6 +7561,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-tournament-types--tournamentType_id-"
@@ -6340,12 +7575,13 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>tournamentType_id</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="tournamentType_id"                data-endpoint="GETapi-tournament-types--tournamentType_id-"
-               value="4"
+               value="9"
                data-component="url">
     <br>
-<p>The ID of the tournamentType. Example: <code>4</code></p>
+<p>The ID of the tournamentType. Example: <code>9</code></p>
             </div>
                     </form>
 
@@ -6363,7 +7599,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request DELETE \
-    "https://picki.vn/api/tournament-types/4" \
+    "https://picki.vn/api/tournament-types/9" \
     --header "Authorization: Bearer {YOUR_AUTH_KEY}" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json"</code></pre></div>
@@ -6371,7 +7607,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "https://picki.vn/api/tournament-types/4"
+    "https://picki.vn/api/tournament-types/9"
 );
 
 const headers = {
@@ -6440,6 +7676,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="DELETEapi-tournament-types--tournamentType_id-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -6451,6 +7688,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="DELETEapi-tournament-types--tournamentType_id-"
                value="application/json"
@@ -6461,6 +7699,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="DELETEapi-tournament-types--tournamentType_id-"
@@ -6474,12 +7713,13 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>tournamentType_id</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="tournamentType_id"                data-endpoint="DELETEapi-tournament-types--tournamentType_id-"
-               value="4"
+               value="9"
                data-component="url">
     <br>
-<p>The ID of the tournamentType. Example: <code>4</code></p>
+<p>The ID of the tournamentType. Example: <code>9</code></p>
             </div>
                     </form>
 
@@ -6498,7 +7738,7 @@ Trả về cấu trúc phân theo round để hiển thị bracket chart</h2>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request GET \
-    --get "https://picki.vn/api/tournament-types/4/bracket" \
+    --get "https://picki.vn/api/tournament-types/9/bracket" \
     --header "Authorization: Bearer {YOUR_AUTH_KEY}" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json"</code></pre></div>
@@ -6506,7 +7746,7 @@ Trả về cấu trúc phân theo round để hiển thị bracket chart</h2>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "https://picki.vn/api/tournament-types/4/bracket"
+    "https://picki.vn/api/tournament-types/9/bracket"
 );
 
 const headers = {
@@ -6591,6 +7831,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-tournament-types--tournamentType_id--bracket"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -6602,6 +7843,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-tournament-types--tournamentType_id--bracket"
                value="application/json"
@@ -6612,6 +7854,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-tournament-types--tournamentType_id--bracket"
@@ -6625,12 +7868,13 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>tournamentType_id</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="tournamentType_id"                data-endpoint="GETapi-tournament-types--tournamentType_id--bracket"
-               value="4"
+               value="9"
                data-component="url">
     <br>
-<p>The ID of the tournamentType. Example: <code>4</code></p>
+<p>The ID of the tournamentType. Example: <code>9</code></p>
             </div>
                     </form>
 
@@ -6648,7 +7892,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request GET \
-    --get "https://picki.vn/api/tournament-types/4/rank" \
+    --get "https://picki.vn/api/tournament-types/9/rank" \
     --header "Authorization: Bearer {YOUR_AUTH_KEY}" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json"</code></pre></div>
@@ -6656,7 +7900,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "https://picki.vn/api/tournament-types/4/rank"
+    "https://picki.vn/api/tournament-types/9/rank"
 );
 
 const headers = {
@@ -6741,6 +7985,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-tournament-types--tournamentId--rank"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -6752,6 +7997,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-tournament-types--tournamentId--rank"
                value="application/json"
@@ -6762,6 +8008,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-tournament-types--tournamentId--rank"
@@ -6775,12 +8022,13 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>tournamentId</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="tournamentId"                data-endpoint="GETapi-tournament-types--tournamentId--rank"
-               value="4"
+               value="9"
                data-component="url">
     <br>
-<p>Example: <code>4</code></p>
+<p>Example: <code>9</code></p>
             </div>
                     </form>
 
@@ -6798,7 +8046,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request GET \
-    --get "https://picki.vn/api/tournament-types/4/advancement-status" \
+    --get "https://picki.vn/api/tournament-types/9/advancement-status" \
     --header "Authorization: Bearer {YOUR_AUTH_KEY}" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json"</code></pre></div>
@@ -6806,7 +8054,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "https://picki.vn/api/tournament-types/4/advancement-status"
+    "https://picki.vn/api/tournament-types/9/advancement-status"
 );
 
 const headers = {
@@ -6891,6 +8139,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-tournament-types--tournamentType_id--advancement-status"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -6902,6 +8151,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-tournament-types--tournamentType_id--advancement-status"
                value="application/json"
@@ -6912,6 +8162,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-tournament-types--tournamentType_id--advancement-status"
@@ -6925,12 +8176,13 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>tournamentType_id</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="tournamentType_id"                data-endpoint="GETapi-tournament-types--tournamentType_id--advancement-status"
-               value="4"
+               value="9"
                data-component="url">
     <br>
-<p>The ID of the tournamentType. Example: <code>4</code></p>
+<p>The ID of the tournamentType. Example: <code>9</code></p>
             </div>
                     </form>
 
@@ -6948,7 +8200,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request POST \
-    "https://picki.vn/api/tournament-types/4/regenerate-matches" \
+    "https://picki.vn/api/tournament-types/9/regenerate-matches" \
     --header "Authorization: Bearer {YOUR_AUTH_KEY}" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json"</code></pre></div>
@@ -6956,7 +8208,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "https://picki.vn/api/tournament-types/4/regenerate-matches"
+    "https://picki.vn/api/tournament-types/9/regenerate-matches"
 );
 
 const headers = {
@@ -7025,6 +8277,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-tournament-types--tournamentType_id--regenerate-matches"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -7036,6 +8289,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-tournament-types--tournamentType_id--regenerate-matches"
                value="application/json"
@@ -7046,6 +8300,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-tournament-types--tournamentType_id--regenerate-matches"
@@ -7059,12 +8314,13 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>tournamentType_id</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="tournamentType_id"                data-endpoint="POSTapi-tournament-types--tournamentType_id--regenerate-matches"
-               value="4"
+               value="9"
                data-component="url">
     <br>
-<p>The ID of the tournamentType. Example: <code>4</code></p>
+<p>The ID of the tournamentType. Example: <code>9</code></p>
             </div>
                     </form>
 
@@ -7188,6 +8444,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-matches-index--tournamentTypeId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -7199,6 +8456,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-matches-index--tournamentTypeId-"
                value="application/json"
@@ -7209,6 +8467,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-matches-index--tournamentTypeId-"
@@ -7222,6 +8481,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>tournamentTypeId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="tournamentTypeId"                data-endpoint="GETapi-matches-index--tournamentTypeId-"
                value="consequatur"
@@ -7234,12 +8494,13 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>per_page</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="per_page"                data-endpoint="GETapi-matches-index--tournamentTypeId-"
                value="21"
                data-component="body">
     <br>
-<p>Must be at least 1. Must not be greater than 200. Example: <code>21</code></p>
+<p>validation.min validation.max. Example: <code>21</code></p>
         </div>
         </form>
 
@@ -7350,6 +8611,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-matches-detail--matchId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -7360,6 +8622,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-matches-detail--matchId-"
@@ -7372,6 +8635,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-matches-detail--matchId-"
                value="application/json"
@@ -7383,6 +8647,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>matchId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="matchId"                data-endpoint="GETapi-matches-detail--matchId-"
@@ -7507,6 +8772,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-matches-update--matchId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -7518,6 +8784,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-matches-update--matchId-"
                value="application/json"
@@ -7528,6 +8795,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-matches-update--matchId-"
@@ -7541,6 +8809,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>matchId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="matchId"                data-endpoint="POSTapi-matches-update--matchId-"
                value="consequatur"
@@ -7553,6 +8822,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>court</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="court"                data-endpoint="POSTapi-matches-update--matchId-"
                value="17"
@@ -7566,6 +8836,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>results</code></b>&nbsp;&nbsp;
 <small>object[]</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
 <br>
 
             </summary>
@@ -7573,6 +8844,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                         <b style="line-height: 2;"><code>id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="results.0.id"                data-endpoint="POSTapi-matches-update--matchId-"
                value=""
@@ -7584,16 +8856,18 @@ You can check the Dev Tools console for debugging information.</code></pre>
                         <b style="line-height: 2;"><code>set_number</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="results.0.set_number"                data-endpoint="POSTapi-matches-update--matchId-"
                value="45"
                data-component="body">
     <br>
-<p>Must be at least 1. Example: <code>45</code></p>
+<p>validation.min. Example: <code>45</code></p>
                     </div>
                                                                 <div style="margin-left: 14px; clear: unset;">
                         <b style="line-height: 2;"><code>team_id</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="results.0.team_id"                data-endpoint="POSTapi-matches-update--matchId-"
@@ -7606,12 +8880,13 @@ You can check the Dev Tools console for debugging information.</code></pre>
                         <b style="line-height: 2;"><code>score</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="results.0.score"                data-endpoint="POSTapi-matches-update--matchId-"
                value="45"
                data-component="body">
     <br>
-<p>Must be at least 0. Example: <code>45</code></p>
+<p>validation.min. Example: <code>45</code></p>
                     </div>
                                     </details>
         </div>
@@ -7709,6 +8984,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-matches--match--swap"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -7720,6 +8996,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-matches--match--swap"
                value="application/json"
@@ -7730,6 +9007,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-matches--match--swap"
@@ -7743,6 +9021,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>match</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="match"                data-endpoint="POSTapi-matches--match--swap"
                value="consequatur"
@@ -7755,6 +9034,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>home_team_id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="home_team_id"                data-endpoint="POSTapi-matches--match--swap"
                value=""
@@ -7766,6 +9046,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>away_team_id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="away_team_id"                data-endpoint="POSTapi-matches--match--swap"
                value=""
@@ -7774,6 +9055,298 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <p>The <code>id</code> of an existing record in the teams table.</p>
         </div>
         </form>
+
+                    <h2 id="endpoints-GETapi-matches--matchId--generate-qr">GET api/matches/{matchId}/generate-qr</h2>
+
+<p>
+<small class="badge badge-darkred">requires authentication</small>
+</p>
+
+
+
+<span id="example-requests-GETapi-matches--matchId--generate-qr">
+<blockquote>Example request:</blockquote>
+
+
+<div class="bash-example">
+    <pre><code class="language-bash">curl --request GET \
+    --get "https://picki.vn/api/matches/consequatur/generate-qr" \
+    --header "Authorization: Bearer {YOUR_AUTH_KEY}" \
+    --header "Content-Type: application/json" \
+    --header "Accept: application/json"</code></pre></div>
+
+
+<div class="javascript-example">
+    <pre><code class="language-javascript">const url = new URL(
+    "https://picki.vn/api/matches/consequatur/generate-qr"
+);
+
+const headers = {
+    "Authorization": "Bearer {YOUR_AUTH_KEY}",
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+};
+
+fetch(url, {
+    method: "GET",
+    headers,
+}).then(response =&gt; response.json());</code></pre></div>
+
+</span>
+
+<span id="example-responses-GETapi-matches--matchId--generate-qr">
+            <blockquote>
+            <p>Example response (401):</p>
+        </blockquote>
+                <details class="annotation">
+            <summary style="cursor: pointer;">
+                <small onclick="textContent = parentElement.parentElement.open ? 'Show headers' : 'Hide headers'">Show headers</small>
+            </summary>
+            <pre><code class="language-http">cache-control: no-cache, private
+content-type: application/json
+access-control-allow-origin: *
+ </code></pre></details>         <pre>
+
+<code class="language-json" style="max-height: 300px;">{
+    &quot;message&quot;: &quot;Unauthenticated.&quot;
+}</code>
+ </pre>
+    </span>
+<span id="execution-results-GETapi-matches--matchId--generate-qr" hidden>
+    <blockquote>Received response<span
+                id="execution-response-status-GETapi-matches--matchId--generate-qr"></span>:
+    </blockquote>
+    <pre class="json"><code id="execution-response-content-GETapi-matches--matchId--generate-qr"
+      data-empty-response-text="<Empty response>" style="max-height: 400px;"></code></pre>
+</span>
+<span id="execution-error-GETapi-matches--matchId--generate-qr" hidden>
+    <blockquote>Request failed with error:</blockquote>
+    <pre><code id="execution-error-message-GETapi-matches--matchId--generate-qr">
+
+Tip: Check that you&#039;re properly connected to the network.
+If you&#039;re a maintainer of ths API, verify that your API is running and you&#039;ve enabled CORS.
+You can check the Dev Tools console for debugging information.</code></pre>
+</span>
+<form id="form-GETapi-matches--matchId--generate-qr" data-method="GET"
+      data-path="api/matches/{matchId}/generate-qr"
+      data-authed="1"
+      data-hasfiles="0"
+      data-isarraybody="0"
+      autocomplete="off"
+      onsubmit="event.preventDefault(); executeTryOut('GETapi-matches--matchId--generate-qr', this);">
+    <h3>
+        Request&nbsp;&nbsp;&nbsp;
+                    <button type="button"
+                    style="background-color: #8fbcd4; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-tryout-GETapi-matches--matchId--generate-qr"
+                    onclick="tryItOut('GETapi-matches--matchId--generate-qr');">Try it out ⚡
+            </button>
+            <button type="button"
+                    style="background-color: #c97a7e; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-canceltryout-GETapi-matches--matchId--generate-qr"
+                    onclick="cancelTryOut('GETapi-matches--matchId--generate-qr');" hidden>Cancel 🛑
+            </button>&nbsp;&nbsp;
+            <button type="submit"
+                    style="background-color: #6ac174; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-executetryout-GETapi-matches--matchId--generate-qr"
+                    data-initial-text="Send Request 💥"
+                    data-loading-text="⏱ Sending..."
+                    hidden>Send Request 💥
+            </button>
+            </h3>
+            <p>
+            <small class="badge badge-green">GET</small>
+            <b><code>api/matches/{matchId}/generate-qr</code></b>
+        </p>
+                <h4 class="fancy-heading-panel"><b>Headers</b></h4>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Authorization" class="auth-value"               data-endpoint="GETapi-matches--matchId--generate-qr"
+               value="Bearer {YOUR_AUTH_KEY}"
+               data-component="header">
+    <br>
+<p>Example: <code>Bearer {YOUR_AUTH_KEY}</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Content-Type"                data-endpoint="GETapi-matches--matchId--generate-qr"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Accept"                data-endpoint="GETapi-matches--matchId--generate-qr"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                        <h4 class="fancy-heading-panel"><b>URL Parameters</b></h4>
+                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>matchId</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="matchId"                data-endpoint="GETapi-matches--matchId--generate-qr"
+               value="consequatur"
+               data-component="url">
+    <br>
+<p>Example: <code>consequatur</code></p>
+            </div>
+                    </form>
+
+                    <h2 id="endpoints-POSTapi-matches-confirm-result--matchId-">POST api/matches/confirm-result/{matchId}</h2>
+
+<p>
+<small class="badge badge-darkred">requires authentication</small>
+</p>
+
+
+
+<span id="example-requests-POSTapi-matches-confirm-result--matchId-">
+<blockquote>Example request:</blockquote>
+
+
+<div class="bash-example">
+    <pre><code class="language-bash">curl --request POST \
+    "https://picki.vn/api/matches/confirm-result/consequatur" \
+    --header "Authorization: Bearer {YOUR_AUTH_KEY}" \
+    --header "Content-Type: application/json" \
+    --header "Accept: application/json"</code></pre></div>
+
+
+<div class="javascript-example">
+    <pre><code class="language-javascript">const url = new URL(
+    "https://picki.vn/api/matches/confirm-result/consequatur"
+);
+
+const headers = {
+    "Authorization": "Bearer {YOUR_AUTH_KEY}",
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+};
+
+fetch(url, {
+    method: "POST",
+    headers,
+}).then(response =&gt; response.json());</code></pre></div>
+
+</span>
+
+<span id="example-responses-POSTapi-matches-confirm-result--matchId-">
+</span>
+<span id="execution-results-POSTapi-matches-confirm-result--matchId-" hidden>
+    <blockquote>Received response<span
+                id="execution-response-status-POSTapi-matches-confirm-result--matchId-"></span>:
+    </blockquote>
+    <pre class="json"><code id="execution-response-content-POSTapi-matches-confirm-result--matchId-"
+      data-empty-response-text="<Empty response>" style="max-height: 400px;"></code></pre>
+</span>
+<span id="execution-error-POSTapi-matches-confirm-result--matchId-" hidden>
+    <blockquote>Request failed with error:</blockquote>
+    <pre><code id="execution-error-message-POSTapi-matches-confirm-result--matchId-">
+
+Tip: Check that you&#039;re properly connected to the network.
+If you&#039;re a maintainer of ths API, verify that your API is running and you&#039;ve enabled CORS.
+You can check the Dev Tools console for debugging information.</code></pre>
+</span>
+<form id="form-POSTapi-matches-confirm-result--matchId-" data-method="POST"
+      data-path="api/matches/confirm-result/{matchId}"
+      data-authed="1"
+      data-hasfiles="0"
+      data-isarraybody="0"
+      autocomplete="off"
+      onsubmit="event.preventDefault(); executeTryOut('POSTapi-matches-confirm-result--matchId-', this);">
+    <h3>
+        Request&nbsp;&nbsp;&nbsp;
+                    <button type="button"
+                    style="background-color: #8fbcd4; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-tryout-POSTapi-matches-confirm-result--matchId-"
+                    onclick="tryItOut('POSTapi-matches-confirm-result--matchId-');">Try it out ⚡
+            </button>
+            <button type="button"
+                    style="background-color: #c97a7e; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-canceltryout-POSTapi-matches-confirm-result--matchId-"
+                    onclick="cancelTryOut('POSTapi-matches-confirm-result--matchId-');" hidden>Cancel 🛑
+            </button>&nbsp;&nbsp;
+            <button type="submit"
+                    style="background-color: #6ac174; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-executetryout-POSTapi-matches-confirm-result--matchId-"
+                    data-initial-text="Send Request 💥"
+                    data-loading-text="⏱ Sending..."
+                    hidden>Send Request 💥
+            </button>
+            </h3>
+            <p>
+            <small class="badge badge-black">POST</small>
+            <b><code>api/matches/confirm-result/{matchId}</code></b>
+        </p>
+                <h4 class="fancy-heading-panel"><b>Headers</b></h4>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Authorization" class="auth-value"               data-endpoint="POSTapi-matches-confirm-result--matchId-"
+               value="Bearer {YOUR_AUTH_KEY}"
+               data-component="header">
+    <br>
+<p>Example: <code>Bearer {YOUR_AUTH_KEY}</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Content-Type"                data-endpoint="POSTapi-matches-confirm-result--matchId-"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Accept"                data-endpoint="POSTapi-matches-confirm-result--matchId-"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                        <h4 class="fancy-heading-panel"><b>URL Parameters</b></h4>
+                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>matchId</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="matchId"                data-endpoint="POSTapi-matches-confirm-result--matchId-"
+               value="consequatur"
+               data-component="url">
+    <br>
+<p>Example: <code>consequatur</code></p>
+            </div>
+                    </form>
 
                     <h2 id="endpoints-GETapi-participants-index--tournamentId-">GET api/participants/index/{tournamentId}</h2>
 
@@ -7897,6 +9470,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-participants-index--tournamentId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -7908,6 +9482,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-participants-index--tournamentId-"
                value="application/json"
@@ -7918,6 +9493,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-participants-index--tournamentId-"
@@ -7931,6 +9507,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>tournamentId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="tournamentId"                data-endpoint="GETapi-participants-index--tournamentId-"
                value="consequatur"
@@ -7943,6 +9520,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>is_confirmed</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="GETapi-participants-index--tournamentId-" style="display: none">
             <input type="radio" name="is_confirmed"
                    value="true"
@@ -7964,12 +9542,13 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>per_page</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="per_page"                data-endpoint="GETapi-participants-index--tournamentId-"
                value="13"
                data-component="body">
     <br>
-<p>Must be at least 1. Must not be greater than 200. Example: <code>13</code></p>
+<p>validation.min validation.max. Example: <code>13</code></p>
         </div>
         </form>
 
@@ -8064,6 +9643,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-participants-join--tournamentId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -8074,6 +9654,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-participants-join--tournamentId-"
@@ -8086,6 +9667,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-participants-join--tournamentId-"
                value="application/json"
@@ -8097,6 +9679,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>tournamentId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="tournamentId"                data-endpoint="POSTapi-participants-join--tournamentId-"
@@ -8227,6 +9810,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-participants-suggestions--tournamentId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -8238,6 +9822,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-participants-suggestions--tournamentId-"
                value="application/json"
@@ -8248,6 +9833,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-participants-suggestions--tournamentId-"
@@ -8261,6 +9847,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>tournamentId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="tournamentId"                data-endpoint="GETapi-participants-suggestions--tournamentId-"
                value="consequatur"
@@ -8273,12 +9860,13 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>per_page</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="per_page"                data-endpoint="GETapi-participants-suggestions--tournamentId-"
                value="21"
                data-component="body">
     <br>
-<p>Must be at least 1. Must not be greater than 200. Example: <code>21</code></p>
+<p>validation.min validation.max. Example: <code>21</code></p>
         </div>
         </form>
 
@@ -8404,6 +9992,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-participants-invite-friend--tournamentId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -8415,6 +10004,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-participants-invite-friend--tournamentId-"
                value="application/json"
@@ -8425,6 +10015,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-participants-invite-friend--tournamentId-"
@@ -8438,6 +10029,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>tournamentId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="tournamentId"                data-endpoint="GETapi-participants-invite-friend--tournamentId-"
                value="consequatur"
@@ -8450,23 +10042,25 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>per_page</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="per_page"                data-endpoint="GETapi-participants-invite-friend--tournamentId-"
                value="21"
                data-component="body">
     <br>
-<p>Must be at least 1. Must not be greater than 200. Example: <code>21</code></p>
+<p>validation.min validation.max. Example: <code>21</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>name</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="name"                data-endpoint="GETapi-participants-invite-friend--tournamentId-"
                value="mqeopfuudtdsufvyvddqa"
                data-component="body">
     <br>
-<p>Must not be greater than 255 characters. Example: <code>mqeopfuudtdsufvyvddqa</code></p>
+<p>validation.max. Example: <code>mqeopfuudtdsufvyvddqa</code></p>
         </div>
         </form>
 
@@ -8561,6 +10155,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-participants-confirm--participantId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -8571,6 +10166,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-participants-confirm--participantId-"
@@ -8583,6 +10179,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-participants-confirm--participantId-"
                value="application/json"
@@ -8594,6 +10191,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>participantId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="participantId"                data-endpoint="POSTapi-participants-confirm--participantId-"
@@ -8695,6 +10293,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-participants-accept--participantId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -8705,6 +10304,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-participants-accept--participantId-"
@@ -8717,6 +10317,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-participants-accept--participantId-"
                value="application/json"
@@ -8728,6 +10329,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>participantId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="participantId"                data-endpoint="POSTapi-participants-accept--participantId-"
@@ -8829,6 +10431,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-participants-decline--participantId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -8839,6 +10442,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-participants-decline--participantId-"
@@ -8851,6 +10455,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-participants-decline--participantId-"
                value="application/json"
@@ -8862,6 +10467,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>participantId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="participantId"                data-endpoint="POSTapi-participants-decline--participantId-"
@@ -8992,6 +10598,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-participants-invite--tournamentId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -9003,6 +10610,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-participants-invite--tournamentId-"
                value="application/json"
@@ -9013,6 +10621,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-participants-invite--tournamentId-"
@@ -9026,6 +10635,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>tournamentId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="tournamentId"                data-endpoint="GETapi-participants-invite--tournamentId-"
                value="consequatur"
@@ -9038,12 +10648,13 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>per_page</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="per_page"                data-endpoint="GETapi-participants-invite--tournamentId-"
                value="21"
                data-component="body">
     <br>
-<p>Must be at least 1. Must not be greater than 200. Example: <code>21</code></p>
+<p>validation.min validation.max. Example: <code>21</code></p>
         </div>
         </form>
 
@@ -9167,6 +10778,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-participants-invite-staff--tournamentId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -9178,6 +10790,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-participants-invite-staff--tournamentId-"
                value="application/json"
@@ -9188,6 +10801,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-participants-invite-staff--tournamentId-"
@@ -9201,6 +10815,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>tournamentId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="tournamentId"                data-endpoint="GETapi-participants-invite-staff--tournamentId-"
                value="consequatur"
@@ -9213,12 +10828,13 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>per_page</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="per_page"                data-endpoint="GETapi-participants-invite-staff--tournamentId-"
                value="21"
                data-component="body">
     <br>
-<p>Must be at least 1. Must not be greater than 200. Example: <code>21</code></p>
+<p>validation.min validation.max. Example: <code>21</code></p>
         </div>
         </form>
 
@@ -9314,6 +10930,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-participants-invite-user--tournamentId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -9325,6 +10942,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-participants-invite-user--tournamentId-"
                value="application/json"
@@ -9335,6 +10953,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-participants-invite-user--tournamentId-"
@@ -9348,6 +10967,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>tournamentId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="tournamentId"                data-endpoint="POSTapi-participants-invite-user--tournamentId-"
                value="consequatur"
@@ -9360,6 +10980,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>user_ids</code></b>&nbsp;&nbsp;
 <small>string[]</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="user_ids[0]"                data-endpoint="POSTapi-participants-invite-user--tournamentId-"
                data-component="body">
@@ -9462,6 +11083,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-participants-delete--participantId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -9472,6 +11094,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-participants-delete--participantId-"
@@ -9484,6 +11107,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-participants-delete--participantId-"
                value="application/json"
@@ -9495,6 +11119,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>participantId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="participantId"                data-endpoint="POSTapi-participants-delete--participantId-"
@@ -9596,6 +11221,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-participants-delete-staff--staffId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -9606,6 +11232,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-participants-delete-staff--staffId-"
@@ -9618,6 +11245,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-participants-delete-staff--staffId-"
                value="application/json"
@@ -9629,6 +11257,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>staffId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="staffId"                data-endpoint="POSTapi-participants-delete-staff--staffId-"
@@ -9759,6 +11388,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-participants-list-invite--tournamentId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -9770,6 +11400,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-participants-list-invite--tournamentId-"
                value="application/json"
@@ -9780,6 +11411,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-participants-list-invite--tournamentId-"
@@ -9793,6 +11425,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>tournamentId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="tournamentId"                data-endpoint="GETapi-participants-list-invite--tournamentId-"
                value="consequatur"
@@ -9805,12 +11438,13 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>per_page</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="per_page"                data-endpoint="GETapi-participants-list-invite--tournamentId-"
                value="21"
                data-component="body">
     <br>
-<p>Must be at least 1. Must not be greater than 200. Example: <code>21</code></p>
+<p>validation.min validation.max. Example: <code>21</code></p>
         </div>
         </form>
 
@@ -9934,6 +11568,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-participants-list-member--tournamentId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -9945,6 +11580,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-participants-list-member--tournamentId-"
                value="application/json"
@@ -9955,6 +11591,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-participants-list-member--tournamentId-"
@@ -9968,6 +11605,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>tournamentId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="tournamentId"                data-endpoint="GETapi-participants-list-member--tournamentId-"
                value="consequatur"
@@ -9980,12 +11618,13 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>per_page</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="per_page"                data-endpoint="GETapi-participants-list-member--tournamentId-"
                value="21"
                data-component="body">
     <br>
-<p>Must be at least 1. Must not be greater than 200. Example: <code>21</code></p>
+<p>validation.min validation.max. Example: <code>21</code></p>
         </div>
         </form>
 
@@ -10093,6 +11732,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-participants-candidates--tournamentId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -10104,6 +11744,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-participants-candidates--tournamentId-"
                value="application/json"
@@ -10114,6 +11755,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-participants-candidates--tournamentId-"
@@ -10127,6 +11769,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>tournamentId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="tournamentId"                data-endpoint="POSTapi-participants-candidates--tournamentId-"
                value="consequatur"
@@ -10138,6 +11781,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
         <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>scope</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="scope"                data-endpoint="POSTapi-participants-candidates--tournamentId-"
@@ -10152,6 +11796,7 @@ Must be one of:
             <b style="line-height: 2;"><code>club_id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="club_id"                data-endpoint="POSTapi-participants-candidates--tournamentId-"
                value=""
@@ -10163,23 +11808,25 @@ Must be one of:
             <b style="line-height: 2;"><code>search</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="search"                data-endpoint="POSTapi-participants-candidates--tournamentId-"
                value="mqeopfuudtdsufvyvddqa"
                data-component="body">
     <br>
-<p>Must not be greater than 255 characters. Example: <code>mqeopfuudtdsufvyvddqa</code></p>
+<p>validation.max. Example: <code>mqeopfuudtdsufvyvddqa</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>per_page</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="per_page"                data-endpoint="POSTapi-participants-candidates--tournamentId-"
                value="13"
                data-component="body">
     <br>
-<p>Must be at least 1. Must not be greater than 200. Example: <code>13</code></p>
+<p>validation.min validation.max. Example: <code>13</code></p>
         </div>
         </form>
 
@@ -10303,6 +11950,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-teams-index--tournamentId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -10314,6 +11962,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-teams-index--tournamentId-"
                value="application/json"
@@ -10324,6 +11973,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-teams-index--tournamentId-"
@@ -10337,6 +11987,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>tournamentId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="tournamentId"                data-endpoint="GETapi-teams-index--tournamentId-"
                value="consequatur"
@@ -10349,12 +12000,13 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>per_page</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="per_page"                data-endpoint="GETapi-teams-index--tournamentId-"
                value="21"
                data-component="body">
     <br>
-<p>Must be at least 1. Must not be greater than 200. Example: <code>21</code></p>
+<p>validation.min validation.max. Example: <code>21</code></p>
         </div>
         </form>
 
@@ -10377,7 +12029,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Content-Type: multipart/form-data" \
     --header "Accept: application/json" \
     --form "name=vmqeopfuudtdsufvyvddq"\
-    --form "avatar=@/tmp/phpNSbhsy" </code></pre></div>
+    --form "avatar=@/tmp/phpzOAVkC" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -10456,6 +12108,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-teams-create--tournamentId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -10467,6 +12120,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-teams-create--tournamentId-"
                value="multipart/form-data"
@@ -10477,6 +12131,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-teams-create--tournamentId-"
@@ -10490,6 +12145,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>tournamentId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="tournamentId"                data-endpoint="POSTapi-teams-create--tournamentId-"
                value="consequatur"
@@ -10502,23 +12158,25 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>name</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="name"                data-endpoint="POSTapi-teams-create--tournamentId-"
                value="vmqeopfuudtdsufvyvddq"
                data-component="body">
     <br>
-<p>Must not be greater than 255 characters. Example: <code>vmqeopfuudtdsufvyvddq</code></p>
+<p>validation.max. Example: <code>vmqeopfuudtdsufvyvddq</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>avatar</code></b>&nbsp;&nbsp;
 <small>file</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="file" style="display: none"
                               name="avatar"                data-endpoint="POSTapi-teams-create--tournamentId-"
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/tmp/phpNSbhsy</code></p>
+<p>validation.image validation.max. Example: <code>/tmp/phpzOAVkC</code></p>
         </div>
         </form>
 
@@ -10541,7 +12199,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Content-Type: multipart/form-data" \
     --header "Accept: application/json" \
     --form "name=vmqeopfuudtdsufvyvddq"\
-    --form "avatar=@/tmp/phpPaxJjf" </code></pre></div>
+    --form "avatar=@/tmp/phpfE5cz9" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -10620,6 +12278,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-teams-update--teamId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -10631,6 +12290,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-teams-update--teamId-"
                value="multipart/form-data"
@@ -10641,6 +12301,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-teams-update--teamId-"
@@ -10654,6 +12315,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>teamId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="teamId"                data-endpoint="POSTapi-teams-update--teamId-"
                value="consequatur"
@@ -10665,24 +12327,26 @@ You can check the Dev Tools console for debugging information.</code></pre>
         <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>name</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+<i>optional</i> &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="name"                data-endpoint="POSTapi-teams-update--teamId-"
                value="vmqeopfuudtdsufvyvddq"
                data-component="body">
     <br>
-<p>Must not be greater than 255 characters. Example: <code>vmqeopfuudtdsufvyvddq</code></p>
+<p>validation.max. Example: <code>vmqeopfuudtdsufvyvddq</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>avatar</code></b>&nbsp;&nbsp;
 <small>file</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="file" style="display: none"
                               name="avatar"                data-endpoint="POSTapi-teams-update--teamId-"
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/tmp/phpPaxJjf</code></p>
+<p>validation.image validation.max. Example: <code>/tmp/phpfE5cz9</code></p>
         </div>
         </form>
 
@@ -10786,6 +12450,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-teams-add-member--teamId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -10797,6 +12462,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-teams-add-member--teamId-"
                value="application/json"
@@ -10807,6 +12473,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-teams-add-member--teamId-"
@@ -10820,6 +12487,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>teamId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="teamId"                data-endpoint="POSTapi-teams-add-member--teamId-"
                value="consequatur"
@@ -10831,6 +12499,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
         <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>user_id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="user_id"                data-endpoint="POSTapi-teams-add-member--teamId-"
@@ -10941,6 +12610,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-teams-remove-member--teamId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -10952,6 +12622,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-teams-remove-member--teamId-"
                value="application/json"
@@ -10962,6 +12633,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-teams-remove-member--teamId-"
@@ -10975,6 +12647,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>teamId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="teamId"                data-endpoint="POSTapi-teams-remove-member--teamId-"
                value="consequatur"
@@ -10986,6 +12659,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
         <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>user_id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="user_id"                data-endpoint="POSTapi-teams-remove-member--teamId-"
@@ -11087,6 +12761,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-teams-auto-assign--tournamentId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -11097,6 +12772,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-teams-auto-assign--tournamentId-"
@@ -11109,6 +12785,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-teams-auto-assign--tournamentId-"
                value="application/json"
@@ -11120,6 +12797,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>tournamentId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="tournamentId"                data-endpoint="POSTapi-teams-auto-assign--tournamentId-"
@@ -11221,6 +12899,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="DELETEapi-teams-delete--teamId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -11231,6 +12910,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="DELETEapi-teams-delete--teamId-"
@@ -11243,6 +12923,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="DELETEapi-teams-delete--teamId-"
                value="application/json"
@@ -11254,6 +12935,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>teamId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="teamId"                data-endpoint="DELETEapi-teams-delete--teamId-"
@@ -11388,6 +13070,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-club-index"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -11399,6 +13082,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-club-index"
                value="application/json"
@@ -11409,6 +13093,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-club-index"
@@ -11422,34 +13107,37 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>name</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="name"                data-endpoint="GETapi-club-index"
                value="vmqeopfuudtdsufvyvddq"
                data-component="body">
     <br>
-<p>Must not be greater than 255 characters. Example: <code>vmqeopfuudtdsufvyvddq</code></p>
+<p>validation.max. Example: <code>vmqeopfuudtdsufvyvddq</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>location</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="location"                data-endpoint="GETapi-club-index"
                value="amniihfqcoynlazghdtqt"
                data-component="body">
     <br>
-<p>Must not be greater than 255 characters. Example: <code>amniihfqcoynlazghdtqt</code></p>
+<p>validation.max. Example: <code>amniihfqcoynlazghdtqt</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>perPage</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="perPage"                data-endpoint="GETapi-club-index"
                value="16"
                data-component="body">
     <br>
-<p>Must be at least 1. Must not be greater than 200. Example: <code>16</code></p>
+<p>validation.min validation.max. Example: <code>16</code></p>
         </div>
         </form>
 
@@ -11474,7 +13162,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --form "name=consequatur"\
     --form "location=consequatur"\
     --form "created_by=consequatur"\
-    --form "logo_url=@/tmp/phpNeifKT" </code></pre></div>
+    --form "logo_url=@/tmp/phppkUGqf" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -11555,6 +13243,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-club-store"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -11566,6 +13255,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-club-store"
                value="multipart/form-data"
@@ -11576,6 +13266,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-club-store"
@@ -11589,6 +13280,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>name</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="name"                data-endpoint="POSTapi-club-store"
                value="consequatur"
@@ -11600,6 +13292,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>location</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="location"                data-endpoint="POSTapi-club-store"
                value="consequatur"
@@ -11611,16 +13304,18 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>logo_url</code></b>&nbsp;&nbsp;
 <small>file</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="file" style="display: none"
                               name="logo_url"                data-endpoint="POSTapi-club-store"
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/tmp/phpNeifKT</code></p>
+<p>validation.image validation.max. Example: <code>/tmp/phppkUGqf</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>created_by</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="created_by"                data-endpoint="POSTapi-club-store"
@@ -11738,6 +13433,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-club-my-clubs"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -11749,6 +13445,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-club-my-clubs"
                value="application/json"
@@ -11759,6 +13456,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-club-my-clubs"
@@ -11876,6 +13574,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-club--id-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -11886,6 +13585,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-club--id-"
@@ -11898,6 +13598,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-club--id-"
                value="application/json"
@@ -11909,6 +13610,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="id"                data-endpoint="GETapi-club--id-"
@@ -11938,7 +13640,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Content-Type: multipart/form-data" \
     --header "Accept: application/json" \
     --form "location=consequatur"\
-    --form "logo_url=@/tmp/phpNg6YRQ" </code></pre></div>
+    --form "logo_url=@/tmp/phpU6XIuA" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -12017,6 +13719,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-club-update--id-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -12028,6 +13731,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-club-update--id-"
                value="multipart/form-data"
@@ -12038,6 +13742,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-club-update--id-"
@@ -12051,6 +13756,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="id"                data-endpoint="POSTapi-club-update--id-"
                value="consequatur"
@@ -12063,6 +13769,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>name</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="name"                data-endpoint="POSTapi-club-update--id-"
                value=""
@@ -12074,6 +13781,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>location</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="location"                data-endpoint="POSTapi-club-update--id-"
                value="consequatur"
@@ -12085,12 +13793,13 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>logo_url</code></b>&nbsp;&nbsp;
 <small>file</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="file" style="display: none"
                               name="logo_url"                data-endpoint="POSTapi-club-update--id-"
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/tmp/phpNg6YRQ</code></p>
+<p>validation.image validation.max. Example: <code>/tmp/phpU6XIuA</code></p>
         </div>
         </form>
 
@@ -12185,6 +13894,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-club-delete"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -12196,6 +13906,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-club-delete"
                value="application/json"
@@ -12206,6 +13917,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-club-delete"
@@ -12307,6 +14019,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-club-join--id-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -12317,6 +14030,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-club-join--id-"
@@ -12329,6 +14043,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-club-join--id-"
                value="application/json"
@@ -12340,6 +14055,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="id"                data-endpoint="POSTapi-club-join--id-"
@@ -12373,7 +14089,8 @@ You can check the Dev Tools console for debugging information.</code></pre>
     \"tournament_per_page\": 13,
     \"banner_per_page\": 16,
     \"club_per_page\": 5,
-    \"leaderboard_per_page\": 14
+    \"leaderboard_club_per_page\": 14,
+    \"leaderboard_per_page\": 16
 }"
 </code></pre></div>
 
@@ -12394,7 +14111,8 @@ let body = {
     "tournament_per_page": 13,
     "banner_per_page": 16,
     "club_per_page": 5,
-    "leaderboard_per_page": 14
+    "leaderboard_club_per_page": 14,
+    "leaderboard_per_page": 16
 };
 
 fetch(url, {
@@ -12478,6 +14196,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-home"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -12489,6 +14208,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-home"
                value="application/json"
@@ -12499,6 +14219,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-home"
@@ -12512,56 +14233,73 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>mini_tournament_per_page</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="mini_tournament_per_page"                data-endpoint="GETapi-home"
                value="21"
                data-component="body">
     <br>
-<p>Must be at least 1. Must not be greater than 200. Example: <code>21</code></p>
+<p>validation.min validation.max. Example: <code>21</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>tournament_per_page</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="tournament_per_page"                data-endpoint="GETapi-home"
                value="13"
                data-component="body">
     <br>
-<p>Must be at least 1. Must not be greater than 200. Example: <code>13</code></p>
+<p>validation.min validation.max. Example: <code>13</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>banner_per_page</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="banner_per_page"                data-endpoint="GETapi-home"
                value="16"
                data-component="body">
     <br>
-<p>Must be at least 1. Must not be greater than 200. Example: <code>16</code></p>
+<p>validation.min validation.max. Example: <code>16</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>club_per_page</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="club_per_page"                data-endpoint="GETapi-home"
                value="5"
                data-component="body">
     <br>
-<p>Must be at least 1. Must not be greater than 200. Example: <code>5</code></p>
+<p>validation.min validation.max. Example: <code>5</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>leaderboard_club_per_page</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="leaderboard_club_per_page"                data-endpoint="GETapi-home"
+               value="14"
+               data-component="body">
+    <br>
+<p>validation.min validation.max. Example: <code>14</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>leaderboard_per_page</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="leaderboard_per_page"                data-endpoint="GETapi-home"
-               value="14"
+               value="16"
                data-component="body">
     <br>
-<p>Must be at least 1. Must not be greater than 200. Example: <code>14</code></p>
+<p>validation.min validation.max. Example: <code>16</code></p>
         </div>
         </form>
 
@@ -12687,6 +14425,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-locations"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -12698,6 +14437,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-locations"
                value="application/json"
@@ -12708,6 +14448,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-locations"
@@ -12721,23 +14462,25 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>name</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="name"                data-endpoint="GETapi-locations"
                value="vmqeopfuudtdsufvyvddq"
                data-component="body">
     <br>
-<p>Must not be greater than 255 characters. Example: <code>vmqeopfuudtdsufvyvddq</code></p>
+<p>validation.max. Example: <code>vmqeopfuudtdsufvyvddq</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>per_page</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="per_page"                data-endpoint="GETapi-locations"
                value="1"
                data-component="body">
     <br>
-<p>Must be at least 1. Must not be greater than 200. Example: <code>1</code></p>
+<p>validation.min validation.max. Example: <code>1</code></p>
         </div>
         </form>
 
@@ -12790,7 +14533,7 @@ fetch(url, {
 
 <span id="example-responses-GETapi-search-location">
             <blockquote>
-            <p>Example response (500):</p>
+            <p>Example response (401):</p>
         </blockquote>
                 <details class="annotation">
             <summary style="cursor: pointer;">
@@ -12802,7 +14545,7 @@ access-control-allow-origin: *
  </code></pre></details>         <pre>
 
 <code class="language-json" style="max-height: 300px;">{
-    &quot;message&quot;: &quot;Server Error&quot;
+    &quot;message&quot;: &quot;Unauthenticated.&quot;
 }</code>
  </pre>
     </span>
@@ -12857,6 +14600,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-search-location"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -12868,6 +14612,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-search-location"
                value="application/json"
@@ -12878,6 +14623,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-search-location"
@@ -12891,12 +14637,13 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>query</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="query"                data-endpoint="GETapi-search-location"
                value="vmqeopfuudtdsufvyvddq"
                data-component="body">
     <br>
-<p>Must not be greater than 255 characters. Example: <code>vmqeopfuudtdsufvyvddq</code></p>
+<p>validation.max. Example: <code>vmqeopfuudtdsufvyvddq</code></p>
         </div>
         </form>
 
@@ -12949,7 +14696,7 @@ fetch(url, {
 
 <span id="example-responses-GETapi-location-detail">
             <blockquote>
-            <p>Example response (500):</p>
+            <p>Example response (401):</p>
         </blockquote>
                 <details class="annotation">
             <summary style="cursor: pointer;">
@@ -12961,7 +14708,7 @@ access-control-allow-origin: *
  </code></pre></details>         <pre>
 
 <code class="language-json" style="max-height: 300px;">{
-    &quot;message&quot;: &quot;Server Error&quot;
+    &quot;message&quot;: &quot;Unauthenticated.&quot;
 }</code>
  </pre>
     </span>
@@ -13016,6 +14763,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-location-detail"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -13027,6 +14775,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-location-detail"
                value="application/json"
@@ -13037,6 +14786,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-location-detail"
@@ -13050,12 +14800,13 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>place_id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="place_id"                data-endpoint="GETapi-location-detail"
                value="vmqeopfuudtdsufvyvddq"
                data-component="body">
     <br>
-<p>Must not be greater than 255 characters. Example: <code>vmqeopfuudtdsufvyvddq</code></p>
+<p>validation.max. Example: <code>vmqeopfuudtdsufvyvddq</code></p>
         </div>
         </form>
 
@@ -13183,6 +14934,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-mini-tournaments-index"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -13194,6 +14946,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-mini-tournaments-index"
                value="application/json"
@@ -13204,6 +14957,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-mini-tournaments-index"
@@ -13217,6 +14971,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>sport_id</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="sport_id"                data-endpoint="GETapi-mini-tournaments-index"
                value="17"
@@ -13228,6 +14983,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>status</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="status"                data-endpoint="GETapi-mini-tournaments-index"
                value="cancelled"
@@ -13241,12 +14997,13 @@ Must be one of:
             <b style="line-height: 2;"><code>per_page</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="per_page"                data-endpoint="GETapi-mini-tournaments-index"
                value="16"
                data-component="body">
     <br>
-<p>Must be at least 1. Must not be greater than 200. Example: <code>16</code></p>
+<p>validation.min validation.max. Example: <code>16</code></p>
         </div>
         </form>
 
@@ -13272,7 +15029,7 @@ Must be one of:
     --form "name=mqeopfuudtdsufvyvddqa"\
     --form "description=Dolores dolorum amet iste laborum eius est dolor."\
     --form "match_type=3"\
-    --form "starts_at=2025-11-17T03:16:21"\
+    --form "starts_at=2025-12-03T21:07:10"\
     --form "duration_minutes=66"\
     --form "is_private="\
     --form "fee=auto_split"\
@@ -13297,7 +15054,7 @@ Must be one of:
     --form "allow_participant_add_friends=1"\
     --form "send_notification=1"\
     --form "status=4"\
-    --form "poster=@/tmp/phpW3mE7Q" </code></pre></div>
+    --form "poster=@/tmp/phpgobUpx" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -13316,7 +15073,7 @@ body.append('sport_id', 'consequatur');
 body.append('name', 'mqeopfuudtdsufvyvddqa');
 body.append('description', 'Dolores dolorum amet iste laborum eius est dolor.');
 body.append('match_type', '3');
-body.append('starts_at', '2025-11-17T03:16:21');
+body.append('starts_at', '2025-12-03T21:07:10');
 body.append('duration_minutes', '66');
 body.append('is_private', '');
 body.append('fee', 'auto_split');
@@ -13404,6 +15161,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-mini-tournaments-store"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -13415,6 +15173,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-mini-tournaments-store"
                value="multipart/form-data"
@@ -13425,6 +15184,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-mini-tournaments-store"
@@ -13438,16 +15198,18 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>poster</code></b>&nbsp;&nbsp;
 <small>file</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="file" style="display: none"
                               name="poster"                data-endpoint="POSTapi-mini-tournaments-store"
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/tmp/phpW3mE7Q</code></p>
+<p>validation.image validation.max. Example: <code>/tmp/phpgobUpx</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>sport_id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="sport_id"                data-endpoint="POSTapi-mini-tournaments-store"
@@ -13460,17 +15222,19 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>name</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="name"                data-endpoint="POSTapi-mini-tournaments-store"
                value="mqeopfuudtdsufvyvddqa"
                data-component="body">
     <br>
-<p>Must not be greater than 255 characters. Example: <code>mqeopfuudtdsufvyvddqa</code></p>
+<p>validation.max. Example: <code>mqeopfuudtdsufvyvddqa</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>description</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="description"                data-endpoint="POSTapi-mini-tournaments-store"
                value="Dolores dolorum amet iste laborum eius est dolor."
@@ -13481,6 +15245,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>match_type</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="match_type"                data-endpoint="POSTapi-mini-tournaments-store"
@@ -13495,28 +15260,31 @@ Must be one of:
             <b style="line-height: 2;"><code>starts_at</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="starts_at"                data-endpoint="POSTapi-mini-tournaments-store"
-               value="2025-11-17T03:16:21"
+               value="2025-12-03T21:07:10"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-11-17T03:16:21</code></p>
+<p>validation.date. Example: <code>2025-12-03T21:07:10</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>duration_minutes</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="duration_minutes"                data-endpoint="POSTapi-mini-tournaments-store"
                value="66"
                data-component="body">
     <br>
-<p>Must be at least 1. Example: <code>66</code></p>
+<p>validation.min. Example: <code>66</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>competition_location_id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="competition_location_id"                data-endpoint="POSTapi-mini-tournaments-store"
                value=""
@@ -13528,6 +15296,7 @@ Must be one of:
             <b style="line-height: 2;"><code>is_private</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="POSTapi-mini-tournaments-store" style="display: none">
             <input type="radio" name="is_private"
                    value="true"
@@ -13549,6 +15318,7 @@ Must be one of:
             <b style="line-height: 2;"><code>fee</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="fee"                data-endpoint="POSTapi-mini-tournaments-store"
                value="auto_split"
@@ -13562,39 +15332,43 @@ Must be one of:
             <b style="line-height: 2;"><code>fee_amount</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="fee_amount"                data-endpoint="POSTapi-mini-tournaments-store"
                value="72"
                data-component="body">
     <br>
-<p>Must be at least 0. Example: <code>72</code></p>
+<p>validation.min. Example: <code>72</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>prize_pool</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="prize_pool"                data-endpoint="POSTapi-mini-tournaments-store"
                value="18"
                data-component="body">
     <br>
-<p>Must be at least 0. Example: <code>18</code></p>
+<p>validation.min. Example: <code>18</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>max_players</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="max_players"                data-endpoint="POSTapi-mini-tournaments-store"
                value="74"
                data-component="body">
     <br>
-<p>Must be at least 1. Example: <code>74</code></p>
+<p>validation.min. Example: <code>74</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>enable_dupr</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="POSTapi-mini-tournaments-store" style="display: none">
             <input type="radio" name="enable_dupr"
                    value="true"
@@ -13616,6 +15390,7 @@ Must be one of:
             <b style="line-height: 2;"><code>enable_vndupr</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="POSTapi-mini-tournaments-store" style="display: none">
             <input type="radio" name="enable_vndupr"
                    value="true"
@@ -13637,82 +15412,90 @@ Must be one of:
             <b style="line-height: 2;"><code>min_rating</code></b>&nbsp;&nbsp;
 <small>number</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="min_rating"                data-endpoint="POSTapi-mini-tournaments-store"
                value="10"
                data-component="body">
     <br>
-<p>Must be at least 0. Example: <code>10</code></p>
+<p>validation.min. Example: <code>10</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>max_rating</code></b>&nbsp;&nbsp;
 <small>number</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="max_rating"                data-endpoint="POSTapi-mini-tournaments-store"
                value="10"
                data-component="body">
     <br>
-<p>Must be at least 0. Example: <code>10</code></p>
+<p>validation.min. Example: <code>10</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>set_number</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="set_number"                data-endpoint="POSTapi-mini-tournaments-store"
                value="59"
                data-component="body">
     <br>
-<p>Must be at least 1. Example: <code>59</code></p>
+<p>validation.min. Example: <code>59</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>games_per_set</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="games_per_set"                data-endpoint="POSTapi-mini-tournaments-store"
                value="12"
                data-component="body">
     <br>
-<p>Must be at least 11. Example: <code>12</code></p>
+<p>validation.min. Example: <code>12</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>points_difference</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="points_difference"                data-endpoint="POSTapi-mini-tournaments-store"
                value="45"
                data-component="body">
     <br>
-<p>Must be at least 1. Example: <code>45</code></p>
+<p>validation.min. Example: <code>45</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>max_points</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="max_points"                data-endpoint="POSTapi-mini-tournaments-store"
                value="51"
                data-component="body">
     <br>
-<p>Must be at least 11. Example: <code>51</code></p>
+<p>validation.min. Example: <code>51</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>court_switch_points</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="court_switch_points"                data-endpoint="POSTapi-mini-tournaments-store"
                value="29"
                data-component="body">
     <br>
-<p>Must be at least 1. Example: <code>29</code></p>
+<p>validation.min. Example: <code>29</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>gender_policy</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="gender_policy"                data-endpoint="POSTapi-mini-tournaments-store"
@@ -13727,6 +15510,7 @@ Must be one of:
             <b style="line-height: 2;"><code>repeat_type</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="repeat_type"                data-endpoint="POSTapi-mini-tournaments-store"
                value="2"
@@ -13739,6 +15523,7 @@ Must be one of:
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>role_type</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="role_type"                data-endpoint="POSTapi-mini-tournaments-store"
@@ -13753,6 +15538,7 @@ Must be one of:
             <b style="line-height: 2;"><code>lock_cancellation</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="lock_cancellation"                data-endpoint="POSTapi-mini-tournaments-store"
                value="6"
@@ -13765,6 +15551,7 @@ Must be one of:
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>age_group</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="age_group"                data-endpoint="POSTapi-mini-tournaments-store"
@@ -13779,6 +15566,7 @@ Must be one of:
             <b style="line-height: 2;"><code>auto_approve</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="POSTapi-mini-tournaments-store" style="display: none">
             <input type="radio" name="auto_approve"
                    value="true"
@@ -13800,6 +15588,7 @@ Must be one of:
             <b style="line-height: 2;"><code>allow_participant_add_friends</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="POSTapi-mini-tournaments-store" style="display: none">
             <input type="radio" name="allow_participant_add_friends"
                    value="true"
@@ -13821,6 +15610,7 @@ Must be one of:
             <b style="line-height: 2;"><code>send_notification</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="POSTapi-mini-tournaments-store" style="display: none">
             <input type="radio" name="send_notification"
                    value="true"
@@ -13842,6 +15632,7 @@ Must be one of:
             <b style="line-height: 2;"><code>status</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="status"                data-endpoint="POSTapi-mini-tournaments-store"
                value="4"
@@ -13855,6 +15646,7 @@ Must be one of:
             <b style="line-height: 2;"><code>invite_user</code></b>&nbsp;&nbsp;
 <small>string[]</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="invite_user[0]"                data-endpoint="POSTapi-mini-tournaments-store"
                data-component="body">
@@ -13880,7 +15672,7 @@ Must be one of:
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request GET \
-    --get "https://picki.vn/api/mini-tournaments/1" \
+    --get "https://picki.vn/api/mini-tournaments/149" \
     --header "Authorization: Bearer {YOUR_AUTH_KEY}" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json"</code></pre></div>
@@ -13888,7 +15680,7 @@ Must be one of:
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "https://picki.vn/api/mini-tournaments/1"
+    "https://picki.vn/api/mini-tournaments/149"
 );
 
 const headers = {
@@ -13973,6 +15765,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-mini-tournaments--id-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -13984,6 +15777,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-mini-tournaments--id-"
                value="application/json"
@@ -13994,6 +15788,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-mini-tournaments--id-"
@@ -14007,12 +15802,13 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>id</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="id"                data-endpoint="GETapi-mini-tournaments--id-"
-               value="1"
+               value="149"
                data-component="url">
     <br>
-<p>The ID of the mini tournament. Example: <code>1</code></p>
+<p>The ID of the mini tournament. Example: <code>149</code></p>
             </div>
                     </form>
 
@@ -14038,7 +15834,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --form "name=mqeopfuudtdsufvyvddqa"\
     --form "description=Dolores dolorum amet iste laborum eius est dolor."\
     --form "match_type=3"\
-    --form "starts_at=2025-11-17T03:16:21"\
+    --form "starts_at=2025-12-03T21:07:10"\
     --form "duration_minutes=66"\
     --form "is_private="\
     --form "fee=auto_split"\
@@ -14063,7 +15859,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --form "allow_participant_add_friends=1"\
     --form "send_notification=1"\
     --form "status=4"\
-    --form "poster=@/tmp/phprYxslT" </code></pre></div>
+    --form "poster=@/tmp/phpGgUk7Y" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -14082,7 +15878,7 @@ body.append('sport_id', 'consequatur');
 body.append('name', 'mqeopfuudtdsufvyvddqa');
 body.append('description', 'Dolores dolorum amet iste laborum eius est dolor.');
 body.append('match_type', '3');
-body.append('starts_at', '2025-11-17T03:16:21');
+body.append('starts_at', '2025-12-03T21:07:10');
 body.append('duration_minutes', '66');
 body.append('is_private', '');
 body.append('fee', 'auto_split');
@@ -14170,6 +15966,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-mini-tournaments-update--id-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -14181,6 +15978,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-mini-tournaments-update--id-"
                value="multipart/form-data"
@@ -14191,6 +15989,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-mini-tournaments-update--id-"
@@ -14204,6 +16003,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="id"                data-endpoint="POSTapi-mini-tournaments-update--id-"
                value="consequatur"
@@ -14216,16 +16016,18 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>poster</code></b>&nbsp;&nbsp;
 <small>file</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="file" style="display: none"
                               name="poster"                data-endpoint="POSTapi-mini-tournaments-update--id-"
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 2048 kilobytes. Example: <code>/tmp/phprYxslT</code></p>
+<p>validation.image validation.max. Example: <code>/tmp/phpGgUk7Y</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>sport_id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="sport_id"                data-endpoint="POSTapi-mini-tournaments-update--id-"
@@ -14238,17 +16040,19 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>name</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="name"                data-endpoint="POSTapi-mini-tournaments-update--id-"
                value="mqeopfuudtdsufvyvddqa"
                data-component="body">
     <br>
-<p>Must not be greater than 255 characters. Example: <code>mqeopfuudtdsufvyvddqa</code></p>
+<p>validation.max. Example: <code>mqeopfuudtdsufvyvddqa</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>description</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="description"                data-endpoint="POSTapi-mini-tournaments-update--id-"
                value="Dolores dolorum amet iste laborum eius est dolor."
@@ -14259,6 +16063,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>match_type</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="match_type"                data-endpoint="POSTapi-mini-tournaments-update--id-"
@@ -14273,28 +16078,31 @@ Must be one of:
             <b style="line-height: 2;"><code>starts_at</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="starts_at"                data-endpoint="POSTapi-mini-tournaments-update--id-"
-               value="2025-11-17T03:16:21"
+               value="2025-12-03T21:07:10"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-11-17T03:16:21</code></p>
+<p>validation.date. Example: <code>2025-12-03T21:07:10</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>duration_minutes</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="duration_minutes"                data-endpoint="POSTapi-mini-tournaments-update--id-"
                value="66"
                data-component="body">
     <br>
-<p>Must be at least 1. Example: <code>66</code></p>
+<p>validation.min. Example: <code>66</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>competition_location_id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="competition_location_id"                data-endpoint="POSTapi-mini-tournaments-update--id-"
                value=""
@@ -14306,6 +16114,7 @@ Must be one of:
             <b style="line-height: 2;"><code>is_private</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="POSTapi-mini-tournaments-update--id-" style="display: none">
             <input type="radio" name="is_private"
                    value="true"
@@ -14327,6 +16136,7 @@ Must be one of:
             <b style="line-height: 2;"><code>fee</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="fee"                data-endpoint="POSTapi-mini-tournaments-update--id-"
                value="auto_split"
@@ -14340,39 +16150,43 @@ Must be one of:
             <b style="line-height: 2;"><code>fee_amount</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="fee_amount"                data-endpoint="POSTapi-mini-tournaments-update--id-"
                value="72"
                data-component="body">
     <br>
-<p>Must be at least 0. Example: <code>72</code></p>
+<p>validation.min. Example: <code>72</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>prize_pool</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="prize_pool"                data-endpoint="POSTapi-mini-tournaments-update--id-"
                value="18"
                data-component="body">
     <br>
-<p>Must be at least 0. Example: <code>18</code></p>
+<p>validation.min. Example: <code>18</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>max_players</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="max_players"                data-endpoint="POSTapi-mini-tournaments-update--id-"
                value="74"
                data-component="body">
     <br>
-<p>Must be at least 1. Example: <code>74</code></p>
+<p>validation.min. Example: <code>74</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>enable_dupr</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="POSTapi-mini-tournaments-update--id-" style="display: none">
             <input type="radio" name="enable_dupr"
                    value="true"
@@ -14394,6 +16208,7 @@ Must be one of:
             <b style="line-height: 2;"><code>enable_vndupr</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="POSTapi-mini-tournaments-update--id-" style="display: none">
             <input type="radio" name="enable_vndupr"
                    value="true"
@@ -14415,82 +16230,90 @@ Must be one of:
             <b style="line-height: 2;"><code>min_rating</code></b>&nbsp;&nbsp;
 <small>number</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="min_rating"                data-endpoint="POSTapi-mini-tournaments-update--id-"
                value="10"
                data-component="body">
     <br>
-<p>Must be at least 0. Example: <code>10</code></p>
+<p>validation.min. Example: <code>10</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>max_rating</code></b>&nbsp;&nbsp;
 <small>number</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="max_rating"                data-endpoint="POSTapi-mini-tournaments-update--id-"
                value="10"
                data-component="body">
     <br>
-<p>Must be at least 0. Example: <code>10</code></p>
+<p>validation.min. Example: <code>10</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>set_number</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="set_number"                data-endpoint="POSTapi-mini-tournaments-update--id-"
                value="59"
                data-component="body">
     <br>
-<p>Must be at least 1. Example: <code>59</code></p>
+<p>validation.min. Example: <code>59</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>games_per_set</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="games_per_set"                data-endpoint="POSTapi-mini-tournaments-update--id-"
                value="12"
                data-component="body">
     <br>
-<p>Must be at least 11. Example: <code>12</code></p>
+<p>validation.min. Example: <code>12</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>points_difference</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="points_difference"                data-endpoint="POSTapi-mini-tournaments-update--id-"
                value="45"
                data-component="body">
     <br>
-<p>Must be at least 1. Example: <code>45</code></p>
+<p>validation.min. Example: <code>45</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>max_points</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="max_points"                data-endpoint="POSTapi-mini-tournaments-update--id-"
                value="51"
                data-component="body">
     <br>
-<p>Must be at least 11. Example: <code>51</code></p>
+<p>validation.min. Example: <code>51</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>court_switch_points</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="court_switch_points"                data-endpoint="POSTapi-mini-tournaments-update--id-"
                value="29"
                data-component="body">
     <br>
-<p>Must be at least 1. Example: <code>29</code></p>
+<p>validation.min. Example: <code>29</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>gender_policy</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="gender_policy"                data-endpoint="POSTapi-mini-tournaments-update--id-"
@@ -14505,6 +16328,7 @@ Must be one of:
             <b style="line-height: 2;"><code>repeat_type</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="repeat_type"                data-endpoint="POSTapi-mini-tournaments-update--id-"
                value="2"
@@ -14517,6 +16341,7 @@ Must be one of:
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>role_type</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="role_type"                data-endpoint="POSTapi-mini-tournaments-update--id-"
@@ -14531,6 +16356,7 @@ Must be one of:
             <b style="line-height: 2;"><code>lock_cancellation</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="lock_cancellation"                data-endpoint="POSTapi-mini-tournaments-update--id-"
                value="6"
@@ -14543,6 +16369,7 @@ Must be one of:
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>age_group</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="age_group"                data-endpoint="POSTapi-mini-tournaments-update--id-"
@@ -14557,6 +16384,7 @@ Must be one of:
             <b style="line-height: 2;"><code>auto_approve</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="POSTapi-mini-tournaments-update--id-" style="display: none">
             <input type="radio" name="auto_approve"
                    value="true"
@@ -14578,6 +16406,7 @@ Must be one of:
             <b style="line-height: 2;"><code>allow_participant_add_friends</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="POSTapi-mini-tournaments-update--id-" style="display: none">
             <input type="radio" name="allow_participant_add_friends"
                    value="true"
@@ -14599,6 +16428,7 @@ Must be one of:
             <b style="line-height: 2;"><code>send_notification</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="POSTapi-mini-tournaments-update--id-" style="display: none">
             <input type="radio" name="send_notification"
                    value="true"
@@ -14620,6 +16450,7 @@ Must be one of:
             <b style="line-height: 2;"><code>status</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="status"                data-endpoint="POSTapi-mini-tournaments-update--id-"
                value="4"
@@ -14633,6 +16464,7 @@ Must be one of:
             <b style="line-height: 2;"><code>invite_user</code></b>&nbsp;&nbsp;
 <small>string[]</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="invite_user[0]"                data-endpoint="POSTapi-mini-tournaments-update--id-"
                data-component="body">
@@ -14771,6 +16603,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-mini-participants-index--miniTournamentId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -14782,6 +16615,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-mini-participants-index--miniTournamentId-"
                value="application/json"
@@ -14792,6 +16626,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-mini-participants-index--miniTournamentId-"
@@ -14805,6 +16640,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>miniTournamentId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="miniTournamentId"                data-endpoint="GETapi-mini-participants-index--miniTournamentId-"
                value="consequatur"
@@ -14817,6 +16653,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>is_confirmed</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="GETapi-mini-participants-index--miniTournamentId-" style="display: none">
             <input type="radio" name="is_confirmed"
                    value="true"
@@ -14838,6 +16675,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>type</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="type"                data-endpoint="GETapi-mini-participants-index--miniTournamentId-"
                value="team"
@@ -14851,12 +16689,13 @@ Must be one of:
             <b style="line-height: 2;"><code>per_page</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="per_page"                data-endpoint="GETapi-mini-participants-index--miniTournamentId-"
                value="16"
                data-component="body">
     <br>
-<p>Must be at least 1. Must not be greater than 200. Example: <code>16</code></p>
+<p>validation.min validation.max. Example: <code>16</code></p>
         </div>
         </form>
 
@@ -14964,6 +16803,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-mini-participants-join--miniTournamentId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -14975,6 +16815,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-mini-participants-join--miniTournamentId-"
                value="application/json"
@@ -14985,6 +16826,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-mini-participants-join--miniTournamentId-"
@@ -14998,6 +16840,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>miniTournamentId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="miniTournamentId"                data-endpoint="POSTapi-mini-participants-join--miniTournamentId-"
                value="consequatur"
@@ -15010,6 +16853,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>type</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="type"                data-endpoint="POSTapi-mini-participants-join--miniTournamentId-"
                value="user"
@@ -15023,6 +16867,7 @@ Must be one of:
             <b style="line-height: 2;"><code>team_id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="team_id"                data-endpoint="POSTapi-mini-participants-join--miniTournamentId-"
                value=""
@@ -15126,6 +16971,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-mini-participants-confirm--participantId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -15136,6 +16982,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-mini-participants-confirm--participantId-"
@@ -15148,6 +16995,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-mini-participants-confirm--participantId-"
                value="application/json"
@@ -15159,6 +17007,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>participantId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="participantId"                data-endpoint="POSTapi-mini-participants-confirm--participantId-"
@@ -15263,6 +17112,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-mini-participants-accept--participantId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -15273,6 +17123,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-mini-participants-accept--participantId-"
@@ -15285,6 +17136,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-mini-participants-accept--participantId-"
                value="application/json"
@@ -15296,6 +17148,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>participantId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="participantId"                data-endpoint="POSTapi-mini-participants-accept--participantId-"
@@ -15397,6 +17250,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-mini-participants-decline--participantId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -15407,6 +17261,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-mini-participants-decline--participantId-"
@@ -15419,6 +17274,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-mini-participants-decline--participantId-"
                value="application/json"
@@ -15430,6 +17286,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>participantId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="participantId"                data-endpoint="POSTapi-mini-participants-decline--participantId-"
@@ -15544,6 +17401,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-mini-participants-invite--miniTournamentId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -15555,6 +17413,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-mini-participants-invite--miniTournamentId-"
                value="application/json"
@@ -15565,6 +17424,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-mini-participants-invite--miniTournamentId-"
@@ -15578,6 +17438,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>miniTournamentId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="miniTournamentId"                data-endpoint="POSTapi-mini-participants-invite--miniTournamentId-"
                value="consequatur"
@@ -15589,6 +17450,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
         <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>type</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="type"                data-endpoint="POSTapi-mini-participants-invite--miniTournamentId-"
@@ -15603,6 +17465,7 @@ Must be one of:
             <b style="line-height: 2;"><code>user_id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="user_id"                data-endpoint="POSTapi-mini-participants-invite--miniTournamentId-"
                value=""
@@ -15614,6 +17477,7 @@ Must be one of:
             <b style="line-height: 2;"><code>team_id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="team_id"                data-endpoint="POSTapi-mini-participants-invite--miniTournamentId-"
                value=""
@@ -15748,6 +17612,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-mini-participants--id--candidates"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -15759,6 +17624,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-mini-participants--id--candidates"
                value="application/json"
@@ -15769,6 +17635,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-mini-participants--id--candidates"
@@ -15782,6 +17649,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="id"                data-endpoint="GETapi-mini-participants--id--candidates"
                value="consequatur"
@@ -15793,6 +17661,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
         <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>scope</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="scope"                data-endpoint="GETapi-mini-participants--id--candidates"
@@ -15807,6 +17676,7 @@ Must be one of:
             <b style="line-height: 2;"><code>club_id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="club_id"                data-endpoint="GETapi-mini-participants--id--candidates"
                value=""
@@ -15818,12 +17688,13 @@ Must be one of:
             <b style="line-height: 2;"><code>per_page</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="per_page"                data-endpoint="GETapi-mini-participants--id--candidates"
                value="13"
                data-component="body">
     <br>
-<p>Must be at least 1. Must not be greater than 200. Example: <code>13</code></p>
+<p>validation.min validation.max. Example: <code>13</code></p>
         </div>
         </form>
 
@@ -15920,6 +17791,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-mini-participants-delete--participantId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -15930,6 +17802,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-mini-participants-delete--participantId-"
@@ -15942,6 +17815,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-mini-participants-delete--participantId-"
                value="application/json"
@@ -15953,6 +17827,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>participantId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="participantId"                data-endpoint="POSTapi-mini-participants-delete--participantId-"
@@ -16085,6 +17960,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-mini-matches-index--miniTournamentId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -16096,6 +17972,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-mini-matches-index--miniTournamentId-"
                value="application/json"
@@ -16106,6 +17983,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-mini-matches-index--miniTournamentId-"
@@ -16119,6 +17997,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>miniTournamentId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="miniTournamentId"                data-endpoint="GETapi-mini-matches-index--miniTournamentId-"
                value="consequatur"
@@ -16131,6 +18010,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>filter</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="filter"                data-endpoint="GETapi-mini-matches-index--miniTournamentId-"
                value="matches"
@@ -16144,14 +18024,169 @@ Must be one of:
             <b style="line-height: 2;"><code>per_page</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="per_page"                data-endpoint="GETapi-mini-matches-index--miniTournamentId-"
                value="13"
                data-component="body">
     <br>
-<p>Must be at least 1. Must not be greater than 200. Example: <code>13</code></p>
+<p>validation.min validation.max. Example: <code>13</code></p>
         </div>
         </form>
+
+                    <h2 id="endpoints-GETapi-mini-matches--matchId-">Lấy thông tin chi tiết trận đấu</h2>
+
+<p>
+<small class="badge badge-darkred">requires authentication</small>
+</p>
+
+
+
+<span id="example-requests-GETapi-mini-matches--matchId-">
+<blockquote>Example request:</blockquote>
+
+
+<div class="bash-example">
+    <pre><code class="language-bash">curl --request GET \
+    --get "https://picki.vn/api/mini-matches/consequatur" \
+    --header "Authorization: Bearer {YOUR_AUTH_KEY}" \
+    --header "Content-Type: application/json" \
+    --header "Accept: application/json"</code></pre></div>
+
+
+<div class="javascript-example">
+    <pre><code class="language-javascript">const url = new URL(
+    "https://picki.vn/api/mini-matches/consequatur"
+);
+
+const headers = {
+    "Authorization": "Bearer {YOUR_AUTH_KEY}",
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+};
+
+fetch(url, {
+    method: "GET",
+    headers,
+}).then(response =&gt; response.json());</code></pre></div>
+
+</span>
+
+<span id="example-responses-GETapi-mini-matches--matchId-">
+            <blockquote>
+            <p>Example response (401):</p>
+        </blockquote>
+                <details class="annotation">
+            <summary style="cursor: pointer;">
+                <small onclick="textContent = parentElement.parentElement.open ? 'Show headers' : 'Hide headers'">Show headers</small>
+            </summary>
+            <pre><code class="language-http">cache-control: no-cache, private
+content-type: application/json
+access-control-allow-origin: *
+ </code></pre></details>         <pre>
+
+<code class="language-json" style="max-height: 300px;">{
+    &quot;message&quot;: &quot;Unauthenticated.&quot;
+}</code>
+ </pre>
+    </span>
+<span id="execution-results-GETapi-mini-matches--matchId-" hidden>
+    <blockquote>Received response<span
+                id="execution-response-status-GETapi-mini-matches--matchId-"></span>:
+    </blockquote>
+    <pre class="json"><code id="execution-response-content-GETapi-mini-matches--matchId-"
+      data-empty-response-text="<Empty response>" style="max-height: 400px;"></code></pre>
+</span>
+<span id="execution-error-GETapi-mini-matches--matchId-" hidden>
+    <blockquote>Request failed with error:</blockquote>
+    <pre><code id="execution-error-message-GETapi-mini-matches--matchId-">
+
+Tip: Check that you&#039;re properly connected to the network.
+If you&#039;re a maintainer of ths API, verify that your API is running and you&#039;ve enabled CORS.
+You can check the Dev Tools console for debugging information.</code></pre>
+</span>
+<form id="form-GETapi-mini-matches--matchId-" data-method="GET"
+      data-path="api/mini-matches/{matchId}"
+      data-authed="1"
+      data-hasfiles="0"
+      data-isarraybody="0"
+      autocomplete="off"
+      onsubmit="event.preventDefault(); executeTryOut('GETapi-mini-matches--matchId-', this);">
+    <h3>
+        Request&nbsp;&nbsp;&nbsp;
+                    <button type="button"
+                    style="background-color: #8fbcd4; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-tryout-GETapi-mini-matches--matchId-"
+                    onclick="tryItOut('GETapi-mini-matches--matchId-');">Try it out ⚡
+            </button>
+            <button type="button"
+                    style="background-color: #c97a7e; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-canceltryout-GETapi-mini-matches--matchId-"
+                    onclick="cancelTryOut('GETapi-mini-matches--matchId-');" hidden>Cancel 🛑
+            </button>&nbsp;&nbsp;
+            <button type="submit"
+                    style="background-color: #6ac174; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-executetryout-GETapi-mini-matches--matchId-"
+                    data-initial-text="Send Request 💥"
+                    data-loading-text="⏱ Sending..."
+                    hidden>Send Request 💥
+            </button>
+            </h3>
+            <p>
+            <small class="badge badge-green">GET</small>
+            <b><code>api/mini-matches/{matchId}</code></b>
+        </p>
+                <h4 class="fancy-heading-panel"><b>Headers</b></h4>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Authorization" class="auth-value"               data-endpoint="GETapi-mini-matches--matchId-"
+               value="Bearer {YOUR_AUTH_KEY}"
+               data-component="header">
+    <br>
+<p>Example: <code>Bearer {YOUR_AUTH_KEY}</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Content-Type"                data-endpoint="GETapi-mini-matches--matchId-"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Accept"                data-endpoint="GETapi-mini-matches--matchId-"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                        <h4 class="fancy-heading-panel"><b>URL Parameters</b></h4>
+                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>matchId</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="matchId"                data-endpoint="GETapi-mini-matches--matchId-"
+               value="consequatur"
+               data-component="url">
+    <br>
+<p>Example: <code>consequatur</code></p>
+            </div>
+                    </form>
 
                     <h2 id="endpoints-POSTapi-mini-matches-store--miniTournamentId-">Tạo trận đấu mới
 participants nếu là int =&gt; user
@@ -16175,7 +18210,7 @@ truyền mảng lên là team</h2>
     --header "Accept: application/json" \
     --data "{
     \"round\": \"consequatur\",
-    \"scheduled_at\": \"2025-11-17T03:16:21\",
+    \"scheduled_at\": \"2025-12-03T21:07:10\",
     \"team1_name\": \"mqeopfuudtdsufvyvddqa\",
     \"team2_name\": \"mniihfqcoynlazghdtqtq\",
     \"yard_number\": \"xbajwbpilpmufinllwloa\",
@@ -16197,7 +18232,7 @@ const headers = {
 
 let body = {
     "round": "consequatur",
-    "scheduled_at": "2025-11-17T03:16:21",
+    "scheduled_at": "2025-12-03T21:07:10",
     "team1_name": "mqeopfuudtdsufvyvddqa",
     "team2_name": "mniihfqcoynlazghdtqtq",
     "yard_number": "xbajwbpilpmufinllwloa",
@@ -16265,6 +18300,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-mini-matches-store--miniTournamentId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -16276,6 +18312,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-mini-matches-store--miniTournamentId-"
                value="application/json"
@@ -16286,6 +18323,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-mini-matches-store--miniTournamentId-"
@@ -16299,6 +18337,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>miniTournamentId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="miniTournamentId"                data-endpoint="POSTapi-mini-matches-store--miniTournamentId-"
                value="consequatur"
@@ -16311,6 +18350,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>round</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="round"                data-endpoint="POSTapi-mini-matches-store--miniTournamentId-"
                value="consequatur"
@@ -16322,6 +18362,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>participant1_id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="participant1_id"                data-endpoint="POSTapi-mini-matches-store--miniTournamentId-"
                value=""
@@ -16333,6 +18374,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>participant2_id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="participant2_id"                data-endpoint="POSTapi-mini-matches-store--miniTournamentId-"
                value=""
@@ -16344,17 +18386,19 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>scheduled_at</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="scheduled_at"                data-endpoint="POSTapi-mini-matches-store--miniTournamentId-"
-               value="2025-11-17T03:16:21"
+               value="2025-12-03T21:07:10"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-11-17T03:16:21</code></p>
+<p>validation.date. Example: <code>2025-12-03T21:07:10</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>referee</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="referee"                data-endpoint="POSTapi-mini-matches-store--miniTournamentId-"
                value=""
@@ -16366,45 +18410,49 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>team1_name</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="team1_name"                data-endpoint="POSTapi-mini-matches-store--miniTournamentId-"
                value="mqeopfuudtdsufvyvddqa"
                data-component="body">
     <br>
-<p>Must not be greater than 255 characters. Example: <code>mqeopfuudtdsufvyvddqa</code></p>
+<p>validation.max. Example: <code>mqeopfuudtdsufvyvddqa</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>team2_name</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="team2_name"                data-endpoint="POSTapi-mini-matches-store--miniTournamentId-"
                value="mniihfqcoynlazghdtqtq"
                data-component="body">
     <br>
-<p>Must not be greater than 255 characters. Example: <code>mniihfqcoynlazghdtqtq</code></p>
+<p>validation.max. Example: <code>mniihfqcoynlazghdtqtq</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>yard_number</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="yard_number"                data-endpoint="POSTapi-mini-matches-store--miniTournamentId-"
                value="xbajwbpilpmufinllwloa"
                data-component="body">
     <br>
-<p>Must not be greater than 50 characters. Example: <code>xbajwbpilpmufinllwloa</code></p>
+<p>validation.max. Example: <code>xbajwbpilpmufinllwloa</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>name_of_match</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="name_of_match"                data-endpoint="POSTapi-mini-matches-store--miniTournamentId-"
                value="uydlsmsjuryvojcybzvrb"
                data-component="body">
     <br>
-<p>Must not be greater than 255 characters. Example: <code>uydlsmsjuryvojcybzvrb</code></p>
+<p>validation.max. Example: <code>uydlsmsjuryvojcybzvrb</code></p>
         </div>
         </form>
 
@@ -16430,7 +18478,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     \"round\": \"consequatur\",
     \"team1_name\": \"mqeopfuudtdsufvyvddqa\",
     \"team2_name\": \"mniihfqcoynlazghdtqtq\",
-    \"scheduled_at\": \"2025-11-17T03:16:21\",
+    \"scheduled_at\": \"2025-12-03T21:07:10\",
     \"yard_number\": \"xbajwbpilpmufinllwloa\",
     \"name_of_match\": \"uydlsmsjuryvojcybzvrb\"
 }"
@@ -16452,7 +18500,7 @@ let body = {
     "round": "consequatur",
     "team1_name": "mqeopfuudtdsufvyvddqa",
     "team2_name": "mniihfqcoynlazghdtqtq",
-    "scheduled_at": "2025-11-17T03:16:21",
+    "scheduled_at": "2025-12-03T21:07:10",
     "yard_number": "xbajwbpilpmufinllwloa",
     "name_of_match": "uydlsmsjuryvojcybzvrb"
 };
@@ -16518,6 +18566,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-mini-matches-update--matchId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -16529,6 +18578,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-mini-matches-update--matchId-"
                value="application/json"
@@ -16539,6 +18589,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-mini-matches-update--matchId-"
@@ -16552,6 +18603,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>matchId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="matchId"                data-endpoint="POSTapi-mini-matches-update--matchId-"
                value="consequatur"
@@ -16564,6 +18616,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>round</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="round"                data-endpoint="POSTapi-mini-matches-update--matchId-"
                value="consequatur"
@@ -16575,6 +18628,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>participant1_id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="participant1_id"                data-endpoint="POSTapi-mini-matches-update--matchId-"
                value=""
@@ -16586,6 +18640,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>participant2_id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="participant2_id"                data-endpoint="POSTapi-mini-matches-update--matchId-"
                value=""
@@ -16597,39 +18652,43 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>team1_name</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="team1_name"                data-endpoint="POSTapi-mini-matches-update--matchId-"
                value="mqeopfuudtdsufvyvddqa"
                data-component="body">
     <br>
-<p>Must not be greater than 255 characters. Example: <code>mqeopfuudtdsufvyvddqa</code></p>
+<p>validation.max. Example: <code>mqeopfuudtdsufvyvddqa</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>team2_name</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="team2_name"                data-endpoint="POSTapi-mini-matches-update--matchId-"
                value="mniihfqcoynlazghdtqtq"
                data-component="body">
     <br>
-<p>Must not be greater than 255 characters. Example: <code>mniihfqcoynlazghdtqtq</code></p>
+<p>validation.max. Example: <code>mniihfqcoynlazghdtqtq</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>scheduled_at</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="scheduled_at"                data-endpoint="POSTapi-mini-matches-update--matchId-"
-               value="2025-11-17T03:16:21"
+               value="2025-12-03T21:07:10"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-11-17T03:16:21</code></p>
+<p>validation.date. Example: <code>2025-12-03T21:07:10</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>referee</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="referee"                data-endpoint="POSTapi-mini-matches-update--matchId-"
                value=""
@@ -16641,23 +18700,25 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>yard_number</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="yard_number"                data-endpoint="POSTapi-mini-matches-update--matchId-"
                value="xbajwbpilpmufinllwloa"
                data-component="body">
     <br>
-<p>Must not be greater than 50 characters. Example: <code>xbajwbpilpmufinllwloa</code></p>
+<p>validation.max. Example: <code>xbajwbpilpmufinllwloa</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>name_of_match</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="name_of_match"                data-endpoint="POSTapi-mini-matches-update--matchId-"
                value="uydlsmsjuryvojcybzvrb"
                data-component="body">
     <br>
-<p>Must not be greater than 255 characters. Example: <code>uydlsmsjuryvojcybzvrb</code></p>
+<p>validation.max. Example: <code>uydlsmsjuryvojcybzvrb</code></p>
         </div>
         </form>
 
@@ -16773,6 +18834,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-mini-matches-add-set--matchId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -16784,6 +18846,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-mini-matches-add-set--matchId-"
                value="application/json"
@@ -16794,6 +18857,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-mini-matches-add-set--matchId-"
@@ -16807,6 +18871,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>matchId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="matchId"                data-endpoint="POSTapi-mini-matches-add-set--matchId-"
                value="consequatur"
@@ -16819,12 +18884,13 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>set_number</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="set_number"                data-endpoint="POSTapi-mini-matches-add-set--matchId-"
                value="73"
                data-component="body">
     <br>
-<p>Must be at least 1. Example: <code>73</code></p>
+<p>validation.min. Example: <code>73</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
         <details>
@@ -16832,12 +18898,14 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>results</code></b>&nbsp;&nbsp;
 <small>object[]</small>&nbsp;
  &nbsp;
+ &nbsp;
 <br>
-<p>Must have at least 2 items.</p>
+<p>validation.min.</p>
             </summary>
                                                 <div style="margin-left: 14px; clear: unset;">
                         <b style="line-height: 2;"><code>participant_id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="results.0.participant_id"                data-endpoint="POSTapi-mini-matches-add-set--matchId-"
@@ -16850,12 +18918,13 @@ You can check the Dev Tools console for debugging information.</code></pre>
                         <b style="line-height: 2;"><code>score</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="results.0.score"                data-endpoint="POSTapi-mini-matches-add-set--matchId-"
                value="45"
                data-component="body">
     <br>
-<p>Must be at least 0. Example: <code>45</code></p>
+<p>validation.min. Example: <code>45</code></p>
                     </div>
                                     </details>
         </div>
@@ -16952,6 +19021,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="DELETEapi-mini-matches-delete-set--matchId---setNumber-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -16963,6 +19033,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="DELETEapi-mini-matches-delete-set--matchId---setNumber-"
                value="application/json"
@@ -16973,6 +19044,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="DELETEapi-mini-matches-delete-set--matchId---setNumber-"
@@ -16986,6 +19058,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>matchId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="matchId"                data-endpoint="DELETEapi-mini-matches-delete-set--matchId---setNumber-"
                value="consequatur"
@@ -16996,6 +19069,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>setNumber</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="setNumber"                data-endpoint="DELETEapi-mini-matches-delete-set--matchId---setNumber-"
@@ -17101,6 +19175,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="DELETEapi-mini-matches-delete"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -17112,6 +19187,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="DELETEapi-mini-matches-delete"
                value="application/json"
@@ -17122,6 +19198,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="DELETEapi-mini-matches-delete"
@@ -17239,6 +19316,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-mini-matches--matchId--generate-qr"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -17249,6 +19327,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-mini-matches--matchId--generate-qr"
@@ -17261,6 +19340,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-mini-matches--matchId--generate-qr"
                value="application/json"
@@ -17272,6 +19352,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>matchId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="matchId"                data-endpoint="GETapi-mini-matches--matchId--generate-qr"
@@ -17373,6 +19454,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-mini-matches-confirm-result--matchId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -17383,6 +19465,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-mini-matches-confirm-result--matchId-"
@@ -17395,6 +19478,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-mini-matches-confirm-result--matchId-"
                value="application/json"
@@ -17406,6 +19490,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>matchId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="matchId"                data-endpoint="POSTapi-mini-matches-confirm-result--matchId-"
@@ -17438,7 +19523,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     \"radius\": 73,
     \"per_page\": 13,
     \"is_map\": true,
-    \"date_from\": \"2025-11-17T03:16:21\",
+    \"date_from\": \"2025-12-03T21:07:10\",
     \"location_id\": 17,
     \"sport_id\": 17,
     \"keyword\": \"mqeopfuudtdsufvyvddqa\",
@@ -17478,7 +19563,7 @@ let body = {
     "radius": 73,
     "per_page": 13,
     "is_map": true,
-    "date_from": "2025-11-17T03:16:21",
+    "date_from": "2025-12-03T21:07:10",
     "location_id": 17,
     "sport_id": 17,
     "keyword": "mqeopfuudtdsufvyvddqa",
@@ -17582,6 +19667,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-mini-matches-list-match"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -17593,6 +19679,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-mini-matches-list-match"
                value="application/json"
@@ -17603,6 +19690,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-mini-matches-list-match"
@@ -17616,6 +19704,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>lat</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="lat"                data-endpoint="GETapi-mini-matches-list-match"
                value=""
@@ -17627,6 +19716,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>lng</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="lng"                data-endpoint="GETapi-mini-matches-list-match"
                value=""
@@ -17638,17 +19728,19 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>radius</code></b>&nbsp;&nbsp;
 <small>number</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="radius"                data-endpoint="GETapi-mini-matches-list-match"
                value="73"
                data-component="body">
     <br>
-<p>Must be at least 1. Example: <code>73</code></p>
+<p>validation.min. Example: <code>73</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>minLat</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="minLat"                data-endpoint="GETapi-mini-matches-list-match"
                value=""
@@ -17660,6 +19752,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>maxLat</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="maxLat"                data-endpoint="GETapi-mini-matches-list-match"
                value=""
@@ -17671,6 +19764,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>minLng</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="minLng"                data-endpoint="GETapi-mini-matches-list-match"
                value=""
@@ -17682,6 +19776,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>maxLng</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="maxLng"                data-endpoint="GETapi-mini-matches-list-match"
                value=""
@@ -17693,17 +19788,19 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>per_page</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="per_page"                data-endpoint="GETapi-mini-matches-list-match"
                value="13"
                data-component="body">
     <br>
-<p>Must be at least 1. Must not be greater than 200. Example: <code>13</code></p>
+<p>validation.min validation.max. Example: <code>13</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>is_map</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="GETapi-mini-matches-list-match" style="display: none">
             <input type="radio" name="is_map"
                    value="true"
@@ -17725,17 +19822,19 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>date_from</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="date_from"                data-endpoint="GETapi-mini-matches-list-match"
-               value="2025-11-17T03:16:21"
+               value="2025-12-03T21:07:10"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-11-17T03:16:21</code></p>
+<p>validation.date. Example: <code>2025-12-03T21:07:10</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>location_id</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="location_id"                data-endpoint="GETapi-mini-matches-list-match"
                value="17"
@@ -17747,6 +19846,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>sport_id</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="sport_id"                data-endpoint="GETapi-mini-matches-list-match"
                value="17"
@@ -17758,17 +19858,19 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>keyword</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="keyword"                data-endpoint="GETapi-mini-matches-list-match"
                value="mqeopfuudtdsufvyvddqa"
                data-component="body">
     <br>
-<p>Must not be greater than 255 characters. Example: <code>mqeopfuudtdsufvyvddqa</code></p>
+<p>validation.max. Example: <code>mqeopfuudtdsufvyvddqa</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>rating</code></b>&nbsp;&nbsp;
 <small>integer[]</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="rating[0]"                data-endpoint="GETapi-mini-matches-list-match"
                data-component="body">
@@ -17782,6 +19884,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>time_of_day</code></b>&nbsp;&nbsp;
 <small>string[]</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="time_of_day[0]"                data-endpoint="GETapi-mini-matches-list-match"
                data-component="body">
@@ -17797,6 +19900,7 @@ Must be one of:
             <b style="line-height: 2;"><code>slot_status</code></b>&nbsp;&nbsp;
 <small>string[]</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="slot_status[0]"                data-endpoint="GETapi-mini-matches-list-match"
                data-component="body">
@@ -17812,6 +19916,7 @@ Must be one of:
             <b style="line-height: 2;"><code>type</code></b>&nbsp;&nbsp;
 <small>string[]</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="type[0]"                data-endpoint="GETapi-mini-matches-list-match"
                data-component="body">
@@ -17827,6 +19932,7 @@ Must be one of:
             <b style="line-height: 2;"><code>fee</code></b>&nbsp;&nbsp;
 <small>string[]</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="fee[0]"                data-endpoint="GETapi-mini-matches-list-match"
                data-component="body">
@@ -17842,23 +19948,25 @@ Must be one of:
             <b style="line-height: 2;"><code>min_price</code></b>&nbsp;&nbsp;
 <small>number</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="min_price"                data-endpoint="GETapi-mini-matches-list-match"
                value="55"
                data-component="body">
     <br>
-<p>Must be at least 0. Example: <code>55</code></p>
+<p>validation.min. Example: <code>55</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>max_price</code></b>&nbsp;&nbsp;
 <small>number</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="max_price"                data-endpoint="GETapi-mini-matches-list-match"
                value="19"
                data-component="body">
     <br>
-<p>Must be at least 0. Example: <code>19</code></p>
+<p>validation.min. Example: <code>19</code></p>
         </div>
         </form>
 
@@ -17876,18 +19984,18 @@ Must be one of:
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request POST \
-    "https://picki.vn/api/send-message/mini-tournament/1" \
+    "https://picki.vn/api/send-message/mini-tournament/149" \
     --header "Authorization: Bearer {YOUR_AUTH_KEY}" \
     --header "Content-Type: multipart/form-data" \
     --header "Accept: application/json" \
     --form "type=text"\
     --form "content=consequatur"\
-    --form "file=@/tmp/phpA9Aebe" </code></pre></div>
+    --form "file=@/tmp/php0Kbo2O" </code></pre></div>
 
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "https://picki.vn/api/send-message/mini-tournament/1"
+    "https://picki.vn/api/send-message/mini-tournament/149"
 );
 
 const headers = {
@@ -17962,6 +20070,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-send-message-mini-tournament--tournamentId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -17973,6 +20082,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-send-message-mini-tournament--tournamentId-"
                value="multipart/form-data"
@@ -17983,6 +20093,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-send-message-mini-tournament--tournamentId-"
@@ -17996,17 +20107,19 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>tournamentId</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="tournamentId"                data-endpoint="POSTapi-send-message-mini-tournament--tournamentId-"
-               value="1"
+               value="149"
                data-component="url">
     <br>
-<p>Example: <code>1</code></p>
+<p>Example: <code>149</code></p>
             </div>
                             <h4 class="fancy-heading-panel"><b>Body Parameters</b></h4>
         <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>type</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="type"                data-endpoint="POSTapi-send-message-mini-tournament--tournamentId-"
@@ -18021,6 +20134,7 @@ Must be one of:
             <b style="line-height: 2;"><code>content</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="content"                data-endpoint="POSTapi-send-message-mini-tournament--tournamentId-"
                value="consequatur"
@@ -18032,12 +20146,13 @@ Must be one of:
             <b style="line-height: 2;"><code>file</code></b>&nbsp;&nbsp;
 <small>file</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="file" style="display: none"
                               name="file"                data-endpoint="POSTapi-send-message-mini-tournament--tournamentId-"
                value=""
                data-component="body">
     <br>
-<p>Must be a file. Must not be greater than 10240 kilobytes. Example: <code>/tmp/phpA9Aebe</code></p>
+<p>Must be a file. validation.max. Example: <code>/tmp/php0Kbo2O</code></p>
         </div>
         </form>
 
@@ -18161,6 +20276,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-send-message-mini-tournament-index--tournamentId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -18172,6 +20288,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-send-message-mini-tournament-index--tournamentId-"
                value="application/json"
@@ -18182,6 +20299,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-send-message-mini-tournament-index--tournamentId-"
@@ -18195,6 +20313,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>tournamentId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="tournamentId"                data-endpoint="GETapi-send-message-mini-tournament-index--tournamentId-"
                value="consequatur"
@@ -18207,12 +20326,13 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>per_page</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="per_page"                data-endpoint="GETapi-send-message-mini-tournament-index--tournamentId-"
                value="21"
                data-component="body">
     <br>
-<p>Must be at least 1. Must not be greater than 200. Example: <code>21</code></p>
+<p>validation.min validation.max. Example: <code>21</code></p>
         </div>
         </form>
 
@@ -18236,7 +20356,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Accept: application/json" \
     --form "type=text"\
     --form "content=consequatur"\
-    --form "file=@/tmp/phplo1Yng" </code></pre></div>
+    --form "file=@/tmp/phpANY3Mb" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -18316,6 +20436,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-send-message-tournament--tournamentId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -18327,6 +20448,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-send-message-tournament--tournamentId-"
                value="multipart/form-data"
@@ -18337,6 +20459,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-send-message-tournament--tournamentId-"
@@ -18350,6 +20473,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>tournamentId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="tournamentId"                data-endpoint="POSTapi-send-message-tournament--tournamentId-"
                value="consequatur"
@@ -18361,6 +20485,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
         <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>type</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="type"                data-endpoint="POSTapi-send-message-tournament--tournamentId-"
@@ -18375,6 +20500,7 @@ Must be one of:
             <b style="line-height: 2;"><code>content</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="content"                data-endpoint="POSTapi-send-message-tournament--tournamentId-"
                value="consequatur"
@@ -18386,12 +20512,13 @@ Must be one of:
             <b style="line-height: 2;"><code>file</code></b>&nbsp;&nbsp;
 <small>file</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="file" style="display: none"
                               name="file"                data-endpoint="POSTapi-send-message-tournament--tournamentId-"
                value=""
                data-component="body">
     <br>
-<p>Must be a file. Must not be greater than 10240 kilobytes. Example: <code>/tmp/phplo1Yng</code></p>
+<p>Must be a file. validation.max. Example: <code>/tmp/phpANY3Mb</code></p>
         </div>
         </form>
 
@@ -18515,6 +20642,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-send-message-tournament-index--tournamentId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -18526,6 +20654,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-send-message-tournament-index--tournamentId-"
                value="application/json"
@@ -18536,6 +20665,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-send-message-tournament-index--tournamentId-"
@@ -18549,6 +20679,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>tournamentId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="tournamentId"                data-endpoint="GETapi-send-message-tournament-index--tournamentId-"
                value="consequatur"
@@ -18561,12 +20692,13 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>per_page</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="per_page"                data-endpoint="GETapi-send-message-tournament-index--tournamentId-"
                value="21"
                data-component="body">
     <br>
-<p>Must be at least 1. Must not be greater than 200. Example: <code>21</code></p>
+<p>validation.min validation.max. Example: <code>21</code></p>
         </div>
         </form>
 
@@ -18690,6 +20822,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-messages-conversation--userId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -18701,6 +20834,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-messages-conversation--userId-"
                value="application/json"
@@ -18711,6 +20845,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-messages-conversation--userId-"
@@ -18724,6 +20859,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>userId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="userId"                data-endpoint="GETapi-messages-conversation--userId-"
                value="consequatur"
@@ -18736,12 +20872,13 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>per_page</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="per_page"                data-endpoint="GETapi-messages-conversation--userId-"
                value="21"
                data-component="body">
     <br>
-<p>Must be at least 1. Must not be greater than 200. Example: <code>21</code></p>
+<p>validation.min validation.max. Example: <code>21</code></p>
         </div>
         </form>
 
@@ -18765,7 +20902,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Accept: application/json" \
     --form "receiver_id=consequatur"\
     --form "message=consequatur"\
-    --form "attachment=@/tmp/phplfdKNz" </code></pre></div>
+    --form "attachment=@/tmp/phpt1qRs8" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -18845,6 +20982,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-messages-store"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -18856,6 +20994,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-messages-store"
                value="multipart/form-data"
@@ -18866,6 +21005,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-messages-store"
@@ -18879,6 +21019,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>receiver_id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="receiver_id"                data-endpoint="POSTapi-messages-store"
                value="consequatur"
@@ -18890,6 +21031,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>message</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="message"                data-endpoint="POSTapi-messages-store"
                value="consequatur"
@@ -18901,12 +21043,13 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>attachment</code></b>&nbsp;&nbsp;
 <small>file</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="file" style="display: none"
                               name="attachment"                data-endpoint="POSTapi-messages-store"
                value=""
                data-component="body">
     <br>
-<p>Must be a file. Must not be greater than 10240 kilobytes. Example: <code>/tmp/phplfdKNz</code></p>
+<p>Must be a file. validation.max. Example: <code>/tmp/phpt1qRs8</code></p>
         </div>
         </form>
 
@@ -19001,6 +21144,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-messages-mark-as-read--senderId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -19011,6 +21155,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-messages-mark-as-read--senderId-"
@@ -19023,6 +21168,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-messages-mark-as-read--senderId-"
                value="application/json"
@@ -19034,6 +21180,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>senderId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="senderId"                data-endpoint="POSTapi-messages-mark-as-read--senderId-"
@@ -19188,6 +21335,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-competition-locations-index"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -19199,6 +21347,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-competition-locations-index"
                value="application/json"
@@ -19209,6 +21358,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-competition-locations-index"
@@ -19222,6 +21372,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>lat</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="lat"                data-endpoint="GETapi-competition-locations-index"
                value=""
@@ -19233,6 +21384,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>lng</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="lng"                data-endpoint="GETapi-competition-locations-index"
                value=""
@@ -19244,17 +21396,19 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>radius</code></b>&nbsp;&nbsp;
 <small>number</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="radius"                data-endpoint="GETapi-competition-locations-index"
                value="73"
                data-component="body">
     <br>
-<p>Must be at least 1. Example: <code>73</code></p>
+<p>validation.min. Example: <code>73</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>minLat</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="minLat"                data-endpoint="GETapi-competition-locations-index"
                value=""
@@ -19266,6 +21420,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>maxLat</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="maxLat"                data-endpoint="GETapi-competition-locations-index"
                value=""
@@ -19277,6 +21432,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>minLng</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="minLng"                data-endpoint="GETapi-competition-locations-index"
                value=""
@@ -19288,6 +21444,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>maxLng</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="maxLng"                data-endpoint="GETapi-competition-locations-index"
                value=""
@@ -19299,6 +21456,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>sport_id</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="sport_id"                data-endpoint="GETapi-competition-locations-index"
                value="17"
@@ -19310,6 +21468,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>location_id</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="location_id"                data-endpoint="GETapi-competition-locations-index"
                value="17"
@@ -19321,6 +21480,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>number_of_yards</code></b>&nbsp;&nbsp;
 <small>integer[]</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="number_of_yards[0]"                data-endpoint="GETapi-competition-locations-index"
                data-component="body">
@@ -19328,23 +21488,25 @@ You can check the Dev Tools console for debugging information.</code></pre>
                name="number_of_yards[1]"                data-endpoint="GETapi-competition-locations-index"
                data-component="body">
     <br>
-<p>Must be at least 1.</p>
+<p>validation.min.</p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>keyword</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="keyword"                data-endpoint="GETapi-competition-locations-index"
                value="qeopfuudtdsufvyvddqam"
                data-component="body">
     <br>
-<p>Must not be greater than 255 characters. Example: <code>qeopfuudtdsufvyvddqam</code></p>
+<p>validation.max. Example: <code>qeopfuudtdsufvyvddqam</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>is_followed</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="GETapi-competition-locations-index" style="display: none">
             <input type="radio" name="is_followed"
                    value="true"
@@ -19366,17 +21528,19 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>per_page</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="per_page"                data-endpoint="GETapi-competition-locations-index"
                value="8"
                data-component="body">
     <br>
-<p>Must be at least 1. Must not be greater than 200. Example: <code>8</code></p>
+<p>validation.min validation.max. Example: <code>8</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>yard_type</code></b>&nbsp;&nbsp;
 <small>string[]</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="yard_type[0]"                data-endpoint="GETapi-competition-locations-index"
                data-component="body">
@@ -19390,6 +21554,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>facility_id</code></b>&nbsp;&nbsp;
 <small>integer[]</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="facility_id[0]"                data-endpoint="GETapi-competition-locations-index"
                data-component="body">
@@ -19403,6 +21568,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>is_map</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="GETapi-competition-locations-index" style="display: none">
             <input type="radio" name="is_map"
                    value="true"
@@ -19544,6 +21710,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-follows-index"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -19555,6 +21722,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-follows-index"
                value="application/json"
@@ -19565,6 +21733,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-follows-index"
@@ -19578,17 +21747,19 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>per_page</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="per_page"                data-endpoint="GETapi-follows-index"
                value="21"
                data-component="body">
     <br>
-<p>Must be at least 1. Must not be greater than 200. Example: <code>21</code></p>
+<p>validation.min validation.max. Example: <code>21</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>is_map</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="GETapi-follows-index" style="display: none">
             <input type="radio" name="is_map"
                    value="true"
@@ -19710,6 +21881,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-follows-store"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -19721,6 +21893,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-follows-store"
                value="application/json"
@@ -19731,6 +21904,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-follows-store"
@@ -19744,6 +21918,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>followable_type</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="followable_type"                data-endpoint="POSTapi-follows-store"
                value="consequatur"
@@ -19754,6 +21929,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>followable_id</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="followable_id"                data-endpoint="POSTapi-follows-store"
@@ -19866,6 +22042,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="DELETEapi-follows-delete"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -19877,6 +22054,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="DELETEapi-follows-delete"
                value="application/json"
@@ -19887,6 +22065,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="DELETEapi-follows-delete"
@@ -19900,6 +22079,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>followable_type</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="followable_type"                data-endpoint="DELETEapi-follows-delete"
                value="consequatur"
@@ -19910,6 +22090,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>followable_id</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="followable_id"                data-endpoint="DELETEapi-follows-delete"
@@ -20042,6 +22223,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-follows-list-friends"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -20053,6 +22235,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-follows-list-friends"
                value="application/json"
@@ -20063,6 +22246,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-follows-list-friends"
@@ -20076,17 +22260,19 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>per_page</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="per_page"                data-endpoint="GETapi-follows-list-friends"
                value="21"
                data-component="body">
     <br>
-<p>Must be at least 1. Must not be greater than 200. Example: <code>21</code></p>
+<p>validation.min validation.max. Example: <code>21</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>is_map</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="GETapi-follows-list-friends" style="display: none">
             <input type="radio" name="is_map"
                    value="true"
@@ -20230,6 +22416,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-sports-index"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -20241,6 +22428,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-sports-index"
                value="application/json"
@@ -20251,6 +22439,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-sports-index"
@@ -20264,28 +22453,31 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>per_page</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="per_page"                data-endpoint="GETapi-sports-index"
                value="21"
                data-component="body">
     <br>
-<p>Must be at least 1. Must not be greater than 200. Example: <code>21</code></p>
+<p>validation.min validation.max. Example: <code>21</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>name</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="name"                data-endpoint="GETapi-sports-index"
                value="mqeopfuudtdsufvyvddqa"
                data-component="body">
     <br>
-<p>Must not be greater than 255 characters. Example: <code>mqeopfuudtdsufvyvddqa</code></p>
+<p>validation.max. Example: <code>mqeopfuudtdsufvyvddqa</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>is_map</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="GETapi-sports-index" style="display: none">
             <input type="radio" name="is_map"
                    value="true"
@@ -20302,6 +22494,176 @@ You can check the Dev Tools console for debugging information.</code></pre>
         </label>
     <br>
 <p>Example: <code>true</code></p>
+        </div>
+        </form>
+
+                    <h2 id="endpoints-POSTapi-sports-update--id-">POST api/sports/update/{id}</h2>
+
+<p>
+<small class="badge badge-darkred">requires authentication</small>
+</p>
+
+
+
+<span id="example-requests-POSTapi-sports-update--id-">
+<blockquote>Example request:</blockquote>
+
+
+<div class="bash-example">
+    <pre><code class="language-bash">curl --request POST \
+    "https://picki.vn/api/sports/update/consequatur" \
+    --header "Authorization: Bearer {YOUR_AUTH_KEY}" \
+    --header "Content-Type: multipart/form-data" \
+    --header "Accept: application/json" \
+    --form "name=vmqeopfuudtdsufvyvddq"\
+    --form "icon=@/tmp/phpTGCVvC" </code></pre></div>
+
+
+<div class="javascript-example">
+    <pre><code class="language-javascript">const url = new URL(
+    "https://picki.vn/api/sports/update/consequatur"
+);
+
+const headers = {
+    "Authorization": "Bearer {YOUR_AUTH_KEY}",
+    "Content-Type": "multipart/form-data",
+    "Accept": "application/json",
+};
+
+const body = new FormData();
+body.append('name', 'vmqeopfuudtdsufvyvddq');
+body.append('icon', document.querySelector('input[name="icon"]').files[0]);
+
+fetch(url, {
+    method: "POST",
+    headers,
+    body,
+}).then(response =&gt; response.json());</code></pre></div>
+
+</span>
+
+<span id="example-responses-POSTapi-sports-update--id-">
+</span>
+<span id="execution-results-POSTapi-sports-update--id-" hidden>
+    <blockquote>Received response<span
+                id="execution-response-status-POSTapi-sports-update--id-"></span>:
+    </blockquote>
+    <pre class="json"><code id="execution-response-content-POSTapi-sports-update--id-"
+      data-empty-response-text="<Empty response>" style="max-height: 400px;"></code></pre>
+</span>
+<span id="execution-error-POSTapi-sports-update--id-" hidden>
+    <blockquote>Request failed with error:</blockquote>
+    <pre><code id="execution-error-message-POSTapi-sports-update--id-">
+
+Tip: Check that you&#039;re properly connected to the network.
+If you&#039;re a maintainer of ths API, verify that your API is running and you&#039;ve enabled CORS.
+You can check the Dev Tools console for debugging information.</code></pre>
+</span>
+<form id="form-POSTapi-sports-update--id-" data-method="POST"
+      data-path="api/sports/update/{id}"
+      data-authed="1"
+      data-hasfiles="1"
+      data-isarraybody="0"
+      autocomplete="off"
+      onsubmit="event.preventDefault(); executeTryOut('POSTapi-sports-update--id-', this);">
+    <h3>
+        Request&nbsp;&nbsp;&nbsp;
+                    <button type="button"
+                    style="background-color: #8fbcd4; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-tryout-POSTapi-sports-update--id-"
+                    onclick="tryItOut('POSTapi-sports-update--id-');">Try it out ⚡
+            </button>
+            <button type="button"
+                    style="background-color: #c97a7e; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-canceltryout-POSTapi-sports-update--id-"
+                    onclick="cancelTryOut('POSTapi-sports-update--id-');" hidden>Cancel 🛑
+            </button>&nbsp;&nbsp;
+            <button type="submit"
+                    style="background-color: #6ac174; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-executetryout-POSTapi-sports-update--id-"
+                    data-initial-text="Send Request 💥"
+                    data-loading-text="⏱ Sending..."
+                    hidden>Send Request 💥
+            </button>
+            </h3>
+            <p>
+            <small class="badge badge-black">POST</small>
+            <b><code>api/sports/update/{id}</code></b>
+        </p>
+                <h4 class="fancy-heading-panel"><b>Headers</b></h4>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Authorization" class="auth-value"               data-endpoint="POSTapi-sports-update--id-"
+               value="Bearer {YOUR_AUTH_KEY}"
+               data-component="header">
+    <br>
+<p>Example: <code>Bearer {YOUR_AUTH_KEY}</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Content-Type"                data-endpoint="POSTapi-sports-update--id-"
+               value="multipart/form-data"
+               data-component="header">
+    <br>
+<p>Example: <code>multipart/form-data</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Accept"                data-endpoint="POSTapi-sports-update--id-"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                        <h4 class="fancy-heading-panel"><b>URL Parameters</b></h4>
+                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>id</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="id"                data-endpoint="POSTapi-sports-update--id-"
+               value="consequatur"
+               data-component="url">
+    <br>
+<p>The ID of the update. Example: <code>consequatur</code></p>
+            </div>
+                            <h4 class="fancy-heading-panel"><b>Body Parameters</b></h4>
+        <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>icon</code></b>&nbsp;&nbsp;
+<small>file</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="file" style="display: none"
+                              name="icon"                data-endpoint="POSTapi-sports-update--id-"
+               value=""
+               data-component="body">
+    <br>
+<p>validation.image validation.max. Example: <code>/tmp/phpTGCVvC</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>name</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="name"                data-endpoint="POSTapi-sports-update--id-"
+               value="vmqeopfuudtdsufvyvddq"
+               data-component="body">
+    <br>
+<p>validation.max. Example: <code>vmqeopfuudtdsufvyvddq</code></p>
         </div>
         </form>
 
@@ -20412,6 +22774,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-facilities-index"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -20423,6 +22786,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-facilities-index"
                value="application/json"
@@ -20433,6 +22797,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-facilities-index"
@@ -20550,6 +22915,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-competition-location-yards-index"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -20561,6 +22927,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-competition-location-yards-index"
                value="application/json"
@@ -20571,6 +22938,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-competition-location-yards-index"
@@ -20703,6 +23071,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-notifications-index"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -20714,6 +23083,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-notifications-index"
                value="application/json"
@@ -20724,6 +23094,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-notifications-index"
@@ -20737,6 +23108,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>type</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="type"                data-endpoint="GETapi-notifications-index"
                value="all"
@@ -20750,12 +23122,13 @@ Must be one of:
             <b style="line-height: 2;"><code>per_page</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="per_page"                data-endpoint="GETapi-notifications-index"
                value="13"
                data-component="body">
     <br>
-<p>Must be at least 1. Must not be greater than 200. Example: <code>13</code></p>
+<p>validation.min validation.max. Example: <code>13</code></p>
         </div>
         </form>
 
@@ -20851,6 +23224,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-notifications-mark-as-read"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -20862,6 +23236,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-notifications-mark-as-read"
                value="application/json"
@@ -20872,6 +23247,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-notifications-mark-as-read"
@@ -20885,6 +23261,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>notification_id</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="notification_id"                data-endpoint="POSTapi-notifications-mark-as-read"
                value=""
@@ -20985,6 +23362,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-mini-tournament-notifications-subscribe--miniTournamentId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -20995,6 +23373,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-mini-tournament-notifications-subscribe--miniTournamentId-"
@@ -21007,6 +23386,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-mini-tournament-notifications-subscribe--miniTournamentId-"
                value="application/json"
@@ -21018,6 +23398,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>miniTournamentId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="miniTournamentId"                data-endpoint="POSTapi-mini-tournament-notifications-subscribe--miniTournamentId-"
@@ -21119,6 +23500,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="POSTapi-mini-tournament-notifications-unsubscribe--miniTournamentId-"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -21129,6 +23511,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="POSTapi-mini-tournament-notifications-unsubscribe--miniTournamentId-"
@@ -21141,6 +23524,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="POSTapi-mini-tournament-notifications-unsubscribe--miniTournamentId-"
                value="application/json"
@@ -21152,6 +23536,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>miniTournamentId</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="miniTournamentId"                data-endpoint="POSTapi-mini-tournament-notifications-unsubscribe--miniTournamentId-"
@@ -21185,7 +23570,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     \"mini_tournament_per_page\": 13,
     \"tournament_per_page\": 16,
     \"is_map\": false,
-    \"date_from\": \"2025-11-17T03:16:21\",
+    \"date_from\": \"2025-12-03T21:07:10\",
     \"location_id\": 17,
     \"sport_id\": 17,
     \"keyword\": \"mqeopfuudtdsufvyvddqa\",
@@ -21226,7 +23611,7 @@ let body = {
     "mini_tournament_per_page": 13,
     "tournament_per_page": 16,
     "is_map": false,
-    "date_from": "2025-11-17T03:16:21",
+    "date_from": "2025-12-03T21:07:10",
     "location_id": 17,
     "sport_id": 17,
     "keyword": "mqeopfuudtdsufvyvddqa",
@@ -21330,6 +23715,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Authorization" class="auth-value"               data-endpoint="GETapi-map-match"
                value="Bearer {YOUR_AUTH_KEY}"
@@ -21341,6 +23727,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="Content-Type"                data-endpoint="GETapi-map-match"
                value="application/json"
@@ -21351,6 +23738,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
 &nbsp;
+ &nbsp;
  &nbsp;
                 <input type="text" style="display: none"
                               name="Accept"                data-endpoint="GETapi-map-match"
@@ -21364,6 +23752,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>lat</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="lat"                data-endpoint="GETapi-map-match"
                value=""
@@ -21375,6 +23764,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>lng</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="lng"                data-endpoint="GETapi-map-match"
                value=""
@@ -21386,17 +23776,19 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>radius</code></b>&nbsp;&nbsp;
 <small>number</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="radius"                data-endpoint="GETapi-map-match"
                value="73"
                data-component="body">
     <br>
-<p>Must be at least 1. Example: <code>73</code></p>
+<p>validation.min. Example: <code>73</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>minLat</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="minLat"                data-endpoint="GETapi-map-match"
                value=""
@@ -21408,6 +23800,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>maxLat</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="maxLat"                data-endpoint="GETapi-map-match"
                value=""
@@ -21419,6 +23812,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>minLng</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="minLng"                data-endpoint="GETapi-map-match"
                value=""
@@ -21430,6 +23824,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>maxLng</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="maxLng"                data-endpoint="GETapi-map-match"
                value=""
@@ -21441,28 +23836,31 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>mini_tournament_per_page</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="mini_tournament_per_page"                data-endpoint="GETapi-map-match"
                value="13"
                data-component="body">
     <br>
-<p>Must be at least 1. Must not be greater than 200. Example: <code>13</code></p>
+<p>validation.min validation.max. Example: <code>13</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>tournament_per_page</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="tournament_per_page"                data-endpoint="GETapi-map-match"
                value="16"
                data-component="body">
     <br>
-<p>Must be at least 1. Must not be greater than 200. Example: <code>16</code></p>
+<p>validation.min validation.max. Example: <code>16</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>is_map</code></b>&nbsp;&nbsp;
 <small>boolean</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <label data-endpoint="GETapi-map-match" style="display: none">
             <input type="radio" name="is_map"
                    value="true"
@@ -21484,17 +23882,19 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>date_from</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="date_from"                data-endpoint="GETapi-map-match"
-               value="2025-11-17T03:16:21"
+               value="2025-12-03T21:07:10"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2025-11-17T03:16:21</code></p>
+<p>validation.date. Example: <code>2025-12-03T21:07:10</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>location_id</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="location_id"                data-endpoint="GETapi-map-match"
                value="17"
@@ -21506,6 +23906,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>sport_id</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="sport_id"                data-endpoint="GETapi-map-match"
                value="17"
@@ -21517,17 +23918,19 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>keyword</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="keyword"                data-endpoint="GETapi-map-match"
                value="mqeopfuudtdsufvyvddqa"
                data-component="body">
     <br>
-<p>Must not be greater than 255 characters. Example: <code>mqeopfuudtdsufvyvddqa</code></p>
+<p>validation.max. Example: <code>mqeopfuudtdsufvyvddqa</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>rating</code></b>&nbsp;&nbsp;
 <small>integer[]</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="rating[0]"                data-endpoint="GETapi-map-match"
                data-component="body">
@@ -21541,6 +23944,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b style="line-height: 2;"><code>time_of_day</code></b>&nbsp;&nbsp;
 <small>string[]</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="time_of_day[0]"                data-endpoint="GETapi-map-match"
                data-component="body">
@@ -21556,6 +23960,7 @@ Must be one of:
             <b style="line-height: 2;"><code>slot_status</code></b>&nbsp;&nbsp;
 <small>string[]</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="slot_status[0]"                data-endpoint="GETapi-map-match"
                data-component="body">
@@ -21571,6 +23976,7 @@ Must be one of:
             <b style="line-height: 2;"><code>type</code></b>&nbsp;&nbsp;
 <small>string[]</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="type[0]"                data-endpoint="GETapi-map-match"
                data-component="body">
@@ -21586,6 +23992,7 @@ Must be one of:
             <b style="line-height: 2;"><code>fee</code></b>&nbsp;&nbsp;
 <small>string[]</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="text" style="display: none"
                               name="fee[0]"                data-endpoint="GETapi-map-match"
                data-component="body">
@@ -21601,23 +24008,196 @@ Must be one of:
             <b style="line-height: 2;"><code>min_price</code></b>&nbsp;&nbsp;
 <small>number</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="min_price"                data-endpoint="GETapi-map-match"
                value="55"
                data-component="body">
     <br>
-<p>Must be at least 0. Example: <code>55</code></p>
+<p>validation.min. Example: <code>55</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>max_price</code></b>&nbsp;&nbsp;
 <small>number</small>&nbsp;
 <i>optional</i> &nbsp;
+ &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="max_price"                data-endpoint="GETapi-map-match"
                value="19"
                data-component="body">
     <br>
-<p>Must be at least 0. Example: <code>19</code></p>
+<p>validation.min. Example: <code>19</code></p>
+        </div>
+        </form>
+
+                    <h2 id="endpoints-POSTapi-banners-store">POST api/banners/store</h2>
+
+<p>
+<small class="badge badge-darkred">requires authentication</small>
+</p>
+
+
+
+<span id="example-requests-POSTapi-banners-store">
+<blockquote>Example request:</blockquote>
+
+
+<div class="bash-example">
+    <pre><code class="language-bash">curl --request POST \
+    "https://picki.vn/api/banners/store" \
+    --header "Authorization: Bearer {YOUR_AUTH_KEY}" \
+    --header "Content-Type: multipart/form-data" \
+    --header "Accept: application/json" \
+    --form "title=consequatur"\
+    --form "subtitle=consequatur"\
+    --form "image_url=@/tmp/php4bJESC" </code></pre></div>
+
+
+<div class="javascript-example">
+    <pre><code class="language-javascript">const url = new URL(
+    "https://picki.vn/api/banners/store"
+);
+
+const headers = {
+    "Authorization": "Bearer {YOUR_AUTH_KEY}",
+    "Content-Type": "multipart/form-data",
+    "Accept": "application/json",
+};
+
+const body = new FormData();
+body.append('title', 'consequatur');
+body.append('subtitle', 'consequatur');
+body.append('image_url', document.querySelector('input[name="image_url"]').files[0]);
+
+fetch(url, {
+    method: "POST",
+    headers,
+    body,
+}).then(response =&gt; response.json());</code></pre></div>
+
+</span>
+
+<span id="example-responses-POSTapi-banners-store">
+</span>
+<span id="execution-results-POSTapi-banners-store" hidden>
+    <blockquote>Received response<span
+                id="execution-response-status-POSTapi-banners-store"></span>:
+    </blockquote>
+    <pre class="json"><code id="execution-response-content-POSTapi-banners-store"
+      data-empty-response-text="<Empty response>" style="max-height: 400px;"></code></pre>
+</span>
+<span id="execution-error-POSTapi-banners-store" hidden>
+    <blockquote>Request failed with error:</blockquote>
+    <pre><code id="execution-error-message-POSTapi-banners-store">
+
+Tip: Check that you&#039;re properly connected to the network.
+If you&#039;re a maintainer of ths API, verify that your API is running and you&#039;ve enabled CORS.
+You can check the Dev Tools console for debugging information.</code></pre>
+</span>
+<form id="form-POSTapi-banners-store" data-method="POST"
+      data-path="api/banners/store"
+      data-authed="1"
+      data-hasfiles="1"
+      data-isarraybody="0"
+      autocomplete="off"
+      onsubmit="event.preventDefault(); executeTryOut('POSTapi-banners-store', this);">
+    <h3>
+        Request&nbsp;&nbsp;&nbsp;
+                    <button type="button"
+                    style="background-color: #8fbcd4; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-tryout-POSTapi-banners-store"
+                    onclick="tryItOut('POSTapi-banners-store');">Try it out ⚡
+            </button>
+            <button type="button"
+                    style="background-color: #c97a7e; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-canceltryout-POSTapi-banners-store"
+                    onclick="cancelTryOut('POSTapi-banners-store');" hidden>Cancel 🛑
+            </button>&nbsp;&nbsp;
+            <button type="submit"
+                    style="background-color: #6ac174; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-executetryout-POSTapi-banners-store"
+                    data-initial-text="Send Request 💥"
+                    data-loading-text="⏱ Sending..."
+                    hidden>Send Request 💥
+            </button>
+            </h3>
+            <p>
+            <small class="badge badge-black">POST</small>
+            <b><code>api/banners/store</code></b>
+        </p>
+                <h4 class="fancy-heading-panel"><b>Headers</b></h4>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Authorization" class="auth-value"               data-endpoint="POSTapi-banners-store"
+               value="Bearer {YOUR_AUTH_KEY}"
+               data-component="header">
+    <br>
+<p>Example: <code>Bearer {YOUR_AUTH_KEY}</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Content-Type"                data-endpoint="POSTapi-banners-store"
+               value="multipart/form-data"
+               data-component="header">
+    <br>
+<p>Example: <code>multipart/form-data</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Accept"                data-endpoint="POSTapi-banners-store"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <h4 class="fancy-heading-panel"><b>Body Parameters</b></h4>
+        <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>title</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="title"                data-endpoint="POSTapi-banners-store"
+               value="consequatur"
+               data-component="body">
+    <br>
+<p>Example: <code>consequatur</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>subtitle</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="subtitle"                data-endpoint="POSTapi-banners-store"
+               value="consequatur"
+               data-component="body">
+    <br>
+<p>Example: <code>consequatur</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>image_url</code></b>&nbsp;&nbsp;
+<small>file</small>&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="file" style="display: none"
+                              name="image_url"                data-endpoint="POSTapi-banners-store"
+               value=""
+               data-component="body">
+    <br>
+<p>validation.image validation.max. Example: <code>/tmp/php4bJESC</code></p>
         </div>
         </form>
 

@@ -21,6 +21,9 @@ class CivicinfoApiprotosV2DivisionSearchResponse extends \Google\Collection
 {
   protected $collection_key = 'results';
   /**
+   * Identifies what kind of resource this is. Value: the fixed string
+   * "civicinfo#divisionSearchResponse".
+   *
    * @var string
    */
   public $kind;
@@ -28,7 +31,10 @@ class CivicinfoApiprotosV2DivisionSearchResponse extends \Google\Collection
   protected $resultsDataType = 'array';
 
   /**
-   * @param string
+   * Identifies what kind of resource this is. Value: the fixed string
+   * "civicinfo#divisionSearchResponse".
+   *
+   * @param string $kind
    */
   public function setKind($kind)
   {
@@ -42,7 +48,7 @@ class CivicinfoApiprotosV2DivisionSearchResponse extends \Google\Collection
     return $this->kind;
   }
   /**
-   * @param CivicinfoApiprotosV2DivisionSearchResult[]
+   * @param CivicinfoApiprotosV2DivisionSearchResult[] $results
    */
   public function setResults($results)
   {

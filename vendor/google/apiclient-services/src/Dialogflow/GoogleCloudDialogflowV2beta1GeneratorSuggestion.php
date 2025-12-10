@@ -20,6 +20,8 @@ namespace Google\Service\Dialogflow;
 class GoogleCloudDialogflowV2beta1GeneratorSuggestion extends \Google\Collection
 {
   protected $collection_key = 'toolCallInfo';
+  protected $agentCoachingSuggestionType = GoogleCloudDialogflowV2beta1AgentCoachingSuggestion::class;
+  protected $agentCoachingSuggestionDataType = '';
   protected $freeFormSuggestionType = GoogleCloudDialogflowV2beta1FreeFormSuggestion::class;
   protected $freeFormSuggestionDataType = '';
   protected $summarySuggestionType = GoogleCloudDialogflowV2beta1SummarySuggestion::class;
@@ -28,7 +30,25 @@ class GoogleCloudDialogflowV2beta1GeneratorSuggestion extends \Google\Collection
   protected $toolCallInfoDataType = 'array';
 
   /**
-   * @param GoogleCloudDialogflowV2beta1FreeFormSuggestion
+   * Optional. Suggestion to coach the agent.
+   *
+   * @param GoogleCloudDialogflowV2beta1AgentCoachingSuggestion $agentCoachingSuggestion
+   */
+  public function setAgentCoachingSuggestion(GoogleCloudDialogflowV2beta1AgentCoachingSuggestion $agentCoachingSuggestion)
+  {
+    $this->agentCoachingSuggestion = $agentCoachingSuggestion;
+  }
+  /**
+   * @return GoogleCloudDialogflowV2beta1AgentCoachingSuggestion
+   */
+  public function getAgentCoachingSuggestion()
+  {
+    return $this->agentCoachingSuggestion;
+  }
+  /**
+   * Optional. Free form suggestion.
+   *
+   * @param GoogleCloudDialogflowV2beta1FreeFormSuggestion $freeFormSuggestion
    */
   public function setFreeFormSuggestion(GoogleCloudDialogflowV2beta1FreeFormSuggestion $freeFormSuggestion)
   {
@@ -42,7 +62,9 @@ class GoogleCloudDialogflowV2beta1GeneratorSuggestion extends \Google\Collection
     return $this->freeFormSuggestion;
   }
   /**
-   * @param GoogleCloudDialogflowV2beta1SummarySuggestion
+   * Optional. Suggested summary.
+   *
+   * @param GoogleCloudDialogflowV2beta1SummarySuggestion $summarySuggestion
    */
   public function setSummarySuggestion(GoogleCloudDialogflowV2beta1SummarySuggestion $summarySuggestion)
   {
@@ -56,7 +78,9 @@ class GoogleCloudDialogflowV2beta1GeneratorSuggestion extends \Google\Collection
     return $this->summarySuggestion;
   }
   /**
-   * @param GoogleCloudDialogflowV2beta1GeneratorSuggestionToolCallInfo[]
+   * Optional. List of request and response for tool calls executed.
+   *
+   * @param GoogleCloudDialogflowV2beta1GeneratorSuggestionToolCallInfo[] $toolCallInfo
    */
   public function setToolCallInfo($toolCallInfo)
   {

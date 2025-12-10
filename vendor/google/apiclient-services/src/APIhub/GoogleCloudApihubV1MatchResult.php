@@ -20,12 +20,20 @@ namespace Google\Service\APIhub;
 class GoogleCloudApihubV1MatchResult extends \Google\Model
 {
   /**
+   * Output only. The name of the matched API Operation. Format: `projects/{proj
+   * ect}/locations/{location}/apis/{api}/versions/{version}/operations/{operati
+   * on}`
+   *
    * @var string
    */
   public $name;
 
   /**
-   * @param string
+   * Output only. The name of the matched API Operation. Format: `projects/{proj
+   * ect}/locations/{location}/apis/{api}/versions/{version}/operations/{operati
+   * on}`
+   *
+   * @param string $name
    */
   public function setName($name)
   {

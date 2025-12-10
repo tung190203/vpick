@@ -24,62 +24,97 @@ class CivicinfoSchemaV2AdministrativeBody extends \Google\Collection
         "voterServices" => "voter_services",
   ];
   /**
+   * A URL provided by this administrative body for information on absentee
+   * voting.
+   *
    * @var string
    */
   public $absenteeVotingInfoUrl;
   /**
+   * A URL provided by this administrative body to give contest information to
+   * the voter.
+   *
    * @var string
    */
   public $ballotInfoUrl;
   protected $correspondenceAddressType = CivicinfoSchemaV2SimpleAddressType::class;
   protected $correspondenceAddressDataType = '';
   /**
+   * A URL provided by this administrative body for looking up general election
+   * information.
+   *
    * @var string
    */
   public $electionInfoUrl;
   /**
+   * A last minute or emergency notification text provided by this
+   * administrative body.
+   *
    * @var string
    */
   public $electionNoticeText;
   /**
+   * A URL provided by this administrative body for additional information
+   * related to the last minute or emergency notification.
+   *
    * @var string
    */
   public $electionNoticeUrl;
   protected $electionOfficialsType = CivicinfoSchemaV2ElectionOfficial::class;
   protected $electionOfficialsDataType = 'array';
   /**
+   * A URL provided by this administrative body for confirming that the voter is
+   * registered to vote.
+   *
    * @var string
    */
   public $electionRegistrationConfirmationUrl;
   /**
+   * A URL provided by this administrative body for looking up how to register
+   * to vote.
+   *
    * @var string
    */
   public $electionRegistrationUrl;
   /**
+   * A URL provided by this administrative body describing election rules to the
+   * voter.
+   *
    * @var string
    */
   public $electionRulesUrl;
   /**
+   * A description of the hours of operation for this administrative body.
+   *
    * @var string
    */
   public $hoursOfOperation;
   /**
+   * The name of this election administrative body.
+   *
    * @var string
    */
   public $name;
   protected $physicalAddressType = CivicinfoSchemaV2SimpleAddressType::class;
   protected $physicalAddressDataType = '';
   /**
+   * A description of the services this administrative body may provide.
+   *
    * @var string[]
    */
   public $voterServices;
   /**
+   * A URL provided by this administrative body for looking up where to vote.
+   *
    * @var string
    */
   public $votingLocationFinderUrl;
 
   /**
-   * @param string
+   * A URL provided by this administrative body for information on absentee
+   * voting.
+   *
+   * @param string $absenteeVotingInfoUrl
    */
   public function setAbsenteeVotingInfoUrl($absenteeVotingInfoUrl)
   {
@@ -93,7 +128,10 @@ class CivicinfoSchemaV2AdministrativeBody extends \Google\Collection
     return $this->absenteeVotingInfoUrl;
   }
   /**
-   * @param string
+   * A URL provided by this administrative body to give contest information to
+   * the voter.
+   *
+   * @param string $ballotInfoUrl
    */
   public function setBallotInfoUrl($ballotInfoUrl)
   {
@@ -107,7 +145,9 @@ class CivicinfoSchemaV2AdministrativeBody extends \Google\Collection
     return $this->ballotInfoUrl;
   }
   /**
-   * @param CivicinfoSchemaV2SimpleAddressType
+   * The mailing address of this administrative body.
+   *
+   * @param CivicinfoSchemaV2SimpleAddressType $correspondenceAddress
    */
   public function setCorrespondenceAddress(CivicinfoSchemaV2SimpleAddressType $correspondenceAddress)
   {
@@ -121,7 +161,10 @@ class CivicinfoSchemaV2AdministrativeBody extends \Google\Collection
     return $this->correspondenceAddress;
   }
   /**
-   * @param string
+   * A URL provided by this administrative body for looking up general election
+   * information.
+   *
+   * @param string $electionInfoUrl
    */
   public function setElectionInfoUrl($electionInfoUrl)
   {
@@ -135,7 +178,10 @@ class CivicinfoSchemaV2AdministrativeBody extends \Google\Collection
     return $this->electionInfoUrl;
   }
   /**
-   * @param string
+   * A last minute or emergency notification text provided by this
+   * administrative body.
+   *
+   * @param string $electionNoticeText
    */
   public function setElectionNoticeText($electionNoticeText)
   {
@@ -149,7 +195,10 @@ class CivicinfoSchemaV2AdministrativeBody extends \Google\Collection
     return $this->electionNoticeText;
   }
   /**
-   * @param string
+   * A URL provided by this administrative body for additional information
+   * related to the last minute or emergency notification.
+   *
+   * @param string $electionNoticeUrl
    */
   public function setElectionNoticeUrl($electionNoticeUrl)
   {
@@ -163,7 +212,9 @@ class CivicinfoSchemaV2AdministrativeBody extends \Google\Collection
     return $this->electionNoticeUrl;
   }
   /**
-   * @param CivicinfoSchemaV2ElectionOfficial[]
+   * The election officials for this election administrative body.
+   *
+   * @param CivicinfoSchemaV2ElectionOfficial[] $electionOfficials
    */
   public function setElectionOfficials($electionOfficials)
   {
@@ -177,7 +228,10 @@ class CivicinfoSchemaV2AdministrativeBody extends \Google\Collection
     return $this->electionOfficials;
   }
   /**
-   * @param string
+   * A URL provided by this administrative body for confirming that the voter is
+   * registered to vote.
+   *
+   * @param string $electionRegistrationConfirmationUrl
    */
   public function setElectionRegistrationConfirmationUrl($electionRegistrationConfirmationUrl)
   {
@@ -191,7 +245,10 @@ class CivicinfoSchemaV2AdministrativeBody extends \Google\Collection
     return $this->electionRegistrationConfirmationUrl;
   }
   /**
-   * @param string
+   * A URL provided by this administrative body for looking up how to register
+   * to vote.
+   *
+   * @param string $electionRegistrationUrl
    */
   public function setElectionRegistrationUrl($electionRegistrationUrl)
   {
@@ -205,7 +262,10 @@ class CivicinfoSchemaV2AdministrativeBody extends \Google\Collection
     return $this->electionRegistrationUrl;
   }
   /**
-   * @param string
+   * A URL provided by this administrative body describing election rules to the
+   * voter.
+   *
+   * @param string $electionRulesUrl
    */
   public function setElectionRulesUrl($electionRulesUrl)
   {
@@ -219,7 +279,9 @@ class CivicinfoSchemaV2AdministrativeBody extends \Google\Collection
     return $this->electionRulesUrl;
   }
   /**
-   * @param string
+   * A description of the hours of operation for this administrative body.
+   *
+   * @param string $hoursOfOperation
    */
   public function setHoursOfOperation($hoursOfOperation)
   {
@@ -233,7 +295,9 @@ class CivicinfoSchemaV2AdministrativeBody extends \Google\Collection
     return $this->hoursOfOperation;
   }
   /**
-   * @param string
+   * The name of this election administrative body.
+   *
+   * @param string $name
    */
   public function setName($name)
   {
@@ -247,7 +311,9 @@ class CivicinfoSchemaV2AdministrativeBody extends \Google\Collection
     return $this->name;
   }
   /**
-   * @param CivicinfoSchemaV2SimpleAddressType
+   * The physical address of this administrative body.
+   *
+   * @param CivicinfoSchemaV2SimpleAddressType $physicalAddress
    */
   public function setPhysicalAddress(CivicinfoSchemaV2SimpleAddressType $physicalAddress)
   {
@@ -261,7 +327,9 @@ class CivicinfoSchemaV2AdministrativeBody extends \Google\Collection
     return $this->physicalAddress;
   }
   /**
-   * @param string[]
+   * A description of the services this administrative body may provide.
+   *
+   * @param string[] $voterServices
    */
   public function setVoterServices($voterServices)
   {
@@ -275,7 +343,9 @@ class CivicinfoSchemaV2AdministrativeBody extends \Google\Collection
     return $this->voterServices;
   }
   /**
-   * @param string
+   * A URL provided by this administrative body for looking up where to vote.
+   *
+   * @param string $votingLocationFinderUrl
    */
   public function setVotingLocationFinderUrl($votingLocationFinderUrl)
   {

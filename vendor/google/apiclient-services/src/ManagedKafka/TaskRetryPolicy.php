@@ -20,16 +20,31 @@ namespace Google\Service\ManagedKafka;
 class TaskRetryPolicy extends \Google\Model
 {
   /**
+   * Optional. The maximum amount of time to wait before retrying a failed task.
+   * This sets an upper bound for the backoff delay.
+   *
    * @var string
    */
   public $maximumBackoff;
   /**
+   * Optional. The minimum amount of time to wait before retrying a failed task.
+   * This sets a lower bound for the backoff delay.
+   *
    * @var string
    */
   public $minimumBackoff;
+  /**
+   * Optional. If true, task retry is disabled.
+   *
+   * @var bool
+   */
+  public $taskRetryDisabled;
 
   /**
-   * @param string
+   * Optional. The maximum amount of time to wait before retrying a failed task.
+   * This sets an upper bound for the backoff delay.
+   *
+   * @param string $maximumBackoff
    */
   public function setMaximumBackoff($maximumBackoff)
   {
@@ -43,7 +58,10 @@ class TaskRetryPolicy extends \Google\Model
     return $this->maximumBackoff;
   }
   /**
-   * @param string
+   * Optional. The minimum amount of time to wait before retrying a failed task.
+   * This sets a lower bound for the backoff delay.
+   *
+   * @param string $minimumBackoff
    */
   public function setMinimumBackoff($minimumBackoff)
   {
@@ -55,6 +73,22 @@ class TaskRetryPolicy extends \Google\Model
   public function getMinimumBackoff()
   {
     return $this->minimumBackoff;
+  }
+  /**
+   * Optional. If true, task retry is disabled.
+   *
+   * @param bool $taskRetryDisabled
+   */
+  public function setTaskRetryDisabled($taskRetryDisabled)
+  {
+    $this->taskRetryDisabled = $taskRetryDisabled;
+  }
+  /**
+   * @return bool
+   */
+  public function getTaskRetryDisabled()
+  {
+    return $this->taskRetryDisabled;
   }
 }
 

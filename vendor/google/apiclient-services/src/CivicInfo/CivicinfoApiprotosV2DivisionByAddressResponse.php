@@ -25,7 +25,7 @@ class CivicinfoApiprotosV2DivisionByAddressResponse extends \Google\Model
   protected $normalizedInputDataType = '';
 
   /**
-   * @param CivicinfoSchemaV2GeographicDivision[]
+   * @param CivicinfoSchemaV2GeographicDivision[] $divisions
    */
   public function setDivisions($divisions)
   {
@@ -39,7 +39,9 @@ class CivicinfoApiprotosV2DivisionByAddressResponse extends \Google\Model
     return $this->divisions;
   }
   /**
-   * @param CivicinfoSchemaV2SimpleAddressType
+   * The normalized version of the requested address.
+   *
+   * @param CivicinfoSchemaV2SimpleAddressType $normalizedInput
    */
   public function setNormalizedInput(CivicinfoSchemaV2SimpleAddressType $normalizedInput)
   {

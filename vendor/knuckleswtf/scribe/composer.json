@@ -26,9 +26,8 @@
         "nikic/php-parser": "^5.0",
         "nunomaduro/collision": "^6.0|^7.0|^8.0",
         "ramsey/uuid": "^4.2.2",
-        "shalvah/clara": "^3.1.0",
+        "shalvah/clara": "3.3.0",
         "shalvah/upgrader": ">=0.6.0",
-        "spatie/data-transfer-object": "^2.6|^3.0",
         "symfony/var-exporter": "^6.0|^7.0",
         "symfony/yaml": "^6.0|^7.0"
     },

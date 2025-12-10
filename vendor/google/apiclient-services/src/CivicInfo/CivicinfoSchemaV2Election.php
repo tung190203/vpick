@@ -19,19 +19,34 @@ namespace Google\Service\CivicInfo;
 
 class CivicinfoSchemaV2Election extends \Google\Model
 {
+  public const SHAPE_LOOKUP_BEHAVIOR_shapeLookupDefault = 'shapeLookupDefault';
+  public const SHAPE_LOOKUP_BEHAVIOR_shapeLookupDisabled = 'shapeLookupDisabled';
+  public const SHAPE_LOOKUP_BEHAVIOR_shapeLookupEnabled = 'shapeLookupEnabled';
   /**
+   * Day of the election in YYYY-MM-DD format.
+   *
    * @var string
    */
   public $electionDay;
   /**
+   * The unique ID of this election.
+   *
    * @var string
    */
   public $id;
   /**
+   * A displayable name for the election.
+   *
    * @var string
    */
   public $name;
   /**
+   * The political division of the election. Represented as an OCD Division ID.
+   * Voters within these political jurisdictions are covered by this election.
+   * This is typically a state such as ocd-division/country:us/state:ca or for
+   * the midterms or general election the entire US (i.e. ocd-
+   * division/country:us).
+   *
    * @var string
    */
   public $ocdDivisionId;
@@ -41,7 +56,9 @@ class CivicinfoSchemaV2Election extends \Google\Model
   public $shapeLookupBehavior;
 
   /**
-   * @param string
+   * Day of the election in YYYY-MM-DD format.
+   *
+   * @param string $electionDay
    */
   public function setElectionDay($electionDay)
   {
@@ -55,7 +72,9 @@ class CivicinfoSchemaV2Election extends \Google\Model
     return $this->electionDay;
   }
   /**
-   * @param string
+   * The unique ID of this election.
+   *
+   * @param string $id
    */
   public function setId($id)
   {
@@ -69,7 +88,9 @@ class CivicinfoSchemaV2Election extends \Google\Model
     return $this->id;
   }
   /**
-   * @param string
+   * A displayable name for the election.
+   *
+   * @param string $name
    */
   public function setName($name)
   {
@@ -83,7 +104,13 @@ class CivicinfoSchemaV2Election extends \Google\Model
     return $this->name;
   }
   /**
-   * @param string
+   * The political division of the election. Represented as an OCD Division ID.
+   * Voters within these political jurisdictions are covered by this election.
+   * This is typically a state such as ocd-division/country:us/state:ca or for
+   * the midterms or general election the entire US (i.e. ocd-
+   * division/country:us).
+   *
+   * @param string $ocdDivisionId
    */
   public function setOcdDivisionId($ocdDivisionId)
   {
@@ -97,14 +124,14 @@ class CivicinfoSchemaV2Election extends \Google\Model
     return $this->ocdDivisionId;
   }
   /**
-   * @param string
+   * @param self::SHAPE_LOOKUP_BEHAVIOR_* $shapeLookupBehavior
    */
   public function setShapeLookupBehavior($shapeLookupBehavior)
   {
     $this->shapeLookupBehavior = $shapeLookupBehavior;
   }
   /**
-   * @return string
+   * @return self::SHAPE_LOOKUP_BEHAVIOR_*
    */
   public function getShapeLookupBehavior()
   {

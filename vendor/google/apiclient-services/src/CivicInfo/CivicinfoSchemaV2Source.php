@@ -20,16 +20,22 @@ namespace Google\Service\CivicInfo;
 class CivicinfoSchemaV2Source extends \Google\Model
 {
   /**
+   * The name of the data source.
+   *
    * @var string
    */
   public $name;
   /**
+   * Whether this data comes from an official government source.
+   *
    * @var bool
    */
   public $official;
 
   /**
-   * @param string
+   * The name of the data source.
+   *
+   * @param string $name
    */
   public function setName($name)
   {
@@ -43,7 +49,9 @@ class CivicinfoSchemaV2Source extends \Google\Model
     return $this->name;
   }
   /**
-   * @param bool
+   * Whether this data comes from an official government source.
+   *
+   * @param bool $official
    */
   public function setOfficial($official)
   {

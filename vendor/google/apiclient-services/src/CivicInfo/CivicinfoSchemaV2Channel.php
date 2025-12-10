@@ -20,16 +20,24 @@ namespace Google\Service\CivicInfo;
 class CivicinfoSchemaV2Channel extends \Google\Model
 {
   /**
+   * The unique public identifier for the candidate's channel.
+   *
    * @var string
    */
   public $id;
   /**
+   * The type of channel. The following is a list of types of channels, but is
+   * not exhaustive. More channel types may be added at a later time. One of:
+   * GooglePlus, YouTube, Facebook, Twitter
+   *
    * @var string
    */
   public $type;
 
   /**
-   * @param string
+   * The unique public identifier for the candidate's channel.
+   *
+   * @param string $id
    */
   public function setId($id)
   {
@@ -43,7 +51,11 @@ class CivicinfoSchemaV2Channel extends \Google\Model
     return $this->id;
   }
   /**
-   * @param string
+   * The type of channel. The following is a list of types of channels, but is
+   * not exhaustive. More channel types may be added at a later time. One of:
+   * GooglePlus, YouTube, Facebook, Twitter
+   *
+   * @param string $type
    */
   public function setType($type)
   {
