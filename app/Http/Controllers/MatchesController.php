@@ -154,7 +154,6 @@ class MatchesController extends Controller
         $match->results()->whereNotIn('id', $keepIds)->delete();
 
         $match->load('results');
-        $this->calculateMatchWinner($match, $setsPerMatch);
 
         return ResponseHelper::success(new MatchDetailResource($match));
     }
@@ -804,6 +803,7 @@ class MatchesController extends Controller
                     }
                 }
             }
+            $this->calculateMatchWinner($match, $setsPerMatch);
         }
         $match->save();
 
