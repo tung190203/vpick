@@ -21,23 +21,15 @@ class UserResource extends JsonResource
     {
         $sport = Sport::where('slug', 'pickleball')->first();
         $sportId = $sport->id;
-        
-        // Lấy score của user hiện tại
-        $userScore = UserSportScore::query()
-            ->join('user_sport', 'user_sport_scores.user_sport_id', '=', 'user_sport.id')
-            ->where('user_sport.user_id', $this->id)
-            ->where('user_sport.sport_id', $sportId)
-            ->where('user_sport_scores.score_type', 'vndupr_score')
-            ->value('score_value') ?? 0;
-        
-        // Đếm số ĐIỂM DISTINCT cao hơn (Standard ranking 1,2,2,3)
-        $vnRank = DB::table('user_sport_scores')
-            ->join('user_sport', 'user_sport_scores.user_sport_id', '=', 'user_sport.id')
+        $userScore = $this->vnduprScoresBySport($sportId)->max('score_value') ?? 0;
+        $vnRank = User::query()
+            ->select(DB::raw('COUNT(DISTINCT users.id) + 1 as rank'))
+            ->join('user_sport', 'users.id', '=', 'user_sport.user_id')
+            ->join('user_sport_scores', 'user_sport.id', '=', 'user_sport_scores.user_sport_id')
             ->where('user_sport.sport_id', $sportId)
             ->where('user_sport_scores.score_type', 'vndupr_score')
             ->where('user_sport_scores.score_value', '>', $userScore)
-            ->distinct()
-            ->count('user_sport_scores.score_value') + 1;
+            ->value('rank');
 
         return [
             'id' => $this->id,

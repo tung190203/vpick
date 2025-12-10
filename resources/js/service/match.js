@@ -10,3 +10,7 @@ export const detailMatches = async(id) => {
 export const updateMatches = async(match_id, data) => {
     return axiosInstance.post(`${matchEndpoint}/update/${match_id}`, data).then((response) => response.data.data);
 }
+
+export const confirmResults = async(match_id) => {
+    return axiosInstance.post(`${matchEndpoint}/confirm-results/${match_id}`).then((response) => response.data.data);
+}
