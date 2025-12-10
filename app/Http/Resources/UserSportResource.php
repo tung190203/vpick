@@ -12,14 +12,16 @@ class UserSportResource extends JsonResource
     {
         $types = ['personal_score', 'dupr_score', 'vndupr_score'];
 
-        $scoresByType = $this->whenLoaded('scores')
-            ? $this->scores->keyBy('score_type')
-            : collect();
-
+        $scores = $this->whenLoaded('scores') ?? collect(); // Lấy tất cả scores
+        
         $formattedScores = [];
         foreach ($types as $type) {
-            $score = $scoresByType->get($type);
-            $formattedScores[$type] = number_format($score?->score_value ?? 0, 3);
+            $scoreValue = $scores->where('score_type', $type)
+                                 ->sortByDesc('created_at') // **Sắp xếp để lấy điểm mới nhất**
+                                 ->first()
+                                 ->score_value ?? 0;
+            
+            $formattedScores[$type] = number_format($scoreValue, 3);
         }
 
         // Tính total_matches
