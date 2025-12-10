@@ -27,9 +27,11 @@ class TournamentService
                     'won' => 0,
                     'draw' => 0,
                     'lost' => 0,
-                    'goals_for' => 0,
-                    'goals_against' => 0,
-                    'goal_difference' => 0,
+                    'sets_won' => 0,
+                    'sets_lost' => 0,
+                    'points_for' => 0,
+                    'points_against' => 0,
+                    'set_difference' => 0,
                     'points' => 0,
                 ];
             }
@@ -42,31 +44,48 @@ class TournamentService
                     'won' => 0,
                     'draw' => 0,
                     'lost' => 0,
-                    'goals_for' => 0,
-                    'goals_against' => 0,
-                    'goal_difference' => 0,
+                    'sets_won' => 0,
+                    'sets_lost' => 0,
+                    'points_for' => 0,
+                    'points_against' => 0,
+                    'set_difference' => 0,
                     'points' => 0,
                 ];
             }
 
-            // Cập nhật số liệu
+            // Cập nhật số trận đã đấu
             $standings[$homeId]['played']++;
             $standings[$awayId]['played']++;
-            $standings[$homeId]['goals_for'] += $match->home_score ?? 0;
-            $standings[$homeId]['goals_against'] += $match->away_score ?? 0;
-            $standings[$awayId]['goals_for'] += $match->away_score ?? 0;
-            $standings[$awayId]['goals_against'] += $match->home_score ?? 0;
 
-            // Tính điểm
-            if ($match->home_score > $match->away_score) {
+            // Tính số set thắng cho mỗi đội
+            $homeSetsWon = $match->results->where('team_id', $homeId)->where('won_match', true)->count();
+            $awaySetsWon = $match->results->where('team_id', $awayId)->where('won_match', true)->count();
+
+            $standings[$homeId]['sets_won'] += $homeSetsWon;
+            $standings[$homeId]['sets_lost'] += $awaySetsWon;
+            $standings[$awayId]['sets_won'] += $awaySetsWon;
+            $standings[$awayId]['sets_lost'] += $homeSetsWon;
+
+            // Tính tổng điểm số (score)
+            $homePoints = $match->results->where('team_id', $homeId)->sum('score');
+            $awayPoints = $match->results->where('team_id', $awayId)->sum('score');
+
+            $standings[$homeId]['points_for'] += $homePoints;
+            $standings[$homeId]['points_against'] += $awayPoints;
+            $standings[$awayId]['points_for'] += $awayPoints;
+            $standings[$awayId]['points_against'] += $homePoints;
+
+            // Tính điểm xếp hạng dựa trên winner_id
+            if ($match->winner_id == $homeId) {
                 $standings[$homeId]['won']++;
                 $standings[$homeId]['points'] += 3;
                 $standings[$awayId]['lost']++;
-            } elseif ($match->home_score < $match->away_score) {
+            } elseif ($match->winner_id == $awayId) {
                 $standings[$awayId]['won']++;
                 $standings[$awayId]['points'] += 3;
                 $standings[$homeId]['lost']++;
             } else {
+                // Trường hợp hòa (nếu có)
                 $standings[$homeId]['draw']++;
                 $standings[$awayId]['draw']++;
                 $standings[$homeId]['points']++;
@@ -74,16 +93,21 @@ class TournamentService
             }
         }
 
-        // Sort standings
+        // Tính set difference và sắp xếp
         $standings = collect($standings)->map(function ($team) {
-            $team['goal_difference'] = $team['goals_for'] - $team['goals_against'];
+            $team['set_difference'] = $team['sets_won'] - $team['sets_lost'];
             return $team;
         })->sortByDesc('points')
-          ->sortByDesc('goal_difference')
-          ->sortByDesc('goals_for')
+          ->sortByDesc('set_difference')
+          ->sortByDesc('sets_won')
           ->values();
 
-        return $standings;
+        // Thêm rank
+        $rank = 1;
+        return $standings->map(function ($team) use (&$rank) {
+            $team['rank'] = $rank++;
+            return $team;
+        });
     }
     
     /**
