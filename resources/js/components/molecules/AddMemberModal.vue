@@ -41,7 +41,7 @@
                             <!-- User Info -->
                             <div class="flex-1 min-w-0">
                                 <div class="flex items-center gap-1 flex-wrap">
-                                    <span class="font-semibold text-gray-800">{{user.user.full_name }} {{ user.user.id }}</span>
+                                    <span class="font-semibold text-gray-800">{{user.user.full_name }}</span>
                                     <span :class="[
                                         'px-2 py-0.5 rounded text-xs font-medium',
                                         user.user.visibility === 'open'
