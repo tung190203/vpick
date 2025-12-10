@@ -27,6 +27,7 @@ import CompleteProfilePage from '@/components/pages/CompleteProfilePage.vue'
 import UpdateProfilePage from '@/components/pages/UpdateProfilePage.vue'
 import NotFoundPage from '@/components/pages/NotFoundPage.vue'
 import TournamentBracketPage from '@/components/pages/TournamentBracketPage.vue'
+import MatchVerifyPage from '@/components/pages/MatchVerifyPage.vue'
 import { ROLE } from '@/constants/index.js'
 
 export const route = [
@@ -101,6 +102,14 @@ export const route = [
         meta: {
           role: [ROLE.PLAYER]
         }
+      },
+      {
+        path: '/match/:id/verify',
+        name: 'match-verify',
+        component: MatchVerifyPage,
+        meta: { 
+          role: [ROLE.REFEREE, ROLE.ADMIN, ROLE.PLAYER]
+        } 
       },
       {
         path: '/club',

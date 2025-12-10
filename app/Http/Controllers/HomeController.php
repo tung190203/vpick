@@ -267,14 +267,17 @@ class HomeController extends Controller
         $leaderboard->transform(function ($user) use ($sportId) {
             $userScore = $user->vndupr_score ?? 0;
             
-            // Đếm số ĐIỂM KHÁC NHAU cao hơn
-            $rank = DB::table('user_sport_scores')
-                ->join('user_sport', 'user_sport_scores.user_sport_id', '=', 'user_sport.id')
-                ->where('user_sport.sport_id', $sportId)
-                ->where('user_sport_scores.score_type', 'vndupr_score')
-                ->where('user_sport_scores.score_value', '>', $userScore)
-                ->distinct()
-                ->count('user_sport_scores.score_value') + 1;
+            $rank = User::query()
+                ->addSelect([
+                    'vndupr_score' => UserSportScore::query()
+                        ->select(DB::raw('COALESCE(MAX(score_value), 0)'))
+                        ->join('user_sport', 'user_sport_scores.user_sport_id', '=', 'user_sport.id')
+                        ->whereColumn('user_sport.user_id', 'users.id')
+                        ->where('user_sport.sport_id', $sportId)
+                        ->where('user_sport_scores.score_type', 'vndupr_score')
+                ])
+                ->havingRaw('vndupr_score > ?', [$userScore])
+                ->count() + 1;
             
             $user->rank = $rank;
             return $user;
