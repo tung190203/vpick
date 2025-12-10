@@ -222,25 +222,49 @@ class MatchesController extends Controller
             return;
         }
 
-        if (!$match->next_match_id) {
-            return;
+        if ($match->next_match_id) {
+            $nextMatch = Matches::find($match->next_match_id);
+            if ($nextMatch) {
+                if ($match->next_position === 'home') {
+                    $nextMatch->update([
+                        'home_team_id' => $winnerTeamId,
+                        'status' => Matches::STATUS_PENDING,
+                    ]);
+                } elseif ($match->next_position === 'away') {
+                    $nextMatch->update([
+                        'away_team_id' => $winnerTeamId,
+                        'status' => Matches::STATUS_PENDING,
+                    ]);
+                }
+            }
         }
-
-        $nextMatch = Matches::find($match->next_match_id);
-        if (!$nextMatch) {
-            return;
-        }
-
-        if ($match->next_position === 'home') {
-            $nextMatch->update([
-                'home_team_id' => $winnerTeamId,
-                'status' => Matches::STATUS_PENDING,
-            ]);
-        } elseif ($match->next_position === 'away') {
-            $nextMatch->update([
-                'away_team_id' => $winnerTeamId,
-                'status' => Matches::STATUS_PENDING,
-            ]);
+    
+        // 🥉 Xử lý đội THUA vào trận tranh hạng 3 (nếu có)
+        if ($match->loser_next_match_id) {
+            // Xác định đội thua
+            $loserTeamId = null;
+            if ($match->home_team_id == $winnerTeamId) {
+                $loserTeamId = $match->away_team_id;
+            } elseif ($match->away_team_id == $winnerTeamId) {
+                $loserTeamId = $match->home_team_id;
+            }
+    
+            if ($loserTeamId) {
+                $loserNextMatch = Matches::find($match->loser_next_match_id);
+                if ($loserNextMatch) {
+                    if ($match->loser_next_position === 'home') {
+                        $loserNextMatch->update([
+                            'home_team_id' => $loserTeamId,
+                            'status' => Matches::STATUS_PENDING,
+                        ]);
+                    } elseif ($match->loser_next_position === 'away') {
+                        $loserNextMatch->update([
+                            'away_team_id' => $loserTeamId,
+                            'status' => Matches::STATUS_PENDING,
+                        ]);
+                    }
+                }
+            }
         }
     }
 

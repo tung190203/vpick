@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class TournamentTypeController extends Controller
 {
@@ -740,53 +741,35 @@ class TournamentTypeController extends Controller
             if ($semiIds->count() >= 2) {
                 $firstSemiId = $semiIds->get(0);
                 $secondSemiId = $semiIds->get(1);
+                $firstThirdPlaceId = null;
                 
-                $firstSemi = $type->matches()->find($firstSemiId);
-                $secondSemi = $type->matches()->find($secondSemiId);
+                for ($leg = 1; $leg <= $numLegs; $leg++) {
+                    $matchNumber++; 
+                    $third = $type->matches()->create([
+                        'tournament_type_id' => $type->id,
+                        'round' => $finalRound + 1,
+                        'leg' => $leg,
+                        'is_third_place' => true,
+                        'status' => 'pending',
+                        'name_of_match' => "Trận đấu số {$matchNumber}",
+                    ]);
                 
-                if ($firstSemi && $secondSemi) {
-                    $firstThirdPlaceId = null;
-                    
-                    for ($leg = 1; $leg <= $numLegs; $leg++) {
-                        $matchNumber++; 
-                        $third = $type->matches()->create([
-                            'tournament_type_id' => $type->id,
-                            'round' => $finalRound + 1,
-                            'leg' => $leg,
-                            'is_third_place' => true,
-                            'status' => 'pending',
-                            'name_of_match' => "Trận đấu số {$matchNumber}",
-                        ]);
-                    
-                        if ($leg === 1) {
-                            $firstThirdPlaceId = $third->id;
-                        }
-                    }
-                    $allLegs1 = $type->matches()
-                        ->where('round', $firstSemi->round)
-                        ->where('home_team_id', $firstSemi->home_team_id)
-                        ->where('away_team_id', $firstSemi->away_team_id)
-                        ->get();
-                    
-                    foreach ($allLegs1 as $legMatch) {
-                        $legMatch->update([
-                            'loser_next_match_id' => $firstThirdPlaceId,
-                            'loser_next_position' => 'home',
-                        ]);
-                    }
-                    $allLegs2 = $type->matches()
-                        ->where('round', $secondSemi->round)
-                        ->where('home_team_id', $secondSemi->home_team_id)
-                        ->where('away_team_id', $secondSemi->away_team_id)
-                        ->get();
-                    
-                    foreach ($allLegs2 as $legMatch) {
-                        $legMatch->update([
-                            'loser_next_match_id' => $firstThirdPlaceId,
-                            'loser_next_position' => 'away',
-                        ]);
+                    if ($leg === 1) {
+                        $firstThirdPlaceId = $third->id;
                     }
                 }
+                DB::table('matches')
+                    ->where('id', $firstSemiId)
+                    ->update([
+                        'loser_next_match_id' => $firstThirdPlaceId,
+                        'loser_next_position' => 'home',
+                    ]);
+                DB::table('matches')
+                    ->where('id', $secondSemiId)
+                    ->update([
+                        'loser_next_match_id' => $firstThirdPlaceId,
+                        'loser_next_position' => 'away',
+                    ]);
             }
         }
 
@@ -837,7 +820,7 @@ class TournamentTypeController extends Controller
                     
                     $rulesCreated++;
                 } catch (\Exception $e) {
-                    \Log::error("✗ Failed to create rule: " . $e->getMessage());
+                    Log::error("✗ Failed to create rule: " . $e->getMessage());
                 }
             }
             elseif (property_exists($placeholder, 'team_id') && $placeholder->team_id) {
