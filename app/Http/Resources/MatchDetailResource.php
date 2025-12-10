@@ -109,6 +109,7 @@ class MatchDetailResource extends JsonResource
             'is_third_place' => $this->is_third_place,
             'court' => $this->court,
             'winner_id' => $this->winner_id,
+            'status' => $this->status,
         ];
     }
 }

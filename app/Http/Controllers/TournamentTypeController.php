@@ -1128,7 +1128,6 @@ class TournamentTypeController extends Controller
                             })->values(),
                         ];
                     })->values(),
-                'standings' => $this->calculateGroupStandings($groupMatches),
             ];
         })->values();
     

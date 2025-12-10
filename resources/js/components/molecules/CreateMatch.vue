@@ -141,10 +141,20 @@
                                 {{ isSaving && !canConfirmMatch ? 'Đang lưu...' : 'Lưu' }}
                             </button>
 
-                            <button @click="confirmMatchResult" 
-                                :disabled="isSaving || !canConfirmMatch"
-                                class="px-12 py-3 bg-green-500 text-white rounded font-medium hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                                {{ isSaving && canConfirmMatch ? 'Đang xác nhận...' : 'Xác nhận kết quả' }}
+                            <button v-if="!isCreator"
+                                @click="confirmMatchResult" 
+                                :disabled="isSaving || !canConfirmMatch || data.status === 'completed'"
+                                class="flex items-center justify-center gap-2 px-12 py-3 bg-green-500 text-white rounded font-medium
+                                    hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <template v-if="data.status === 'completed'">
+                                    <CheckBadgeIcon class="w-6 h-6 text-white" />
+                                    <span>Đã xác nhận</span>
+                                </template>
+
+                                <template v-else>
+                                    {{ isSaving && canConfirmMatch ? 'Đang xác nhận...' : 'Xác nhận' }}
+                                </template>
                             </button>
                             
                             <button @click="closeModal" :disabled="isSaving"
@@ -161,19 +171,25 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { MinusIcon, PlusIcon, XMarkIcon } from '@heroicons/vue/24/solid'
+import { MinusIcon, PlusIcon, XMarkIcon, CheckBadgeIcon } from '@heroicons/vue/24/solid'
 import { ClipboardIcon, CalendarDaysIcon, MapPinIcon } from '@heroicons/vue/24/outline'
 import UserCard from './UserCard.vue'
 import { formatEventDate } from '@/composables/formatDatetime.js'
 import QrcodeVue from 'qrcode.vue'
 import { toast } from 'vue3-toastify'
 import * as MatchesServices from '@/service/match.js'
+import { useUserStore } from '@/store/auth'
+import { storeToRefs } from 'pinia'
 
 const props = defineProps({
     modelValue: { type: Boolean, default: false },
     data: { type: Object, default: () => ({}) },
     tournament: { type: Object, default: () => ({ player_per_team: 0 }) }
 })
+
+const userStore = useUserStore()
+const { getUser } = storeToRefs(userStore)
+const isCreator = computed(() => props.tournament.value?.created_by?.id === getUser.value.id)
 
 const emit = defineEmits(['update:modelValue', 'updated'])
 
