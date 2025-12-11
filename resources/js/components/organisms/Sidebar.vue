@@ -233,8 +233,10 @@
             <!-- Bottom Section (Actions + User Info) -->
             <div class="flex flex-col space-y-1 px-2 mb-4">
                 <!-- Notification -->
+                <router-link to="/notifications" v-slot="{ isActive }">
                 <button
                     class="flex items-center h-12 px-3 rounded-xl text-gray-600 hover:bg-gray-100 transition-all relative w-full text-left"
+                    :class="isActive ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-100'"
                 >
                     <div class="relative flex-shrink-0">
                         <BellIcon class="w-5 h-5" />
@@ -255,6 +257,7 @@
                         Thông báo
                     </span>
                 </button>
+                </router-link>
 
                 <!-- Settings -->
                 <router-link to="/settings" v-slot="{ isActive }">

@@ -65,5 +65,27 @@ class NotificationController extends Controller
         }
 
         return ResponseHelper::success(null, 'Đánh dấu thông báo đã đọc thành công');
-    }    
+    }  
+    
+    public function delete(Request $request)
+    {
+        $validated = $request->validate([
+            'notification_id' => 'nullable|exists:notifications,id',
+        ]);
+    
+        $user = auth()->user();
+        if (!empty($validated['notification_id'])) {
+            $notification = $user->notifications()
+                ->where('id', $validated['notification_id'])
+                ->first();
+    
+            if ($notification) {
+                $notification->delete();
+            }
+        } else {
+            $user->notifications()->delete();
+        }
+
+        return ResponseHelper::success(null, 'Xóa thông báo thành công');
+    }
 }

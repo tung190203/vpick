@@ -28,6 +28,8 @@ import UpdateProfilePage from '@/components/pages/UpdateProfilePage.vue'
 import NotFoundPage from '@/components/pages/NotFoundPage.vue'
 import TournamentBracketPage from '@/components/pages/TournamentBracketPage.vue'
 import MatchVerifyPage from '@/components/pages/MatchVerifyPage.vue'
+import NotificationsPage from '@/components/pages/NotificationsPage.vue'
+import SettingsPage from '@/components/pages/SettingsPage.vue'
 import { ROLE } from '@/constants/index.js'
 
 export const route = [
@@ -120,6 +122,22 @@ export const route = [
         }
       },
       {
+        path: '/notifications',
+        name: 'notifications',
+        component: NotificationsPage,
+        meta: { 
+          role: [ROLE.REFEREE, ROLE.ADMIN, ROLE.PLAYER]
+        } 
+      },
+      {
+        path: '/settings',
+        name: 'settings',
+        component: SettingsPage,
+        meta: {
+          role: [ROLE.PLAYER, ROLE.ADMIN, ROLE.REFEREE]
+        }
+      },
+      {
         path: '/tournament',
         meta: {
           role: [ROLE.PLAYER]
@@ -147,8 +165,8 @@ export const route = [
             props: true
           },
           {
-            path: ':id/branket',
-            name: 'tournament-branket',
+            path: ':id/bracket',
+            name: 'tournament-bracket',
             component: TournamentBracketPage,
           }
         ]

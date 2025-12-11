@@ -438,7 +438,7 @@
                 </div>
                 <div v-if="publicBracket == true || isCreator"
                   class="border border-[#BBBFCC] rounded my-4 px-4 py-3 flex justify-between items-center cursor-pointer hover:shadow-md transition"
-                  @click="openBranketPage">
+                  @click="openBracketPage">
                   <div class="flex items-center gap-3">
                     <img src="@/assets/images/branch.svg" class="w-5 h-5" alt="">
                     <p>Sơ đồ thi đấu</p>
@@ -796,8 +796,8 @@ const handleUpdateOwnScore = debounce(async () => {
   await updateTournament(tournament.value.id, { is_own_score: isHandleOwnScore.value })
 })
 
-const openBranketPage = () => {
-  router.push({ name: 'tournament-branket', param: { id: id } });
+const openBracketPage = () => {
+  router.push({ name: 'tournament-bracket', param: { id: id } });
 };
 
 function formatMatchCount(matches) {

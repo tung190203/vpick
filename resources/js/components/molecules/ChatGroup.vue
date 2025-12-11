@@ -1,5 +1,5 @@
 <template>
-    <div class="fixed bottom-6 right-6 flex flex-col items-center space-y-3">
+    <div class="fixed bottom-6 right-6 flex flex-col items-center space-y-3 position-absolute z-[9999]">
         <div class="relative cursor-pointer">
             <img src="https://i.pravatar.cc/100?img=1" alt="avatar1"
                 class="w-12 h-12 rounded-full border-white shadow-md" />
