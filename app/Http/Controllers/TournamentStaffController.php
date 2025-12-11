@@ -23,7 +23,7 @@ class TournamentStaffController extends Controller
         }
 
         $tournament->staff()->attach($staffId, [
-            'role' => TournamentStaff::ROLE_REFEREE,
+            'role' => TournamentStaff::ROLE_ORGANIZER,
             'is_invite_by_organizer' => true
         ]);
     

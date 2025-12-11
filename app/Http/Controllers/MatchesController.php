@@ -486,6 +486,10 @@ class MatchesController extends Controller
             'home_team_id' => 'nullable|exists:teams,id',
             'away_team_id' => 'nullable|exists:teams,id',
         ]);
+        $tournamentType = TournamentType::find($match->tournament_type_id);
+        if (in_array($tournamentType->format, [TournamentType::FORMAT_MIXED, TournamentType::FORMAT_ROUND_ROBIN]) && $match->round == 1) {
+            return ResponseHelper::error('Cài đặt thể thức không cho phép hoán đổi các đội đấu vòng tròn (round robin).', 403);
+        }
 
         // chỉ cho phép swap ở round 1 và khi chưa diễn ra
         if ($match->round != 1) {
