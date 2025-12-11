@@ -99,7 +99,7 @@ class UserController extends Controller
         }
 
         if (!empty($validated['is_map']) && $validated['is_map'] === true) {
-            $users = $query->get();
+            $users = $query->whereNotNull('latitude')->whereNotNull('longitude')->get();
 
             $data = [
                 'users' => UserResource::collection($users),
