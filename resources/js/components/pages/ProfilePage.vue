@@ -47,22 +47,25 @@
                                 'bg-yellow-100 text-yellow-700': user.visibility === 'friend-only',
                                 'bg-red-100 text-red-700': user.visibility === 'private'
                             }" @click="toggleVisibilityMenu">
-                                {{ user.visibility }}
+                                {{ getVisibilityText(user.visibility) }}
                             </span>
                             <!-- Dropdown Menu -->
                             <div v-if="showVisibilityMenu"
-                                class="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-30 min-w-[150px]">
+                                class="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-30 min-w-[250px]">
                                 <div class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm text-green-700 font-medium"
                                     @click="changeVisibility('open')">
-                                    Open
+                                    Công khai <br>
+                                    <span class="text-gray-500 text-xs">Mọi người đều thấy hồ sơ của bạn</span>
                                 </div>
                                 <div class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm text-yellow-700 font-medium"
                                     @click="changeVisibility('friend-only')">
-                                    Friend-only
+                                    Bạn bè <br>
+                                    <span class="text-gray-500 text-xs">Chỉ bạn bè mới thấy hồ sơ của bạn</span>
                                 </div>
                                 <div class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm text-red-700 font-medium"
                                     @click="changeVisibility('private')">
-                                    Private
+                                    Riêng tư <br>
+                                    <span class="text-gray-500 text-xs">Chỉ bạn mới thấy hồ sơ của bạn</span>
                                 </div>
                             </div>
                         </div>
@@ -238,6 +241,19 @@ const mappedSports = computed(() =>
         vndupr: s.scores.vndupr_score ?? 0
     }))
 );
+
+const getVisibilityText = (visibility) => {
+    switch (visibility) {
+        case 'open':
+            return 'Công khai';
+        case 'friend-only':
+            return 'Bạn bè';
+        case 'private':
+            return 'Riêng tư';
+        default:
+            return 'Không xác định';
+    }
+};
 
 const backgroundStyle = computed(() => ({
     backgroundImage: `url('${user.value.thumbnail || Background}')`,

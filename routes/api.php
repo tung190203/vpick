@@ -238,6 +238,7 @@ Route::middleware(['auth:api'])->group(function () {
     Route::prefix('notifications')->group(function () {
         Route::match(['get', 'post'], '/index', [NotificationController::class, 'index']);
         Route::post('/mark-as-read', [NotificationController::class, 'markAsRead']);
+        Route::post('/delete', [NotificationController::class, 'delete']);
     });
     Route::prefix('mini-tournament-notifications')->group(function () {
         Route::post('/subscribe/{miniTournamentId}', [MiniTournamentNotificationController::class, 'subscribe']);
