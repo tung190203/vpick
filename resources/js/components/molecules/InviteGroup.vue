@@ -55,12 +55,11 @@
                         <template v-else>
                             <div v-for="user in filteredUsers" :key="user.id"
                                 class="flex items-center gap-3 py-3 border-b border-gray-100 last:border-b-0 cursor-pointer hover:bg-gray-50">
-
                                 <!-- Avatar -->
                                 <div class="relative flex-shrink-0">
                                     <div
                                         class="w-16 h-16 bg-red-300 rounded-full flex items-center justify-center overflow-hidden">
-                                        <img src="https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cHJvZmlsZSUyMGltYWdlfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60"
+                                        <img :src="user.avatar"
                                             alt="User Avatar" class="w-full h-full object-cover" />
                                     </div>
                                 </div>
