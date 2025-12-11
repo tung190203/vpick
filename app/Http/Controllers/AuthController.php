@@ -244,21 +244,40 @@ class AuthController extends Controller
     {
         try {
             $googleUser = Socialite::driver('google')->stateless()->user();
-            $avatarContent = file_get_contents($googleUser->getAvatar());
-            $avatarName = 'avatars/' . uniqid() . '.jpg';
-            Storage::disk('public')->put($avatarName, $avatarContent);
+            $user = User::where('email', $googleUser->getEmail())
+                ->orWhere('google_id', $googleUser->getId())
+                ->first();
+    
+            if ($user) {
+                if (!$user->google_id) {
+                    $user->google_id = $googleUser->getId();
+                }
+                if (!$user->avatar_url || $user->avatar_url === asset('images/default-avatar.png')) {
+                    $avatarContent = file_get_contents($googleUser->getAvatar());
+                    $avatarName = 'avatars/' . uniqid() . '.jpg';
+                    Storage::disk('public')->put($avatarName, $avatarContent);
+                    $user->avatar_url = asset('storage/' . $avatarName);
+                }
+                
+                if (!$user->email_verified_at) {
+                    $user->email_verified_at = now();
+                }
+                
+                $user->save();
+            } else {
+                $avatarContent = file_get_contents($googleUser->getAvatar());
+                $avatarName = 'avatars/' . uniqid() . '.jpg';
+                Storage::disk('public')->put($avatarName, $avatarContent);
 
-            $user = User::firstOrCreate(
-                ['email' => $googleUser->getEmail()],
-                [
+                $user = User::create([
+                    'email' => $googleUser->getEmail(),
                     'full_name' => $googleUser->getName(),
                     'google_id' => $googleUser->getId(),
                     'avatar_url' => asset('storage/' . $avatarName),
                     'password' => Hash::make(Str::random(16)),
                     'email_verified_at' => now(),
-                ]
-            );
-
+                ]);
+            } 
             Auth::login($user);
             $accessToken = JWTAuth::claims(['type' => 'access'])->fromUser($user);
             $refreshToken = JWTAuth::claims(['type' => 'refresh', 'exp' => now()->addDays(30)->timestamp])->fromUser($user);
@@ -299,17 +318,34 @@ class AuthController extends Controller
         $platform = collect($validClients)->search($aud);
         if ($platform === false) return ResponseHelper::error('Client ID không hợp lệ', 401, ['status_code' => 'INVALID_CLIENT']);
 
-        $user = User::firstOrCreate(
-            ['email' => $payload['email']],
-            [
+        $user = User::where('email', $payload['email'])
+            ->orWhere('google_id', $payload['sub'])
+            ->first();
+    
+        if ($user) {
+            if (!$user->google_id) {
+                $user->google_id = $payload['sub'];
+            }
+            
+            if (!$user->avatar_url || $user->avatar_url === asset('images/default-avatar.png')) {
+                $user->avatar_url = $payload['picture'] ?? null;
+            }
+            
+            if (!$user->email_verified_at) {
+                $user->email_verified_at = now();
+            }
+            
+            $user->save();
+        } else {
+            $user = User::create([
+                'email' => $payload['email'],
                 'full_name' => $payload['name'] ?? null,
                 'google_id' => $payload['sub'],
                 'avatar_url' => $payload['picture'] ?? null,
                 'password' => Hash::make(Str::random(16)),
                 'email_verified_at' => now(),
-            ]
-        );
-
+            ]);
+        }
         $accessToken = JWTAuth::claims(['type' => 'access'])->fromUser($user);
         $refreshToken = JWTAuth::claims(['type' => 'refresh', 'exp' => now()->addDays(30)->timestamp])->fromUser($user);
         $user->last_login = now();
@@ -345,27 +381,46 @@ class AuthController extends Controller
             if (empty($fbResponse['email'])) {
                 return ResponseHelper::error('Facebook account không có email', 400, ['status_code' => 'NO_EMAIL']);
             }
+            $user = User::where('email', $fbResponse['email'])
+                ->orWhere('facebook_id', $fbResponse['id'])
+                ->first();
+    
+            if ($user) {
+                if (!$user->facebook_id) {
+                    $user->facebook_id = $fbResponse['id'];
+                }
+                
+                $avatarUrl = $fbResponse['picture']['data']['url'] ?? null;
+                if ($avatarUrl && (!$user->avatar_url || $user->avatar_url === asset('images/default-avatar.png'))) {
+                    $avatarContent = file_get_contents($avatarUrl);
+                    $avatarName = 'avatars/' . uniqid() . '.jpg';
+                    Storage::disk('public')->put($avatarName, $avatarContent);
+                    $user->avatar_url = asset('storage/' . $avatarName);
+                }
+                
+                if (!$user->email_verified_at) {
+                    $user->email_verified_at = now();
+                }
+                
+                $user->save();
+            } else {
+                $avatarUrl = $fbResponse['picture']['data']['url'] ?? null;
+                $avatarName = null;
+                if ($avatarUrl) {
+                    $avatarContent = file_get_contents($avatarUrl);
+                    $avatarName = 'avatars/' . uniqid() . '.jpg';
+                    Storage::disk('public')->put($avatarName, $avatarContent);
+                }
 
-            // Lưu avatar về storage giống web
-            $avatarUrl = $fbResponse['picture']['data']['url'] ?? null;
-            $avatarName = null;
-            if ($avatarUrl) {
-                $avatarContent = file_get_contents($avatarUrl);
-                $avatarName = 'avatars/' . uniqid() . '.jpg';
-                Storage::disk('public')->put($avatarName, $avatarContent);
-            }
-
-            // Tạo hoặc lấy user
-            $user = User::firstOrCreate(
-                ['email' => $fbResponse['email']],
-                [
+                $user = User::create([
+                    'email' => $fbResponse['email'],
                     'full_name' => $fbResponse['name'] ?? null,
                     'facebook_id' => $fbResponse['id'],
                     'avatar_url' => $avatarName ? asset('storage/' . $avatarName) : null,
                     'password' => Hash::make(Str::random(16)),
                     'email_verified_at' => now(),
-                ]
-            );
+                ]);
+            }
 
             // JWT Token
             $accessTokenJWT = JWTAuth::claims(['type' => 'access'])->fromUser($user);
@@ -390,21 +445,41 @@ class AuthController extends Controller
     {
         try {
             $fbUser = Socialite::driver('facebook')->stateless()->user();
-            $avatarContent = file_get_contents($fbUser->getAvatar());
-            $avatarName = 'avatars/' . uniqid() . '.jpg';
-            Storage::disk('public')->put($avatarName, $avatarContent);
-
-            $user = User::firstOrCreate(
-                ['email' => $fbUser->getEmail()],
-                [
+            $user = User::where('email', $fbUser->getEmail())
+                ->orWhere('facebook_id', $fbUser->getId())
+                ->first();
+    
+            if ($user) {
+                if (!$user->facebook_id) {
+                    $user->facebook_id = $fbUser->getId();
+                }
+                
+                if (!$user->avatar_url || $user->avatar_url === asset('images/default-avatar.png')) {
+                    $avatarContent = file_get_contents($fbUser->getAvatar());
+                    $avatarName = 'avatars/' . uniqid() . '.jpg';
+                    Storage::disk('public')->put($avatarName, $avatarContent);
+                    $user->avatar_url = asset('storage/' . $avatarName);
+                }
+                
+                if (!$user->email_verified_at) {
+                    $user->email_verified_at = now();
+                }
+                
+                $user->save();
+            } else {
+                $avatarContent = file_get_contents($fbUser->getAvatar());
+                $avatarName = 'avatars/' . uniqid() . '.jpg';
+                Storage::disk('public')->put($avatarName, $avatarContent);
+    
+                $user = User::create([
+                    'email' => $fbUser->getEmail(),
                     'full_name' => $fbUser->getName(),
                     'facebook_id' => $fbUser->getId(),
                     'avatar_url' => asset('storage/' . $avatarName),
                     'password' => Hash::make(Str::random(16)),
                     'email_verified_at' => now(),
-                ]
-            );
-
+                ]);
+            }
             Auth::login($user);
             $accessToken = JWTAuth::claims(['type' => 'access'])->fromUser($user);
             $refreshToken = JWTAuth::claims(['type' => 'refresh', 'exp' => now()->addDays(30)->timestamp])->fromUser($user);
@@ -438,16 +513,29 @@ class AuthController extends Controller
 
             $name = $appleUser->user['name'] ?? ('PickiUser' . $appleUser->getId());
             $email = $appleUser->getEmail();
-
-            $user = User::firstOrCreate(
-                ['email' => $email],
-                [
+            $user = User::where('email', $email)
+                ->orWhere('apple_id', $appleUser->getId())
+                ->first();
+    
+            if ($user) {
+                if (!$user->apple_id) {
+                    $user->apple_id = $appleUser->getId();
+                }
+                
+                if (!$user->email_verified_at) {
+                    $user->email_verified_at = now();
+                }
+                
+                $user->save();
+            } else {
+                $user = User::create([
+                    'email' => $email,
                     'full_name' => $name,
                     'apple_id' => $appleUser->getId(),
                     'password' => Hash::make(Str::random(16)),
                     'email_verified_at' => now(),
-                ]
-            );
+                ]);
+            }
             Auth::login($user);
             $accessToken = JWTAuth::claims(['type' => 'access'])->fromUser($user);
             $refreshToken = JWTAuth::claims(['type' => 'refresh', 'exp' => now()->addDays(30)->timestamp])->fromUser($user);
@@ -485,7 +573,7 @@ class AuthController extends Controller
                 }
             }
             if (!$payload) {
-                return response()->json(['message' => 'Invalid id_token'], 400);
+                return ResponseHelper::error('Token Apple không hợp lệ', 401, ['status_code' => 'INVALID_TOKEN']);
             }
             $data = json_decode(json_encode($payload), true);
             $appleId = $data['sub'];
@@ -497,18 +585,28 @@ class AuthController extends Controller
             if (!$name) {
                 $name = 'PickiUser' . $appleId;
             }
-            $user = User::where('apple_id', $appleId)->first();
-
-            if (!$user) {
-                $user = User::firstOrCreate(
-                    ['email' => $email],
-                    [
-                        'full_name' => $name,
-                        'apple_id' => $appleId,
-                        'password' => Hash::make(Str::random(16)),
-                        'email_verified_at' => now(),
-                    ]
-                );
+            $user = User::where('apple_id', $appleId)
+                ->orWhere('email', $email)
+                ->first();
+    
+            if ($user) {
+                if (!$user->apple_id) {
+                    $user->apple_id = $appleId;
+                }
+                
+                if (!$user->email_verified_at) {
+                    $user->email_verified_at = now();
+                }
+                
+                $user->save();
+            } else {
+                $user = User::create([
+                    'email' => $email,
+                    'full_name' => $name,
+                    'apple_id' => $appleId,
+                    'password' => Hash::make(Str::random(16)),
+                    'email_verified_at' => now(),
+                ]);
             }
 
             Auth::login($user);
@@ -519,7 +617,7 @@ class AuthController extends Controller
             $user->save();
 
             $response = $this->responseWithToken($accessToken, $refreshToken, $user);
-
+            $response['status_code'] = 'VERIFIED';
             return ResponseHelper::success($response, 'Đăng nhập bằng Apple thành công');
         } catch (\Exception $e) {
             return ResponseHelper::error('Không thể đăng nhập bằng Apple', 500, ['status_code' => 'OAUTH_FAILED']);
@@ -541,7 +639,7 @@ class AuthController extends Controller
                 'token_type' => 'Bearer',
                 'expires_in' => 3600,
             ],
-            'user' => new UserResource($user),
+            'user' => new UserResource($user->loadFullRelations()),
         ];
     }
 }

@@ -30,7 +30,10 @@ class TeamController extends Controller
         $perPage = $validated['per_page'] ?? Team::PER_PAGE;
     
         $teams = Team::where('tournament_id', $tournamentId)
-            ->with('members.sports')
+        ->with([
+            'members.sports.sport',   // Load sport relationship
+            'members.sports.scores'   // Load scores relationship
+        ])
             ->paginate($perPage);
     
         $data = [
