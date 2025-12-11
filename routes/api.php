@@ -73,7 +73,7 @@ Route::prefix('auth')->group(function () {
 Route::get('/verify-email', [VerificationController::class, 'verify']);
 Route::post('/resend-email', [VerificationController::class, 'resend']);
 
-Route::middleware(['auth:api', 'verified'])->group(function () {
+Route::middleware(['auth:api'])->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::prefix('user')->group(function () {
         Route::match(['get', 'post'], '/index', [UserController::class, 'index']);

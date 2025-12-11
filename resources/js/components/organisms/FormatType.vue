@@ -563,6 +563,10 @@ const updateMatchPoint = (id, value) => {
         }
     } else if (id === 'maxpoint' && numValue >= pointsToWinSet.value) {
         maxPoints.value = numValue;
+    } else if (id === 'serve' && numValue >= 0 && numValue < pointsToWinSet.value) {
+        serveChangeInterval.value = numValue;
+    } else if (id === 'serve' && numValue >= pointsToWinSet.value) {
+        serveChangeInterval.value = 0;
     }
 };
 
