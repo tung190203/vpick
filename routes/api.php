@@ -82,6 +82,9 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
         Route::delete('/delete/{id}', [UserController::class, 'destroy']);
         Route::get('/matches/dataset', [UserMatchStatsController::class, 'dataset']);
         Route::get('/matches/list',[UserMatchStatsController::class, 'matchesBySportId']);
+        Route::post('/change-email', [UserController::class, 'changeEmail']);
+        Route::post('/verify-change-email', [UserController::class, 'verifyChangeEmail']);
+        Route::post('/resend-change-email-otp', [UserController::class, 'resendChangeEmailOtp']);
     });
     Route::prefix('tournaments')->group(function () {
         Route::get('/index', [TournamentController::class, 'index']);

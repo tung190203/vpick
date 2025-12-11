@@ -5,13 +5,16 @@ namespace App\Http\Controllers;
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\ClubResource;
 use App\Http\Resources\UserResource;
+use App\Mail\VerifyNewEmailMail;
 use App\Models\User;
 use App\Services\GeocodingService;
 use App\Services\ImageOptimizationService;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
@@ -323,5 +326,139 @@ class UserController extends Controller
         $user->delete();
 
         return ResponseHelper::success(null, 'Xóa người dùng thành công');
+    }
+    public function changeEmail(Request $request)
+    {
+        $request->validate([
+            'new_email' => 'required|email|unique:users,email',
+            'password' => 'required|string',
+        ]);
+
+        $user = $request->user();
+        
+        if (!Hash::check($request->password, $user->password)) {
+            return ResponseHelper::error('Mật khẩu không đúng', 401, [
+                'status_code' => 'INVALID_PASSWORD'
+            ]);
+        }
+
+        $otp = rand(100000, 999999);
+        DB::table('verification_codes')->updateOrInsert(
+            ['type' => 'email_change', 'identifier' => $request->new_email],
+            [
+                'otp' => $otp,
+                'user_id' => $user->id,
+                'expires_at' => now()->addMinutes(10),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]
+        );
+
+        try {
+            Mail::to($request->new_email)->send(new VerifyNewEmailMail($otp));
+        } catch (\Exception $e) {
+            return ResponseHelper::error('Không thể gửi email xác minh', 500, [
+                'status_code' => 'EMAIL_SEND_FAILED'
+            ]);
+        }
+
+        return ResponseHelper::success([
+            'status_code' => 'OTP_SENT'
+        ], 'Mã OTP đã được gửi đến email mới');
+    }
+
+    public function verifyChangeEmail(Request $request)
+    {
+        $request->validate([
+            'new_email' => 'required|email',
+            'otp' => 'required|digits:6',
+        ]);
+
+        $user = $request->user();
+
+        $record = DB::table('verification_codes')
+            ->where('type', 'email_change')
+            ->where('identifier', $request->new_email)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (!$record) {
+            return ResponseHelper::error('Không tìm thấy mã xác minh', 404, [
+                'status_code' => 'OTP_NOT_FOUND'
+            ]);
+        }
+
+        if ($record->otp !== $request->otp) {
+            return ResponseHelper::error('Mã OTP không đúng', 400, [
+                'status_code' => 'OTP_INVALID'
+            ]);
+        }
+
+        if (now()->greaterThan($record->expires_at)) {
+            return ResponseHelper::error('Mã OTP đã hết hạn', 400, [
+                'status_code' => 'OTP_EXPIRED'
+            ]);
+        }
+
+        if (User::where('email', $request->new_email)->where('id', '!=', $user->id)->exists()) {
+            return ResponseHelper::error('Email đã được sử dụng', 400, [
+                'status_code' => 'EMAIL_EXISTS'
+            ]);
+        }
+
+        $user->email = $request->new_email;
+        $user->save();
+
+        DB::table('verification_codes')
+            ->where('type', 'email_change')
+            ->where('identifier', $request->new_email)
+            ->delete();
+
+        return ResponseHelper::success([
+            'status_code' => 'COMPLETED',
+            'user' => new UserResource($user->loadFullRelations())
+        ], 'Đổi email thành công');
+    }
+
+    public function resendChangeEmailOtp(Request $request)
+    {
+        $request->validate(['new_email' => 'required|email']);
+        
+        $user = $request->user();
+
+        $record = DB::table('verification_codes')
+            ->where('type', 'email_change')
+            ->where('identifier', $request->new_email)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (!$record) {
+            return ResponseHelper::error('Không tìm thấy yêu cầu đổi email', 404, [
+                'status_code' => 'REQUEST_NOT_FOUND'
+            ]);
+        }
+
+        $otp = rand(100000, 999999);
+        DB::table('verification_codes')
+            ->where('type', 'email_change')
+            ->where('identifier', $request->new_email)
+            ->where('user_id', $user->id)
+            ->update([
+                'otp' => $otp,
+                'expires_at' => now()->addMinutes(10),
+                'updated_at' => now(),
+            ]);
+
+        try {
+            Mail::to($request->new_email)->send(new VerifyNewEmailMail($otp));
+        } catch (\Exception $e) {
+            return ResponseHelper::error('Không thể gửi email xác minh', 500, [
+                'status_code' => 'EMAIL_SEND_FAILED'
+            ]);
+        }
+
+        return ResponseHelper::success([
+            'status_code' => 'OTP_SENT'
+        ], 'Mã OTP mới đã được gửi');
     }
 }
