@@ -1,6 +1,6 @@
 <template>
     <div class="grid grid-cols-10 gap-4">
-        <CreateMatch v-model="showCreateMatchModal" :data="detailData" :tournament="tournament" />
+        <CreateMatch v-model="showCreateMatchModal" :data="detailData" :tournament="tournament" @updated="handleMatchUpdated" />
         <div class="col-span-3 p-4">
             <div class="flex justify-between items-center p-4 mb-4 bg-[#EDEEF2] rounded-md">
                 <h2 class="font-bold text-[#3E414C]">Bảng xếp hạng</h2>
@@ -357,6 +357,11 @@ const handleDrop = async (event, targetMatchId, targetPosition) => {
 
 const isDropTarget = (matchId, position) => {
     return dropTargetMatch.value === matchId && dropTargetPosition.value === position;
+};
+
+const handleMatchUpdated = () => {
+    showCreateMatchModal.value = false;
+    emit('refresh'); // Refresh bracket data
 };
 
 /* ===========================

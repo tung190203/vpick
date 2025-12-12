@@ -379,7 +379,7 @@ const confirmMatchResult = async () => {
         const response = await MatchesServices.confirmResults(props.data.id)
         
         toast.success('Xác nhận kết quả trận đấu thành công!')
-        emit('updated', response.data)
+        emit('updated', response)
         isOpen.value = false;
         
     } catch (error) {
