@@ -29,12 +29,12 @@
                             <div class="relative flex-shrink-0">
                                 <div
                                     class="w-16 h-16 bg-red-300 rounded-full flex items-center justify-center overflow-hidden">
-                                    <img src="https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cHJvZmlsZSUyMGltYWdlfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60"
+                                    <img :src="user.user.avatar_url"
                                         alt="User Avatar" class="w-full h-full object-cover" />
                                 </div>
                                 <div
                                     class="absolute -bottom-1 -left-1 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center border border-1 border-white">
-                                    <span class="text-white font-bold text-[9px]">{{ convertLevel(user.level) }}</span>
+                                    <span class="text-white font-bold text-[9px]">{{ convertLevel(user.user?.sports[0]?.scores) }}</span>
                                 </div>
                             </div>
 
@@ -103,16 +103,12 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'add', 'search'])
 
-const convertLevel = (level) => {
-    if (level === null || level === undefined || level === '') {
-        return '0';
-    }
-    const floatValue = parseFloat(level);
-    if (isNaN(floatValue)) {
-        return '0';
-    }
-    return floatValue.toFixed(1);
-}
+const convertLevel = (level = []) => {
+    if (!Array.isArray(level) || level.length === 0) return 0;
+    const item = level.find(i => i.score_type === "vndupr_score");
+
+    return item ? Number(item.score_value).toFixed(1) : 0;
+};
 
 const onSearch = () => {
   emit('search', searchQuery.value)
