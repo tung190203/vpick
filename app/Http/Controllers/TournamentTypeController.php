@@ -599,13 +599,15 @@ class TournamentTypeController extends Controller
         $teamList = is_array($teams) ? collect($teams) : $teams->values();
         $roundIndex = 2;
         $rounds = collect();
-
+    
         while ($teamList->count() > 1) {
             $matchIds = collect();
             $nextRoundTeams = collect();
             $teamCount = $teamList->count();
             $numMatches = intdiv($teamCount, 2);
             $hasBye = ($teamCount % 2 === 1);
+            
+            // Tạo các trận đấu bình thường
             for ($i = 0; $i < $numMatches; $i++) {
                 $homeIdx = $i * 2;
                 $awayIdx = $i * 2 + 1;
@@ -613,6 +615,7 @@ class TournamentTypeController extends Controller
                 $home = $teamList->get($homeIdx);
                 $away = $teamList->get($awayIdx);
                 $firstMatchId = null;
+                
                 for ($leg = 1; $leg <= $numLegs; $leg++) {
                     $isReturn = ($leg % 2 === 0);
                     $matchNumber++;
@@ -627,12 +630,12 @@ class TournamentTypeController extends Controller
                         'is_bye' => false,
                         'name_of_match' => "Trận đấu số {$matchNumber}",
                     ]);
-
+    
                     if ($leg === 1) {
                         $firstMatchId = $match->id;
                     }
                 }
-
+    
                 $matchIds->push($firstMatchId);
                 
                 $nextRoundTeams->push((object)[
@@ -640,14 +643,14 @@ class TournamentTypeController extends Controller
                     '_from_match' => $firstMatchId,
                 ]);
             }
-
-            // Xử lý đội bye (nếu có)
+    
+            // Xử lý đội bye
             if ($hasBye) {
                 $byeTeam = $teamList->get($teamCount - 1);
                 $byeTeamId = $this->getTeamId($byeTeam);
-
+    
                 if ($advancedToNext) {
-                    // Tạo trận với best loser
+                    // ✅ FIX: Tạo trận bye vs best loser và THÊM VÀO $matchIds
                     $firstByeMatchId = null;
                     for ($leg = 1; $leg <= $numLegs; $leg++) {
                         $matchNumber++;
@@ -666,7 +669,8 @@ class TournamentTypeController extends Controller
                             $firstByeMatchId = $byeMatch->id;
                         }
                     }
-
+    
+                    // ✅ QUAN TRỌNG: Thêm bye match vào matchIds để nó được link
                     $matchIds->push($firstByeMatchId);
                     
                     $nextRoundTeams->push((object)[
@@ -674,6 +678,7 @@ class TournamentTypeController extends Controller
                         '_from_match' => $firstByeMatchId,
                     ]);
                 } else {
+                    // Bye đơn giản (không có best loser)
                     $matchNumber++;
                     $byeMatch = $type->matches()->create([
                         'tournament_type_id' => $type->id,
@@ -685,7 +690,7 @@ class TournamentTypeController extends Controller
                         'is_bye' => true,
                         'name_of_match' => "Trận đấu số {$matchNumber}",
                     ]);
-
+    
                     $matchIds->push($byeMatch->id);
                     
                     $nextRoundTeams->push((object)[
@@ -694,15 +699,17 @@ class TournamentTypeController extends Controller
                     ]);
                 }
             }
-
+    
             $rounds->put($roundIndex, $matchIds);
             $teamList = $nextRoundTeams;
             $roundIndex++;
         }
-
+    
         if ($rounds->isEmpty()) {
             return collect();
         }
+        
+        // Link các trận vào round tiếp theo
         $finalRound = $roundIndex - 1;
         for ($r = 2; $r < $finalRound; $r++) {
             $currMatchIds = $rounds->get($r, collect());
@@ -711,7 +718,10 @@ class TournamentTypeController extends Controller
             foreach ($currMatchIds as $idx => $matchId) {
                 $match = $type->matches()->find($matchId);
                 if (!$match) continue;
-                if ($match->is_bye && !$match->away_team_id) continue;
+                
+                // ✅ FIX: Bỏ điều kiện skip bye match để link được
+                // Trước: if ($match->is_bye && !$match->away_team_id) continue;
+                // Sau: Cho phép link cả bye match
                 
                 $targetIdx = intdiv($idx, 2);
                 $targetId = $nextMatchIds->get($targetIdx);
@@ -719,21 +729,14 @@ class TournamentTypeController extends Controller
                 
                 $position = ($idx % 2 === 0) ? 'home' : 'away';
                 
-                // Link tất cả legs của cùng 1 cặp đấu
-                // $allLegs = $type->matches()
-                //     ->where('round', $match->round)
-                //     ->where('home_team_id', $match->home_team_id)
-                //     ->where('away_team_id', $match->away_team_id)
-                //     ->get();
-                $allLegs = collect([$match]);
-                foreach ($allLegs as $legMatch) {
-                    $legMatch->update([
-                        'next_match_id' => $targetId,
-                        'next_position' => $position,
-                    ]);
-                }
+                $match->update([
+                    'next_match_id' => $targetId,
+                    'next_position' => $position,
+                ]);
             }
         }
+        
+        // Xử lý trận tranh hạng 3
         if ($hasThirdPlace) {
             $semiRound = $finalRound - 1;
             $semiIds = $rounds->get($semiRound, collect());
@@ -758,6 +761,7 @@ class TournamentTypeController extends Controller
                         $firstThirdPlaceId = $third->id;
                     }
                 }
+                
                 DB::table('matches')
                     ->where('id', $firstSemiId)
                     ->update([
@@ -772,7 +776,7 @@ class TournamentTypeController extends Controller
                     ]);
             }
         }
-
+    
         return $rounds;
     }
 
