@@ -1,6 +1,6 @@
 <template>
   <div class="p-4 pt-0 min-h-screen overflow-x-auto">
-    <CreateMatch v-model="showCreateMatchModal" :data="detailData" :tournament="tournament" />
+    <CreateMatch v-model="showCreateMatchModal" :data="detailData" :tournament="tournament" @updated="handleMatchUpdated" />
 
     <!-- HEADER CÁC ROUND -->
     <div class="flex w-max min-h-full pb-4">
@@ -256,6 +256,11 @@ const handleDrop = async (event, targetMatchId, targetPosition) => {
   } finally {
     handleDragEnd();
   }
+};
+
+const handleMatchUpdated = () => {
+    showCreateMatchModal.value = false;
+    emit('refresh'); // Refresh bracket data
 };
 
 const isDropTarget = (matchId, position) => {

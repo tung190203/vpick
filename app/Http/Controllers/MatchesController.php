@@ -16,6 +16,7 @@ use App\Models\PoolAdvancementRule;
 use App\Models\VnduprHistory;
 use App\Services\TournamentService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class MatchesController extends Controller
 {
@@ -332,24 +333,154 @@ class MatchesController extends Controller
         $allPoolMatches = Matches::where('tournament_type_id', $tournamentTypeId)
             ->where('round', 1)
             ->get();
-
+    
         if ($allPoolMatches->isEmpty()) {
             return;
         }
-
-        $totalMatches = $allPoolMatches->count();
-        $completedMatches = $allPoolMatches->where('status', 'completed')->count();
+    
         $allCompleted = $allPoolMatches->every(fn($m) => $m->status === 'completed');
-
-        if ($allCompleted) {
-            $knockoutMatches = Matches::where('tournament_type_id', $tournamentTypeId)
-                ->where('round', '>', 1)
-                ->where('status', Matches::STATUS_PENDING)
+    
+        if (!$allCompleted) {
+            return;
+        }
+    
+        // Tất cả pool đã hoàn thành
+        $tournamentType = TournamentType::find($tournamentTypeId);
+        if (!$tournamentType) {
+            return;
+        }
+    
+        $config = $tournamentType->format_specific_config ?? [];
+        $mainConfig = is_array($config) && isset($config[0]) ? $config[0] : [];
+        $advancedToNext = filter_var($mainConfig['advanced_to_next_round'] ?? false, FILTER_VALIDATE_BOOLEAN);
+    
+        // Lấy tất cả trận knockout round 2 (vòng đấu đầu tiên sau pool)
+        $knockoutMatches = Matches::where('tournament_type_id', $tournamentTypeId)
+            ->where('round', 2)
+            ->where('status', 'pending')
+            ->get();
+    
+        if ($knockoutMatches->isEmpty()) {
+            return;
+        }
+    
+        // Tìm các trận có đội lẻ (is_bye = true hoặc có 1 team null)
+        $byeMatches = $knockoutMatches->filter(function ($match) {
+            return $match->is_bye || $match->home_team_id === null || $match->away_team_id === null;
+        });
+    
+        if ($byeMatches->isEmpty()) {
+            // Không có đội lẻ, tất cả đã sẵn sàng
+            return;
+        }
+    
+        if (!$advancedToNext) {
+            // Nếu advanced_to_next_round = false, giữ nguyên bye
+            // Các đội bye sẽ tự động đi tiếp
+            return;
+        }
+    
+        // advanced_to_next_round = true: Tìm best loser để đấu với đội lẻ
+        $this->assignBestLosersToByeMatches($tournamentTypeId, $byeMatches);
+    }
+    
+    private function assignBestLosersToByeMatches($tournamentTypeId, $byeMatches)
+    {
+        // Lấy tất cả các group
+        $groups = DB::table('groups')
+            ->join('matches', 'groups.id', '=', 'matches.group_id')
+            ->where('matches.tournament_type_id', $tournamentTypeId)
+            ->where('matches.round', 1)
+            ->select('groups.id', 'groups.name')
+            ->distinct()
+            ->get();
+    
+        if ($groups->isEmpty()) {
+            return;
+        }
+    
+        // Tính standings cho tất cả các group
+        $allGroupStandings = collect();
+        
+        foreach ($groups as $group) {
+            $groupMatches = Matches::where('group_id', $group->id)
+                ->where('round', 1)
+                ->with(['homeTeam.members', 'awayTeam.members', 'results'])
                 ->get();
-        } else {
-            $remainingGroups = $allPoolMatches->groupBy('group_id')
-                ->filter(fn($matches) => $matches->some(fn($m) => $m->status !== 'completed'))
-                ->count();
+    
+            $standings = TournamentService::calculateGroupStandings($groupMatches);
+            
+            // Lấy các đội không đi tiếp (từ vị trí thứ 2 trở đi)
+            $advancementRules = PoolAdvancementRule::where('group_id', $group->id)->pluck('rank')->toArray();
+            
+            foreach ($standings as $index => $standing) {
+                $rank = $index + 1;
+                
+                // Nếu không phải đội đi tiếp chính thức
+                if (!in_array($rank, $advancementRules)) {
+                    $allGroupStandings->push([
+                        'group_id' => $group->id,
+                        'group_name' => $group->name,
+                        'rank' => $rank,
+                        'team_id' => $standing['team']['id'],
+                        'team_name' => $standing['team']['name'],
+                        'points' => $standing['points'] ?? 0,
+                        'won' => $standing['won'] ?? 0,
+                        'set_difference' => $standing['set_difference'] ?? 0,
+                        'sets_won' => $standing['sets_won'] ?? 0,
+                    ]);
+                }
+            }
+        }
+    
+        if ($allGroupStandings->isEmpty()) {
+            return;
+        }
+    
+        // Sắp xếp để tìm best losers
+        // Ưu tiên: điểm > thắng > hiệu số set > số set thắng
+        $bestLosers = $allGroupStandings->sortByDesc(function ($standing) {
+            return [
+                $standing['points'],
+                $standing['won'],
+                $standing['set_difference'],
+                $standing['sets_won'],
+            ];
+        })->values();
+    
+        // Gán best losers vào các trận bye
+        $loserIndex = 0;
+        
+        foreach ($byeMatches as $byeMatch) {
+            if ($loserIndex >= $bestLosers->count()) {
+                break; // Hết best losers
+            }
+    
+            $bestLoser = $bestLosers[$loserIndex];
+            $loserIndex++;
+    
+            // Xác định vị trí trống (home hoặc away)
+            if ($byeMatch->home_team_id === null) {
+                $byeMatch->update([
+                    'home_team_id' => $bestLoser['team_id'],
+                    'is_bye' => false,
+                    'status' => 'pending',
+                ]);
+            } elseif ($byeMatch->away_team_id === null) {
+                $byeMatch->update([
+                    'away_team_id' => $bestLoser['team_id'],
+                    'is_bye' => false,
+                    'status' => 'pending',
+                ]);
+            }
+    
+            Log::info("Best loser assigned", [
+                'match_id' => $byeMatch->id,
+                'team_id' => $bestLoser['team_id'],
+                'team_name' => $bestLoser['team_name'],
+                'from_group' => $bestLoser['group_name'],
+                'rank' => $bestLoser['rank'],
+            ]);
         }
     }
 
