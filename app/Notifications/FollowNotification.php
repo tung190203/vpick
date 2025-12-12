@@ -31,6 +31,7 @@ class FollowNotification extends Notification implements ShouldQueue
             'follower_name' => $this->follower->full_name,
             'followable_type' => get_class($this->followable),
             'followable_id' => $this->followable->id,
+            'title' => 'Bạn có một người theo dõi mới!',
             'message' => "{$this->follower->full_name} đã theo dõi bạn.",
         ];
     }

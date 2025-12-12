@@ -109,6 +109,7 @@ import { TrashIcon } from '@heroicons/vue/24/outline'
 
 import { ref, onMounted, onUnmounted, computed } from "vue";
 import * as NotificationService from "@/service/notifications.js";
+import { toast } from 'vue3-toastify';
 
 const notifications = ref([]);
 const unreadCount = ref(0);
@@ -181,6 +182,7 @@ const changeFilter = (filter) => {
 // Mark one notification as read
 const markOneAsRead = async (id) => {
   await NotificationService.markAsRead(id);
+  toast.success("Đã đánh dấu thông báo là đã đọc");
   const item = notifications.value.find(n => n.id === id);
   if (item && !item.read) {
     item.read = true;
@@ -191,6 +193,7 @@ const markOneAsRead = async (id) => {
 // Mark all as read
 const markAllAsRead = async () => {
   await NotificationService.markAsRead(null);
+  toast.success("Đã đánh dấu tất cả thông báo là đã đọc");
   notifications.value.forEach(n => n.read = true);
   unreadCount.value = 0;
 };
@@ -198,6 +201,7 @@ const markAllAsRead = async () => {
 // Delete one
 const deleteOne = async (id) => {
   await NotificationService.deleteNotification(id);
+  toast.success("Đã xóa thông báo");
   notifications.value = notifications.value.filter(n => n.id !== id);
 };
 
