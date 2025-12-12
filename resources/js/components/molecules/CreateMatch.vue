@@ -4,7 +4,7 @@
             <div v-if="isOpen"
                 class="fixed inset-0 bg-black backdrop-blur-[1px] bg-opacity-50 flex items-center justify-center z-50 p-4"
                 @click.self="closeModal">
-                <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl h-[95vh] max-h-[95vh] flex flex-col">
+                <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl h-[85vh] max-h-[95vh] flex flex-col">
                     <div class="flex items-center justify-between p-6 border-b border-gray-200">
                         <h2 class="text-2xl font-semibold text-gray-800">{{ data.round_name || 'Trận đấu' }}</h2>
                         <button @click="closeModal" class="text-gray-400 hover:text-gray-600 transition-colors">
@@ -63,7 +63,7 @@
                                     <div class="border border-1 border-[#DCDEE6] bg-[#F2F7FC] rounded-lg p-3 flex flex-col">
                                         <p class="text-center mb-4">{{ data.home_team?.name || 'Team A' }}</p>
                                         <div class="flex gap-2 justify-around items-stretch">
-                                            <UserCard v-for="member in data.home_team?.members || []" :key="member.id"
+                                            <UserCard v-for="member in data.home_team?.members || []" :key="member.id" :showHoverDelete="false"
                                                 :name="member.name" :avatar="member.avatar" :size="12" :badgeSize="5" class="cursor-pointer" />
                                             <UserCard v-for="n in emptySlots('home')" :key="'empty-home-' + n" empty
                                                 :size="12" :badgeSize="5" class="cursor-pointer" />
@@ -77,7 +77,7 @@
                                     <div class="border border-1 border-[#DCDEE6] bg-[#F2F7FC] rounded-lg p-3 flex flex-col">
                                         <p class="text-center mb-4">{{ data.away_team?.name || 'Team B' }}</p>
                                         <div class="flex gap-2 justify-around items-stretch">
-                                            <UserCard v-for="member in data.away_team?.members || []" :key="member.id"
+                                            <UserCard v-for="member in data.away_team?.members || []" :key="member.id" :showHoverDelete="false"
                                                 :name="member.name" :avatar="member.avatar" :size="12" :badgeSize="5" class="cursor-pointer" />
                                             <UserCard v-for="n in emptySlots('away')" :key="'empty-away-' + n" empty
                                                 :size="12" :badgeSize="5" class="cursor-pointer" />
@@ -294,7 +294,7 @@ watch(() => props.data, () => {
 }, { deep: true })
 
 const incrementScore = (setIndex, team) => {
-    const maxPoints = props.tournament?.tournament_type?.match_rules?.max_points || 11
+    const maxPoints = props.tournament?.tournament_types?.[0].match_rules?.[0].max_points || 11
     if (team === 'A' && scores.value[setIndex].teamA < maxPoints) {
         scores.value[setIndex].teamA++
     } else if (team === 'B' && scores.value[setIndex].teamB < maxPoints) {
