@@ -58,9 +58,6 @@ return [
     'url' => env('APP_URL', 'http://localhost'),
     'redirect_success_url' => env('REDIRECT_SUCCESS_URL', 'http://localhost:8000'),
     'frontend_url' => env('FRONTEND_URL', 'http://localhost:8000'),
-    'api_base_url' => env('VITE_BASE_URL'),
-    'redirect_success' => env('REDIRECT_SUCCESS_URL'),
-    'vite_base_url' => env('VITE_BASE_URL'),
     
 
     'asset_url' => env('ASSET_URL'),
