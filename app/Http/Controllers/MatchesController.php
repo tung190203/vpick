@@ -230,11 +230,13 @@ class MatchesController extends Controller
                     $nextMatch->update([
                         'home_team_id' => $winnerTeamId,
                         'status' => Matches::STATUS_PENDING,
+                        'is_bye' => $nextMatch->away_team_id ? false : $nextMatch->is_bye,
                     ]);
                 } elseif ($match->next_position === 'away') {
                     $nextMatch->update([
                         'away_team_id' => $winnerTeamId,
                         'status' => Matches::STATUS_PENDING,
+                        'is_bye' => $nextMatch->home_team_id ? false : $nextMatch->is_bye,
                     ]);
                 }
             }
@@ -473,14 +475,6 @@ class MatchesController extends Controller
                     'status' => 'pending',
                 ]);
             }
-    
-            Log::info("Best loser assigned", [
-                'match_id' => $byeMatch->id,
-                'team_id' => $bestLoser['team_id'],
-                'team_name' => $bestLoser['team_name'],
-                'from_group' => $bestLoser['group_name'],
-                'rank' => $bestLoser['rank'],
-            ]);
         }
     }
 
