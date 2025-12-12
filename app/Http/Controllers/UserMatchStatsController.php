@@ -21,7 +21,7 @@ class UserMatchStatsController extends Controller
 {
     public function dataset(Request $request)
     {
-        $userId = auth()->id();
+        $userId = $request->query('user_id', auth()->id());
         $sportId = $request->query('sport_id');
 
         if (!$sportId) {
@@ -463,7 +463,7 @@ class UserMatchStatsController extends Controller
     }
 
     public function matchesBySportId(Request $request) {
-        $userId = auth()->id();
+        $userId = $request->query('user_id', auth()->id());
         $sportId = $request->query('sport_id');
         $perPage = $request->query('per_page', 15); // Mặc định 15 items/page
         
