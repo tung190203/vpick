@@ -120,6 +120,7 @@ class TournamentController extends Controller
     {
         $validated = $request->validate([
             'poster' => 'nullable|image|max:5120',
+            'remove_poster' => 'nullable|boolean', // Thêm field này
             'sport_id' => 'nullable|exists:sports,id',
             'name' => 'nullable|string',
             'competition_location_id' => 'nullable|exists:competition_locations,id',
@@ -154,16 +155,19 @@ class TournamentController extends Controller
     
         DB::transaction(function () use ($validated, $tournament, $request) {
             if ($request->hasFile('poster')) {
-                    $this->imageService->deleteOldImage($tournament->poster);
-                    $path = $this->imageService->optimize(
-                        $validated['poster'],
-                        'tournaments/posters'
-                    );
-                    $validated['poster'] = $path;
-            } else {
+                $this->imageService->deleteOldImage($tournament->poster);
+                $path = $this->imageService->optimize(
+                    $validated['poster'],
+                    'tournaments/posters'
+                );
+                $validated['poster'] = $path;
+            } elseif ($request->has('remove_poster') && $request->input('remove_poster')) {
                 $this->imageService->deleteOldImage($tournament->poster);
                 $validated['poster'] = null;
+            } else {
+                unset($validated['poster']);
             }
+            unset($validated['remove_poster']);
             $tournament->fill($validated);
             $tournament->save();
         });
