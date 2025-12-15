@@ -147,6 +147,7 @@ class TournamentController extends Controller
             'club_id' => 'nullable|exists:clubs,id',
             'is_public_branch' => 'nullable|boolean',
             'is_own_score' => 'nullable|boolean',
+            'status' => 'nullable|in:' . implode(',', Tournament::STATUS),
         ]);
     
         $tournament = Tournament::findOrFail($id);
