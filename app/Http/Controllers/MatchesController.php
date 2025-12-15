@@ -175,11 +175,24 @@ class MatchesController extends Controller
                     if (!($winningScore >= $pointsToWinSet && ($winningScore - $losingScore) >= $winningRule)) {
                          return ResponseHelper::error("Điểm số $A - $B trong set $setNumber không hợp lệ với luật (trước $maxPoints).", 400);
                     }
+                    for ($i = $pointsToWinSet; $i < $winningScore; $i++) {
+                        // Tại mỗi điểm i, kiểm tra xem đã thắng chưa
+                        $diffAtPoint = $i - $losingScore;
+                        if ($diffAtPoint >= $winningRule) {
+                            return ResponseHelper::error("Điểm số $A - $B trong set $setNumber không hợp lệ. Set kết thúc sớm hơn tại $i - $losingScore.", 400);
+                        }
+                    }
                 } 
                 // 2. Nếu set kết thúc tại maxPoints (ví dụ: 15-14)
                 else {
                     if (!($winningScore == $maxPoints && $winningScore > $losingScore)) {
                         return ResponseHelper::error("Điểm số $A - $B trong set $setNumber không hợp lệ với luật (tại $maxPoints).", 400);
+                    }
+                    for ($i = $pointsToWinSet; $i < $maxPoints; $i++) {
+                        $diffAtPoint = $i - $losingScore;
+                        if ($diffAtPoint >= $winningRule) {
+                            return ResponseHelper::error("Điểm số $A - $B trong set $setNumber không hợp lệ. Set kết thúc sớm hơn tại $i - $losingScore.", 400);
+                        }
                     }
                 }
             }
