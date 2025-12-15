@@ -66,7 +66,7 @@ class TournamentResource extends JsonResource
                 ];
             }),
             'tournament_staff' => TournamentStaffResource::collection($this->whenLoaded('tournamentStaffs')),
-            'tournamnet_participants' => $this->whenLoaded('participants', function() {
+            'tournament_participants' => $this->whenLoaded('participants', function() {
                 return $this->participants->map(function($participant) {
                     return [
                         'id' => $participant->id,
