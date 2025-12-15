@@ -23,7 +23,7 @@ router.beforeEach((to, from, next) => {
   ];
 
   if (!loginToken) {
-    const onboardingWhitelist = ["onboarding", "privacy-policy", "login", "register"];
+    const onboardingWhitelist = ["onboarding", "privacy-policy"];
 
     if (!hasSeenOnboarding && !onboardingWhitelist.includes(to.name)) {
       return next({ name: "onboarding" });
