@@ -466,11 +466,23 @@ class MiniMatchController extends Controller
                 if (!($winningScore >= $pointsToWinSet && ($winningScore - $losingScore) >= $pointsDifference)) {
                      return ResponseHelper::error("Điểm số $A - $B trong set {$validated['set_number']} không hợp lệ với luật (trước $maxPoints).", 400);
                 }
+                for ($i = $pointsToWinSet; $i < $winningScore; $i++) {
+                    $diffAtPoint = $i - $losingScore;
+                    if ($diffAtPoint >= $pointsDifference) {
+                        return ResponseHelper::error("Điểm số $A - $B trong set {$validated['set_number']} không hợp lệ. Set đã kết thúc sớm hơn tại $i - $losingScore.", 400);
+                    }
+                }
             } 
             // 2. Kết thúc tại maxPoints (ví dụ: 15-14)
             else {
                 if (!($winningScore == $maxPoints && $winningScore > $losingScore)) {
                     return ResponseHelper::error("Điểm số $A - $B trong set {$validated['set_number']} không hợp lệ với luật (tại $maxPoints).", 400);
+                }
+                for ($i = $pointsToWinSet; $i < $maxPoints; $i++) {
+                    $diffAtPoint = $i - $losingScore;
+                    if ($diffAtPoint >= $pointsDifference) {
+                        return ResponseHelper::error("Điểm số $A - $B trong set {$validated['set_number']} không hợp lệ. Set đã kết thúc sớm hơn tại $i - $losingScore.", 400);
+                    }
                 }
             }
         }
