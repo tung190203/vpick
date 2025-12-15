@@ -376,31 +376,112 @@ class MiniMatchController extends Controller
         if (!empty($tournament->set_number) && $validated['set_number'] > $tournament->set_number) {
             return ResponseHelper::error("Trận đấu không được vượt quá {$tournament->set_number} set", 400);
         }
-
-        if (!empty($tournament->games_per_set) && !empty($tournament->max_points)) {
-            foreach ($validated['results'] as $res) {
-                $limit = ($tournament->games_per_set == $tournament->max_points)
-                    ? $tournament->games_per_set
-                    : $tournament->max_points;
         
-                if ($res['score'] > $limit) {
-                    return ResponseHelper::error(
-                        "Điểm số không được vượt quá {$limit} trong một set",
-                        400
-                    );
+        // --- 2. Lấy luật thi đấu ---
+        $pointsToWinSet = $tournament->games_per_set ?? null;
+        $pointsDifference = $tournament->points_difference ?? null; // Sử dụng tên biến đồng nhất với DB
+        $maxPoints = $tournament->max_points ?? null;
+
+        if ($pointsToWinSet === null || $pointsDifference === null || $maxPoints === null) {
+             return ResponseHelper::error('Giải đấu chưa thiết lập đủ luật thi đấu (games_per_set, points_difference, max_points).', 400);
+        }
+        
+        // --- 3. Đảm bảo 2 participant hợp lệ ---
+        $participantIds = [$match->participant1_id, $match->participant2_id];
+        $inputParticipants = collect($validated['results']);
+
+        if ($inputParticipants->count() !== 2) {
+            return ResponseHelper::error('Cần cung cấp điểm số cho cả hai người chơi/đội.', 400);
+        }
+
+        $participantA = $inputParticipants->firstWhere('participant_id', $participantIds[0]);
+        $participantB = $inputParticipants->firstWhere('participant_id', $participantIds[1]);
+
+        if (!$participantA || !$participantB) {
+            return ResponseHelper::error('Người chơi không hợp lệ hoặc thiếu dữ liệu cho một trong hai người chơi/đội.', 400);
+        }
+
+        $A = (int)$participantA['score'];
+        $B = (int)$participantB['score'];
+        $teamAId = $participantA['participant_id'];
+        $teamBId = $participantB['participant_id'];
+        
+        // Đảm bảo điểm số không âm
+        if ($A < 0 || $B < 0) {
+             return ResponseHelper::error("Điểm số không hợp lệ trong set {$validated['set_number']}.", 400);
+        }
+
+        // --- 4. Áp dụng Logic Kiểm tra Luật Thắng Set ---
+        
+        $winnerTeamId = null;
+        $isSetCompleted = false;
+        $scoreDiff = abs($A - $B);
+        $isPointsToWinReached = ($A >= $pointsToWinSet || $B >= $pointsToWinSet);
+        $isMaxPointsReached = ($A == $maxPoints || $B == $maxPoints);
+
+        // Trường hợp pointsToWinSet = maxPoints (Ví dụ: 11-2-11)
+        if ($pointsToWinSet == $maxPoints) {
+            // Thắng khi chạm maxPoints (11-10 là thắng)
+            if ($isMaxPointsReached) {
+                $isSetCompleted = true;
+                $winnerTeamId = $A > $B ? $teamAId : $teamBId;
+            }
+        } else {
+            // Trường hợp pointsToWinSet != maxPoints (Ví dụ: 11-2-15)
+
+            // 1. Nếu đã chạm điểm pointsToWinSet và cách biệt pointsDifference điểm
+            if ($isPointsToWinReached && $scoreDiff >= $pointsDifference) {
+                $isSetCompleted = true;
+                $winnerTeamId = $A > $B ? $teamAId : $teamBId;
+            } 
+            // 2. Nếu chạm maxPoints (Luật "Deuce" kết thúc)
+            elseif ($isMaxPointsReached) {
+                $isSetCompleted = true;
+                // Nếu điểm bằng nhau ở maxPoints, thì không thể kết thúc
+                if ($A == $B) {
+                    return ResponseHelper::error("Điểm số hòa tại điểm tối đa $maxPoints trong set {$validated['set_number']}. Set phải kết thúc với cách biệt.", 400);
+                }
+                $winnerTeamId = $A > $B ? $teamAId : $teamBId;
+            }
+        }
+
+        // 🚫 YÊU CẦU BẮT BUỘC: CHỈ LƯU KHI SET ĐÃ HOÀN THÀNH
+        if (!$isSetCompleted) {
+            return ResponseHelper::error("Set {$validated['set_number']} có điểm số $A - $B chưa thỏa mãn luật thắng. Chỉ có thể lưu kết quả khi set đã hoàn thành.", 400);
+        }
+        
+        // --- 5. Kiểm tra tính hợp lệ của điểm cuối cùng (Chống gian lận điểm) ---
+        
+        $winningScore = max($A, $B);
+        $losingScore = min($A, $B);
+
+        if ($pointsToWinSet == $maxPoints) {
+            // Phải thắng tại điểm maxPoints và người thua phải dưới maxPoints
+            if (!($winningScore == $maxPoints && $losingScore < $maxPoints)) {
+                return ResponseHelper::error("Điểm số $A - $B trong set {$validated['set_number']} không hợp lệ với luật (thắng khi chạm $maxPoints).", 400);
+            }
+        } else {
+            // 1. Kết thúc bằng cách biệt >= pointsDifference trước maxPoints
+            if ($winningScore < $maxPoints) {
+                if (!($winningScore >= $pointsToWinSet && ($winningScore - $losingScore) >= $pointsDifference)) {
+                     return ResponseHelper::error("Điểm số $A - $B trong set {$validated['set_number']} không hợp lệ với luật (trước $maxPoints).", 400);
+                }
+            } 
+            // 2. Kết thúc tại maxPoints (ví dụ: 15-14)
+            else {
+                if (!($winningScore == $maxPoints && $winningScore > $losingScore)) {
+                    return ResponseHelper::error("Điểm số $A - $B trong set {$validated['set_number']} không hợp lệ với luật (tại $maxPoints).", 400);
                 }
             }
         }
 
-        // đảm bảo participant hợp lệ
-        $participantIds = [$match->participant1_id, $match->participant2_id];
-        foreach ($validated['results'] as $res) {
-            if (!in_array($res['participant_id'], $participantIds)) {
-                return ResponseHelper::error('Người chơi không hợp lệ', 400);
-            }
+        if (!$winnerTeamId) {
+             return ResponseHelper::error("Lỗi xác định người thắng trong set {$validated['set_number']}.", 400);
         }
-
-        // xóa nếu đã tồn tại set_number (update lại)
+        
+        // --- 6. Xóa kết quả cũ và lưu kết quả mới (Khi đã hợp lệ) ---
+        
+        // Xóa nếu đã tồn tại set_number (update lại)
         MiniMatchResult::where('mini_match_id', $match->id)
             ->where('set_number', $validated['set_number'])
             ->delete();
@@ -412,21 +493,15 @@ class MiniMatchController extends Controller
                 'participant_id' => $res['participant_id'],
                 'score' => $res['score'],
                 'set_number' => $validated['set_number'],
+                'won_set' => $res['participant_id'] == $winnerTeamId, // Đã xác định người thắng
             ]);
         }
 
-        // xác định người thắng set
-        $setResults = MiniMatchResult::where('mini_match_id', $match->id)
-            ->where('set_number', $validated['set_number'])
-            ->get();
-
-        $maxScore = $setResults->max('score');
-        foreach ($setResults as $r) {
-            $r->won_set = $r->score === $maxScore;
-            $r->save();
-        }
-
         $match = MiniMatch::withFullRelations()->findOrFail($matchId);
+        $match->update([
+            'participant1_confirm' => false,
+            'participant2_confirm' => false,
+        ]);
 
         return ResponseHelper::success(new MiniMatchResource($match), 'Thành công');
     }

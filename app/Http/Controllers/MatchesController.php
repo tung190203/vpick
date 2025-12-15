@@ -101,40 +101,95 @@ class MatchesController extends Controller
         foreach ($sets as $setNumber => $setResults) {
             // chỉ xử lý khi có đủ 2 đội trong set
             if ($setResults->count() !== 2) {
-                foreach ($setResults as $r) {
-                    $result = $match->results()->updateOrCreate(
-                        ['id' => $r['id'] ?? null],
-                        [
-                            'match_id' => $match->id,
-                            'team_id' => $r['team_id'],
-                            'score' => $r['score'],
-                            'set_number' => $r['set_number'],
-                            'won_match' => false,
-                        ]
-                    );
-                    $keepIds[] = $result->id;
-                }
-                continue;
+                 return ResponseHelper::error("Set $setNumber thiếu kết quả của một đội. Vui lòng cung cấp điểm số cho cả hai đội.", 400);
             }
 
             $teamA = $setResults[0];
             $teamB = $setResults[1];
-            $A = $teamA['score'];
-            $B = $teamB['score'];
+            $A = (int)$teamA['score'];
+            $B = (int)$teamB['score'];
 
             $winnerTeamId = null;
+            $isSetCompleted = false;
 
-            // 🧮 Xác định đội thắng set
-            if (
-                ($A >= $pointsToWinSet || $B >= $pointsToWinSet) &&
-                abs($A - $B) >= $winningRule
-            ) {
-                $winnerTeamId = $A > $B ? $teamA['team_id'] : $teamB['team_id'];
-            } elseif ($A == $maxPoints || $B == $maxPoints) {
-                // nếu chạm max point thì thắng luôn
-                $winnerTeamId = $A > $B ? $teamA['team_id'] : $teamB['team_id'];
+            // Kiểm tra điểm số không âm
+            if ($A < 0 || $B < 0) {
+                 return ResponseHelper::error("Điểm số không hợp lệ trong set $setNumber.", 400);
             }
 
+            // 🧮 Xác định đội thắng set theo 3 quy tắc
+            
+            $scoreDiff = abs($A - $B);
+            $isPointsToWinReached = ($A >= $pointsToWinSet || $B >= $pointsToWinSet);
+            $isMaxPointsReached = ($A == $maxPoints || $B == $maxPoints);
+
+            // 1. Trường hợp pointsToWinSet = maxPoints
+            if ($pointsToWinSet == $maxPoints) {
+                if ($isMaxPointsReached) {
+                    $isSetCompleted = true;
+                    $winnerTeamId = $A > $B ? $teamA['team_id'] : $teamB['team_id'];
+                }
+            } else {
+                // Trường hợp pointsToWinSet != maxPoints
+
+                // 2. Nếu đã chạm điểm pointsToWinSet và cách biệt winningRule điểm
+                if ($isPointsToWinReached && $scoreDiff >= $winningRule) {
+                    $isSetCompleted = true;
+                    $winnerTeamId = $A > $B ? $teamA['team_id'] : $teamB['team_id'];
+                } 
+                // 3. Nếu chạm maxPoints (Luật "Deuce" kết thúc)
+                elseif ($isMaxPointsReached) {
+                    $isSetCompleted = true;
+                    // Nếu điểm bằng nhau ở maxPoints, thì không thể kết thúc (lỗi dữ liệu)
+                    if ($A == $B) {
+                        return ResponseHelper::error("Điểm số hòa tại điểm tối đa $maxPoints trong set $setNumber. Set phải kết thúc với cách biệt.", 400);
+                    }
+                    $winnerTeamId = $A > $B ? $teamA['team_id'] : $teamB['team_id'];
+                }
+            }
+
+            // 🚫 Yêu cầu: Chỉ lưu khi set đã hoàn thành (isSetCompleted = true)
+            if (!$isSetCompleted) {
+                return ResponseHelper::error("Set $setNumber có điểm số $A - $B chưa thỏa mãn luật thắng. Chỉ có thể lưu kết quả khi set đã hoàn thành.", 400);
+            }
+            
+            // --- Bắt đầu kiểm tra tính hợp lệ của điểm cuối cùng ---
+            
+            $winningScore = max($A, $B);
+            $losingScore = min($A, $B);
+
+            // Nếu pointsToWinSet = maxPoints
+            if ($pointsToWinSet == $maxPoints) {
+                // Phải thắng tại điểm maxPoints
+                if ($winningScore != $maxPoints ) {
+                    return ResponseHelper::error("Điểm số $A - $B trong set $setNumber không hợp lệ với luật (thắng khi chạm $maxPoints).", 400);
+                }
+                if($losingScore == $maxPoints) {
+                    return ResponseHelper::error("Điểm số $A - $B trong set $setNumber không hợp lệ với luật (không thể hòa tại $maxPoints).", 400);
+                }
+            }
+            // Nếu pointsToWinSet != maxPoints
+            else {
+                // 1. Nếu set kết thúc bằng cách biệt >= winningRule trước maxPoints
+                if ($winningScore < $maxPoints) {
+                    if (!($winningScore >= $pointsToWinSet && ($winningScore - $losingScore) >= $winningRule)) {
+                         return ResponseHelper::error("Điểm số $A - $B trong set $setNumber không hợp lệ với luật (trước $maxPoints).", 400);
+                    }
+                } 
+                // 2. Nếu set kết thúc tại maxPoints (ví dụ: 15-14)
+                else {
+                    if (!($winningScore == $maxPoints && $winningScore > $losingScore)) {
+                        return ResponseHelper::error("Điểm số $A - $B trong set $setNumber không hợp lệ với luật (tại $maxPoints).", 400);
+                    }
+                }
+            }
+
+            // Phải có người thắng sau khi kiểm tra hợp lệ
+            if (!$winnerTeamId) {
+                 return ResponseHelper::error("Lỗi xác định người thắng trong set $setNumber.", 400);
+            }
+
+            // Lưu kết quả set đã hoàn thành
             foreach ($setResults as $r) {
                 $result = $match->results()->updateOrCreate(
                     [
@@ -153,6 +208,10 @@ class MatchesController extends Controller
 
         // 🧹 Xoá kết quả thừa
         $match->results()->whereNotIn('id', $keepIds)->delete();
+        $match->update([
+            'home_team_confirm' => 0,
+            'away_team_confirm' => 0,
+        ]);
 
         $match->load('results');
 
@@ -959,6 +1018,7 @@ class MatchesController extends Controller
             $this->calculateMatchWinner($match, $setsPerMatch);
         }
         $match->save();
+        $recipientUserIds = collect();
 
         return ResponseHelper::success(new MatchesResource($match->fresh('results')), 'Xác nhận kết quả thành công');
     }
