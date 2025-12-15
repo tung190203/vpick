@@ -255,7 +255,7 @@
                 <div class="border border-[#BBBFCC] rounded-lg my-4 p-4">
                   <div class="flex items-center justify-between mb-3">
                     <h4 class="font-semibold text-[#6B6F80] uppercase text-sm">
-                      NGƯỜI THAM GIA • {{ tournament?.tournamnet_participants?.length || 0 }} / {{
+                      NGƯỜI THAM GIA • {{ tournament?.tournament_participants?.length || 0 }} / {{
                         tournament.max_team * tournament.player_per_team
                       }}
                     </h4>
@@ -263,14 +263,14 @@
                       @click="showInviteFriendModal = true">Mời bạn
                       bè</span>
                   </div>
-                  <div v-if="tournament?.tournamnet_participants?.length">
+                  <div v-if="tournament?.tournament_participants?.length">
                     <div class="grid grid-cols-2 sm:grid-cols-6 lg:grid-cols-6 gap-4">
-                      <UserCard v-for="(item, index) in tournament.tournamnet_participants" :key="index" :id="item.id"
+                      <UserCard v-for="(item, index) in tournament.tournament_participants" :key="index" :id="item.id"
                         :name="item.user.name" :avatar="item.avatar" :rating="getUserScore(item)"
                         :status="item.is_confirmed == true ? 'approved' : 'pending'" @removeUser="handleRemoveUser"
                         @click="openActionModal(item)" />
                       <UserCard
-                        v-if="tournament?.tournamnet_participants?.length < (tournament.max_team * tournament.player_per_team) && isCreator"
+                        v-if="tournament?.tournament_participants?.length < (tournament.max_team * tournament.player_per_team) && isCreator"
                         :empty="true" @clickEmpty="showInviteFriendModal = true" />
                     </div>
                   </div>
@@ -1464,7 +1464,7 @@ const joinerTournament = async () => {
 
 const confirmTournament = async () => {
   const participantId =
-    tournament.value?.tournamnet_participants?.find(
+    tournament.value?.tournament_participants?.find(
         p => p.user.id === getUser.value.id
     )?.id ?? null;
   try {
