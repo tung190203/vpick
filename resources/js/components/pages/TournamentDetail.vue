@@ -1068,7 +1068,7 @@ const handleRemove = () => {
   if (fileInput.value) {
     fileInput.value.value = '';
   }
-  updateTournament(tournament.value.id)
+  updateTournament(tournament.value.id, { remove_poster: true });
 };
 
 const handleInvite = async (user) => {
