@@ -1,0 +1,13 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+BRANCH=$(git branch --show-current)
+
+if [ "$BRANCH" != "main" ]; then
+  echo "ℹ️ post-commit skipped (branch=$BRANCH)"
+  exit 0
+fi
+
+echo "🚀 post-commit deploy triggered from MAIN"
+
+sh ./deploy-local.sh
