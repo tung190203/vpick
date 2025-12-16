@@ -106,7 +106,7 @@
                         </span>
                     </RouterLink>
 
-                    <RouterLink to="/tools" :class="mobileLinkClass('/tools')">
+                    <RouterLink to="/map" :class="mobileLinkClass('/map')">
                         <BriefcaseIcon class="w-5 h-5 flex-shrink-0" />
                         <span
                             class="font-medium whitespace-nowrap overflow-hidden transition-all duration-300"

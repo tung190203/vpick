@@ -12,7 +12,7 @@ use Illuminate\Http\Request;
 
 class CompetitionLocationController extends Controller
 {
-    private const VALIDATION_RULE = 'sometimes';
+    private const VALIDATION_RULE = 'nullable';
     /**
      * Lọc và lấy danh sách địa điểm thi đấu (trình lọc sân bóng)
      *
@@ -22,25 +22,25 @@ class CompetitionLocationController extends Controller
     public function index(Request $request)
     {
         $validated = $request->validate([
-            'lat' => 'sometimes',
-            'lng' => 'sometimes',
-            'radius' => 'sometimes|numeric|min:1',
+            'lat' => 'nullable',
+            'lng' => 'nullable',
+            'radius' => 'nullable|numeric|min:1',
             'minLat' => self::VALIDATION_RULE,
             'maxLat' => self::VALIDATION_RULE,
             'minLng' => self::VALIDATION_RULE,
             'maxLng' => self::VALIDATION_RULE,
-            'sport_id' => 'sometimes|integer|exists:sports,id',
-            'location_id' => 'sometimes|integer|exists:locations,id',
-            'number_of_yards' => 'sometimes|array',
+            'sport_id' => 'nullable|integer|exists:sports,id',
+            'location_id' => 'nullable|integer|exists:locations,id',
+            'number_of_yards' => 'nullable|array',
             'number_of_yards.*' => 'integer|min:1',
-            'keyword' => 'sometimes|string|max:255',
-            'is_followed' => 'sometimes|boolean',
-            'per_page' => 'sometimes|integer|min:1|max:200',
+            'keyword' => 'nullable|string|max:255',
+            'is_followed' => 'nullable|boolean',
+            'per_page' => 'nullable|integer|min:1|max:200',
             'yard_type' => 'nullable|array',
             'yard_type.*' => 'integer|in:' . implode(',', CompetitionLocationYard::YARD_TYPE),
             'facility_id' => 'nullable|array',
             'facility_id.*' => 'integer|exists:facilities,id',
-            'is_map' => 'sometimes|boolean',
+            'is_map' => 'nullable|boolean',
         ]);
 
         $query = CompetitionLocation::withFullRelations();

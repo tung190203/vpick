@@ -35,6 +35,7 @@ export const API_ENDPOINT = {
   },
   MATCHES: '/matches',
   NOTIFICATION: '/notifications',
+  MAP: '/map',
 };
 
 export const TOURNAMENT_STATUS = {

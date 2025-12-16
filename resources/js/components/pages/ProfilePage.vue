@@ -207,6 +207,7 @@ import { useRoute } from "vue-router";
 import { toast } from "vue3-toastify";
 import { useUserStore } from "@/store/auth";
 import { storeToRefs } from "pinia";
+import { getVisibilityText }  from "@/composables/formatVisibilityText";
 
 const route = useRoute();
 const id = route.params.id;
@@ -241,19 +242,6 @@ const mappedSports = computed(() =>
         vndupr: s.scores.vndupr_score ?? 0
     }))
 );
-
-const getVisibilityText = (visibility) => {
-    switch (visibility) {
-        case 'open':
-            return 'Công khai';
-        case 'friend-only':
-            return 'Bạn bè';
-        case 'private':
-            return 'Riêng tư';
-        default:
-            return 'Không xác định';
-    }
-};
 
 const backgroundStyle = computed(() => ({
     backgroundImage: `url('${user.value.thumbnail || Background}')`,
