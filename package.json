@@ -4,7 +4,8 @@
     "scripts": {
         "dev": "vite",
         "dev-all": "concurrently \"php artisan serve\" \"npm run dev\"",
-        "build": "vite build"
+        "build:dev": "cp .env.dev .env && vite build",
+        "build:prod": "cp .env.prod .env && vite build"
     },
     "devDependencies": {
         "autoprefixer": "^10.4.21",

@@ -41,3 +41,8 @@ php artisan db:seed
 
 # -----------------------------------------------
 php artisan app:import-location-into-competition-location
+
+# -----------------------------------------------
+build code for production/staging
+commit code->run this command:
+./deploy-local.sh
