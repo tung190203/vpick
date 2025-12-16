@@ -73,6 +73,10 @@ git push origin deploy
 # 4. BACK TO MAIN
 # ==============================
 git checkout main
+git restore .
+git clean -fd
+echo "▶ Install composer dependencies"
+composer install
 
 echo "=============================="
 echo "✅ DEPLOY FINISHED SAFELY"
