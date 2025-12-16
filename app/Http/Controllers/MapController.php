@@ -11,38 +11,38 @@ use Illuminate\Http\Request;
 
 class MapController extends Controller
 {
-    private const VALIDATION_RULE = 'sometimes';
+    private const VALIDATION_RULE = 'nullable';
     public function getMatch(Request $request)
     {
         $validated = $request->validate([
-            'lat' => 'sometimes',
-            'lng' => 'sometimes',
-            'radius' => 'sometimes|numeric|min:1',
+            'lat' => 'nullable',
+            'lng' => 'nullable',
+            'radius' => 'nullable|numeric|min:1',
             'minLat' => self::VALIDATION_RULE,
             'maxLat' => self::VALIDATION_RULE,
             'minLng' => self::VALIDATION_RULE,
             'maxLng' => self::VALIDATION_RULE,
-            'mini_tournament_per_page' => 'sometimes|integer|min:1|max:200',
-            'mini_tournament_page' => 'sometimes|integer|min:1',
-            'tournament_per_page' => 'sometimes|integer|min:1|max:200',
-            'tournament_page' => 'sometimes|integer|min:1',
-            'is_map' => 'sometimes|boolean',
-            'date_from' => 'sometimes|date',
-            'location_id' => 'sometimes|integer|exists:locations,id',
-            'sport_id' => 'sometimes|integer|exists:sports,id',
-            'keyword' => 'sometimes|string|max:255',
-            'rating' => 'sometimes',
+            'mini_tournament_per_page' => 'nullable|integer|min:1|max:200',
+            'mini_tournament_page' => 'nullable|integer|min:1',
+            'tournament_per_page' => 'nullable|integer|min:1|max:200',
+            'tournament_page' => 'nullable|integer|min:1',
+            'is_map' => 'nullable|boolean',
+            'date_from' => 'nullable|date',
+            'location_id' => 'nullable|integer|exists:locations,id',
+            'sport_id' => 'nullable|integer|exists:sports,id',
+            'keyword' => 'nullable|string|max:255',
+            'rating' => 'nullable',
             'rating.*' => 'integer',
-            'time_of_day' => 'sometimes|array',
+            'time_of_day' => 'nullable|array',
             'time_of_day.*' => 'in:morning,afternoon,evening',
-            'slot_status' => 'sometimes|array',
+            'slot_status' => 'nullable|array',
             'slot_status.*' => 'in:one_slot,two_slot,full_slot',
-            'type' => 'sometimes|array',
+            'type' => 'nullable|array',
             'type.*' => 'in:single,double',
-            'fee' => 'sometimes|array',
+            'fee' => 'nullable|array',
             'fee.*' => 'in:free,paid',
-            'min_price' => 'sometimes|numeric|min:0',
-            'max_price' => 'sometimes|numeric|min:0',
+            'min_price' => 'nullable|numeric|min:0',
+            'max_price' => 'nullable|numeric|min:0',
         ]);
         $miniTournamentQuery = MiniTournament::withFullRelations()->filter($validated);
         $tournamentQuery = Tournament::withFullRelations()->filter($validated);
