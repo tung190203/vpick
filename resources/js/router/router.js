@@ -30,6 +30,7 @@ import TournamentBracketPage from '@/components/pages/TournamentBracketPage.vue'
 import MatchVerifyPage from '@/components/pages/MatchVerifyPage.vue'
 import NotificationsPage from '@/components/pages/NotificationsPage.vue'
 import SettingsPage from '@/components/pages/SettingsPage.vue'
+import MapPage from '@/components/pages/MapPage.vue'
 import { ROLE } from '@/constants/index.js'
 
 export const route = [
@@ -194,7 +195,15 @@ export const route = [
             props: true
           }
         ]
-      },      
+      },
+      {
+        path: '/map',
+        name: 'map',
+        component: MapPage,
+        meta: {
+          role: [ROLE.PLAYER, ROLE.ADMIN, ROLE.REFEREE]
+        }
+      },
       {
         path: '/admin/dashboard',
         name: 'admin.dashboard',

@@ -47,3 +47,7 @@ export const updateUser = async (data) => {
 export const detailUser = async (id) => {
   return axiosInstance.get(`${userEndpoint}/${id}`).then((response) => response.data.data);
 }
+
+export const getUserData = async (params = {}) => {
+  return axiosInstance.get(`${userEndpoint}/index`, { params }).then((response) => response.data.data);
+}

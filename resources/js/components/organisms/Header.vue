@@ -43,7 +43,7 @@
                     Tạo giải đấu
                 </RouterLink>
 
-                <RouterLink class="whitespace-nowrap" to="/tools" :class="linkClass('/tools')">
+                <RouterLink class="whitespace-nowrap" to="/map" :class="linkClass('/map')">
                     <BriefcaseIcon class="w-5 h-5" />
                     Công cụ
                 </RouterLink>
