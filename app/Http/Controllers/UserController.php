@@ -24,37 +24,37 @@ class UserController extends Controller
     {
         $this->imageService = $imageService;
     }
-    private const VALIDATION_RULE = 'sometimes';
+    private const VALIDATION_RULE = 'nullable';
     public function index(Request $request)
     {
         $validated = $request->validate([
-            'lat' => 'sometimes',
-            'lng' => 'sometimes',
-            'radius' => 'sometimes|numeric|min:1',
+            'lat' => 'nullable',
+            'lng' => 'nullable',
+            'radius' => 'nullable|numeric|min:1',
             'minLat' => self::VALIDATION_RULE,
             'maxLat' => self::VALIDATION_RULE,
             'minLng' => self::VALIDATION_RULE,
             'maxLng' => self::VALIDATION_RULE,
             'keyword' => 'nullable|string|max:255',
-            'sport_id' => 'sometimes|exists:sports,id',
-            'per_page' => 'sometimes|integer|min:1|max:200',
-            'location_id' => 'sometimes|exists:locations,id',
+            'sport_id' => 'nullable|exists:sports,id',
+            'per_page' => 'nullable|integer|min:1|max:200',
+            'location_id' => 'nullable|exists:locations,id',
             'favourite_player' => 'nullable|boolean',
             'is_connected' => 'nullable|boolean',
             'gender' => 'nullable|in:' . implode(',', User::GENDER),
-            'time_of_day' => 'sometimes|array',
+            'time_of_day' => 'nullable|array',
             'time_of_day.*' => 'in:' . implode(',', User::PLAY_TIME_OPTIONS),
-            'rating' => 'sometimes|array',
-            'rating.*' => 'sometimes',
+            'rating' => 'nullable|array',
+            'rating.*' => 'nullable',
             'online_recently' => 'nullable|boolean',
-            'online_before_minutes' => 'sometimes|integer|min:1',
-            'recent_matches' => 'sometimes|array',
-            'recent_matches.*' => 'sometimes|in:' . implode(',', User::RECENT_MATCHES_OPTIONS),
-            'same_club_id' => 'sometimes|array',
+            'online_before_minutes' => 'nullable|integer|min:1',
+            'recent_matches' => 'nullable|array',
+            'recent_matches.*' => 'nullable|in:' . implode(',', User::RECENT_MATCHES_OPTIONS),
+            'same_club_id' => 'nullable|array',
             'same_club_id.*' => 'exists:clubs,id',
             'verify_profile' => 'nullable|boolean',
-            'achievement' => 'sometimes',
-            'is_map' => 'sometimes|boolean',
+            'achievement' => 'nullable',
+            'is_map' => 'nullable|boolean',
         ]);
 
         $query = User::withFullRelations()->filter($validated)->visibleFor(auth()->user());
