@@ -12,7 +12,7 @@ use Illuminate\Http\Request;
 class MapController extends Controller
 {
     private const VALIDATION_RULE = 'sometimes';
-    public function  getMatch(Request $request)
+    public function getMatch(Request $request)
     {
         $validated = $request->validate([
             'lat' => 'sometimes',
@@ -23,7 +23,9 @@ class MapController extends Controller
             'minLng' => self::VALIDATION_RULE,
             'maxLng' => self::VALIDATION_RULE,
             'mini_tournament_per_page' => 'sometimes|integer|min:1|max:200',
+            'mini_tournament_page' => 'sometimes|integer|min:1',
             'tournament_per_page' => 'sometimes|integer|min:1|max:200',
+            'tournament_page' => 'sometimes|integer|min:1',
             'is_map' => 'sometimes|boolean',
             'date_from' => 'sometimes|date',
             'location_id' => 'sometimes|integer|exists:locations,id',
@@ -45,58 +47,39 @@ class MapController extends Controller
         $miniTournamentQuery = MiniTournament::withFullRelations()->filter($validated);
         $tournamentQuery = Tournament::withFullRelations()->filter($validated);
         $hasMiniTournamentFilter = collect([
-            'sport_id',
-            'location_id',
-            'date_from',
-            'keyword',
-            'lat',
-            'lng',
-            'radius',
-            'type',
-            'rating',
-            'fee',
-            'min_price',
-            'max_price',
-            'time_of_day',
-            'slot_status',
-        ])->some(fn($key) =>$request->filled($key));
+            'sport_id', 'location_id', 'date_from', 'keyword',
+            'lat', 'lng', 'radius', 'type', 'rating', 'fee',
+            'min_price', 'max_price', 'time_of_day', 'slot_status',
+        ])->some(fn($key) => $request->filled($key));
+
         $hasTournamentFilter = collect([
-            'sport_id',
-            'location_id',
-            'date_from',
-            'keyword',
-            'lat',
-            'lng',
-            'radius',
-            'rating',
-            'fee',
-            'min_price',
-            'max_price',
-            'time_of_day',
-            'slot_status',
-        ])->some(fn($key) =>$request->filled($key));
-        if(!$hasMiniTournamentFilter && (!empty($validated['minLat']) || !empty($validated['maxLat']) || !empty($validated['minLng']) || !empty($validated['maxLng']))){
-           $miniTournamentQuery->inBounds(
+            'sport_id', 'location_id', 'date_from', 'keyword',
+            'lat', 'lng', 'radius', 'rating', 'fee',
+            'min_price', 'max_price', 'time_of_day', 'slot_status',
+        ])->some(fn($key) => $request->filled($key));
+
+        if (!$hasMiniTournamentFilter && (!empty($validated['minLat']) || !empty($validated['maxLat']) || !empty($validated['minLng']) || !empty($validated['maxLng']))) {
+            $miniTournamentQuery->inBounds(
                 $validated['minLat'] ?? null,
                 $validated['maxLat'] ?? null,
                 $validated['minLng'] ?? null,
                 $validated['maxLng'] ?? null,
             );
         }
-        if(!$hasTournamentFilter && (!empty($validated['minLat']) || !empty($validated['maxLat']) || !empty($validated['minLng']) || !empty($validated['maxLng']))){
+        if (!$hasTournamentFilter && (!empty($validated['minLat']) || !empty($validated['maxLat']) || !empty($validated['minLng']) || !empty($validated['maxLng']))) {
             $tournamentQuery->inBounds(
-                 $validated['minLat'] ?? null,
-                 $validated['maxLat'] ?? null,
-                 $validated['minLng'] ?? null,
-                 $validated['maxLng'] ?? null,
-             );
-         }
+                $validated['minLat'] ?? null,
+                $validated['maxLat'] ?? null,
+                $validated['minLng'] ?? null,
+                $validated['maxLng'] ?? null,
+            );
+        }
         if (!empty($validated['lat']) && !empty($validated['lng']) && !empty($validated['radius'])) {
             $miniTournamentQuery->nearBy($validated['lat'], $validated['lng'], $validated['radius']);
             $tournamentQuery->nearBy($validated['lat'], $validated['lng'], $validated['radius']);
         }
         $isMap = filter_var($validated['is_map'] ?? false, FILTER_VALIDATE_BOOLEAN);
-        if($isMap) {
+        if ($isMap) {
             $miniTournament = $miniTournamentQuery->get();
             $miniTournamentMeta = [
                 'current_page' => 1,
@@ -120,7 +103,12 @@ class MapController extends Controller
                 'meta' => $tournamentMeta,
             ];
         } else {
-            $miniTournament = $miniTournamentQuery->paginate($validated['mini_tournament_per_page'] ?? MiniTournament::PER_PAGE);
+            $miniTournament = $miniTournamentQuery->paginate(
+                $validated['mini_tournament_per_page'] ?? MiniTournament::PER_PAGE,
+                ['*'],
+                'mini_tournament_page',
+                $validated['mini_tournament_page'] ?? 1
+            );
             $miniTournamentMeta = [
                 'current_page' => $miniTournament->currentPage(),
                 'last_page' => $miniTournament->lastPage(),
@@ -131,7 +119,12 @@ class MapController extends Controller
                 'data' => MiniTournamentResource::collection($miniTournament->items()),
                 'meta' => $miniTournamentMeta,
             ];
-            $tournament = $tournamentQuery->paginate($validated['tournament_per_page'] ?? Tournament::PER_PAGE);
+            $tournament = $tournamentQuery->paginate(
+                $validated['tournament_per_page'] ?? Tournament::PER_PAGE,
+                ['*'],
+                'tournament_page',
+                $validated['tournament_page'] ?? 1
+            );
             $tournamentMeta = [
                 'current_page' => $tournament->currentPage(),
                 'last_page' => $tournament->lastPage(),
