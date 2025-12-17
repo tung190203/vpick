@@ -182,7 +182,7 @@ class TeamController extends Controller
             ->shuffle(); // random danh sách người
 
         if ($participants->isEmpty()) {
-            return ResponseHelper::error('Không có người tham gia nào đã được xác nhận để phân đội', 400);
+            return ResponseHelper::error('Cần ít nhất 1 người chơi để tiến hành phân chia đội', 400);
         }
         if ($tournament->tournamentTypes()->exists()) {
             return ResponseHelper::error('Không thể tự động chia lại đội khi giải đấu đã có loại hình thi đấu', 400);

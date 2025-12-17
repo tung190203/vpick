@@ -10,7 +10,7 @@
       </div>
 
       <div v-else :class="`w-${computedSize} h-${computedSize} rounded-full overflow-hidden`">
-        <img :src="avatar" :alt="name"
+        <img :src="avatar || defaultImage" :alt="name" @error="event.target.src=defaultImage"
           class="w-full h-full object-cover cursor-pointer hover:scale-110 transition-transform duration-300" />
       </div>
 
@@ -110,7 +110,11 @@ const props = defineProps({
   showHoverDelete: {
     type: Boolean,
     default: true,
-  }
+  },
+  defaultImage: {
+    type: String,
+    default: false,
+  },
 })
 
 const emit = defineEmits(['clickEmpty', 'removeUser'])

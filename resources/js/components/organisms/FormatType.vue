@@ -71,11 +71,18 @@
                                 class="absolute right-0 top-44 -translate-y-1/2 z-20 w-auto p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
                                 <div class="space-y-1">
                                     <button v-for="(option, id) in RANKING_RULES_MAP" :key="id"
-                                        @click="selectRankingRule(`ranking-${index}`, index, id)"
+                                        @click="!isRankingRuleDisabled(index, id) && selectRankingRule(`ranking-${index}`, index, id)"
                                         class="w-full block text-left px-3 py-2 text-sm rounded-lg transition-colors"
-                                        :class="{ 'font-semibold bg-red-50 text-[#D72D36]': calculationMethods[index] === parseInt(id), 'hover:bg-gray-100': calculationMethods[index] !== parseInt(id) }">
+                                        :class="[
+                                            calculationMethods[index] === parseInt(id)
+                                                ? 'font-semibold bg-red-50 text-[#D72D36]'
+                                                : isRankingRuleDisabled(index, id)
+                                                    ? 'opacity-40 cursor-not-allowed'
+                                                    : 'hover:bg-gray-100'
+                                        ]" :disabled="isRankingRuleDisabled(index, id)">
                                         {{ option.label }}
                                     </button>
+
                                 </div>
                             </div>
                         </div>
@@ -216,11 +223,18 @@
                                 class="absolute right-0 top-44 -translate-y-1/2 z-20 w-auto p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
                                 <div class="space-y-1">
                                     <button v-for="(option, id) in RANKING_RULES_MAP" :key="id"
-                                        @click="selectRankingRule(`ranking-${index}`, index, id)"
+                                        @click="!isRankingRuleDisabled(index, id) && selectRankingRule(`ranking-${index}`, index, id)"
                                         class="w-full block text-left px-3 py-2 text-sm rounded-lg transition-colors"
-                                        :class="{ 'font-semibold bg-red-50 text-[#D72D36]': calculationMethods[index] === parseInt(id), 'hover:bg-gray-100': calculationMethods[index] !== parseInt(id) }">
+                                        :class="[
+                                            calculationMethods[index] === parseInt(id)
+                                                ? 'font-semibold bg-red-50 text-[#D72D36]'
+                                                : isRankingRuleDisabled(index, id)
+                                                    ? 'opacity-40 cursor-not-allowed'
+                                                    : 'hover:bg-gray-100'
+                                        ]" :disabled="isRankingRuleDisabled(index, id)">
                                         {{ option.label }}
                                     </button>
+
                                 </div>
                             </div>
                         </div>
@@ -325,11 +339,18 @@
                                 class="absolute right-0 top-44 -translate-y-1/2 z-20 w-auto p-2 bg-white border border-gray-200 rounded-lg shadow-2xl transition-all duration-300">
                                 <div class="space-y-1">
                                     <button v-for="(option, id) in RANKING_RULES_MAP" :key="id"
-                                        @click="selectRankingRule(`ranking-${index}`, index, id)"
+                                        @click="!isRankingRuleDisabled(index, id) && selectRankingRule(`ranking-${index}`, index, id)"
                                         class="w-full block text-left px-3 py-2 text-sm rounded-lg transition-colors"
-                                        :class="{ 'font-semibold bg-red-50 text-[#D72D36]': calculationMethods[index] === parseInt(id), 'hover:bg-gray-100': calculationMethods[index] !== parseInt(id) }">
+                                        :class="[
+                                            calculationMethods[index] === parseInt(id)
+                                                ? 'font-semibold bg-red-50 text-[#D72D36]'
+                                                : isRankingRuleDisabled(index, id)
+                                                    ? 'opacity-40 cursor-not-allowed'
+                                                    : 'hover:bg-gray-100'
+                                        ]" :disabled="isRankingRuleDisabled(index, id)">
                                         {{ option.label }}
                                     </button>
+
                                 </div>
                             </div>
                         </div>
@@ -759,6 +780,10 @@ const handleSubmit = () => {
 
 const goBack = () => {
     emit('back');
+};
+const isRankingRuleDisabled = (currentIndex, ruleId) => {
+    const usedRules = calculationMethods.value.filter((_, i) => i !== currentIndex);
+    return usedRules.includes(Number(ruleId));
 };
 </script>
 <style scoped>

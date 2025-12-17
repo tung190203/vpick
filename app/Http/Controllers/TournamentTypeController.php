@@ -6,6 +6,7 @@ use App\Helpers\ResponseHelper;
 use App\Http\Resources\TournamentTypeResource;
 use App\Models\Matches;
 use App\Models\PoolAdvancementRule;
+use App\Models\Tournament;
 use App\Models\TournamentType;
 use App\Services\TournamentService;
 use Illuminate\Http\Request;
@@ -30,6 +31,11 @@ class TournamentTypeController extends Controller
             'rules' => 'string|nullable',
             'rules_file_path' => 'string|nullable',
         ]);
+
+        $tournament = Tournament::withFullRelations()->find($validated['tournament_id']);
+        if($tournament->teams()->count() < 2) {
+            return ResponseHelper::error('Cần có ít nhất 2 đội tham gia để tạo thể thức', 422);
+        }
 
         $poolStage = $validated['format_specific_config']['pool_stage'] ?? null;
         if ($poolStage) {

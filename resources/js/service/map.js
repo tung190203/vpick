@@ -5,7 +5,7 @@ const mapEndpoint = API_ENDPOINT.MAP;
 const competitionLocationEndpoint = API_ENDPOINT.COMPETITION_LOCATION;
 
 export const getCourtData = async (params = {}) => {
-    return axiosInstance.get(`${competitionLocationEndpoint}/index`, { params }).then((response) => response.data.data);
+    return axiosInstance.get(`${competitionLocationEndpoint}/index`, { params }).then((response) => response.data);
 }
 
 export const getMatchesData = async (params = {}) => {
