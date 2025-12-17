@@ -8,8 +8,8 @@ export const autoAssignTeams = async (tournamentId) => {
     .then((response) => response?.data?.data || null);
 }
 
-export const getTeamsByTournamentId = async (tournamentId) => {
-  return axiosInstance.get(`${teamEndPoint}/index/${tournamentId}`)
+export const getTeamsByTournamentId = async (tournamentId, data) => {
+  return axiosInstance.get(`${teamEndPoint}/index/${tournamentId}`, { params: data })
     .then((response) => response?.data?.data || []);
 }
 

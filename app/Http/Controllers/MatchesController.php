@@ -584,6 +584,7 @@ class MatchesController extends Controller
                 'points_won' => 0,
                 'points_lost' => 0,
                 'set_diff' => 0,
+                'point_diff' => 0,
                 'win_rate' => 0,
             ];
         }
@@ -627,17 +628,26 @@ class MatchesController extends Controller
                 else
                     $stats[$r->team_id]['sets_lost']++;
             }
+            
+            // Tính points_lost (tổng điểm bị đối thủ ghi)
+            if ($home && $away && isset($stats[$home]) && isset($stats[$away])) {
+                $homeScore = $match->results->where('team_id', $home)->sum('score');
+                $awayScore = $match->results->where('team_id', $away)->sum('score');
+                $stats[$home]['points_lost'] += $awayScore;
+                $stats[$away]['points_lost'] += $homeScore;
+            }
         }
 
         // 4️⃣ Tính phụ
         foreach ($stats as &$s) {
             $s['set_diff'] = $s['sets_won'] - $s['sets_lost'];
+            $s['point_diff'] = $s['points_won'] - $s['points_lost'];
             $s['win_rate'] = $s['played'] > 0 ? round($s['wins'] / $s['played'] * 100, 2) : 0;
         }
         unset($s);
 
         // 5️⃣ Sắp xếp theo rule
-        $sorted = collect($stats)->sort(function ($a, $b) use ($rankingRules, $matches) {
+        $sorted = collect($stats)->sort(function ($a, $b) use ($rankingRules, $matches, $tournamentTypeId) {
             if ($a['played'] == 0 && $b['played'] > 0)
                 return 1;
             if ($b['played'] == 0 && $a['played'] > 0)
@@ -653,6 +663,28 @@ class MatchesController extends Controller
                     case TournamentType::RANKING_WIN_RATE:
                         if ($a['win_rate'] !== $b['win_rate'])
                             return $b['win_rate'] <=> $a['win_rate'];
+                        break;
+    
+                    case TournamentType::RANKING_SETS_WON:
+                        if ($a['set_diff'] !== $b['set_diff'])
+                            return $b['set_diff'] <=> $a['set_diff'];
+                        break;
+    
+                    case TournamentType::RANKING_POINTS_WON:
+                        if ($a['point_diff'] !== $b['point_diff'])
+                            return $b['point_diff'] <=> $a['point_diff'];
+                        break;
+    
+                    case TournamentType::RANKING_HEAD_TO_HEAD:
+                        // So sánh đối đầu trực tiếp giữa 2 đội
+                        $h2h = $this->getHeadToHeadResult($a['team_id'], $b['team_id'], $matches);
+                        if ($h2h !== 0)
+                            return $h2h;
+                        break;
+    
+                    case TournamentType::RANKING_RANDOM_DRAW:
+                        // Random (dùng team_id để đảm bảo kết quả nhất quán)
+                        return $a['team_id'] <=> $b['team_id'];
                         break;
                 }
             }
@@ -670,6 +702,38 @@ class MatchesController extends Controller
                 'rank' => $rank++,
             ]);
         }
+    }
+    
+    /**
+     * So sánh đối đầu giữa 2 đội
+     * Return: -1 nếu team A thắng, 1 nếu team B thắng, 0 nếu hòa hoặc chưa gặp
+     */
+    private function getHeadToHeadResult($teamA, $teamB, $matches)
+    {
+        $h2hMatches = $matches->filter(function ($match) use ($teamA, $teamB) {
+            return ($match->home_team_id == $teamA && $match->away_team_id == $teamB) ||
+                   ($match->home_team_id == $teamB && $match->away_team_id == $teamA);
+        });
+    
+        if ($h2hMatches->isEmpty())
+            return 0;
+    
+        $teamAWins = 0;
+        $teamBWins = 0;
+    
+        foreach ($h2hMatches as $match) {
+            if ($match->winner_id == $teamA)
+                $teamAWins++;
+            elseif ($match->winner_id == $teamB)
+                $teamBWins++;
+        }
+    
+        if ($teamAWins > $teamBWins)
+            return -1;
+        elseif ($teamBWins > $teamAWins)
+            return 1;
+    
+        return 0;
     }
 
     public function swapTeams(Request $request, $matchId)
