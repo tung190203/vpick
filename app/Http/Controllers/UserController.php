@@ -57,7 +57,7 @@ class UserController extends Controller
             'is_map' => 'nullable|boolean',
         ]);
 
-        $query = User::withFullRelations()->filter($validated)->visibleFor(auth()->user());
+        $query = User::withFullRelations()->where('id' , '!=', auth()->id())->filter($validated)->visibleFor(auth()->user());
 
         $hasFilter = collect([
             'sport_id',

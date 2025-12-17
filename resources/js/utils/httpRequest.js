@@ -76,7 +76,7 @@ axiosInstance.interceptors.response.use(
           }
         );
 
-        const newAccessToken = res.data.access_token;
+        const newAccessToken = res?.data?.data?.access_token;
         if (!newAccessToken) {
           throw new Error("No access_token in refresh response");
         }

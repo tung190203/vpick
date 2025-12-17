@@ -1355,7 +1355,7 @@ const loadMoreUsers = async () => {
 
 const getTeams = async () => {
   try {
-    const response = await TeamService.getTeamsByTournamentId(id)
+    const response = await TeamService.getTeamsByTournamentId(id, {per_page:50})
     listTeams.value = response.teams || []
   } catch (error) {
     return []
