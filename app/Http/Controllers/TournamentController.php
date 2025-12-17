@@ -184,6 +184,17 @@ class TournamentController extends Controller
         if (!$tournament) {
             return ResponseHelper::error('Giải đấu không tồn tại', 404);
         }
+        $tournamentType = $tournament->tournamentTypes()->first();
+        $completedMatches = $tournamentType->matches()
+        ->where('status', 'completed')
+        ->exists();
+
+        if ($completedMatches) {
+            return ResponseHelper::error(
+                'Không thể huỷ bỏ giải. Đã có trận đấu hoàn thành thuộc giải này.', 
+                400
+            );
+        }
 
         DB::transaction(function () use ($tournament) {
             $tournament->tournamentTypes()->each(function ($type) {

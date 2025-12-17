@@ -186,6 +186,17 @@ class TournamentTypeController extends Controller
      */
     public function destroy(TournamentType $tournamentType)
     {
+        $completedMatches = $tournamentType->matches()
+        ->where('status', 'completed')
+        ->exists();
+
+        if ($completedMatches) {
+            return ResponseHelper::error(
+                'Không thể chia lại cặp đấu. Đã có trận đấu hoàn thành thuộc thể thức này.', 
+                400
+            );
+        }
+
         $tournamentType->delete();
 
         return ResponseHelper::success('Xoá thể thức thành công');
