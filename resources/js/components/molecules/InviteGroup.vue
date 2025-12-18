@@ -70,11 +70,11 @@
                                         <span class="font-semibold text-gray-800">{{ user.name }}</span>
                                         <span :class="[
                                             'px-2 py-0.5 rounded text-xs font-medium',
-                                            user.status === 'open'
+                                            user.visibility === 'open'
                                                 ? 'bg-blue-100 text-blue-700'
                                                 : 'bg-green-100 text-green-700'
                                         ]">
-                                            {{ user.status === 'open' ? 'Open' : 'Friend-Only' }}
+                                            {{ user.visibility === 'open' ? 'Open' : 'Friend-Only' }}
                                         </span>
                                     </div>
                                     <div class="flex items-center gap-2 text-sm text-gray-500 mt-0.5">

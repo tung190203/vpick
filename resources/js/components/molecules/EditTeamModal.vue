@@ -13,14 +13,14 @@
                     </div>
                     <div class="flex-1 overflow-y-auto px-6 pb-6 mt-4">
                         <label class="block text-gray-700 font-medium">Tên đội:</label>
-                        <input type="text" v-model="data.name"
+                        <input type="text" v-model="localData.name"
                             class="w-full mt-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#D72D36]" />
 
                         <label class="block mt-6 text-gray-700 font-medium">Ảnh đội:</label>
 
                         <div class="group mt-2 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer 
                                     hover:border-[#D72D36] transition-colors" @click="fileInput.click()"
-                            @dragover="handleDragOver" @dragleave.prevent @drop="handleDrop">
+                            @dragover.prevent @dragover="handleDragOver" @dragleave.prevent @drop="handleDrop">
 
                             <input type="file" ref="fileInput" @change="handleFileChange" accept="image/*"
                                 class="hidden" />
@@ -46,8 +46,8 @@
                     </div>
 
                     <div class="p-4 border-t flex justify-start gap-2">
-                        <button @click="handleUpdate" :disabled="isSaving"
-                            :class="[isSaving ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#D72D36] hover:bg-red-700']"
+                        <button @click="handleUpdate" :disabled="isSaving || !localData.name"
+                            :class="[(isSaving || !localData.name) ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#D72D36] hover:bg-red-700']"
                             class="px-4 py-2 text-white rounded-lg transition-colors flex items-center">
                             <svg v-if="isSaving" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
                                 xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -59,7 +59,7 @@
                             </svg>
                             {{ isSaving ? 'Đang lưu...' : 'Cập nhật' }}
                         </button>
-                        <button @click="deleteTeam(data.id)"
+                        <button @click="deleteTeam(props.data.id)"
                             class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
                             Xóa đội
                         </button>
@@ -86,7 +86,7 @@ const props = defineProps({
     },
     data: {
         type: Object,
-        default: () => ({})
+        default: () => ({ name: '', avatar: '', id: null })
     },
     isSaving: {
         type: Boolean,
@@ -95,32 +95,31 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:modelValue', 'update-info', 'delete'])
+const localData = ref({ name: '' })
+const fileInput = ref(null)
+const previewUrl = ref(null)
+const newAvatarFile = ref(null)
 
 const isOpen = computed({
     get: () => props.modelValue,
     set: (value) => emit('update:modelValue', value)
 })
 
+watch(() => props.modelValue, (newVal) => {
+    if (newVal) {
+        localData.value = { ...props.data };
+        previewUrl.value = props.data?.avatar || null;
+        newAvatarFile.value = null;
+    } else {
+        if (previewUrl.value && previewUrl.value.startsWith('blob:')) {
+            URL.revokeObjectURL(previewUrl.value)
+        }
+    }
+}, { immediate: true });
+
 const closeModal = () => {
-    clearAvatar();
-    previewUrl.value = props.data?.avatar || null;
     isOpen.value = false;
 }
-
-const fileInput = ref(null)
-const previewUrl = ref(props.data?.avatar || null)
-const newAvatarFile = ref(null)
-
-watch(() => props.data, (newData) => {
-    if (previewUrl.value && previewUrl.value.startsWith('blob:')) {
-        URL.revokeObjectURL(previewUrl.value)
-    }
-    newAvatarFile.value = null;
-    if (fileInput.value) {
-        fileInput.value.value = '';
-    }
-    previewUrl.value = newData?.avatar || null;
-}, { immediate: true });
 
 const handleFileChange = (event) => {
     const file = event.target.files[0]
@@ -137,17 +136,15 @@ const clearAvatar = () => {
     if (previewUrl.value && previewUrl.value.startsWith('blob:')) {
         URL.revokeObjectURL(previewUrl.value)
     }
-
     previewUrl.value = null
     newAvatarFile.value = null
-    fileInput.value.value = ''
+    if (fileInput.value) fileInput.value.value = ''
 }
 
 const handleDrop = (event) => {
     event.preventDefault()
     const file = event.dataTransfer.files[0]
     if (file && file.type.startsWith('image/')) {
-        fileInput.value.files = event.dataTransfer.files
         handleFileChange({ target: { files: [file] } })
     }
 }
@@ -158,26 +155,23 @@ const handleDragOver = (event) => {
 
 const handleUpdate = () => {
     let updatePayload = {
-        name: props.data.name,
+        id: props.data.id,
+        name: localData.value.name,
     };
     if (newAvatarFile.value) {
-        updatePayload.avatar = newAvatarFile.value;
-    }
-
-    else if (previewUrl.value === null) {
-    }
-    else {
-        updatePayload.avatar = props.data.avatar;
+        updatePayload.avatar = newAvatarFile.value; // File mới
+    } else if (previewUrl.value === null) {
+        updatePayload.avatar = null; // Đã xóa ảnh
+    } else {
+        updatePayload.avatar = props.data.avatar; // Giữ ảnh cũ
     }
 
     emit('update-info', updatePayload);
 };
 
-
 const deleteTeam = (teamId) => {
     emit('delete', teamId);
 }
-
 </script>
 
 <style scoped>

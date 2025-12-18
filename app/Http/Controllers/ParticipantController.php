@@ -586,9 +586,11 @@ class ParticipantController extends Controller
             return ResponseHelper::error('Tất cả người chơi đã được mời hoặc đã tham gia.', 422);
         }
 
+        $organizerId = $organizer->id;
+
         $insertData = array_map(fn($id) => [
             'tournament_id' => $tournament->id,
-            'user_id' => $id,
+            'user_id' => $id == $organizerId,
             'is_confirmed' => false,
             'created_at' => now(),
             'updated_at' => now(),
