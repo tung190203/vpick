@@ -1295,7 +1295,6 @@ const getUserList = async (page = 1) => {
       page,
       name: searchUserTerm.value
     })
-    console.log('response', response.invitations);
     if (page === 1) {
       listUsers.value = response.invitations || []
     } else {
