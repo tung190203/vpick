@@ -671,7 +671,7 @@ class ParticipantController extends Controller
             ->paginate($validated['per_page'] ?? Participant::PER_PAGE);
 
         $data = [
-            'participants' => $nonTeamParticipants->items()
+            'participants' => UserListResource::collection($nonTeamParticipants->getCollection()),
         ];
 
         $meta = [
