@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\ParticipantResource;
+use App\Http\Resources\UserListResource;
 use App\Models\Participant;
 use App\Models\Tournament;
 use App\Models\TournamentStaff;
@@ -305,7 +306,7 @@ class ParticipantController extends Controller
         $user = Auth::user();
 
         // Bắt đầu query từ danh sách bạn bè
-        $query = $user->friends()
+        $query = User::withFullRelations()
             ->whereIn('visibility', [User::VISIBILITY_PUBLIC, User::VISIBILITY_FRIEND_ONLY])
             // 1. Có môn thể thao phù hợp
             ->whereHas(
@@ -352,24 +353,8 @@ class ParticipantController extends Controller
 
         $friends = $query->paginate($perPage);
 
-        $suggestions = $friends->getCollection()->map(function ($user) use ($tournament) {
-            return [
-                'id' => $user->id,
-                'name' => $user->full_name,
-                'avatar' => $user->avatar_url,
-                'gender' => $user->gender,
-                'gender_text' => $user->gender_text,
-                'age' => $user->age_years,
-                'location_id' => $user->location_id,
-                'level' => $user->level,
-                'visibility' => $user->visibility,
-                'same_location' => (bool) $user->same_location,
-                'match_score' => $this->calculateMatchScore($user, $tournament),
-            ];
-        });
-
         $data = [
-            'invitations' => $suggestions,
+            'invitations' => UserListResource::collection($friends->getCollection()),
         ];
 
         $meta = [
@@ -545,30 +530,14 @@ class ParticipantController extends Controller
         $user = Auth::user();
 
         // Bắt đầu query từ toàn bộ user (trừ chính mình)
-        $query = User::query()
+        $query = User::withFullRelations()
             ->whereIn('visibility', [User::VISIBILITY_PUBLIC, User::VISIBILITY_FRIEND_ONLY])
             ->where('users.id', '!=', $user->id);
 
         $users = $query->paginate($perPage);
 
-        $suggestions = $users->getCollection()->map(function ($user) use ($tournament) {
-            return [
-                'id' => $user->id,
-                'name' => $user->full_name,
-                'avatar' => $user->avatar_url,
-                'gender' => $user->gender,
-                'gender_text' => $user->gender_text,
-                'age' => $user->age_years,
-                'location_id' => $user->location_id,
-                'level' => $user->level,
-                'visibility' => $user->visibility,
-                'same_location' => (bool) $user->same_location,
-                'match_score' => $this->calculateMatchScore($user, $tournament),
-            ];
-        });
-
         $data = [
-            'invitations' => $suggestions,
+            'invitations' => UserListResource::collection($users->getCollection()),
         ];
 
         $meta = [

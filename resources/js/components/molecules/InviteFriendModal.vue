@@ -34,14 +34,14 @@
                                 </div>
                                 <div
                                     class="absolute -bottom-1 -left-1 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center border border-1 border-white">
-                                    <span class="text-white font-bold text-[9px]">{{ convertLevel(user.level) }}</span>
+                                    <span class="text-white font-bold text-[9px]">{{ convertLevel(user) }}</span>
                                 </div>
                             </div>
 
                             <!-- User Info -->
                             <div class="flex-1 min-w-0">
                                 <div class="flex items-center gap-1 flex-wrap">
-                                    <span class="font-semibold text-gray-800">{{ user.name }}</span>
+                                    <span class="font-semibold text-gray-800">{{ user.full_name }}</span>
                                     <span :class="[
                                         'px-2 py-0.5 rounded text-xs font-medium',
                                         user.visibility === 'open'
@@ -117,16 +117,14 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'invite', 'loadMore', 'search'])
 
-const convertLevel = (level) => {
-    if (level === null || level === undefined || level === '') {
-        return '0';
-    }
-    const floatValue = parseFloat(level);
-    if (isNaN(floatValue)) {
-        return '0';
-    }
-    return floatValue.toFixed(1);
-}
+const convertLevel = (user, sportId = 1) => {
+    if (!user?.sports || user.sports.length === 0) return '0';
+
+    const sport = user.sports.find(s => s.sport_id === sportId);
+    if (!sport?.scores?.vndupr_score) return '0';
+
+    return parseFloat(sport.scores.vndupr_score).toFixed(1);
+};
 
 const loadMore = () => {
   emit('loadMore')
@@ -149,7 +147,7 @@ const searchQuery = ref('')
 
 const filteredUsers = computed(() => {
     return props.data.filter(user =>
-        user.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+        user.full_name.toLowerCase().includes(searchQuery.value.toLowerCase())
     )
 })
 
