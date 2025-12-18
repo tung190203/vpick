@@ -590,8 +590,8 @@ class ParticipantController extends Controller
 
         $insertData = array_map(fn($id) => [
             'tournament_id' => $tournament->id,
-            'user_id' => $id == $organizerId,
-            'is_confirmed' => false,
+            'user_id' => $id,
+            'is_confirmed' => $id == $organizerId,
             'created_at' => now(),
             'updated_at' => now(),
             'is_invite_by_organizer' => true
@@ -671,7 +671,7 @@ class ParticipantController extends Controller
             ->paginate($validated['per_page'] ?? Participant::PER_PAGE);
 
         $data = [
-            'participants' => UserListResource::collection($nonTeamParticipants->getCollection()),
+            'participants' => $nonTeamParticipants->items()
         ];
 
         $meta = [
