@@ -246,7 +246,7 @@
                       <UserCard v-for="(item, index) in tournament.tournament_staff" :key="index" :id="item.id"
                         :name="item.staff.name" :avatar="item.staff.avatar" :rating="getUserScore(item.staff)"
                         status="approved" @removeUser="handleRemoveStaff" />
-                      <UserCard :empty="true" @click="showInviteStaffModal = true" v-if="isCreator" />
+                      <UserCard :empty="true" @clickEmpty="showInviteStaffModal = true" v-if="isCreator" />
                     </div>
                   </div>
                 </div>
@@ -1295,6 +1295,7 @@ const getUserList = async (page = 1) => {
       page,
       name: searchUserTerm.value
     })
+    console.log('response', response.invitations);
     if (page === 1) {
       listUsers.value = response.invitations || []
     } else {
