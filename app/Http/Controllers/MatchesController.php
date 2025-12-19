@@ -465,7 +465,20 @@ class MatchesController extends Controller
     
     private function assignBestLosersToByeMatches($tournamentTypeId, $byeMatches)
     {
-        // Lấy tất cả các group
+        // 1. Lấy thông tin TournamentType và cấu hình ranking
+        $tournamentType = TournamentType::find($tournamentTypeId);
+        if (!$tournamentType) return;
+    
+        // Lấy config từ format_specific_config (Hỗ trợ cả dạng mảng bọc ngoài hoặc object trực tiếp)
+        $config = $tournamentType->format_specific_config;
+        if (is_array($config) && isset($config[0])) {
+            $config = $config[0];
+        }
+        
+        // Mảng các Rule ID (ví dụ: [1, 2, 3])
+        $rankingRules = $config['ranking'] ?? [1, 3]; 
+    
+        // 2. Lấy tất cả các group
         $groups = DB::table('groups')
             ->join('matches', 'groups.id', '=', 'matches.group_id')
             ->where('matches.tournament_type_id', $tournamentTypeId)
@@ -474,13 +487,10 @@ class MatchesController extends Controller
             ->distinct()
             ->get();
     
-        if ($groups->isEmpty()) {
-            return;
-        }
+        if ($groups->isEmpty()) return;
     
-        // Tính standings cho tất cả các group
+        // 3. Tính standings cho tất cả các group để tìm ứng viên
         $allGroupStandings = collect();
-        
         foreach ($groups as $group) {
             $groupMatches = Matches::where('group_id', $group->id)
                 ->where('round', 1)
@@ -488,69 +498,76 @@ class MatchesController extends Controller
                 ->get();
     
             $standings = TournamentService::calculateGroupStandings($groupMatches);
-            
-            // Lấy các đội không đi tiếp (từ vị trí thứ 2 trở đi)
             $advancementRules = PoolAdvancementRule::where('group_id', $group->id)->pluck('rank')->toArray();
             
             foreach ($standings as $index => $standing) {
                 $rank = $index + 1;
-                
-                // Nếu không phải đội đi tiếp chính thức
                 if (!in_array($rank, $advancementRules)) {
                     $allGroupStandings->push([
-                        'group_id' => $group->id,
-                        'group_name' => $group->name,
-                        'rank' => $rank,
                         'team_id' => $standing['team']['id'],
-                        'team_name' => $standing['team']['name'],
                         'points' => $standing['points'] ?? 0,
-                        'won' => $standing['won'] ?? 0,
-                        'set_difference' => $standing['set_difference'] ?? 0,
+                        'win_rate' => $standing['win_rate'] ?? 0, // Cần đảm bảo hàm calculateGroupStandings có trả về cái này
                         'sets_won' => $standing['sets_won'] ?? 0,
+                        'points_won' => $standing['points_won'] ?? 0, // Tổng điểm ghi được (không phải point BXH)
+                        // Thêm các trường khác nếu cần để map với hằng số
                     ]);
                 }
             }
         }
     
-        if ($allGroupStandings->isEmpty()) {
-            return;
-        }
+        if ($allGroupStandings->isEmpty()) return;
     
-        // Sắp xếp để tìm best losers
-        // Ưu tiên: điểm > thắng > hiệu số set > số set thắng
-        $bestLosers = $allGroupStandings->sortByDesc(function ($standing) {
-            return [
-                $standing['points'],
-                $standing['won'],
-                $standing['set_difference'],
-                $standing['sets_won'],
-            ];
+        // 4. Sắp xếp Best Losers dựa trên mảng Ranking trong Config
+        $bestLosers = $allGroupStandings->sort(function ($a, $b) use ($rankingRules) {
+            foreach ($rankingRules as $ruleId) {
+                $field = null;
+                
+                // Map từ Const sang key trong mảng $standing
+                switch ((int)$ruleId) {
+                    case 1: // RANKING_WIN_DRAW_LOSE_POINTS
+                        $field = 'points';
+                        break;
+                    case 2: // RANKING_WIN_RATE
+                        $field = 'win_rate';
+                        break;
+                    case 3: // RANKING_SETS_WON
+                        $field = 'sets_won';
+                        break;
+                    case 4: // RANKING_POINTS_WON
+                        $field = 'points_won';
+                        break;
+                    // Rule 5 (Head-to-head) bỏ qua khi so sánh giữa các bảng khác nhau
+                    // Rule 6 (Random) xử lý sau cùng nếu cần
+                }
+    
+                if ($field && isset($a[$field], $b[$field])) {
+                    if ($a[$field] != $b[$field]) {
+                        return $b[$field] <=> $a[$field]; // Sắp xếp giảm dần
+                    }
+                }
+            }
+            return 0;
         })->values();
     
-        // Gán best losers vào các trận bye
+        // 5. Gán best losers vào các trận bye
         $loserIndex = 0;
-        
         foreach ($byeMatches as $byeMatch) {
-            if ($loserIndex >= $bestLosers->count()) {
-                break; // Hết best losers
-            }
+            if ($loserIndex >= $bestLosers->count()) break;
     
             $bestLoser = $bestLosers[$loserIndex];
-            $loserIndex++;
-    
-            // Xác định vị trí trống (home hoặc away)
+            
+            $updateData = [];
             if ($byeMatch->home_team_id === null) {
-                $byeMatch->update([
-                    'home_team_id' => $bestLoser['team_id'],
-                    'is_bye' => false,
-                    'status' => 'pending',
-                ]);
+                $updateData = ['home_team_id' => $bestLoser['team_id']];
             } elseif ($byeMatch->away_team_id === null) {
-                $byeMatch->update([
-                    'away_team_id' => $bestLoser['team_id'],
-                    'is_bye' => false,
-                    'status' => 'pending',
-                ]);
+                $updateData = ['away_team_id' => $bestLoser['team_id']];
+            }
+    
+            if (!empty($updateData)) {
+                $updateData['is_bye'] = false;
+                $updateData['status'] = Matches::STATUS_PENDING; // Nên dùng Const
+                $byeMatch->update($updateData);
+                $loserIndex++;
             }
         }
     }
