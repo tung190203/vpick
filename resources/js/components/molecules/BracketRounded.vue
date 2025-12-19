@@ -27,7 +27,7 @@
                 <p class="font-medium text-sm">{{ team.team_name }}</p>
               </div>
             </div>
-            <p class="font-semibold text-[20px]">{{ team.total_set_points }}</p>
+            <p class="font-semibold text-[20px]">{{ team.points }}</p>
           </div>
         </div>
       </div>
