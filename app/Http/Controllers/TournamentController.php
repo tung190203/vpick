@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\TournamentResource;
+use App\Models\Matches;
 use App\Models\Tournament;
 use App\Models\TournamentStaff;
 use App\Services\ImageOptimizationService;
@@ -184,29 +185,21 @@ class TournamentController extends Controller
         if (!$tournament) {
             return ResponseHelper::error('Giải đấu không tồn tại', 404);
         }
-        $tournamentType = $tournament->tournamentTypes()->first();
-        $completedMatches = $tournamentType->matches()
-        ->where('status', 'completed')
+
+        $hasCompletedMatch = Matches::whereHas('tournamentType', function ($q) use ($tournament) {
+            $q->where('tournament_id', $tournament->id);
+        })
+        ->where('status', Matches::STATUS_COMPLETED)
         ->exists();
 
-        if ($completedMatches) {
+        if ($hasCompletedMatch) {
             return ResponseHelper::error(
-                'Không thể huỷ bỏ giải. Đã có trận đấu hoàn thành thuộc giải này.', 
+                'Không thể huỷ bỏ giải. Đã có trận đấu hoàn thành thuộc giải này.',
                 400
             );
         }
 
         DB::transaction(function () use ($tournament) {
-            $tournament->tournamentTypes()->each(function ($type) {
-                $type->groups()->each(function ($group) {
-                    $group->matches()->delete();
-                    $group->delete();
-                });
-                $type->delete();
-            });
-            $tournament->tournamentStaffs()->delete();
-            $tournament->teams()->delete();
-            $tournament->participants()->delete();
             $tournament->delete();
         });
 
