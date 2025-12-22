@@ -50,36 +50,25 @@ const setupMarkerClusterGroup = () => {
             const childCount = cluster.getChildCount();
             let bgColor, textColor, borderColor;
 
-            if (childCount < 5) {
-                bgColor = '#22c55e'; 
-                borderColor = '#16a34a';
-                textColor = '#ffffff';
-            } else if (childCount < 10) {
-                bgColor = '#3b82f6'; 
-                borderColor = '#1d4ed8';
-                textColor = '#ffffff';
-            } else if (childCount < 20) {
-                bgColor = '#fb923c'; 
-                borderColor = '#ea580c';
-                textColor = '#ffffff';
+            if (childCount < 10) {
+                bgColor = '#4392E0'; 
+            } else if (childCount >= 10 && childCount < 99) {
+                bgColor = '#F59E0B'; 
             } else {
-                bgColor = '#f43f5e'; 
-                borderColor = '#dc2626';
-                textColor = '#ffffff';
+                bgColor = '#D72D36'; 
             }
 
             return new L.DivIcon({
                 html: `
                     <div style="
                         background: ${bgColor};
-                        border: 4px solid ${borderColor};
                         width: 50px;
                         height: 50px;
                         border-radius: 50%;
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        color: ${textColor};
+                        color: #fff;
                         font-weight: 700;
                         font-size: 17px;
                         box-shadow: 0 4px 12px rgba(0,0,0,0.4), 0 2px 4px rgba(0,0,0,0.3);

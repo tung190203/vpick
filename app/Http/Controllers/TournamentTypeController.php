@@ -1130,7 +1130,7 @@ class TournamentTypeController extends Controller
             }
     
             return [
-                'sets' => $sets,
+                'sets' => empty($sets) ? (object) [] : $sets,
                 'home_score_calculated' => $homePoints,
                 'away_score_calculated' => $awayPoints,
             ];
