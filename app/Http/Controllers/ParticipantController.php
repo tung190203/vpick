@@ -115,7 +115,7 @@ class ParticipantController extends Controller
     {
         $tournament = Tournament::findOrFail($tournamentId);
         $user = Auth::user();
-        if ($tournament->registration_closed_at < now()) {
+        if ($tournament->start_date < now()) {
             return ResponseHelper::error('Thời gian đăng ký đã kết thúc', 400);
         }
         $userSport = $user->sports()
@@ -399,7 +399,7 @@ class ParticipantController extends Controller
             return ResponseHelper::error('Người tham gia đã được xác nhận', 400);
         }
         $tournament = Tournament::findOrFail($participant->tournament_id);
-        if ($tournament->registration_closed_at < now()) {
+        if ($tournament->start_date < now()) {
             return ResponseHelper::error('Thời gian đăng ký đã kết thúc', 400);
         }
         $participantType = $tournament->participant;
