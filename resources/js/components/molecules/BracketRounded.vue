@@ -87,7 +87,7 @@
                 >
                   <div class="flex items-center gap-2 pointer-events-none">
                     <img
-                      :src="match.home_team.logo || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(match.home_team.name)}`"
+                      :src="match.home_team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(match.home_team.name)}`"
                       class="w-8 h-8 rounded-full" :alt="match.home_team.name" />
                     <p class="text-sm font-semibold text-[#3E414C]">{{ match.home_team.name }}</p>
                   </div>
@@ -114,7 +114,7 @@
                 >
                   <div class="flex items-center gap-2 pointer-events-none">
                     <img
-                      :src="match.away_team.logo || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(match.away_team.name)}`"
+                      :src="match.away_team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(match.away_team.name)}`"
                       class="w-8 h-8 rounded-full" :alt="match.away_team.name" />
                     <p class="text-sm font-semibold text-[#3E414C]">{{ match.away_team.name }}</p>
                   </div>

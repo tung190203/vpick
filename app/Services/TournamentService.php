@@ -127,7 +127,7 @@ class TournamentService
         return [
             'id' => $team->id,
             'name' => $team->name,
-            'logo' => $team->logo,
+            'team_avatar' => $team->avatar,
             'members' => $team->members->map(function ($user) {
                 return [
                     'id' => $user->id,
