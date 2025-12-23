@@ -63,12 +63,12 @@
                                 v-for="leg in match.legs" 
                                 :key="leg.id" 
                                 :class="[
-                                    matchCardWrapperClass(leg.status),
+                                    matchCardWrapperClass(leg),
                                     { 'opacity-50': isDragging && draggedTeam?.matchId === match.match_id }
                                 ]"
                                 class="match-card bg-[#dcdee6] rounded-lg mb-4 w-64 flex flex-col transition-all"
                             >
-                                <div :class="matchHeaderContentClass(leg.status)"
+                                <div :class="matchHeaderContentClass(leg)"
                                     class="flex justify-between items-center text-xs font-medium text-[#838799] px-4 py-2 bg-[#dcdee6] rounded-tl-lg rounded-tr-lg">
                                     <span class="uppercase">SÂN 1 - Lượt {{ leg.leg == 1 ? 'đi' : 'về' }}</span>
                                     <div class="flex items-center gap-2">
@@ -77,7 +77,7 @@
                                             <VideoCameraIcon class="w-4 h-4 mr-1" />
                                             Trực tiếp
                                         </span>
-                                        <span class="text-xs">
+                                        <span class="text-xs" v-else>
                                             {{ formatTime(leg.scheduled_at) }}
                                         </span>
                                     </div>
@@ -172,11 +172,11 @@
                             <div 
                                 v-for="leg in match.legs" 
                                 :key="leg.id" 
-                                :class="matchCardWrapperClass(leg.status)"
+                                :class="matchCardWrapperClass(leg)"
                                 class="match-card bg-[#dcdee6] rounded-lg mb-4 w-64 flex flex-col cursor-pointer hover:shadow-lg transition-all"
                                 @click="handleMatchClick(match.match_id)"
                             >
-                                <div :class="matchHeaderContentClass(leg.status)"
+                                <div :class="matchHeaderContentClass(leg)"
                                     class="flex justify-between items-center text-xs font-medium text-[#838799] px-4 py-2 bg-[#dcdee6] rounded-tl-lg rounded-tr-lg">
                                     <span class="uppercase">SÂN 1 - Lượt {{ leg.leg == 1 ? 'đi' : 'về' }}</span>
                                     <div class="flex items-center gap-2">
@@ -185,7 +185,7 @@
                                             <VideoCameraIcon class="w-4 h-4 mr-1" />
                                             Trực tiếp
                                         </span>
-                                        <span class="text-xs">
+                                        <span class="text-xs" v-else>
                                             {{ formatTime(leg.scheduled_at) }}
                                         </span>
                                     </div>
@@ -411,16 +411,27 @@ const roundHeaderClass = (roundName, isPoolStage) => {
     return 'border-l border-white';
 };
 
-const matchCardWrapperClass = (status) => {
-    if (status === "in_progress") {
-        return "border border-red-500 shadow-md bg-red-100";
-    }
-    return "";
+const hasScoreInSets = (leg) => {
+    if (!leg.sets) return false;
+    return Object.values(leg.sets).some(setArr => 
+        setArr.some(item => item.score !== 0)
+    );
 };
 
-const matchHeaderContentClass = (status) => {
-    if (status === 'in_progress') {
-        return 'text-red-500';
+const matchCardWrapperClass = (leg) => {
+    if (leg.status === "pending" && hasScoreInSets(leg)) {
+        return "border border-[#FBBF24] shadow-md !bg-[#FBBF24]";
+    } else if (leg.status === 'completed') {
+        return "border border-green-500 shadow-md bg-green-500";
+    }
+    return "border";
+};
+
+const matchHeaderContentClass = (leg) => {
+    if (leg.status === "pending" && hasScoreInSets(leg)) {
+        return 'text-white !bg-[#FBBF24]';
+    } else if (leg.status === 'completed') {
+        return 'text-white bg-green-500';
     }
     return 'text-[#838799]';
 };

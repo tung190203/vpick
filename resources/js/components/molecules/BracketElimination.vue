@@ -46,43 +46,37 @@
         <div
           v-if="player.isPlayer1"
           class="w-64 rounded-lg shadow-md border bg-[#EDEEF2] relative cursor-pointer hover:shadow-lg transition-all"
-          :class="{
-            'ring-2 ring-red-500': player.isLive,
-            'bg-amber-500 text-white': player.isThirdPlace,
-            'opacity-50': isDragging && draggedTeam?.matchId === player.matchId,
-          }"
+          :class="playerWrapperClass(player)"
           @click="handleMatchClick(player.matchId)"
         >
-          <div
-            class="flex justify-between items-center text-xs font-medium rounded-t-lg px-4 py-2"
-            :class="{
-              'bg-red-500 text-white': player.isLive,
-              'bg-[#dcdee6] text-[#838799]': !player.isLive && !player.isThirdPlace,
-            }"
-          >
-            <span class="uppercase">{{ player.label || 'SÂN 1' }}</span>
-
-            <div class="flex items-center gap-2">
-              <span v-if="player.isLive"
-                class="text-white font-bold text-xs flex items-center bg-red-600 rounded-full px-2 py-0.5">
-                <VideoCameraIcon class="w-3 h-3 mr-1" />
-                Trực tiếp
-              </span>
-              <span class="text-xs">{{ player.time ? formatTime(player.time) : "Chưa xác định" }}</span>
-            </div>
+        <div
+          class="flex justify-between items-center text-xs font-medium rounded-t-[7px] rounded-b-[7px] px-4 py-2"
+          :class="headerClass(player)"
+        >
+          <span class="uppercase">{{ player.label || 'SÂN 1' }}</span>
+          <div class="flex items-center gap-2">
+            <span v-if="player.status === 'pending' || hasScoreInSets(player)"
+                  class="text-white font-bold text-xs flex items-center px-2 py-0.5">
+              <VideoCameraIcon class="w-3 h-3 mr-1" />
+              Trực tiếp
+            </span>
+            <span class="text-xs" v-else>
+              {{ player.time ? formatTime(player.time) : "Chưa xác định" }}
+            </span>
           </div>
+        </div>
 
           <!-- TEAMS -->
-          <div class="px-4 space-y-1">
+          <div class="px-4 space-y-1 bg-[#eceef2] rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px] rounded-tr-[7px]">
 
             <!-- HOME TEAM -->
             <div 
               class="space-y-1 rounded transition-colors"
               :class="{
                 'bg-blue-100': isDropTarget(player.matchId, 'home'),
-                'cursor-move': player.roundNumber === 1 && !player.isLive
+                'cursor-move': player.roundNumber === 1 && !player.status
               }"
-              :draggable="player.roundNumber === 1 && !player.isLive"
+              :draggable="player.roundNumber === 1 && !player.status"
               @dragstart="handleDragStart($event, player, 'home')"
               @dragend="handleDragEnd"
               @dragover.prevent="handleDragOver($event, player.matchId, 'home')"
@@ -107,9 +101,9 @@
               class="space-y-1 rounded transition-colors"
               :class="{
                 'bg-blue-100': isDropTarget(player.matchId, 'away'),
-                'cursor-move': player.roundNumber === 1 && !player.isLive
+                'cursor-move': player.roundNumber === 1 && !player.status
               }"
-              :draggable="player.roundNumber === 1 && !player.isLive"
+              :draggable="player.roundNumber === 1 && !player.status"
               @dragstart="handleDragStart($event, player, 'away')"
               @dragend="handleDragEnd"
               @dragover.prevent="handleDragOver($event, player.matchId, 'away')"
@@ -181,7 +175,7 @@ const handleMatchClick = async (matchId) => {
 =========================== */
 const handleDragStart = (event, player, position) => {
   // Chỉ cho phép drag ở round 1 và khi trận chưa bắt đầu
-  if (player.roundNumber !== 1 || player.isLive) {
+  if (player.roundNumber !== 1 || player.status) {
     event.preventDefault();
     return;
   }
@@ -223,6 +217,47 @@ const handleDragLeave = () => {
   dropTargetMatch.value = null;
   dropTargetPosition.value = null;
 };
+
+const hasScoreInSets = (player) => {
+  if (!player.sets) return false;
+  return player.sets.some(score => score !== 0);
+};
+
+const headerClass = (player) => {
+  if (player.status === 'pending' && hasScoreInSets(player)) {
+    return ' bg-[#FBBF24] text-white';
+  } else if (player.status === 'completed') {
+    return 'bg-green-500 text-white';
+  } else {
+    return 'bg-[#dddee5] text-[#3E414C]';
+  }
+};
+
+const playerWrapperClass = (player) => {
+  let classes = [];
+
+  // Opacity khi drag
+  if (isDragging.value && draggedTeam.value?.matchId === player.matchId) {
+    classes.push('opacity-50');
+  }
+
+  // Trận tranh hạng 3
+  if (player.isThirdPlace) {
+    classes.push('bg-amber-500 text-white');
+  } else if (player.status === 'pending' && hasScoreInSets(player)) {
+    // Pending + có score → đỏ
+    classes.push('border border-[#FBBF24]', 'bg-[#FBBF24]', 'text-white');
+  } else if (player.status === 'completed') {
+    // Completed → xanh
+    classes.push('border border-green-500', 'bg-green-500', 'text-white');
+  } else {
+    // Pending chưa score / default
+    classes.push('bg-[#dddee5] text-[#838799]');
+  }
+
+  return classes.join(' ');
+};
+
 
 const handleDrop = async (event, targetMatchId, targetPosition) => {
   event.preventDefault();
@@ -280,7 +315,7 @@ const rounds = computed(() => {
         score: match.aggregate_score?.home,
         sets: match.legs[0].sets ? getTeamSets(match.legs[0].sets, match.home_team.id) : [],
         winnerId: match.winner_team_id,
-        isLive: match.legs[0].status === "in_progress",
+        status: match.legs[0].status,
         isThirdPlace: !!match.is_third_place,
         label: match.match_label,
         time: match.legs[0].scheduled_at,

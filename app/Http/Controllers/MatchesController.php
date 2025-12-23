@@ -6,7 +6,6 @@ use App\Helpers\ResponseHelper;
 use App\Http\Resources\MatchDetailResource;
 use App\Http\Resources\MatchesResource;
 use App\Models\Matches;
-use App\Models\MatchResult;
 use App\Models\Team;
 use App\Models\TeamRanking;
 use App\Models\TournamentType;
@@ -16,7 +15,6 @@ use App\Models\PoolAdvancementRule;
 use App\Models\VnduprHistory;
 use App\Services\TournamentService;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 
 class MatchesController extends Controller
 {

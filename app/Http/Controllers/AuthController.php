@@ -6,7 +6,6 @@ use App\Helpers\ResponseHelper;
 use App\Http\Resources\UserResource;
 use App\Mail\ResetPasswordMail;
 use App\Models\User;
-use App\Models\VnduprHistory;
 use App\Notifications\VerifyEmailNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;

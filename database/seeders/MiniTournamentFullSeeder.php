@@ -11,7 +11,6 @@ use App\Models\MiniTournament;
 use App\Models\MiniTournamentStaff;
 use App\Models\User;
 use Carbon\Carbon;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class MiniTournamentFullSeeder extends Seeder

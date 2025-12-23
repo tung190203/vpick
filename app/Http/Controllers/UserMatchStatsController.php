@@ -13,7 +13,6 @@ use App\Models\MiniMatch;
 use App\Models\MatchResult;
 use App\Models\MiniMatchResult;
 use App\Models\MiniParticipant;
-use App\Models\Team;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
