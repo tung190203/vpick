@@ -27,4 +27,9 @@ class Participant extends Model
     {
         return $this->belongsTo(Tournament::class, 'tournament_id');
     }
+
+    public static function scopeWithFullRelations($query)
+    {
+        return $query->with('user', 'tournament', 'user.sports.scores');
+    }
 }
