@@ -276,7 +276,7 @@ const rounds = computed(() => {
       player1: {
         id: match.home_team.id,
         name: match.home_team.name,
-        logo: match.home_team.logo,
+        logo: match.home_team.team_avatar,
         score: match.aggregate_score?.home,
         sets: match.legs[0].sets ? getTeamSets(match.legs[0].sets, match.home_team.id) : [],
         winnerId: match.winner_team_id,
@@ -290,7 +290,7 @@ const rounds = computed(() => {
         opponent: {
           id: match.away_team.id,
           name: match.away_team.name,
-          logo: match.away_team.logo,
+          logo: match.away_team.team_avatar,
           score: match.aggregate_score?.away,
           sets: match.legs[0].sets ? getTeamSets(match.legs[0].sets, match.away_team.id) : [],
         }
