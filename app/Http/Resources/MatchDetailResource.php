@@ -19,9 +19,11 @@ class MatchDetailResource extends JsonResource
         $homeTeam = $this->homeTeam;
         $awayTeam = $this->awayTeam;
         $tournamentType = $this->tournamentType;
+
         $roundNumber = Matches::where('tournament_type_id', $this->tournament_type_id)
             ->where('id', '<=', $this->id)
             ->count();
+
         $roundName = "Trận đấu số {$roundNumber}";
 
         // Mặc định rỗng
@@ -29,20 +31,23 @@ class MatchDetailResource extends JsonResource
 
         if ($tournamentType) {
             switch ($tournamentType->format) {
+
                 case TournamentType::FORMAT_ROUND_ROBIN:
+                    $sets = $this->results->isEmpty()
+                        ? (object)[]
+                        : $this->results
+                            ->groupBy('set_number')
+                            ->mapWithKeys(fn ($setGroup, $setNumber) => [
+                                'set_' . $setNumber => $setGroup->map(fn ($r) => [
+                                    'team_id' => $r->team_id,
+                                    'score' => $r->score,
+                                    'won_match' => $r->won_match,
+                                ])->values(),
+                            ])
+                            ->toArray();
+
                     $legs = collect([
-                        [
-                            'sets' => $this->results
-                                ->groupBy('set_number')
-                                ->map(fn($setGroup, $setNumber) => [
-                                    'set_' . $setNumber => $setGroup->map(fn($r) => [
-                                        'team_id' => $r->team_id,
-                                        'score' => $r->score,
-                                        'won_match' => $r->won_match,
-                                    ]),
-                                ])
-                                ->values()
-                        ],
+                        ['sets' => $sets],
                     ]);
                     break;
 
@@ -63,18 +68,26 @@ class MatchDetailResource extends JsonResource
                             })
                             ->orderBy('leg')
                             ->get()
-                            ->map(fn($match) => [
-                                'leg' => $match->leg,
-                                'sets' => collect($match->results)->groupBy('set_number')
-                                    ->map(fn($setGroup, $setNumber) => [
-                                        'set_' . $setNumber => $setGroup->map(fn($r) => [
-                                            'team_id' => $r->team_id,
-                                            'score' => $r->score,
-                                            'won_match' => $r->won_match,
-                                        ]),
-                                    ])
-                                    ->toArray(),
-                            ]);
+                            ->map(function ($match) {
+
+                                $sets = $match->results->isEmpty()
+                                    ? (object)[]
+                                    : $match->results
+                                        ->groupBy('set_number')
+                                        ->mapWithKeys(fn ($setGroup, $setNumber) => [
+                                            'set_' . $setNumber => $setGroup->map(fn ($r) => [
+                                                'team_id' => $r->team_id,
+                                                'score' => $r->score,
+                                                'won_match' => $r->won_match,
+                                            ])->values(),
+                                        ])
+                                        ->toArray();
+
+                                return [
+                                    'leg' => $match->leg,
+                                    'sets' => $sets,
+                                ];
+                            });
                     }
                     break;
             }
