@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use App\Models\CompetitionLocation;
-use App\Models\Location;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 

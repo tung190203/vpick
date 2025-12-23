@@ -11,7 +11,6 @@ use App\Models\Tournament;
 use App\Models\TournamentType;
 use App\Services\TournamentService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -1172,6 +1171,7 @@ class TournamentTypeController extends Controller
                                     'sets' => $details['sets'],
                                 ];
                             })->values(),
+                            'status' => $firstMatch->status,
                         ];
                     })->values(),
                     'standings' => $this->calculateGroupStandings($groupMatches),
@@ -1225,6 +1225,7 @@ class TournamentTypeController extends Controller
                         'winner_team_id' => $this->determineWinner($matchGroup),
                         'next_match_id' => $firstMatch->next_match_id,
                         'next_position' => $firstMatch->next_position,
+                        'status' => $firstMatch->status,
                     ];
                 })->values(),
             ];
