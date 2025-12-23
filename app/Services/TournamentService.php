@@ -119,7 +119,7 @@ class TournamentService
             return [
                 'id' => null,
                 'name' => 'TBD',
-                'logo' => null,
+                'team_avatar' => null,
                 'members' => [],
             ];
         }

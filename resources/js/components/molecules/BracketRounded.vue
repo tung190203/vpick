@@ -51,12 +51,12 @@
               </div>
             </div>
 
-            <div v-for="match in matches" :key="match.id" :class="[matchCardWrapperClass(match.status),
+            <div v-for="match in matches" :key="match.id" :class="[matchCardWrapperClass(match),
                 { 'opacity-50': isDragging && draggedTeam?.matchId === match.id }
               ]"
               class="match-card bg-[#dcdee6] rounded-lg mb-4 w-64 flex flex-col transition-all">
               
-              <div :class="matchHeaderContentClass(match.status)"
+              <div :class="matchHeaderContentClass(match)"
                 class="flex justify-between items-center text-xs font-medium text-[#838799] px-4 py-2 bg-[#dcdee6] rounded-tl-lg rounded-tr-lg">
                 <span class="uppercase">SÂN 1</span>
                 <div class="flex items-center gap-2">
@@ -325,19 +325,30 @@ const roundHeaderClass = (roundName) => {
   return 'border-l border-white';
 };
 
-const matchCardWrapperClass = (status) => {
-  if (status === "in_progress") {
-    return "border border-red-500 shadow-md bg-red-100";
-  }
-  return "";
+const hasScoreInSets = (leg) => {
+    if (!leg.sets) return false;
+    return Object.values(leg.sets).some(setArr => 
+        setArr.some(item => item.score !== null)
+    );
 };
 
-const matchHeaderContentClass = (status) => {
-  if (status === 'in_progress') {
-    return 'text-red-500';
-  }
-  return 'text-[#838799]';
-}
+const matchCardWrapperClass = (leg) => {
+    if (leg.status === "pending" && hasScoreInSets(leg)) {
+        return "border border-[#FBBF24] shadow-md !bg-[#FBBF24]";
+    } else if (leg.status === 'completed') {
+        return "border border-green-500 shadow-md bg-green-500";
+    }
+    return "border";
+};
+
+const matchHeaderContentClass = (leg) => {
+    if (leg.status === "pending" && hasScoreInSets(leg)) {
+        return 'text-white !bg-[#FBBF24]';
+    } else if (leg.status === 'completed') {
+        return 'text-white bg-green-500';
+    }
+    return 'text-[#838799]';
+};
 
 const scoreClass = (status) => {
   if (status === "in_progress") {

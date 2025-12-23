@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use App\Models\UserSportScore;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 

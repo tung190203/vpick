@@ -5,7 +5,6 @@ namespace App\Console\Commands;
 use App\Models\Location;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Str;
 
 class ImportLocation extends Command
 {

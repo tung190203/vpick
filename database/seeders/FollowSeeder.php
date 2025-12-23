@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\CompetitionLocation;
 use App\Models\Follow;
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class FollowSeeder extends Seeder

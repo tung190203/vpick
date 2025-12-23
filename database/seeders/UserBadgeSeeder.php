@@ -6,7 +6,6 @@ use App\Models\Badge;
 use App\Models\User;
 use App\Models\UserBadge;
 use Carbon\Carbon;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class UserBadgeSeeder extends Seeder

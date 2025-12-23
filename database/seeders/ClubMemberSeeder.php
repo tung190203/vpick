@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\Club;
 use App\Models\ClubMember;
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class ClubMemberSeeder extends Seeder
