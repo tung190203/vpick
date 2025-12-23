@@ -23,7 +23,7 @@
                         <div class="flex items-center gap-3">
                             <span class="text-sm">{{ index + 1 }}</span>
                             <div class="flex items-center gap-2">
-                                <img :src="team.logo || 'https://placehold.co/400x400'" class="w-8 h-8 rounded-full"
+                                <img :src="team.team_avatar || 'https://placehold.co/400x400'" class="w-8 h-8 rounded-full"
                                     alt="logo team" />
                                 <p class="font-medium text-sm">{{ team.team_name }}</p>
                             </div>
