@@ -140,8 +140,7 @@
                                 class="px-12 py-3 bg-red-500 text-white rounded font-medium hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                                 {{ isSaving && !canConfirmMatch ? 'Đang lưu...' : 'Lưu' }}
                             </button>
-
-                            <button v-if="!isCreator" @click="confirmMatchResult"
+                            <button v-if="isCreator" @click="confirmMatchResult"
                                 :disabled="isSaving || !canConfirmMatch || data.status === 'completed'"
                                 class="flex items-center justify-center gap-2 px-12 py-3 bg-green-500 text-white rounded font-medium hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                                 <template v-if="data.status === 'completed'">
@@ -233,7 +232,7 @@ watch(() => props.data, () => {
 
 // Score operations
 const incrementScore = (idx, team) => {
-    const maxPoints = props.tournament?.tournament_type?.match_rules?.max_points || 11
+    const maxPoints = props.tournament?.tournament_types[0]?.match_rules[0]?.max_points || 11
     if (team === 'A' && scores.value[idx].teamA < maxPoints) scores.value[idx].teamA++
     if (team === 'B' && scores.value[idx].teamB < maxPoints) scores.value[idx].teamB++
 }
