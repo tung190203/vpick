@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\ResponseHelper;
+use App\Http\Resources\ListParticipantResource;
 use App\Http\Resources\ParticipantResource;
 use App\Http\Resources\UserListResource;
 use App\Models\Participant;
@@ -664,14 +665,14 @@ class ParticipantController extends Controller
             ->pluck('team_members.user_id')
             ->unique();
     
-        $nonTeamParticipants = Participant::with('user.sports.scores')
+        $nonTeamParticipants = Participant::withFullRelations()
             ->where('tournament_id', $tournamentId)
             ->where('is_confirmed', 1)
             ->whereNotIn('user_id', $user_ids_in_teams)
             ->paginate($validated['per_page'] ?? Participant::PER_PAGE);
 
         $data = [
-            'participants' => $nonTeamParticipants->items()
+            'participants' => ListParticipantResource::collection($nonTeamParticipants->items()),
         ];
 
         $meta = [

@@ -1380,6 +1380,7 @@ class TournamentTypeController extends Controller
             return array_merge([
                 'rank' => $index + 1, // Đánh lại hạng trong nội bộ bảng
                 'team_name' => $r->team->name ?? 'Unknown',
+                'team_avatar' => $r->team->avatar ?? '',
             ], $stats);
         });
 
