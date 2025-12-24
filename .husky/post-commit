@@ -1,13 +1,37 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
+GREEN="\033[0;32m"
+BLUE="\033[0;34m"
+GRAY="\033[0;90m"
+RESET="\033[0m"
+
 BRANCH=$(git branch --show-current)
 
+echo ""
+echo "${GRAY}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+echo "${BLUE}🔎 Husky post-commit hook${RESET}"
+echo "${GRAY}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+
 if [ "$BRANCH" != "main" ]; then
-  echo "ℹ️ post-commit skipped (branch=$BRANCH)"
+  echo "${GRAY}ℹ️  Skipped – not on MAIN (branch=$BRANCH)${RESET}"
   exit 0
 fi
 
-echo "🚀 post-commit deploy triggered from MAIN"
+echo "${GREEN}🚀 Post-commit deploy triggered from MAIN${RESET}"
+echo "${GRAY}▶ Executing deploy-local.sh${RESET}"
+echo ""
 
+# Run deploy script
 sh ./deploy-local.sh
+
+EXIT_CODE=$?
+
+echo ""
+if [ $EXIT_CODE -eq 0 ]; then
+  echo "${GREEN}✔ Deploy completed successfully${RESET}"
+else
+  echo "${RED}✖ Deploy failed (exit code=$EXIT_CODE)${RESET}"
+fi
+
+exit $EXIT_CODE
