@@ -908,12 +908,30 @@ class MatchesController extends Controller
             return ResponseHelper::error('Thể thức này chưa có luật thi đấu (match_rules).', 400);
         }
         $setsPerMatch = $rules[0]['sets_per_match'] ?? 3;
-        $realSetNeedToPlay = $match->results->groupBy('set_number')->count();
         $neededToWin = intdiv($setsPerMatch, 2) + 1;
-
-        if ($realSetNeedToPlay < $neededToWin) {
-            return ResponseHelper::error("Cần tối thiểu $neededToWin set mới được xác nhận kết quả.", 400);
-        }            
+        
+        $sets = $match->results->groupBy('set_number');
+        
+        $wins = [];
+        
+        foreach ($sets as $setNumber => $setResults) {
+            if ($setResults->count() < 2) {
+                continue;
+            }
+        
+            $sorted = $setResults->sortByDesc('score')->values();
+        
+            if ($sorted[0]->score !== $sorted[1]->score) {
+                $winnerTeamId = $sorted[0]->team_id;
+                $wins[$winnerTeamId] = ($wins[$winnerTeamId] ?? 0) + 1;
+            }
+        }
+        
+        $maxWin = max($wins ?: [0]);
+        
+        if ($maxWin < $neededToWin) {
+            return ResponseHelper::error("Cần thắng tối thiểu $neededToWin set mới được xác nhận kết quả.",400);
+        }        
         if (!$userTeam && !$isOrganizer) {
             return ResponseHelper::error('Bạn không có quyền xác nhận kết quả trận đấu này', 403);
         }
