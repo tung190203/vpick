@@ -196,7 +196,7 @@ const isSaving = ref(false)
 const courtNumber = ref(props.data.court || 1)
 
 // Max sets
-const maxSets = computed(() => props.tournament?.tournament_type?.match_rules?.sets_per_match || 3)
+const maxSets = computed(() => props.tournament?.tournament_types[0]?.match_rules[0]?.sets_per_match)
 const isMaxSets = computed(() => scores.value.length >= maxSets.value)
 
 // QR Code
