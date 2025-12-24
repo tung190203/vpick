@@ -1335,100 +1335,101 @@ class TournamentTypeController extends Controller
     }
 
     public function getRank($tournament_id)
-{
-    $type = TournamentType::where('tournament_id', $tournament_id)->first();
-    if (!$type) {
-        return ResponseHelper::error('Tournament type not found', 404);
-    }
+    {
+        $type = TournamentType::where('tournament_id', $tournament_id)->first();
+        if (!$type) {
+            return ResponseHelper::error('Tournament type not found', 404);
+        }
 
-    // Lấy bảng xếp hạng đã được tính toán sẵn từ database
-    // Bảng này đã được sắp xếp theo đúng rankingRules (4, 1, 3...)
-    $savedRankings = TeamRanking::where('tournament_type_id', $type->id)
-        ->orderBy('rank', 'asc')
-        ->with(['team.members'])
-        ->get();
+        // Lấy bảng xếp hạng đã được tính toán sẵn từ database
+        // Bảng này đã được sắp xếp theo đúng rankingRules (4, 1, 3...)
+        $savedRankings = TeamRanking::where('tournament_type_id', $type->id)
+            ->orderBy('rank', 'asc')
+            ->with(['team.members'])
+            ->get();
 
-    $groups = $type->groups()->get();
+        $groups = $type->groups()->get();
 
-    // TH 1: Nếu không chia bảng (Tính rank chung)
-    if ($groups->isEmpty()) {
-        $data = $savedRankings->map(function ($r) use ($type) {
-            // Lấy stats chi tiết nếu cần hiển thị (giống trong recalculate)
-            $stats = $this->getTeamStats($r->team_id, $type->id);
-            return array_merge([
-                'rank' => $r->rank,
-                'team_name' => $r->team->name ?? 'Unknown',
-            ], $stats);
+        // TH 1: Nếu không chia bảng (Tính rank chung)
+        if ($groups->isEmpty()) {
+            $data = $savedRankings->map(function ($r) use ($type) {
+                // Lấy stats chi tiết nếu cần hiển thị (giống trong recalculate)
+                $stats = $this->getTeamStats($r->team_id, $type->id);
+                return array_merge([
+                    'rank' => $r->rank,
+                    'team_name' => $r->team->name ?? 'Unknown',
+                    'team_avatar' => $r->team->avatar ??'',
+                ], $stats);
+            });
+
+            return ResponseHelper::success(['rankings' => $data]);
+        }
+
+        // TH 2: Nếu có chia bảng
+        $groupRankings = $groups->map(function ($group) use ($type, $savedRankings) {
+            // Lọc ra các đội thuộc group này từ bảng rank đã sắp xếp
+            $rankInGroup = $savedRankings->filter(function($r) use ($group, $type) {
+                // Kiểm tra đội có trận đấu nào trong group này không
+                return Matches::where('group_id', $group->id)
+                    ->where(function($q) use ($r) {
+                        $q->where('home_team_id', $r->team_id)
+                        ->orWhere('away_team_id', $r->team_id);
+                    })->exists();
+            })->values();
+
+            $rankings = $rankInGroup->map(function ($r, $index) use ($type) {
+                $stats = $this->getTeamStats($r->team_id, $type->id);
+                return array_merge([
+                    'rank' => $index + 1, // Đánh lại hạng trong nội bộ bảng
+                    'team_name' => $r->team->name ?? 'Unknown',
+                    'team_avatar' => $r->team->avatar ?? '',
+                ], $stats);
+            });
+
+            return [
+                'group_id' => $group->id,
+                'group_name' => $group->name,
+                'rankings' => $rankings,
+            ];
         });
 
-        return ResponseHelper::success(['rankings' => $data]);
+        return ResponseHelper::success(['group_rankings' => $groupRankings]);
     }
 
-    // TH 2: Nếu có chia bảng
-    $groupRankings = $groups->map(function ($group) use ($type, $savedRankings) {
-        // Lọc ra các đội thuộc group này từ bảng rank đã sắp xếp
-        $rankInGroup = $savedRankings->filter(function($r) use ($group, $type) {
-            // Kiểm tra đội có trận đấu nào trong group này không
-            return Matches::where('group_id', $group->id)
-                ->where(function($q) use ($r) {
-                    $q->where('home_team_id', $r->team_id)
-                      ->orWhere('away_team_id', $r->team_id);
-                })->exists();
-        })->values();
+    /**
+     * Hàm bổ trợ để lấy các chỉ số thắng/thua/hiệu số để hiển thị
+     */
+    private function getTeamStats($teamId, $tournamentTypeId)
+    {
+        $matches = Matches::where('tournament_type_id', $tournamentTypeId)
+            ->where('status', 'completed')
+            ->where(function ($query) use ($teamId) {
+                $query->where('home_team_id', $teamId)->orWhere('away_team_id', $teamId);
+            })
+            ->with('results')
+            ->get();
 
-        $rankings = $rankInGroup->map(function ($r, $index) use ($type) {
-            $stats = $this->getTeamStats($r->team_id, $type->id);
-            return array_merge([
-                'rank' => $index + 1, // Đánh lại hạng trong nội bộ bảng
-                'team_name' => $r->team->name ?? 'Unknown',
-                'team_avatar' => $r->team->avatar ?? '',
-            ], $stats);
-        });
+        $wins = $matches->where('winner_id', $teamId)->count();
+        $played = $matches->count();
+        
+        $pWon = 0;
+        $pLost = 0;
+        foreach($matches as $m) {
+            $pWon += $m->results->where('team_id', $teamId)->sum('score');
+            $opponentResult = $m->results->where('team_id', '!=', $teamId)->first();
+            if ($opponentResult) $pLost += $opponentResult->score;
+        }
 
         return [
-            'group_id' => $group->id,
-            'group_name' => $group->name,
-            'rankings' => $rankings,
+            'team_id' => $teamId,
+            'played' => $played,
+            'wins' => $wins,
+            'losses' => $played - $wins,
+            'points' => $wins * 3,
+            'point_diff' => $pWon - $pLost,
+            'win_rate' => $played > 0 ? round(($wins / $played) * 100, 2) : 0,
         ];
-    });
-
-    return ResponseHelper::success(['group_rankings' => $groupRankings]);
-}
-
-/**
- * Hàm bổ trợ để lấy các chỉ số thắng/thua/hiệu số để hiển thị
- */
-private function getTeamStats($teamId, $tournamentTypeId)
-{
-    $matches = Matches::where('tournament_type_id', $tournamentTypeId)
-        ->where('status', 'completed')
-        ->where(function ($query) use ($teamId) {
-            $query->where('home_team_id', $teamId)->orWhere('away_team_id', $teamId);
-        })
-        ->with('results')
-        ->get();
-
-    $wins = $matches->where('winner_id', $teamId)->count();
-    $played = $matches->count();
-    
-    $pWon = 0;
-    $pLost = 0;
-    foreach($matches as $m) {
-        $pWon += $m->results->where('team_id', $teamId)->sum('score');
-        $opponentResult = $m->results->where('team_id', '!=', $teamId)->first();
-        if ($opponentResult) $pLost += $opponentResult->score;
     }
-
-    return [
-        'team_id' => $teamId,
-        'played' => $played,
-        'wins' => $wins,
-        'losses' => $played - $wins,
-        'points' => $wins * 3,
-        'point_diff' => $pWon - $pLost,
-        'win_rate' => $played > 0 ? round(($wins / $played) * 100, 2) : 0,
-    ];
-}
     public function getAdvancementStatus(TournamentType $tournamentType)
     {
         if ($tournamentType->format !== TournamentType::FORMAT_MIXED) {
