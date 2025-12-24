@@ -23,6 +23,10 @@ class UserListResource extends JsonResource
             'play_times' => UserPlayTimeResource::collection($this->whenLoaded('playTimes')),
             'sports' => UserSportResource::collection($this->whenLoaded('sports')) ?? [],
             'is_manager' => $this->whenPivotLoaded('club_members', fn() => (bool)$this->pivot->is_manager, false),
+            'rank_in_club' => $this->whenPivotLoaded(
+                'club_members',
+                fn () => $this->pivot->rank_in_club ?? null
+            ),
         ];
     }
 }

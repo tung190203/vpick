@@ -172,6 +172,7 @@ class UserController extends Controller
     {
         $validated = $request->validate([
             'full_name' => 'required|string|max:255',
+            'phone' => 'nullable|string|max:10|unique:users,phone',
             'avatar_url' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
             'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
             'location_id' => 'nullable|exists:locations,id',

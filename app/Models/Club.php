@@ -27,7 +27,7 @@ class Club extends Model
 
     public function scopeWithFullRelations($query)
     {
-        return $query->with('members', 'members.playTimes', 'members.sports', 'members.sports.sport');
+        return $query->with('members', 'members.playTimes', 'members.sports', 'members.sports.sport', 'members.sports.scores');
     }
 
     public function scopeSearch($query, $fillable, $searchTerm)

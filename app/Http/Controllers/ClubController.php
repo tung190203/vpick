@@ -75,6 +75,22 @@ class ClubController extends Controller
     {
         $club = Club::withFullRelations()->findOrFail($id);
 
+        $members = $club->members
+            ->map(function ($member) {
+                $member->club_score = $member->vnduprScores->first()?->score_value ?? 0;
+                return $member;
+            })
+            ->sortByDesc('club_score')
+            ->values();
+
+        $members->each(function ($member, $index) {
+            if ($member->pivot) {
+                $member->pivot->rank_in_club = $index + 1;
+            }
+        });
+
+        $club->setRelation('members', $members);
+
         return ResponseHelper::success(new ClubResource($club), 'Lấy thông tin câu lạc bộ thành công');
     }
 

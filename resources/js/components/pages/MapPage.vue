@@ -191,9 +191,53 @@
                             <!-- Khu vực -->
                             <div class="flex justify-between items-center">
                                 <p class="font-medium text-gray-900 text-xl">Khu vực</p>
-                                <div class="text-[#207AD5] flex items-center gap-1 cursor-pointer font-semibold">
-                                    <p>Chọn địa điểm</p>
-                                    <ChevronRightIcon class="w-4 h-4" />
+                                <div class="relative">
+                                    <button @click="isLocationDropdownOpen = !isLocationDropdownOpen"
+                                        class="text-[#207AD5] flex items-center gap-1 cursor-pointer font-semibold">
+                                        <p>{{ selectedLocationLabel }}</p>
+                                        <ChevronRightIcon class="w-4 h-4 transition-transform" :class="{ 'rotate-90': isLocationDropdownOpen }" />
+                                    </button>
+                                    <Transition enter-active-class="transition ease-out duration-100"
+                                        enter-from-class="opacity-0 scale-95" enter-to-class="opacity-100 scale-100"
+                                        leave-active-class="transition ease-in duration-75"
+                                        leave-from-class="opacity-100 scale-100" leave-to-class="opacity-0 scale-95">
+                                        <div v-if="isLocationDropdownOpen"
+                                            class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                                            <div class="p-2 border-b">
+                                                <div class="relative">
+                                                    <MagnifyingGlassIcon class="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                                                    <input v-model="locationSearchQuery" type="text" placeholder="Tìm kiếm địa điểm..."
+                                                        class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D72D36] focus:border-transparent" />
+                                                </div>
+                                            </div>
+                                            <div class="max-h-60 overflow-y-auto py-1">
+                                                <button @click="selectLocation(null)"
+                                                    :disabled="selectedLocationValue === null"
+                                                    :class="[
+                                                        'w-full text-left px-4 py-2 text-sm',
+                                                        selectedLocationValue === null
+                                                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                            : 'text-gray-700 hover:bg-gray-50 cursor-pointer'
+                                                    ]">
+                                                    Chọn địa điểm
+                                                </button>
+                                                <button v-for="location in filteredLocations" :key="location.id"
+                                                    @click="selectLocation(location)"
+                                                    :disabled="selectedLocationValue === location.id"
+                                                    :class="[
+                                                        'w-full text-left px-4 py-2 text-sm',
+                                                        selectedLocationValue === location.id
+                                                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                            : 'text-gray-700 hover:bg-gray-50 cursor-pointer'
+                                                    ]">
+                                                    {{ location.name }}
+                                                </button>
+                                                <div v-if="filteredLocations.length === 0" class="px-4 py-3 text-sm text-gray-500 text-center">
+                                                    Không tìm thấy địa điểm
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </Transition>
                                 </div>
                             </div>
 
@@ -395,6 +439,7 @@ import { toast } from 'vue3-toastify';
 import * as MapService from '@/service/map.js';
 import * as UserService from '@/service/auth.js';
 import * as SportService from '@/service/sport.js';
+import * as LocationService from '@/service/location.js';
 import { useTimeFormat } from '@/composables/formatTime.js';
 import { getVisibilityText } from "@/composables/formatVisibilityText";
 import defaultImage from '@/assets/images/default-image.jpeg';
@@ -449,9 +494,14 @@ const selectedRadiusValue = ref(null);
 const selectedRadiusLabel = ref('Chọn');
 const userLocation = ref(null);
 const radiusOptions = [
-    { value: null, label: 'Chọn' },
-    { value: 'nearby', label: 'Gần đây' }
+    { value: null, label: 'Tất cả' },
+    { value: 'nearby', label: 'Gần đây (20km)' }
 ];
+const isLocationDropdownOpen = ref(false);
+const selectedLocationValue = ref(null);
+const selectedLocationLabel = ref('Chọn địa điểm');
+const locations = ref([]);
+const locationSearchQuery = ref('');
 
 const tabs = [
     { id: 'courts', label: 'Sân bóng' },
@@ -527,7 +577,8 @@ const hasActiveFilters = computed(() => {
         selectedCourtCounts.value.length > 0 ||
         selectedCourtTypes.value.length > 0 ||
         selectedFacilities.value.length > 0 ||
-        selectedRadiusValue.value !== null
+        selectedRadiusValue.value !== null ||
+        selectedLocationValue.value !== null
     );
 });
 
@@ -541,6 +592,7 @@ const getCompetitionLocation = async (bounds = null) => {
             number_of_yards: selectedCourtCounts.value.length > 0 ? selectedCourtCounts.value : undefined,
             yard_type: selectedCourtTypes.value.length > 0 ? selectedCourtTypes.value : undefined,
             facility_id: selectedFacilities.value.length > 0 ? selectedFacilities.value : undefined,
+            location_id: selectedLocationValue.value || undefined,
         };
 
         if (selectedRadiusValue.value === 'nearby' && userLocation.value) {
@@ -650,6 +702,16 @@ const getListSports = async () => {
     }
 };
 
+const getListLocation = async () => {
+    try {
+        const res = await LocationService.getAllLocations();
+        locations.value = res || [];
+    } catch (error) {
+        console.error('Error fetching locations data:', error);
+        toast.error(error.response?.data?.message || "Lỗi khi tải dữ liệu địa điểm");
+    }
+}
+
 const loadTabContent = async (tab, bounds = null) => {
     if (bounds) {
         currentBounds.value = bounds;
@@ -736,6 +798,9 @@ const resetFilter = async () => {
     selectedRadiusValue.value = null;
     selectedRadiusLabel.value = 'Chọn';
     userLocation.value = null;
+    selectedLocationValue.value = null;
+    selectedLocationLabel.value = 'Chọn địa điểm';
+    locationSearchQuery.value = '';
 
     courtsMap.value.clear();
     usersMap.value.clear();
@@ -828,6 +893,23 @@ const selectRadius = async (option) => {
     await loadTabContent(activeTab.value, currentBounds.value);
 };
 
+const selectLocation = async (location) => {
+    if (selectedLocationValue.value === (location?.id || null)) return;
+
+    selectedLocationValue.value = location?.id || null;
+    selectedLocationLabel.value = location?.name || 'Chọn địa điểm';
+    isLocationDropdownOpen.value = false;
+    locationSearchQuery.value = '';
+
+    isInitialLoad.value = true;
+    if (activeTab.value === 'courts') courtsMap.value.clear();
+    else if (activeTab.value === 'match') matchesMap.value.clear();
+    else if (activeTab.value === 'players') usersMap.value.clear();
+
+    clearAllMarkers();
+    await loadTabContent(activeTab.value, currentBounds.value);
+};
+
 const selectedMap = {
   courts: selectedCourt,
   players: selectedUser,
@@ -851,6 +933,7 @@ const getUserRating = (user) => {
 
 onMounted(async () => {
     await getListSports();
+    await getListLocation();
 });
 
 const searchValue = computed({
@@ -873,6 +956,16 @@ const searchPlaceholder = computed(() => {
     if (activeTab.value === 'players') return 'Tìm người chơi'
     return ''
 })
+
+const filteredLocations = computed(() => {
+    if (!locationSearchQuery.value.trim()) {
+        return locations.value;
+    }
+    const query = locationSearchQuery.value.toLowerCase().trim();
+    return locations.value.filter(location => 
+        location.name.toLowerCase().includes(query)
+    );
+});
 
 watch(activeTab, (newTab) => {
     isInitialLoad.value = true;
@@ -931,7 +1024,7 @@ watch([searchCourt, searchMatch, searchUser], ([newCourt, newMatch, newUser], [o
 
         clearAllMarkers();
         await loadTabContent(activeTab.value, currentBounds.value);
-    }, 800);
+    }, 1200);
 });
 
 watch(isShowMyFollow, async () => {
