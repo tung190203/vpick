@@ -932,6 +932,8 @@ const tabs = [
 ];
 
 const myClub = ref([]);
+const lat = ref(null)
+const lng = ref(null)
 
 // Convert Map sang Array
 const courts = computed(() => Array.from(courtsMap.value.values()));
@@ -1010,6 +1012,13 @@ const hasActiveFilters = computed(() => {
     );
 });
 
+navigator.geolocation.getCurrentPosition(
+  ({ coords }) => {
+    lat.value = coords.latitude
+    lng.value = coords.longitude
+  }
+)
+
 const getCompetitionLocation = async (bounds = null) => {
     try {
         const params = {
@@ -1032,6 +1041,11 @@ const getCompetitionLocation = async (bounds = null) => {
             params.maxLat = bounds.getNorth();
             params.minLng = bounds.getWest();
             params.maxLng = bounds.getEast();
+        }
+
+        if(lat.value && lng.value) {
+            params.lat = lat.value,
+            params.lng = lng.value   
         }
 
         Object.keys(params).forEach(key => {
@@ -1083,6 +1097,10 @@ const getListUser = async (bounds = null) => {
         //     params.minLng = bounds.getWest();
         //     params.maxLng = bounds.getEast();
         // }
+        if(lat.value && lng.value) {
+            params.lat = lat.value,
+            params.lng = lng.value   
+        }
 
         Object.keys(params).forEach(key => {
             if (params[key] === undefined) {
@@ -1114,6 +1132,11 @@ const getListMatches = async (bounds = null) => {
             params.max_lat = bounds.getNorth();
             params.min_lng = bounds.getWest();
             params.max_lng = bounds.getEast();
+        }
+
+        if(lat.value && lng.value) {
+            params.lat = lat.value,
+            params.lng = lng.value   
         }
 
         Object.keys(params).forEach(key => {
