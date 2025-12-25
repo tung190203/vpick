@@ -74,6 +74,10 @@ class MapController extends Controller
                 $validated['maxLng'] ?? null,
             );
         }
+        if (!empty($validated['lat']) && !empty($validated['lng'])) {
+            $miniTournamentQuery->orderByDistanceFromLocation($validated['lat'], $validated['lng']);
+            $tournamentQuery->orderByDistanceFromLocation($validated['lat'], $validated['lng']);
+        }        
         if (!empty($validated['lat']) && !empty($validated['lng']) && !empty($validated['radius'])) {
             $miniTournamentQuery->nearBy($validated['lat'], $validated['lng'], $validated['radius']);
             $tournamentQuery->nearBy($validated['lat'], $validated['lng'], $validated['radius']);

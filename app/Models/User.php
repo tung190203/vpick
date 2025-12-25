@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -475,6 +476,24 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
             ->orderBy('distance');
     }
 
+    public function scopeOrderByDistance($query, $lat, $lng)
+    {
+        return $query
+            ->select('*')
+            ->selectRaw("
+                (
+                    6371 * acos(
+                        cos(radians(?))
+                        * cos(radians(latitude))
+                        * cos(radians(longitude) - radians(?))
+                        + sin(radians(?))
+                        * sin(radians(latitude))
+                    )
+                ) AS distance
+            ", [$lat, $lng, $lat])
+            ->orderByRaw('latitude IS NULL OR longitude IS NULL') // 👈 NULL xuống cuối
+            ->orderBy('distance', 'asc');
+    }
     // User.php
     public function isFriendWith(User $otherUser): bool
     {
