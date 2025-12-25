@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
@@ -527,5 +528,27 @@ class MiniTournament extends Model
             $q->whereBetween('latitude', [$minLat, $maxLat])
                 ->whereBetween('longitude', [$minLng, $maxLng]);
         });
+    }
+    public function scopeOrderByDistanceFromLocation(
+        Builder $query,
+        float $lat,
+        float $lng
+    ) {
+        return $query
+            ->leftJoin('competition_locations', 'competition_locations.id', '=', 'mini_tournaments.competition_location_id')
+            ->select('mini_tournaments.*')
+            ->selectRaw("
+                (
+                    6371 * acos(
+                        cos(radians(?))
+                        * cos(radians(competition_locations.latitude))
+                        * cos(radians(competition_locations.longitude) - radians(?))
+                        + sin(radians(?))
+                        * sin(radians(competition_locations.latitude))
+                    )
+                ) AS distance
+            ", [$lat, $lng, $lat])
+            ->orderByRaw('competition_locations.latitude IS NULL OR competition_locations.longitude IS NULL')
+            ->orderBy('distance', 'asc');
     }
 }
