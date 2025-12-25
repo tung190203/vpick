@@ -45,6 +45,9 @@ class CompetitionLocationController extends Controller
 
         $query = CompetitionLocation::withFullRelations();
 
+        if (!empty($validated['lat']) && !empty($validated['lng'])) {
+            $query->orderByDistance($validated['lat'], $validated['lng']);
+        }
         // 1. NearBy
         if (!empty($validated['lat']) && !empty($validated['lng']) && !empty($validated['radius'])) {
             $query->nearBy($validated['lat'], $validated['lng'], $validated['radius']);

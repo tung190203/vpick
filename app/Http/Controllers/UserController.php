@@ -94,6 +94,10 @@ class UserController extends Controller
             );
         }
 
+        if (!empty($validated['lat']) && !empty($validated['lng'])) {
+            $query->orderByDistance($validated['lat'], $validated['lng']);
+        }        
+
         if (!empty($validated['lat']) && !empty($validated['lng']) && !empty($validated['radius'])) {
             $query->nearBy($validated['lat'], $validated['lng'], $validated['radius']);
         }
