@@ -6,6 +6,7 @@ use App\Helpers\ResponseHelper;
 use App\Http\Requests\StoreMiniTournamentRequest;
 use App\Http\Resources\ListMiniTournamentResource;
 use App\Http\Resources\MiniTournamentResource;
+use App\Models\MiniMatch;
 use App\Models\MiniParticipant;
 use App\Models\MiniTournament;
 use App\Models\MiniTournamentStaff;
@@ -14,6 +15,7 @@ use App\Notifications\MiniTournamentInvitationNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class MiniTournamentController extends Controller
 {
@@ -144,5 +146,26 @@ class MiniTournamentController extends Controller
         $miniTournament->loadFullRelations();
 
         return ResponseHelper::success(new MiniTournamentResource($miniTournament), 'Cập nhật thông tin kèo đấu thành công');
+    }
+
+    public function destroy(Request $request, $id)
+    {
+        $miniTournament = MiniTournament::find($id);
+
+        if(!$miniTournament) {
+            return ResponseHelper::error('Kèo đấu không tồn tại', 404);
+        }
+
+        $hasCompletedMatch = MiniMatch::where('mini_tournament_id', $miniTournament->id)->where('status', MiniMatch::STATUS_COMPLETED)->exists();
+
+        if($hasCompletedMatch) {
+            return ResponseHelper::error('Không thể huỷ bỏ kèo đã có trận đấu được xác nhận',404);
+        }
+
+        DB::transaction(function () use ($miniTournament) {
+            $miniTournament->delete();
+        });
+
+        return ResponseHelper::success(null, 'Xoá kèo đấu thành công');
     }
 }
