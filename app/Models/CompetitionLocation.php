@@ -128,19 +128,19 @@ class CompetitionLocation extends Model
     public function scopeOrderByDistance($query, $lat, $lng)
     {
         return $query
-            ->select('*')
-            ->selectRaw("
+            ->addSelect('*')
+            ->addSelect(\DB::raw("
                 (
                     6371 * acos(
-                        cos(radians(?))
+                        cos(radians($lat))
                         * cos(radians(latitude))
-                        * cos(radians(longitude) - radians(?))
-                        + sin(radians(?))
+                        * cos(radians(longitude) - radians($lng))
+                        + sin(radians($lat))
                         * sin(radians(latitude))
                     )
-                ) AS distance
-            ", [$lat, $lng, $lat])
-            ->orderByRaw('latitude IS NULL OR longitude IS NULL') // 👈 NULL xuống cuối
+                )
+            AS distance"))
+            ->orderByRaw('(latitude IS NULL OR longitude IS NULL)')
             ->orderBy('distance', 'asc');
-    }
+    }    
 }
