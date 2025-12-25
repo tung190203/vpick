@@ -48,8 +48,10 @@ export function useMap() {
   let resizeHandler = null;
   let resetControl = null;
   let locationControl = null;
-  let moveEndHandler = null; // ✅ THÊM: Handler cho moveend event
-  let loadDataCallback = null; // ✅ THÊM: Callback để load data theo bounds
+  let moveEndHandler = null;
+  let loadDataCallback = null;
+  let isUserInteraction = false;
+  let isFocusing = false;
 
   // --- MARKER MANAGEMENT ---
   const clearAllMarkers = () => {
@@ -59,7 +61,6 @@ export function useMap() {
     }
   };  
 
-  // ✅ THÊM: Hàm update markers thông minh (không clear hết)
   const updateMarkers = (newMarkersArray) => {
     if (!map || !markerClusterGroup) return;
 
@@ -222,9 +223,6 @@ export function useMap() {
     window.addEventListener('resize', resizeHandler);
   };
 
-  // ✅ THAY ĐỔI: initMap nhận 2 callbacks
-  // - initialLoadCallback: gọi lần đầu khi map init
-  // - onMapMoveCallback: gọi khi user pan/zoom map
   const initMap = (initialLoadCallback, onMapMoveCallback) => {
     onMounted(() => {
       // Base Layers
@@ -256,31 +254,46 @@ export function useMap() {
       setupMarkerClusterGroup();
       setupCustomControls();
 
-      // ✅ THÊM: Lưu callback để dùng cho moveend
       loadDataCallback = onMapMoveCallback;
 
-      // ✅ SỬA: Load data lần đầu với bounds hiện tại (KHÔNG để null)
+      // Load data lần đầu với bounds hiện tại
       if (initialLoadCallback) {
-        // Đợi map render xong rồi mới lấy bounds
         setTimeout(() => {
-          const bounds = map.getBounds(); // Lấy bounds của viewport ban đầu
-          initialLoadCallback(bounds); // Truyền bounds vào callback
+          const bounds = map.getBounds();
+          initialLoadCallback(bounds);
         }, 100);
       }
 
-      // ✅ THÊM: Setup moveend event với debounce
+      // Setup moveend event với debounce
       let moveEndTimeout;
       moveEndHandler = () => {
         clearTimeout(moveEndTimeout);
         moveEndTimeout = setTimeout(() => {
-          if (loadDataCallback && map) {
-            const bounds = map.getBounds(); // Lấy bounds mới
-            loadDataCallback(bounds); // Load data với bounds mới
+          // Chỉ load data khi user thực sự pan/zoom map, không phải khi focus item
+          if (loadDataCallback && map && isUserInteraction && !isFocusing) {
+            const bounds = map.getBounds();
+            loadDataCallback(bounds);
           }
-        }, 800); // ✅ TĂNG lên 800ms để đợi user pan xong
+          // Reset flag sau khi xử lý xong
+          isUserInteraction = false;
+          isFocusing = false;
+        }, 800);
       };
 
-      map.on('moveend', moveEndHandler); // Lắng nghe sự kiện moveend
+      // Track khi user bắt đầu tương tác với map
+      map.on('dragstart', () => {
+        isUserInteraction = true;
+        isFocusing = false;
+      });
+      
+      map.on('zoomstart', () => {
+        // Chỉ set isUserInteraction = true nếu không đang focus
+        if (!isFocusing) {
+          isUserInteraction = true;
+        }
+      });
+
+      map.on('moveend', moveEndHandler);
     });
 
     // Cleanup
@@ -290,7 +303,9 @@ export function useMap() {
       }
       if (map) {
         if (moveEndHandler) {
-          map.off('moveend', moveEndHandler); // ✅ THÊM: Remove event listener
+          map.off('moveend', moveEndHandler);
+          map.off('dragstart');
+          map.off('zoomstart');
         }
         map.remove();
         map = null;
@@ -304,6 +319,10 @@ export function useMap() {
 
     const marker = markers[itemId];
     if (marker) {
+      // Set flag trước khi setView để moveend biết đây là focus, không phải user pan
+      isFocusing = true;
+      isUserInteraction = false;
+
       map.setView(marker.getLatLng(), 17, {
         animate: true,
         duration: 0.8,
@@ -324,7 +343,6 @@ export function useMap() {
 
   // --- ADD MARKERS ---
   const addCourtMarkers = (courtsData, toHourMinute, defaultImage, onMarkerClick, shouldUpdate = false) => {
-    // ✅ Nếu shouldUpdate = true, chỉ thêm markers mới
     const dataToAdd = shouldUpdate ? updateMarkers(courtsData) : courtsData;
     const batchMarkers = [];
 
@@ -377,9 +395,8 @@ export function useMap() {
     getUserRating,
     router,
     onMarkerClick,
-    shouldUpdate = false // ✅ THÊM tham số
+    shouldUpdate = false
   ) => {
-    // ✅ Nếu shouldUpdate = true, chỉ thêm markers mới
     const dataToAdd = shouldUpdate ? updateMarkers(usersData) : usersData;
     const batchMarkers = [];
 
@@ -520,7 +537,6 @@ export function useMap() {
   };
 
   const addMatchMarkers = (matchesData, onMarkerClick, shouldUpdate = false) => {
-    // ✅ Nếu shouldUpdate = true, chỉ thêm markers mới
     const dataToAdd = shouldUpdate ? updateMarkers(matchesData) : matchesData;
     const batchMarkers = [];
     
@@ -545,7 +561,7 @@ export function useMap() {
   return {
     initMap,
     clearAllMarkers,
-    updateMarkers, // ✅ THÊM: Export để Vue component dùng
+    updateMarkers,
     focusItem,
     addCourtMarkers,
     addUserMarkers,

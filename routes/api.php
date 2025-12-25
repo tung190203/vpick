@@ -168,6 +168,7 @@ Route::middleware(['auth:api'])->group(function () {
         Route::post('/store', [MiniTournamentController::class, 'store']);
         Route::get('/{id}', [MiniTournamentController::class, 'show']);
         Route::post('/update/{id}', [MiniTournamentController::class, 'update']);
+        Route::post('/delete/{id}', [MiniTournamentController::class,'destroy']);
     });
     // Mini Participant Routes
     Route::prefix('mini-participants')->group(function (): void {

@@ -20,7 +20,7 @@
                     <div class="px-4 py-3 border-gray-100">
                         <div class="grid grid-cols-3 gap-2">
                             <button v-for="tab in tabs" :key="tab.id" @click="activeTab = tab.id" :class="[
-                                'flex items-center justify-center gap-2 w-full py-2 rounded border text-sm font-medium transition-all',
+                                'flex items-center justify-center gap-1 w-full py-2 rounded border text-sm font-medium transition-all',
                                 activeTab === tab.id
                                     ? 'border-[#D72D36] text-gray-800 bg-white'
                                     : 'border-gray-300 text-gray-600 bg-white hover:bg-gray-50'
@@ -109,7 +109,8 @@
                     class="fixed inset-y-0 right-4 z-[10000] w-full max-w-sm h-[95vh] mt-6 bg-white shadow-xl rounded-md flex flex-col">
 
                     <!-- ===== HEADER (KHÔNG SCROLL) ===== -->
-                    <div class="px-4 pt-4 pb-3 flex justify-between items-center border-b bg-white">
+                    <div
+                        class="px-4 pt-4 pb-3 flex justify-between items-center border-b bg-white rounded-tl-md rounded-tr-md">
                         <h3 class="text-2xl font-semibold text-gray-900">
                             Trình lọc sân bóng
                         </h3>
@@ -163,7 +164,8 @@
                                     <button @click="isRadiusDropdownOpen = !isRadiusDropdownOpen"
                                         class="text-[#207AD5] flex items-center gap-1 cursor-pointer font-semibold">
                                         <p>{{ selectedRadiusLabel }}</p>
-                                        <ChevronRightIcon class="w-4 h-4 transition-transform" :class="{ 'rotate-90': isRadiusDropdownOpen }" />
+                                        <ChevronRightIcon class="w-4 h-4 transition-transform"
+                                            :class="{ 'rotate-90': isRadiusDropdownOpen }" />
                                     </button>
                                     <Transition enter-active-class="transition ease-out duration-100"
                                         enter-from-class="opacity-0 scale-95" enter-to-class="opacity-100 scale-100"
@@ -195,7 +197,8 @@
                                     <button @click="isLocationDropdownOpen = !isLocationDropdownOpen"
                                         class="text-[#207AD5] flex items-center gap-1 cursor-pointer font-semibold">
                                         <p>{{ selectedLocationLabel }}</p>
-                                        <ChevronRightIcon class="w-4 h-4 transition-transform" :class="{ 'rotate-90': isLocationDropdownOpen }" />
+                                        <ChevronRightIcon class="w-4 h-4 transition-transform"
+                                            :class="{ 'rotate-90': isLocationDropdownOpen }" />
                                     </button>
                                     <Transition enter-active-class="transition ease-out duration-100"
                                         enter-from-class="opacity-0 scale-95" enter-to-class="opacity-100 scale-100"
@@ -205,15 +208,16 @@
                                             class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                                             <div class="p-2 border-b">
                                                 <div class="relative">
-                                                    <MagnifyingGlassIcon class="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                                                    <input v-model="locationSearchQuery" type="text" placeholder="Tìm kiếm địa điểm..."
+                                                    <MagnifyingGlassIcon
+                                                        class="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                                                    <input v-model="locationSearchQuery" type="text"
+                                                        placeholder="Tìm kiếm địa điểm..."
                                                         class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D72D36] focus:border-transparent" />
                                                 </div>
                                             </div>
                                             <div class="max-h-60 overflow-y-auto py-1">
                                                 <button @click="selectLocation(null)"
-                                                    :disabled="selectedLocationValue === null"
-                                                    :class="[
+                                                    :disabled="selectedLocationValue === null" :class="[
                                                         'w-full text-left px-4 py-2 text-sm',
                                                         selectedLocationValue === null
                                                             ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
@@ -223,8 +227,7 @@
                                                 </button>
                                                 <button v-for="location in filteredLocations" :key="location.id"
                                                     @click="selectLocation(location)"
-                                                    :disabled="selectedLocationValue === location.id"
-                                                    :class="[
+                                                    :disabled="selectedLocationValue === location.id" :class="[
                                                         'w-full text-left px-4 py-2 text-sm',
                                                         selectedLocationValue === location.id
                                                             ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
@@ -232,7 +235,8 @@
                                                     ]">
                                                     {{ location.name }}
                                                 </button>
-                                                <div v-if="filteredLocations.length === 0" class="px-4 py-3 text-sm text-gray-500 text-center">
+                                                <div v-if="filteredLocations.length === 0"
+                                                    class="px-4 py-3 text-sm text-gray-500 text-center">
                                                     Không tìm thấy địa điểm
                                                 </div>
                                             </div>
@@ -244,58 +248,80 @@
                             <!-- Số sân -->
                             <div class="border-t pt-4">
                                 <p class="font-medium text-gray-900 mb-4 text-xl">Số sân</p>
-                                <div class="grid grid-cols-3 gap-4">
-                                    <label v-for="n in courtCounts" :key="n"
-                                        class="flex items-center gap-3 cursor-pointer relative"
-                                        @click="toggleCourtCount(n)">
-                                        <input type="checkbox" :checked="isCourtCountSelected(n)"
-                                            class="peer appearance-none w-5 h-5 rounded border-2 border-[#D72D36] checked:bg-[#D72D36] checked:border-[#D72D36]"
-                                            @click.prevent />
-                                        <CheckIcon
-                                            class="w-4 h-4 text-white absolute left-[2px] opacity-0 peer-checked:opacity-100 pointer-events-none" />
-                                        <span>{{ n }}+</span>
-                                    </label>
-                                </div>
-                            </div>
 
+                                <template v-if="courtCounts?.length">
+                                    <div class="grid grid-cols-3 gap-4">
+                                        <label v-for="n in courtCounts" :key="n"
+                                            class="flex items-center gap-3 cursor-pointer relative"
+                                            @click="toggleCourtCount(n)">
+                                            <input type="checkbox" :checked="isCourtCountSelected(n)" class="peer appearance-none w-5 h-5 rounded border-2 border-[#D72D36]
+                           checked:bg-[#D72D36] checked:border-[#D72D36]" @click.prevent />
+                                            <CheckIcon class="w-4 h-4 text-white absolute left-[2px] opacity-0
+                           peer-checked:opacity-100 pointer-events-none" />
+                                            <span>{{ n }}+</span>
+                                        </label>
+                                    </div>
+                                </template>
+
+                                <template v-else>
+                                    <div class="text-gray-400 italic text-sm flex justify-center">
+                                        Tính năng đang phát triển
+                                    </div>
+                                </template>
+                            </div>
                             <!-- Loại sân -->
                             <div class="border-t pt-4">
                                 <p class="font-medium text-gray-900 mb-4 text-xl">Loại sân</p>
-                                <div class="grid grid-cols-2 gap-4">
-                                    <label v-for="yardType in yardTypes" :key="yardType.id"
-                                        class="flex items-center gap-3 cursor-pointer relative"
-                                        @click="toggleCourtType(yardType.id)">
-                                        <input type="checkbox" :checked="isCourtTypeSelected(yardType.id)"
-                                            class="peer appearance-none w-5 h-5 rounded border-2 border-[#D72D36] checked:bg-[#D72D36] checked:border-[#D72D36]"
-                                            @click.prevent />
-                                        <CheckIcon
-                                            class="w-4 h-4 text-white absolute left-[2px] opacity-0 peer-checked:opacity-100 pointer-events-none" />
-                                        <span>{{ yardType.name }}</span>
-                                    </label>
-                                </div>
+
+                                <template v-if="yardTypes?.length">
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <label v-for="yardType in yardTypes" :key="yardType.id"
+                                            class="flex items-center gap-3 cursor-pointer relative"
+                                            @click="toggleCourtType(yardType.id)">
+                                            <input type="checkbox" :checked="isCourtTypeSelected(yardType.id)" class="peer appearance-none w-5 h-5 rounded border-2 border-[#D72D36]
+                           checked:bg-[#D72D36] checked:border-[#D72D36]" @click.prevent />
+                                            <CheckIcon class="w-4 h-4 text-white absolute left-[2px]
+                           opacity-0 peer-checked:opacity-100 pointer-events-none" />
+                                            <span>{{ yardType.name }}</span>
+                                        </label>
+                                    </div>
+                                </template>
+
+                                <template v-else>
+                                    <div class="text-gray-400 italic text-sm flex justify-center">
+                                        Tính năng đang phát triển
+                                    </div>
+                                </template>
                             </div>
 
                             <!-- Tiện ích -->
                             <div class="border-t pt-4">
                                 <p class="font-medium text-gray-900 mb-4 text-xl">Tiện ích đi kèm</p>
-                                <div class="space-y-4">
-                                    <label v-for="facility in facilities" :key="facility.id"
-                                        class="flex items-center gap-3 cursor-pointer relative"
-                                        @click="toggleFacility(facility.id)">
-                                        <input type="checkbox" :checked="isFacilitySelected(facility.id)"
-                                            class="peer appearance-none w-5 h-5 rounded border-2 border-[#D72D36] checked:bg-[#D72D36] checked:border-[#D72D36]"
-                                            @click.prevent />
-                                        <CheckIcon
-                                            class="w-4 h-4 text-white absolute left-[2px] opacity-0 peer-checked:opacity-100 pointer-events-none" />
-                                        <span>{{ facility.name }}</span>
-                                    </label>
-                                </div>
+                                <template v-if="facilities?.length">
+                                    <div class="space-y-4">
+                                        <label v-for="facility in facilities" :key="facility.id"
+                                            class="flex items-center gap-3 cursor-pointer relative"
+                                            @click="toggleFacility(facility.id)">
+                                            <input type="checkbox" :checked="isFacilitySelected(facility.id)" class="peer appearance-none w-5 h-5 rounded border-2 border-[#D72D36]
+                           checked:bg-[#D72D36] checked:border-[#D72D36]" @click.prevent />
+                                            <CheckIcon class="w-4 h-4 text-white absolute left-[2px]
+                           opacity-0 peer-checked:opacity-100 pointer-events-none" />
+                                            <span>{{ facility.name }}</span>
+                                        </label>
+                                    </div>
+                                </template>
+
+                                <template v-else>
+                                    <div class="text-gray-400 italic text-sm flex justify-center">
+                                        Tính năng đang phát triển
+                                    </div>
+                                </template>
                             </div>
                         </div>
                     </div>
 
                     <!-- ===== FOOTER (KHÔNG SCROLL) ===== -->
-                    <div class="p-4 border-t bg-white flex justify-between gap-3">
+                    <div class="p-4 border-t bg-white flex justify-between gap-3 rounded-bl-md rounded-br-md">
                         <div class="flex items-center gap-2 cursor-pointer" @click="resetFilter">
                             <p>Làm mới</p>
                             <ArrowPathIcon class="w-5 h-5 text-[#4392E0]" :class="{ 'animate-spin': spinning }" />
@@ -373,8 +399,11 @@
                 enter-to-class="translate-x-0" leave-active-class="transition ease-in duration-200"
                 leave-from-class="translate-x-0" leave-to-class="translate-x-full">
                 <div v-if="isFilterModalOpen"
-                    class="fixed inset-y-0 right-4 z-[10000] w-full max-w-sm h-[95vh] mt-6 bg-white shadow-xl overflow-y-auto transform flex flex-col rounded-md">
-                    <div class="px-4 pt-4 flex justify-between items-center sticky top-0 bg-white z-10">
+                    class="fixed inset-y-0 right-4 z-[10000] w-full max-w-sm h-[95vh] mt-6 bg-white shadow-xl rounded-md flex flex-col">
+
+                    <!-- ===== HEADER (KHÔNG SCROLL) ===== -->
+                    <div
+                        class="px-4 pt-4 pb-3 flex justify-between items-center border-b bg-white rounded-tl-md rounded-tr-md">
                         <h3 class="text-2xl font-semibold text-gray-900">
                             Trình lọc người chơi
                         </h3>
@@ -383,46 +412,364 @@
                             <XMarkIcon class="w-6 h-6" />
                         </button>
                     </div>
-                    <div class="px-4 pb-4 border-b sticky top-0 bg-white z-10">
-                        <h3 class="text-xl text-gray-900">
-                            Bộ môn thể thao
-                        </h3>
-                        <div class="mt-4 flex gap-2 font-semibold">
-                            <div
-                                class="px-6 py-2 rounded-full bg-[#D72D36] border inline-block text-white text-sm cursor-pointer">
-                                Bóng đá
+                    <div class="flex-1 overflow-y-auto">
+                        <div class="px-4 py-4 border-b bg-white">
+                            <h3 class="text-xl text-gray-900 mb-4">
+                                Bộ môn thể thao
+                            </h3>
+                            <Swiper :slides-per-view="'auto'" :space-between="8" :freeMode="true"
+                                :mousewheel="{ forceToAxis: true }" :modules="modules" class="mt-2 !pb-2">
+                                <SwiperSlide v-for="sport in sports" :key="sport.id" class="!w-auto">
+                                    <div @click="selectedSportId = sport.id" :class="[
+                                        'px-6 py-2 rounded-full text-sm font-semibold cursor-pointer transition select-none whitespace-nowrap flex items-center gap-2',
+                                        selectedSportId === sport.id
+                                            ? 'bg-[#D72D36] text-white border border-[#D72D36]'
+                                            : 'border border-[#BBBFCC] bg-white text-gray-700 hover:border-gray-400'
+                                    ]">
+                                        <img v-if="sport.icon" :src="sport.icon" class="w-4 h-4"
+                                            :class="{ 'filter brightness-0 invert': selectedSportId === sport.id }"
+                                            draggable="false" />
+                                        {{ sport.name }}
+                                    </div>
+                                </SwiperSlide>
+                            </Swiper>
+                        </div>
+
+                        <div class="p-4 space-y-6">
+                            <!-- Xung quanh -->
+                            <div class="flex justify-between items-center">
+                                <p class="font-medium text-gray-900 text-xl">Xung quanh bạn</p>
+                                <div class="relative">
+                                    <button @click="isRadiusDropdownOpen = !isRadiusDropdownOpen"
+                                        class="text-[#207AD5] flex items-center gap-1 cursor-pointer font-semibold">
+                                        <p>{{ selectedRadiusLabel }}</p>
+                                        <ChevronRightIcon class="w-4 h-4 transition-transform"
+                                            :class="{ 'rotate-90': isRadiusDropdownOpen }" />
+                                    </button>
+                                    <Transition enter-active-class="transition ease-out duration-100"
+                                        enter-from-class="opacity-0 scale-95" enter-to-class="opacity-100 scale-100"
+                                        leave-active-class="transition ease-in duration-75"
+                                        leave-from-class="opacity-100 scale-100" leave-to-class="opacity-0 scale-95">
+                                        <div v-if="isRadiusDropdownOpen"
+                                            class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                                            <div class="py-1">
+                                                <button v-for="option in radiusOptions" :key="option.value"
+                                                    @click="selectRadius(option)"
+                                                    :disabled="selectedRadiusValue === option.value" :class="[
+                                                        'w-full text-left px-4 py-2 text-sm',
+                                                        selectedRadiusValue === option.value
+                                                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                            : 'text-gray-700 hover:bg-gray-50 cursor-pointer'
+                                                    ]">
+                                                    {{ option.label }}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </Transition>
+                                </div>
                             </div>
-                            <div
-                                class="px-6 py-2 rounded-full border border-[#BBBFCC] bg-white inline-block text-sm cursor-pointer">
-                                Tennis
+
+                            <!-- Khu vực -->
+                            <div class="flex justify-between items-center">
+                                <p class="font-medium text-gray-900 text-xl">Khu vực</p>
+                                <div class="relative">
+                                    <button @click="isLocationDropdownOpen = !isLocationDropdownOpen"
+                                        class="text-[#207AD5] flex items-center gap-1 cursor-pointer font-semibold">
+                                        <p>{{ selectedLocationLabel }}</p>
+                                        <ChevronRightIcon class="w-4 h-4 transition-transform"
+                                            :class="{ 'rotate-90': isLocationDropdownOpen }" />
+                                    </button>
+                                    <Transition enter-active-class="transition ease-out duration-100"
+                                        enter-from-class="opacity-0 scale-95" enter-to-class="opacity-100 scale-100"
+                                        leave-active-class="transition ease-in duration-75"
+                                        leave-from-class="opacity-100 scale-100" leave-to-class="opacity-0 scale-95">
+                                        <div v-if="isLocationDropdownOpen"
+                                            class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                                            <div class="p-2 border-b">
+                                                <div class="relative">
+                                                    <MagnifyingGlassIcon
+                                                        class="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                                                    <input v-model="locationSearchQuery" type="text"
+                                                        placeholder="Tìm kiếm địa điểm..."
+                                                        class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D72D36] focus:border-transparent" />
+                                                </div>
+                                            </div>
+                                            <div class="max-h-60 overflow-y-auto py-1">
+                                                <button @click="selectLocation(null)"
+                                                    :disabled="selectedLocationValue === null" :class="[
+                                                        'w-full text-left px-4 py-2 text-sm',
+                                                        selectedLocationValue === null
+                                                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                            : 'text-gray-700 hover:bg-gray-50 cursor-pointer'
+                                                    ]">
+                                                    Chọn địa điểm
+                                                </button>
+                                                <button v-for="location in filteredLocations" :key="location.id"
+                                                    @click="selectLocation(location)"
+                                                    :disabled="selectedLocationValue === location.id" :class="[
+                                                        'w-full text-left px-4 py-2 text-sm',
+                                                        selectedLocationValue === location.id
+                                                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                            : 'text-gray-700 hover:bg-gray-50 cursor-pointer'
+                                                    ]">
+                                                    {{ location.name }}
+                                                </button>
+                                                <div v-if="filteredLocations.length === 0"
+                                                    class="px-4 py-3 text-sm text-gray-500 text-center">
+                                                    Không tìm thấy địa điểm
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </Transition>
+                                </div>
+                            </div>
+
+                            <!-- Gồm các giải thi đấu -->
+                            <div class="border-t pt-4">
+                                <p class="font-medium text-gray-900 mb-4 text-xl">Gồm cả các giải thi đấu</p>
+
+                                <template v-if="matchesType?.length">
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <label v-for="n in matchesType" :key="n"
+                                            class="flex items-center gap-3 cursor-pointer relative"
+                                            @click="toggleCourtCount(n)">
+                                            <input type="checkbox" :checked="isCourtCountSelected(n)" class="peer appearance-none w-5 h-5 rounded border-2 border-[#D72D36]
+                           checked:bg-[#D72D36] checked:border-[#D72D36]" @click.prevent />
+                                            <CheckIcon class="w-4 h-4 text-white absolute left-[2px] opacity-0
+                           peer-checked:opacity-100 pointer-events-none" />
+                                            <span>{{ n }}+</span>
+                                        </label>
+                                    </div>
+                                </template>
+
+                                <template v-else>
+                                    <div class="text-gray-400 italic text-sm flex justify-center">
+                                        Tính năng đang phát triển
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="border-t pt-4 space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <p class="font-medium text-gray-900 text-xl">
+                                        Người chơi yêu thích
+                                    </p>
+                                    <button @click="isShowFavoritePlayer = !isShowFavoritePlayer"
+                                        class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+                                        :class="isShowFavoritePlayer ? 'bg-[#D72D36]' : 'bg-gray-300'">
+                                        <span
+                                            class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
+                                            :class="isShowFavoritePlayer ? 'translate-x-6' : 'translate-x-1'" />
+                                    </button>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <p class="font-medium text-gray-900 text-xl">
+                                        Có kết nối với bạn
+                                    </p>
+                                    <button @click="isConnected = !isConnected"
+                                        class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+                                        :class="isConnected ? 'bg-[#D72D36]' : 'bg-gray-300'">
+                                        <span
+                                            class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
+                                            :class="isConnected ? 'translate-x-6' : 'translate-x-1'" />
+                                    </button>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <p class="font-medium text-gray-900 text-xl">Giới tính</p>
+                                    <div class="relative">
+                                        <button @click="isGenderDropdownOpen = !isGenderDropdownOpen"
+                                            class="text-[#207AD5] flex items-center gap-1 cursor-pointer font-semibold">
+                                            <p>{{ selectedGenderLabel }}</p>
+                                            <ChevronRightIcon class="w-4 h-4 transition-transform"
+                                                :class="{ 'rotate-90': isGenderDropdownOpen }" />
+                                        </button>
+                                        <Transition enter-active-class="transition ease-out duration-100"
+                                            enter-from-class="opacity-0 scale-95" enter-to-class="opacity-100 scale-100"
+                                            leave-active-class="transition ease-in duration-75"
+                                            leave-from-class="opacity-100 scale-100"
+                                            leave-to-class="opacity-0 scale-95">
+                                            <div v-if="isGenderDropdownOpen"
+                                                class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                                                <div class="py-1">
+                                                    <button v-for="option in genderOptions" :key="option.value"
+                                                        @click="selectGender(option)"
+                                                        :disabled="selectedGenderValue === option.value" :class="[
+                                                            'w-full text-left px-4 py-2 text-sm',
+                                                            selectedGenderValue === option.value
+                                                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                                : 'text-gray-700 hover:bg-gray-50 cursor-pointer'
+                                                        ]">
+                                                        {{ option.label }}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </Transition>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="border-t pt-4">
+                                <p class="font-medium text-gray-900 mb-4 text-xl">Thời gian chơi trong ngày</p>
+
+                                <template v-if="timePlay?.length">
+                                    <div class="grid grid-cols-1 gap-4">
+                                        <label v-for="item in timePlay" :key="item.value"
+                                            class="flex items-center gap-3 cursor-pointer relative select-none">
+                                            <input type="checkbox" v-model="selectedTimePlay" :value="item.value" class="peer appearance-none w-5 h-5 rounded border-2 border-[#D72D36]
+               checked:bg-[#D72D36] checked:border-[#D72D36]" />
+
+                                            <CheckIcon class="w-4 h-4 text-white absolute left-[2px]
+               opacity-0 peer-checked:opacity-100 pointer-events-none" />
+
+                                            <span>{{ item.label }}</span>
+                                        </label>
+
+                                    </div>
+                                </template>
+
+                                <template v-else>
+                                    <div class="text-gray-400 italic text-sm flex justify-center">
+                                        Tính năng đang phát triển
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="border-t pt-4">
+                                <p class="font-medium text-gray-900 mb-4 text-xl">Trình độ</p>
+
+                                <template v-if="rating?.length">
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <label v-for="item in rating" :key="item.value"
+                                            class="flex items-center gap-3 cursor-pointer relative select-none">
+                                            <input type="checkbox" v-model="selectedRating" :value="item.value" class="peer appearance-none w-5 h-5 rounded border-2 border-[#D72D36]
+               checked:bg-[#D72D36] checked:border-[#D72D36]" />
+
+                                            <CheckIcon class="w-4 h-4 text-white absolute left-[2px]
+               opacity-0 peer-checked:opacity-100 pointer-events-none" />
+
+                                            <span>{{ item.label }}</span>
+                                        </label>
+
+                                    </div>
+                                </template>
+
+                                <template v-else>
+                                    <div class="text-gray-400 italic text-sm flex justify-center">
+                                        Tính năng đang phát triển
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="border-t pt-4">
+                                <p class="font-medium text-gray-900 mb-4 text-xl">Mức độ hoạt động</p>
+
+                                <template v-if="onlineRecently?.length">
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <label v-for="item in onlineRecently" :key="item.value"
+                                            class="flex items-center gap-3 cursor-pointer relative select-none">
+                                            <input type="checkbox" v-model="isOnlineRecently" :value="item.value" class="peer appearance-none w-5 h-5 rounded border-2 border-[#D72D36]
+               checked:bg-[#D72D36] checked:border-[#D72D36]" />
+
+                                            <CheckIcon class="w-4 h-4 text-white absolute left-[2px]
+               opacity-0 peer-checked:opacity-100 pointer-events-none" />
+
+                                            <span>{{ item.label }}</span>
+                                        </label>
+                                    </div>
+                                </template>
+
+                                <template v-else>
+                                    <div class="text-gray-400 italic text-sm flex justify-center">
+                                        Tính năng đang phát triển
+                                    </div>
+                                </template>
+                                <p class="my-4 text-gray-900">Số trận đã chơi gần đây</p>
+                                <template v-if="quantityMatchesHasPlayRecently?.length">
+                                    <div class="grid grid-cols-1 gap-4">
+                                        <label v-for="item in quantityMatchesHasPlayRecently" :key="item.value"
+                                            class="flex items-center gap-3 cursor-pointer relative select-none">
+                                            <input type="checkbox" v-model="isQuantityMatcheshasPlayRecently"
+                                                :value="item.value" class="peer appearance-none w-5 h-5 rounded border-2 border-[#D72D36]
+               checked:bg-[#D72D36] checked:border-[#D72D36]" />
+
+                                            <CheckIcon class="w-4 h-4 text-white absolute left-[2px]
+               opacity-0 peer-checked:opacity-100 pointer-events-none" />
+
+                                            <span>{{ item.label }}</span>
+                                        </label>
+
+                                    </div>
+                                </template>
+
+                                <template v-else>
+                                    <div class="text-gray-400 italic text-sm flex justify-center">
+                                        Tính năng đang phát triển
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="border-t pt-4">
+                                <p class="font-medium text-gray-900 mb-4 text-xl">Câu lạc bộ chung</p>
+
+                                <template v-if="myClub?.length">
+                                    <div class="grid grid-cols-1 gap-4">
+                                        <label v-for="item in myClub" :key="item.id"
+                                            class="flex items-center justify-between gap-3 cursor-pointer relative select-none">
+                                            <div class="flex gap-4">
+                                                <img :src="item.logo_url || defaultImage" alt=""
+                                                    class="rounded-full w-8 h-8">
+                                                <span>{{ item.name }}</span>
+                                            </div>
+                                            <input type="checkbox" v-model="selectedClub" :value="item.id" class="peer appearance-none w-5 h-5 rounded border-2 border-[#D72D36]
+               checked:bg-[#D72D36] checked:border-[#D72D36]" />
+
+                                            <CheckIcon class="w-4 h-4 text-white absolute right-[2px]
+               opacity-0 peer-checked:opacity-100 pointer-events-none" />
+
+                                        </label>
+
+                                    </div>
+                                </template>
+
+                                <template v-else>
+                                    <div class="text-gray-400 italic text-sm flex justify-center">
+                                        Bạn chưa tham gia câu lạc bộ nào
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="border-t pt-4 space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <p class="font-medium text-gray-900 text-xl">
+                                        Đã xác thực profile
+                                    </p>
+                                    <button @click="is_verify_profile = !is_verify_profile"
+                                        class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+                                        :class="is_verify_profile ? 'bg-[#D72D36]' : 'bg-gray-300'">
+                                        <span
+                                            class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
+                                            :class="is_verify_profile ? 'translate-x-6' : 'translate-x-1'" />
+                                    </button>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <p class="font-medium text-gray-900 text-xl">
+                                        Thành tích, giải thưởng
+                                    </p>
+                                    <button @click="isHasAchievement = !isHasAchievement"
+                                        class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+                                        :class="isHasAchievement ? 'bg-[#D72D36]' : 'bg-gray-300'">
+                                        <span
+                                            class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
+                                            :class="isHasAchievement ? 'translate-x-6' : 'translate-x-1'" />
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="flex-1 p-4 space-y-6">
-                        <div class="flex justify-between items-center">
-                            <p class="font-medium text-gray-900">Hiển thị sân bóng tôi theo dõi</p>
-                            <button @click="isShowMyFollow = !isShowMyFollow"
-                                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
-                                :class="isShowMyFollow ? 'bg-[#D72D36]' : 'bg-gray-300'">
-                                <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
-                                    :class="isShowMyFollow ? 'translate-x-6' : 'translate-x-1'" />
-                            </button>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <p class="font-medium text-gray-900">Xung quanh bạn</p>
-                        </div>
-                    </div>
-
-                    <div class="p-4 border-t sticky bottom-0 bg-white flex justify-between gap-3">
-                        <div class="flex items-center gap-2">
+                    <!-- ===== FOOTER (KHÔNG SCROLL) ===== -->
+                    <div class="p-4 border-t bg-white flex justify-between gap-3 rounded-bl-md rounded-br-md">
+                        <div class="flex items-center gap-2 cursor-pointer" @click="resetFilter">
                             <p>Làm mới</p>
-                            <ArrowPathIcon class="w-5 h-5 text-[#4392E0] cursor-pointer"
-                                :class="{ 'animate-spin-once': spinning }" @click="refresh" />
+                            <ArrowPathIcon class="w-5 h-5 text-[#4392E0]" :class="{ 'animate-spin': spinning }" />
                         </div>
                         <button @click="applyFilter"
-                            class="px-4 py-2 text-sm font-medium text-white bg-[#D72D36] rounded-md hover:bg-[#c22830] transition-colors">
-                            Áp dụng Lọc
+                            class="px-8 py-2 text-sm font-medium text-white bg-[#D72D36] rounded-full hover:bg-[#c22830]">
+                            Lọc
                         </button>
                     </div>
                 </div>
@@ -440,6 +787,7 @@ import * as MapService from '@/service/map.js';
 import * as UserService from '@/service/auth.js';
 import * as SportService from '@/service/sport.js';
 import * as LocationService from '@/service/location.js';
+import * as ClubService from '@/service/club.js'
 import { useTimeFormat } from '@/composables/formatTime.js';
 import { getVisibilityText } from "@/composables/formatVisibilityText";
 import defaultImage from '@/assets/images/default-image.jpeg';
@@ -467,6 +815,10 @@ const isInitialLoad = ref(true);
 const isLoadingMap = ref(false);
 const activeTab = ref('courts');
 const isShowMyFollow = ref(false);
+const isShowFavoritePlayer = ref(false);
+const isConnected = ref(false);
+const is_verify_profile = ref(false);
+const isHasAchievement = ref(false);
 const selectedCourt = ref(null);
 const selectedUser = ref(null);
 const selectedMatches = ref(null);
@@ -485,7 +837,8 @@ const selectedCourtTypes = ref([]);
 const selectedFacilities = ref([]);
 const facilities = ref([]);
 const yardTypes = ref([]);
-const courtCounts = [2, 4, 6, 8, 10];
+const courtCounts = []; // Sau cho hiện sân thì thêm vào đây
+const matchesType = [];
 const modules = [FreeMode, Mousewheel];
 const visibleItems = ref(20);
 const itemsPerLoad = ref(10);
@@ -502,12 +855,83 @@ const selectedLocationValue = ref(null);
 const selectedLocationLabel = ref('Chọn địa điểm');
 const locations = ref([]);
 const locationSearchQuery = ref('');
+const isGenderDropdownOpen = ref(false);
+const selectedGenderValue = ref(null);
+const selectedGenderLabel = ref('Tất cả');
+const selectedTimePlay = ref([]);
+const selectedRating = ref([]);
+const selectedClub = ref([]);
+const isOnlineRecently = ref(false);
+const quantityMatchesHasPlayRecently = [
+    {
+        label: 'Ít',
+        value: 'low',
+    },
+    {
+        label: 'Trung bình',
+        value: 'medium',
+    },
+    {
+        label: 'Nhiều',
+        value: 'high',
+    },
+];
+const isQuantityMatcheshasPlayRecently = ref([]);
+const genderOptions = [
+    { value: null, label: 'Tất cả' },
+    { value: 1, label: 'Nam' },
+    { value: 2, label: 'Nữ' },
+    { value: 0, label: 'Khác' },
+    { value: 3, label: 'Không tiết lộ' },
+];
+
+const timePlay = [
+    {
+        label: 'Sáng (Trước 11:00 AM)',
+        value: 'morning',
+    },
+    {
+        label: 'Chiều (Từ 11:00 AM - 4:00 PM)',
+        value: 'afternoon',
+    },
+    {
+        label: 'Tối (Sau 4:00 PM)',
+        value: 'evening',
+    },
+];
+const rating = [
+    {
+        label: '2+',
+        value: 2,
+    },
+    {
+        label: '3+',
+        value: 3,
+    },
+    {
+        label: '4+',
+        value: 4,
+    },
+    {
+        label: '5+',
+        value: 5,
+    },
+];
+
+const onlineRecently = [
+    {
+        label: 'Online gần đây',
+        value: false
+    }
+]
 
 const tabs = [
     { id: 'courts', label: 'Sân bóng' },
     { id: 'match', label: 'Trận đấu' },
     { id: 'players', label: 'Người chơi' }
 ];
+
+const myClub = ref([]);
 
 // Convert Map sang Array
 const courts = computed(() => Array.from(courtsMap.value.values()));
@@ -574,11 +998,15 @@ const hasActiveFilters = computed(() => {
         searchUser.value?.trim() ||
         selectedSportId.value ||
         isShowMyFollow.value ||
+        isShowFavoritePlayer.value ||
+        isConnected.value ||
         selectedCourtCounts.value.length > 0 ||
         selectedCourtTypes.value.length > 0 ||
         selectedFacilities.value.length > 0 ||
         selectedRadiusValue.value !== null ||
-        selectedLocationValue.value !== null
+        selectedLocationValue.value !== null ||
+        is_verify_profile.value ||
+        isHasAchievement.value
     );
 });
 
@@ -588,7 +1016,7 @@ const getCompetitionLocation = async (bounds = null) => {
             is_map: 1,
             keyword: searchCourt.value?.trim() || undefined,
             sport_id: selectedSportId.value || undefined,
-            is_followed: isShowMyFollow.value ? 1 : 0 || undefined,
+            is_followed: isShowMyFollow.value ? 1 : 0,
             number_of_yards: selectedCourtCounts.value.length > 0 ? selectedCourtCounts.value : undefined,
             yard_type: selectedCourtTypes.value.length > 0 ? selectedCourtTypes.value : undefined,
             facility_id: selectedFacilities.value.length > 0 ? selectedFacilities.value : undefined,
@@ -635,15 +1063,26 @@ const getListUser = async (bounds = null) => {
         const params = {
             keyword: searchUser.value?.trim() || undefined,
             sport_id: selectedSportId.value || undefined,
-            is_followed: isShowMyFollow.value ? 1 : 0 || undefined,
+            favourite_player: isShowFavoritePlayer.value ? 1 : 0,
+            is_connected: isConnected.value ? 1 : 0,
+            is_map: 1,
+            location_id: selectedLocationValue.value || undefined,
+            gender: selectedGenderValue.value ?? undefined,
+            time_of_day: selectedTimePlay.value ?? undefined,
+            rating: selectedRating.value ?? undefined,
+            online_recently: isOnlineRecently.value ? 1 : 0,
+            recent_matches: isQuantityMatcheshasPlayRecently.value ?? undefined,
+            same_club_id: selectedClub.value ?? undefined,
+            verify_profile: is_verify_profile.value ? 1 : undefined,
+            achievement: isHasAchievement.value ? 1 : undefined
         };
 
-        if (bounds) {
-            params.min_lat = bounds.getSouth();
-            params.max_lat = bounds.getNorth();
-            params.min_lng = bounds.getWest();
-            params.max_lng = bounds.getEast();
-        }
+        // if (bounds) {
+        //     params.minLat = bounds.getSouth();
+        //     params.maxLat = bounds.getNorth();
+        //     params.minLng = bounds.getWest();
+        //     params.maxLng = bounds.getEast();
+        // }
 
         Object.keys(params).forEach(key => {
             if (params[key] === undefined) {
@@ -783,15 +1222,17 @@ const applyFilter = async () => {
     clearAllMarkers();
     await loadTabContent(activeTab.value, currentBounds.value);
     isFilterModalOpen.value = false;
-    toast.success('Đã áp dụng bộ lọc');
+    toast.success('Lọc thành công');
 };
 
 const resetFilter = async () => {
+    // Reset các trường chung
     selectedCourtCounts.value = [];
     selectedCourtTypes.value = [];
     selectedFacilities.value = [];
     selectedSportId.value = null;
     isShowMyFollow.value = false;
+    isShowFavoritePlayer.value = false;
     searchCourt.value = '';
     searchMatch.value = '';
     searchUser.value = '';
@@ -801,6 +1242,18 @@ const resetFilter = async () => {
     selectedLocationValue.value = null;
     selectedLocationLabel.value = 'Chọn địa điểm';
     locationSearchQuery.value = '';
+    
+    // Reset các trường của tab Players
+    selectedTimePlay.value = [];
+    selectedRating.value = [];
+    selectedClub.value = [];
+    isOnlineRecently.value = false;
+    isQuantityMatcheshasPlayRecently.value = [];
+    isConnected.value = false;
+    is_verify_profile.value = false;
+    isHasAchievement.value = false;
+    selectedGenderValue.value = null;
+    selectedGenderLabel.value = 'Tất cả';
 
     courtsMap.value.clear();
     usersMap.value.clear();
@@ -873,7 +1326,6 @@ const selectRadius = async (option) => {
     if (option.value === 'nearby') {
         try {
             userLocation.value = await getUserLocation();
-            toast.success('Đã lấy vị trí của bạn');
         } catch (error) {
             toast.error('Không thể lấy vị trí của bạn. Vui lòng cho phép truy cập vị trí.');
             selectedRadiusValue.value = null;
@@ -885,13 +1337,15 @@ const selectRadius = async (option) => {
     }
 
     isInitialLoad.value = true;
-    if (activeTab.value === 'courts') courtsMap.value.clear();
-    else if (activeTab.value === 'match') matchesMap.value.clear();
-    else if (activeTab.value === 'players') usersMap.value.clear();
-
-    clearAllMarkers();
-    await loadTabContent(activeTab.value, currentBounds.value);
 };
+
+const selectGender = async (option) => {
+    if (selectedGenderValue.value === option.value) return;
+    selectedGenderValue.value = option.value;
+    selectedGenderLabel.value = option.label;
+    isGenderDropdownOpen.value = false;
+    isInitialLoad.value = true;
+}
 
 const selectLocation = async (location) => {
     if (selectedLocationValue.value === (location?.id || null)) return;
@@ -902,26 +1356,20 @@ const selectLocation = async (location) => {
     locationSearchQuery.value = '';
 
     isInitialLoad.value = true;
-    if (activeTab.value === 'courts') courtsMap.value.clear();
-    else if (activeTab.value === 'match') matchesMap.value.clear();
-    else if (activeTab.value === 'players') usersMap.value.clear();
-
-    clearAllMarkers();
-    await loadTabContent(activeTab.value, currentBounds.value);
 };
 
 const selectedMap = {
-  courts: selectedCourt,
-  players: selectedUser,
-  match: selectedMatches
+    courts: selectedCourt,
+    players: selectedUser,
+    match: selectedMatches
 }
 
 const focusItemAuto = (item) => {
-  const selectedRef = selectedMap[activeTab.value]
-  if (!selectedRef) return
+    const selectedRef = selectedMap[activeTab.value]
+    if (!selectedRef) return
 
-  selectedRef.value = item.id
-  focusItem(item.id)
+    selectedRef.value = item.id
+    focusItem(item.id)
 }
 
 const getUserRating = (user) => {
@@ -931,9 +1379,19 @@ const getUserRating = (user) => {
     return parseFloat(pickleballSport.scores.vndupr_score).toFixed(1) || "0";
 };
 
+const getMyClubs = async () => {
+    try {
+        const response = await ClubService.myClubs();
+        myClub.value = response || [];
+    } catch (e) {
+        toast.error(e.responsve?.data?.message || "Lấy danh sách câu lạc bộ không thành công");
+    }
+};
+
 onMounted(async () => {
     await getListSports();
     await getListLocation();
+    await getMyClubs();
 });
 
 const searchValue = computed({
@@ -962,7 +1420,7 @@ const filteredLocations = computed(() => {
         return locations.value;
     }
     const query = locationSearchQuery.value.toLowerCase().trim();
-    return locations.value.filter(location => 
+    return locations.value.filter(location =>
         location.name.toLowerCase().includes(query)
     );
 });
@@ -1024,37 +1482,7 @@ watch([searchCourt, searchMatch, searchUser], ([newCourt, newMatch, newUser], [o
 
         clearAllMarkers();
         await loadTabContent(activeTab.value, currentBounds.value);
-    }, 1200);
-});
-
-watch(isShowMyFollow, async () => {
-    isInitialLoad.value = true;
-
-    if (activeTab.value === 'courts') {
-        courtsMap.value.clear();
-    } else if (activeTab.value === 'match') {
-        matchesMap.value.clear();
-    } else if (activeTab.value === 'players') {
-        usersMap.value.clear();
-    }
-
-    clearAllMarkers();
-    await loadTabContent(activeTab.value, currentBounds.value);
-});
-
-watch(selectedSportId, async () => {
-    isInitialLoad.value = true;
-
-    if (activeTab.value === 'courts') {
-        courtsMap.value.clear();
-    } else if (activeTab.value === 'match') {
-        matchesMap.value.clear();
-    } else if (activeTab.value === 'players') {
-        usersMap.value.clear();
-    }
-
-    clearAllMarkers();
-    await loadTabContent(activeTab.value, currentBounds.value);
+    }, 800);
 });
 
 onUnmounted(() => {

@@ -98,8 +98,9 @@ class UserController extends Controller
             $query->nearBy($validated['lat'], $validated['lng'], $validated['radius']);
         }
 
-        if (!empty($validated['is_map']) && $validated['is_map'] === true) {
-            $users = $query->whereNotNull('latitude')->whereNotNull('longitude')->get();
+        if (!empty($validated['is_map']) && $validated['is_map']) {
+            // $users = $query->whereNotNull('latitude')->whereNotNull('longitude')->get();
+            $users = $query->get();
 
             $data = [
                 'users' => UserResource::collection($users),

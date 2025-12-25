@@ -386,8 +386,8 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
                 })
             )
             ->when(
-                !empty($filters['gender']) && $filters['gender'] != 0,
-                fn($query) => $query->where('gender', $filters['gender'])
+                isset($filters['gender']),
+                fn ($query) => $query->where('gender', $filters['gender'])
             )
             ->when(
                 !empty($filters['time_of_day']) && is_array($filters['time_of_day']),
@@ -418,7 +418,7 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
                         $q->whereNotIn('score_type', ['personal_score'])
                             ->whereIn('score_value', function ($subQuery) use ($ratings) {
                                 $subQuery->select('score_value')
-                                    ->from('user_sports')
+                                    ->from('user_sport')
                                     ->whereIn('score_value', $ratings);
                             });
                     });
