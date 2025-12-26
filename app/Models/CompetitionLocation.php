@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class CompetitionLocation extends Model
 {
@@ -129,7 +130,7 @@ class CompetitionLocation extends Model
     {
         return $query
             ->addSelect('*')
-            ->addSelect(\DB::raw("
+            ->addSelect(DB::raw("
                 (
                     6371 * acos(
                         cos(radians($lat))
