@@ -91,9 +91,13 @@
                       class="w-8 h-8 rounded-full" :alt="match.home_team.name" />
                     <p class="text-sm font-semibold text-[#3E414C]">{{ match.home_team.name }}</p>
                   </div>
-                  <span :class="scoreClass(match.status)" class="font-bold text-lg pointer-events-none">
-                    {{ match.home_score !== null ? match.home_score : "-" }}
-                  </span>
+                  <span
+  :class="scoreClass(match, 'home')"
+  class="font-bold text-lg pointer-events-none"
+>
+  {{ match.home_score !== null ? match.home_score : "-" }}
+</span>
+
                 </div>
 
                 <!-- AWAY TEAM - DRAGGABLE -->
@@ -118,9 +122,13 @@
                       class="w-8 h-8 rounded-full" :alt="match.away_team.name" />
                     <p class="text-sm font-semibold text-[#3E414C]">{{ match.away_team.name }}</p>
                   </div>
-                  <span :class="scoreClass(match.status)" class="font-bold text-lg pointer-events-none">
-                    {{ match.away_score !== null ? match.away_score : "-" }}
-                  </span>
+                  <span
+  :class="scoreClass(match, 'away')"
+  class="font-bold text-lg pointer-events-none"
+>
+  {{ match.away_score !== null ? match.away_score : "-" }}
+</span>
+
                 </div>
               </div>
             </div>
@@ -350,11 +358,26 @@ const matchHeaderContentClass = (leg) => {
     return 'text-[#838799]';
 };
 
-const scoreClass = (status) => {
-  if (status === "in_progress") {
-    return "text-red-500";
+const scoreClass = (match, position) => {
+  if (
+    match.home_score === null ||
+    match.away_score === null ||
+    match.status !== 'completed'
+  ) {
+    return 'text-[#3E414C]';
   }
-  return "text-[#3E414C]";
+
+  if (match.home_score === match.away_score) {
+    return 'text-[#3E414C]';
+  }
+
+  const isHomeWin = match.home_score > match.away_score;
+
+  if (position === 'home') {
+    return isHomeWin ? 'text-green-700' : 'text-red-700';
+  }
+
+  return isHomeWin ? 'text-red-700' : 'text-green-700';
 };
 
 /* ===========================
