@@ -1,25 +1,21 @@
 <template>
   <div class="p-4 pt-0 min-h-screen overflow-x-auto">
-    <CreateMatch v-model="showCreateMatchModal" :data="detailData" :tournament="tournament" @updated="handleMatchUpdated" />
+    <CreateMatch v-model="showCreateMatchModal" :data="detailData" :tournament="tournament"
+      @updated="handleMatchUpdated" />
 
     <!-- HEADER CÁC ROUND -->
     <div class="flex w-max min-h-full pb-4">
 
-      <div
-        v-for="(round, roundIndex) in bracket.bracket"
-        :key="roundIndex"
-        class="flex flex-col min-w-[320px] relative"
-      >
-        <div
-          :class="[
-            'flex justify-between items-center w-full mb-6 bg-[#EDEEF2] p-4 sticky top-0 z-10',
-            roundIndex === 0
-              ? 'rounded-l-md'
-              : roundIndex === totalRounds - 1
+      <div v-for="(round, roundIndex) in bracket.bracket" :key="roundIndex"
+        class="flex flex-col min-w-[320px] relative">
+        <div :class="[
+          'flex justify-between items-center w-full mb-6 bg-[#EDEEF2] p-4 sticky top-0 z-10',
+          roundIndex === 0
+            ? 'rounded-l-md'
+            : roundIndex === totalRounds - 1
               ? 'rounded-r-md border-l border-white'
               : 'border-l border-white',
-          ]"
-        >
+        ]">
           <h2 class="font-bold text-[#3E414C] whitespace-nowrap">
             {{ round.round_name }}
           </h2>
@@ -30,8 +26,7 @@
             </span>
 
             <button
-              class="w-9 h-9 rounded-full flex items-center justify-center border border-[#BBBFCC] hover:bg-gray-100 hover:border-[#838799] transition-colors"
-            >
+              class="w-9 h-9 rounded-full flex items-center justify-center border border-[#BBBFCC] hover:bg-gray-100 hover:border-[#838799] transition-colors">
               <PencilIcon class="w-5 h-5 text-[#838799]" />
             </button>
           </div>
@@ -43,83 +38,76 @@
     <!-- BRACKET -->
     <Bracket :rounds="rounds">
       <template #player="{ player }">
-        <div
-          v-if="player.isPlayer1"
+        <div v-if="player.isPlayer1"
           class="w-64 rounded-lg shadow-md border bg-[#EDEEF2] relative cursor-pointer hover:shadow-lg transition-all"
-          :class="playerWrapperClass(player)"
-          @click="handleMatchClick(player.matchId)"
-        >
-        <div
-          class="flex justify-between items-center text-xs font-medium rounded-t-[7px] rounded-b-[7px] px-4 py-2"
-          :class="headerClass(player)"
-        >
-          <span class="uppercase">{{ player.label || 'SÂN 1' }}</span>
-          <div class="flex items-center gap-2">
-            <span v-if="player.status === 'pending' || hasScoreInSets(player)"
-                  class="text-white font-bold text-xs flex items-center px-2 py-0.5">
-              <VideoCameraIcon class="w-3 h-3 mr-1" />
-              Trực tiếp
-            </span>
-            <span class="text-xs" v-else>
-              {{ player.time ? formatTime(player.time) : "Chưa xác định" }}
-            </span>
+          :class="playerWrapperClass(player)" @click="handleMatchClick(player.matchId)">
+          <div class="flex justify-between items-center text-xs font-medium rounded-t-[7px] rounded-b-[7px] px-4 py-2"
+            :class="headerClass(player)">
+            <span class="uppercase">{{ player.label || 'SÂN 1' }}</span>
+            <div class="flex items-center gap-2">
+              <span v-if="player.status === 'pending' || hasScoreInSets(player)"
+                class="text-white font-bold text-xs flex items-center px-2 py-0.5">
+                <VideoCameraIcon class="w-3 h-3 mr-1" />
+                Trực tiếp
+              </span>
+              <span class="text-xs" v-else>
+                {{ player.time ? formatTime(player.time) : "Chưa xác định" }}
+              </span>
+            </div>
           </div>
-        </div>
 
           <!-- TEAMS -->
           <div class="px-4 space-y-1 bg-[#eceef2] rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px] rounded-tr-[7px]">
 
             <!-- HOME TEAM -->
-            <div 
-              class="space-y-1 rounded transition-colors"
-              :class="{
-                'bg-blue-100': isDropTarget(player.matchId, 'home'),
-                'cursor-move': player.roundNumber === 1 && !player.status
-              }"
-              :draggable="player.roundNumber === 1 && !player.status"
-              @dragstart="handleDragStart($event, player, 'home')"
-              @dragend="handleDragEnd"
-              @dragover.prevent="handleDragOver($event, player.matchId, 'home')"
-              @dragleave="handleDragLeave"
-              @drop="handleDrop($event, player.matchId, 'home')"
-            >
+            <div class="space-y-1 rounded transition-colors" :class="{
+              'bg-blue-100': isDropTarget(player.matchId, 'home'),
+              'cursor-move': player.roundNumber === 1 && !player.status
+            }" :draggable="player.roundNumber === 1 && !player.status"
+              @dragstart="handleDragStart($event, player, 'home')" @dragend="handleDragEnd"
+              @dragover.prevent="handleDragOver($event, player.matchId, 'home')" @dragleave="handleDragLeave"
+              @drop="handleDrop($event, player.matchId, 'home')">
               <div class="flex justify-between items-center">
                 <div class="flex items-center gap-2">
                   <img :src="player.logo || placeholderFor(player.name)" class="w-8 h-8 rounded-full" />
                   <p class="text-sm font-semibold text-[#3E414C]">{{ player.name }}</p>
                 </div>
 
-                <span class="font-bold text-lg"
-                  :class="player.id === player.winnerId ? 'text-[#D72D36]' : 'text-[#3E414C]'">
+                <span class="font-bold text-lg" :class="player.winnerId
+                    ? (player.id === player.winnerId
+                      ? 'text-green-700'
+                      : 'text-red-700')
+                    : 'text-[#3E414C]'
+                  ">
                   {{ player.score ?? 0 }}
                 </span>
               </div>
             </div>
 
             <!-- AWAY TEAM -->
-            <div 
-              class="space-y-1 rounded transition-colors"
-              :class="{
-                'bg-blue-100': isDropTarget(player.matchId, 'away'),
-                'cursor-move': player.roundNumber === 1 && !player.status
-              }"
-              :draggable="player.roundNumber === 1 && !player.status"
-              @dragstart="handleDragStart($event, player, 'away')"
-              @dragend="handleDragEnd"
-              @dragover.prevent="handleDragOver($event, player.matchId, 'away')"
-              @dragleave="handleDragLeave"
-              @drop="handleDrop($event, player.matchId, 'away')"
-            >
+            <div class="space-y-1 rounded transition-colors" :class="{
+              'bg-blue-100': isDropTarget(player.matchId, 'away'),
+              'cursor-move': player.roundNumber === 1 && !player.status
+            }" :draggable="player.roundNumber === 1 && !player.status"
+              @dragstart="handleDragStart($event, player, 'away')" @dragend="handleDragEnd"
+              @dragover.prevent="handleDragOver($event, player.matchId, 'away')" @dragleave="handleDragLeave"
+              @drop="handleDrop($event, player.matchId, 'away')">
               <div class="flex justify-between items-center">
                 <div class="flex items-center gap-2">
-                  <img :src="player.opponent.logo || placeholderFor(player.opponent.name)" class="w-8 h-8 rounded-full" />
+                  <img :src="player.opponent.logo || placeholderFor(player.opponent.name)"
+                    class="w-8 h-8 rounded-full" />
                   <p class="text-sm font-semibold text-[#3E414C]">{{ player.opponent.name }}</p>
                 </div>
 
-                <span class="font-bold text-lg"
-                  :class="player.opponent.id === player.winnerId ? 'text-[#D72D36]' : 'text-[#3E414C]'">
+                <span class="font-bold text-lg" :class="player.winnerId
+                    ? (player.opponent.id === player.winnerId
+                      ? 'text-green-700'
+                      : 'text-red-700')
+                    : 'text-[#3E414C]'
+                  ">
                   {{ player.opponent.score ?? 0 }}
                 </span>
+
               </div>
             </div>
 
@@ -158,7 +146,7 @@ const totalRounds = computed(() => props.bracket.bracket.length);
 =========================== */
 const handleMatchClick = async (matchId) => {
   if (!matchId || isDragging.value) return;
-  
+
   try {
     const res = await MatchesService.detailMatches(matchId);
     if (res) {
@@ -201,7 +189,7 @@ const handleDragEnd = () => {
 
 const handleDragOver = (event, matchId, position) => {
   if (!draggedTeam.value) return;
-  
+
   // Không cho drop vào chính vị trí đang drag
   if (draggedTeam.value.matchId === matchId && draggedTeam.value.position === position) {
     event.dataTransfer.dropEffect = 'none';
@@ -261,7 +249,7 @@ const playerWrapperClass = (player) => {
 
 const handleDrop = async (event, targetMatchId, targetPosition) => {
   event.preventDefault();
-  
+
   if (!draggedTeam.value) return;
 
   // Không cho swap với chính mình
@@ -280,7 +268,7 @@ const handleDrop = async (event, targetMatchId, targetPosition) => {
     }
 
     const res = await MatchesService.swapTeams(targetMatchId, payload);
-    
+
     if (res) {
       toast.success('Hoán đổi đội thành công!');
       // Refresh bracket data
@@ -294,8 +282,8 @@ const handleDrop = async (event, targetMatchId, targetPosition) => {
 };
 
 const handleMatchUpdated = () => {
-    showCreateMatchModal.value = false;
-    emit('refresh'); // Refresh bracket data
+  showCreateMatchModal.value = false;
+  emit('refresh'); // Refresh bracket data
 };
 
 const isDropTarget = (matchId, position) => {

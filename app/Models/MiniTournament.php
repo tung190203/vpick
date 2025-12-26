@@ -49,21 +49,15 @@ class MiniTournament extends Model
     const PER_PAGE = 15;
 
     const MATCH_TYPE_FRIENDLY = 1;
-    const MATCH_TYPE_ROUND_ROBIN = 2;
-    const MATCH_TYPE_SINGLE = 3;
-    const MATCH_TYPE_DOUBLE = 4;
-    const MATCH_TYPE_TRAINING = 5;
-    const MATCH_TYPE_LESSON = 6;
-    const MATCH_TYPE_MEETING = 7;
+    const MATCH_TYPE_SINGLE = 2;
+    const MATCH_TYPE_DOUBLE = 3;
+    const MATCH_TYPE_TRAINING = 4;
 
     const MATCH_TYPE_NUMBER = [
         self::MATCH_TYPE_FRIENDLY,
-        self::MATCH_TYPE_ROUND_ROBIN,
         self::MATCH_TYPE_SINGLE,
         self::MATCH_TYPE_DOUBLE,
         self::MATCH_TYPE_TRAINING,
-        self::MATCH_TYPE_LESSON,
-        self::MATCH_TYPE_MEETING,
     ];
 
     const MALE = 1;

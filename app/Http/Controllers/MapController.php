@@ -44,8 +44,15 @@ class MapController extends Controller
             'min_price' => 'nullable|numeric|min:0',
             'max_price' => 'nullable|numeric|min:0',
         ]);
-        $miniTournamentQuery = MiniTournament::withFullRelations()->filter($validated);
-        $tournamentQuery = Tournament::withFullRelations()->filter($validated);
+        $today = now()->toDateString();
+
+        $miniTournamentQuery = MiniTournament::withFullRelations()
+            ->whereDate('starts_at', '>=', $today)
+            ->filter($validated);
+
+        $tournamentQuery = Tournament::withFullRelations()
+            ->whereDate('start_date', '>=', $today)
+            ->filter($validated);
         $hasMiniTournamentFilter = collect([
             'sport_id', 'location_id', 'date_from', 'keyword',
             'lat', 'lng', 'radius', 'type', 'rating', 'fee',
