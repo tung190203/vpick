@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class MiniParticipantResource extends JsonResource
+class MiniTeamResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -15,10 +15,11 @@ class MiniParticipantResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'            => $this->id,
-            'is_confirmed'  => (bool) $this->is_confirmed,
-            'joined_at'     => $this->created_at->format('d-m-Y'),
-            'user' => new UserListResource($this->whenLoaded('user')),
-        ];
+            'id' => $this->id,
+            'name' => $this->name,
+            'members' => MiniTeamMemberResource::collection(
+    $this->whenLoaded('members')
+            ),
+        ];   
     }
 }

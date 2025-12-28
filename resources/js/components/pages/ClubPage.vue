@@ -43,7 +43,7 @@
                             {{ club.members }} thành viên
                         </span>
                         <span class="inline-block text-xs px-2 py-1 bg-green-100 text-green-800 rounded">
-                            {{ club.vndupr }} VNDUPR
+                            {{ club.vndupr }} PICKI
                         </span>
                         <span class="inline-block text-xs px-2 py-1 bg-indigo-100 text-indigo-800 rounded">
                             {{ club.vnrank }} VNRANK

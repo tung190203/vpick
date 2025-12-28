@@ -41,7 +41,7 @@
             </div>
 
             <div class="mt-2 sm:mt-0 text-xs text-left md:text-right grid grid-cols-2 gap-x-4">
-              <div class="text-gray-400 uppercase">VNDUPR</div>
+              <div class="text-gray-400 uppercase">PICKI</div>
               <div class="text-gray-400 uppercase">VN RANK</div>
               <div class="text-black font-medium">{{ club.vndupr }}</div>
               <div class="text-black font-medium">{{ club.rank }}</div>

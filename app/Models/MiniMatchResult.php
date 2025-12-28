@@ -11,7 +11,7 @@ class MiniMatchResult extends Model
 
     protected $fillable = [
         'mini_match_id',
-        'participant_id',
+        'team_id',
         'score',
         'won_set',
         'set_number',
@@ -26,8 +26,9 @@ class MiniMatchResult extends Model
     {
         return $this->belongsTo(MiniMatch::class, 'mini_match_id');
     }
-    public function participant()
+
+    public function team()
     {
-        return $this->belongsTo(MiniParticipant::class, 'participant_id');
+        return $this->belongsTo(MiniTeam::class,'team_id');
     }
 }

@@ -189,7 +189,7 @@
                             </button>
                         </div>
                         <div class="flex justify-between items-center">
-                            <span class="text-gray-700">Tích điểm VNDUPR</span>
+                            <span class="text-gray-700">Tích điểm PICKI</span>
                             <button @click="toggleVNDUPR"
                                 class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
                                 :class="vnduprEnabled ? 'bg-[#D72D36]' : 'bg-gray-300'">

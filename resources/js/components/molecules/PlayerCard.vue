@@ -6,7 +6,7 @@
         <div v-else class="w-8 h-8 bg-gray-300 rounded-full"></div>
         <div>
           <div class="font-medium text-sm">{{ player.name || 'Chọn người chơi' }}</div>
-          <div class="text-xs text-gray-500">VNDUPR {{ player.vndupr || '--' }}</div>
+          <div class="text-xs text-gray-500">PICKI {{ player.vndupr || '--' }}</div>
         </div>
       </div>
       <button class="text-sm text-primary border border-primary px-2 py-1 rounded" @click="onSelect">

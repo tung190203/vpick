@@ -32,7 +32,6 @@ class MiniTournamentController extends Controller
         if ($data['role_type'] !== MiniTournament::ROLE_ORGANIZER) {
             MiniParticipant::create([
                 'mini_tournament_id' => $miniTournament->id,
-                'type' => 'user',
                 'user_id' => Auth::id(),
                 'is_confirmed' => true,
             ]);
@@ -43,7 +42,6 @@ class MiniTournamentController extends Controller
             foreach ($inviteUsers as $userId) {
                 MiniParticipant::create([
                     'mini_tournament_id' => $miniTournament->id,
-                    'type' => 'user',
                     'user_id' => $userId,
                     'is_confirmed' => true,
                 ]);
@@ -136,7 +134,6 @@ class MiniTournamentController extends Controller
                 if (!$existingParticipant) {
                     MiniParticipant::create([
                         'mini_tournament_id' => $miniTournament->id,
-                        'type' => 'user',
                         'user_id' => Auth::id(),
                         'is_confirmed' => true,
                     ]);

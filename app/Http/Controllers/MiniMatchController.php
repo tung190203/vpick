@@ -46,12 +46,10 @@ class MiniMatchController extends Controller
             $userId = Auth::id();
     
             $query->where(function ($q) use ($userId) {
-                $q->whereHas('participant1', function ($sub) use ($userId) {
-                    $sub->where('user_id', $userId)
-                        ->orWhereHas('team.members', fn($m) => $m->where('user_id', $userId));
-                })->orWhereHas('participant2', function ($sub) use ($userId) {
-                    $sub->where('user_id', $userId)
-                        ->orWhereHas('team.members', fn($m) => $m->where('user_id', $userId));
+                $q->whereHas('team1.members.user', function ($sub) use ($userId) {
+                    $sub->where('user_id', $userId);
+                })->orWhereHas('team2.members.user', function ($sub) use ($userId) {
+                    $sub->where('user_id', $userId);
                 });
             });
         }
@@ -81,278 +79,215 @@ class MiniMatchController extends Controller
 
         return ResponseHelper::success(new MiniMatchResource($match), 'Lấy thông tin trận đấu thành công');
     }
-    /**
-     * Tạo trận đấu mới
-     * participants nếu là int => user
-     * truyền mảng lên là team
-     */
     public function store(Request $request, $miniTournamentId)
     {
-        $validated = $request->validate([
-            'round' => 'nullable|string',
-            'participant1_id' => 'sometimes',
-            'participant2_id' => 'sometimes',
-            'scheduled_at' => 'nullable|date',
-            'referee' => 'nullable|exists:referees,id',
+        $miniTournament = MiniTournament::findOrFail($miniTournamentId);
+    
+        if(!$miniTournament->hasOrganizer(Auth::id())) {
+            return ResponseHelper::error('Bạn không có quyền tạo trận đấu', 403);
+        }
+    
+        $data = $request->validate([
+            'team1' => 'required|array|min:1',
+            'team2' => 'required|array|min:1',
+            'team1.*' => 'exists:users,id',
+            'team2.*' => 'exists:users,id',
             'team1_name' => 'nullable|string|max:255',
             'team2_name' => 'nullable|string|max:255',
+            'scheduled_at' => 'nullable|date',
+            'round' => 'nullable|string',
+            'referee' => 'nullable|exists:referees,id',
             'yard_number' => 'nullable|string|max:50',
             'name_of_match' => 'nullable|string|max:255',
         ]);
 
-        $miniTournament = MiniTournament::with('staff')->findOrFail($miniTournamentId);
-        $isOrganizer = $miniTournament->hasOrganizer(Auth::id());
+        $team1Count = count($data['team1']);
+        $team2Count = count($data['team2']);
 
-        if (!$isOrganizer) {
-            return ResponseHelper::error('Người dùng không có quyền tạo trận đấu trong giải đấu này', 403);
+        if ($team1Count !== $team2Count) {
+            return ResponseHelper::error('Số lượng người chơi của 2 đội phải bằng nhau',422);
         }
 
-        // xử lý participant (có thể là id hoặc array user_id[])
-        $p1 = $this->resolveParticipant(
-            $validated['participant1_id'] ?? null,
-            $miniTournament->id,
-            null,
-            $validated['team1_name'] ?? null
-        );
-
-        $p2 = $this->resolveParticipant(
-            $validated['participant2_id'] ?? null,
-            $miniTournament->id,
-            null,
-            $validated['team2_name'] ?? null
-        );
-
-        // check trùng nhau
-        if ($p1 && $p2) {
-            if ($p1->id === $p2->id) {
-                return ResponseHelper::error('Người chơi không được trùng nhau', 400);
-            }
-
-            $matches = MiniMatch::where('mini_tournament_id', $miniTournament->id)
-                ->where(function ($query) use ($p1, $p2) {
-                    $query->where(function ($q) use ($p1, $p2) {
-                        $q->where('participant1_id', $p1->id)->where('participant2_id', $p2->id);
-                    })->orWhere(function ($q) use ($p1, $p2) {
-                        $q->where('participant1_id', $p2->id)->where('participant2_id', $p1->id);
-                    });
-                })
-                ->first();
-
-            if ($matches) {
-                return ResponseHelper::error('Trận đấu giữa hai người chơi này đã tồn tại', 400);
-            }
-        }
-
-        $matchCount = MiniMatch::where('mini_tournament_id', $miniTournament->id)->count();
-        $defaultMatchName = 'Trận đấu số ' . ($matchCount + 1);
-        // tạo trận đấu
-        $match = MiniMatch::create([
-            'mini_tournament_id' => $miniTournament->id,
-            'participant1_id' => $p1?->id,
-            'participant2_id' => $p2?->id,
-            'scheduled_at' => $validated['scheduled_at'] ?? null,
-            'referee_id' => $validated['referee'] ?? null,
-            'status' => MiniMatch::STATUS_PENDING,
-            'round' => $validated['round'] ?? null,
-            'yard_number' => $validated['yard_number'] ?? null,
-            'name_of_match' => $validated['name_of_match'] ?? $defaultMatchName,
-        ]);
-
-        $match = MiniMatch::withFullRelations()->findOrFail($match->id);
-
-        $participants = [$p1, $p2];
-
-        foreach ($participants as $participant) {
-            if (!$participant) continue;
-
-            if ($participant->type === 'user' && $participant->user) {
-                $participant->user->notify(new MiniMatchCreatedNotification($match));
-            }
-
-            if ($participant->type === 'team' && $participant->team) {
-                // Gửi notification cho tất cả thành viên team
-                foreach ($participant->team->members as $member) {
-                    $member->notify(new MiniMatchCreatedNotification($match));
+        switch ($miniTournament->match_type) {
+            case MiniTournament::MATCH_TYPE_SINGLE:
+                if ($team1Count !== 1) {
+                    return ResponseHelper::error('Kèo này chỉ cho phép tạo trận 1v1', 422);
                 }
-            }
+                break;
+            case MiniTournament::MATCH_TYPE_DOUBLE:
+                if ($team1Count !== 2) {
+                    return ResponseHelper::error('Kèo này chỉ cho phép tạo trận 2v2', 422);
+                }
+                break;
+            default:
+                if (!in_array($team1Count, [1, 2])) {
+                    return ResponseHelper::error('Chỉ cho phép tạo trận 1v1 hoặc 2v2', 422);
+                }
+                break;
         }
-
-        return ResponseHelper::success(new MiniMatchResource($match), 'Tạo trận đấu thành công');
-    }
-
-    /**
-     * Giải quyết participant từ input (chỉ nhận user_id hoặc mảng user_id[])
-     * - Nếu input là số -> coi là user đơn (participant type = user)
-     * - Nếu input là mảng có 1 phần tử -> cũng coi là user đơn
-     * - Nếu input là mảng >1 -> coi là team (participant type = team)
-     *
-     * Trả về MiniParticipant hoặc null
-     */
-    protected function resolveParticipant($input, $miniTournamentId, $currentParticipant = null, $teamName = null)
-    {
-        if (empty($input)) {
-            return null;
-        }
-
-        // Nếu input là số (user đơn)
-        if (!is_array($input)) {
-            return MiniParticipant::firstOrCreate(
-                [
-                    'mini_tournament_id' => $miniTournamentId,
-                    'type' => 'user',
-                    'user_id' => (int) $input,
-                ],
-                ['is_confirmed' => true]
+    
+        $allUserIds = array_unique(array_merge($data['team1'], $data['team2']));
+    
+        $validParticipants = MiniParticipant::where('mini_tournament_id', $miniTournament->id)
+            ->where('is_confirmed', true)
+            ->whereIn('user_id', $allUserIds)
+            ->pluck('user_id')
+            ->toArray();
+    
+        if (count($validParticipants) !== count($allUserIds)) {
+            return ResponseHelper::error(
+                'Có người chơi chưa tham gia hoặc chưa được duyệt trong kèo',
+                422
             );
         }
-
-        // Nếu input là array -> LUÔN coi là team
-        $userIds = collect($input)->map(fn($i) => (int) $i)->unique()->sort()->values()->all();
-
-        // Nếu currentParticipant là team -> update members + tên team
-        if ($currentParticipant && $currentParticipant->type === 'team') {
-            $team = $currentParticipant->team;
-
-            foreach ($userIds as $uid) {
-                MiniTeamMember::firstOrCreate(['mini_team_id' => $team->id, 'user_id' => $uid]);
-            }
-            // Update tên team nếu có truyền vào
-            if (!empty($teamName)) {
-                $team->update(['name' => $teamName]);
-            }
-            return $currentParticipant;
-        }
-
-        // Tìm team có đúng danh sách userIds
-        $existingTeam = MiniTeam::where('mini_tournament_id', $miniTournamentId)
-            ->whereHas('members', function ($q) use ($userIds) {
-                $q->whereIn('user_id', $userIds);
-            }, '=', count($userIds))
-            ->whereDoesntHave('members', function ($q) use ($userIds) {
-                $q->whereNotIn('user_id', $userIds);
-            })
-            ->first();
-
-        if ($existingTeam) {
-            // Nếu có team rồi nhưng user truyền name -> update name
-            if ($teamName) {
-                $existingTeam->update(['name' => $teamName]);
-            }
-        } else {
-            // Nếu chưa có team -> tạo mới
-            $existingTeam = MiniTeam::create([
-                'mini_tournament_id' => $miniTournamentId,
-                'name' => $teamName ?: 'Team ' . Str::random(5),
+    
+        DB::beginTransaction();
+    
+        try {
+            $team1 = MiniTeam::create([
+                'mini_tournament_id' => $miniTournament->id,
+                'name' => $data['team1_name'] ?? 'Team 1',
             ]);
-            foreach ($userIds as $uid) {
-                $existingTeam->members()->create(['user_id' => $uid]);
+    
+            foreach ($data['team1'] as $userId) {
+                $team1->members()->create(['user_id' => $userId]);
             }
+    
+            $team2 = MiniTeam::create([
+                'mini_tournament_id' => $miniTournament->id,
+                'name' => $data['team2_name'] ?? 'Team 2',
+            ]);
+    
+            foreach ($data['team2'] as $userId) {
+                $team2->members()->create(['user_id' => $userId]);
+            }
+            $matchCount = MiniMatch::where('mini_tournament_id', $miniTournament->id)->count();
+            $defaultMatchName = 'Trận đấu số ' . ($matchCount + 1);
+    
+            $match = MiniMatch::create([
+                'mini_tournament_id' => $miniTournament->id,
+                'team1_id' => $team1->id,
+                'team2_id' => $team2->id,
+                'scheduled_at' => $data['scheduled_at'] ?? null,
+                'status' => MiniMatch::STATUS_PENDING,
+                'round' => $data['round'] ?? null,
+                'yard_number' => $data['yard_number'] ?? null,
+                'name_of_match' => $data['name_of_match'] ?? $defaultMatchName
+            ]);
+    
+            DB::commit();
+    
+            return ResponseHelper::success(new MiniMatchResource($match->loadFullRelations()), 'Tạo trận đấu thành công', 201);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return ResponseHelper::error($e->getMessage());
         }
-
-        return MiniParticipant::firstOrCreate(
-            [
-                'mini_tournament_id' => $miniTournamentId,
-                'type' => 'team',
-                'team_id' => $existingTeam->id,
-            ],
-            ['is_confirmed' => true]
-        );
     }
-
     /**
      * Cập nhật thông tin trận đấu trong kèo đấu
      */
 
-    public function update(Request $request, $matchId)
+     public function update(Request $request, $matchId)
+     {
+         $match = MiniMatch::withFullRelations()->findOrFail($matchId);
+     
+         $miniTournament = $match->miniTournament;
+     
+         if (!$miniTournament->hasOrganizer(Auth::id())) {
+             return ResponseHelper::error('Bạn không có quyền sửa trận đấu', 403);
+         }
+     
+         $data = $request->validate([
+             'team1' => 'sometimes|array|min:1',
+             'team2' => 'sometimes|array|min:1',
+             'team1.*' => 'exists:users,id',
+             'team2.*' => 'exists:users,id',
+             'team1_name' => 'nullable|string|max:255',
+             'team2_name' => 'nullable|string|max:255',
+             'scheduled_at' => 'nullable|date',
+             'round' => 'nullable|string',
+             'yard_number' => 'nullable|string|max:50',
+             'name_of_match' => 'nullable|string|max:255',
+         ]);
+     
+         // ---- CHECK MATCH TYPE ----
+         $team1Count = isset($data['team1']) ? count($data['team1']) : $match->team1->members->count();
+     
+         $team2Count = isset($data['team2']) ? count($data['team2']) : $match->team2->members->count();
+     
+         if ($team1Count !== $team2Count) {
+             return ResponseHelper::error('Số lượng người chơi của 2 đội phải bằng nhau', 422);
+         }
+     
+         switch ($miniTournament->match_type) {
+             case MiniTournament::MATCH_TYPE_SINGLE:
+                 if ($team1Count !== 1) {
+                     return ResponseHelper::error('Kèo này chỉ cho phép tạo trận 1v1', 422);
+                 }
+                 break;
+     
+             case MiniTournament::MATCH_TYPE_DOUBLE:
+                 if ($team1Count !== 2) {
+                     return ResponseHelper::error('Kèo này chỉ cho phép tạo trận 2v2', 422);
+                 }
+                 break;
+     
+             default:
+                 if (!in_array($team1Count, [1, 2])) {
+                     return ResponseHelper::error('Chỉ cho phép tạo trận 1v1 hoặc 2v2', 422);
+                 }
+         }
+     
+         DB::beginTransaction();
+     
+         try {
+             // ---- UPDATE TEAM 1 ----
+             if (isset($data['team1'])) {
+                 $this->syncTeamMembers($match->team1, $data['team1']);
+             }
+     
+             if (!empty($data['team1_name'])) {
+                 $match->team1->update(['name' => $data['team1_name']]);
+             }
+     
+             // ---- UPDATE TEAM 2 ----
+             if (isset($data['team2'])) {
+                 $this->syncTeamMembers($match->team2, $data['team2']);
+             }
+     
+             if (!empty($data['team2_name'])) {
+                 $match->team2->update(['name' => $data['team2_name']]);
+             }
+     
+             // ---- UPDATE MATCH INFO ----
+             $match->update([
+                 'scheduled_at' => $data['scheduled_at'] ?? $match->scheduled_at,
+                 'round' => $data['round'] ?? $match->round,
+                 'yard_number' => $data['yard_number'] ?? $match->yard_number,
+                 'name_of_match' => $data['name_of_match'] ?? $match->name_of_match,
+             ]);
+     
+             DB::commit();
+     
+             return ResponseHelper::success(
+                 new MiniMatchResource($match->loadFullRelations()),
+                 'Cập nhật trận đấu thành công'
+             );
+     
+         } catch (\Throwable $e) {
+             DB::rollBack();
+             return ResponseHelper::error($e->getMessage());
+         }
+     }
+
+     protected function syncTeamMembers(MiniTeam $team, array $userIds)
     {
-        $validated = $request->validate([
-            'round' => 'nullable|string',
-            'participant1_id' => 'sometimes',
-            'participant2_id' => 'sometimes',
-            'team1_name' => 'nullable|string|max:255',
-            'team2_name' => 'nullable|string|max:255',
-            'scheduled_at' => 'nullable|date',
-            'referee' => 'nullable|exists:referees,id',
-            'yard_number' => 'nullable|string|max:50',
-            'name_of_match' => 'nullable|string|max:255',
-        ]);
+        $team->members()->delete();
 
-        $match = MiniMatch::with(['miniTournament', 'participant1', 'participant2'])->findOrFail($matchId);
-        $miniTournament = $match->miniTournament->load('staff');
-        $isOrganizer = $miniTournament->hasOrganizer(Auth::id());
-        if (!$isOrganizer) {
-            return ResponseHelper::error('Người dùng không có quyền sửa trận đấu trong giải đấu này', 403);
+        foreach ($userIds as $userId) {
+            $team->members()->create(['user_id' => $userId]);
         }
-
-        // Xử lý participant 1
-        $p1 = array_key_exists('participant1_id', $validated)
-            ? $this->resolveParticipant(
-                $validated['participant1_id'],
-                $miniTournament->id,
-                $match->participant1,
-                $validated['team1_name'] ?? null
-            )
-            : $match->participant1;
-
-        // Xử lý participant 2
-        $p2 = array_key_exists('participant2_id', $validated)
-            ? $this->resolveParticipant(
-                $validated['participant2_id'],
-                $miniTournament->id,
-                $match->participant2,
-                $validated['team2_name'] ?? null
-            )
-            : $match->participant2;
-
-        if ($p1 && $p2 && $p1->id === $p2->id) {
-            return ResponseHelper::error('Người chơi không được trùng nhau', 400);
-        }
-
-        $exists = MiniMatch::where('mini_tournament_id', $miniTournament->id)
-            ->where(function ($query) use ($p1, $p2) {
-                $query->where(function ($q) use ($p1, $p2) {
-                    $q->where('participant1_id', $p1->id)->where('participant2_id', $p2->id);
-                })->orWhere(function ($q) use ($p1, $p2) {
-                    $q->where('participant1_id', $p2->id)->where('participant2_id', $p1->id);
-                });
-            })
-            ->where('id', '!=', $match->id)
-            ->exists();
-
-        if ($exists) {
-            return ResponseHelper::error('Trận đấu giữa hai người chơi này đã tồn tại', 400);
-        }
-
-        $match->update([
-            'participant1_id' => $p1?->id,
-            'participant2_id' => $p2?->id,
-            'scheduled_at' => $validated['scheduled_at'] ?? $match->scheduled_at,
-            'referee_id' => $validated['referee'] ?? $match->referee_id,
-            'round' => $validated['round'] ?? $match->round,
-            'yard_number' => $validated['yard_number'] ?? $match->yard_number,
-            'name_of_match' => $validated['name_of_match'] ?? $match->name_of_match,
-        ]);
-
-        $match = MiniMatch::withFullRelations()->findOrFail($match->id);
-
-        $participants = [$p1, $p2];
-
-        foreach ($participants as $participant) {
-            if (!$participant) continue;
-
-            if ($participant->type === 'user' && $participant->user) {
-                $participant->user->notify(new MiniMatchUpdatedNotification($match));
-            }
-
-            if ($participant->type === 'team' && $participant->team) {
-                foreach ($participant->team->members as $member) {
-                    $member->notify(new MiniMatchUpdatedNotification($match));
-                }
-            }
-        }
-
-        return ResponseHelper::success(new MiniMatchResource($match), 'Cập nhật trận đấu thành công');
-    }
+    }     
 
     /**
      * Thêm hoặc cập nhật kết quả 1 hiệp (set)
@@ -361,161 +296,171 @@ class MiniMatchController extends Controller
     {
         $validated = $request->validate([
             'set_number' => 'required|integer|min:1',
-            'results' => 'required|array|min:2',
-            'results.*.participant_id' => 'required|exists:mini_participants,id',
+            'results' => 'required|array|min:2|max:2',
+            'results.*.team_id' => 'required|exists:mini_teams,id',
             'results.*.score' => 'required|integer|min:0',
         ]);
-
-        $match = MiniMatch::with('miniTournament')->findOrFail($matchId);
+    
+        $match = MiniMatch::withFullRelations()->findOrFail($matchId);
         $tournament = $match->miniTournament->load('staff');
-        $isOrganizer = $tournament->hasOrganizer(Auth::id());
-        if (!$isOrganizer) {
-            return ResponseHelper::error('Người dùng không có quyền thêm kết quả trận đấu trong giải đấu này', 403);
+    
+        if (!$tournament->hasOrganizer(Auth::id())) {
+            return ResponseHelper::error('Người dùng không có quyền thêm kết quả trận đấu trong kèo đấu này',403);
         }
 
+        if (!$match->isEditable()) {
+            return ResponseHelper::error('Trận đấu này đã được xác nhận kết quả', 400);
+        }
+    
+        // =======================
+        // 1. Kiểm tra set_number
+        // =======================
         if (!empty($tournament->set_number) && $validated['set_number'] > $tournament->set_number) {
-            return ResponseHelper::error("Trận đấu không được vượt quá {$tournament->set_number} set", 400);
+            return ResponseHelper::error(
+                "Trận đấu không được vượt quá {$tournament->set_number} set",
+                400
+            );
         }
-        
-        // --- 2. Lấy luật thi đấu ---
-        $pointsToWinSet = $tournament->games_per_set ?? null;
-        $pointsDifference = $tournament->points_difference ?? null; // Sử dụng tên biến đồng nhất với DB
-        $maxPoints = $tournament->max_points ?? null;
-
+    
+        // =======================
+        // 2. Lấy luật thi đấu
+        // =======================
+        $pointsToWinSet   = $tournament->games_per_set;
+        $pointsDifference = $tournament->points_difference;
+        $maxPoints        = $tournament->max_points;
+    
         if ($pointsToWinSet === null || $pointsDifference === null || $maxPoints === null) {
-             return ResponseHelper::error('Giải đấu chưa thiết lập đủ luật thi đấu (games_per_set, points_difference, max_points).', 400);
+            return ResponseHelper::error(
+                'Kèo đấu chưa thiết lập đủ luật thi đấu',
+                400
+            );
         }
-        
-        // --- 3. Đảm bảo 2 participant hợp lệ ---
-        $participantIds = [$match->participant1_id, $match->participant2_id];
-        $inputParticipants = collect($validated['results']);
-
-        if ($inputParticipants->count() !== 2) {
-            return ResponseHelper::error('Cần cung cấp điểm số cho cả hai người chơi/đội.', 400);
+    
+        // =======================
+        // 3. Validate team hợp lệ
+        // =======================
+        $teamIds = [$match->team1_id, $match->team2_id];
+        $inputResults = collect($validated['results']);
+    
+        if ($inputResults->count() !== 2) {
+            return ResponseHelper::error(
+                'Cần cung cấp điểm số cho cả hai đội',
+                400
+            );
         }
-
-        $participantA = $inputParticipants->firstWhere('participant_id', $participantIds[0]);
-        $participantB = $inputParticipants->firstWhere('participant_id', $participantIds[1]);
-
-        if (!$participantA || !$participantB) {
-            return ResponseHelper::error('Người chơi không hợp lệ hoặc thiếu dữ liệu cho một trong hai người chơi/đội.', 400);
+    
+        $teamA = $inputResults->firstWhere('team_id', $teamIds[0]);
+        $teamB = $inputResults->firstWhere('team_id', $teamIds[1]);
+    
+        if (!$teamA || !$teamB) {
+            return ResponseHelper::error(
+                'Team không hợp lệ hoặc không thuộc trận đấu này',
+                400
+            );
         }
-
-        $A = (int)$participantA['score'];
-        $B = (int)$participantB['score'];
-        $teamAId = $participantA['participant_id'];
-        $teamBId = $participantB['participant_id'];
-        
-        // Đảm bảo điểm số không âm
+    
+        $A = (int) $teamA['score'];
+        $B = (int) $teamB['score'];
+    
         if ($A < 0 || $B < 0) {
-             return ResponseHelper::error("Điểm số không hợp lệ trong set {$validated['set_number']}.", 400);
+            return ResponseHelper::error('Điểm số không hợp lệ', 400);
         }
-
-        // --- 4. Áp dụng Logic Kiểm tra Luật Thắng Set ---
-        
+    
+        // =======================
+        // 4. Logic xác định thắng set
+        // =======================
         $winnerTeamId = null;
         $isSetCompleted = false;
         $scoreDiff = abs($A - $B);
         $isPointsToWinReached = ($A >= $pointsToWinSet || $B >= $pointsToWinSet);
         $isMaxPointsReached = ($A == $maxPoints || $B == $maxPoints);
-
-        // Trường hợp pointsToWinSet = maxPoints (Ví dụ: 11-2-11)
+    
         if ($pointsToWinSet == $maxPoints) {
-            // Thắng khi chạm maxPoints (11-10 là thắng)
+            // Ví dụ: 11-2-11
             if ($isMaxPointsReached) {
                 $isSetCompleted = true;
-                $winnerTeamId = $A > $B ? $teamAId : $teamBId;
+                $winnerTeamId = $A > $B ? $teamIds[0] : $teamIds[1];
             }
         } else {
-            // Trường hợp pointsToWinSet != maxPoints (Ví dụ: 11-2-15)
-
-            // 1. Nếu đã chạm điểm pointsToWinSet và cách biệt pointsDifference điểm
+            // Ví dụ: 11-2-15
             if ($isPointsToWinReached && $scoreDiff >= $pointsDifference) {
                 $isSetCompleted = true;
-                $winnerTeamId = $A > $B ? $teamAId : $teamBId;
-            } 
-            // 2. Nếu chạm maxPoints (Luật "Deuce" kết thúc)
-            elseif ($isMaxPointsReached) {
-                $isSetCompleted = true;
-                // Nếu điểm bằng nhau ở maxPoints, thì không thể kết thúc
+                $winnerTeamId = $A > $B ? $teamIds[0] : $teamIds[1];
+            } elseif ($isMaxPointsReached) {
                 if ($A == $B) {
-                    return ResponseHelper::error("Điểm số hòa tại điểm tối đa $maxPoints trong set {$validated['set_number']}. Set phải kết thúc với cách biệt.", 400);
+                    return ResponseHelper::error(
+                        "Điểm số hòa tại điểm tối đa $maxPoints",
+                        400
+                    );
                 }
-                $winnerTeamId = $A > $B ? $teamAId : $teamBId;
+                $isSetCompleted = true;
+                $winnerTeamId = $A > $B ? $teamIds[0] : $teamIds[1];
             }
         }
-
-        // 🚫 YÊU CẦU BẮT BUỘC: CHỈ LƯU KHI SET ĐÃ HOÀN THÀNH
-        if (!$isSetCompleted) {
-            return ResponseHelper::error("Set {$validated['set_number']} có điểm số $A - $B chưa thỏa mãn luật thắng. Chỉ có thể lưu kết quả khi set đã hoàn thành.", 400);
+    
+        if (!$isSetCompleted || !$winnerTeamId) {
+            return ResponseHelper::error(
+                "Set {$validated['set_number']} chưa thỏa mãn luật thắng",
+                400
+            );
         }
-        
-        // --- 5. Kiểm tra tính hợp lệ của điểm cuối cùng (Chống gian lận điểm) ---
-        
+    
+        // =======================
+        // 5. Anti-cheat điểm
+        // =======================
         $winningScore = max($A, $B);
-        $losingScore = min($A, $B);
-
+        $losingScore  = min($A, $B);
+    
         if ($pointsToWinSet == $maxPoints) {
-            // Phải thắng tại điểm maxPoints và người thua phải dưới maxPoints
             if (!($winningScore == $maxPoints && $losingScore < $maxPoints)) {
-                return ResponseHelper::error("Điểm số $A - $B trong set {$validated['set_number']} không hợp lệ với luật (thắng khi chạm $maxPoints).", 400);
+                return ResponseHelper::error('Điểm số không hợp lệ', 400);
             }
         } else {
-            // 1. Kết thúc bằng cách biệt >= pointsDifference trước maxPoints
             if ($winningScore < $maxPoints) {
-                if (!($winningScore >= $pointsToWinSet && ($winningScore - $losingScore) >= $pointsDifference)) {
-                     return ResponseHelper::error("Điểm số $A - $B trong set {$validated['set_number']} không hợp lệ với luật (trước $maxPoints).", 400);
+                if (
+                    $winningScore < $pointsToWinSet ||
+                    ($winningScore - $losingScore) < $pointsDifference
+                ) {
+                    return ResponseHelper::error('Điểm số không hợp lệ', 400);
                 }
-                for ($i = $pointsToWinSet; $i < $winningScore; $i++) {
-                    $diffAtPoint = $i - $losingScore;
-                    if ($diffAtPoint >= $pointsDifference) {
-                        return ResponseHelper::error("Điểm số $A - $B trong set {$validated['set_number']} không hợp lệ. Set đã kết thúc sớm hơn tại $i - $losingScore.", 400);
-                    }
-                }
-            } 
-            // 2. Kết thúc tại maxPoints (ví dụ: 15-14)
-            else {
-                if (!($winningScore == $maxPoints && $winningScore > $losingScore)) {
-                    return ResponseHelper::error("Điểm số $A - $B trong set {$validated['set_number']} không hợp lệ với luật (tại $maxPoints).", 400);
-                }
-                for ($i = $pointsToWinSet; $i < $maxPoints; $i++) {
-                    $diffAtPoint = $i - $losingScore;
-                    if ($diffAtPoint >= $pointsDifference) {
-                        return ResponseHelper::error("Điểm số $A - $B trong set {$validated['set_number']} không hợp lệ. Set đã kết thúc sớm hơn tại $i - $losingScore.", 400);
-                    }
+            } else {
+                if ($winningScore != $maxPoints || $winningScore <= $losingScore) {
+                    return ResponseHelper::error('Điểm số không hợp lệ', 400);
                 }
             }
         }
+    
+        // =======================
+        // 6. Ghi DB
+        // =======================
+        DB::transaction(function () use ($match, $validated, $winnerTeamId) {
+    
+            MiniMatchResult::where('mini_match_id', $match->id)
+                ->where('set_number', $validated['set_number'])
+                ->delete();
 
-        if (!$winnerTeamId) {
-             return ResponseHelper::error("Lỗi xác định người thắng trong set {$validated['set_number']}.", 400);
-        }
-        
-        // --- 6. Xóa kết quả cũ và lưu kết quả mới (Khi đã hợp lệ) ---
-        
-        // Xóa nếu đã tồn tại set_number (update lại)
-        MiniMatchResult::where('mini_match_id', $match->id)
-            ->where('set_number', $validated['set_number'])
-            ->delete();
-
-        // lưu kết quả mới
-        foreach ($validated['results'] as $res) {
-            MiniMatchResult::create([
-                'mini_match_id' => $match->id,
-                'participant_id' => $res['participant_id'],
-                'score' => $res['score'],
-                'set_number' => $validated['set_number'],
-                'won_set' => $res['participant_id'] == $winnerTeamId, // Đã xác định người thắng
+            foreach ($validated['results'] as $res) {
+                MiniMatchResult::create([
+                    'mini_match_id' => $match->id,
+                    'team_id' => $res['team_id'],
+                    'score' => $res['score'],
+                    'set_number' => $validated['set_number'],
+                    'won_set' => $res['team_id'] == $winnerTeamId,
+                ]);
+            }
+    
+            $match->update([
+                'team1_confirm' => false,
+                'team2_confirm' => false,
             ]);
-        }
-
+        });
+    
         $match = MiniMatch::withFullRelations()->findOrFail($matchId);
-        $match->update([
-            'participant1_confirm' => false,
-            'participant2_confirm' => false,
-        ]);
-
-        return ResponseHelper::success(new MiniMatchResource($match), 'Thành công');
+    
+        return ResponseHelper::success(
+            new MiniMatchResource($match),
+            'Thành công'
+        );
     }
 
     /**
@@ -525,9 +470,12 @@ class MiniMatchController extends Controller
     {
         $match = MiniMatch::with('miniTournament')->findOrFail($matchId);
         $tournament = $match->miniTournament->load('staff');
-        $isOrganizer = $tournament->hasOrganizer(Auth::id());
-        if (!$isOrganizer) {
-            return ResponseHelper::error('Người dùng không có quyền xóa kết quả trận đấu trong giải đấu này', 403);
+        if (!$tournament->hasOrganizer(Auth::id())) {
+            return ResponseHelper::error('Người dùng không có quyền xoá kết quả trận đấu trong kèo đấu này',403);
+        }
+
+        if (!$match->isEditable()) {
+            return ResponseHelper::error('Trận đấu đã được xác nhận không thể xoá kết quả', 400);
         }
 
         MiniMatchResult::where('mini_match_id', $match->id)
@@ -558,11 +506,10 @@ class MiniMatchController extends Controller
 
         foreach ($matches as $match) {
             $tournament = $match->miniTournament->load('staff');
-            $isOrganizer = $tournament->hasOrganizer(Auth::id());
-            if (!$isOrganizer) {
-                return ResponseHelper::error("Bạn không có quyền xóa trận đấu", 403);
+            if (!$tournament->hasOrganizer(Auth::id())) {
+                return ResponseHelper::error('Người dùng không có quyền xoá trận đấu này',403);
             }
-            if ($match->status === MiniMatch::STATUS_COMPLETED) {
+            if (!$match->isEditable()) {
                 return ResponseHelper::error("Không thể xóa trận đấu đã xác nhận kết quả", 400);
             }
         }
@@ -570,7 +517,7 @@ class MiniMatchController extends Controller
         MiniMatchResult::whereIn('mini_match_id', $ids)->delete();
         MiniMatch::whereIn('id', $ids)->delete();
 
-        return ResponseHelper::success(null, 'Các trận đấu đã được xóa');
+        return ResponseHelper::success(null, 'Xoá thành công');
     }
 
     /**
@@ -588,275 +535,156 @@ class MiniMatchController extends Controller
      * Xác nhận kết quả trận đấu (thông qua QR code)
      */
 
-    public function confirmResult($matchId)
-    {
-        $match = MiniMatch::with('results.participant.user')
-            ->findOrFail($matchId);
-        $tournament = $match->miniTournament->load('staff');
-        $isOrganizer = $tournament->hasOrganizer(Auth::id());
-        $participantIds = [$match->participant1_id, $match->participant2_id];
-
-        $userParticipant = MiniParticipant::whereIn('id', $participantIds)
-            ->where(function ($q) {
-                $q->where(fn($sub) => $sub->where('type', 'user')->where('user_id', Auth::id()))
-                    ->orWhereHas('team.members', fn($sub) => $sub->where('user_id', Auth::id()));
-            })
-            ->first();
-
-        if (!$userParticipant && !$isOrganizer) {
-            return ResponseHelper::error('Bạn không có quyền xác nhận kết quả trận đấu này', 403);
-        }
-
-        if ($match->status === MiniMatch::STATUS_COMPLETED) {
-            return ResponseHelper::error('Kết quả trận đấu đã được xác nhận trước đó', 400);
-        }
-
-        if ($isOrganizer) {
-            $match->participant1_confirm = true;
-            $match->participant2_confirm = true;
-        } else {
-            if ($userParticipant && $userParticipant->id == $match->participant1_id) {
-                $match->participant1_confirm = true;
-            } elseif ($userParticipant && $userParticipant->id == $match->participant2_id) {
-                $match->participant2_confirm = true;
-            }
-        }      
-
-        if ($match->participant1_confirm && $match->participant2_confirm) {
-            $wins = $match->results->groupBy('participant_id')->map(function ($results) {
-                return $results->where('won_set', true)->count();
-            });
-            $winners = $wins->filter(fn($count) => $count === $wins->max())->keys();
-            $match->participant_win_id = $winners->count() === 1 ? $winners->first() : null;
-            $match->status = MiniMatch::STATUS_COMPLETED;
-            foreach ($match->results as $result) {
-                $result->status = MiniMatchResult::STATUS_APPROVED;
-                $result->save();
-            }
-            // Tính toán S cho từng participants
-            $scores = $match->results
-                ->groupBy('participant_id')
-                ->map(fn($results) => $results->sum('score'));
-
-            $p1Score = $scores->get($match->participant1_id, 0);
-            $p2Score = $scores->get($match->participant2_id, 0);
-
-            $totalScore = $p1Score + $p2Score;
-
-            $S_p1 = $totalScore > 0 ? $p1Score / $totalScore : 0;
-            $S_p2 = $totalScore > 0 ? $p2Score / $totalScore : 0;
-            // Tính toán E cho từng participants
-            $sportId = $match->miniTournament->sport_id;
-            $p1 = $match->participant1;
-            $p2 = $match->participant2;
-             // Hàm helper để lấy rating trung bình của participant (user hoặc team)
-             $getAverageRating = function($participant, $sportId) {
-                 if ($participant->type === 'user') {
-                     return (float) $this->getParticipantRating($participant, $sportId);
-                 } else {
-                     // Team: tính trung bình rating của các thành viên
-                     $teamMembers = $participant->team->members;
-                     if ($teamMembers->isEmpty()) {
-                         return 0;
-                     }
-                     
-                     $totalRating = 0;
-                     foreach ($teamMembers as $member) {
-                         $userSport = DB::table('user_sport')
-                             ->where('user_id', $member->user_id)
-                             ->where('sport_id', $sportId)
-                             ->first();
+     public function confirmResult($matchId)
+     {
+         // 1. Load data với đầy đủ quan hệ (tận dụng scope đã có)
+         $match = MiniMatch::withFullRelations()->findOrFail($matchId);
      
-                         if ($userSport) {
-                             $scoreRecord = DB::table('user_sport_scores')
-                                 ->where('user_sport_id', $userSport->id)
-                                 ->where('score_type', 'vndupr_score')
-                                 ->first();
-                             
-                             $totalRating += $scoreRecord ? (float) $scoreRecord->score_value : 0;
-                         }
-                     }
-                     
-                     return $totalRating / $teamMembers->count();
+         if (!$match->isEditable()) {
+             return ResponseHelper::error('Kết quả trận đấu đã được xác nhận trước đó', 400);
+         }
+     
+         $tournament = $match->miniTournament;
+         $sportId = $tournament->sport_id;
+         $currentUserId = Auth::id();
+         $isOrganizer = $tournament->hasOrganizer($currentUserId);
+     
+         // 2. Kiểm tra quyền xác nhận
+         $userTeam = null;
+         if (!$isOrganizer) {
+             if ($match->team1->members->contains('user_id', $currentUserId)) {
+                 $userTeam = $match->team1;
+             } elseif ($match->team2->members->contains('user_id', $currentUserId)) {
+                 $userTeam = $match->team2;
+             }
+     
+             if (!$userTeam) {
+                 return ResponseHelper::error('Bạn không có quyền xác nhận kết quả trận đấu này', 403);
+             }
+         }
+     
+         // 3. Thực hiện xác nhận và tính toán trong Transaction
+         return DB::transaction(function () use ($match, $isOrganizer, $userTeam, $sportId) {
+             // --- CẬP NHẬT TRẠNG THÁI XÁC NHẬN ---
+             if ($isOrganizer) {
+                 $match->team1_confirm = true;
+                 $match->team2_confirm = true;
+             } else {
+                 if ($userTeam->id === $match->team1_id) $match->team1_confirm = true;
+                 if ($userTeam->id === $match->team2_id) $match->team2_confirm = true;
+             }
+     
+             // --- CHỈ TÍNH TOÁN KHI CẢ 2 ĐÃ CONFIRM ---
+             if ($match->team1_confirm && $match->team2_confirm) {
+                 $this->processMatchCompletion($match, $sportId);
+             }
+     
+             $match->save();
+     
+             return ResponseHelper::success(
+                 new MiniMatchResource($match->refresh()),
+                 'Xác nhận kết quả thành công'
+             );
+         });
+     }
+     
+     /**
+      * Logic xử lý khi trận đấu hoàn tất (Tính winner, Elo/VNDUPR)
+      */
+     private function processMatchCompletion($match, $sportId)
+     {
+         // A. Xác định đội thắng
+         $wins = $match->results->where('won_set', true)->groupBy('team_id')->map->count();
+         $maxWins = $wins->max();
+         $winnerTeams = $wins->filter(fn($c) => $c === $maxWins)->keys();
+         
+         $match->team_win_id = $winnerTeams->count() === 1 ? $winnerTeams->first() : null;
+         $match->status = MiniMatch::STATUS_COMPLETED;
+     
+         foreach ($match->results as $r) {
+             $r->update(['status' => MiniMatchResult::STATUS_APPROVED]);
+         }
+     
+         // B. Tính toán S (Actual Score) & R (Average Rating)
+         $scores = $match->results->groupBy('team_id')->map->sum('score');
+         $t1Score = $scores->get($match->team1_id, 0);
+         $t2Score = $scores->get($match->team2_id, 0);
+         $totalScore = $t1Score + $t2Score;
+     
+         $S_t1 = $totalScore > 0 ? $t1Score / $totalScore : 0;
+         $S_t2 = $totalScore > 0 ? $t2Score / $totalScore : 0;
+     
+         // Tận dụng dữ liệu đã load trong relation để tính Rating trung bình (Tránh Query DB)
+         $calcAvgRating = function ($team) use ($sportId) {
+             $ratings = $team->members->map(function ($member) use ($sportId) {
+                 $userSport = $member->user->sports->where('sport_id', $sportId)->first();
+                 if (!$userSport) return 0;
+                 $scoreRecord = $userSport->scores->where('score_type', 'vndupr_score')->first();
+                 return $scoreRecord ? (float)$scoreRecord->score_value : 0;
+             });
+             return $ratings->count() > 0 ? $ratings->avg() : 0;
+         };
+     
+         $R_t1 = $calcAvgRating($match->team1);
+         $R_t2 = $calcAvgRating($match->team2);
+     
+         $E_t1 = 1 / (1 + pow(10, ($R_t2 - $R_t1)));
+         $E_t2 = 1 / (1 + pow(10, ($R_t1 - $R_t2)));
+     
+         // C. Cập nhật điểm cho từng Player
+         $teamData = [
+             ['team' => $match->team1, 'S' => $S_t1, 'E' => $E_t1],
+             ['team' => $match->team2, 'S' => $S_t2, 'E' => $E_t2],
+         ];
+     
+         $W = 0.2;
+     
+         foreach ($teamData as $data) {
+             foreach ($data['team']->members as $member) {
+                 $user = $member->user;
+                 
+                 // 1. Cập nhật số trận
+                 $user->increment('total_matches');
+     
+                 // 2. Lấy R_old từ relation (Không dùng DB::table)
+                 $userSport = $user->sports->where('sport_id', $sportId)->first();
+                 $R_old = 0;
+                 if ($userSport) {
+                     $scoreRecord = $userSport->scores->where('score_type', 'vndupr_score')->first();
+                     $R_old = $scoreRecord ? (float)$scoreRecord->score_value : 0;
                  }
-             };
      
-             $p1Rating = $getAverageRating($p1, $sportId);
-             $p2Rating = $getAverageRating($p2, $sportId);
-             
-             $E_p1 = 1 / (1 + pow(10, ($p2Rating - $p1Rating)));
-             $E_p2 = 1 / (1 + pow(10, ($p1Rating - $p2Rating)));  
-             
-             $players = [
-                 $p1->id => [
-                     'participant' => $p1,
-                     'S' => $S_p1,
-                     'E' => $E_p1,
-                 ],
-                 $p2->id => [
-                     'participant' => $p2,
-                     'S' => $S_p2,
-                     'E' => $E_p2,
-                 ],
-             ];
-             
-             $W = 0.2;
-             
-             foreach ($players as $pid => $data) {
-                 $participant = $data['participant'];
-                 $S = $data['S'];
-                 $E = $data['E'];
+                 // 3. Tính K & Turbo (Giữ nguyên logic gốc)
+                 $history = VnduprHistory::where('user_id', $user->id)->latest('id')->take(15)->get()->reverse();
                  
-                 // Lấy danh sách users cần cập nhật
-                 $usersToUpdate = [];
+                 $K = ($user->total_matches <= 10) ? 1 : (($user->total_matches <= 50) ? 0.6 : 0.3);
                  
-                 if ($participant->type === 'user') {
-                     $usersToUpdate[] = [
-                         'user' => $participant->user,
-                         'user_id' => $participant->user_id
-                     ];
-                 } else {
-                     // Team: lấy tất cả thành viên
-                     foreach ($participant->team->members as $member) {
-                         $usersToUpdate[] = [
-                             'user' => $member->user,
-                             'user_id' => $member->user_id
-                         ];
-                     }
-                 }
-                 
-                 // Cập nhật điểm cho từng user
-                 foreach ($usersToUpdate as $userData) {
-                     $user = $userData['user'];
-                     $userId = $userData['user_id'];
-                     
-                     // 1. Tăng total_matches
-                     $user->total_matches = ($user->total_matches ?? 0) + 1;
-                     $user->save();
-                     
-                     // 2. Lấy R_old của user này
-                     $userSport = DB::table('user_sport')
-                         ->where('user_id', $userId)
-                         ->where('sport_id', $sportId)
-                         ->first();
-     
-                     $R_old = 0;
-                     if ($userSport) {
-                         $scoreRecord = DB::table('user_sport_scores')
-                             ->where('user_sport_id', $userSport->id)
-                             ->where('score_type', 'vndupr_score')
-                             ->first();
-                         
-                         $R_old = $scoreRecord ? (float) $scoreRecord->score_value : 0;
-                     }
-                     
-                     // 3. Lấy lịch sử 15 trận gần nhất
-                     $history = VnduprHistory::where('user_id', $userId)
-                         ->orderByDesc('id')
-                         ->take(15)
-                         ->get()
-                         ->sortBy('id')
-                         ->values();
-                     
-                     // 4. Chuẩn bị K theo total_matches
-                     if ($user->total_matches <= 10) {
+                 if ($history->count() >= 2) {
+                     if (($history->first()->score_before - $history->last()->score_after) > 0.5) {
                          $K = 1;
-                     } elseif ($user->total_matches <= 50) {
-                         $K = 0.6;
-                     } else {
-                         $K = 0.3;
                      }
-                     
-                     // 5. Kiểm tra TURBO
-                     if ($history->count() >= 2) {
-                         $first_old = $history->first()->score_before;
-                         $last_new = $history->last()->score_after;
-                         
-                         if (($first_old - $last_new) > 0.5) {
-                             $K = 1; // bật chế độ turbo
-                         }
-                     }
-                     
-                     // 6. Tính R_new
-                     $R_new = $R_old + ($W * $K * ($S - $E));
-                     
-                     // 7. Lưu history
-                     VnduprHistory::create([
-                         'user_id' => $userId,
-                         'match_id' => null,
-                         'mini_match_id' => $match->id,
-                         'score_before' => $R_old,
-                         'score_after' => $R_new,
-                     ]);
-                     
-                     // 8. Update điểm vndupr_score vào user_sport_scores
-                     if ($userSport) {
-                         $exists = DB::table('user_sport_scores')
-                             ->where('user_sport_id', $userSport->id)
-                             ->where('score_type', 'vndupr_score')
-                             ->exists();
+                 }
      
-                         if ($exists) {
-                             DB::table('user_sport_scores')
-                                 ->where('user_sport_id', $userSport->id)
-                                 ->where('score_type', 'vndupr_score')
-                                 ->update([
-                                     'score_value' => $R_new,
-                                     'updated_at'  => now(),
-                                 ]);
-                         } else {
-                             DB::table('user_sport_scores')->insert([
-                                 'user_sport_id' => $userSport->id,
-                                 'score_type'    => 'vndupr_score',
-                                 'score_value'   => $R_new,
-                                 'created_at'    => now(),
-                                 'updated_at'    => now(),
-                             ]);
-                         }
-                    }
-                }
-            }                
-        }
-
-        $match->save();
-
-        // Xác định đối thủ cần nhận noti
-        $recipientUserIds = collect();
-
-        if ($userParticipant) {
-            $opponentParticipant = $userParticipant->id == $match->participant1_id
-                ? $match->participant2
-                : $match->participant1;
-
-            if ($opponentParticipant->type === 'user') {
-                $recipientUserIds->push($opponentParticipant->user_id);
-            } elseif ($opponentParticipant->type === 'team') {
-                $recipientUserIds = $recipientUserIds->merge($opponentParticipant->team->members->pluck('user_id'));
-            }
-        }
-
-        if ($isOrganizer) {
-            foreach ([$match->participant1, $match->participant2] as $participant) {
-                if ($participant->type === 'user') {
-                    $recipientUserIds->push($participant->user_id);
-                } elseif ($participant->type === 'team') {
-                    $recipientUserIds = $recipientUserIds->merge($participant->team->members->pluck('user_id'));
-                }
-            }
-        }
-
-        // Loại bỏ chính user vừa xác nhận
-        $recipientUserIds = $recipientUserIds->unique()->reject(fn($id) => $id == Auth::id());
-
-        foreach ($recipientUserIds as $uid) {
-            $user = User::find($uid);
-            if ($user) {
-                $user->notify(new MiniMatchResultConfirmedNotification($match));
-            }
-        }
-
-        return ResponseHelper::success(new MiniMatchResource($match->fresh('results.participant.user')), 'Xác nhận kết quả thành công');
-    }
+                 // 4. Tính R_new
+                 $R_new = $R_old + ($W * $K * ($data['S'] - $data['E']));
+     
+                 // 5. Lưu History & Update Score
+                 VnduprHistory::create([
+                     'user_id' => $user->id,
+                     'mini_match_id' => $match->id,
+                     'score_before' => $R_old,
+                     'score_after' => $R_new,
+                 ]);
+     
+                 if ($userSport) {
+                     DB::table('user_sport_scores')->updateOrInsert(
+                         ['user_sport_id' => $userSport->id, 'score_type' => 'vndupr_score'],
+                         ['score_value' => $R_new, 'updated_at' => now()]
+                     );
+                 }
+             }
+         }
+     }
 
     /**
      * Trình lọc trận đấu (theo địa điểm, môn thể thao, từ khóa, thời gian, vị trí)
