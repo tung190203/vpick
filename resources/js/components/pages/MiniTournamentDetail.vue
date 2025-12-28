@@ -160,15 +160,15 @@
                             <div class="border border-[#BBBFCC] rounded-lg my-4 p-4">
                                 <div class="flex items-center justify-between mb-3">
                                     <h4 class="font-semibold text-[#6B6F80] uppercase text-sm">
-                                        NGƯỜI THAM GIA • {{ mini?.participants?.users?.length || 0 }} / {{
+                                        NGƯỜI THAM GIA • {{ mini?.participants?.length || 0 }} / {{
                                             mini.max_players
                                         }}
                                     </h4>
                                     <span class="text-[#207AD5] text-xs font-semibold cursor-pointer">Mời bạn bè</span>
                                 </div>
-                                <div v-if="mini?.participants?.users?.length">
+                                <div v-if="mini?.participants?.length">
                                     <div class="grid grid-cols-2 sm:grid-cols-6 lg:grid-cols-6 gap-4">
-                                        <UserCard v-for="(item, index) in mini.participants.users" :key="index"
+                                        <UserCard v-for="(item, index) in mini.participants" :key="index"
                                             :name="item.user.full_name" :avatar="item.user.avatar_url"
                                             :rating="getUserScore(item.user)"
                                             :status="item.is_confirmed == true ? 'approved' : 'pending'" />
@@ -552,18 +552,17 @@ const getUserScore = (user) => {
 
     const matchedSport = user.sports.find(s => s.sport_id === mini.value.sport.id)
 
-    if (!matchedSport?.scores?.length) {
+    if (!matchedSport?.scores) {
         return '0'
     }
 
-    const vnduprScore = matchedSport.scores.find(sc => sc.score_type === 'vndupr_score')
-    if (vnduprScore) {
-        return parseFloat(vnduprScore.score_value).toFixed(1)
+    const scores = matchedSport.scores
+    if (scores.vndupr_score) {
+        return parseFloat(scores.vndupr_score).toFixed(1)
     }
 
-    const personalScore = matchedSport.scores.find(sc => sc.score_type === 'personal_score')
-    if (personalScore) {
-        return parseFloat(personalScore.score_value).toFixed(1)
+    if (scores.personal_score) {
+        return parseFloat(scores.personal_score).toFixed(1)
     }
 
     return '0'

@@ -33,9 +33,9 @@
             </select>
           </div>
   
-          <!-- VNDUPR -->
+          <!-- PICKI -->
           <div>
-            <label class="block text-sm text-gray-600 mb-2">VNDUPR</label>
+            <label class="block text-sm text-gray-600 mb-2">PICKI</label>
             <div class="space-y-1">
               <label class="flex items-center gap-2"><input type="checkbox" value="1-2" v-model="selectedVNDUPR" />1.0 - 2.0</label>
               <label class="flex items-center gap-2"><input type="checkbox" value="2-3" v-model="selectedVNDUPR" />2.0 - 3.0</label>
@@ -59,7 +59,7 @@
         <main class="lg:col-span-3 bg-white shadow-lg rounded-xl overflow-hidden">
           <div class="px-6 py-4 border-b border-gray-200">
             <h1 class="text-2xl font-bold text-gray-800">Bảng xếp hạng người chơi</h1>
-            <p class="text-sm text-gray-500">Xếp hạng theo điểm VNDUPR</p>
+            <p class="text-sm text-gray-500">Xếp hạng theo điểm PICKI</p>
           </div>
   
           <div class="overflow-x-auto">
@@ -71,7 +71,7 @@
                   <th class="px-6 py-3">CLB</th>
                   <th class="px-6 py-3">Khu vực</th>
                   <th class="px-6 py-3">Tier</th>
-                  <th class="px-6 py-3">VNDUPR</th>
+                  <th class="px-6 py-3">PICKI</th>
                 </tr>
               </thead>
               <tbody>

@@ -37,9 +37,7 @@ class MiniTournamentJoinRequestNotification extends Notification implements Shou
             'mini_tournament_id' => $this->participant->mini_tournament_id,
             'participant_id' => $this->participant->id,
             'title' => 'Có yêu cầu tham gia kèo đấu',
-            'message' => $this->participant->type === 'user'
-                ? "{$this->participant->user->full_name} muốn tham gia kèo đấu {$this->participant->miniTournament->name}"
-                : "{$this->participant->team->name} muốn tham gia kèo đấu {$this->participant->miniTournament->name}",
+            'message' => "{$this->participant->user->full_name} muốn tham gia kèo đấu {$this->participant->miniTournament->name}"
         ];
     }
 

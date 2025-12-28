@@ -270,11 +270,8 @@ class MiniTournament extends Model
         return $query->with([
             'sport',
             'competitionLocation',
-            'participants.user',
-            'participants.team',
-            'participants.team.members.user',
+            'participants.user.sports.sport',
             'participants.user.sports.scores',
-            'miniTournamentStaffs',
             'miniTournamentStaffs.user',
             'staff',
         ]);
@@ -285,9 +282,8 @@ class MiniTournament extends Model
         return $this->load([
             'sport',
             'competitionLocation',
-            'participants.user',
-            'participants.team.members.user',
-            'miniTournamentStaffs',
+            'participants.user.sports.sport',
+            'participants.user.sports.scores',
             'miniTournamentStaffs.user',
             'staff',
         ]);
@@ -295,21 +291,7 @@ class MiniTournament extends Model
 
     public function getAllUsersAttribute(): Collection
     {
-        $directUsers = $this->participants
-            ->where('type', 'user')
-            ->pluck('user')
-            ->filter();
-
-        $teamUsers = collect();
-        foreach ($this->participants->where('type', 'team') as $teamParticipant) {
-            if ($teamParticipant->team && $teamParticipant->team->members) {
-                $teamUsers = $teamUsers->merge(
-                    $teamParticipant->team->members->pluck('user')->filter()
-                );
-            }
-        }
-
-        return $directUsers->merge($teamUsers)->unique('id')->values();
+        return $this->participants->pluck('user')->filter();
     }
 
     public function hasOrganizer(int $userId): bool

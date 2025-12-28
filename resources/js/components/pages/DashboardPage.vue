@@ -9,7 +9,7 @@
           <div class="relative z-10">
             <div class="flex flex-col md:flex-row md:justify-between md:items-start">
               <div class="mb-6 md:mb-0">
-                <div class="text-sm opacity-90 mb-1 text-[32px]">VNDUPR</div>
+                <div class="text-sm opacity-90 mb-1 text-[32px]">PICKI</div>
                 <div class="text-6xl font-bold leading-none mb-4 text-[100px]">{{
                   homeData.user_info?.sports[0]?.scores.vndupr_score
                 }}

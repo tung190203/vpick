@@ -61,14 +61,7 @@ class MiniTournamentResource extends JsonResource
                     ->groupBy(fn($staff) => MiniTournamentStaff::getRoleText( $staff->pivot->role))
                     ->map(fn($group) => MiniTournamentStaffResource::collection($group));
             }),
-            'participants' => [
-                'users' => MiniParticipantResource::collection(
-                    $participants->where('type', 'user')
-                ),
-                'teams' => MiniParticipantResource::collection(
-                    $participants->where('type', 'team')
-                ),
-            ],
+            'participants' => MiniParticipantResource::collection($participants),
             'all_users' => UserListResource::collection($this->all_users ?? collect()),
         ];
     }

@@ -17,7 +17,7 @@ class MiniMatchResultResource extends JsonResource
         return [
             'id'              => $this->id,
             'mini_match_id'   => $this->mini_match_id,
-            'participant'     => new MiniParticipantResource($this->whenLoaded('participant')),
+            'team' => new MiniTeamResource($this->whenLoaded('team')),
             'score'           => $this->score,
             'won_set'       => $this->won_set,
         ];
