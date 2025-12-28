@@ -12,7 +12,6 @@ use App\Models\Banner;
 use App\Models\Club;
 use App\Models\Matches;
 use App\Models\MiniMatch;
-use App\Models\MiniParticipant;
 use App\Models\MiniTournament;
 use App\Models\Sport;
 use App\Models\Tournament;
@@ -58,7 +57,7 @@ class HomeController extends Controller
             $miniIds  = $histories->pluck('mini_match_id')->filter()->unique()->values()->all();
     
             $matches = Matches::whereIn('id', $matchIds)->get()->keyBy('id');
-            $minis   = MiniMatch::whereIn('id', $miniIds)->get()->keyBy('id');
+            $minis = MiniMatch::withFullRelations()->whereIn('id', $miniIds)->get()->keyBy('id');
     
             $teamIds = $matches->pluck('winner_id')->filter()->unique()->values()->all();
             $teamMembersByTeam = collect();
@@ -69,6 +68,19 @@ class HomeController extends Controller
                 $teamMembersByTeam = $members->groupBy('team_id')
                     ->map(fn($rows) => $rows->pluck('user_id')->flip());
             }
+    
+            // ========== MINI TEAM MEMBERS ==========
+            $miniTeamMembersByTeam = DB::table('mini_team_members')
+                ->whereIn(
+                    'mini_team_id',
+                    $minis->pluck('team1_id')
+                        ->merge($minis->pluck('team2_id'))
+                        ->filter()
+                        ->unique()
+                )
+                ->get()
+                ->groupBy('mini_team_id')
+                ->map(fn($rows) => $rows->pluck('user_id')->flip());
     
             foreach ($histories->values() as $index => $history) {
                 $isWin = false;
@@ -84,9 +96,9 @@ class HomeController extends Controller
                 // mini_match_id: winner là user trực tiếp
                 elseif ($history->mini_match_id) {
                     $mini = $minis->get($history->mini_match_id);
-                    $participants = MiniParticipant::where('id', $mini->participant_win_id)->first();
-                    if ($mini && $mini->participant_win_id && $participants->user_id == $userId) {
-                        $isWin = true;
+                    if ($mini && $mini->team_win_id) {
+                        $winningTeamMembers = $miniTeamMembersByTeam->get($mini->team_win_id);
+                        $isWin = $winningTeamMembers ? $winningTeamMembers->has($userId) : false;
                     }
                 }
     

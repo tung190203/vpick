@@ -14,12 +14,17 @@ class MiniMatch extends Model
     protected $fillable = [
         'mini_tournament_id',
         'round',
+        'team1_id',
+        'team2_id',
         'participant1_id',
         'participant2_id',
         'scheduled_at',
         'referee_id',
         'status',
         'participant_win_id',
+        'team_win_id',
+        'team1_confirm',
+        'team2_confirm',
         'yard_number',
         'name_of_match',
     ];
@@ -39,6 +44,20 @@ class MiniMatch extends Model
         return $this->belongsTo(MiniParticipant::class, 'participant2_id');
     }
 
+    public function team1()
+    {
+        return $this->belongsTo(MiniTeam::class,'team1_id');
+    }
+    public function team2()
+    {
+        return $this->belongsTo(MiniTeam::class,'team2_id');
+    }
+
+    public function teamWin() 
+    {
+        return $this->belongsTo(MiniTeam::class,'team_win_id');
+    }
+
     public function participantWin()
     {
         return $this->belongsTo(MiniParticipant::class, 'participant_win_id');
@@ -53,17 +72,31 @@ class MiniMatch extends Model
         return $this->belongsTo(MiniTournament::class, 'mini_tournament_id');
     }
 
+    public function isEditable(): bool
+    {
+        return $this->status !== self::STATUS_COMPLETED;
+    }
+
     public function scopeWithFullRelations($query)
     {
         return $query->with([
-            'participant1.user',
-            'participant1.team.members.user',
-            'participant2.user',
-            'participant2.team.members.user',
-            'results.participant.user',
-            'results.participant.team.members.user',
-            'participantWin.user',
-            'participantWin.team.members.user',
+            'team1.members.user.sports.scores',
+            'team2.members.user.sports.scores',
+            'team1.members.user.sports.sport',
+            'team2.members.user.sports.sport',
+            'results.team.members.user',
+            'miniTournament.competitionLocation',
+            'miniTournament.sport',
+        ]);
+    }
+    public function scopeLoadFullRelations()
+    {
+        return $this->load([
+            'team1.members.user.sports.scores',
+            'team2.members.user.sports.scores',
+            'team1.members.user.sports.sport',
+            'team2.members.user.sports.sport',
+            'results.team.members.user',
             'miniTournament.competitionLocation',
             'miniTournament.sport',
         ]);

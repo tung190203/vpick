@@ -11,9 +11,7 @@ class MiniParticipant extends Model
     use HasFactory, Notifiable;
     protected $fillable = [
         'mini_tournament_id',
-        'type',
         'user_id',
-        'team_id',
         'is_confirmed',
     ];
 
@@ -30,9 +28,12 @@ class MiniParticipant extends Model
         return $this->belongsTo(User::class);
     }
 
-    // Nếu là team
-    public function team()
+    public function scopeWithFullRelations($query) {
+        return $query->with('user.sports.scores', 'user.sports.sport');
+    }
+
+    public function scopeLoadFullRelations()
     {
-        return $this->belongsTo(MiniTeam::class);
+        return $this->load('user.sports.scores', 'user.sports.sport');
     }
 }

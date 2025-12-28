@@ -129,7 +129,7 @@
                         v-for="(item, index) in mappedSports" :key="index"
                         :icon="item.sport_icon || '/images/basketball.png'"
                         :title="item.sport_name"
-                        :subtitle="item.dupr == 0 ? 'VNDUPR ' + item.vndupr : 'DUPR ' + item.dupr"
+                        :subtitle="item.dupr == 0 ? 'PICKI ' + item.vndupr : 'DUPR ' + item.dupr"
                         :selfScore="item.selfScore"
                         :dupr="item.dupr"
                         :vndupr="item.vndupr"

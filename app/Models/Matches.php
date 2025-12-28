@@ -97,6 +97,7 @@ class Matches extends Model
             'awayTeam',
             'awayTeam.members',
             'results',
+            'tournamentType.tournament'
         ]);
     }
 }

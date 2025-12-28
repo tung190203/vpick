@@ -239,7 +239,7 @@
                             </button>
                         </div>
                         <div class="flex justify-between items-center">
-                            <span class="text-gray-700">Tích điểm VNDUPR</span>
+                            <span class="text-gray-700">Tích điểm PICKI</span>
                             <button @click="toggleVNDUPR"
                                 class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
                                 :class="vnduprEnabled ? 'bg-[#D72D36]' : 'bg-gray-300'">
@@ -1160,7 +1160,7 @@ const prefillForm = (data) => {
     } else {
         formattedFeeAmount.value = '';
     }
-    // điểm DUPR và VNDUPR
+    // điểm DUPR và PICKI
     duprEnabled.value = data?.enable_dupr || false;
     vnduprEnabled.value = data?.enable_vndupr || false;
     minLevel.value = data?.min_rating ? data.min_rating.toString() : 'Không giới hạn';

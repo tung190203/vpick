@@ -28,7 +28,7 @@
                         </div>
 
                         <div class="flex flex-col items-center">
-                            <span class="px-3 py-1 bg-red-500 text-white rounded text-xs font-medium">VNDUPR</span>
+                            <span class="px-3 py-1 bg-red-500 text-white rounded text-xs font-medium">PICKI</span>
                             <p class="mt-1 text-xl font-semibold text-gray-800">{{ vndupr }}</p>
                         </div>
 
