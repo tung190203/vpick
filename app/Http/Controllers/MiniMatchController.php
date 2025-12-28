@@ -8,7 +8,6 @@ use App\Models\MiniMatch;
 use App\Models\MiniMatchResult;
 use App\Models\MiniParticipant;
 use App\Models\MiniTeam;
-use App\Models\MiniTeamMember;
 use App\Models\MiniTournament;
 use App\Models\User;
 use App\Models\VnduprHistory;
@@ -18,7 +17,6 @@ use App\Notifications\MiniMatchUpdatedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class MiniMatchController extends Controller
 {
@@ -176,6 +174,11 @@ class MiniMatchController extends Controller
             ]);
     
             DB::commit();
+            $allParticipantIds = array_unique(array_merge($data['team1'], $data['team2']));
+            $users = User::whereIn('id', $allParticipantIds)->get();
+            $users->each(function ($user) use ($match) {
+                $user->notify(new MiniMatchCreatedNotification($match));
+            });
     
             return ResponseHelper::success(new MiniMatchResource($match->loadFullRelations()), 'Tạo trận đấu thành công', 201);
         } catch (\Throwable $e) {
@@ -268,6 +271,14 @@ class MiniMatchController extends Controller
              ]);
      
              DB::commit();
+             $team1UserIds = $match->team1->members()->pluck('user_id')->toArray();
+             $team2UserIds = $match->team2->members()->pluck('user_id')->toArray();
+             $allParticipantIds = array_unique(array_merge($team1UserIds, $team2UserIds));
+             $users = User::whereIn('id', $allParticipantIds)->get();
+
+             $users->each(function ($user) use ($match) {
+                 $user->notify(new MiniMatchUpdatedNotification($match));
+             });
      
              return ResponseHelper::success(
                  new MiniMatchResource($match->loadFullRelations()),
@@ -537,7 +548,6 @@ class MiniMatchController extends Controller
 
      public function confirmResult($matchId)
      {
-         // 1. Load data với đầy đủ quan hệ (tận dụng scope đã có)
          $match = MiniMatch::withFullRelations()->findOrFail($matchId);
      
          if (!$match->isEditable()) {
@@ -549,7 +559,6 @@ class MiniMatchController extends Controller
          $currentUserId = Auth::id();
          $isOrganizer = $tournament->hasOrganizer($currentUserId);
      
-         // 2. Kiểm tra quyền xác nhận
          $userTeam = null;
          if (!$isOrganizer) {
              if ($match->team1->members->contains('user_id', $currentUserId)) {
@@ -563,9 +572,7 @@ class MiniMatchController extends Controller
              }
          }
      
-         // 3. Thực hiện xác nhận và tính toán trong Transaction
-         return DB::transaction(function () use ($match, $isOrganizer, $userTeam, $sportId) {
-             // --- CẬP NHẬT TRẠNG THÁI XÁC NHẬN ---
+         $result = DB::transaction(function () use ($match, $isOrganizer, $userTeam, $sportId) {
              if ($isOrganizer) {
                  $match->team1_confirm = true;
                  $match->team2_confirm = true;
@@ -574,18 +581,30 @@ class MiniMatchController extends Controller
                  if ($userTeam->id === $match->team2_id) $match->team2_confirm = true;
              }
      
-             // --- CHỈ TÍNH TOÁN KHI CẢ 2 ĐÃ CONFIRM ---
              if ($match->team1_confirm && $match->team2_confirm) {
                  $this->processMatchCompletion($match, $sportId);
              }
      
              $match->save();
-     
-             return ResponseHelper::success(
-                 new MiniMatchResource($match->refresh()),
-                 'Xác nhận kết quả thành công'
-             );
+             return $match;
          });
+         $team1UserIds = $match->team1->members()->pluck('user_id')->toArray();
+         $team2UserIds = $match->team2->members()->pluck('user_id')->toArray();
+         $allParticipantIds = array_unique(array_merge($team1UserIds, $team2UserIds));
+         $recipientIds = array_diff($allParticipantIds, [$currentUserId]);
+ 
+         // 3. Gửi thông báo
+         if (!empty($recipientIds)) {
+             $users = User::whereIn('id', $recipientIds)->get();
+             foreach ($users as $user) {
+                 $user->notify(new MiniMatchResultConfirmedNotification($match));
+             }
+         }
+ 
+         return ResponseHelper::success(
+             new MiniMatchResource($result->refresh()),
+             'Xác nhận kết quả thành công'
+         );
      }
      
      /**
@@ -766,28 +785,5 @@ class MiniMatchController extends Controller
             200,
             $paginationMeta
         );
-    }    
-
-    private function getParticipantRating($participant, $sportId)
-    {
-        if ($participant->type !== 'user') {
-            return 0; // team chưa có rating
-        }
-
-        // Lấy user_sport
-        $userSport = DB::table('user_sport')
-            ->where('user_id', $participant->user_id)
-            ->where('sport_id', $sportId)
-            ->first();
-
-        if (!$userSport) {
-            return 0;
-        }
-
-        // Lấy score_value = vndupr_score
-        return DB::table('user_sport_scores')
-            ->where('user_sport_id', $userSport->id)
-            ->where('score_type', 'vndupr_score')
-            ->value('score_value') ?? 0;
     }
 }
