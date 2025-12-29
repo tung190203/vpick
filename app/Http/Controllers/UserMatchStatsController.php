@@ -203,7 +203,7 @@ class UserMatchStatsController extends Controller
 
                             foreach ($setResults as $r) {
 
-                                // ✅ FIX: Dùng team_id thay vì mini_team_id
+                                // ✅ FIX: Dùng team_id thay vì team_id
                                 if (isset($r->team_id)) {
                                     if ($r->team_id == $myTeamId) {
                                         $my_set_score += $r->score;
@@ -495,10 +495,10 @@ class UserMatchStatsController extends Controller
                     $opponentScore = 0;
 
                     foreach ($setResults as $r) {
-                        // Sử dụng mini_team_id thay vì participant_id
-                        if ($r->mini_team_id == $myTeamId) {
+                        // Sử dụng team_id thay vì participant_id
+                        if ($r->team_id == $myTeamId) {
                             $myScore += $r->score;
-                        } elseif ($r->mini_team_id == $opponentTeamId) {
+                        } elseif ($r->team_id == $opponentTeamId) {
                             $opponentScore += $r->score;
                         }
                     }
