@@ -245,6 +245,65 @@ class MiniParticipantController extends Controller
         }
     }
 
+    public function getCandidates(Request $request, $tournamentId)
+    {
+        $miniTournament = MiniTournament::with('participants')->findOrFail($tournamentId);
+        $user = Auth::user();
+    
+        $validated = $request->validate([
+            'scope' => 'required|in:club,friends,area',
+            'club_id' => 'required_if:scope,club|exists:clubs,id'
+        ]);
+    
+        $scope = $validated['scope'];
+        $candidates = collect();
+    
+        switch ($scope) {
+            case 'club':
+                $candidates = User::whereHas(
+                    'clubs',
+                    fn($q) => $q->where('clubs.id', $validated['club_id'])
+                )->get();
+                break;
+    
+            case 'friends':
+                $candidates = $user->friends()->get();
+                break;
+    
+            case 'area':
+                $candidates = User::where('location_id', $user->location_id)
+                    ->where('id', '!=', $user->id)
+                    ->get();
+                break;
+        }
+    
+        // lấy danh sách id participant trong giải này
+        $participantUserIds = $miniTournament->participants->pluck('user_id')->toArray();
+    
+        // map theo format UI
+        $result = $candidates->map(function ($u) use ($user, $participantUserIds) {
+            $visibility = 'open';
+            if ($u->invite_mode === 'friend_only') {
+                $visibility = 'friend_only';
+            } elseif ($u->invite_mode === 'private') {
+                $visibility = 'private';
+            }
+    
+            return [
+                'id' => $u->id,
+                'name' => $u->full_name,
+                'gender' => $u->gender,
+                'age_group' => $u->age_group,
+                'avatar' => $u->avatar_url,
+                'visibility' => $visibility,
+                'is_friend' => $user->isFriendWith($u),
+                'is_participant' => in_array($u->id, $participantUserIds), // 👈 thêm cờ này
+            ];
+        })->values();
+    
+        return ResponseHelper::success($result, 'Danh sách ứng viên');
+    }
+
     private function notifyOrganizersJoinRequest(MiniTournament $tournament, MiniParticipant $participant)
     {
         $organizers = $tournament->staff()
