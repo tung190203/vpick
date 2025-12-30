@@ -11,6 +11,21 @@
                             <XMarkIcon class="w-6 h-6" />
                         </button>
                     </div>
+                    <div v-if="data.legs?.length > 1" class="px-6 pt-3 ">
+    <div class="flex gap-2">
+        <button
+            v-for="(leg, index) in data.legs"
+            :key="leg.id"
+            @click="selectedLegIndex = index"
+            class="px-4 py-2 rounded-md text-sm font-semibold transition"
+            :class="selectedLegIndex === index
+                ? 'bg-red-500 text-white'
+                : 'bg-white border text-gray-600 hover:bg-gray-100'"
+        >
+            Lượt {{ leg.leg }}
+        </button>
+    </div>
+</div>
                     
                     <div class="p-6 overflow-y-auto flex-1">
                         <div class="grid grid-cols-[2fr_3fr] gap-6">
@@ -140,7 +155,7 @@
                                 class="px-12 py-3 bg-red-500 text-white rounded font-medium hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                                 {{ isSaving && !canConfirmMatch ? 'Đang lưu...' : 'Lưu' }}
                             </button>
-                            <button v-if="isCreator" @click="confirmMatchResult"
+                            <!-- <button v-if="isCreator" @click="confirmMatchResult"
                                 :disabled="isSaving || !canConfirmMatch || data.status === 'completed'"
                                 class="flex items-center justify-center gap-2 px-12 py-3 bg-green-500 text-white rounded font-medium hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                                 <template v-if="data.status === 'completed'">
@@ -150,7 +165,21 @@
                                 <template v-else>
                                     {{ isSaving && canConfirmMatch ? 'Đang xác nhận...' : 'Xác nhận' }}
                                 </template>
-                            </button>
+                            </button> -->
+                            <button v-if="isCreator"
+    @click="confirmMatchResult"
+    :disabled="isSaving || !canConfirmMatch || currentLeg.status === 'completed'"
+    class="flex items-center justify-center gap-2 px-12 py-3 bg-green-500 text-white rounded font-medium hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+>
+    <template v-if="currentLeg.status === 'completed'">
+        <CheckBadgeIcon class="w-6 h-6 text-white" />
+        <span>Đã xác nhận</span>
+    </template>
+    <template v-else>
+        {{ isSaving ? 'Đang xác nhận...' : 'Xác nhận' }}
+    </template>
+</button>
+
 
                             <button @click="closeModal" :disabled="isSaving"
                                 class="px-12 py-3 bg-gray-200 text-gray-700 rounded font-medium hover:bg-gray-300 transition-colors disabled:opacity-50">
@@ -165,126 +194,193 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
-import { MinusIcon, PlusIcon, XMarkIcon, CheckBadgeIcon } from '@heroicons/vue/24/solid'
-import { ClipboardIcon, CalendarDaysIcon, MapPinIcon } from '@heroicons/vue/24/outline'
-import UserCard from './UserCard.vue'
-import { formatEventDate } from '@/composables/formatDatetime.js'
-import QrcodeVue from 'qrcode.vue'
-import { toast } from 'vue3-toastify'
-import * as MatchesServices from '@/service/match.js'
-import { useUserStore } from '@/store/auth'
-import { storeToRefs } from 'pinia'
-
-const props = defineProps({
-    modelValue: { type: Boolean, default: false },
-    data: { type: Object, default: () => ({}) },
-    tournament: { type: Object, default: () => ({ player_per_team: 0 }) }
-})
-
-const userStore = useUserStore()
-const { getUser } = storeToRefs(userStore)
-const isCreator = computed(() => props.tournament?.created_by?.id === getUser.value.id)
-
-const emit = defineEmits(['update:modelValue', 'updated'])
-const isOpen = computed({
-    get: () => props.modelValue,
-    set: val => emit('update:modelValue', val)
-})
-
-const isSaving = ref(false)
-const courtNumber = ref(props.data.court || 1)
-
-// Max sets
-const maxSets = computed(() => props.tournament?.tournament_types[0]?.match_rules[0]?.sets_per_match)
-const isMaxSets = computed(() => scores.value.length >= maxSets.value)
-
-// QR Code
-const qrCodeUrl = computed(() => `${window.location.origin}/match/${props.data.id}/verify`)
-
-// Close modal
-const closeModal = () => { if (!isSaving.value) isOpen.value = false }
-const incrementCourt = () => { courtNumber.value++ }
-const decrementCourt = () => { if (courtNumber.value > 1) courtNumber.value-- }
-
-watch(() => props.data.court, (newVal) => courtNumber.value = newVal || 1)
-
-// Initialize scores from legs (API mới)
-const initializeScores = () => {
-    if (props.data.legs?.length > 0) {
-        const leg = props.data.legs[0]
-        const sets = leg.sets
-        // Object.values để lấy mảng các set
-        return Object.values(sets).map(setArray => ({
-            teamA: setArray.find(s => s.team_id === props.data.home_team?.id)?.score || 0,
-            teamB: setArray.find(s => s.team_id === props.data.away_team?.id)?.score || 0
-        }))
+    import { ref, computed, watch } from 'vue'
+    import { MinusIcon, PlusIcon, XMarkIcon, CheckBadgeIcon } from '@heroicons/vue/24/solid'
+    import { ClipboardIcon, CalendarDaysIcon, MapPinIcon } from '@heroicons/vue/24/outline'
+    import UserCard from './UserCard.vue'
+    import { formatEventDate } from '@/composables/formatDatetime.js'
+    import QrcodeVue from 'qrcode.vue'
+    import { toast } from 'vue3-toastify'
+    import * as MatchesServices from '@/service/match.js'
+    import { useUserStore } from '@/store/auth'
+    import { storeToRefs } from 'pinia'
+    
+    /* ===================== PROPS ===================== */
+    const props = defineProps({
+        modelValue: { type: Boolean, default: false },
+        data: { type: Object, default: () => ({}) },
+        tournament: { type: Object, default: () => ({ player_per_team: 0 }) }
+    })
+    
+    /* ===================== AUTH ===================== */
+    const userStore = useUserStore()
+    const { getUser } = storeToRefs(userStore)
+    const isCreator = computed(() =>
+        props.tournament?.created_by?.id === getUser.value.id
+    )
+    
+    /* ===================== MODAL ===================== */
+    const emit = defineEmits(['update:modelValue', 'updated'])
+    const isOpen = computed({
+        get: () => props.modelValue,
+        set: val => emit('update:modelValue', val)
+    })
+    
+    const isSaving = ref(false)
+    
+    /* ===================== LEG LOGIC ===================== */
+    const selectedLegIndex = ref(0)
+    
+    const currentLeg = computed(() => {
+        return props.data.legs?.[selectedLegIndex.value] || props.data
+    })
+    
+    /* ===================== COURT ===================== */
+    const courtNumber = ref(1)
+    
+    const incrementCourt = () => courtNumber.value++
+    const decrementCourt = () => {
+        if (courtNumber.value > 1) courtNumber.value--
     }
-    return [{ teamA: 0, teamB: 0 }]
-}
-
-const scores = ref(initializeScores())
-
-watch(() => props.data, () => {
-    scores.value = initializeScores()
-    courtNumber.value = props.data.court || 1
-}, { deep: true })
-
-// Score operations
-const incrementScore = (idx, team) => {
-    const maxPoints = props.tournament?.tournament_types[0]?.match_rules[0]?.max_points || 11
-    if (team === 'A' && scores.value[idx].teamA < maxPoints) scores.value[idx].teamA++
-    if (team === 'B' && scores.value[idx].teamB < maxPoints) scores.value[idx].teamB++
-}
-const decrementScore = (idx, team) => {
-    if (team === 'A' && scores.value[idx].teamA > 0) scores.value[idx].teamA--
-    if (team === 'B' && scores.value[idx].teamB > 0) scores.value[idx].teamB--
-}
-const addSet = () => { if (!isMaxSets.value) scores.value.push({ teamA: 0, teamB: 0 }) }
-const removeSet = idx => { if (scores.value.length > 1) scores.value.splice(idx, 1) }
-
-// Convert scores to API format
-const formatResultsForAPI = () => {
-    return scores.value.flatMap((score, idx) => [
-        { set_number: idx + 1, team_id: props.data.home_team.id, score: score.teamA },
-        { set_number: idx + 1, team_id: props.data.away_team.id, score: score.teamB }
-    ])
-}
-
-// Save match
-const saveMatch = async () => {
-    if (isSaving.value) return
-    try {
-        isSaving.value = true
-        const payload = { court: courtNumber.value, results: formatResultsForAPI() }
-        const res = await MatchesServices.updateMatches(props.data.id, payload)
-        toast.success('Cập nhật kết quả trận đấu thành công!')
-        emit('updated', res.data)
-        isOpen.value = false
-    } catch (err) {
-        toast.error(err.response?.data?.message || 'Lỗi khi cập nhật trận đấu')
-    } finally { isSaving.value = false }
-}
-
-// Confirm result
-const canConfirmMatch = computed(() => scores.value.some(s => s.teamA > 0 || s.teamB > 0))
-const confirmMatchResult = async () => {
-    if (isSaving.value || !canConfirmMatch.value) return
-    try {
-        isSaving.value = true
-        const res = await MatchesServices.confirmResults(props.data.id)
-        toast.success('Xác nhận kết quả trận đấu thành công!')
-        emit('updated', res)
-        isOpen.value = false
-    } catch (err) {
-        toast.error(err.response?.data?.message || 'Lỗi khi xác nhận kết quả')
-    } finally { isSaving.value = false }
-}
-
-// Empty slots
-const emptySlots = team => {
-    const members = team === 'home' ? props.data.home_team?.members?.length || 0 : props.data.away_team?.members?.length || 0
-    const slots = props.tournament.player_per_team - members
-    return slots > 0 ? Array.from({ length: slots }, (_, i) => i + 1) : []
-}
-</script>
+    
+    /* ===================== SCORES (⚠️ PHẢI KHAI BÁO TRƯỚC WATCH) ===================== */
+    const scores = ref([])
+    
+    /* ===================== INIT SCORES ===================== */
+    const initializeScores = () => {
+        if (currentLeg.value?.sets) {
+            return Object.values(currentLeg.value.sets).map(setArray => ({
+                teamA:
+                    setArray.find(s => s.team_id === props.data.home_team?.id)?.score || 0,
+                teamB:
+                    setArray.find(s => s.team_id === props.data.away_team?.id)?.score || 0
+            }))
+        }
+        return [{ teamA: 0, teamB: 0 }]
+    }
+    
+    /* ===================== WATCH LEG ===================== */
+    watch(
+        currentLeg,
+        (leg) => {
+            courtNumber.value = leg?.court || 1
+            scores.value = initializeScores()
+        },
+        { immediate: true }
+    )
+    
+    /* ===================== WATCH DATA ===================== */
+    watch(
+        () => props.data,
+        () => {
+            scores.value = initializeScores()
+            courtNumber.value = currentLeg.value?.court || 1
+        },
+        { deep: true }
+    )
+    
+    /* ===================== MATCH RULES ===================== */
+    const maxSets = computed(
+        () => props.tournament?.tournament_types?.[0]?.match_rules?.[0]?.sets_per_match || 3
+    )
+    const isMaxSets = computed(() => scores.value.length >= maxSets.value)
+    
+    /* ===================== QR CODE (THEO LEG) ===================== */
+    const qrCodeUrl = computed(() => {
+        if (!currentLeg.value?.id) return ''
+        return `${window.location.origin}/match/${currentLeg.value.id}/verify`
+    })
+    
+    /* ===================== SCORE ACTIONS ===================== */
+    const incrementScore = (idx, team) => {
+        const maxPoints =
+            props.tournament?.tournament_types?.[0]?.match_rules?.[0]?.max_points || 11
+    
+        if (team === 'A' && scores.value[idx].teamA < maxPoints) scores.value[idx].teamA++
+        if (team === 'B' && scores.value[idx].teamB < maxPoints) scores.value[idx].teamB++
+    }
+    
+    const decrementScore = (idx, team) => {
+        if (team === 'A' && scores.value[idx].teamA > 0) scores.value[idx].teamA--
+        if (team === 'B' && scores.value[idx].teamB > 0) scores.value[idx].teamB--
+    }
+    
+    const addSet = () => {
+        if (!isMaxSets.value) scores.value.push({ teamA: 0, teamB: 0 })
+    }
+    
+    const removeSet = (idx) => {
+        if (scores.value.length > 1) scores.value.splice(idx, 1)
+    }
+    
+    /* ===================== FORMAT API ===================== */
+    const formatResultsForAPI = () => {
+        return scores.value.flatMap((score, idx) => [
+            {
+                set_number: idx + 1,
+                team_id: props.data.home_team.id,
+                score: score.teamA
+            },
+            {
+                set_number: idx + 1,
+                team_id: props.data.away_team.id,
+                score: score.teamB
+            }
+        ])
+    }
+    
+    /* ===================== SAVE MATCH ===================== */
+    const saveMatch = async () => {
+        if (isSaving.value) return
+        try {
+            isSaving.value = true
+            const payload = {
+                court: courtNumber.value,
+                results: formatResultsForAPI()
+            }
+            const res = await MatchesServices.updateMatches(currentLeg.value.id, payload)
+            toast.success('Cập nhật kết quả thành công!')
+            emit('updated', res.data)
+            isOpen.value = false
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Lỗi khi cập nhật')
+        } finally {
+            isSaving.value = false
+        }
+    }
+    
+    /* ===================== CONFIRM MATCH ===================== */
+    const canConfirmMatch = computed(() =>
+        scores.value.some(s => s.teamA > 0 || s.teamB > 0)
+    )
+    
+    const confirmMatchResult = async () => {
+        if (isSaving.value || !canConfirmMatch.value) return
+        try {
+            isSaving.value = true
+            const res = await MatchesServices.confirmResults(currentLeg.value.id)
+            toast.success('Xác nhận kết quả thành công!')
+            emit('updated', res)
+            isOpen.value = false
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Lỗi xác nhận')
+        } finally {
+            isSaving.value = false
+        }
+    }
+    
+    /* ===================== UI HELPERS ===================== */
+    const closeModal = () => {
+        if (!isSaving.value) isOpen.value = false
+    }
+    
+    const emptySlots = (team) => {
+        const members =
+            team === 'home'
+                ? props.data.home_team?.members?.length || 0
+                : props.data.away_team?.members?.length || 0
+    
+        const slots = props.tournament.player_per_team - members
+        return slots > 0 ? Array.from({ length: slots }, (_, i) => i + 1) : []
+    }
+    </script>    
