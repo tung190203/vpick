@@ -289,37 +289,59 @@ const handleMatchUpdated = () => {
 const isDropTarget = (matchId, position) => {
   return dropTargetMatch.value === matchId && dropTargetPosition.value === position;
 };
+const getDisplayLeg = (legs) => {
+  if (!Array.isArray(legs) || !legs.length) return null;
+
+  // Ưu tiên leg đang diễn ra
+  const inProgress = legs.find(l => l.status === 'pending');
+  return inProgress ?? legs[legs.length - 1];
+};
 
 /* ===========================
    FORMAT ROUNDS FOR BRACKET
 =========================== */
 const rounds = computed(() => {
   return props.bracket.bracket.map((round, roundIndex) => ({
-    games: round.matches.map((match) => ({
-      player1: {
-        id: match.home_team.id,
-        name: match.home_team.name,
-        logo: match.home_team.team_avatar,
-        score: match.aggregate_score?.home,
-        sets: match.legs[0].sets ? getTeamSets(match.legs[0].sets, match.home_team.id) : [],
-        winnerId: match.winner_team_id,
-        status: match.legs[0].status,
-        isThirdPlace: !!match.is_third_place,
-        label: match.match_label,
-        time: match.legs[0].scheduled_at,
-        isPlayer1: true,
-        matchId: match.match_id,
-        roundNumber: roundIndex + 1,
-        opponent: {
-          id: match.away_team.id,
-          name: match.away_team.name,
-          logo: match.away_team.team_avatar,
-          score: match.aggregate_score?.away,
-          sets: match.legs[0].sets ? getTeamSets(match.legs[0].sets, match.away_team.id) : [],
-        }
-      },
-      player2: { isPlayer1: false },
-    })),
+    games: round.matches.map((match) => {
+      const displayLeg = getDisplayLeg(match.legs);
+
+      return {
+        player1: {
+          id: match.home_team.id,
+          name: match.home_team.name,
+          logo: match.home_team.team_avatar,
+          score: match.aggregate_score?.home ?? 0,
+
+          // ✅ SETS LẤY THEO LEG ĐƯỢC CHỌN
+          sets: displayLeg?.sets
+            ? getTeamSets(displayLeg.sets, match.home_team.id)
+            : [],
+
+          winnerId: match.winner_team_id,
+          status: displayLeg?.status,
+          isThirdPlace: !!match.is_third_place,
+          label: match.match_label,
+          time: displayLeg?.scheduled_at,
+
+          isPlayer1: true,
+          matchId: match.match_id,
+          roundNumber: roundIndex + 1,
+
+          opponent: {
+            id: match.away_team.id,
+            name: match.away_team.name,
+            logo: match.away_team.team_avatar,
+            score: match.aggregate_score?.away ?? 0,
+
+            // ✅ SETS LẤY THEO LEG ĐƯỢC CHỌN
+            sets: displayLeg?.sets
+              ? getTeamSets(displayLeg.sets, match.away_team.id)
+              : [],
+          }
+        },
+        player2: { isPlayer1: false },
+      };
+    }),
   }));
 });
 

@@ -58,89 +58,91 @@
                             </div>
                         </div>
 
-                        <!-- Lặp qua matches, với mỗi match lặp qua legs -->
-                        <template v-for="match in group.matches" :key="match.match_id">
-                            <div v-for="leg in match.legs" :key="leg.id" :class="[
-                                matchCardWrapperClass(leg),
+                        <!-- ✅ GỘP LEGS THÀNH 1 CARD -->
+                        <div v-for="match in group.matches" :key="match.match_id"
+                            :class="[
+                                matchCardWrapperClass(match),
                                 { 'opacity-50': isDragging && draggedTeam?.matchId === match.match_id }
-                            ]" class="match-card bg-[#dcdee6] rounded-lg mb-4 w-64 flex flex-col transition-all">
-                                <div :class="matchHeaderContentClass(leg)"
-                                    class="flex justify-between items-center text-xs font-medium text-[#838799] px-4 py-2 bg-[#dcdee6] rounded-tl-lg rounded-tr-lg">
-                                    <span class="uppercase">SÂN 1 - Lượt {{ leg.leg == 1 ? 'đi' : 'về' }}</span>
-                                    <div class="flex items-center gap-2">
-                                        <span v-if="leg.status === 'in_progress'"
-                                            class="text-white font-bold text-xs flex items-center">
-                                            <VideoCameraIcon class="w-4 h-4 mr-1" />
-                                            Trực tiếp
-                                        </span>
-                                        <span class="text-xs" v-else>
-                                            {{ formatTime(leg.scheduled_at) }}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div
-                                    class="flex flex-col gap-3 rounded-lg shadow-md border border-[#dcdee6] bg-[#EDEEF2] px-4 py-3">
-
-                                    <!-- HOME TEAM - DRAGGABLE -->
-                                    <div class="flex justify-between items-center px-2 -mx-2 rounded transition-all"
-                                        :class="{
-                                            'bg-blue-100 ring-2 ring-blue-400': isDropTarget(match.match_id, 'home'),
-                                            'cursor-move hover:bg-gray-100': canDragPoolStage(leg.status),
-                                            'cursor-pointer': !canDragPoolStage(leg.status)
-                                        }" :draggable="canDragPoolStage(leg.status) ? 'true' : 'false'"
-                                        @dragstart="handleDragStart($event, match, 'home', leg.status)"
-                                        @dragend="handleDragEnd"
-                                        @dragover.prevent="handleDragOver($event, match.match_id, 'home')"
-                                        @dragleave="handleDragLeave($event)"
-                                        @drop.prevent.stop="handleDrop($event, match.match_id, 'home')"
-                                        @click="!isDragging ? handleMatchClick(match.match_id) : null">
-                                        <div class="flex items-center gap-2 pointer-events-none">
-                                            <img :src="match.home_team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(match.home_team.name)}`"
-                                                class="w-8 h-8 rounded-full" :alt="match.home_team.name" />
-                                            <p class="text-sm font-semibold text-[#3E414C]">
-                                                {{ match.home_team.name }}
-                                            </p>
-                                        </div>
-                                        <span class="font-bold text-lg pointer-events-none" :class="[
-                                            { 'text-green-700': isWinner(leg, 'home') },
-                                            { 'text-red-700': isLoser(leg, 'home') }
-                                        ]">
-                                            {{ leg.home_score !== null ? leg.home_score : "-" }}
-                                        </span>
-                                    </div>
-
-                                    <!-- AWAY TEAM - DRAGGABLE -->
-                                    <div class="flex justify-between items-center px-2 -mx-2 rounded transition-all"
-                                        :class="{
-                                            'bg-blue-100 ring-2 ring-blue-400': isDropTarget(match.match_id, 'away'),
-                                            'cursor-move hover:bg-gray-100': canDragPoolStage(leg.status),
-                                            'cursor-pointer': !canDragPoolStage(leg.status)
-                                        }" :draggable="canDragPoolStage(leg.status) ? 'true' : 'false'"
-                                        @dragstart="handleDragStart($event, match, 'away', leg.status)"
-                                        @dragend="handleDragEnd"
-                                        @dragover.prevent="handleDragOver($event, match.match_id, 'away')"
-                                        @dragleave="handleDragLeave($event)"
-                                        @drop.prevent.stop="handleDrop($event, match.match_id, 'away')"
-                                        @click="!isDragging ? handleMatchClick(match.match_id) : null">
-                                        <div class="flex items-center gap-2 pointer-events-none">
-                                            <img :src="match.away_team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(match.away_team.name)}`"
-                                                class="w-8 h-8 rounded-full" :alt="match.away_team.name" />
-                                            <p class="text-sm font-semibold text-[#3E414C]">
-                                                {{ match.away_team.name }}
-                                            </p>
-                                        </div>
-                                        <span class="font-bold text-lg pointer-events-none" :class="[
-                                            { 'text-green-700': isWinner(leg, 'away') },
-                                            { 'text-red-700': isLoser(leg, 'away') }
-                                        ]">
-
-                                            {{ leg.away_score !== null ? leg.away_score : "-" }}
-                                        </span>
-                                    </div>
+                            ]"
+                            class="match-card bg-[#dcdee6] rounded-lg mb-4 w-64 flex flex-col transition-all">
+                            
+                            <div :class="matchHeaderContentClass(match)"
+                                class="flex justify-between items-center text-xs font-medium text-[#838799] px-4 py-2 bg-[#dcdee6] rounded-tl-lg rounded-tr-lg">
+                                <span class="uppercase">SÂN {{ match.legs?.[0]?.court || 1 }}</span>
+                                <div class="flex items-center gap-2">
+                                    <span v-if="hasAnyLegInProgress(match)"
+                                        class="text-white font-bold text-xs flex items-center">
+                                        <VideoCameraIcon class="w-4 h-4 mr-1" />
+                                        Trực tiếp
+                                    </span>
+                                    <span class="text-xs" v-else>
+                                        {{ formatTime(match.legs?.[0]?.scheduled_at) }}
+                                    </span>
                                 </div>
                             </div>
-                        </template>
+
+                            <div
+                                class="flex flex-col gap-3 rounded-lg shadow-md border border-[#dcdee6] bg-[#EDEEF2] px-4 py-3">
+
+                                <!-- HOME TEAM - DRAGGABLE -->
+                                <div class="flex justify-between items-center px-2 -mx-2 rounded transition-all"
+                                    :class="{
+                                        'bg-blue-100 ring-2 ring-blue-400': isDropTarget(match.match_id, 'home'),
+                                        'cursor-move hover:bg-gray-100': canDragPoolStage(match),
+                                        'cursor-pointer': !canDragPoolStage(match)
+                                    }" 
+                                    :draggable="canDragPoolStage(match) ? 'true' : 'false'"
+                                    @dragstart="handleDragStart($event, match, 'home')"
+                                    @dragend="handleDragEnd"
+                                    @dragover.prevent="handleDragOver($event, match.match_id, 'home')"
+                                    @dragleave="handleDragLeave($event)"
+                                    @drop.prevent.stop="handleDrop($event, match.match_id, 'home')"
+                                    @click="!isDragging ? handleMatchClick(match.match_id) : null">
+                                    <div class="flex items-center gap-2 pointer-events-none">
+                                        <img :src="match.home_team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(match.home_team.name)}`"
+                                            class="w-8 h-8 rounded-full" :alt="match.home_team.name" />
+                                        <p class="text-sm font-semibold text-[#3E414C]">
+                                            {{ match.home_team.name }}
+                                        </p>
+                                    </div>
+                                    <span class="font-bold text-lg pointer-events-none" :class="[
+                                        { 'text-green-700': isWinner(match, 'home') },
+                                        { 'text-red-700': isLoser(match, 'home') }
+                                    ]">
+                                        {{ match.aggregate_score?.home ?? 0 }}
+                                    </span>
+                                </div>
+
+                                <!-- AWAY TEAM - DRAGGABLE -->
+                                <div class="flex justify-between items-center px-2 -mx-2 rounded transition-all"
+                                    :class="{
+                                        'bg-blue-100 ring-2 ring-blue-400': isDropTarget(match.match_id, 'away'),
+                                        'cursor-move hover:bg-gray-100': canDragPoolStage(match),
+                                        'cursor-pointer': !canDragPoolStage(match)
+                                    }" 
+                                    :draggable="canDragPoolStage(match) ? 'true' : 'false'"
+                                    @dragstart="handleDragStart($event, match, 'away')"
+                                    @dragend="handleDragEnd"
+                                    @dragover.prevent="handleDragOver($event, match.match_id, 'away')"
+                                    @dragleave="handleDragLeave($event)"
+                                    @drop.prevent.stop="handleDrop($event, match.match_id, 'away')"
+                                    @click="!isDragging ? handleMatchClick(match.match_id) : null">
+                                    <div class="flex items-center gap-2 pointer-events-none">
+                                        <img :src="match.away_team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(match.away_team.name)}`"
+                                            class="w-8 h-8 rounded-full" :alt="match.away_team.name" />
+                                        <p class="text-sm font-semibold text-[#3E414C]">
+                                            {{ match.away_team.name }}
+                                        </p>
+                                    </div>
+                                    <span class="font-bold text-lg pointer-events-none" :class="[
+                                        { 'text-green-700': isWinner(match, 'away') },
+                                        { 'text-red-700': isLoser(match, 'away') }
+                                    ]">
+                                        {{ match.aggregate_score?.away ?? 0 }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- KNOCKOUT STAGE -->
@@ -150,7 +152,7 @@
                         <div :class="roundHeaderClass(roundData.round_name, false)"
                             class="flex justify-between items-center w-full mb-4 bg-[#EDEEF2] p-4">
                             <h2 class="font-bold text-[#3E414C] whitespace-nowrap">
-                                {{roundData.matches.some(m => m.is_third_place == 1)
+                                {{ roundData.matches.some(m => m.is_third_place == 1)
                                     ? 'Tranh hạng 3'
                                     : roundData.round_name
                                 }}
@@ -165,62 +167,62 @@
                             </div>
                         </div>
 
-                        <!-- Lặp qua matches, với mỗi match lặp qua legs -->
-                        <template v-for="match in roundData.matches" :key="match.match_id">
-                            <div v-for="leg in match.legs" :key="leg.id" :class="matchCardWrapperClass(leg)"
-                                class="match-card bg-[#dcdee6] rounded-lg mb-4 w-64 flex flex-col cursor-pointer hover:shadow-lg transition-all"
-                                @click="handleMatchClick(match.match_id)">
-                                <div :class="matchHeaderContentClass(leg)"
-                                    class="flex justify-between items-center text-xs font-medium text-[#838799] px-4 py-2 bg-[#dcdee6] rounded-tl-lg rounded-tr-lg">
-                                    <span class="uppercase">SÂN 1 - Lượt {{ leg.leg == 1 ? 'đi' : 'về' }}</span>
-                                    <div class="flex items-center gap-2">
-                                        <span v-if="leg.status === 'in_progress'"
-                                            class="text-white font-bold text-xs flex items-center">
-                                            <VideoCameraIcon class="w-4 h-4 mr-1" />
-                                            Trực tiếp
-                                        </span>
-                                        <span class="text-xs" v-else>
-                                            {{ formatTime(leg.scheduled_at) }}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div
-                                    class="flex flex-col gap-3 rounded-lg shadow-md border border-[#dcdee6] bg-[#EDEEF2] px-4 py-3">
-                                    <div class="flex justify-between items-center">
-                                        <div class="flex items-center gap-2">
-                                            <img :src="match.home_team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(match.home_team.name)}`"
-                                                class="w-8 h-8 rounded-full" :alt="match.home_team.name" />
-                                            <p class="text-sm font-semibold text-[#3E414C]">
-                                                {{ match.home_team.name }}
-                                            </p>
-                                        </div>
-                                        <span class="font-bold text-lg pointer-events-none" :class="[
-                                            { 'text-green-700': isWinner(leg, 'home') },
-                                            { 'text-red-700': isLoser(leg, 'home') }
-                                        ]">
-                                            {{ leg.home_score !== null ? leg.home_score : "-" }}
-                                        </span>
-                                    </div>
-
-                                    <div class="flex justify-between items-center">
-                                        <div class="flex items-center gap-2">
-                                            <img :src="match.away_team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(match.away_team.name)}`"
-                                                class="w-8 h-8 rounded-full" :alt="match.away_team.name" />
-                                            <p class="text-sm font-semibold text-[#3E414C]">
-                                                {{ match.away_team.name }}
-                                            </p>
-                                        </div>
-                                        <span class="font-bold text-lg pointer-events-none" :class="[
-                                            { 'text-green-700': isWinner(leg, 'away') },
-                                            { 'text-red-700': isLoser(leg, 'away') }
-                                        ]">
-                                            {{ leg.home_score !== null ? leg.home_score : "-" }}
-                                        </span>
-                                    </div>
+                        <!-- ✅ GỘP LEGS THÀNH 1 CARD -->
+                        <div v-for="match in roundData.matches" :key="match.match_id"
+                            :class="matchCardWrapperClass(match)"
+                            class="match-card bg-[#dcdee6] rounded-lg mb-4 w-64 flex flex-col cursor-pointer hover:shadow-lg transition-all"
+                            @click="handleMatchClick(match.match_id)">
+                            
+                            <div :class="matchHeaderContentClass(match)"
+                                class="flex justify-between items-center text-xs font-medium text-[#838799] px-4 py-2 bg-[#dcdee6] rounded-tl-lg rounded-tr-lg">
+                                <span class="uppercase">SÂN {{ match.legs?.[0]?.court || 1 }}</span>
+                                <div class="flex items-center gap-2">
+                                    <span v-if="hasAnyLegInProgress(match)"
+                                        class="text-white font-bold text-xs flex items-center">
+                                        <VideoCameraIcon class="w-4 h-4 mr-1" />
+                                        Trực tiếp
+                                    </span>
+                                    <span class="text-xs" v-else>
+                                        {{ formatTime(match.legs?.[0]?.scheduled_at) }}
+                                    </span>
                                 </div>
                             </div>
-                        </template>
+
+                            <div
+                                class="flex flex-col gap-3 rounded-lg shadow-md border border-[#dcdee6] bg-[#EDEEF2] px-4 py-3">
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center gap-2">
+                                        <img :src="match.home_team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(match.home_team.name)}`"
+                                            class="w-8 h-8 rounded-full" :alt="match.home_team.name" />
+                                        <p class="text-sm font-semibold text-[#3E414C]">
+                                            {{ match.home_team.name }}
+                                        </p>
+                                    </div>
+                                    <span class="font-bold text-lg" :class="[
+                                        { 'text-green-700': isWinner(match, 'home') },
+                                        { 'text-red-700': isLoser(match, 'home') }
+                                    ]">
+                                        {{ match.aggregate_score?.home ?? 0 }}
+                                    </span>
+                                </div>
+
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center gap-2">
+                                        <img :src="match.away_team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(match.away_team.name)}`"
+                                            class="w-8 h-8 rounded-full" :alt="match.away_team.name" />
+                                        <p class="text-sm font-semibold text-[#3E414C]">
+                                            {{ match.away_team.name }}
+                                        </p>
+                                    </div>
+                                    <span class="font-bold text-lg" :class="[
+                                        { 'text-green-700': isWinner(match, 'away') },
+                                        { 'text-red-700': isLoser(match, 'away') }
+                                    ]">
+                                        {{ match.aggregate_score?.away ?? 0 }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                 </div>
@@ -263,13 +265,13 @@ const dropTargetPosition = ref(null);
 /* ===========================
    DRAG & DROP HANDLERS
 =========================== */
-const canDragPoolStage = (legStatus) => {
-    // Chỉ cho phép drag khi leg chưa bắt đầu
-    return !['in_progress', 'completed', 'finished'].includes(legStatus);
+const canDragPoolStage = (match) => {
+    // Chỉ cho drag khi tất cả legs đều pending (chưa bắt đầu)
+    return match.legs?.every(leg => leg.status === 'pending');
 };
 
-const handleDragStart = (event, match, position, legStatus) => {
-    if (!canDragPoolStage(legStatus)) {
+const handleDragStart = (event, match, position) => {
+    if (!canDragPoolStage(match)) {
         event.preventDefault();
         return;
     }
@@ -359,11 +361,6 @@ const isDropTarget = (matchId, position) => {
     return dropTargetMatch.value === matchId && dropTargetPosition.value === position;
 };
 
-const handleMatchUpdated = () => {
-    showCreateMatchModal.value = false;
-    emit('refresh'); // Refresh bracket data
-};
-
 /* ===========================
    GET DETAIL MATCH
 =========================== */
@@ -379,6 +376,11 @@ const handleMatchClick = async (matchId) => {
     } catch (error) {
         toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi lấy chi tiết trận đấu');
     }
+};
+
+const handleMatchUpdated = () => {
+    showCreateMatchModal.value = false;
+    emit('refresh');
 };
 
 /* ===========================
@@ -411,33 +413,63 @@ const roundHeaderClass = (roundName, isPoolStage) => {
     return 'border-l border-white';
 };
 
-const hasScoreInSets = (leg) => {
-    if (!leg.sets) return false;
-    return Object.values(leg.sets).some(setArr =>
-        setArr.some(item => item.score !== 0)
-    );
+const hasAnyLegInProgress = (match) => {
+    return match.legs?.some(leg => leg.status === 'in_progress');
 };
 
-const matchCardWrapperClass = (leg) => {
-    if (leg.status === "pending" && hasScoreInSets(leg)) {
-        return "border border-[#FBBF24] shadow-md !bg-[#FBBF24]";
-    } else if (leg.status === 'completed') {
+const hasAnyLegStarted = (match) => {
+    return match.legs?.some(leg => ['in_progress', 'completed'].includes(leg.status));
+};
+
+const matchCardWrapperClass = (match) => {
+    if (match.status === 'completed') {
         return "border border-green-500 shadow-md bg-green-500";
+    } else if (hasAnyLegStarted(match)) {
+        return "border border-[#FBBF24] shadow-md !bg-[#FBBF24]";
     }
     return "border";
 };
 
-const matchHeaderContentClass = (leg) => {
-    if (leg.status === "pending" && hasScoreInSets(leg)) {
-        return 'text-white !bg-[#FBBF24]';
-    } else if (leg.status === 'completed') {
+const matchHeaderContentClass = (match) => {
+    if (match.status === 'completed') {
         return 'text-white bg-green-500';
+    } else if (hasAnyLegStarted(match)) {
+        return 'text-white !bg-[#FBBF24]';
     }
     return 'text-[#838799]';
 };
 
 /* ===========================
-   UTILITY FUNCTIONS
+   WINNER/LOSER LOGIC
+=========================== */
+const isWinner = (match, position) => {
+    if (!match.aggregate_score || match.status !== 'completed') return false;
+    
+    const homeScore = match.aggregate_score.home ?? 0;
+    const awayScore = match.aggregate_score.away ?? 0;
+
+    if (position === 'home') {
+        return homeScore > awayScore;
+    } else {
+        return awayScore > homeScore;
+    }
+};
+
+const isLoser = (match, position) => {
+    if (!match.aggregate_score || match.status !== 'completed') return false;
+    
+    const homeScore = match.aggregate_score.home ?? 0;
+    const awayScore = match.aggregate_score.away ?? 0;
+
+    if (position === 'home') {
+        return homeScore < awayScore;
+    } else {
+        return awayScore < homeScore;
+    }
+};
+
+/* ===========================
+   UTILITY
 =========================== */
 const getTeamInitials = (name) => {
     if (!name) return "??";
@@ -459,41 +491,6 @@ const formatTime = (scheduledAt) => {
         return "Chưa xác định";
     }
 };
-const isWinner = (leg, position) => {
-    if (
-        leg.home_score === null ||
-        leg.away_score === null ||
-        leg.status !== 'completed'
-    ) return false;
-
-    if (position === 'home') {
-        return leg.home_score > leg.away_score;
-    }
-
-    if (position === 'away') {
-        return leg.away_score > leg.home_score;
-    }
-
-    return false;
-};
-
-const isLoser = (leg, position) => {
-    if (
-        leg.home_score === null ||
-        leg.away_score === null ||
-        leg.status !== 'completed'
-    ) return false;
-
-    if (position === 'home') {
-        return leg.home_score < leg.away_score;
-    }
-
-    if (position === 'away') {
-        return leg.away_score < leg.home_score;
-    }
-
-    return false;
-}
 </script>
 
 <style scoped>

@@ -9,29 +9,24 @@ use App\Models\TournamentType;
 
 class MatchDetailResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray(Request $request): array
     {
         $homeTeam = $this->homeTeam;
         $awayTeam = $this->awayTeam;
         $tournamentType = $this->tournamentType;
 
-        $roundNumber = Matches::where('tournament_type_id', $this->tournament_type_id)
-            ->where('id', '<=', $this->id)
-            ->count();
+        // ✅ ROUND LẤY TRỰC TIẾP
+        $roundNumber = $this->round;
+        $roundName = "Vòng {$roundNumber}";
 
-        $roundName = "Trận đấu số {$roundNumber}";
-
-        // Mặc định rỗng
         $legs = collect();
 
         if ($tournamentType) {
             switch ($tournamentType->format) {
 
+                /* =========================
+                   ROUND ROBIN → 1 LEG
+                ========================= */
                 case TournamentType::FORMAT_ROUND_ROBIN:
                     $sets = $this->results->isEmpty()
                         ? (object)[]
@@ -47,16 +42,28 @@ class MatchDetailResource extends JsonResource
                             ->toArray();
 
                     $legs = collect([
-                        ['sets' => $sets],
+                        [
+                            'id' => $this->id,
+                            'leg' => 1,
+                            'status' => $this->status,
+                            'court' => $this->court,
+                            'scheduled_at' => $this->scheduled_at,
+                            'sets' => $sets,
+                        ],
                     ]);
                     break;
 
+                /* =========================
+                   ELIMINATION / MIXED
+                ========================= */
                 case TournamentType::FORMAT_ELIMINATION:
                 case TournamentType::FORMAT_MIXED:
                 default:
                     if ($this->home_team_id && $this->away_team_id) {
+
                         $legs = Matches::with('results')
                             ->where('tournament_type_id', $this->tournament_type_id)
+                            ->where('round', $this->round) // ✅ QUAN TRỌNG
                             ->where(function ($q) {
                                 $q->where(function ($sub) {
                                     $sub->where('home_team_id', $this->home_team_id)
@@ -84,7 +91,11 @@ class MatchDetailResource extends JsonResource
                                         ->toArray();
 
                                 return [
+                                    'id' => $match->id,                 // ✅ CẦN CHO UPDATE
                                     'leg' => $match->leg,
+                                    'status' => $match->status,
+                                    'court' => $match->court,
+                                    'scheduled_at' => $match->scheduled_at,
                                     'sets' => $sets,
                                 ];
                             });
@@ -94,35 +105,38 @@ class MatchDetailResource extends JsonResource
         }
 
         return [
-            'id' => $this->id,
+            'id' => $this->id, // match cha
             'name_of_match' => $this->name_of_match,
             'round' => $roundNumber,
             'round_name' => $roundName,
+
             'home_team' => $homeTeam ? [
                 'id' => $homeTeam->id,
                 'name' => $homeTeam->name,
-                'members' => $homeTeam->members->map(fn($m) => [
+                'members' => $homeTeam->members->map(fn ($m) => [
                     'id' => $m->id,
                     'name' => $m->full_name,
                     'avatar' => $m->avatar_url,
                 ]),
             ] : null,
+
             'away_team' => $awayTeam ? [
                 'id' => $awayTeam->id,
                 'name' => $awayTeam->name,
-                'members' => $awayTeam->members->map(fn($m) => [
+                'members' => $awayTeam->members->map(fn ($m) => [
                     'id' => $m->id,
                     'name' => $m->full_name,
                     'avatar' => $m->avatar_url,
                 ]),
             ] : null,
-            'legs' => $legs,
+
+            // ✅ QUAN TRỌNG NHẤT
+            'legs' => $legs->values(),
+
             'is_bye' => $this->is_bye,
             'is_loser_bracket' => $this->is_loser_bracket,
             'is_third_place' => $this->is_third_place,
-            'court' => $this->court,
             'winner_id' => $this->winner_id,
-            'status' => $this->status,
         ];
     }
 }
