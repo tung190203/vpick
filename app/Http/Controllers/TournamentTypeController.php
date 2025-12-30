@@ -1171,7 +1171,7 @@ class TournamentTypeController extends Controller
                     'round' => $round,
                     'round_name' => $this->getRoundName(
                         $round,
-                        $roundMatches->count(),
+                        $grouped->count(),
                         $type->format
                     ),
                     'matches' => $grouped->map(function ($matchGroup) use ($calculateLegDetails) {
@@ -1400,89 +1400,6 @@ class TournamentTypeController extends Controller
             ->orderBy('leg')
             ->get();
     
-        // $knockoutStage = $knockoutMatches->groupBy('round')->map(function ($roundMatches, $round) use ($calculateLegDetails, $type) {
-        //     $grouped = $roundMatches->groupBy(function ($match) {
-        //         if ($match->home_team_id === null && $match->away_team_id === null) {
-        //             return 'match_' . $match->id;
-        //         }
-                
-        //         return collect([
-        //             $match->home_team_id,
-        //             $match->away_team_id,
-        //         ])->sort()->implode('_');
-        //     })->values();
-    
-        //     return [
-        //         'round' => $round,
-        //         'round_name' => $this->getRoundName(
-        //             $round,
-        //             $roundMatches->count(),
-        //             $type->format
-        //         ),
-        //         'matches' => $grouped->map(function ($matchGroup) use ($calculateLegDetails) {
-        //             $first = $matchGroup->first();
-        //             $homeTeamId = $first->home_team_id;
-        //             $awayTeamId = $first->away_team_id;
-    
-        //             $homeTotal = 0;
-        //             $awayTotal = 0;
-    
-        //             // ✅ TÍNH AGGREGATE GIỐNG ELIMINATION
-        //             $legs = $matchGroup->map(function ($leg) use (
-        //                 $calculateLegDetails,
-        //                 &$homeTotal,
-        //                 &$awayTotal,
-        //                 $homeTeamId,
-        //                 $awayTeamId
-        //             ) {
-        //                 $details = $calculateLegDetails($leg);
-                        
-        //                 if ($leg->status === 'completed') {
-        //                     if ($details['winner_team_id'] === $homeTeamId) {
-        //                         $homeTotal += 3;
-        //                     } elseif ($details['winner_team_id'] === $awayTeamId) {
-        //                         $awayTotal += 3;
-        //                     }
-        //                 }
-    
-        //                 return [
-        //                     'id' => $leg->id,
-        //                     'leg' => $leg->leg,
-        //                     'court' => $leg->court,
-        //                     'home_score' => $details['home_score_calculated'],
-        //                     'away_score' => $details['away_score_calculated'],
-        //                     'status' => $leg->status,
-        //                     'scheduled_at' => $leg->scheduled_at,
-        //                     'is_completed' => $leg->status === 'completed',
-        //                     'sets' => $details['sets'],
-        //                 ];
-        //             })->values();
-    
-        //             return [
-        //                 'match_id' => $first->id,
-        //                 'home_team' => $this->formatTeam($first->homeTeam),
-        //                 'away_team' => $this->formatTeam($first->awayTeam),
-        //                 'is_bye' => $first->is_bye,
-        //                 'is_third_place' => $first->is_third_place ?? false,
-        //                 'best_loser_source_round' => $first->best_loser_source_round ?? null,
-    
-        //                 // 👉 FE DÙNG
-        //                 'legs' => $legs,
-        //                 'aggregate_score' => [
-        //                     'home' => $homeTotal,
-        //                     'away' => $awayTotal,
-        //                 ],
-        //                 'winner_team_id' =>
-        //                     $homeTotal > $awayTotal ? $homeTeamId :
-        //                     ($awayTotal > $homeTotal ? $awayTeamId : null),
-    
-        //                 'next_match_id' => $first->next_match_id,
-        //                 'next_position' => $first->next_position,
-        //                 'status' => $matchGroup->every(fn($l) => $l->status === 'completed') ? 'completed' : 'pending',
-        //             ];
-        //         })->values(),
-        //     ];
-        // })->values();
         $knockoutStage = $knockoutMatches->groupBy('round')->map(function ($roundMatches, $round) use ($calculateLegDetails, $type) {
             $numLegs = (int) ($type->num_legs ?? 1);
         
@@ -1651,32 +1568,21 @@ class TournamentTypeController extends Controller
     /**
      * Lấy tên round
      */
-    private function getRoundName($round, $matchCount, $format, $hasThirdPlace = false)
+    private function getRoundName($round, $pairCount, $format)
     {
         if ($round === 1 && $format == TournamentType::FORMAT_MIXED) {
             return 'Vòng bảng';
         }
-        
-        if ($matchCount) {
-            switch ($matchCount) {
-                case 1:
-                    return 'Chung kết';
-                case 2:
-                    return 'Bán kết';
-                case 4:
-                    return 'Tứ kết';
-                case 8:
-                    return 'Vòng 1/8';
-                case 16:
-                    return 'Vòng 1/16';
-                case 32:
-                    return 'Vòng 1/32';
-                default:
-                    return "Vòng {$round}";
-            }
-        }
-        
-        return "Vòng {$round}";
+
+        return match ($pairCount) {
+            1 => 'Chung kết',
+            2 => 'Bán kết',
+            4 => 'Tứ kết',
+            8 => 'Vòng 1/8',
+            16 => 'Vòng 1/16',
+            32 => 'Vòng 1/32',
+            default => "Vòng {$round}",
+        };
     }
 
     public function getRank($tournament_id)

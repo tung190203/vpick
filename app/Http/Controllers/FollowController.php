@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\FollowResource;
-use App\Http\Resources\UserListResource;
+use App\Http\Resources\UserResource;
 use App\Models\CompetitionLocation;
 use App\Models\Follow;
 use App\Models\User;
@@ -220,7 +220,7 @@ class FollowController extends Controller
 
         // Chuẩn hóa data
         $data = [
-            'friends' => UserListResource::collection($friends),
+            'friends' => UserResource::collection($friends),
         ];
 
         return ResponseHelper::success($data, 'Lấy danh sách bạn bè thành công', 200, $meta);
