@@ -12,28 +12,36 @@
                             <XMarkIcon class="w-6 h-6" />
                         </button>
                     </div>
+                    
                     <!-- Search and Filter -->
                     <div class="grid grid-cols-1 gap-3 px-6">
                         <div class="relative flex items-center">
                             <MagnifyingGlassIcon class="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2" />
-                            <input v-model="searchQuery" type="text" placeholder="Tìm kiếm" @input="onSearch"
-                                class="w-full pl-10 pr-4 py-2 h-10 border border-[#EDEEF2] bg-[#EDEEF2] rounded focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-[#838799]" />
+                            <input 
+                                v-model="searchQuery" 
+                                type="text" 
+                                placeholder="Tìm kiếm" 
+                                @input="onSearch"
+                                class="w-full pl-10 pr-4 py-2 h-10 border border-[#EDEEF2] bg-[#EDEEF2] rounded focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-[#838799]" 
+                            />
                         </div>
                     </div>
 
-                    <!-- User List -->
-                    <div class="flex-1 overflow-y-auto px-6 pb-6" v-if="filteredUsers.length > 0">
-                        <div v-for="user in filteredUsers" :key="user.id"
+                    <!-- User List with Infinite Scroll -->
+                    <div 
+                        ref="scrollContainer"
+                        @scroll="handleScroll"
+                        class="flex-1 overflow-y-auto px-6 pb-6" 
+                        v-if="data && data.length > 0"
+                    >
+                        <div v-for="user in data" :key="user.id"
                             class="flex items-center gap-3 py-3 border-b border-gray-100 last:border-b-0 cursor-pointer hover:bg-gray-50">
                             <!-- Avatar -->
                             <div class="relative flex-shrink-0">
-                                <div
-                                    class="w-16 h-16 bg-red-300 rounded-full flex items-center justify-center overflow-hidden">
-                                    <img :src="user.avatar_url"
-                                        alt="User Avatar" class="w-full h-full object-cover" />
+                                <div class="w-16 h-16 bg-red-300 rounded-full flex items-center justify-center overflow-hidden">
+                                    <img :src="user.avatar_url" alt="User Avatar" class="w-full h-full object-cover" />
                                 </div>
-                                <div
-                                    class="absolute -bottom-1 -left-1 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center border border-1 border-white">
+                                <div class="absolute -bottom-1 -left-1 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center border border-1 border-white">
                                     <span class="text-white font-bold text-[9px]">{{ convertLevel(user) }}</span>
                                 </div>
                             </div>
@@ -53,35 +61,46 @@
                                 </div>
                                 <div class="flex items-center gap-1 text-sm text-gray-500 mt-0.5">
                                     <img :src="maleIcon" alt="male icon" class="w-4 h-4" v-if="user.gender == 1"/>
-                                    <img :src="femaleIcon" alt="male icon" class="w-4 h-4" v-else-if="user.gender == 2"/>
+                                    <img :src="femaleIcon" alt="female icon" class="w-4 h-4" v-else-if="user.gender == 2"/>
                                     <img src="" alt="" v-else>
                                     <span>{{ user.gender_text }}</span>
                                 </div>
                             </div>
 
                             <!-- Invite Button -->
-                            <button @click="inviteUser(user.id)" :disabled="user.invited" :class="[
-                                'px-4 py-2 rounded-lg text-sm font-medium transition-colors flex-shrink-0',
-                                user.invited
-                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                    : 'bg-blue-500 text-white hover:bg-blue-600'
-                            ]">
+                            <button 
+                                @click="inviteUser(user.id)" 
+                                :disabled="user.invited" 
+                                :class="[
+                                    'px-4 py-2 rounded-lg text-sm font-medium transition-colors flex-shrink-0',
+                                    user.invited
+                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                        : 'bg-blue-500 text-white hover:bg-blue-600'
+                                ]">
                                 {{ user.invited ? 'Đã mời' : 'Mời bạn' }}
                             </button>
                         </div>
-                        <div v-if="hasMore" class="flex justify-center mt-4">
-                            <button
-                            @click="loadMore"
-                            class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-medium"
-                            >
-                            Xem thêm
-                            </button>
+                        
+                        <!-- Loading Indicator -->
+                        <div v-if="isLoading" class="flex justify-center py-4">
+                            <div class="flex items-center gap-2 text-gray-500">
+                                <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span class="text-sm">Đang tải...</span>
+                            </div>
+                        </div>
+
+                        <!-- End Message -->
+                        <div v-else-if="!hasMore && data.length > 0" class="text-center py-4 text-gray-400 text-sm">
+                            Đã hiển thị tất cả
                         </div>
                     </div>
+                    
+                    <!-- Empty State -->
                     <div v-else class="flex-1 flex items-center justify-center px-6 pb-6">
-                        <span class="text-gray-500">
-                            {{ emptyText }}
-                        </span>
+                        <span class="text-gray-500">{{ emptyText }}</span>
                     </div>
                 </div>
             </div>
@@ -90,10 +109,10 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { XMarkIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
-import maleIcon from '@/assets/images/male.svg';
-import femaleIcon from '@/assets/images/female.svg';
+import maleIcon from '@/assets/images/male.svg'
+import femaleIcon from '@/assets/images/female.svg'
 
 const props = defineProps({
     modelValue: {
@@ -101,10 +120,13 @@ const props = defineProps({
         default: false
     },
     data: {
-        type: Object,
-        default: () => ({})
+        type: Array,
+        default: () => []
     },
-    hasMore: Boolean,
+    hasMore: {
+        type: Boolean,
+        default: false
+    },
     title: {
         type: String,
         default: 'Mời bạn bè'
@@ -117,21 +139,38 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'invite', 'loadMore', 'search'])
 
+const searchQuery = ref('')
+const isLoading = ref(false)
+const scrollContainer = ref(null)
+
 const convertLevel = (user, sportId = 1) => {
-    if (!user?.sports || user.sports.length === 0) return '0';
+    if (!user?.sports || user.sports.length === 0) return '0'
 
-    const sport = user.sports.find(s => s.sport_id === sportId);
-    if (!sport?.scores?.vndupr_score) return '0';
+    const sport = user.sports.find(s => s.sport_id === sportId)
+    if (!sport?.scores?.vndupr_score) return '0'
 
-    return parseFloat(sport.scores.vndupr_score).toFixed(1);
-};
-
-const loadMore = () => {
-  emit('loadMore')
+    return parseFloat(sport.scores.vndupr_score).toFixed(1)
 }
 
+const handleScroll = (e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.target
+    
+    // Khi scroll gần đến cuối (còn 150px)
+    const nearBottom = scrollHeight - scrollTop - clientHeight < 150
+    
+    if (nearBottom && props.hasMore && !isLoading.value) {
+        isLoading.value = true
+        emit('loadMore')
+    }
+}
+
+// Reset loading state khi data thay đổi
+watch(() => props.data, () => {
+    isLoading.value = false
+}, { deep: true })
+
 const onSearch = () => {
-  emit('search', searchQuery.value)
+    emit('search', searchQuery.value)
 }
 
 const isOpen = computed({
@@ -141,19 +180,12 @@ const isOpen = computed({
 
 const closeModal = () => {
     isOpen.value = false
+    searchQuery.value = '' // Reset search khi đóng modal
 }
-
-const searchQuery = ref('')
-
-const filteredUsers = computed(() => {
-    return props.data.filter(user =>
-        user.full_name.toLowerCase().includes(searchQuery.value.toLowerCase())
-    )
-})
 
 const inviteUser = (userId) => {
     const user = props.data.find(u => u.id === userId)
-    if (user) {
+    if (user && !user.invited) {
         user.invited = true
         emit('invite', user)
     }
@@ -179,5 +211,35 @@ const inviteUser = (userId) => {
 .modal-enter-from .bg-white,
 .modal-leave-to .bg-white {
     transform: scale(0.9);
+}
+
+/* Custom scrollbar */
+.overflow-y-auto::-webkit-scrollbar {
+    width: 6px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Loading spinner animation */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
 }
 </style>

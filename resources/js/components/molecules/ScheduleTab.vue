@@ -21,59 +21,71 @@
     </div>
 
     <template v-if="scheduleActiveTab === 'ranking'">
-        <template v-if="data.tournament_types?.[0]?.format === 2 || data.tournament_types?.[0]?.format === 3">
-            <div class="rounded-md bg-[#dcdee6] shadow-md border border-[#dcdee6] mx-2" v-if="rank && rank.rankings">
-                <div class="flex justify-between items-center px-4 py-2 text-[#838799]">
-                    <p class="font-semibold text-sm">Đội</p>
-                    <p class="font-semibold text-sm">Điểm</p>
-                </div>
-                <div class="rounded-md bg-[#EDEEF2]">
-                    <div v-for="(team, index) in rank.rankings" :key="team.team_id"
-                        class="px-4 py-2 flex justify-between items-center text-[#6B6F80] hover:text-[#4392E0] hover:bg-blue-100 cursor-pointer"
-                        :class="{ 'rounded-tl-md rounded-tr-md': index === 0 }">
-                        <div class="flex items-center gap-3">
-                            <span class="text-sm">{{ index + 1 }}</span>
-                            <div class="flex items-center gap-2">
-                                <img :src="team.team_avatar || 'https://placehold.co/400x400'" class="w-8 h-8 rounded-full"
-                                    alt="logo team" />
-                                <p class="font-medium text-sm">{{ team.team_name }}</p>
-                            </div>
-                        </div>
-                        <p class="font-semibold text-[20px]">{{ team.total_set_points }}</p>
-                    </div>
-                </div>
-            </div>
-        </template>
+  <template v-if="data.tournament_types?.[0]?.format === 2 || data.tournament_types?.[0]?.format === 3">
+    <!-- BXH không group -->
+    <div v-if="rank && rank.rankings" class="p-4 space-y-4">
+      <div class="bg-gray-100 rounded-lg shadow overflow-hidden">
+        <!-- Header -->
+        <div class="grid grid-cols-[40px_1fr_80px_80px] bg-gray-200 px-4 py-2 text-gray-600 font-semibold text-sm">
+          <span>#</span>
+          <span>Đội</span>
+          <span class="text-center">Điểm</span>
+          <span class="text-center">Hiệu số</span>
+        </div>
 
-        <template v-else-if="data.tournament_types?.[0]?.format === 1">
-            <div v-for="group in rank.group_rankings" :key="group.group_id"
-                class="rounded-md bg-[#dcdee6] shadow-md border border-[#dcdee6] mx-2 mb-4">
-                <div class="flex justify-between items-center px-4 py-2 text-[#838799]">
-                    <p class="font-semibold text-sm">{{ group.group_name }}</p>
-                    <p class="font-semibold text-sm">Điểm</p>
-                </div>
-                <div class="rounded-md bg-[#EDEEF2]">
-                    <div v-for="(team, index) in group.rankings" :key="team.team_id"
-                        class="px-4 py-2 flex justify-between items-center text-[#6B6F80] hover:text-[#4392E0] hover:bg-blue-100 cursor-pointer"
-                        :class="{ 'rounded-tl-md rounded-tr-md': index === 0 }">
-                        <div class="flex items-center gap-3">
-                            <span class="text-sm">{{ index + 1 }}</span>
-                            <div class="flex items-center gap-2">
-                                <img :src="team.team_avatar || 'https://placehold.co/400x400'" class="w-8 h-8 rounded-full"
-                                    alt="logo team" />
-                                <p class="font-medium text-sm">{{ team.team_name }}</p>
-                            </div>
-                        </div>
-                        <p class="font-semibold text-[20px]">{{ team.total_set_points }}</p>
-                    </div>
-                </div>
+        <!-- Teams -->
+        <div class="divide-y divide-gray-200">
+          <div v-for="(team, index) in rank.rankings" :key="team.team_id"
+               class="grid grid-cols-[40px_1fr_80px_80px] items-center px-4 py-3 bg-white hover:bg-blue-50 transition-colors duration-200 cursor-pointer">
+            <span class="text-gray-700 font-medium">{{ index + 1 }}</span>
+            <div class="flex items-center gap-2">
+              <img :src="team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(team.team_name)}`" alt="logo team"
+                   class="w-8 h-8 rounded-full border border-gray-300" />
+              <p class="text-gray-800 font-medium text-sm">{{ team.team_name }}</p>
             </div>
-        </template>
+            <span class="text-center font-semibold text-gray-700">{{ team.points }}</span>
+            <span class="text-center font-semibold text-gray-700">{{ team.point_diff }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
 
-        <template v-else>
-            <p class="text-center text-gray-500">Không có dữ liệu bảng xếp hạng.</p>
-        </template>
-    </template>
+  <template v-else-if="data.tournament_types?.[0]?.format === 1">
+    <!-- BXH group (Mixed format) -->
+    <div v-for="group in rank.group_rankings" :key="group.group_id" class="p-4 space-y-4">
+      <div class="bg-gray-100 rounded-lg shadow overflow-hidden">
+        <!-- Group Header -->
+        <div class="grid grid-cols-[40px_1fr_80px_80px] bg-gray-200 px-4 py-2 text-gray-600 font-semibold text-sm">
+          <span>#</span>
+          <span>{{ group.group_name }}</span>
+          <span class="text-center">Điểm</span>
+          <span class="text-center">Hiệu số</span>
+        </div>
+
+        <!-- Teams -->
+        <div class="divide-y divide-gray-200">
+          <div v-for="(team, index) in group.rankings" :key="team.team_id"
+               class="grid grid-cols-[40px_1fr_80px_80px] items-center px-4 py-3 bg-white hover:bg-blue-50 transition-colors duration-200 cursor-pointer">
+            <span class="text-gray-700 font-medium">{{ index + 1 }}</span>
+            <div class="flex items-center gap-2">
+              <img :src="team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(team.team_name)}`" alt="logo team"
+                   class="w-8 h-8 rounded-full border border-gray-300" />
+              <p class="text-gray-800 font-medium text-sm">{{ team.team_name }}</p>
+            </div>
+            <span class="text-center font-semibold text-gray-700">{{ team.points }}</span>
+            <span class="text-center font-semibold text-gray-700">{{ team.point_diff }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <template v-else>
+    <p class="text-center text-gray-500">Không có dữ liệu bảng xếp hạng.</p>
+  </template>
+</template>
+
 
     <template v-else-if="scheduleActiveTab === 'matches'">
         <!-- Mixed Format (format === 1) -->
@@ -702,6 +714,11 @@ const formatDate = (dateString) => {
     const minutes = date.getMinutes().toString().padStart(2, '0')
     return `${day} Th${month} - ${hours}:${minutes}`
 }
+
+const getTeamInitials = (name) => {
+  if (!name) return "??";
+  return name.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2);
+};
 
 // Watch để tự động load trận đấu khi tournament_type_id thay đổi
 watch(

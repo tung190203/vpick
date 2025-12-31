@@ -6,6 +6,7 @@
 .env
 .env.dev
 .env.prod
+.env.dev1
 .env.backup
 .env.production
 .phpunit.result.cache
