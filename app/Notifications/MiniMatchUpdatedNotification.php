@@ -27,7 +27,7 @@ class MiniMatchUpdatedNotification extends Notification implements ShouldQueue
     {
         return [
             'match_id' => $this->match->id,
-            'tournament_id' => $this->match->mini_tournament_id,
+            'mini_tournament_id' => $this->match->mini_tournament_id,
             'title' => 'Bạn có trận đấu mới',
             'message' => "Trận đấu '{$this->match->name_of_match}' đã được sửa đổi.",
         ];
@@ -37,7 +37,7 @@ class MiniMatchUpdatedNotification extends Notification implements ShouldQueue
     {
         return new BroadcastMessage([
             'match_id' => $this->match->id,
-            'tournament_id' => $this->match->mini_tournament_id,
+            'mini_tournament_id' => $this->match->mini_tournament_id,
             'title' => 'Bạn có trận đấu mới',
             'message' => "Trận đấu '{$this->match->name_of_match}' đã được sửa đổi.",
         ]);
