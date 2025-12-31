@@ -61,6 +61,9 @@
                                         class="w-16 h-16 bg-red-300 rounded-full flex items-center justify-center overflow-hidden">
                                         <img :src="user.avatar"
                                             alt="User Avatar" class="w-full h-full object-cover" />
+                                            <div class="absolute -bottom-1 -left-1 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center border border-1 border-white">
+                                    <span class="text-white font-bold text-[9px]">{{ convertLevel(user) }}</span>
+                                </div>
                                     </div>
                                 </div>
 
@@ -78,7 +81,10 @@
                                         </span>
                                     </div>
                                     <div class="flex items-center gap-2 text-sm text-gray-500 mt-0.5">
-                                        <span>{{ user.age_group ?? 'Chưa rõ' }}</span>
+                                        <img :src="maleIcon" alt="male icon" class="w-4 h-4" v-if="user.gender == 1"/>
+                                        <img :src="femaleIcon" alt="female icon" class="w-4 h-4" v-else-if="user.gender == 2"/>
+                                        <img src="" alt="" v-else>
+                                        <span>{{ user.gender_text }}</span>
                                     </div>
                                 </div>
 
@@ -103,6 +109,8 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { XMarkIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
+import maleIcon from '@/assets/images/male.svg'
+import femaleIcon from '@/assets/images/female.svg'
 
 const props = defineProps({
     modelValue: Boolean,
@@ -120,6 +128,15 @@ const isOpen = computed({
 
 const closeModal = () => {
     isOpen.value = false
+}
+
+const convertLevel = (user, sportId = 1) => {
+    if (!user?.sports || user.sports.length === 0) return '0'
+
+    const sport = user.sports.find(s => s.sport_id === sportId)
+    if (!sport?.scores?.vndupr_score) return '0'
+
+    return parseFloat(sport.scores.vndupr_score).toFixed(1)
 }
 
 const tabs = [

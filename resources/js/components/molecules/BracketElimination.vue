@@ -40,7 +40,7 @@
       <template #player="{ player }">
         <div v-if="player.isPlayer1"
           class="w-64 rounded-lg shadow-md border bg-[#EDEEF2] relative cursor-pointer hover:shadow-lg transition-all"
-          :class="playerWrapperClass(player)" @click="handleMatchClick(player.matchId)">
+          :class="playerWrapperClass(player)" @click="!isDragging ? handleMatchClick(player.matchId) : null">      
           <div class="flex justify-between items-center text-xs font-medium rounded-t-[7px] rounded-b-[7px] px-4 py-2"
             :class="headerClass(player)">
             <span class="uppercase">{{ player.label || 'SÂN 1' }}</span>
@@ -60,14 +60,18 @@
           <div class="px-4 space-y-1 bg-[#eceef2] rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px] rounded-tr-[7px]">
 
             <!-- HOME TEAM -->
-            <div class="space-y-1 rounded transition-colors" :class="{
-              'bg-blue-100': isDropTarget(player.matchId, 'home'),
-              'cursor-move': player.roundNumber === 1 && !player.status
-            }" :draggable="player.roundNumber === 1 && !player.status"
-              @dragstart="handleDragStart($event, player, 'home')" @dragend="handleDragEnd"
-              @dragover.prevent="handleDragOver($event, player.matchId, 'home')" @dragleave="handleDragLeave"
-              @drop="handleDrop($event, player.matchId, 'home')">
-              <div class="flex justify-between items-center">
+            <div class="space-y-1 rounded transition-all px-2 -mx-2" :class="{
+              'bg-blue-100 ring-2 ring-blue-400': isDropTarget(player.matchId, 'home'),
+              'cursor-move hover:bg-gray-100': canDrag(player),
+              'cursor-not-allowed': !canDrag(player)
+            }" 
+            :draggable="canDrag(player) ? 'true' : 'false'"
+            @dragstart="handleDragStart($event, player, 'home')" 
+            @dragend="handleDragEnd"
+            @dragover.prevent="handleDragOver($event, player.matchId, 'home')" 
+            @dragleave="handleDragLeave($event)"
+            @drop.prevent.stop="handleDrop($event, player.matchId, 'home')">
+              <div class="flex justify-between items-center pointer-events-none">
                 <div class="flex items-center gap-2">
                   <img :src="player.logo || placeholderFor(player.name)" class="w-8 h-8 rounded-full" />
                   <p class="text-sm font-semibold text-[#3E414C]">{{ player.name }}</p>
@@ -85,14 +89,19 @@
             </div>
 
             <!-- AWAY TEAM -->
-            <div class="space-y-1 rounded transition-colors" :class="{
-              'bg-blue-100': isDropTarget(player.matchId, 'away'),
-              'cursor-move': player.roundNumber === 1 && !player.status
-            }" :draggable="player.roundNumber === 1 && !player.status"
-              @dragstart="handleDragStart($event, player, 'away')" @dragend="handleDragEnd"
-              @dragover.prevent="handleDragOver($event, player.matchId, 'away')" @dragleave="handleDragLeave"
-              @drop="handleDrop($event, player.matchId, 'away')">
-              <div class="flex justify-between items-center">
+            <div class="space-y-1 rounded transition-all px-2 -mx-2" :class="{
+              'bg-blue-100 ring-2 ring-blue-400': isDropTarget(player.matchId, 'away'),
+              'cursor-move hover:bg-gray-100': canDrag(player),
+              'cursor-not-allowed': !canDrag(player)
+            }" 
+            :draggable="canDrag(player) ? 'true' : 'false'"
+            @dragstart="handleDragStart($event, player, 'away')" 
+            @dragend="handleDragEnd"
+            @dragover.prevent="handleDragOver($event, player.matchId, 'away')" 
+            @dragleave="handleDragLeave($event)"
+            @drop.prevent.stop="handleDrop($event, player.matchId, 'away')">
+              
+              <div class="flex justify-between items-center pointer-events-none">
                 <div class="flex items-center gap-2">
                   <img :src="player.opponent.logo || placeholderFor(player.opponent.name)"
                     class="w-8 h-8 rounded-full" />
@@ -142,6 +151,41 @@ const dropTargetPosition = ref(null);
 const totalRounds = computed(() => props.bracket.bracket.length);
 
 /* ===========================
+   CHECK IF CAN DRAG
+=========================== */
+const canDrag = (player) => {
+  // Chỉ cho phép kéo ở round 1, status = pending và chưa có kết quả (score)
+  return player.roundNumber === 1 && 
+         player.status === 'pending' && 
+         !hasScoreInSets(player);
+};
+
+// Helper: Kiểm tra match có thể drag/drop không (dùng cho validation)
+const canDragMatch = (match) => {
+  const displayLeg = getDisplayLeg(match.legs);
+  if (!displayLeg) return false;
+  
+  // Lấy sets từ displayLeg
+  const homeSets = displayLeg.sets ? getTeamSets(displayLeg.sets, match.home_team.id) : [];
+  const awaySets = displayLeg.sets ? getTeamSets(displayLeg.sets, match.away_team.id) : [];
+  const allSets = [...homeSets, ...awaySets];
+  
+  // Kiểm tra có score nào khác 0 không
+  const hasScore = allSets.some(score => score !== 0);
+  
+  return displayLeg.status === 'pending' && !hasScore;
+};
+
+// Helper: Tìm match theo ID trong rounds
+const findMatchById = (matchId) => {
+  for (const round of props.bracket.bracket) {
+    const match = round.matches.find(m => m.match_id === matchId);
+    if (match) return match;
+  }
+  return null;
+};
+
+/* ===========================
    GET DETAIL MATCH
 =========================== */
 const handleMatchClick = async (matchId) => {
@@ -162,8 +206,8 @@ const handleMatchClick = async (matchId) => {
    DRAG & DROP HANDLERS
 =========================== */
 const handleDragStart = (event, player, position) => {
-  // Chỉ cho phép drag ở round 1 và khi trận chưa bắt đầu
-  if (player.roundNumber !== 1 || player.status) {
+  // Kiểm tra lại lần nữa để đảm bảo
+  if (!canDrag(player)) {
     event.preventDefault();
     return;
   }
@@ -196,14 +240,33 @@ const handleDragOver = (event, matchId, position) => {
     return;
   }
 
+  // 🚫 Không cho swap trong cùng 1 trận (home ↔ away)
+  if (draggedTeam.value.matchId === matchId) {
+    event.dataTransfer.dropEffect = 'none';
+    return;
+  }
+
+  // Kiểm tra trận đích có thể drop không
+  const targetMatch = findMatchById(matchId);
+  if (!targetMatch || !canDragMatch(targetMatch)) {
+    event.dataTransfer.dropEffect = 'none';
+    return;
+  }
+
   event.dataTransfer.dropEffect = 'move';
   dropTargetMatch.value = matchId;
   dropTargetPosition.value = position;
 };
 
-const handleDragLeave = () => {
-  dropTargetMatch.value = null;
-  dropTargetPosition.value = null;
+const handleDragLeave = (event) => {
+  const rect = event.currentTarget.getBoundingClientRect();
+  const x = event.clientX;
+  const y = event.clientY;
+
+  if (x < rect.left || x >= rect.right || y < rect.top || y >= rect.bottom) {
+    dropTargetMatch.value = null;
+    dropTargetPosition.value = null;
+  }
 };
 
 const hasScoreInSets = (player) => {
@@ -249,11 +312,27 @@ const playerWrapperClass = (player) => {
 
 const handleDrop = async (event, targetMatchId, targetPosition) => {
   event.preventDefault();
+  event.stopPropagation();
 
   if (!draggedTeam.value) return;
 
-  // Không cho swap với chính mình
+  // Không cho drop vào chính vị trí đang drag
   if (draggedTeam.value.matchId === targetMatchId && draggedTeam.value.position === targetPosition) {
+    handleDragEnd();
+    return;
+  }
+
+  // 🚫 Không cho swap trong cùng 1 trận
+  if (draggedTeam.value.matchId === targetMatchId) {
+    toast.error('Không thể hoán đổi đội trong cùng 1 trận');
+    handleDragEnd();
+    return;
+  }
+
+  // Kiểm tra trận đích có thể drop không
+  const targetMatch = findMatchById(targetMatchId);
+  if (!targetMatch || !canDragMatch(targetMatch)) {
+    toast.error('Không thể hoán đổi vào trận đã có kết quả');
     handleDragEnd();
     return;
   }

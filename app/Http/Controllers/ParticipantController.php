@@ -215,75 +215,93 @@ class ParticipantController extends Controller
     {
         $validated = $request->validate([
             'per_page' => 'nullable|integer|min:1|max:200',
+            'name' => 'nullable|string',
         ]);
 
         $tournament = Tournament::findOrFail($tournamentId);
-        $perPage = $validated['per_page'] ?? 20;
-
-        $midLevel = ($tournament->min_level + $tournament->max_level) / 2;
-
+        $perPage    = $validated['per_page'] ?? 20;
+    
+        $midLevel = null;
+        if ($tournament->min_level !== null && $tournament->max_level !== null) {
+            $midLevel = (float)(($tournament->min_level + $tournament->max_level) / 2);
+        }
+    
         $query = User::withFullRelations()
-            ->whereIn('visibility', [User::VISIBILITY_PUBLIC])
+            ->whereIn('users.visibility', [User::VISIBILITY_PUBLIC])
+    
             // 1. Có môn thể thao phù hợp
-            ->whereHas(
-                'sports',
-                fn($q) =>
-                $q->where('sport_id', $tournament->sport_id)
-            )
-            // 2. Có điểm số trong khoảng
-            ->when(
-                $tournament->min_level !== null || $tournament->max_level !== null,
-                fn ($q) =>
-                    $q->where('score_type', 'vndupr_score')
-                      ->when(
-                          $tournament->min_level !== null,
-                          fn ($q) => $q->where('score_value', '>=', $tournament->min_level)
-                      )
-                      ->when(
-                          $tournament->max_level !== null,
-                          fn ($q) => $q->where('score_value', '<=', $tournament->max_level)
-                      )
-            )
-            // 3. Tuổi
-            ->tap(fn($q) => $this->filterByAge($q, $tournament->age_group))
-            // 4. Giới tính
-            ->tap(fn($q) => $this->filterByGender($q, $tournament->gender_policy))
-            // 5. Loại trừ người đã tham gia giải
-            ->whereDoesntHave(
-                'participants',
-                fn($q) =>
-                $q->where('tournament_id', $tournamentId)
-            )
-            // 6. Join để lấy level và sort
+            ->whereHas('sports', function ($q) use ($tournament) {
+                $q->where('sport_id', $tournament->sport_id);
+            })
+    
+            // 2. Tuổi
+            ->tap(fn ($q) => $this->filterByAge($q, $tournament->age_group))
+    
+            // 3. Giới tính
+            ->tap(fn ($q) => $this->filterByGender($q, $tournament->gender_policy))
+    
+            // 4. Loại trừ người đã tham gia
+            ->whereDoesntHave('participants', function ($q) use ($tournamentId) {
+                $q->where('tournament_id', $tournamentId);
+            })
+    
+            // 5. Join để lấy level
             ->leftJoin('user_sport', function ($join) use ($tournament) {
                 $join->on('users.id', '=', 'user_sport.user_id')
-                    ->where('user_sport.sport_id', '=', $tournament->sport_id);
+                    ->where('user_sport.sport_id', $tournament->sport_id);
             })
             ->leftJoin('user_sport_scores', function ($join) {
                 $join->on('user_sport.id', '=', 'user_sport_scores.user_sport_id')
-                    ->where('user_sport_scores.score_type', '=', 'vndupr_score');
+                    ->where('user_sport_scores.score_type', 'vndupr_score');
             })
+    
+            // 6. Filter level (ĐÚNG BẢNG)
+            ->when(
+                $tournament->min_level !== null,
+                fn ($q) => $q->where('user_sport_scores.score_value', '>=', $tournament->min_level)
+            )
+            ->when(
+                $tournament->max_level !== null,
+                fn ($q) => $q->where('user_sport_scores.score_value', '<=', $tournament->max_level)
+            )
+    
+            // 7. Select + sort
             ->select('users.*')
             ->selectRaw('user_sport_scores.score_value as level')
-            ->selectRaw('ABS(user_sport_scores.score_value - ?) as level_diff', [$midLevel])
-            ->selectRaw('CASE WHEN users.location_id = ? THEN 1 ELSE 0 END as same_location', [$tournament->location_id])
+            ->when(
+                $midLevel !== null,
+                fn ($q) => $q->selectRaw(
+                    'ABS(user_sport_scores.score_value - ?) as level_diff',
+                    [$midLevel]
+                )
+            )
+            ->selectRaw(
+                'CASE WHEN users.location_id = ? THEN 1 ELSE 0 END as same_location',
+                [$tournament->location_id]
+            )
             ->orderByDesc('same_location')
-            ->orderBy('level_diff');
-
+            ->when($midLevel !== null, fn ($q) => $q->orderBy('level_diff'));
+    
+            $query->when(
+                $validated['name'] ?? null,
+                fn ($q, $name) =>
+                    $q->where('users.full_name', 'like', "%{$name}%")
+            );
         $users = $query->paginate($perPage);
-
-        $data = [
-            'suggestions' => UserListResource::collection($users),
-        ];
-
-        $meta = [
-            'current_page'   => $users->currentPage(),
-            'last_page'      => $users->lastPage(),
-            'per_page'       => $users->perPage(),
-            'total'          => $users->total(),
-        ];
-
-        return ResponseHelper::success($data, 'Lấy danh sách gợi ý người dùng thành công', 200, $meta);
+    
+        return ResponseHelper::success(
+            [
+                'suggestions' => UserListResource::collection($users->getCollection()),
+            ],
+            'Lấy danh sách gợi ý người dùng thành công',
+            200,
+            [
+                'current_page' => $users->currentPage(),
+                'last_page'    => $users->lastPage(),
+                'per_page'     => $users->perPage(),
+                'total'        => $users->total(),
+            ]
+        );
     }
 
     public function inviteFriends(Request $request, $tournamentId)
@@ -294,82 +312,102 @@ class ParticipantController extends Controller
         ]);
 
         $tournament = Tournament::findOrFail($tournamentId);
-        $perPage = $validated['per_page'] ?? Participant::PER_PAGE;
-        $midLevel = ($tournament->min_level + $tournament->max_level) / 2;
-
+        $perPage    = $validated['per_page'] ?? Participant::PER_PAGE;
+    
+        $midLevel = null;
+        if ($tournament->min_level !== null && $tournament->max_level !== null) {
+            $midLevel = (float)(($tournament->min_level + $tournament->max_level) / 2);
+        }
+    
         $user = Auth::user();
 
         // Bắt đầu query từ danh sách bạn bè
         $friendIds = DB::table('follows')
-        ->where('user_id', $user->id)
-        ->where('followable_type', User::class)
-        ->pluck('followable_id');
+            ->where('user_id', $user->id)
+            ->where('followable_type', User::class)
+            ->pluck('followable_id');
         $query = User::withFullRelations()
-        ->whereIn('users.id', $friendIds)
-            ->whereIn('visibility', [User::VISIBILITY_PUBLIC, User::VISIBILITY_FRIEND_ONLY])
+            ->whereIn('users.id', $friendIds)
+            ->whereIn('users.visibility', [
+                User::VISIBILITY_PUBLIC,
+                User::VISIBILITY_FRIEND_ONLY
+            ])
+    
             // 1. Có môn thể thao phù hợp
-            ->whereHas(
-                'sports',
-                fn($q) =>
-                $q->where('sport_id', $tournament->sport_id)
-            )
-            // 2. Có điểm số phù hợp
-            ->when(
-                $tournament->min_level !== null || $tournament->max_level !== null,
-                fn ($q) =>
-                    $q->where('score_type', 'vndupr_score')
-                      ->when(
-                          $tournament->min_level !== null,
-                          fn ($q) => $q->where('score_value', '>=', $tournament->min_level)
-                      )
-                      ->when(
-                          $tournament->max_level !== null,
-                          fn ($q) => $q->where('score_value', '<=', $tournament->max_level)
-                      )
-            )
-            // 3. Tuổi
-            ->tap(fn($q) => $this->filterByAge($q, $tournament->age_group))
-            // 4. Giới tính
-            ->tap(fn($q) => $this->filterByGender($q, $tournament->gender_policy))
-            // 5. Loại trừ đã tham gia
-            ->whereDoesntHave(
-                'participants',
-                fn($q) =>
-                $q->where('tournament_id', $tournamentId)
-            )
-            // 6. Join để lấy level, sắp xếp
+            ->whereHas('sports', function ($q) use ($tournament) {
+                $q->where('sport_id', $tournament->sport_id);
+            })
+    
+            // 2. Tuổi
+            ->tap(fn ($q) => $this->filterByAge($q, $tournament->age_group))
+    
+            // 3. Giới tính
+            ->tap(fn ($q) => $this->filterByGender($q, $tournament->gender_policy))
+    
+            // 4. Loại trừ người đã tham gia
+            ->whereDoesntHave('participants', function ($q) use ($tournamentId) {
+                $q->where('tournament_id', $tournamentId);
+            })
+    
+            // 5. Join để lấy level + sort
             ->leftJoin('user_sport', function ($join) use ($tournament) {
                 $join->on('users.id', '=', 'user_sport.user_id')
-                    ->where('user_sport.sport_id', '=', $tournament->sport_id);
+                    ->where('user_sport.sport_id', $tournament->sport_id);
             })
             ->leftJoin('user_sport_scores', function ($join) {
                 $join->on('user_sport.id', '=', 'user_sport_scores.user_sport_id')
-                    ->where('user_sport_scores.score_type', '=', 'vndupr_score');
+                    ->where('user_sport_scores.score_type', 'vndupr_score');
             })
+    
+            // 6. Filter level (ĐÚNG BẢNG)
+            ->when(
+                $tournament->min_level !== null,
+                fn ($q) => $q->where('user_sport_scores.score_value', '>=', $tournament->min_level)
+            )
+            ->when(
+                $tournament->max_level !== null,
+                fn ($q) => $q->where('user_sport_scores.score_value', '<=', $tournament->max_level)
+            )
+    
+            // 7. Select + sort
             ->select('users.*')
             ->selectRaw('user_sport_scores.score_value as level')
-            ->selectRaw('ABS(user_sport_scores.score_value - ?) as level_diff', [$midLevel])
-            ->selectRaw('CASE WHEN users.location_id = ? THEN 1 ELSE 0 END as same_location', [$tournament->location_id])
+            ->when(
+                $midLevel !== null,
+                fn ($q) => $q->selectRaw(
+                    'ABS(user_sport_scores.score_value - ?) as level_diff',
+                    [$midLevel]
+                )
+            )
+            ->selectRaw(
+                'CASE WHEN users.location_id = ? THEN 1 ELSE 0 END as same_location',
+                [$tournament->location_id]
+            )
             ->orderByDesc('same_location')
-            ->orderBy('level_diff');
-        if (!empty($validated['name'])) {
-            $query->where('users.full_name', 'like', '%' . $validated['name'] . '%');
-        }
-
+            ->when($midLevel !== null, fn ($q) => $q->orderBy('level_diff'));
+    
+        // 8. Filter theo tên (SAFE)
+        $query->when(
+            $validated['name'] ?? null,
+            fn ($q, $name) =>
+                $q->where('users.full_name', 'like', "%{$name}%")
+        );
+    
         $friends = $query->paginate($perPage);
-
-        $data = [
-            'invitations' => UserListResource::collection($friends->getCollection()),
-        ];
-
-        $meta = [
-            'current_page'   => $friends->currentPage(),
-            'last_page'      => $friends->lastPage(),
-            'per_page'       => $friends->perPage(),
-            'total'          => $friends->total(),
-        ];
-
-        return ResponseHelper::success($data, 'Lấy danh sách gợi ý bạn bè thành công', 200, $meta);
+    
+        return ResponseHelper::success(
+            [
+                'invitations' => UserListResource::collection($friends->getCollection()),
+            ],
+            'Lấy danh sách gợi ý bạn bè thành công',
+            200,
+            [
+                'current_page' => $friends->currentPage(),
+                'last_page'    => $friends->lastPage(),
+                'per_page'     => $friends->perPage(),
+                'total'        => $friends->total(),
+            ]
+        );
     }
 
     public function confirm($participantId)
@@ -442,60 +480,69 @@ class ParticipantController extends Controller
 
         $tournament = Tournament::findOrFail($tournamentId);
         $perPage = $validated['per_page'] ?? Participant::PER_PAGE;
-        $midLevel = ($tournament->min_level + $tournament->max_level) / 2;
-
-        $user = Auth::user();
-
-        // Bắt đầu query từ toàn bộ user (trừ chính mình)
+        $midLevel = null;
+        if ($tournament->min_level !== null && $tournament->max_level !== null) {
+            $midLevel = (float)(($tournament->min_level + $tournament->max_level) / 2);
+        }
+    
+        $authUser = Auth::user();
         $query = User::query()
-            ->whereIn('visibility', [User::VISIBILITY_PUBLIC])
-            ->where('users.id', '!=', $user->id)
+            ->where('users.id', '!=', $authUser->id)
+            ->whereIn('users.visibility', [User::VISIBILITY_PUBLIC])
+    
             // 1. Có môn thể thao phù hợp
-            ->whereHas(
-                'sports',
-                fn($q) =>
-                $q->where('sport_id', $tournament->sport_id)
-            )
-            // 2. Có điểm số phù hợp
-            ->when(
-                $tournament->min_level !== null || $tournament->max_level !== null,
-                fn ($q) =>
-                    $q->where('score_type', 'vndupr_score')
-                      ->when(
-                          $tournament->min_level !== null,
-                          fn ($q) => $q->where('score_value', '>=', $tournament->min_level)
-                      )
-                      ->when(
-                          $tournament->max_level !== null,
-                          fn ($q) => $q->where('score_value', '<=', $tournament->max_level)
-                      )
-            )
-            // 3. Tuổi
-            ->tap(fn($q) => $this->filterByAge($q, $tournament->age_group))
-            // 4. Giới tính
-            ->tap(fn($q) => $this->filterByGender($q, $tournament->gender_policy))
-            // 5. Loại trừ đã tham gia
-            ->whereDoesntHave(
-                'participants',
-                fn($q) =>
-                $q->where('tournament_id', $tournamentId)
-            )
-            // 6. Join để lấy level, sắp xếp
+            ->whereHas('sports', function ($q) use ($tournament) {
+                $q->where('sport_id', $tournament->sport_id);
+            })
+    
+            // 2. Tuổi
+            ->tap(fn ($q) => $this->filterByAge($q, $tournament->age_group))
+    
+            // 3. Giới tính
+            ->tap(fn ($q) => $this->filterByGender($q, $tournament->gender_policy))
+    
+            // 4. Loại trừ người đã tham gia
+            ->whereDoesntHave('participants', function ($q) use ($tournamentId) {
+                $q->where('tournament_id', $tournamentId);
+            })
+    
+            // 5. Join lấy level
             ->leftJoin('user_sport', function ($join) use ($tournament) {
                 $join->on('users.id', '=', 'user_sport.user_id')
-                    ->where('user_sport.sport_id', '=', $tournament->sport_id);
+                    ->where('user_sport.sport_id', $tournament->sport_id);
             })
             ->leftJoin('user_sport_scores', function ($join) {
                 $join->on('user_sport.id', '=', 'user_sport_scores.user_sport_id')
-                    ->where('user_sport_scores.score_type', '=', 'vndupr_score');
+                    ->where('user_sport_scores.score_type', 'vndupr_score');
             })
+    
+            // 6. Filter level (ĐÚNG BẢNG)
+            ->when(
+                $tournament->min_level !== null,
+                fn ($q) => $q->where('user_sport_scores.score_value', '>=', $tournament->min_level)
+            )
+            ->when(
+                $tournament->max_level !== null,
+                fn ($q) => $q->where('user_sport_scores.score_value', '<=', $tournament->max_level)
+            )
+    
+            // 7. Select + sort
             ->select('users.*')
             ->selectRaw('user_sport_scores.score_value as level')
-            ->selectRaw('ABS(user_sport_scores.score_value - ?) as level_diff', [$midLevel])
-            ->selectRaw('CASE WHEN users.location_id = ? THEN 1 ELSE 0 END as same_location', [$tournament->location_id])
+            ->when(
+                $midLevel !== null,
+                fn ($q) => $q->selectRaw(
+                    'ABS(user_sport_scores.score_value - ?) as level_diff',
+                    [$midLevel]
+                )
+            )
+            ->selectRaw(
+                'CASE WHEN users.location_id = ? THEN 1 ELSE 0 END as same_location',
+                [$tournament->location_id]
+            )
             ->orderByDesc('same_location')
-            ->orderBy('level_diff');
-
+            ->when($midLevel !== null, fn ($q) => $q->orderBy('level_diff'));
+    
         $users = $query->paginate($perPage);
 
         $suggestions = $users->getCollection()->map(function ($user) use ($tournament) {
@@ -513,25 +560,28 @@ class ParticipantController extends Controller
                 'match_score' => $this->calculateMatchScore($user, $tournament),
             ];
         });
-
-        $data = [
-            'invitations' => $suggestions,
-        ];
-
-        $meta = [
-            'current_page'   => $users->currentPage(),
-            'last_page'      => $users->lastPage(),
-            'per_page'       => $users->perPage(),
-            'total'          => $users->total(),
-        ];
-
-        return ResponseHelper::success($data, 'Lấy danh sách người dùng thành công', 200, $meta);
+    
+        return ResponseHelper::success(
+            [
+                'invitations' => $suggestions,
+            ],
+            'Lấy danh sách người dùng thành công',
+            200,
+            [
+                'current_page' => $users->currentPage(),
+                'last_page'    => $users->lastPage(),
+                'per_page'     => $users->perPage(),
+                'total'        => $users->total(),
+            ]
+        );
     }
+    
 
     public function inviteStaff(Request $request, $tournamentId)
     {
         $validated = $request->validate([
             'per_page' => 'nullable|integer|min:1|max:200',
+            'name' => 'nullable|string'
         ]);
 
         // $tournament = Tournament::findOrFail($tournamentId);
@@ -544,6 +594,9 @@ class ParticipantController extends Controller
         $query = User::withFullRelations()
             ->whereIn('visibility', [User::VISIBILITY_PUBLIC, User::VISIBILITY_FRIEND_ONLY])
             ->where('users.id', '!=', $user->id);
+        if($validated['name']) {
+            $query->where('full_name','like','%'. $validated['name'] .'%');
+        }
 
         $users = $query->paginate($perPage);
 
@@ -796,6 +849,7 @@ class ParticipantController extends Controller
     public function getCandidates(Request $request, $tournamentId)
     {
         $tournament = Tournament::with('participants')->findOrFail($tournamentId);
+        $sportId = $tournament->sport_id;
         $user = Auth::user();
 
         $validated = $request->validate([
@@ -837,22 +891,38 @@ class ParticipantController extends Controller
 
         // 🧮 Phân trang
         $paginated = $query->paginate($perPage);
-
-        // ✨ Map dữ liệu
         $candidates = $paginated->getCollection()->map(function ($u) use ($user, $participantUserIds) {
-            $visibility = match ($u->visibility) {
-                'friend_only' => 'friend_only',
-                'private' => 'private',
-                default => 'open',
-            };
 
             return [
                 'id' => $u->id,
                 'name' => $u->full_name,
-                'gender' => $u->gender,
+                'visibility' => $u->visibility,
                 'age_group' => $u->age_group,
                 'avatar' => $u->avatar_url,
-                'visibility' => $visibility,
+                'thumbnail' => $u->thumbnail,
+                'gender' => $u->gender,
+                'gender_text' => $u->gender_text,
+                'play_times' => [],
+        
+                'sports' => $u->sports->map(function ($userSport) {
+                    $scores = $userSport->scores
+                        ->pluck('score_value', 'score_type')
+                        ->toArray();
+        
+                    return [
+                        'sport_id' => $userSport->sport_id,
+                        'sport_icon' => $userSport->sport?->icon,
+                        'sport_name' => $userSport->sport?->name,
+                        'scores' => [
+                            'personal_score' => $scores['personal_score'] ?? '0.000',
+                            'dupr_score'     => $scores['dupr_score'] ?? '0.000',
+                            'vndupr_score'   => $scores['vndupr_score'] ?? '0.000',
+                        ],
+                        'total_matches'     => $userSport->total_matches ?? 0,
+                        'total_tournaments' => $userSport->total_tournaments ?? 0,
+                        'total_prizes'      => $userSport->total_prizes ?? 0,
+                    ];
+                }),
                 'is_friend' => $user->isFriendWith($u),
                 'is_participant' => in_array($u->id, $participantUserIds),
             ];

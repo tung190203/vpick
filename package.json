@@ -5,7 +5,8 @@
         "dev": "vite",
         "dev-all": "concurrently \"php artisan serve\" \"npm run dev\"",
         "build:dev": "vite build --mode dev",
-        "build:prod": "vite build --mode prod"
+        "build:prod": "vite build --mode prod",
+        "build:dev1": "vite build --mode dev1"
     },
     "devDependencies": {
         "autoprefixer": "^10.4.21",

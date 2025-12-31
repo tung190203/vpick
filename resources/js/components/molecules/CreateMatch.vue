@@ -12,21 +12,16 @@
                         </button>
                     </div>
                     <div v-if="data.legs?.length > 1" class="px-6 pt-3 ">
-    <div class="flex gap-2">
-        <button
-            v-for="(leg, index) in data.legs"
-            :key="leg.id"
-            @click="selectedLegIndex = index"
-            class="px-4 py-2 rounded-md text-sm font-semibold transition"
-            :class="selectedLegIndex === index
-                ? 'bg-red-500 text-white'
-                : 'bg-white border text-gray-600 hover:bg-gray-100'"
-        >
-            Lượt {{ leg.leg }}
-        </button>
-    </div>
-</div>
-                    
+                        <div class="flex gap-2">
+                            <button v-for="(leg, index) in data.legs" :key="leg.id" @click="selectedLegIndex = index"
+                                class="px-4 py-2 rounded-md text-sm font-semibold transition" :class="selectedLegIndex === index
+                                    ? 'bg-red-500 text-white'
+                                    : 'bg-white border text-gray-600 hover:bg-gray-100'">
+                                Lượt {{ leg.leg }}
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="p-6 overflow-y-auto flex-1">
                         <div class="grid grid-cols-[2fr_3fr] gap-6">
                             <div class="space-y-4">
@@ -75,11 +70,13 @@
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-3">Chọn đội</label>
                                 <div class="grid grid-cols-[2fr_1fr_2fr] gap-4 items-stretch mb-6">
-                                    <div class="border border-1 border-[#DCDEE6] bg-[#F2F7FC] rounded-lg p-3 flex flex-col">
+                                    <div
+                                        class="border border-1 border-[#DCDEE6] bg-[#F2F7FC] rounded-lg p-3 flex flex-col">
                                         <p class="text-center mb-4">{{ data.home_team?.name || 'Team A' }}</p>
                                         <div class="flex gap-2 justify-around items-stretch">
-                                            <UserCard v-for="member in data.home_team?.members || []" :key="member.id" :showHoverDelete="false"
-                                                :name="member.name" :avatar="member.avatar" :size="12" :badgeSize="5" class="cursor-pointer" />
+                                            <UserCard v-for="member in data.home_team?.members || []" :key="member.id"
+                                                :showHoverDelete="false" :name="member.name" :avatar="member.avatar"
+                                                :size="12" :badgeSize="5" class="cursor-pointer" />
                                             <UserCard v-for="n in emptySlots('home')" :key="'empty-home-' + n" empty
                                                 :size="12" :badgeSize="5" class="cursor-pointer" />
                                         </div>
@@ -89,19 +86,21 @@
                                         <span class="text-sm font-bold">VS</span>
                                     </div>
 
-                                    <div class="border border-1 border-[#DCDEE6] bg-[#F2F7FC] rounded-lg p-3 flex flex-col">
+                                    <div
+                                        class="border border-1 border-[#DCDEE6] bg-[#F2F7FC] rounded-lg p-3 flex flex-col">
                                         <p class="text-center mb-4">{{ data.away_team?.name || 'Team B' }}</p>
                                         <div class="flex gap-2 justify-around items-stretch">
-                                            <UserCard v-for="member in data.away_team?.members || []" :key="member.id" :showHoverDelete="false"
-                                                :name="member.name" :avatar="member.avatar" :size="12" :badgeSize="5" class="cursor-pointer" />
+                                            <UserCard v-for="member in data.away_team?.members || []" :key="member.id"
+                                                :showHoverDelete="false" :name="member.name" :avatar="member.avatar"
+                                                :size="12" :badgeSize="5" class="cursor-pointer" />
                                             <UserCard v-for="n in emptySlots('away')" :key="'empty-away-' + n" empty
                                                 :size="12" :badgeSize="5" class="cursor-pointer" />
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <label class="block text-sm font-semibold text-gray-700 mb-3">Kết quả</label>
-                                
+
                                 <div v-for="(score, index) in scores" :key="index" class="mb-4">
                                     <div class="grid grid-cols-[2fr_1fr_2fr] gap-4 items-center">
                                         <div class="border border-1 border-[#DCDEE6] rounded-lg p-3">
@@ -115,7 +114,7 @@
                                                 <MinusIcon class="w-5 h-5" />
                                             </button>
                                         </div>
-                                        
+
                                         <div class="flex flex-col items-center gap-2">
                                             <span class="text-sm font-semibold">Set {{ index + 1 }}</span>
                                             <button v-if="scores.length > 1" @click="removeSet(index)"
@@ -123,7 +122,7 @@
                                                 <XMarkIcon class="w-5 h-5" />
                                             </button>
                                         </div>
-                                        
+
                                         <div class="border border-1 border-[#DCDEE6] rounded-lg p-3">
                                             <button @click="incrementScore(index, 'B')"
                                                 class="w-full bg-[#EDEEF2] rounded px-3 py-2 text-gray-600 hover:bg-gray-300 transition-colors mb-2 flex items-center justify-center">
@@ -137,7 +136,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <button @click="addSet" :disabled="isMaxSets"
                                     class="w-full flex justify-center items-center gap-2 border p-3 rounded-lg text-[#838799] hover:bg-gray-100 transition-colors mb-6 disabled:opacity-50 disabled:cursor-not-allowed">
                                     <PlusIcon class="w-5 h-5" />
@@ -148,39 +147,24 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="px-4 py-4 bg-white rounded-b-lg border-t">
                         <div class="flex gap-3">
                             <button @click="saveMatch" :disabled="isSaving"
                                 class="px-12 py-3 bg-red-500 text-white rounded font-medium hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                                 {{ isSaving && !canConfirmMatch ? 'Đang lưu...' : 'Lưu' }}
                             </button>
-                            <!-- <button v-if="isCreator" @click="confirmMatchResult"
-                                :disabled="isSaving || !canConfirmMatch || data.status === 'completed'"
+                            <button v-if="isCreator" @click="confirmMatchResult"
+                                :disabled="isSaving || !canConfirmMatch || currentLeg.status === 'completed'"
                                 class="flex items-center justify-center gap-2 px-12 py-3 bg-green-500 text-white rounded font-medium hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                                <template v-if="data.status === 'completed'">
+                                <template v-if="currentLeg.status === 'completed'">
                                     <CheckBadgeIcon class="w-6 h-6 text-white" />
                                     <span>Đã xác nhận</span>
                                 </template>
                                 <template v-else>
-                                    {{ isSaving && canConfirmMatch ? 'Đang xác nhận...' : 'Xác nhận' }}
+                                    {{ isSaving ? 'Đang xác nhận...' : 'Xác nhận' }}
                                 </template>
-                            </button> -->
-                            <button v-if="isCreator"
-    @click="confirmMatchResult"
-    :disabled="isSaving || !canConfirmMatch || currentLeg.status === 'completed'"
-    class="flex items-center justify-center gap-2 px-12 py-3 bg-green-500 text-white rounded font-medium hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
->
-    <template v-if="currentLeg.status === 'completed'">
-        <CheckBadgeIcon class="w-6 h-6 text-white" />
-        <span>Đã xác nhận</span>
-    </template>
-    <template v-else>
-        {{ isSaving ? 'Đang xác nhận...' : 'Xác nhận' }}
-    </template>
-</button>
-
-
+                            </button>
                             <button @click="closeModal" :disabled="isSaving"
                                 class="px-12 py-3 bg-gray-200 text-gray-700 rounded font-medium hover:bg-gray-300 transition-colors disabled:opacity-50">
                                 Hủy
@@ -194,193 +178,195 @@
 </template>
 
 <script setup>
-    import { ref, computed, watch } from 'vue'
-    import { MinusIcon, PlusIcon, XMarkIcon, CheckBadgeIcon } from '@heroicons/vue/24/solid'
-    import { ClipboardIcon, CalendarDaysIcon, MapPinIcon } from '@heroicons/vue/24/outline'
-    import UserCard from './UserCard.vue'
-    import { formatEventDate } from '@/composables/formatDatetime.js'
-    import QrcodeVue from 'qrcode.vue'
-    import { toast } from 'vue3-toastify'
-    import * as MatchesServices from '@/service/match.js'
-    import { useUserStore } from '@/store/auth'
-    import { storeToRefs } from 'pinia'
-    
-    /* ===================== PROPS ===================== */
-    const props = defineProps({
-        modelValue: { type: Boolean, default: false },
-        data: { type: Object, default: () => ({}) },
-        tournament: { type: Object, default: () => ({ player_per_team: 0 }) }
-    })
-    
-    /* ===================== AUTH ===================== */
-    const userStore = useUserStore()
-    const { getUser } = storeToRefs(userStore)
-    const isCreator = computed(() =>
-        props.tournament?.created_by?.id === getUser.value.id
+import { ref, computed, watch } from 'vue'
+import { MinusIcon, PlusIcon, XMarkIcon, CheckBadgeIcon } from '@heroicons/vue/24/solid'
+import { ClipboardIcon, CalendarDaysIcon, MapPinIcon } from '@heroicons/vue/24/outline'
+import UserCard from './UserCard.vue'
+import { formatEventDate } from '@/composables/formatDatetime.js'
+import QrcodeVue from 'qrcode.vue'
+import { toast } from 'vue3-toastify'
+import * as MatchesServices from '@/service/match.js'
+import { useUserStore } from '@/store/auth'
+import { storeToRefs } from 'pinia'
+
+/* ===================== PROPS ===================== */
+const props = defineProps({
+    modelValue: { type: Boolean, default: false },
+    data: { type: Object, default: () => ({}) },
+    tournament: { type: Object, default: () => ({ player_per_team: 0 }) }
+})
+
+/* ===================== AUTH ===================== */
+const userStore = useUserStore()
+const { getUser } = storeToRefs(userStore)
+const isCreator = computed(() => {
+    return props.tournament?.tournament_staff?.some(
+        staff => staff.role === 1 && staff.staff?.id === getUser.value.id
     )
-    
-    /* ===================== MODAL ===================== */
-    const emit = defineEmits(['update:modelValue', 'updated'])
-    const isOpen = computed({
-        get: () => props.modelValue,
-        set: val => emit('update:modelValue', val)
-    })
-    
-    const isSaving = ref(false)
-    
-    /* ===================== LEG LOGIC ===================== */
-    const selectedLegIndex = ref(0)
-    
-    const currentLeg = computed(() => {
-        return props.data.legs?.[selectedLegIndex.value] || props.data
-    })
-    
-    /* ===================== COURT ===================== */
-    const courtNumber = ref(1)
-    
-    const incrementCourt = () => courtNumber.value++
-    const decrementCourt = () => {
-        if (courtNumber.value > 1) courtNumber.value--
+})
+
+/* ===================== MODAL ===================== */
+const emit = defineEmits(['update:modelValue', 'updated'])
+const isOpen = computed({
+    get: () => props.modelValue,
+    set: val => emit('update:modelValue', val)
+})
+
+const isSaving = ref(false)
+
+/* ===================== LEG LOGIC ===================== */
+const selectedLegIndex = ref(0)
+
+const currentLeg = computed(() => {
+    return props.data.legs?.[selectedLegIndex.value] || props.data
+})
+
+/* ===================== COURT ===================== */
+const courtNumber = ref(1)
+
+const incrementCourt = () => courtNumber.value++
+const decrementCourt = () => {
+    if (courtNumber.value > 1) courtNumber.value--
+}
+
+/* ===================== SCORES (⚠️ PHẢI KHAI BÁO TRƯỚC WATCH) ===================== */
+const scores = ref([])
+
+/* ===================== INIT SCORES ===================== */
+const initializeScores = () => {
+    if (currentLeg.value?.sets) {
+        return Object.values(currentLeg.value.sets).map(setArray => ({
+            teamA:
+                setArray.find(s => s.team_id === props.data.home_team?.id)?.score || 0,
+            teamB:
+                setArray.find(s => s.team_id === props.data.away_team?.id)?.score || 0
+        }))
     }
-    
-    /* ===================== SCORES (⚠️ PHẢI KHAI BÁO TRƯỚC WATCH) ===================== */
-    const scores = ref([])
-    
-    /* ===================== INIT SCORES ===================== */
-    const initializeScores = () => {
-        if (currentLeg.value?.sets) {
-            return Object.values(currentLeg.value.sets).map(setArray => ({
-                teamA:
-                    setArray.find(s => s.team_id === props.data.home_team?.id)?.score || 0,
-                teamB:
-                    setArray.find(s => s.team_id === props.data.away_team?.id)?.score || 0
-            }))
-        }
-        return [{ teamA: 0, teamB: 0 }]
-    }
-    
-    /* ===================== WATCH LEG ===================== */
-    watch(
-        currentLeg,
-        (leg) => {
-            courtNumber.value = leg?.court || 1
-            scores.value = initializeScores()
+    return [{ teamA: 0, teamB: 0 }]
+}
+
+/* ===================== WATCH LEG ===================== */
+watch(
+    currentLeg,
+    (leg) => {
+        courtNumber.value = leg?.court || 1
+        scores.value = initializeScores()
+    },
+    { immediate: true }
+)
+
+/* ===================== WATCH DATA ===================== */
+watch(
+    () => props.data,
+    () => {
+        scores.value = initializeScores()
+        courtNumber.value = currentLeg.value?.court || 1
+    },
+    { deep: true }
+)
+
+/* ===================== MATCH RULES ===================== */
+const maxSets = computed(
+    () => props.tournament?.tournament_types?.[0]?.match_rules?.[0]?.sets_per_match || 3
+)
+const isMaxSets = computed(() => scores.value.length >= maxSets.value)
+
+/* ===================== QR CODE (THEO LEG) ===================== */
+const qrCodeUrl = computed(() => {
+    if (!currentLeg.value?.id) return ''
+    return `${window.location.origin}/match/${currentLeg.value.id}/verify`
+})
+
+/* ===================== SCORE ACTIONS ===================== */
+const incrementScore = (idx, team) => {
+    const maxPoints =
+        props.tournament?.tournament_types?.[0]?.match_rules?.[0]?.max_points || 11
+
+    if (team === 'A' && scores.value[idx].teamA < maxPoints) scores.value[idx].teamA++
+    if (team === 'B' && scores.value[idx].teamB < maxPoints) scores.value[idx].teamB++
+}
+
+const decrementScore = (idx, team) => {
+    if (team === 'A' && scores.value[idx].teamA > 0) scores.value[idx].teamA--
+    if (team === 'B' && scores.value[idx].teamB > 0) scores.value[idx].teamB--
+}
+
+const addSet = () => {
+    if (!isMaxSets.value) scores.value.push({ teamA: 0, teamB: 0 })
+}
+
+const removeSet = (idx) => {
+    if (scores.value.length > 1) scores.value.splice(idx, 1)
+}
+
+/* ===================== FORMAT API ===================== */
+const formatResultsForAPI = () => {
+    return scores.value.flatMap((score, idx) => [
+        {
+            set_number: idx + 1,
+            team_id: props.data.home_team.id,
+            score: score.teamA
         },
-        { immediate: true }
-    )
-    
-    /* ===================== WATCH DATA ===================== */
-    watch(
-        () => props.data,
-        () => {
-            scores.value = initializeScores()
-            courtNumber.value = currentLeg.value?.court || 1
-        },
-        { deep: true }
-    )
-    
-    /* ===================== MATCH RULES ===================== */
-    const maxSets = computed(
-        () => props.tournament?.tournament_types?.[0]?.match_rules?.[0]?.sets_per_match || 3
-    )
-    const isMaxSets = computed(() => scores.value.length >= maxSets.value)
-    
-    /* ===================== QR CODE (THEO LEG) ===================== */
-    const qrCodeUrl = computed(() => {
-        if (!currentLeg.value?.id) return ''
-        return `${window.location.origin}/match/${currentLeg.value.id}/verify`
-    })
-    
-    /* ===================== SCORE ACTIONS ===================== */
-    const incrementScore = (idx, team) => {
-        const maxPoints =
-            props.tournament?.tournament_types?.[0]?.match_rules?.[0]?.max_points || 11
-    
-        if (team === 'A' && scores.value[idx].teamA < maxPoints) scores.value[idx].teamA++
-        if (team === 'B' && scores.value[idx].teamB < maxPoints) scores.value[idx].teamB++
-    }
-    
-    const decrementScore = (idx, team) => {
-        if (team === 'A' && scores.value[idx].teamA > 0) scores.value[idx].teamA--
-        if (team === 'B' && scores.value[idx].teamB > 0) scores.value[idx].teamB--
-    }
-    
-    const addSet = () => {
-        if (!isMaxSets.value) scores.value.push({ teamA: 0, teamB: 0 })
-    }
-    
-    const removeSet = (idx) => {
-        if (scores.value.length > 1) scores.value.splice(idx, 1)
-    }
-    
-    /* ===================== FORMAT API ===================== */
-    const formatResultsForAPI = () => {
-        return scores.value.flatMap((score, idx) => [
-            {
-                set_number: idx + 1,
-                team_id: props.data.home_team.id,
-                score: score.teamA
-            },
-            {
-                set_number: idx + 1,
-                team_id: props.data.away_team.id,
-                score: score.teamB
-            }
-        ])
-    }
-    
-    /* ===================== SAVE MATCH ===================== */
-    const saveMatch = async () => {
-        if (isSaving.value) return
-        try {
-            isSaving.value = true
-            const payload = {
-                court: courtNumber.value,
-                results: formatResultsForAPI()
-            }
-            const res = await MatchesServices.updateMatches(currentLeg.value.id, payload)
-            toast.success('Cập nhật kết quả thành công!')
-            emit('updated', res.data)
-            isOpen.value = false
-        } catch (err) {
-            toast.error(err.response?.data?.message || 'Lỗi khi cập nhật')
-        } finally {
-            isSaving.value = false
+        {
+            set_number: idx + 1,
+            team_id: props.data.away_team.id,
+            score: score.teamB
         }
-    }
-    
-    /* ===================== CONFIRM MATCH ===================== */
-    const canConfirmMatch = computed(() =>
-        scores.value.some(s => s.teamA > 0 || s.teamB > 0)
-    )
-    
-    const confirmMatchResult = async () => {
-        if (isSaving.value || !canConfirmMatch.value) return
-        try {
-            isSaving.value = true
-            const res = await MatchesServices.confirmResults(currentLeg.value.id)
-            toast.success('Xác nhận kết quả thành công!')
-            emit('updated', res)
-            isOpen.value = false
-        } catch (err) {
-            toast.error(err.response?.data?.message || 'Lỗi xác nhận')
-        } finally {
-            isSaving.value = false
+    ])
+}
+
+/* ===================== SAVE MATCH ===================== */
+const saveMatch = async () => {
+    if (isSaving.value) return
+    try {
+        isSaving.value = true
+        const payload = {
+            court: courtNumber.value,
+            results: formatResultsForAPI()
         }
+        const res = await MatchesServices.updateMatches(currentLeg.value.id, payload)
+        toast.success('Cập nhật kết quả thành công!')
+        emit('updated', res.data)
+        isOpen.value = false
+    } catch (err) {
+        toast.error(err.response?.data?.message || 'Lỗi khi cập nhật')
+    } finally {
+        isSaving.value = false
     }
-    
-    /* ===================== UI HELPERS ===================== */
-    const closeModal = () => {
-        if (!isSaving.value) isOpen.value = false
+}
+
+/* ===================== CONFIRM MATCH ===================== */
+const canConfirmMatch = computed(() =>
+    scores.value.some(s => s.teamA > 0 || s.teamB > 0)
+)
+
+const confirmMatchResult = async () => {
+    if (isSaving.value || !canConfirmMatch.value) return
+    try {
+        isSaving.value = true
+        const res = await MatchesServices.confirmResults(currentLeg.value.id)
+        toast.success('Xác nhận kết quả thành công!')
+        emit('updated', res)
+        isOpen.value = false
+    } catch (err) {
+        toast.error(err.response?.data?.message || 'Lỗi xác nhận')
+    } finally {
+        isSaving.value = false
     }
-    
-    const emptySlots = (team) => {
-        const members =
-            team === 'home'
-                ? props.data.home_team?.members?.length || 0
-                : props.data.away_team?.members?.length || 0
-    
-        const slots = props.tournament.player_per_team - members
-        return slots > 0 ? Array.from({ length: slots }, (_, i) => i + 1) : []
-    }
-    </script>    
+}
+
+/* ===================== UI HELPERS ===================== */
+const closeModal = () => {
+    if (!isSaving.value) isOpen.value = false
+}
+
+const emptySlots = (team) => {
+    const members =
+        team === 'home'
+            ? props.data.home_team?.members?.length || 0
+            : props.data.away_team?.members?.length || 0
+
+    const slots = props.tournament.player_per_team - members
+    return slots > 0 ? Array.from({ length: slots }, (_, i) => i + 1) : []
+}
+</script>

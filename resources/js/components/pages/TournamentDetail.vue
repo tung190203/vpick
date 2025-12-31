@@ -539,7 +539,7 @@
       <ShareAction :buttons="[
         { label: 'Gửi link', icon: LinkIcon, onClick: copyLink },
         { label: 'Quét mã QR', icon: QrCodeIcon, onClick: showQRCode },
-        isCreator ? { label: 'Mời người chơi', icon: UsersIcon, onClick: () => showInviteFriendModal = true } : null,
+        isCreator ? { label: 'Mời người chơi', icon: UsersIcon, onClick: () => showInviteSuggestModal = true } : null,
         isCreator ? { label: 'Mời nhóm', icon: UserMultiple, onClick: () => showInviteModal = true } : null,
         { label: 'Yêu cầu xác nhận KQ', icon: ClipboardDocumentCheckIcon }
       ].filter(Boolean)" :subtitle="'Hãy chia sẻ thông tin tới bạn bè để cùng tham gia giải đấu'" />
@@ -557,7 +557,11 @@
       message="Thao tác này sẽ xoá toàn bộ các trận đấu và các kết quả" confirmButtonText="Xác nhận"
       @confirm="reGenerateMatches" />
     <InviteFriendModal v-model="showInviteFriendModal" :data="friendList" @invite="handleInviteFriend"
-      @loadMore="loadMoreFriends" :hasMore="hasMoreFriend" @search="handleSearchFriends" title="Mời vận động viên"
+      @loadMore="loadMoreFriends" :hasMore="hasMoreFriend" @search="handleSearchFriends" title="Mời bạn bè"
+      emptyText="Không có bạn bè phù hợp với yêu cầu" />
+
+    <InviteFriendModal v-model="showInviteSuggestModal" :data="suggestList" @invite="handleInviteSuggest"
+      @loadMore="loadMoreSuggests" :hasMore="hasMoreSuggests" @search="handleSearchSuggests" title="Mời vận động viên"
       emptyText="Không có vận động viên phù hợp với yêu cầu" />
     <InviteFriendModal v-model="showInviteStaffModal" :data="listUsers" @invite="handleInviteUser"
       @loadMore="loadMoreUsers" :hasMore="hasMoreUsers" @search="handleSearchUsers" title="Mời người tổ chức"
@@ -641,6 +645,7 @@ const autoApprove = ref(false)
 const publicBracket = ref(false)
 const showInviteModal = ref(false)
 const showInviteFriendModal = ref(false)
+const showInviteSuggestModal = ref(false)
 const showInviteStaffModal = ref(false)
 const showDeleteModal = ref(false);
 const showDeleteTournamentTypeModal = ref(false);
@@ -648,11 +653,15 @@ const showReGenerateBracketModal = ref(false);
 const isEditingDescription = ref(false);
 const descriptionModel = ref('');
 const friendList = ref([]);
+const suggestList = ref([])
 const listUsers = ref([]);
 const inviteGroupData = ref([]);
-const meta = ref({})
+const userMeta = ref({})
+const suggestMeta = ref({})
+const friendMeta = ref({})
 const searchFriendTerm = ref('')
 const searchUserTerm = ref('')
+const searchSuggestTerm = ref('')
 const listTeams = ref([])
 const isOpenUpdateTeamModal = ref(false)
 const isOpenCreateTeamModal = ref(false)
@@ -674,7 +683,12 @@ const showQRCodeModal = ref(false);
 const isDescriptionChanged = computed(() => {
   return descriptionModel.value !== tournament.value.description;
 });
-const isCreator = computed(() => tournament.value?.created_by?.id === getUser.value.id)
+// const isCreator = computed(() => tournament.value?.created_by?.id === getUser.value.id)
+const isCreator = computed(() => {
+  return tournament.value?.tournament_staff?.some(
+    staff => staff.role === 1 && staff.staff?.id === getUser.value.id
+  )
+})
 const setupDescription = () => {
   descriptionModel.value = tournament.value.description || '';
   isEditingDescription.value = true;
@@ -1081,6 +1095,11 @@ const handleInviteFriend = async (friend) => {
   await detailTournament(id);
 }
 
+const handleInviteSuggest = async (suggest) => {
+  await invite(suggest.id);
+  await detailTournament(id);
+}
+
 const handleInviteUser = async (user) => {
   await inviteStaff(user.id);
   await detailTournament(id);
@@ -1280,11 +1299,11 @@ const getFriendList = async (page = 1) => {
       name: searchFriendTerm.value
     })
     if (page === 1) {
-      friendList.value = response.invitations || []
+      friendList.value = response?.data?.invitations || []
     } else {
-      friendList.value.push(...response.invitations)
+      friendList.value.push(...response?.data?.invitations)
     }
-    meta.value = response.meta || {}
+    friendMeta.value = response.meta || {}
   } catch (error) {
   }
 }
@@ -1296,11 +1315,27 @@ const getUserList = async (page = 1) => {
       name: searchUserTerm.value
     })
     if (page === 1) {
-      listUsers.value = response.invitations || []
+      listUsers.value = response?.data?.invitations || []
     } else {
-      listUsers.value.push(...response.invitations)
+      listUsers.value.push(...response?.data?.invitations)
     }
-    meta.value = response.meta || {}
+    userMeta.value = response.meta || {}
+  } catch (error) {
+  }
+}
+
+const getSuggestList = async (page = 1) => {
+  try {
+    const response = await ParticipantService.suggests(id, {
+      page,
+      name: searchSuggestTerm.value
+    })
+    if (page === 1) {
+      suggestList.value = response?.data?.suggestions || []
+    } else {
+      suggestList.value.push(...response?.data?.suggestions)
+    }
+    suggestMeta.value = response.meta || {}
   } catch (error) {
   }
 }
@@ -1333,23 +1368,38 @@ const handleSearchUsers = debounce(async (query) => {
   await getUserList(1)
 }, 300)
 
+const handleSearchSuggests = debounce(async(query) => {
+  searchSuggestTerm.value = query
+  await getSuggestList(1)
+}, 300)
+
 const hasMoreFriend = computed(() => {
-  return meta.value.current_page < meta.value.last_page
+  return friendMeta.value.current_page < friendMeta.value.last_page
 })
 
 const hasMoreUsers = computed(() => {
-  return meta.value.current_page < meta.value.last_page
+  return userMeta.value.current_page < userMeta.value.last_page
+})
+
+const hasMoreSuggests = computed(() => {
+  return suggestMeta.value.current_page < suggestMeta.value.last_page
 })
 
 const loadMoreFriends = async () => {
   if (hasMoreFriend.value) {
-    await getFriendList(meta.value.current_page + 1)
+    await getFriendList(friendMeta.value.current_page + 1)
+  }
+}
+
+const loadMoreSuggests = async () => {
+  if (hasMoreSuggests.value) {
+    await getSuggestList(suggestMeta.value.current_page + 1)
   }
 }
 
 const loadMoreUsers = async () => {
   if (hasMoreUsers.value) {
-    await getUserList(meta.value.current_page + 1)
+    await getUserList(userMeta.value.current_page + 1)
   }
 }
 
@@ -1483,6 +1533,7 @@ onMounted(async () => {
       detailTournament(id),
       getFriendList(),
       getUserList(),
+      getSuggestList(),
       getTeams(),
       getListHasInvite(),
     ])

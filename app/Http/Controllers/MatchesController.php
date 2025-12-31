@@ -754,17 +754,20 @@ class MatchesController extends Controller
             'home_team_id' => 'nullable|exists:teams,id',
             'away_team_id' => 'nullable|exists:teams,id',
         ]);
+        if (!in_array($match->status, haystack: ['pending', 'not_started'])) {
+            return ResponseHelper::error('Trận đã bắt đầu hoặc hoàn tất, không thể hoán đổi đội.', 403);
+        }
         $tournamentType = TournamentType::find($match->tournament_type_id);
-        if (in_array($tournamentType->format, [TournamentType::FORMAT_MIXED, TournamentType::FORMAT_ROUND_ROBIN]) && $match->round == 1) {
+        if (in_array($tournamentType->format, [TournamentType::FORMAT_ROUND_ROBIN]) && $match->round == 1) {
             return ResponseHelper::error('Cài đặt thể thức không cho phép hoán đổi các đội đấu vòng tròn (round robin).', 403);
         }
+        if ( $tournamentType->format === TournamentType::FORMAT_MIXED && $match->group && $match->round == 1) {
+            return $this->handleMixedSwap($request, $match, $tournamentType);
+        }        
 
         // chỉ cho phép swap ở round 1 và khi chưa diễn ra
         if ($match->round != 1) {
             return ResponseHelper::error('Chỉ được hoán đổi đội ở Round 1.', 403);
-        }
-        if (!in_array($match->status, haystack: ['pending', 'not_started'])) {
-            return ResponseHelper::error('Trận đã bắt đầu hoặc hoàn tất, không thể hoán đổi đội.', 403);
         }
 
         $targetTeamId = $validated['away_team_id'] ?? $validated['home_team_id'];
@@ -890,6 +893,89 @@ class MatchesController extends Controller
         ]);
     }
 
+    private function handleMixedSwap(Request $request, Matches $match, TournamentType $tournamentType)
+    {
+        $validated = $request->validate([
+            'from_team_id' => 'required|exists:teams,id',
+            'to_team_id'   => 'required|exists:teams,id',
+        ]);
+
+        $fromTeamId = $validated['from_team_id'];
+        $toTeamId   = $validated['to_team_id'];
+
+        // 🚫 Cùng bảng thì cấm
+        $sameGroup = Matches::where('tournament_type_id', $tournamentType->id)
+            ->where('round', 1)
+            ->where(function ($q) use ($fromTeamId, $toTeamId) {
+                $q->where(function ($q) use ($fromTeamId) {
+                    $q->where('home_team_id', $fromTeamId)
+                        ->orWhere('away_team_id', $fromTeamId);
+                });
+            })
+            ->where(function ($q) use ($toTeamId) {
+                $q->where('home_team_id', $toTeamId)
+                    ->orWhere('away_team_id', $toTeamId);
+            })
+            ->exists();
+
+        if ($sameGroup) {
+            return ResponseHelper::error(
+                'Không cho phép hoán đổi đội trong cùng bảng của thể thức mixed.',
+                403
+            );
+        }
+
+        // ✅ Swap GLOBAL toàn bộ round 1
+        DB::transaction(function () use ($tournamentType, $fromTeamId, $toTeamId) {
+
+            $matches = Matches::where('tournament_type_id', $tournamentType->id)
+                ->where('round', 1)
+                ->where(function ($q) use ($fromTeamId, $toTeamId) {
+                    $q->whereIn('home_team_id', [$fromTeamId, $toTeamId])
+                        ->orWhereIn('away_team_id', [$fromTeamId, $toTeamId]);
+                })
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($matches as $m) {
+
+                if ($m->home_team_id == $fromTeamId) {
+                    $m->home_team_id = $toTeamId;
+                } elseif ($m->home_team_id == $toTeamId) {
+                    $m->home_team_id = $fromTeamId;
+                }
+
+                if ($m->away_team_id == $fromTeamId) {
+                    $m->away_team_id = $toTeamId;
+                } elseif ($m->away_team_id == $toTeamId) {
+                    $m->away_team_id = $fromTeamId;
+                }
+
+                $m->update([
+                    'is_bye' => ($m->home_team_id === null || $m->away_team_id === null),
+                    'winner_id' => null,
+                    'status' => 'pending',
+                ]);
+
+                $m->results()->delete();
+            }
+
+            // reset các round sau
+            Matches::where('tournament_type_id', $tournamentType->id)
+                ->where('round', '>', 1)
+                ->update([
+                    'winner_id' => null,
+                    'status' => 'pending',
+                ]);
+
+            Matches::where('tournament_type_id', $tournamentType->id)
+                ->where('round', '>', 1)
+                ->get()
+                ->each(fn($m) => $m->results()->delete());
+        });
+
+        return ResponseHelper::success(null, 'Đã hoán đổi toàn bộ các trận đấu giữa hai đội ở hai bảng khác nhau.', 200);
+    }
     public function generateQr($matchId)
     {
         $match = Matches::findOrFail($matchId);

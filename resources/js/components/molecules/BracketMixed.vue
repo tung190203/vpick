@@ -2,37 +2,50 @@
     <div class="grid grid-cols-10 gap-4">
         <CreateMatch v-model="showCreateMatchModal" :data="detailData" :tournament="tournament"
             @updated="handleMatchUpdated" />
-        <div class="col-span-3 p-4">
-            <div class="flex justify-between items-center p-4 mb-4 bg-[#EDEEF2] rounded-md">
-                <h2 class="font-bold text-[#3E414C]">Bảng xếp hạng</h2>
-                <button
-                    class="w-9 h-9 rounded-full shadow-lg flex items-center justify-center border border-[#BBBFCC] transition-colors duration-200 hover:bg-gray-100 hover:border-[#838799]">
-                    <PencilIcon class="w-5 h-5 text-[#838799] transition-colors duration-200 hover:text-black" />
-                </button>
-            </div>
-
-            <div v-for="group in rank.group_rankings" :key="group.group_id"
-                class="rounded-md bg-[#dcdee6] shadow-md border border-[#dcdee6] mx-2 mb-4">
-                <div class="flex justify-between items-center px-4 py-2 text-[#838799]">
-                    <p class="font-semibold text-sm">{{ group.group_name }}</p>
-                    <p class="font-semibold text-sm">Điểm</p>
+        <div class="col-span-3">
+            <div class="p-4 space-y-4">
+                <!-- Header -->
+                <div class="flex justify-between items-center p-4 bg-[#EDEEF2] rounded-md">
+                    <h2 class="text-lg font-bold text-gray-800">Bảng xếp hạng</h2>
+                    <button
+                        class="w-9 h-9 rounded-full shadow-lg flex items-center justify-center border border-[#BBBFCC] transition-colors duration-200 hover:bg-gray-100 hover:border-[#838799]">
+                        <PencilIcon class="w-5 h-5 text-[#838799] transition-colors duration-200 hover:text-black" />
+                    </button>
                 </div>
-                <div class="rounded-md bg-[#EDEEF2]">
-                    <div v-for="(team, index) in group.rankings" :key="team.team_id"
-                        class="px-4 py-2 flex justify-between items-center text-[#6B6F80] hover:text-[#4392E0] hover:bg-blue-100 cursor-pointer"
-                        :class="{ 'rounded-tl-md rounded-tr-md': index === 0 }">
-                        <div class="flex items-center gap-3">
-                            <span class="text-sm">{{ index + 1 }}</span>
+
+                <!-- Groups -->
+                <div v-for="group in rank.group_rankings" :key="group.group_id"
+                    class="bg-gray-100 rounded-lg shadow overflow-hidden">
+                    <!-- Group Header -->
+                    <div
+                        class="grid grid-cols-[40px_1fr_80px_80px] bg-gray-200 px-4 py-2 text-gray-600 font-semibold text-sm">
+                        <span>#</span>
+                        <span>Đội</span>
+                        <span class="text-center">Điểm</span>
+                        <span class="text-center">Hiệu số</span>
+                    </div>
+
+                    <!-- Teams -->
+                    <div class="divide-y divide-gray-200">
+                        <div v-for="(team, index) in group.rankings" :key="team.team_id"
+                            class="grid grid-cols-[40px_1fr_80px_80px] items-center px-4 py-3 bg-white hover:bg-blue-50 transition-colors duration-200 cursor-pointer">
+                            <!-- Rank -->
+                            <span class="text-gray-700 font-medium">{{ index + 1 }}</span>
+                            <!-- Team -->
                             <div class="flex items-center gap-2">
-                                <img :src="team.team_avatar || 'https://placehold.co/400x400'"
-                                    class="w-8 h-8 rounded-full" alt="logo team" />
-                                <p class="font-medium text-sm">{{ team.team_name }}</p>
+                                <img :src="team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(team.team_name)}`" alt="logo team"
+                                    class="w-8 h-8 rounded-full border border-gray-300" />
+                                <p class="text-gray-800 font-medium text-sm">{{ team.team_name }}</p>
                             </div>
+                            <!-- Points -->
+                            <span class="text-center font-semibold text-gray-700">{{ team.points }}</span>
+                            <!-- Point diff -->
+                            <span class="text-center font-semibold text-gray-700">{{ team.point_diff }}</span>
                         </div>
-                        <p class="font-semibold text-[20px]">{{ team.points }}</p>
                     </div>
                 </div>
             </div>
+
         </div>
 
         <div class="col-span-7 p-4 pt-0">
@@ -59,13 +72,11 @@
                         </div>
 
                         <!-- ✅ GỘP LEGS THÀNH 1 CARD -->
-                        <div v-for="match in group.matches" :key="match.match_id"
-                            :class="[
-                                matchCardWrapperClass(match),
-                                { 'opacity-50': isDragging && draggedTeam?.matchId === match.match_id }
-                            ]"
-                            class="match-card bg-[#dcdee6] rounded-lg mb-4 w-64 flex flex-col transition-all">
-                            
+                        <div v-for="match in group.matches" :key="match.match_id" :class="[
+                            matchCardWrapperClass(match),
+                            { 'opacity-50': isDragging && draggedTeam?.matchId === match.match_id }
+                        ]" class="match-card bg-[#dcdee6] rounded-lg mb-4 w-64 flex flex-col transition-all">
+
                             <div :class="matchHeaderContentClass(match)"
                                 class="flex justify-between items-center text-xs font-medium text-[#838799] px-4 py-2 bg-[#dcdee6] rounded-tl-lg rounded-tr-lg">
                                 <span class="uppercase">SÂN {{ match.legs?.[0]?.court || 1 }}</span>
@@ -85,15 +96,12 @@
                                 class="flex flex-col gap-3 rounded-lg shadow-md border border-[#dcdee6] bg-[#EDEEF2] px-4 py-3">
 
                                 <!-- HOME TEAM - DRAGGABLE -->
-                                <div class="flex justify-between items-center px-2 -mx-2 rounded transition-all"
-                                    :class="{
-                                        'bg-blue-100 ring-2 ring-blue-400': isDropTarget(match.match_id, 'home'),
-                                        'cursor-move hover:bg-gray-100': canDragPoolStage(match),
-                                        'cursor-pointer': !canDragPoolStage(match)
-                                    }" 
-                                    :draggable="canDragPoolStage(match) ? 'true' : 'false'"
-                                    @dragstart="handleDragStart($event, match, 'home')"
-                                    @dragend="handleDragEnd"
+                                <div class="flex justify-between items-center px-2 -mx-2 rounded transition-all" :class="{
+                                    'bg-blue-100 ring-2 ring-blue-400': isDropTarget(match.match_id, 'home'),
+                                    'cursor-move hover:bg-gray-100': canDragPoolStage(match),
+                                    'cursor-pointer': !canDragPoolStage(match)
+                                }" :draggable="canDragPoolStage(match) ? 'true' : 'false'"
+                                    @dragstart="handleDragStart($event, match, 'home')" @dragend="handleDragEnd"
                                     @dragover.prevent="handleDragOver($event, match.match_id, 'home')"
                                     @dragleave="handleDragLeave($event)"
                                     @drop.prevent.stop="handleDrop($event, match.match_id, 'home')"
@@ -114,15 +122,12 @@
                                 </div>
 
                                 <!-- AWAY TEAM - DRAGGABLE -->
-                                <div class="flex justify-between items-center px-2 -mx-2 rounded transition-all"
-                                    :class="{
-                                        'bg-blue-100 ring-2 ring-blue-400': isDropTarget(match.match_id, 'away'),
-                                        'cursor-move hover:bg-gray-100': canDragPoolStage(match),
-                                        'cursor-pointer': !canDragPoolStage(match)
-                                    }" 
-                                    :draggable="canDragPoolStage(match) ? 'true' : 'false'"
-                                    @dragstart="handleDragStart($event, match, 'away')"
-                                    @dragend="handleDragEnd"
+                                <div class="flex justify-between items-center px-2 -mx-2 rounded transition-all" :class="{
+                                    'bg-blue-100 ring-2 ring-blue-400': isDropTarget(match.match_id, 'away'),
+                                    'cursor-move hover:bg-gray-100': canDragPoolStage(match),
+                                    'cursor-pointer': !canDragPoolStage(match)
+                                }" :draggable="canDragPoolStage(match) ? 'true' : 'false'"
+                                    @dragstart="handleDragStart($event, match, 'away')" @dragend="handleDragEnd"
                                     @dragover.prevent="handleDragOver($event, match.match_id, 'away')"
                                     @dragleave="handleDragLeave($event)"
                                     @drop.prevent.stop="handleDrop($event, match.match_id, 'away')"
@@ -152,7 +157,7 @@
                         <div :class="roundHeaderClass(roundData.round_name, false)"
                             class="flex justify-between items-center w-full mb-4 bg-[#EDEEF2] p-4">
                             <h2 class="font-bold text-[#3E414C] whitespace-nowrap">
-                                {{ roundData.matches.some(m => m.is_third_place == 1)
+                                {{roundData.matches.some(m => m.is_third_place == 1)
                                     ? 'Tranh hạng 3'
                                     : roundData.round_name
                                 }}
@@ -172,7 +177,7 @@
                             :class="matchCardWrapperClass(match)"
                             class="match-card bg-[#dcdee6] rounded-lg mb-4 w-64 flex flex-col cursor-pointer hover:shadow-lg transition-all"
                             @click="handleMatchClick(match.match_id)">
-                            
+
                             <div :class="matchHeaderContentClass(match)"
                                 class="flex justify-between items-center text-xs font-medium text-[#838799] px-4 py-2 bg-[#dcdee6] rounded-tl-lg rounded-tr-lg">
                                 <span class="uppercase">SÂN {{ match.legs?.[0]?.court || 1 }}</span>
@@ -328,33 +333,49 @@ const handleDrop = async (event, targetMatchId, targetPosition) => {
 
     if (!draggedTeam.value) return;
 
-    // Không cho swap với chính mình
     if (draggedTeam.value.matchId === targetMatchId && draggedTeam.value.position === targetPosition) {
         handleDragEnd();
         return;
     }
 
+    // Tìm trận đích
+    const targetMatch = findMatchById(targetMatchId);
+    if (!targetMatch) {
+        toast.error('Không tìm thấy trận đấu đích');
+        handleDragEnd();
+        return;
+    }
+
+    // Lấy team bị thay thế (to_team)
+    const targetTeam = targetPosition === 'home'
+        ? targetMatch.home_team
+        : targetMatch.away_team;
+
     try {
-        // Gọi API swap teams
-        const payload = {};
-        if (targetPosition === 'home') {
-            payload.home_team_id = draggedTeam.value.teamId;
-        } else {
-            payload.away_team_id = draggedTeam.value.teamId;
-        }
+        // ✅ Payload cho Mixed format: from_team_id và to_team_id
+        const payload = {
+            from_team_id: draggedTeam.value.teamId,  // Đội đang kéo
+            to_team_id: targetTeam.id,               // Đội bị thay thế
+        };
 
-        const res = await MatchesService.swapTeams(targetMatchId, payload);
-
-        if (res) {
-            toast.success('Hoán đổi đội thành công!');
-            emit('refresh');
-        }
+        await MatchesService.swapTeams(targetMatchId, payload);
+        toast.success('Hoán đổi đội thành công!');
+        emit('refresh');
     } catch (error) {
         const errorMsg = error.response?.data?.message || 'Có lỗi xảy ra khi hoán đổi đội';
         toast.error(errorMsg);
     } finally {
         handleDragEnd();
     }
+};
+
+// Helper function
+const findMatchById = (matchId) => {
+    for (const group of props.bracket.pool_stage) {
+        const match = group.matches.find(m => m.match_id === matchId);
+        if (match) return match;
+    }
+    return null;
 };
 
 const isDropTarget = (matchId, position) => {
@@ -444,7 +465,7 @@ const matchHeaderContentClass = (match) => {
 =========================== */
 const isWinner = (match, position) => {
     if (!match.aggregate_score || match.status !== 'completed') return false;
-    
+
     const homeScore = match.aggregate_score.home ?? 0;
     const awayScore = match.aggregate_score.away ?? 0;
 
@@ -457,7 +478,7 @@ const isWinner = (match, position) => {
 
 const isLoser = (match, position) => {
     if (!match.aggregate_score || match.status !== 'completed') return false;
-    
+
     const homeScore = match.aggregate_score.home ?? 0;
     const awayScore = match.aggregate_score.away ?? 0;
 

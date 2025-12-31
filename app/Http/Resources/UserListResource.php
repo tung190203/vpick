@@ -20,6 +20,8 @@ class UserListResource extends JsonResource
             'visibility' => $this->visibility,
             'avatar_url' => $this->avatar_url,
             'thumbnail' => $this->thumbnail,
+            'gender' => $this->gender,
+            'gender_text' => $this->gender_text,
             'play_times' => UserPlayTimeResource::collection($this->whenLoaded('playTimes')),
             'sports' => UserSportResource::collection($this->whenLoaded('sports')) ?? [],
             'is_manager' => $this->whenPivotLoaded('club_members', fn() => (bool)$this->pivot->is_manager, false),
