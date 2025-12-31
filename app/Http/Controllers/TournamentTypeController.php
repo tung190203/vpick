@@ -1155,16 +1155,31 @@ class TournamentTypeController extends Controller
             ->groupBy('round')
             ->map(function ($roundMatches, $round) use ($calculateLegDetails, $type) {
     
-                // Group 2 leg thành 1 match
+                // ✅ SỬA: Group 2 leg thành 1 match - Dùng match_pair_id hoặc logic ổn định
                 $grouped = $roundMatches->groupBy(function ($match) {
-                    if (!$match->home_team_id && !$match->away_team_id) {
-                        return 'match_' . $match->id;
+                    // Nếu có match_pair_id (nên thêm vào DB)
+                    if (isset($match->match_pair_id)) {
+                        return 'pair_' . $match->match_pair_id;
                     }
-    
-                    return collect([
-                        $match->home_team_id,
-                        $match->away_team_id,
-                    ])->sort()->implode('_');
+                    
+                    // TH1: Dùng next_match_id + next_position (ổn định nhất)
+                    if ($match->next_match_id && $match->next_position) {
+                        return 'to_' . $match->next_match_id . '_' . $match->next_position;
+                    }
+                    
+                    // TH2: Trận cuối (Final/Third Place) - không có next
+                    if ($match->is_third_place) {
+                        return 'third_place_' . $match->round;
+                    }
+                    
+                    if (!$match->next_match_id) {
+                        return 'final_' . $match->round;
+                    }
+                    
+                    // TH3: Fallback - gom theo min ID của 2 leg
+                    // Leg 1 & 2 thường có ID liên tiếp
+                    $baseId = floor($match->id / 2) * 2;
+                    return 'match_' . $baseId;
                 })->values();
     
                 return [
