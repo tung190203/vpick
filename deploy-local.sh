@@ -136,6 +136,32 @@ git push origin deploy
 success "PROD build completed"
 
 # ==============================
+# 3. BUILD DEV1
+# ==============================
+step "Build DEV1 assets"
+
+info "Checkout deploy"
+git checkout dev1
+
+info "Merge main → dev1"
+git merge main --no-edit
+
+info "Clean old Dev1 build"
+rm -rf public/build
+
+info "Build Dev1"
+npm run build:dev1
+
+info "Commit Dev1 build"
+git add public/build
+git commit -m "build(dev1): update assets" || info "No Dev changes"
+
+info "Push Dev1"
+git push origin deploy
+
+success "Dev1 build completed"
+
+# ==============================
 # 4. BACK TO MAIN
 # ==============================
 step "Restore MAIN working state"
