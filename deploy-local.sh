@@ -157,7 +157,7 @@ git add public/build
 git commit -m "build(dev1): update assets" || info "No Dev changes"
 
 info "Push Dev1"
-git push origin deploy
+git push origin dev1
 
 success "Dev1 build completed"
 
