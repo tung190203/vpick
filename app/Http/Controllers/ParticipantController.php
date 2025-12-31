@@ -10,8 +10,10 @@ use App\Models\Participant;
 use App\Models\Tournament;
 use App\Models\TournamentStaff;
 use App\Models\User;
+use App\Notifications\TournamentInvitationNotification;
 use App\Notifications\TournamentJoinConfirmedNotification;
 use App\Notifications\TournamentJoinRequestNotification;
+use App\Notifications\TournamentRemovedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -662,6 +664,11 @@ class ParticipantController extends Controller
         ], $newUserIds);
 
         $tournament->participants()->insert($insertData);
+        $invitedUsers = User::whereIn('id', $newUserIds)->get();
+        
+        foreach ($invitedUsers as $user) {
+            $user->notify(new TournamentInvitationNotification($tournament));
+        }
 
         $participants = Participant::where('tournament_id', $tournament->id)
             ->whereIn('user_id', $newUserIds)
@@ -691,6 +698,8 @@ class ParticipantController extends Controller
         ->whereIn('team_id', $teamIdsInTournament)
         ->delete();
         $participant->delete();
+
+        $participant->user?->notify(new TournamentRemovedNotification($participant));
 
         return ResponseHelper::success(null, 'Xoá người tham gia thành công', 200);
     }

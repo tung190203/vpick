@@ -33,7 +33,7 @@ class MiniMatchResultConfirmedNotification extends Notification implements Shoul
     {
         return [
             'match_id' => $this->match->id,
-            'tournament_id' => $this->match->mini_tournament_id,
+            'mini_tournament_id' => $this->match->mini_tournament_id,
             'title' => 'Kết quả trận đấu đã được xác nhận',
             'message' => "Một bên đã xác nhận kết quả trận đấu '{$this->match->name_of_match}'",
             'confirmed_by' => auth()->id(),
@@ -47,7 +47,7 @@ class MiniMatchResultConfirmedNotification extends Notification implements Shoul
     {
         return new BroadcastMessage([
             'match_id' => $this->match->id,
-            'tournament_id' => $this->match->mini_tournament_id,
+            'mini_tournament_id' => $this->match->mini_tournament_id,
             'title' => 'Kết quả trận đấu đã được xác nhận',
             'message' => "Một bên đã xác nhận kết quả trận đấu '{$this->match->name_of_match}'",
             'confirmed_by' => auth()->id(),
