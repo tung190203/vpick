@@ -326,12 +326,12 @@ class MiniMatchController extends Controller
         // =======================
         // 1. Kiểm tra set_number
         // =======================
-        if (!empty($tournament->set_number) && $validated['set_number'] > $tournament->set_number) {
-            return ResponseHelper::error(
-                "Trận đấu không được vượt quá {$tournament->set_number} set",
-                400
-            );
-        }
+        // if (!empty($tournament->set_number) && $validated['set_number'] > $tournament->set_number) {
+        //     return ResponseHelper::error(
+        //         "Trận đấu không được vượt quá {$tournament->set_number} set",
+        //         400
+        //     );
+        // }
     
         // =======================
         // 2. Lấy luật thi đấu

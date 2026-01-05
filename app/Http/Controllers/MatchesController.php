@@ -88,9 +88,9 @@ class MatchesController extends Controller
         $winningRule = $rules[0]['winning_rule'] ?? 2; // cách biệt tối thiểu để win
         $maxPoints = $rules[0]['max_points'] ?? $pointsToWinSet;
 
-        if (count($validated['results'] ?? []) > $setsPerMatch * 2) {
-            return ResponseHelper::error("Số sets vượt quá giới hạn.", 400);
-        }
+        // if (count($validated['results'] ?? []) > $setsPerMatch * 2) {
+        //     return ResponseHelper::error("Số sets vượt quá giới hạn.", 400);
+        // }
 
         // 🔄 Gom dữ liệu theo từng set_number
         $sets = collect($validated['results'] ?? [])->groupBy('set_number');
