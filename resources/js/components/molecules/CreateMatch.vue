@@ -137,11 +137,18 @@
                                     </div>
                                 </div>
 
-                                <button @click="addSet" :disabled="isMaxSets"
+                                <!-- <button @click="addSet" :disabled="isMaxSets"
                                     class="w-full flex justify-center items-center gap-2 border p-3 rounded-lg text-[#838799] hover:bg-gray-100 transition-colors mb-6 disabled:opacity-50 disabled:cursor-not-allowed">
                                     <PlusIcon class="w-5 h-5" />
                                     <span class="text-sm font-semibold">
                                         Thêm set {{ isMaxSets ? `(Tối đa ${maxSets} sets)` : '' }}
+                                    </span>
+                                </button> -->
+                                <button @click="addSet"
+                                    class="w-full flex justify-center items-center gap-2 border p-3 rounded-lg text-[#838799] hover:bg-gray-100 transition-colors mb-6 disabled:opacity-50 disabled:cursor-not-allowed">
+                                    <PlusIcon class="w-5 h-5" />
+                                    <span class="text-sm font-semibold">
+                                        Thêm set
                                     </span>
                                 </button>
                             </div>
@@ -269,7 +276,7 @@ watch(
 const maxSets = computed(
     () => props.tournament?.tournament_types?.[0]?.match_rules?.[0]?.sets_per_match || 3
 )
-const isMaxSets = computed(() => scores.value.length >= maxSets.value)
+// const isMaxSets = computed(() => scores.value.length >= maxSets.value)
 
 /* ===================== QR CODE (THEO LEG) ===================== */
 const qrCodeUrl = computed(() => {
@@ -292,7 +299,8 @@ const decrementScore = (idx, team) => {
 }
 
 const addSet = () => {
-    if (!isMaxSets.value) scores.value.push({ teamA: 0, teamB: 0 })
+    // if (!isMaxSets.value) scores.value.push({ teamA: 0, teamB: 0 })
+    scores.value.push({ teamA: 0, teamB: 0 })
 }
 
 const removeSet = (idx) => {
