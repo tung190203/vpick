@@ -255,46 +255,36 @@ class HomeController extends Controller
         $sportId = $sport->id;
         $perPage = $validated['leaderboard_per_page'] ?? User::PER_PAGE;
 
+        $scoreSubQuery = UserSportScore::query()
+            ->select(
+                'user_sport.user_id',
+                DB::raw('MAX(user_sport_scores.score_value) as vndupr_score')
+            )
+            ->join('user_sport', 'user_sport.id', '=', 'user_sport_scores.user_sport_id')
+            ->where('user_sport.sport_id', $sportId)
+            ->where('user_sport_scores.score_type', 'vndupr_score')
+            ->groupBy('user_sport.user_id');
+
         $leaderboard = User::query()
-            ->where('total_matches', '>', 10)
+            ->where('users.total_matches', '>', 5)
+            ->joinSub($scoreSubQuery, 'scores', function ($join) {
+                $join->on('scores.user_id', '=', 'users.id');
+            })
             ->withFullRelations()
             ->with([
-                'sports' => function($query) use ($sportId) {
+                'sports' => function ($query) use ($sportId) {
                     $query->where('sport_id', $sportId)
-                          ->with('scores', 'sport');
+                        ->with('scores', 'sport');
                 },
             ])
-            ->addSelect([
-                'vndupr_score' => UserSportScore::query()
-                    ->select(DB::raw('COALESCE(MAX(score_value), 0)'))
-                    ->join('user_sport', 'user_sport_scores.user_sport_id', '=', 'user_sport.id')
-                    ->whereColumn('user_sport.user_id', 'users.id')
-                    ->where('user_sport.sport_id', $sportId)
-                    ->where('user_sport_scores.score_type', 'vndupr_score')
-            ])
-            ->orderByDesc('vndupr_score')
+            ->select(
+                'users.*',
+                'scores.vndupr_score',
+                DB::raw('RANK() OVER (ORDER BY scores.vndupr_score DESC) as rank')
+            )
+            ->orderByDesc('scores.vndupr_score')
             ->limit($perPage)
             ->get();
-
-        // Tính rank ĐÚNG - dựa trên toàn bộ database
-        $leaderboard->transform(function ($user) use ($sportId) {
-            $userScore = $user->vndupr_score ?? 0;
-            
-            $rank = User::query()
-                ->addSelect([
-                    'vndupr_score' => UserSportScore::query()
-                        ->select(DB::raw('COALESCE(MAX(score_value), 0)'))
-                        ->join('user_sport', 'user_sport_scores.user_sport_id', '=', 'user_sport.id')
-                        ->whereColumn('user_sport.user_id', 'users.id')
-                        ->where('user_sport.sport_id', $sportId)
-                        ->where('user_sport_scores.score_type', 'vndupr_score')
-                ])
-                ->havingRaw('vndupr_score > ?', [$userScore])
-                ->count() + 1;
-            
-            $user->rank = $rank;
-            return $user;
-        });
 
         // Trả về data
         $data = [
@@ -314,6 +304,7 @@ class HomeController extends Controller
                     'sports' => $user->relationLoaded('sports') && $user->sports ? UserSportResource::collection($user->sports) : [],
                 ];
             }),
+            'count_leaderboard' => $leaderboard->count(),
         ];
     
         return ResponseHelper::success($data, 'Lấy dữ liệu thành công');
