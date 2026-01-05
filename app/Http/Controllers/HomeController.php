@@ -256,6 +256,7 @@ class HomeController extends Controller
         $perPage = $validated['leaderboard_per_page'] ?? User::PER_PAGE;
 
         $leaderboard = User::query()
+            ->where('total_matches', '>', 10)
             ->withFullRelations()
             ->with([
                 'sports' => function($query) use ($sportId) {
