@@ -408,19 +408,35 @@ class UserMatchStatsController extends Controller
             $history = $histories->where('match_id', $match->id)->first();
             if (!$history) continue;
 
-            // Xác định team của user
-            $homeMembers = $match->homeTeam->members->pluck('user_id')->all();
-            $awayMembers = $match->awayTeam->members->pluck('user_id')->all();
+            // Lấy members từ các team
+            $homeMembers = $teamMembersByTeam[$match->home_team_id] ?? [];
+            $awayMembers = $teamMembersByTeam[$match->away_team_id] ?? [];
 
-            $isHome = in_array($userId, $homeMembers);
+            // Xác định user thuộc team nào
+            $userIsInHomeTeam = in_array($userId, $homeMembers);
+            $userIsInAwayTeam = in_array($userId, $awayMembers);
 
-            // Swap để user luôn ở vị trí "home" (participant 1)
-            $myTeam = $isHome ? $match->homeTeam : $match->awayTeam;
-            $opponentTeam = $isHome ? $match->awayTeam : $match->homeTeam;
-            $myTeamId = $isHome ? $match->home_team_id : $match->away_team_id;
-            $opponentTeamId = $isHome ? $match->away_team_id : $match->home_team_id;
+            // Bỏ qua nếu user không thuộc team nào (edge case)
+            if (!$userIsInHomeTeam && !$userIsInAwayTeam) {
+                continue;
+            }
 
-            // Tính điểm số
+            // SWAP: User luôn ở vị trí "my_team" (home position)
+            if ($userIsInHomeTeam) {
+                // User đã ở home team rồi, không cần swap
+                $myTeam = $match->homeTeam;
+                $opponentTeam = $match->awayTeam;
+                $myTeamId = $match->home_team_id;
+                $opponentTeamId = $match->away_team_id;
+            } else {
+                // User ở away team, swap để đưa lên home
+                $myTeam = $match->awayTeam;
+                $opponentTeam = $match->homeTeam;
+                $myTeamId = $match->away_team_id;
+                $opponentTeamId = $match->home_team_id;
+            }
+
+            // Tính điểm số theo set
             $scores = [];
             $is_win = false;
 
@@ -434,7 +450,7 @@ class UserMatchStatsController extends Controller
                     foreach ($setResults as $r) {
                         if ($r->team_id == $myTeamId) {
                             $myScore += $r->score;
-                        } else {
+                        } elseif ($r->team_id == $opponentTeamId) {
                             $opponentScore += $r->score;
                         }
                     }
@@ -456,8 +472,8 @@ class UserMatchStatsController extends Controller
                 'tournament_id' => $match->tournamentType->tournament->id ?? null,
                 'tournament_name' => $match->tournamentType->tournament->name ?? null,
                 'match_name' => $match->name_of_match,
-                'my_team' => new TeamResource($myTeam),           // User team (luôn ở vị trí 1)
-                'opponent_team' => new TeamResource($opponentTeam), // Đối thủ (luôn ở vị trí 2)
+                'my_team' => new TeamResource($myTeam),           // User team (HOME position)
+                'opponent_team' => new TeamResource($opponentTeam), // Opponent team (AWAY position)
                 'my_team_id' => $myTeamId,
                 'opponent_team_id' => $opponentTeamId,
                 'scores' => $scores,
@@ -476,15 +492,31 @@ class UserMatchStatsController extends Controller
             $team1Members = $miniTeamMembersByTeam[$mini->team1_id] ?? [];
             $team2Members = $miniTeamMembersByTeam[$mini->team2_id] ?? [];
 
-            $isTeam1 = in_array($userId, $team1Members);
+            // Xác định user thuộc team nào
+            $userIsInTeam1 = in_array($userId, $team1Members);
+            $userIsInTeam2 = in_array($userId, $team2Members);
 
-            // Swap để user luôn ở vị trí "team1"
-            $myTeam = $isTeam1 ? $mini->team1 : $mini->team2;
-            $opponentTeam = $isTeam1 ? $mini->team2 : $mini->team1;
-            $myTeamId = $isTeam1 ? $mini->team1_id : $mini->team2_id;
-            $opponentTeamId = $isTeam1 ? $mini->team2_id : $mini->team1_id;
+            // Bỏ qua nếu user không thuộc team nào
+            if (!$userIsInTeam1 && !$userIsInTeam2) {
+                continue;
+            }
 
-            // Tính điểm số
+            // SWAP: User luôn ở vị trí "my_team" (team1/home position)
+            if ($userIsInTeam1) {
+                // User đã ở team1, không cần swap
+                $myTeam = $mini->team1;
+                $opponentTeam = $mini->team2;
+                $myTeamId = $mini->team1_id;
+                $opponentTeamId = $mini->team2_id;
+            } else {
+                // User ở team2, swap để đưa lên team1
+                $myTeam = $mini->team2;
+                $opponentTeam = $mini->team1;
+                $myTeamId = $mini->team2_id;
+                $opponentTeamId = $mini->team1_id;
+            }
+
+            // Tính điểm số theo set
             $scores = [];
             $is_win = false;
 
@@ -496,7 +528,6 @@ class UserMatchStatsController extends Controller
                     $opponentScore = 0;
 
                     foreach ($setResults as $r) {
-                        // Sử dụng team_id thay vì participant_id
                         if ($r->team_id == $myTeamId) {
                             $myScore += $r->score;
                         } elseif ($r->team_id == $opponentTeamId) {
@@ -510,9 +541,9 @@ class UserMatchStatsController extends Controller
                         'set_number' => $setNumber
                     ];
                 }
-            }
 
-            $is_win = $mini->team_win_id == $myTeamId;
+                $is_win = $mini->team_win_id == $myTeamId;
+            }
 
             $allMatches->push([
                 'type' => 'mini_match',
@@ -521,8 +552,8 @@ class UserMatchStatsController extends Controller
                 'tournament_id' => $mini->miniTournament->id ?? null,
                 'tournament_name' => $mini->miniTournament->name ?? null,
                 'match_name' => $mini->name_of_match,
-                'my_team' => new MiniTeamResource($myTeam),        // User team (luôn ở vị trí 1)
-                'opponent_team' => new MiniTeamResource($opponentTeam), // Đối thủ team (luôn ở vị trí 2)
+                'my_team' => new MiniTeamResource($myTeam),        // User team (TEAM1/HOME position)
+                'opponent_team' => new MiniTeamResource($opponentTeam), // Opponent team (TEAM2/AWAY position)
                 'my_team_id' => $myTeamId,
                 'opponent_team_id' => $opponentTeamId,
                 'scores' => $scores,
@@ -543,9 +574,11 @@ class UserMatchStatsController extends Controller
 
         $offset = ($currentPage - 1) * $perPage;
         $paginatedData = $allMatches->slice($offset, $perPage)->values();
+
         $matches = [
             'matches' => $paginatedData
         ];
+
         $meta = [
             'current_page' => $currentPage,
             'last_page' => $lastPage,
