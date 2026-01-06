@@ -137,6 +137,21 @@ class MatchDetailResource extends JsonResource
             'is_loser_bracket' => $this->is_loser_bracket,
             'is_third_place' => $this->is_third_place,
             'winner_id' => $this->winner_id,
+            'has_anchor' => collect()
+            ->merge(
+                $homeTeam
+                    ? $homeTeam->members
+                    : collect()
+            )
+            ->merge(
+                $awayTeam
+                    ? $awayTeam->members
+                    : collect()
+            )
+            ->contains(function ($user) {
+                return $user->is_anchor
+                    || ($user->total_matches_has_anchor ?? 0) >= 10;
+            }),
         ];
     }
 }
