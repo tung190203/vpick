@@ -41,6 +41,22 @@ class MiniMatchResource extends JsonResource
             'competition_location' => $this->whenLoaded('miniTournament', function () {
                 return optional(optional($this->miniTournament)->competitionLocation)?->only(['id', 'name', 'latitude', 'longitude']);
             }),
+            'has_anchor' => collect()
+            ->merge(
+                $this->whenLoaded('team1', fn () =>
+                    $this->team1->members->pluck('user')
+                ) ?? collect()
+            )
+            ->merge(
+                $this->whenLoaded('team2', fn () =>
+                    $this->team2->members->pluck('user')
+                ) ?? collect()
+            )
+            ->filter()
+            ->contains(function ($user) {
+                return $user->is_anchor
+                    || ($user->total_matches_has_anchor ?? 0) >= 10;
+            }),
         ];
     }
 }

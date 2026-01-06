@@ -623,7 +623,35 @@ class MiniMatchController extends Controller
          foreach ($match->results as $r) {
              $r->update(['status' => MiniMatchResult::STATUS_APPROVED]);
          }
-     
+
+         // ===== ANCHOR MATCH LOGIC (CHỈ CHẠY 1 LẦN / MINI MATCH) =====
+
+        // Lấy toàn bộ user trong mini match
+        $allUsersInMatch = collect()
+        ->merge($match->team1->members->pluck('user'))
+        ->merge($match->team2->members->pluck('user'))
+        ->unique('id')
+        ->values();
+
+        // Kiểm tra trong trận có anchor không
+        $hasAnchorInMatch = $allUsersInMatch->contains(function ($user) {
+        return $user->is_anchor
+            || ($user->total_matches_has_anchor ?? 0) >= 10;
+        });
+
+        // Nếu có anchor → cộng cho người KHÔNG phải anchor
+        if ($hasAnchorInMatch) {
+            foreach ($allUsersInMatch as $user) {
+                $isAnchor = $user->is_anchor
+                    || ($user->total_matches_has_anchor ?? 0) >= 10;
+
+                if (!$isAnchor) {
+                    $user->total_matches_has_anchor =
+                        ($user->total_matches_has_anchor ?? 0) + 1;
+                    $user->save();
+                }
+            }
+        }
          // B. Tính toán S (Actual Score) & R (Average Rating)
          $scores = $match->results->groupBy('team_id')->map->sum('score');
          $t1Score = $scores->get($match->team1_id, 0);
@@ -676,7 +704,17 @@ class MiniMatchController extends Controller
                  // 3. Tính K & Turbo (Giữ nguyên logic gốc)
                  $history = VnduprHistory::where('user_id', $user->id)->latest('id')->take(15)->get()->reverse();
                  
-                 $K = ($user->total_matches <= 10) ? 1 : (($user->total_matches <= 50) ? 0.6 : 0.3);
+                 $K = 0.3;
+                    // 4. Chuẩn bị K theo total_matches
+                    if ($user->is_anchor || $user->total_matches_has_anchor >= 10) {
+                        $K = 0.1;
+                    } else {
+                        if ($user->total_matches <= 10) {
+                            $K = 1;
+                        } elseif ($user->total_matches <= 50) {
+                            $K = 0.6;
+                        }
+                    }
                  
                  if ($history->count() >= 2) {
                      if (($history->first()->score_before - $history->last()->score_after) > 0.5) {
@@ -685,7 +723,11 @@ class MiniMatchController extends Controller
                  }
      
                  // 4. Tính R_new
-                 $R_new = $R_old + ($W * $K * ($data['S'] - $data['E']));
+                 if ($hasAnchorInMatch) {
+                    $R_new = $R_old + ($W * $K * ($data['S'] - $data['E']));
+                 } else {
+                    $R_new = $R_old;
+                 }          
      
                  // 5. Lưu History & Update Score
                  VnduprHistory::create([
