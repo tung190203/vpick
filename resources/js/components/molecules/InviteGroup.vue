@@ -59,7 +59,8 @@
                                 <div class="relative flex-shrink-0">
                                     <div
                                         class="w-16 h-16 bg-red-300 rounded-full flex items-center justify-center overflow-hidden">
-                                        <img :src="user.avatar"
+                                        <img :src="user.avatar_url || defaultAvatar"
+                                            @error="e => e.target.src = defaultAvatar"
                                             alt="User Avatar" class="w-full h-full object-cover" />
                                             <div class="absolute -bottom-1 -left-1 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center border border-1 border-white">
                                     <span class="text-white font-bold text-[9px]">{{ convertLevel(user) }}</span>
@@ -111,6 +112,8 @@ import { ref, computed, watch } from 'vue'
 import { XMarkIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
 import maleIcon from '@/assets/images/male.svg'
 import femaleIcon from '@/assets/images/female.svg'
+
+const defaultAvatar = "/images/default-avatar.png";
 
 const props = defineProps({
     modelValue: Boolean,
