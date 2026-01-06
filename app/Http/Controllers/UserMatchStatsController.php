@@ -568,8 +568,8 @@ class UserMatchStatsController extends Controller
                 'type' => 'mini_match',
                 'format' => 'team',
                 'id' => $mini->id,
-                'tournament_id' => $mini->miniTournament->id ?? null,
-                'tournament_name' => $mini->miniTournament->name ?? null,
+                'mini_tournament_id' => $mini->miniTournament->id ?? null,
+                'mini_tournament_name' => $mini->miniTournament->name ?? null,
                 'match_name' => $mini->name_of_match,
                 'my_team' => new MiniTeamResource($myTeam),        // User team (TEAM1/HOME position)
                 'opponent_team' => new MiniTeamResource($opponentTeam), // Opponent team (TEAM2/AWAY position)
