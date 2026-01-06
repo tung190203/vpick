@@ -315,151 +315,50 @@ class MiniMatchController extends Controller
         $match = MiniMatch::withFullRelations()->findOrFail($matchId);
         $tournament = $match->miniTournament->load('staff');
     
+        // Kiểm tra quyền
         if (!$tournament->hasOrganizer(Auth::id())) {
-            return ResponseHelper::error('Người dùng không có quyền thêm kết quả trận đấu trong kèo đấu này',403);
+            return ResponseHelper::error('Người dùng không có quyền thêm kết quả trận đấu trong kèo đấu này', 403);
         }
-
+    
+        // Kiểm tra trận đấu còn editable không
         if (!$match->isEditable()) {
             return ResponseHelper::error('Trận đấu này đã được xác nhận kết quả', 400);
         }
     
-        // =======================
-        // 1. Kiểm tra set_number
-        // =======================
-        // if (!empty($tournament->set_number) && $validated['set_number'] > $tournament->set_number) {
-        //     return ResponseHelper::error(
-        //         "Trận đấu không được vượt quá {$tournament->set_number} set",
-        //         400
-        //     );
-        // }
-    
-        // =======================
-        // 2. Lấy luật thi đấu
-        // =======================
-        $pointsToWinSet   = $tournament->games_per_set;
-        $pointsDifference = $tournament->points_difference;
-        $maxPoints        = $tournament->max_points;
-    
-        if ($pointsToWinSet === null || $pointsDifference === null || $maxPoints === null) {
-            return ResponseHelper::error(
-                'Kèo đấu chưa thiết lập đủ luật thi đấu',
-                400
-            );
-        }
-    
-        // =======================
-        // 3. Validate team hợp lệ
-        // =======================
+        // Validate team thuộc trận đấu
         $teamIds = [$match->team1_id, $match->team2_id];
         $inputResults = collect($validated['results']);
     
         if ($inputResults->count() !== 2) {
-            return ResponseHelper::error(
-                'Cần cung cấp điểm số cho cả hai đội',
-                400
-            );
+            return ResponseHelper::error('Cần cung cấp điểm số cho cả hai đội', 400);
         }
     
         $teamA = $inputResults->firstWhere('team_id', $teamIds[0]);
         $teamB = $inputResults->firstWhere('team_id', $teamIds[1]);
     
         if (!$teamA || !$teamB) {
-            return ResponseHelper::error(
-                'Team không hợp lệ hoặc không thuộc trận đấu này',
-                400
-            );
+            return ResponseHelper::error('Team không hợp lệ hoặc không thuộc trận đấu này', 400);
         }
     
-        $A = (int) $teamA['score'];
-        $B = (int) $teamB['score'];
-    
-        if ($A < 0 || $B < 0) {
-            return ResponseHelper::error('Điểm số không hợp lệ', 400);
-        }
-    
-        // =======================
-        // 4. Logic xác định thắng set
-        // =======================
-        $winnerTeamId = null;
-        $isSetCompleted = false;
-        $scoreDiff = abs($A - $B);
-        $isPointsToWinReached = ($A >= $pointsToWinSet || $B >= $pointsToWinSet);
-        $isMaxPointsReached = ($A == $maxPoints || $B == $maxPoints);
-    
-        if ($pointsToWinSet == $maxPoints) {
-            // Ví dụ: 11-2-11
-            if ($isMaxPointsReached) {
-                $isSetCompleted = true;
-                $winnerTeamId = $A > $B ? $teamIds[0] : $teamIds[1];
-            }
-        } else {
-            // Ví dụ: 11-2-15
-            if ($isPointsToWinReached && $scoreDiff >= $pointsDifference) {
-                $isSetCompleted = true;
-                $winnerTeamId = $A > $B ? $teamIds[0] : $teamIds[1];
-            } elseif ($isMaxPointsReached) {
-                if ($A == $B) {
-                    return ResponseHelper::error(
-                        "Điểm số hòa tại điểm tối đa $maxPoints",
-                        400
-                    );
-                }
-                $isSetCompleted = true;
-                $winnerTeamId = $A > $B ? $teamIds[0] : $teamIds[1];
-            }
-        }
-    
-        if (!$isSetCompleted || !$winnerTeamId) {
-            return ResponseHelper::error(
-                "Set {$validated['set_number']} chưa thỏa mãn luật thắng",
-                400
-            );
-        }
-    
-        // =======================
-        // 5. Anti-cheat điểm
-        // =======================
-        $winningScore = max($A, $B);
-        $losingScore  = min($A, $B);
-    
-        if ($pointsToWinSet == $maxPoints) {
-            if (!($winningScore == $maxPoints && $losingScore < $maxPoints)) {
-                return ResponseHelper::error('Điểm số không hợp lệ', 400);
-            }
-        } else {
-            if ($winningScore < $maxPoints) {
-                if (
-                    $winningScore < $pointsToWinSet ||
-                    ($winningScore - $losingScore) < $pointsDifference
-                ) {
-                    return ResponseHelper::error('Điểm số không hợp lệ', 400);
-                }
-            } else {
-                if ($winningScore != $maxPoints || $winningScore <= $losingScore) {
-                    return ResponseHelper::error('Điểm số không hợp lệ', 400);
-                }
-            }
-        }
-    
-        // =======================
-        // 6. Ghi DB
-        // =======================
-        DB::transaction(function () use ($match, $validated, $winnerTeamId) {
-    
+        // Lưu vào database (không validate logic thắng thua)
+        DB::transaction(function () use ($match, $validated) {
+            // Xóa set cũ nếu có
             MiniMatchResult::where('mini_match_id', $match->id)
                 ->where('set_number', $validated['set_number'])
                 ->delete();
-
+    
+            // Lưu điểm số mới (won_set để null hoặc false tạm thời)
             foreach ($validated['results'] as $res) {
                 MiniMatchResult::create([
                     'mini_match_id' => $match->id,
                     'team_id' => $res['team_id'],
                     'score' => $res['score'],
                     'set_number' => $validated['set_number'],
-                    'won_set' => $res['team_id'] == $winnerTeamId,
+                    'won_set' => false, // Sẽ được tính lại khi confirm
                 ]);
             }
     
+            // Reset confirm
             $match->update([
                 'team1_confirm' => false,
                 'team2_confirm' => false,
@@ -470,7 +369,7 @@ class MiniMatchController extends Controller
     
         return ResponseHelper::success(
             new MiniMatchResource($match),
-            'Thành công'
+            'Lưu kết quả set thành công'
         );
     }
 
@@ -559,6 +458,7 @@ class MiniMatchController extends Controller
          $currentUserId = Auth::id();
          $isOrganizer = $tournament->hasOrganizer($currentUserId);
      
+         // Kiểm tra quyền xác nhận
          $userTeam = null;
          if (!$isOrganizer) {
              if ($match->team1->members->contains('user_id', $currentUserId)) {
@@ -572,6 +472,15 @@ class MiniMatchController extends Controller
              }
          }
      
+         // ===================================
+         // VALIDATE TOÀN BỘ KẾT QUẢ CÁC SET
+         // ===================================
+         $validationError = $this->validateAllSets($match, $tournament);
+         if ($validationError) {
+             return ResponseHelper::error($validationError, 400);
+         }
+     
+         // Thực hiện confirm
          $result = DB::transaction(function () use ($match, $isOrganizer, $userTeam, $sportId) {
              if ($isOrganizer) {
                  $match->team1_confirm = true;
@@ -588,24 +497,131 @@ class MiniMatchController extends Controller
              $match->save();
              return $match;
          });
+     
+         // Gửi thông báo
          $team1UserIds = $match->team1->members()->pluck('user_id')->toArray();
          $team2UserIds = $match->team2->members()->pluck('user_id')->toArray();
          $allParticipantIds = array_unique(array_merge($team1UserIds, $team2UserIds));
          $recipientIds = array_diff($allParticipantIds, [$currentUserId]);
- 
-         // 3. Gửi thông báo
+     
          if (!empty($recipientIds)) {
              $users = User::whereIn('id', $recipientIds)->get();
              foreach ($users as $user) {
                  $user->notify(new MiniMatchResultConfirmedNotification($match));
              }
          }
- 
+     
          return ResponseHelper::success(
              new MiniMatchResource($result->refresh()),
              'Xác nhận kết quả thành công'
          );
      }
+
+     private function validateAllSets($match, $tournament)
+{
+    $pointsToWinSet = $tournament->games_per_set;
+    $pointsDifference = $tournament->points_difference;
+    $maxPoints = $tournament->max_points;
+
+    // Kiểm tra luật thi đấu
+    if ($pointsToWinSet === null || $pointsDifference === null || $maxPoints === null) {
+        return 'Kèo đấu chưa thiết lập đủ luật thi đấu';
+    }
+
+    $teamIds = [$match->team1_id, $match->team2_id];
+    $allResults = $match->results->groupBy('set_number');
+
+    if ($allResults->isEmpty()) {
+        return 'Trận đấu chưa có kết quả nào';
+    }
+
+    // Validate từng set
+    foreach ($allResults as $setNumber => $setResults) {
+        if ($setResults->count() !== 2) {
+            return "Set {$setNumber}: Thiếu điểm số của một trong hai đội";
+        }
+
+        $teamA = $setResults->firstWhere('team_id', $teamIds[0]);
+        $teamB = $setResults->firstWhere('team_id', $teamIds[1]);
+
+        if (!$teamA || !$teamB) {
+            return "Set {$setNumber}: Dữ liệu không hợp lệ";
+        }
+
+        $A = (int) $teamA->score;
+        $B = (int) $teamB->score;
+
+        // Validate logic thắng thua
+        $validation = $this->validateSetScore($A, $B, $pointsToWinSet, $pointsDifference, $maxPoints);
+        if ($validation['error']) {
+            return "Set {$setNumber}: {$validation['message']}";
+        }
+
+        // Cập nhật won_set
+        $winnerTeamId = $validation['winner'];
+        $teamA->update(['won_set' => $teamA->team_id == $winnerTeamId]);
+        $teamB->update(['won_set' => $teamB->team_id == $winnerTeamId]);
+    }
+
+    return null; // Không có lỗi
+}
+
+// ============================================
+// 4. VALIDATE SET SCORE - LOGIC THẮNG THUA
+// ============================================
+private function validateSetScore($A, $B, $pointsToWinSet, $pointsDifference, $maxPoints)
+{
+    if ($A < 0 || $B < 0) {
+        return ['error' => true, 'message' => 'Điểm số không hợp lệ'];
+    }
+
+    $scoreDiff = abs($A - $B);
+    $isPointsToWinReached = ($A >= $pointsToWinSet || $B >= $pointsToWinSet);
+    $isMaxPointsReached = ($A == $maxPoints || $B == $maxPoints);
+    $winnerTeamId = null;
+
+    if ($pointsToWinSet == $maxPoints) {
+        // Trường hợp: 11-2-11
+        if (!$isMaxPointsReached) {
+            return ['error' => true, 'message' => "Chưa đạt điểm tối đa {$maxPoints}"];
+        }
+        $winnerTeamId = $A > $B ? 'team1' : 'team2';
+    } else {
+        // Trường hợp: 11-2-15
+        if ($isPointsToWinReached && $scoreDiff >= $pointsDifference) {
+            $winnerTeamId = $A > $B ? 'team1' : 'team2';
+        } elseif ($isMaxPointsReached) {
+            if ($A == $B) {
+                return ['error' => true, 'message' => "Điểm số hòa tại điểm tối đa {$maxPoints}"];
+            }
+            $winnerTeamId = $A > $B ? 'team1' : 'team2';
+        } else {
+            return ['error' => true, 'message' => 'Set chưa hoàn thành hoặc chưa đủ điều kiện thắng'];
+        }
+    }
+
+    // Anti-cheat
+    $winningScore = max($A, $B);
+    $losingScore = min($A, $B);
+
+    if ($pointsToWinSet == $maxPoints) {
+        if (!($winningScore == $maxPoints && $losingScore < $maxPoints)) {
+            return ['error' => true, 'message' => 'Điểm số không hợp lệ (anti-cheat)'];
+        }
+    } else {
+        if ($winningScore < $maxPoints) {
+            if ($winningScore < $pointsToWinSet || ($winningScore - $losingScore) < $pointsDifference) {
+                return ['error' => true, 'message' => 'Điểm số không hợp lệ (anti-cheat)'];
+            }
+        } else {
+            if ($winningScore != $maxPoints || $winningScore <= $losingScore) {
+                return ['error' => true, 'message' => 'Điểm số không hợp lệ (anti-cheat)'];
+            }
+        }
+    }
+
+    return ['error' => false, 'winner' => $winnerTeamId];
+}
      
      /**
       * Logic xử lý khi trận đấu hoàn tất (Tính winner, Elo/VNDUPR)

@@ -77,130 +77,28 @@ class MatchesController extends Controller
         }
 
         $match->update(['court' => $validated['court'] ?? $match->court]);
-
-        $rules = $match->tournamentType->match_rules ?? null;
-        if (!$rules) {
-            return ResponseHelper::error('Thể thức này chưa có luật thi đấu (match_rules).', 400);
-        }
-
-        $setsPerMatch = $rules[0]['sets_per_match'] ?? 3;
-        $pointsToWinSet = $rules[0]['points_to_win_set'] ?? 11;
-        $winningRule = $rules[0]['winning_rule'] ?? 2; // cách biệt tối thiểu để win
-        $maxPoints = $rules[0]['max_points'] ?? $pointsToWinSet;
-
-        // if (count($validated['results'] ?? []) > $setsPerMatch * 2) {
-        //     return ResponseHelper::error("Số sets vượt quá giới hạn.", 400);
-        // }
-
-        // 🔄 Gom dữ liệu theo từng set_number
+    
+        // Validate cơ bản: mỗi set phải có đủ 2 đội
         $sets = collect($validated['results'] ?? [])->groupBy('set_number');
         $keepIds = [];
 
         foreach ($sets as $setNumber => $setResults) {
             // chỉ xử lý khi có đủ 2 đội trong set
             if ($setResults->count() !== 2) {
-                 return ResponseHelper::error("Set $setNumber thiếu kết quả của một đội. Vui lòng cung cấp điểm số cho cả hai đội.", 400);
+                return ResponseHelper::error("Set $setNumber thiếu kết quả của một đội. Vui lòng cung cấp điểm số cho cả hai đội.", 400);
             }
 
             $teamA = $setResults[0];
             $teamB = $setResults[1];
             $A = (int)$teamA['score'];
             $B = (int)$teamB['score'];
-
-            $winnerTeamId = null;
-            $isSetCompleted = false;
-
+    
             // Kiểm tra điểm số không âm
             if ($A < 0 || $B < 0) {
                  return ResponseHelper::error("Điểm số không hợp lệ trong set $setNumber.", 400);
             }
-
-            // 🧮 Xác định đội thắng set theo 3 quy tắc
-            
-            $scoreDiff = abs($A - $B);
-            $isPointsToWinReached = ($A >= $pointsToWinSet || $B >= $pointsToWinSet);
-            $isMaxPointsReached = ($A == $maxPoints || $B == $maxPoints);
-
-            // 1. Trường hợp pointsToWinSet = maxPoints
-            if ($pointsToWinSet == $maxPoints) {
-                if ($isMaxPointsReached) {
-                    $isSetCompleted = true;
-                    $winnerTeamId = $A > $B ? $teamA['team_id'] : $teamB['team_id'];
-                }
-            } else {
-                // Trường hợp pointsToWinSet != maxPoints
-
-                // 2. Nếu đã chạm điểm pointsToWinSet và cách biệt winningRule điểm
-                if ($isPointsToWinReached && $scoreDiff >= $winningRule) {
-                    $isSetCompleted = true;
-                    $winnerTeamId = $A > $B ? $teamA['team_id'] : $teamB['team_id'];
-                } 
-                // 3. Nếu chạm maxPoints (Luật "Deuce" kết thúc)
-                elseif ($isMaxPointsReached) {
-                    $isSetCompleted = true;
-                    // Nếu điểm bằng nhau ở maxPoints, thì không thể kết thúc (lỗi dữ liệu)
-                    if ($A == $B) {
-                        return ResponseHelper::error("Điểm số hòa tại điểm tối đa $maxPoints trong set $setNumber. Set phải kết thúc với cách biệt.", 400);
-                    }
-                    $winnerTeamId = $A > $B ? $teamA['team_id'] : $teamB['team_id'];
-                }
-            }
-
-            // 🚫 Yêu cầu: Chỉ lưu khi set đã hoàn thành (isSetCompleted = true)
-            if (!$isSetCompleted) {
-                return ResponseHelper::error("Set $setNumber có điểm số $A - $B chưa thỏa mãn luật thắng. Chỉ có thể lưu kết quả khi set đã hoàn thành.", 400);
-            }
-            
-            // --- Bắt đầu kiểm tra tính hợp lệ của điểm cuối cùng ---
-            
-            $winningScore = max($A, $B);
-            $losingScore = min($A, $B);
-
-            // Nếu pointsToWinSet = maxPoints
-            if ($pointsToWinSet == $maxPoints) {
-                // Phải thắng tại điểm maxPoints
-                if ($winningScore != $maxPoints ) {
-                    return ResponseHelper::error("Điểm số $A - $B trong set $setNumber không hợp lệ với luật (thắng khi chạm $maxPoints).", 400);
-                }
-                if($losingScore == $maxPoints) {
-                    return ResponseHelper::error("Điểm số $A - $B trong set $setNumber không hợp lệ với luật (không thể hòa tại $maxPoints).", 400);
-                }
-            }
-            // Nếu pointsToWinSet != maxPoints
-            else {
-                // 1. Nếu set kết thúc bằng cách biệt >= winningRule trước maxPoints
-                if ($winningScore < $maxPoints) {
-                    if (!($winningScore >= $pointsToWinSet && ($winningScore - $losingScore) >= $winningRule)) {
-                         return ResponseHelper::error("Điểm số $A - $B trong set $setNumber không hợp lệ với luật (trước $maxPoints).", 400);
-                    }
-                    for ($i = $pointsToWinSet; $i < $winningScore; $i++) {
-                        // Tại mỗi điểm i, kiểm tra xem đã thắng chưa
-                        $diffAtPoint = $i - $losingScore;
-                        if ($diffAtPoint >= $winningRule) {
-                            return ResponseHelper::error("Điểm số $A - $B trong set $setNumber không hợp lệ. Set kết thúc sớm hơn tại $i - $losingScore.", 400);
-                        }
-                    }
-                } 
-                // 2. Nếu set kết thúc tại maxPoints (ví dụ: 15-14)
-                else {
-                    if (!($winningScore == $maxPoints && $winningScore > $losingScore)) {
-                        return ResponseHelper::error("Điểm số $A - $B trong set $setNumber không hợp lệ với luật (tại $maxPoints).", 400);
-                    }
-                    for ($i = $pointsToWinSet; $i < $maxPoints; $i++) {
-                        $diffAtPoint = $i - $losingScore;
-                        if ($diffAtPoint >= $winningRule) {
-                            return ResponseHelper::error("Điểm số $A - $B trong set $setNumber không hợp lệ. Set kết thúc sớm hơn tại $i - $losingScore.", 400);
-                        }
-                    }
-                }
-            }
-
-            // Phải có người thắng sau khi kiểm tra hợp lệ
-            if (!$winnerTeamId) {
-                 return ResponseHelper::error("Lỗi xác định người thắng trong set $setNumber.", 400);
-            }
-
-            // Lưu kết quả set đã hoàn thành
+    
+            // Lưu kết quả (won_match tạm thời = false, sẽ tính lại khi confirm)
             foreach ($setResults as $r) {
                 $result = $match->results()->updateOrCreate(
                     [
@@ -210,7 +108,7 @@ class MatchesController extends Controller
                     ],
                     [
                         'score' => $r['score'],
-                        'won_match' => $winnerTeamId === $r['team_id'],
+                        'won_match' => false, // Sẽ được tính lại khi confirm
                     ]
                 );
                 $keepIds[] = $result->id;
@@ -1001,24 +899,41 @@ class MatchesController extends Controller
                 $query->where('user_id', Auth::id());
             })
             ->first();
+    
+        // Kiểm tra quyền
+        if (!$userTeam && !$isOrganizer) {
+            return ResponseHelper::error('Bạn không có quyền xác nhận kết quả trận đấu này', 403);
+        }
+    
+        if ($match->status === Matches::STATUS_COMPLETED) {
+            return ResponseHelper::error('Kết quả trận đấu đã được xác nhận trước đó', 400);
+        }
+    
         $rules = $match->tournamentType->match_rules ?? null;
         if (!$rules) {
             return ResponseHelper::error('Thể thức này chưa có luật thi đấu (match_rules).', 400);
         }
+    
+        // ===================================
+        // VALIDATE TOÀN BỘ KẾT QUẢ CÁC SET
+        // ===================================
+        $validationError = $this->validateAllMatchSets($match, $rules[0]);
+        if ($validationError) {
+            return ResponseHelper::error($validationError, 400);
+        }
+    
+        // Kiểm tra số set thắng
         $setsPerMatch = $rules[0]['sets_per_match'] ?? 3;
         $neededToWin = intdiv($setsPerMatch, 2) + 1;
         
         $sets = $match->results->groupBy('set_number');
-        
         $wins = [];
     
         foreach ($sets as $setResults) {
-            if ($setResults->count() < 2) {
-                continue;
-            }
-        
+            if ($setResults->count() < 2) continue;
+            
             $sorted = $setResults->sortByDesc('score')->values();
-        
+            
             if ($sorted[0]->score !== $sorted[1]->score) {
                 $winnerTeamId = $sorted[0]->team_id;
                 $wins[$winnerTeamId] = ($wins[$winnerTeamId] ?? 0) + 1;
@@ -1028,14 +943,10 @@ class MatchesController extends Controller
         $maxWin = max($wins ?: [0]);
         
         if ($maxWin < $neededToWin) {
-            return ResponseHelper::error("Cần thắng tối thiểu $neededToWin set mới được xác nhận kết quả.",400);
-        }        
-        if (!$userTeam && !$isOrganizer) {
-            return ResponseHelper::error('Bạn không có quyền xác nhận kết quả trận đấu này', 403);
+            return ResponseHelper::error("Cần thắng tối thiểu $neededToWin set mới được xác nhận kết quả.", 400);
         }
-        if ($match->status === Matches::STATUS_COMPLETED) {
-            return ResponseHelper::error('Kết quả trận đấu đã được xác nhận trước đó', 400);
-        }
+    
+        // Thực hiện confirm
         if ($isOrganizer) {
             $match->home_team_confirm = true;
             $match->away_team_confirm = true;
@@ -1048,173 +959,340 @@ class MatchesController extends Controller
         }
 
         if ($match->home_team_confirm && $match->away_team_confirm) {
-            $match->status = Matches::STATUS_COMPLETED;
-            foreach ($match->results as $result) {
-                $result->confirmed = true;
-                $result->save();
-            }
-            $allUsersInMatch = collect()
-                ->merge($match->homeTeam->members)
-                ->merge($match->awayTeam->members)
-                ->unique('id')
-                ->values();
-    
-            $hasAnchorInMatch = $allUsersInMatch->contains(function ($user) {
-                return $user->is_anchor
-                    || ($user->total_matches_has_anchor ?? 0) >= 10;
-            });
-    
-            if ($hasAnchorInMatch) {
-                foreach ($allUsersInMatch as $user) {
-                    $isAnchor = $user->is_anchor
-                        || ($user->total_matches_has_anchor ?? 0) >= 10;
-    
-                    if (!$isAnchor) {
-                        $user->total_matches_has_anchor =
-                            ($user->total_matches_has_anchor ?? 0) + 1;
-                        $user->save();
-                    }
-                }
-            }
-            // Tính S
-            $scores = $match->results
-                ->groupBy('team_id')
-                ->map(fn($results) => $results->sum('score'));
-            $homeScore = $scores->get($match->home_team_id, 0);
-            $awayScore = $scores->get($match->away_team_id, 0);
-            $totalScore = $homeScore + $awayScore;
-            $S_home = $totalScore > 0 ? $homeScore / $totalScore : 0;
-            $S_away = $totalScore > 0 ? $awayScore / $totalScore : 0;
-            // Tính toán E cho từng team
-            $sportId = $tournament->sport_id;
-            // Hàm helper để lấy rating trung bình của team
-            $getAverageRating = function ($team, $sportId) {
-                $members = $team->members;
-                if ($members->isEmpty()) {
-                    return 0;
-                }
-
-                $total = 0;
-                foreach ($members as $member) {
-                    $userSport = DB::table('user_sport')
-                        ->where('user_id', $member->id)
-                        ->where('sport_id', $sportId)
-                        ->first();
-
-                    if ($userSport) {
-                        $score = DB::table('user_sport_scores')
-                            ->where('user_sport_id', $userSport->id)
-                            ->where('score_type', 'vndupr_score')
-                            ->value('score_value');
-
-                        $total += (float) ($score ?? 0);
-                    }
-                }
-
-                return $total / $members->count();
-            };
-            $homeRating = $getAverageRating($match->homeTeam, $sportId);
-            $awayRating = $getAverageRating($match->awayTeam, $sportId);
-
-            $E_home = 1 / (1 + pow(10, ($awayRating - $homeRating)));
-            $E_away = 1 / (1 + pow(10, ($homeRating - $awayRating)));
-            $teams = [
-                $match->home_team_id => [
-                    'team' => $match->homeTeam,
-                    'S' => $S_home,
-                    'E' => $E_home,
-                ],
-                $match->away_team_id => [
-                    'team' => $match->awayTeam,
-                    'S' => $S_away,
-                    'E' => $E_away,
-                ],
-            ];
-
-            $W = 0.6;
-    
-            foreach ($teams as $data) {
-                $team = $data['team'];
-                $S = $data['S'];
-                $E = $data['E'];
-    
-                foreach ($team->members as $user) {
-                    $user->total_matches = ($user->total_matches ?? 0) + 1;
-                    $user->save();
-
-                    // 2. Lấy R_old của user này
-                    $userSport = DB::table('user_sport')
-                        ->where('user_id', $user->id)
-                        ->where('sport_id', $sportId)
-                        ->first();
-    
-                    $R_old = DB::table('user_sport_scores')
-                        ->where('user_sport_id', $userSport?->id)
-                        ->where('score_type', 'vndupr_score')
-                        ->value('score_value') ?? 0;
-    
-                    $history = VnduprHistory::where('user_id', $user->id)
-                        ->orderByDesc('id')
-                        ->take(15)
-                        ->get()
-                        ->sortBy('id')
-                        ->values();
-    
-                    $K = 0.3;
-    
-                    if ($user->is_anchor || $user->total_matches_has_anchor >= 10) {
-                        $K = 0.1;
-                    } else {
-                        if ($user->total_matches <= 10) {
-                            $K = 1;
-                        } elseif ($user->total_matches <= 50) {
-                            $K = 0.6;
-                        }
-                    }
-    
-                    if ($history->count() >= 2) {
-                        $first = $history->first()->score_before;
-                        $last = $history->last()->score_after;
-                        if (($first - $last) > 0.5) {
-                            $K = 1;
-                        }
-                    }
-
-                    if ($hasAnchorInMatch) {
-                        $R_new = $R_old + ($W * $K * ($S - $E));
-                    } else {
-                        $R_new = $R_old;
-                    }                    
-    
-                    VnduprHistory::create([
-                        'user_id' => $user->id,
-                        'match_id' => $match->id,
-                        'mini_match_id' => null,
-                        'score_before' => $R_old,
-                        'score_after' => $R_new,
-                    ]);
-    
-                    if ($userSport) {
-                        DB::table('user_sport_scores')->updateOrInsert(
-                            [
-                                'user_sport_id' => $userSport->id,
-                                'score_type' => 'vndupr_score',
-                            ],
-                            [
-                                'score_value' => $R_new,
-                                'updated_at' => now(),
-                                'created_at' => now(),
-                            ]
-                        );
-                    }
-                }
-            }
-    
-            $this->checkAndAdvanceFromMultiLeg($match, $setsPerMatch);
+            $this->processMatchCompletionBig($match, $tournament, $setsPerMatch);
         }
+    
         $match->save();
-
-        return ResponseHelper::success(new MatchesResource($match->fresh('results')), 'Xác nhận kết quả thành công');
+    
+        return ResponseHelper::success(
+            new MatchesResource($match->fresh('results')), 
+            'Xác nhận kết quả thành công'
+        );
+    }
+    
+    // ============================================
+    // 3. VALIDATE ALL MATCH SETS - HÀM PHỤ
+    // ============================================
+    private function validateAllMatchSets($match, $rules)
+    {
+        $pointsToWinSet = $rules['points_to_win_set'] ?? 11;
+        $winningRule = $rules['winning_rule'] ?? 2;
+        $maxPoints = $rules['max_points'] ?? $pointsToWinSet;
+    
+        $sets = $match->results->groupBy('set_number');
+    
+        if ($sets->isEmpty()) {
+            return 'Trận đấu chưa có kết quả nào';
+        }
+    
+        foreach ($sets as $setNumber => $setResults) {
+            if ($setResults->count() !== 2) {
+                return "Set $setNumber: Thiếu điểm số của một trong hai đội";
+            }
+    
+            $teamA = $setResults->first();
+            $teamB = $setResults->last();
+            $A = (int) $teamA->score;
+            $B = (int) $teamB->score;
+    
+            // Validate logic thắng thua
+            $validation = $this->validateMatchSetScore(
+                $A, $B, $setNumber,
+                $pointsToWinSet, $winningRule, $maxPoints
+            );
+    
+            if ($validation['error']) {
+                return $validation['message'];
+            }
+    
+            // Cập nhật won_match
+            $winnerTeamId = $validation['winner'];
+            $teamA->update(['won_match' => $teamA->team_id == $winnerTeamId]);
+            $teamB->update(['won_match' => $teamB->team_id == $winnerTeamId]);
+        }
+    
+        return null; // Không có lỗi
+    }
+    
+    // ============================================
+    // 4. VALIDATE MATCH SET SCORE - LOGIC CHI TIẾT
+    // ============================================
+    private function validateMatchSetScore($A, $B, $setNumber, $pointsToWinSet, $winningRule, $maxPoints)
+    {
+        if ($A < 0 || $B < 0) {
+            return ['error' => true, 'message' => "Set $setNumber: Điểm số không hợp lệ"];
+        }
+    
+        $scoreDiff = abs($A - $B);
+        $isPointsToWinReached = ($A >= $pointsToWinSet || $B >= $pointsToWinSet);
+        $isMaxPointsReached = ($A == $maxPoints || $B == $maxPoints);
+        $winnerTeamId = null;
+        $isSetCompleted = false;
+    
+        // Logic xác định thắng set
+        if ($pointsToWinSet == $maxPoints) {
+            if ($isMaxPointsReached) {
+                $isSetCompleted = true;
+                $winnerTeamId = $A > $B ? 'home' : 'away';
+            }
+        } else {
+            if ($isPointsToWinReached && $scoreDiff >= $winningRule) {
+                $isSetCompleted = true;
+                $winnerTeamId = $A > $B ? 'home' : 'away';
+            } elseif ($isMaxPointsReached) {
+                if ($A == $B) {
+                    return [
+                        'error' => true, 
+                        'message' => "Set $setNumber: Điểm số hòa tại điểm tối đa $maxPoints. Set phải kết thúc với cách biệt."
+                    ];
+                }
+                $isSetCompleted = true;
+                $winnerTeamId = $A > $B ? 'home' : 'away';
+            }
+        }
+    
+        if (!$isSetCompleted) {
+            return [
+                'error' => true,
+                'message' => "Set $setNumber: Điểm số $A - $B chưa thỏa mãn luật thắng. Chỉ có thể lưu kết quả khi set đã hoàn thành."
+            ];
+        }
+    
+        // Anti-cheat điểm số
+        $winningScore = max($A, $B);
+        $losingScore = min($A, $B);
+    
+        if ($pointsToWinSet == $maxPoints) {
+            if ($winningScore != $maxPoints) {
+                return [
+                    'error' => true,
+                    'message' => "Set $setNumber: Điểm số $A - $B không hợp lệ với luật (thắng khi chạm $maxPoints)."
+                ];
+            }
+            if ($losingScore == $maxPoints) {
+                return [
+                    'error' => true,
+                    'message' => "Set $setNumber: Điểm số $A - $B không hợp lệ với luật (không thể hòa tại $maxPoints)."
+                ];
+            }
+        } else {
+            // Kết thúc trước maxPoints
+            if ($winningScore < $maxPoints) {
+                if (!($winningScore >= $pointsToWinSet && ($winningScore - $losingScore) >= $winningRule)) {
+                    return [
+                        'error' => true,
+                        'message' => "Set $setNumber: Điểm số $A - $B không hợp lệ với luật (trước $maxPoints)."
+                    ];
+                }
+                
+                // Kiểm tra không kết thúc sớm hơn
+                for ($i = $pointsToWinSet; $i < $winningScore; $i++) {
+                    $diffAtPoint = $i - $losingScore;
+                    if ($diffAtPoint >= $winningRule) {
+                        return [
+                            'error' => true,
+                            'message' => "Set $setNumber: Điểm số $A - $B không hợp lệ. Set kết thúc sớm hơn tại $i - $losingScore."
+                        ];
+                    }
+                }
+            } 
+            // Kết thúc tại maxPoints
+            else {
+                if (!($winningScore == $maxPoints && $winningScore > $losingScore)) {
+                    return [
+                        'error' => true,
+                        'message' => "Set $setNumber: Điểm số $A - $B không hợp lệ với luật (tại $maxPoints)."
+                    ];
+                }
+                
+                for ($i = $pointsToWinSet; $i < $maxPoints; $i++) {
+                    $diffAtPoint = $i - $losingScore;
+                    if ($diffAtPoint >= $winningRule) {
+                        return [
+                            'error' => true,
+                            'message' => "Set $setNumber: Điểm số $A - $B không hợp lệ. Set kết thúc sớm hơn tại $i - $losingScore."
+                        ];
+                    }
+                }
+            }
+        }
+    
+        if (!$winnerTeamId) {
+            return ['error' => true, 'message' => "Set $setNumber: Lỗi xác định người thắng."];
+        }
+    
+        return ['error' => false, 'winner' => $winnerTeamId];
+    }
+    
+    // ============================================
+    // 5. PROCESS MATCH COMPLETION - LOGIC ELO
+    // ============================================
+    private function processMatchCompletionBig($match, $tournament, $setsPerMatch)
+    {
+        $match->status = Matches::STATUS_COMPLETED;
+        
+        foreach ($match->results as $result) {
+            $result->confirmed = true;
+            $result->save();
+        }
+    
+        // ===== ANCHOR MATCH LOGIC =====
+        $allUsersInMatch = collect()
+            ->merge($match->homeTeam->members)
+            ->merge($match->awayTeam->members)
+            ->unique('id')
+            ->values();
+    
+        $hasAnchorInMatch = $allUsersInMatch->contains(function ($user) {
+            return $user->is_anchor || ($user->total_matches_has_anchor ?? 0) >= 10;
+        });
+    
+        if ($hasAnchorInMatch) {
+            foreach ($allUsersInMatch as $user) {
+                $isAnchor = $user->is_anchor || ($user->total_matches_has_anchor ?? 0) >= 10;
+                if (!$isAnchor) {
+                    $user->total_matches_has_anchor = ($user->total_matches_has_anchor ?? 0) + 1;
+                    $user->save();
+                }
+            }
+        }
+    
+        // Tính S (Actual Score)
+        $scores = $match->results
+            ->groupBy('team_id')
+            ->map(fn($results) => $results->sum('score'));
+        
+        $homeScore = $scores->get($match->home_team_id, 0);
+        $awayScore = $scores->get($match->away_team_id, 0);
+        $totalScore = $homeScore + $awayScore;
+        
+        $S_home = $totalScore > 0 ? $homeScore / $totalScore : 0;
+        $S_away = $totalScore > 0 ? $awayScore / $totalScore : 0;
+    
+        // Tính R (Average Rating)
+        $sportId = $tournament->sport_id;
+    
+        $getAverageRating = function ($team, $sportId) {
+            $members = $team->members;
+            if ($members->isEmpty()) return 0;
+    
+            $total = 0;
+            foreach ($members as $member) {
+                $userSport = DB::table('user_sport')
+                    ->where('user_id', $member->id)
+                    ->where('sport_id', $sportId)
+                    ->first();
+    
+                if ($userSport) {
+                    $score = DB::table('user_sport_scores')
+                        ->where('user_sport_id', $userSport->id)
+                        ->where('score_type', 'vndupr_score')
+                        ->value('score_value');
+    
+                    $total += (float) ($score ?? 0);
+                }
+            }
+    
+            return $total / $members->count();
+        };
+    
+        $homeRating = $getAverageRating($match->homeTeam, $sportId);
+        $awayRating = $getAverageRating($match->awayTeam, $sportId);
+    
+        $E_home = 1 / (1 + pow(10, ($awayRating - $homeRating)));
+        $E_away = 1 / (1 + pow(10, ($homeRating - $awayRating)));
+    
+        $teams = [
+            $match->home_team_id => [
+                'team' => $match->homeTeam,
+                'S' => $S_home,
+                'E' => $E_home,
+            ],
+            $match->away_team_id => [
+                'team' => $match->awayTeam,
+                'S' => $S_away,
+                'E' => $E_away,
+            ],
+        ];
+    
+        $W = 0.6;
+    
+        foreach ($teams as $data) {
+            $team = $data['team'];
+            $S = $data['S'];
+            $E = $data['E'];
+    
+            foreach ($team->members as $user) {
+                $user->total_matches = ($user->total_matches ?? 0) + 1;
+                $user->save();
+    
+                // Lấy R_old
+                $userSport = DB::table('user_sport')
+                    ->where('user_id', $user->id)
+                    ->where('sport_id', $sportId)
+                    ->first();
+    
+                $R_old = DB::table('user_sport_scores')
+                    ->where('user_sport_id', $userSport?->id)
+                    ->where('score_type', 'vndupr_score')
+                    ->value('score_value') ?? 0;
+    
+                $history = VnduprHistory::where('user_id', $user->id)
+                    ->orderByDesc('id')
+                    ->take(15)
+                    ->get()
+                    ->sortBy('id')
+                    ->values();
+    
+                $K = 0.3;
+    
+                if ($user->is_anchor || $user->total_matches_has_anchor >= 10) {
+                    $K = 0.1;
+                } else {
+                    if ($user->total_matches <= 10) {
+                        $K = 1;
+                    } elseif ($user->total_matches <= 50) {
+                        $K = 0.6;
+                    }
+                }
+    
+                if ($history->count() >= 2) {
+                    $first = $history->first()->score_before;
+                    $last = $history->last()->score_after;
+                    if (($first - $last) > 0.5) {
+                        $K = 1;
+                    }
+                }
+    
+                $R_new = $hasAnchorInMatch 
+                    ? $R_old + ($W * $K * ($S - $E))
+                    : $R_old;
+    
+                VnduprHistory::create([
+                    'user_id' => $user->id,
+                    'match_id' => $match->id,
+                    'mini_match_id' => null,
+                    'score_before' => $R_old,
+                    'score_after' => $R_new,
+                ]);
+    
+                if ($userSport) {
+                    DB::table('user_sport_scores')->updateOrInsert(
+                        [
+                            'user_sport_id' => $userSport->id,
+                            'score_type' => 'vndupr_score',
+                        ],
+                        [
+                            'score_value' => $R_new,
+                            'updated_at' => now(),
+                            'created_at' => now(),
+                        ]
+                    );
+                }
+            }
+        }
+    
+        $this->checkAndAdvanceFromMultiLeg($match, $setsPerMatch);
     }
 
     private function checkAndAdvanceFromMultiLeg($match, $setsPerMatch)
