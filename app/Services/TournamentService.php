@@ -113,12 +113,12 @@ class TournamentService
     /**
      * Format team data
      */
-    public static function formatTeam($team): array
+    public static function formatTeam($team, $placeholderText = null): array
     {
         if (!$team) {
             return [
                 'id' => null,
-                'name' => 'TBD',
+                'name' => $placeholderText ?? 'TBD',
                 'team_avatar' => null,
                 'members' => [],
             ];

@@ -25,20 +25,36 @@
 
       <!-- Teams -->
       <div class="divide-y divide-gray-200">
-        <div v-for="(team, index) in rank.rankings" :key="team.team_id"
-             class="grid grid-cols-[40px_1fr_80px_80px] items-center px-4 py-3 bg-white hover:bg-blue-50 transition-colors duration-200 cursor-pointer">
-          <!-- Rank -->
-          <span class="text-gray-700 font-medium">{{ index + 1 }}</span>
-          <!-- Team -->
-          <div class="flex items-center gap-2">
-            <img :src="team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(team.team_name)}`" alt="logo team"
-                 class="w-8 h-8 rounded-full border border-gray-300" />
-            <p class="text-gray-800 font-medium text-sm">{{ team.team_name }}</p>
+        <!-- Có dữ liệu -->
+        <template v-if="rank.rankings && rank.rankings.length">
+          <div v-for="(team, index) in rank.rankings" :key="team.team_id"
+            class="grid grid-cols-[40px_1fr_80px_80px] items-center px-4 py-3 bg-white hover:bg-blue-50 transition-colors duration-200 cursor-pointer">
+            <!-- Rank -->
+            <span class="text-gray-700 font-medium">{{ index + 1 }}</span>
+
+            <!-- Team -->
+            <div class="flex items-center gap-2">
+              <img :src="team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(team.team_name)}`" alt="logo team" class="w-8 h-8 rounded-full border border-gray-300" />
+              <p class="text-gray-800 font-medium text-sm">
+                {{ team.team_name }}
+              </p>
+            </div>
+
+            <!-- Points -->
+            <span class="text-center font-semibold text-gray-700">
+              {{ team.points }}
+            </span>
+
+            <!-- Point diff -->
+            <span class="text-center font-semibold text-gray-700">
+              {{ team.point_diff }}
+            </span>
           </div>
-          <!-- Points -->
-          <span class="text-center font-semibold text-gray-700">{{ team.points }}</span>
-          <!-- Point diff -->
-          <span class="text-center font-semibold text-gray-700">{{ team.point_diff }}</span>
+        </template>
+
+        <!-- Không có dữ liệu -->
+        <div v-else class="px-4 py-6 text-center text-gray-400 italic">
+          Chưa có dữ liệu bảng xếp hạng
         </div>
       </div>
     </div>
