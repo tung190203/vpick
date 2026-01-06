@@ -40,13 +40,21 @@ class UserMatchStatsController extends Controller
         $miniIds  = $histories->pluck('mini_match_id')->filter()->unique();
 
         // ========== TỐI ƯU: FILTER BẰNG whereHas, CHỈ LOAD RELATIONS CẦN THIẾT ==========
-        $matches = Matches::with(['homeTeam.members', 'awayTeam.members', 'tournamentType.tournament'])
+        $matches = Matches::with([
+                'homeTeam.members:id',
+                'awayTeam.members:id',
+                'tournamentType.tournament'
+            ])
             ->whereIn('id', $matchIds)
             ->whereHas('tournamentType.tournament', fn($q) => $q->where('sport_id', $sportId))
             ->get()
             ->keyBy('id');
-
-        $minis = MiniMatch::with(['team1.members', 'team2.members', 'miniTournament'])
+    
+        $minis = MiniMatch::with([
+                'team1.members:id',
+                'team2.members:id',
+                'miniTournament'
+            ])
             ->whereIn('id', $miniIds)
             ->whereHas('miniTournament', fn($q) => $q->where('sport_id', $sportId))
             ->get()
@@ -81,12 +89,14 @@ class UserMatchStatsController extends Controller
         $checkWin = function ($history) use ($matches, $minis, $miniTeamMembersByTeam, $userId) {
             if ($history->match_id && $matches->has($history->match_id)) {
                 $match = $matches[$history->match_id];
-
+    
+                // Lấy danh sách user_id từ members collection
+                $homeUserIds = $match->homeTeam->members->pluck('id')->all();
+                $awayUserIds = $match->awayTeam->members->pluck('id')->all();
+    
                 return (
-                    ($match->winner_id == $match->home_team_id &&
-                        in_array($userId, $match->homeTeam->members->pluck('user_id')->all())) ||
-                    ($match->winner_id == $match->away_team_id &&
-                        in_array($userId, $match->awayTeam->members->pluck('user_id')->all()))
+                    ($match->winner_id == $match->home_team_id && in_array($userId, $homeUserIds)) ||
+                    ($match->winner_id == $match->away_team_id && in_array($userId, $awayUserIds))
                 );
             }
 
@@ -105,20 +115,26 @@ class UserMatchStatsController extends Controller
 
         // Helper function tính win_rate và performance
         $calculateStats = function ($historiesCollection) use ($checkWin) {
-            $recentMatches = $historiesCollection->sortByDesc('created_at')->take(10)->values();
-            $totalMatches = $recentMatches->count();
-
+            // Sắp xếp theo thời gian mới nhất
+            $sortedHistories = $historiesCollection->sortByDesc('created_at')->values();
+            $totalMatches = $sortedHistories->count();
+    
             if ($totalMatches == 0) {
                 return ['win_rate' => 0, 'performance' => 0];
             }
 
             // Tính win_rate
-            $winCount = $recentMatches->filter($checkWin)->count();
+            $winCount = 0;
+            foreach ($sortedHistories as $match) {
+                if ($checkWin($match)) {
+                    $winCount++;
+                }
+            }
             $win_rate = round(($winCount / $totalMatches) * 100, 2);
 
             // Tính performance
             $points = 0;
-            foreach ($recentMatches as $index => $match) {
+            foreach ($sortedHistories as $index => $match) {
                 if ($checkWin($match)) {
                     $multiplier = $index < 3 ? 1.5 : 1.0;
                     $points += 10 * $multiplier;
@@ -137,10 +153,13 @@ class UserMatchStatsController extends Controller
         // ========== HELPER: REMOVE DUPLICATES ==========
         $removeDuplicates = function ($historiesCollection) {
             $unique = collect();
+            $seen = [];
+            
             foreach ($historiesCollection as $h) {
-                $key = $h->match_id ? 'match_' . $h->match_id : 'mini_' . $h->mini_match_id;
-                if (!$unique->has($key)) {
-                    $unique->put($key, $h);
+                $key = $h->match_id ? 'match_' . $h->match_id : 'mini_' . $h->mini_match_id;  
+                if (!isset($seen[$key])) {
+                    $seen[$key] = true;
+                    $unique->push($h);
                 }
             }
             return $unique;
@@ -154,9 +173,9 @@ class UserMatchStatsController extends Controller
             foreach ($historiesCollection as $history) {
                 if ($history->match_id && $matches->has($history->match_id)) {
                     $match = $matches->get($history->match_id);
-                    $homeMembers = $match->homeTeam->members->pluck('user_id')->all();
-                    $awayMembers = $match->awayTeam->members->pluck('user_id')->all();
-                    $isHome = in_array($userId, $homeMembers);
+                    $homeUserIds = $match->homeTeam->members->pluck('id')->all();
+                    $awayUserIds = $match->awayTeam->members->pluck('id')->all();
+                    $isHome = in_array($userId, $homeUserIds);
                     $myTeamId = $isHome ? $match->home_team_id : $match->away_team_id;
                     $opponentTeamId = $isHome ? $match->away_team_id : $match->home_team_id;
                     $scores = [];

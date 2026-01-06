@@ -48,13 +48,24 @@ class HomeController extends Controller
             ->take(10)
             ->get();
     
-        $totalMatches = $histories->count();
+        // ========== REMOVE DUPLICATES ==========
+        $uniqueHistories = collect();
+        $seen = [];
+        foreach ($histories as $h) {
+            $key = $h->match_id ? 'match_' . $h->match_id : 'mini_' . $h->mini_match_id;
+            if (!isset($seen[$key])) {
+                $seen[$key] = true;
+                $uniqueHistories->push($h);
+            }
+        }
+    
+        $totalMatches = $uniqueHistories->count();
         $wins = 0;
         $totalPoint = 0;
     
         if ($totalMatches > 0) {
-            $matchIds = $histories->pluck('match_id')->filter()->unique()->values()->all();
-            $miniIds  = $histories->pluck('mini_match_id')->filter()->unique()->values()->all();
+            $matchIds = $uniqueHistories->pluck('match_id')->filter()->unique()->values()->all();
+            $miniIds  = $uniqueHistories->pluck('mini_match_id')->filter()->unique()->values()->all();
     
             $matches = Matches::whereIn('id', $matchIds)->get()->keyBy('id');
             $minis = MiniMatch::withFullRelations()->whereIn('id', $miniIds)->get()->keyBy('id');
@@ -82,7 +93,7 @@ class HomeController extends Controller
                 ->groupBy('mini_team_id')
                 ->map(fn($rows) => $rows->pluck('user_id')->flip());
     
-            foreach ($histories->values() as $index => $history) {
+            foreach ($uniqueHistories->values() as $index => $history) {
                 $isWin = false;
     
                 // match_id: winner là team
@@ -166,9 +177,9 @@ class HomeController extends Controller
             ->where('vndupr_history.user_id', $userId)
             ->where('mini_tournaments.sport_id', $sport->id)
             ->count();
-
-        $totalMatches = $matchCount + $miniMatchCount;
-
+    
+        $totalMatchesAll = $matchCount + $miniMatchCount;
+    
         $matchIds = DB::table('vndupr_history')
             ->where('user_id', $userId)
             ->whereNotNull('match_id')
@@ -192,7 +203,7 @@ class HomeController extends Controller
                 'sport_icon' => $sport->icon,
                 'sport_name' => $sport->name,
                 'scores' => $scores,
-                'total_matches' => $totalMatches,
+                'total_matches' => $totalMatchesAll,
                 'total_tournament' => $tournamentsCount,
                 'total_prizes' => 0
             ]
@@ -304,7 +315,6 @@ class HomeController extends Controller
                     'sports' => $user->relationLoaded('sports') && $user->sports ? UserSportResource::collection($user->sports) : [],
                 ];
             }),
-            'count_leaderboard' => $leaderboard->count(),
         ];
     
         return ResponseHelper::success($data, 'Lấy dữ liệu thành công');

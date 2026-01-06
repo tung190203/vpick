@@ -907,7 +907,7 @@ class ParticipantController extends Controller
                 'name' => $u->full_name,
                 'visibility' => $u->visibility,
                 'age_group' => $u->age_group,
-                'avatar' => $u->avatar_url,
+                'avatar_url' => $u->avatar_url,
                 'thumbnail' => $u->thumbnail,
                 'gender' => $u->gender,
                 'gender_text' => $u->gender_text,
