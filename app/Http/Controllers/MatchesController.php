@@ -986,7 +986,13 @@ class MatchesController extends Controller
 
     public function confirmResult($matchId)
     {
-        $match = Matches::with(['results', 'tournamentType.tournament'])->findOrFail($matchId);
+        $match = Matches::with([
+            'results',
+            'tournamentType.tournament',
+            'homeTeam.members',
+            'awayTeam.members',
+        ])->findOrFail($matchId);
+    
         $tournament = $match->tournamentType->tournament->load('staff');
         $isOrganizer = $tournament->hasOrganizer(Auth::id());
         $teamIds = [$match->home_team_id, $match->away_team_id];
@@ -1005,8 +1011,8 @@ class MatchesController extends Controller
         $sets = $match->results->groupBy('set_number');
         
         $wins = [];
-        
-        foreach ($sets as $setNumber => $setResults) {
+    
+        foreach ($sets as $setResults) {
             if ($setResults->count() < 2) {
                 continue;
             }
@@ -1045,8 +1051,32 @@ class MatchesController extends Controller
             $match->status = Matches::STATUS_COMPLETED;
             foreach ($match->results as $result) {
                 $result->confirmed = true;
+                $result->save();
             }
-            // Tính toán S cho từng team
+            $allUsersInMatch = collect()
+                ->merge($match->homeTeam->members)
+                ->merge($match->awayTeam->members)
+                ->unique('id')
+                ->values();
+    
+            $hasAnchorInMatch = $allUsersInMatch->contains(function ($user) {
+                return $user->is_anchor
+                    || ($user->total_matches_has_anchor ?? 0) >= 10;
+            });
+    
+            if ($hasAnchorInMatch) {
+                foreach ($allUsersInMatch as $user) {
+                    $isAnchor = $user->is_anchor
+                        || ($user->total_matches_has_anchor ?? 0) >= 10;
+    
+                    if (!$isAnchor) {
+                        $user->total_matches_has_anchor =
+                            ($user->total_matches_has_anchor ?? 0) + 1;
+                        $user->save();
+                    }
+                }
+            }
+            // Tính S
             $scores = $match->results
                 ->groupBy('team_id')
                 ->map(fn($results) => $results->sum('score'));
@@ -1059,36 +1089,35 @@ class MatchesController extends Controller
             $sportId = $tournament->sport_id;
             // Hàm helper để lấy rating trung bình của team
             $getAverageRating = function ($team, $sportId) {
-                // Lấy tất cả thành viên của team
-                $teamMembers = $team->members;
-                if ($teamMembers->isEmpty()) {
+                $members = $team->members;
+                if ($members->isEmpty()) {
                     return 0;
                 }
 
-                $totalRating = 0;
-                foreach ($teamMembers as $member) {
+                $total = 0;
+                foreach ($members as $member) {
                     $userSport = DB::table('user_sport')
                         ->where('user_id', $member->id)
                         ->where('sport_id', $sportId)
                         ->first();
 
                     if ($userSport) {
-                        $scoreRecord = DB::table('user_sport_scores')
+                        $score = DB::table('user_sport_scores')
                             ->where('user_sport_id', $userSport->id)
                             ->where('score_type', 'vndupr_score')
-                            ->first();
+                            ->value('score_value');
 
-                        $totalRating += $scoreRecord ? (float) $scoreRecord->score_value : 0;
+                        $total += (float) ($score ?? 0);
                     }
                 }
 
-                return $totalRating / $teamMembers->count();
+                return $total / $members->count();
             };
-            $homeTeamRating = $getAverageRating($match->homeTeam, $sportId);
-            $awayTeamRating = $getAverageRating($match->awayTeam, $sportId);
+            $homeRating = $getAverageRating($match->homeTeam, $sportId);
+            $awayRating = $getAverageRating($match->awayTeam, $sportId);
 
-            $E_home = 1 / (1 + pow(10, ($awayTeamRating - $homeTeamRating)));
-            $E_away = 1 / (1 + pow(10, ($homeTeamRating - $awayTeamRating)));
+            $E_home = 1 / (1 + pow(10, ($awayRating - $homeRating)));
+            $E_away = 1 / (1 + pow(10, ($homeRating - $awayRating)));
             $teams = [
                 $match->home_team_id => [
                     'team' => $match->homeTeam,
@@ -1103,106 +1132,84 @@ class MatchesController extends Controller
             ];
 
             $W = 0.6;
-
-            foreach ($teams as $teamId => $data) {
+    
+            foreach ($teams as $data) {
                 $team = $data['team'];
                 $S = $data['S'];
                 $E = $data['E'];
-
-                // Lấy tất cả thành viên của team
-                $teamMembers = $team->members;
-
-                // Cập nhật điểm cho từng user trong team
-                foreach ($teamMembers as $member) {
-                    $user = $member;
-                    $userId = $member->id;
-
-                    // 1. Tăng total_matches
+    
+                foreach ($team->members as $user) {
                     $user->total_matches = ($user->total_matches ?? 0) + 1;
                     $user->save();
 
                     // 2. Lấy R_old của user này
                     $userSport = DB::table('user_sport')
-                        ->where('user_id', $userId)
+                        ->where('user_id', $user->id)
                         ->where('sport_id', $sportId)
                         ->first();
-
-                    $R_old = 0;
-                    if ($userSport) {
-                        $scoreRecord = DB::table('user_sport_scores')
-                            ->where('user_sport_id', $userSport->id)
-                            ->where('score_type', 'vndupr_score')
-                            ->first();
-
-                        $R_old = $scoreRecord ? (float) $scoreRecord->score_value : 0;
-                    }
-
-                    // 3. Lấy lịch sử 15 trận gần nhất
-                    $history = VnduprHistory::where('user_id', $userId)
+    
+                    $R_old = DB::table('user_sport_scores')
+                        ->where('user_sport_id', $userSport?->id)
+                        ->where('score_type', 'vndupr_score')
+                        ->value('score_value') ?? 0;
+    
+                    $history = VnduprHistory::where('user_id', $user->id)
                         ->orderByDesc('id')
                         ->take(15)
                         ->get()
                         ->sortBy('id')
                         ->values();
-
-                    // 4. Chuẩn bị K theo total_matches
-                    if ($user->total_matches <= 10) {
-                        $K = 1;
-                    } elseif ($user->total_matches <= 50) {
-                        $K = 0.6;
+    
+                    $K = 0.3;
+    
+                    if ($user->is_anchor || $user->total_matches_has_anchor >= 10) {
+                        $K = 0.1;
                     } else {
-                        $K = 0.3;
+                        if ($user->total_matches <= 10) {
+                            $K = 1;
+                        } elseif ($user->total_matches <= 50) {
+                            $K = 0.6;
+                        }
                     }
-
-                    // 5. Kiểm tra TURBO
+    
                     if ($history->count() >= 2) {
-                        $first_old = $history->first()->score_before;
-                        $last_new = $history->last()->score_after;
-
-                        if (($first_old - $last_new) > 0.5) {
-                            $K = 1; // bật chế độ turbo
+                        $first = $history->first()->score_before;
+                        $last = $history->last()->score_after;
+                        if (($first - $last) > 0.5) {
+                            $K = 1;
                         }
                     }
 
-                    // 6. Tính R_new
-                    $R_new = $R_old + ($W * $K * ($S - $E));
-
-                    // 7. Lưu history
+                    if ($hasAnchorInMatch) {
+                        $R_new = $R_old + ($W * $K * ($S - $E));
+                    } else {
+                        $R_new = $R_old;
+                    }                    
+    
                     VnduprHistory::create([
-                        'user_id' => $userId,
+                        'user_id' => $user->id,
                         'match_id' => $match->id,
                         'mini_match_id' => null,
                         'score_before' => $R_old,
                         'score_after' => $R_new,
                     ]);
-
-                    // 8. Update điểm vndupr_score vào user_sport_scores
+    
                     if ($userSport) {
-                        $exists = DB::table('user_sport_scores')
-                            ->where('user_sport_id', $userSport->id)
-                            ->where('score_type', 'vndupr_score')
-                            ->exists();
-
-                        if ($exists) {
-                            DB::table('user_sport_scores')
-                                ->where('user_sport_id', $userSport->id)
-                                ->where('score_type', 'vndupr_score')
-                                ->update([
-                                    'score_value' => $R_new,
-                                    'updated_at' => now(),
-                                ]);
-                        } else {
-                            DB::table('user_sport_scores')->insert([
+                        DB::table('user_sport_scores')->updateOrInsert(
+                            [
                                 'user_sport_id' => $userSport->id,
                                 'score_type' => 'vndupr_score',
+                            ],
+                            [
                                 'score_value' => $R_new,
-                                'created_at' => now(),
                                 'updated_at' => now(),
-                            ]);
-                        }
+                                'created_at' => now(),
+                            ]
+                        );
                     }
                 }
             }
+    
             $this->checkAndAdvanceFromMultiLeg($match, $setsPerMatch);
         }
         $match->save();
