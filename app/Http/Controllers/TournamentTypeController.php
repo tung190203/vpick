@@ -1261,7 +1261,7 @@ class TournamentTypeController extends Controller
 
     private function getMixedBracket(TournamentType $type)
     {
-        // ✅ CLOSURE TÍNH ĐIỂM GIỐNG HỆT ELIMINATION
+        // ===== CLOSURE TÍNH ĐIỂM LEG =====
         $calculateLegDetails = function ($leg) {
             $homeTeamId = $leg->home_team_id;
             $awayTeamId = $leg->away_team_id;
@@ -1279,11 +1279,8 @@ class TournamentTypeController extends Controller
                 $homeScore = (int) ($home->score ?? 0);
                 $awayScore = (int) ($away->score ?? 0);
     
-                if ($homeScore > $awayScore) {
-                    $homeSetWins++;
-                } elseif ($awayScore > $homeScore) {
-                    $awaySetWins++;
-                }
+                if ($homeScore > $awayScore) $homeSetWins++;
+                elseif ($awayScore > $homeScore) $awaySetWins++;
     
                 $sets['set_' . $setNumber] = [
                     ['team_id' => $homeTeamId, 'score' => $homeScore],
@@ -1291,7 +1288,6 @@ class TournamentTypeController extends Controller
                 ];
             }
     
-            // 👉 QUYẾT ĐỊNH THẮNG LEG
             if ($homeSetWins > $awaySetWins) {
                 return [
                     'sets' => $sets,
@@ -1310,7 +1306,6 @@ class TournamentTypeController extends Controller
                 ];
             }
     
-            // Hòa hoặc chưa đủ dữ liệu
             return [
                 'sets' => $sets,
                 'home_score_calculated' => 0,
@@ -1319,7 +1314,7 @@ class TournamentTypeController extends Controller
             ];
         };
     
-        // Vòng bảng (round = 1)
+        // ===== POOL STAGE =====
         $poolMatches = $type->matches()
             ->with(['homeTeam.members', 'awayTeam.members', 'group', 'results'])
             ->where('round', 1)
@@ -1330,7 +1325,6 @@ class TournamentTypeController extends Controller
         $poolStage = $poolMatches->groupBy('group_id')->map(function ($groupMatches, $groupId) use ($calculateLegDetails) {
             $group = $groupMatches->first()->group;
     
-            // ✅ GROUP CÁC LEGS THÀNH 1 MATCH (GIỐNG ROUND ROBIN & ELIMINATION)
             $grouped = $groupMatches->groupBy(function ($match) {
                 if (!$match->home_team_id && !$match->away_team_id) {
                     return 'match_' . $match->id;
@@ -1344,7 +1338,7 @@ class TournamentTypeController extends Controller
     
             return [
                 'group_id' => $groupId,
-                'group_name' => $group ? $group->name : 'Bye',
+                'group_name' => $group?->name ?? 'Bye',
                 'matches' => $grouped->map(function ($matchGroup) use ($calculateLegDetails) {
                     $first = $matchGroup->first();
                     $homeTeamId = $first->home_team_id;
@@ -1353,7 +1347,6 @@ class TournamentTypeController extends Controller
                     $homeTotal = 0;
                     $awayTotal = 0;
     
-                    // ✅ TÍNH AGGREGATE SCORE GIỐNG ELIMINATION
                     $legs = $matchGroup->map(function ($leg) use (
                         $calculateLegDetails,
                         &$homeTotal,
@@ -1362,13 +1355,10 @@ class TournamentTypeController extends Controller
                         $awayTeamId
                     ) {
                         $details = $calculateLegDetails($leg);
-                        
+    
                         if ($leg->status === 'completed') {
-                            if ($details['winner_team_id'] === $homeTeamId) {
-                                $homeTotal += 3;
-                            } elseif ($details['winner_team_id'] === $awayTeamId) {
-                                $awayTotal += 3;
-                            }
+                            if ($details['winner_team_id'] === $homeTeamId) $homeTotal += 3;
+                            elseif ($details['winner_team_id'] === $awayTeamId) $awayTotal += 3;
                         }
     
                         return [
@@ -1389,8 +1379,6 @@ class TournamentTypeController extends Controller
                         'home_team' => $this->formatTeam($first->homeTeam),
                         'away_team' => $this->formatTeam($first->awayTeam),
                         'is_bye' => $first->is_bye,
-                        
-                        // 👉 FE DÙNG
                         'legs' => $legs,
                         'aggregate_score' => [
                             'home' => $homeTotal,
@@ -1399,15 +1387,20 @@ class TournamentTypeController extends Controller
                         'winner_team_id' =>
                             $homeTotal > $awayTotal ? $homeTeamId :
                             ($awayTotal > $homeTotal ? $awayTeamId : null),
-                        
-                        'status' => $matchGroup->every(fn($l) => $l->status === 'completed') ? 'completed' : 'pending',
+                        'status' => $matchGroup->every(fn ($l) => $l->status === 'completed') ? 'completed' : 'pending',
                     ];
                 })->values(),
                 'standings' => $this->calculateGroupStandings($groupMatches),
             ];
         })->values();
     
-        // Vòng knockout (round >= 2)
+        // ===== ADVANCEMENT RULES =====
+        $advancementRules = PoolAdvancementRule::where('tournament_type_id', $type->id)
+            ->with('group')
+            ->get()
+            ->groupBy('next_match_id');
+    
+        // ===== KNOCKOUT STAGE =====
         $knockoutMatches = $type->matches()
             ->with(['homeTeam.members', 'awayTeam.members', 'results'])
             ->where('round', '>=', 2)
@@ -1415,36 +1408,58 @@ class TournamentTypeController extends Controller
             ->orderBy('leg')
             ->get();
     
-        $knockoutStage = $knockoutMatches->groupBy('round')->map(function ($roundMatches, $round) use ($calculateLegDetails, $type) {
+        $knockoutStage = $knockoutMatches->groupBy('round')->map(function ($roundMatches, $round) use (
+            $calculateLegDetails,
+            $type,
+            $advancementRules
+        ) {
             $numLegs = (int) ($type->num_legs ?? 1);
-        
-            // ✅ THAY ĐỔI LOGIC GOM NHÓM:
-            // Sắp xếp lại roundMatches theo ID để đảm bảo Leg 1 luôn đứng trước Leg 2 trong mỗi cặp
             $sortedMatches = $roundMatches->sortBy('id')->values();
-            
-            // Gom nhóm dựa trên số lượt trận (num_legs)
-            // Ví dụ: Nếu num_legs = 2, cứ 2 trận liên tiếp sẽ tạo thành 1 matchGroup (cặp đấu)
             $matchGroups = $sortedMatches->chunk($numLegs);
-        
+    
             return [
                 'round' => $round,
-                'round_name' => $this->getRoundName(
-                    $round,
-                    $matchGroups->count(), // Số cặp đấu thực tế
-                    $type->format
-                ),
-                'matches' => $matchGroups->map(function ($matchGroup) use ($calculateLegDetails) {
-                    $matchGroup = $matchGroup->values(); // Reset key cho từng group nhỏ
+                'round_name' => $this->getRoundName($round, $matchGroups->count(), $type->format),
+                'matches' => $matchGroups->map(function ($matchGroup) use (
+                    $calculateLegDetails,
+                    $advancementRules
+                ) {
                     $first = $matchGroup->first();
-                    
-                    // Lấy ID đội từ trận đầu tiên của cặp
+    
                     $homeTeamId = $first->home_team_id;
                     $awayTeamId = $first->away_team_id;
-        
+    
+                    // ===== PLACEHOLDER LOGIC ĐÚNG THEO Ý MÀY =====
+                    $rulesForThisMatch = $advancementRules->get($first->id, collect());
+    
+                    $homePlaceholder = null;
+                    $awayPlaceholder = null;
+    
+                    foreach ($rulesForThisMatch as $rule) {
+                        $text = trim(
+                            $this->getRankText($rule->rank) . ' ' . ($rule->group?->name ?? '')
+                        );
+    
+                        if ($rule->next_position === 'home') $homePlaceholder = $text;
+                        if ($rule->next_position === 'away') $awayPlaceholder = $text;
+                    }
+    
+                    // 👉 RULE BỊ LẺ ⇒ SINH "NHÌ TỐT NHẤT"
+                    if ($rulesForThisMatch->count() === 1) {
+                        $onlyRule = $rulesForThisMatch->first();
+    
+                        if ($onlyRule->next_position === 'home' && !$awayPlaceholder) {
+                            $awayPlaceholder = 'Nhì tốt nhất';
+                        }
+    
+                        if ($onlyRule->next_position === 'away' && !$homePlaceholder) {
+                            $homePlaceholder = 'Nhì tốt nhất';
+                        }
+                    }
+    
                     $homeTotal = 0;
                     $awayTotal = 0;
-        
-                    // ✅ TÍNH AGGREGATE GIỐNG ELIMINATION
+    
                     $legs = $matchGroup->map(function ($leg) use (
                         $calculateLegDetails,
                         &$homeTotal,
@@ -1453,16 +1468,12 @@ class TournamentTypeController extends Controller
                         $awayTeamId
                     ) {
                         $details = $calculateLegDetails($leg);
-                        
-                        if ($leg->status === 'completed' && ($homeTeamId || $awayTeamId)) {
-                            // Logic tính điểm thắng leg (3-0)
-                            if ($details['winner_team_id'] === $homeTeamId) {
-                                $homeTotal += 3;
-                            } elseif ($details['winner_team_id'] === $awayTeamId) {
-                                $awayTotal += 3;
-                            }
+    
+                        if ($leg->status === 'completed') {
+                            if ($details['winner_team_id'] === $homeTeamId) $homeTotal += 3;
+                            elseif ($details['winner_team_id'] === $awayTeamId) $awayTotal += 3;
                         }
-        
+    
                         return [
                             'id' => $leg->id,
                             'leg' => $leg->leg,
@@ -1475,34 +1486,25 @@ class TournamentTypeController extends Controller
                             'sets' => $details['sets'],
                         ];
                     })->values();
-        
-                    // Xác định người chiến thắng cuối cùng sau các lượt trận
+    
                     $finalWinnerId = null;
-                    if ($matchGroup->every(fn($l) => $l->status === 'completed')) {
-                        if ($homeTotal > $awayTotal) {
-                            $finalWinnerId = $homeTeamId;
-                        } elseif ($awayTotal > $homeTotal) {
-                            $finalWinnerId = $awayTeamId;
-                        }
+                    if ($matchGroup->every(fn ($l) => $l->status === 'completed')) {
+                        if ($homeTotal > $awayTotal) $finalWinnerId = $homeTeamId;
+                        elseif ($awayTotal > $homeTotal) $finalWinnerId = $awayTeamId;
                     }
-        
+    
                     return [
                         'match_id' => $first->id,
-                        'home_team' => $this->formatTeam($first->homeTeam),
-                        'away_team' => $this->formatTeam($first->awayTeam),
+                        'home_team' => $this->formatTeam($first->homeTeam, $homePlaceholder),
+                        'away_team' => $this->formatTeam($first->awayTeam, $awayPlaceholder),
                         'is_bye' => $first->is_bye,
-                        'is_third_place' => $first->is_third_place ?? false,
-                        'best_loser_source_round' => $first->best_loser_source_round ?? null,
                         'legs' => $legs,
                         'aggregate_score' => [
                             'home' => $homeTotal,
                             'away' => $awayTotal,
                         ],
                         'winner_team_id' => $finalWinnerId,
-        
-                        'next_match_id' => $first->next_match_id,
-                        'next_position' => $first->next_position,
-                        'status' => $matchGroup->every(fn($l) => $l->status === 'completed') ? 'completed' : 'pending',
+                        'status' => $matchGroup->every(fn ($l) => $l->status === 'completed') ? 'completed' : 'pending',
                     ];
                 })->values(),
             ];
@@ -1516,12 +1518,23 @@ class TournamentTypeController extends Controller
         ]);
     }
     
+    private function getRankText(int $rank): string
+    {
+        return match($rank) {
+            1 => 'Nhất',
+            2 => 'Nhì', 
+            3 => 'Ba',
+            4 => 'Tư',
+            default => "Hạng {$rank}",
+        };
+    }
+    
     /**
      * Format team data
      */
-    private function formatTeam($team)
+    private function formatTeam($team, $placeholderText = null)
     {
-        return TournamentService::formatTeam($team);
+        return TournamentService::formatTeam($team, $placeholderText);
     }
 
     /**

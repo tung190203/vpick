@@ -14,33 +14,38 @@
                 </div>
 
                 <!-- Groups -->
-                <div v-for="group in rank.group_rankings" :key="group.group_id"
-                    class="bg-gray-100 rounded-lg shadow overflow-hidden">
-                    <!-- Group Header -->
-                    <div
-                        class="grid grid-cols-[40px_1fr_80px_80px] bg-gray-200 px-4 py-2 text-gray-600 font-semibold text-sm">
-                        <span>#</span>
-                        <span>Đội</span>
-                        <span class="text-center">Điểm</span>
-                        <span class="text-center">Hiệu số</span>
-                    </div>
+                <div v-if="!hasAnyRanking" class="py-2 text-center text-gray-500">
+                    Chưa có dữ liệu bảng xếp hạng
+                </div>
 
-                    <!-- Teams -->
-                    <div class="divide-y divide-gray-200">
-                        <div v-for="(team, index) in group.rankings" :key="team.team_id"
-                            class="grid grid-cols-[40px_1fr_80px_80px] items-center px-4 py-3 bg-white hover:bg-blue-50 transition-colors duration-200 cursor-pointer">
-                            <!-- Rank -->
-                            <span class="text-gray-700 font-medium">{{ index + 1 }}</span>
-                            <!-- Team -->
-                            <div class="flex items-center gap-2">
-                                <img :src="team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(team.team_name)}`" alt="logo team"
-                                    class="w-8 h-8 rounded-full border border-gray-300" />
-                                <p class="text-gray-800 font-medium text-sm">{{ team.team_name }}</p>
+                <div v-else>
+                    <div v-for="group in rank.group_rankings" :key="group.group_id"
+                        v-if="group.rankings && group.rankings.length"
+                        class="bg-gray-100 rounded-lg shadow overflow-hidden mb-4">
+                        <!-- Group Header -->
+                        <div
+                            class="grid grid-cols-[40px_1fr_80px_80px] bg-gray-200 px-4 py-2 text-gray-600 font-semibold text-sm">
+                            <span>#</span>
+                            <span>Đội</span>
+                            <span class="text-center">Điểm</span>
+                            <span class="text-center">Hiệu số</span>
+                        </div>
+
+                        <!-- Teams -->
+                        <div class="divide-y divide-gray-200">
+                            <div v-for="(team, index) in group.rankings" :key="team.team_id"
+                                class="grid grid-cols-[40px_1fr_80px_80px] items-center px-4 py-3 bg-white hover:bg-blue-50 transition-colors duration-200">
+                                <span class="font-medium">{{ index + 1 }}</span>
+
+                                <div class="flex items-center gap-2">
+                                    <img :src="team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(team.team_name)}`"
+                                        class="w-8 h-8 rounded-full border" />
+                                    <p class="text-sm font-medium">{{ team.team_name }}</p>
+                                </div>
+
+                                <span class="text-center font-semibold">{{ team.points }}</span>
+                                <span class="text-center font-semibold">{{ team.point_diff }}</span>
                             </div>
-                            <!-- Points -->
-                            <span class="text-center font-semibold text-gray-700">{{ team.points }}</span>
-                            <!-- Point diff -->
-                            <span class="text-center font-semibold text-gray-700">{{ team.point_diff }}</span>
                         </div>
                     </div>
                 </div>
@@ -315,6 +320,12 @@ const handleDragOver = (event, matchId, position) => {
     dropTargetMatch.value = matchId;
     dropTargetPosition.value = position;
 };
+
+const hasAnyRanking = computed(() => {
+  return rank.value?.group_rankings?.some(
+    g => g.rankings && g.rankings.length > 0
+  );
+});
 
 const handleDragLeave = (event) => {
     const rect = event.currentTarget.getBoundingClientRect();
