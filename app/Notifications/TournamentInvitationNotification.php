@@ -35,7 +35,7 @@ class TournamentInvitationNotification extends Notification implements ShouldQue
     public function toDatabase($notifiable)
     {
         return [
-            'mini_tournament_id' => $this->tournament->id,
+            'tournament_id' => $this->tournament->id,
             'title' => 'Bạn được mời tham gia giải đấu',
             'message' => "Bạn được mời tham gia giải đấu: {$this->tournament->name}",
             'invited_by' => auth()->id(),
@@ -45,7 +45,7 @@ class TournamentInvitationNotification extends Notification implements ShouldQue
     public function toBroadcast($notifiable): BroadcastMessage
     {
         return new BroadcastMessage([
-            'mini_tournament_id' => $this->tournament->id,
+            'tournament_id' => $this->tournament->id,
             'title' => 'Bạn được mời tham gia giải đấu',
             'message' => "Bạn được mời tham gia giải đấu: {$this->tournament->name}",
             'invited_by' => auth()->id(),

@@ -45,7 +45,7 @@ class TournamentRemovedNotification extends Notification implements ShouldQueue
     {
         return new BroadcastMessage([
             'participant_id' => $this->participant->id,
-            'mini_tournament_id' => $this->participant->tournament_id,
+            'tournament_id' => $this->participant->tournament_id,
             'title' => 'Bạn đã bị xóa khỏi giải đấu',
             'message' => "Bạn đã bị xóa khỏi giải đấu '{$this->participant->tournament->name}'",
             'removed_by' => auth()->id(),
