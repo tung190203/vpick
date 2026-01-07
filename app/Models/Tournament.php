@@ -263,13 +263,13 @@ class Tournament extends Model
             ->when(
                 !empty($filters['keyword']),
                 fn($q) => $q->where(function ($kq) use ($filters){
-                    $kq->where('name', 'like', '%' . $filters['keyword'] . '%')
+                    $kq->where('tournaments.name', 'like', '%' . $filters['keyword'] . '%')
                     ->orWhereHas('competitionLocation', function ($clq) use ($filters) {
-                        $clq->where('name', 'like', '%' . $filters['keyword'] . '%')
-                            ->orWhere('address', 'like', '%' . $filters['keyword'] . '%')
+                        $clq->where('competition_locations.name', 'like', '%' . $filters['keyword'] . '%')
+                            ->orWhere('competition_locations.address', 'like', '%' . $filters['keyword'] . '%')
                             ->orWhereHas(
                                 'location',
-                                fn($llq) => $llq->where('name', 'like', '%' . $filters['keyword'] . '%')
+                                fn($llq) => $llq->where('locations.name', 'like', '%' . $filters['keyword'] . '%')
                             );
                     });
                 })
