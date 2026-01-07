@@ -7,6 +7,7 @@ use App\Http\Resources\ListParticipantResource;
 use App\Http\Resources\ParticipantResource;
 use App\Http\Resources\UserListResource;
 use App\Models\Participant;
+use App\Models\SuperAdminDraft;
 use App\Models\Tournament;
 use App\Models\TournamentStaff;
 use App\Models\User;
@@ -625,6 +626,7 @@ class ParticipantController extends Controller
 
         $tournament = Tournament::findOrFail($tournamentId);
         $organizer = Auth::user();
+        $isSuperAdminDraft = SuperAdminDraft::where('user_id', $organizerId)->exists();
 
         if (!$tournament->hasOrganizer($organizer->id)) {
             return ResponseHelper::error('Bạn không có quyền mời người chơi.', 403);
@@ -654,14 +656,16 @@ class ParticipantController extends Controller
 
         $organizerId = $organizer->id;
 
-        $insertData = array_map(fn($id) => [
-            'tournament_id' => $tournament->id,
-            'user_id' => $id,
-            'is_confirmed' => $id == $organizerId,
-            'created_at' => now(),
-            'updated_at' => now(),
-            'is_invite_by_organizer' => true
-        ], $newUserIds);
+        $insertData = array_map(function ($invitedUserId) use ($tournament, $organizerId, $isSuperAdminDraft) {
+            return [
+                'tournament_id' => $tournament->id,
+                'user_id' => $invitedUserId,
+                'is_confirmed' => ($invitedUserId === $organizerId) || $isSuperAdminDraft,
+                'created_at' => now(),
+                'updated_at' => now(),
+                'is_invite_by_organizer' => true,
+            ];
+        }, $newUserIds);        
 
         $tournament->participants()->insert($insertData);
         $invitedUsers = User::whereIn('id', $newUserIds)->get();
