@@ -107,6 +107,10 @@ Route::middleware(['auth:api'])->group(function () {
         Route::get('/{tournamentId}/rank', [TournamentTypeController::class, 'getRank']);
         Route::get('/{tournamentType}/advancement-status', [TournamentTypeController::class, 'getAdvancementStatus']);
         Route::post('/{tournamentType}/regenerate-matches', [TournamentTypeController::class, 'regenerateMatches']);
+        // manual
+        Route::get('/{tournamentType}/groups-with-teams', [TournamentTypeController::class, 'getGroupsWithTeams']);
+        Route::post('/{tournamentType}/assign-teams-and-generate', [TournamentTypeController::class, 'assignTeamsAndGenerate']);
+        Route::post('/{tournamentType}/auto-generate-matches', [TournamentTypeController::class, 'autoGenerateMatches']);
     });
 
     Route::prefix('matches')->group(function() {
