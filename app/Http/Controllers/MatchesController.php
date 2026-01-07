@@ -943,7 +943,7 @@ class MatchesController extends Controller
         $maxWin = max($wins ?: [0]);
         
         if ($maxWin < $neededToWin) {
-            return ResponseHelper::error("Cần thắng tối thiểu $neededToWin set mới được xác nhận kết quả.", 400);
+            return ResponseHelper::error("Kết quả hiện tại chưa xác định được đội thắng", 400);
         }
     
         // Thực hiện confirm
