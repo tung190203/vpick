@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\TournamentTypeResource;
+use App\Models\Group;
 use App\Models\Matches;
 use App\Models\PoolAdvancementRule;
 use App\Models\TeamRanking;
@@ -13,7 +14,6 @@ use App\Services\TournamentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class TournamentTypeController extends Controller
 {
@@ -83,14 +83,79 @@ class TournamentTypeController extends Controller
                 $type->num_legs = $validated['num_legs'];
                 $type->save();
             }
-
-            $this->generateMatchesForType($type);
-
+    
+            // ✅ TẠO BẢNG TRỐNG CHO FORMAT MIXED
+            if ($type->format === TournamentType::FORMAT_MIXED) {
+                $this->createEmptyGroups($type);
+            }
+    
             DB::commit();
             return ResponseHelper::success(new TournamentTypeResource($type), 'Tạo thể thức thành công');
         } catch (\Throwable $e) {
             DB::rollBack();
             return ResponseHelper::error('Lỗi khi tạo thể thức: ' . $e->getMessage(), 500);
+        }
+    }
+
+    public function autoGenerateMatches(TournamentType $tournamentType)
+    {
+        $completedMatches = $tournamentType->matches()
+            ->where('status', 'completed')
+            ->exists();
+
+        if ($completedMatches) {
+            return ResponseHelper::error(
+                'Không thể generate lại. Đã có trận đấu hoàn thành.', 
+                400
+            );
+        }
+
+        DB::beginTransaction();
+        try {
+            // Xóa assignment và matches cũ (nếu có)
+            foreach ($tournamentType->groups as $group) {
+                $group->teams()->detach();
+            }
+            $tournamentType->matches()->each(function ($match) {
+                $match->results()->delete();
+                $match->delete();
+            });
+            if ($tournamentType->format == TournamentType::FORMAT_MIXED) {
+                $tournamentType->advancementRules()->delete();
+            }
+
+            // ✅ GỌI HÀM GENERATE CŨ (TỰ ĐỘNG CHIA ĐỘI)
+            $this->generateMatchesForType($tournamentType);
+
+            DB::commit();
+            return ResponseHelper::success(
+                new TournamentTypeResource($tournamentType->fresh()), 
+                'Tự động tạo lịch thi đấu thành công'
+            );
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return ResponseHelper::error('Lỗi: ' . $e->getMessage(), 500);
+        }
+    }
+    
+    /**
+     * ✅ TẠO CÁC BẢNG TRỐNG DỰA VÀO CONFIG
+     */
+    protected function createEmptyGroups(TournamentType $type)
+    {
+        $config = $type->format_specific_config ?? [];
+        $mainConfig = is_array($config) && isset($config[0]) ? $config[0] : [];
+        $poolConfig = $mainConfig['pool_stage'] ?? [];
+        $numGroups = max(1, (int)($poolConfig['number_competing_teams'] ?? 2));
+    
+        // Xóa groups cũ nếu có
+        $type->groups()->delete();
+    
+        // Tạo groups mới
+        for ($i = 0; $i < $numGroups; $i++) {
+            $type->groups()->create([
+                'name' => 'Bảng ' . chr(65 + $i) // A, B, C, D...
+            ]);
         }
     }
 
@@ -131,7 +196,19 @@ class TournamentTypeController extends Controller
 
         DB::beginTransaction();
         try {
-            // Xoá toàn bộ cấu hình cũ trước khi cập nhật (đảm bảo không lẫn dữ liệu cũ)
+            // ✅ KIỂM TRA SỐ BẢNG CÓ THAY ĐỔI KHÔNG
+            $oldNumGroups = $tournamentType->groups()->count();
+            $newNumGroups = null;
+            
+            if (!empty($validated['format_specific_config'])) {
+                $mainConfig = is_array($validated['format_specific_config']) && isset($validated['format_specific_config'][0]) 
+                    ? $validated['format_specific_config'][0] 
+                    : $validated['format_specific_config'];
+                $poolConfig = $mainConfig['pool_stage'] ?? [];
+                $newNumGroups = max(1, (int)($poolConfig['number_competing_teams'] ?? 2));
+            }
+    
+            // Xoá toàn bộ cấu hình cũ trước khi cập nhật
             $tournamentType->match_rules = [];
             $tournamentType->format_specific_config = [];
 
@@ -162,9 +239,28 @@ class TournamentTypeController extends Controller
             }
 
             $tournamentType->save();
-
-            $this->generateMatchesForType($tournamentType);
-
+    
+            // ✅ NẾU SỐ BẢNG THAY ĐỔI -> TẠO LẠI BẢNG TRỐNG
+            if ($tournamentType->format === TournamentType::FORMAT_MIXED && 
+                $newNumGroups !== null && 
+                $newNumGroups !== $oldNumGroups) {
+                
+                // Xóa assignment và matches cũ
+                foreach ($tournamentType->groups as $group) {
+                    $group->teams()->detach();
+                }
+                $tournamentType->matches()->each(function ($match) {
+                    $match->results()->delete();
+                    $match->delete();
+                });
+                
+                // Tạo lại groups
+                $this->createEmptyGroups($tournamentType);
+            } else {
+                // ✅ NẾU KHÔNG THAY ĐỔI SỐ BẢNG -> CHỈ REGENERATE MATCHES
+                $this->generateMatchesForType($tournamentType);
+            }
+    
             DB::commit();
             return ResponseHelper::success(new TournamentTypeResource($tournamentType->fresh()), 'Cập nhật thể thức thành công');
         } catch (\Throwable $e) {
@@ -309,7 +405,7 @@ class TournamentTypeController extends Controller
                         ->filter()->unique()->values()->all();
                     if (!$sportId || empty($allUserIds)) { $teams = $teams->shuffle()->values(); break; }
 
-                    $userScores = DB::table('user_sports as us')
+                    $userScores = DB::table('user_sport as us')
                         ->join('user_sport_scores as uss','us.id','=','uss.user_sport_id')
                         ->where('us.sport_id',$sportId)
                         ->where('uss.score_type','vndupr_score')
@@ -443,33 +539,53 @@ class TournamentTypeController extends Controller
 
     private function generateMixed(TournamentType $type, $teams, $config, $numLegs)
     {
-        $teamCount = $teams->count();
-        if ($teamCount < 2) return;
         $matchNumber = 0;
 
         $mainConfig = is_array($config) && isset($config[0]) ? $config[0] : [];        
         $poolConfig = $mainConfig['pool_stage'] ?? [];
-        $numGroups = max(1, (int)($poolConfig['number_competing_teams'] ?? 2)); 
         $numAdvancing = max(1, (int)($poolConfig['num_advancing_teams'] ?? 1));
         $advancedToNext = filter_var($mainConfig['advanced_to_next_round'] ?? false, FILTER_VALIDATE_BOOLEAN);
         $hasThirdPlace = filter_var($mainConfig['has_third_place_match'] ?? false, FILTER_VALIDATE_BOOLEAN);
     
-        // Chia đội vào các bảng (support bảng lẻ)
-        $baseTeamsPerGroup = floor($teamCount / $numGroups);
-        $remainder = $teamCount % $numGroups;
-        // Tạo các mảng nhóm (chunks)
-        $chunks = collect();
-        $offset = 0;
-        for ($i = 0; $i < $numGroups; $i++) {
-            $groupSize = $baseTeamsPerGroup + ($i < $remainder ? 1 : 0);
-            if ($groupSize > 0) {
-                $groupTeams = $teams->slice($offset, $groupSize)->values();
-                $chunks->push($groupTeams);
-                $offset += $groupSize;
+        // ✅ KIỂM TRA: Có groups với teams assigned không?
+        $groups = $type->groups()->with('teams.members')->get();
+        $hasAssignedTeams = $groups->isNotEmpty() && $groups->some(fn($g) => $g->teams->isNotEmpty());
+    
+        if ($hasAssignedTeams) {
+            // ✅ TRƯỜNG HỢP 1: ĐÃ ASSIGN TEAMS VÀO BẢNG
+            $chunks = $groups->map(fn($g) => $g->teams)->filter(fn($chunk) => $chunk->count() > 0)->values();
+        } else {
+            // ✅ TRƯỜNG HỢP 2: AUTO GENERATE - CHIA ĐỘI TỰ ĐỘNG (LOGIC CŨ)
+            $teamCount = $teams->count();
+            if ($teamCount < 2) return;
+    
+            $numGroups = max(1, (int)($poolConfig['number_competing_teams'] ?? 2)); 
+            $baseTeamsPerGroup = floor($teamCount / $numGroups);
+            $remainder = $teamCount % $numGroups;
+            
+            $chunks = collect();
+            $offset = 0;
+            for ($i = 0; $i < $numGroups; $i++) {
+                $groupSize = $baseTeamsPerGroup + ($i < $remainder ? 1 : 0);
+                if ($groupSize > 0) {
+                    $groupTeams = $teams->slice($offset, $groupSize)->values();
+                    $chunks->push($groupTeams);               
+                    // ✅ LƯU TEAMS VÀO GROUP_TEAM
+                    $group = $groups->get($i);
+                    if ($group) {
+                        $syncData = [];
+                        foreach ($groupTeams as $order => $team) {
+                            $syncData[$team->id] = ['order' => $order];
+                        }
+                        $group->teams()->sync($syncData);
+                    }
+                    
+                    $offset += $groupSize;
+                }
             }
-        }
         
-        $chunks = $chunks->filter(fn($chunk) => $chunk->count() > 0)->values();
+            $chunks = $chunks->filter(fn($chunk) => $chunk->count() > 0)->values();
+        }
         $advancingByRank = collect();
         $groupObjects = collect();
     
@@ -481,6 +597,8 @@ class TournamentTypeController extends Controller
             // Nếu chỉ có 1 đội trong group -> tạo bye match
             if ($count === 1) {
                 $matchNumber++;
+                    $group = $type->groups()->create(['name' => 'Bảng ' . chr(65 + $index)]);
+    
                 $byeMatch = $type->matches()->create([
                     'tournament_type_id' => $type->id,
                     'home_team_id' => $chunk[0]->id,
@@ -505,8 +623,11 @@ class TournamentTypeController extends Controller
                 continue;
             }
     
-            // Group bình thường (2+ đội)
-            $group = $type->groups()->create(['name' => 'Bảng ' . chr(65 + $index)]);
+            // ✅ Group bình thường (2+ đội)
+            $group = $groups->get($index);
+            if (!$group) {
+                continue;
+            }
             $groupObjects->push($group);
     
             // Thuật toán Round Robin (Circle Method)
@@ -938,8 +1059,6 @@ class TournamentTypeController extends Controller
                         $rule->next_position . '_team_id' => $advancingTeamId,
                         'status' => 'pending',
                     ]);
-                    
-                    Log::info("✓ Advanced team {$advancingTeamId} to match {$rule->next_match_id} (leg {$targetMatch->leg}) as {$rule->next_position}");
                 }
             }
         }
@@ -1564,28 +1683,6 @@ class TournamentTypeController extends Controller
     }
 
     /**
-     * Xác định winner (sau khi tất cả legs hoàn thành)
-     */
-    private function determineWinner($matchGroup)
-    {
-        $allCompleted = $matchGroup->every(fn($m) => $m->status === 'completed');
-        
-        if (!$allCompleted) {
-            return null;
-        }
-
-        $aggregate = $this->calculateAggregateScore($matchGroup);
-        
-        if ($aggregate['home'] > $aggregate['away']) {
-            return $matchGroup->first()->home_team_id;
-        } elseif ($aggregate['away'] > $aggregate['home']) {
-            return $matchGroup->first()->away_team_id;
-        }
-
-        return null; // Draw - cần penalty hoặc away goals rule
-    }
-
-    /**
      * Tính bảng xếp hạng cho group
      */
     private function calculateGroupStandings($groupMatches)
@@ -1802,4 +1899,374 @@ class TournamentTypeController extends Controller
             return ResponseHelper::error('Lỗi khi chia lại cặp đấu: ' . $e->getMessage(), 500);
         }
     }
+    /**
+     * Lưu đội vào các bảng và generate matches
+     * POST /api/tournament-types/{tournamentType}/assign-teams-and-generate
+     */
+    public function assignTeamsAndGenerate(Request $request, TournamentType $tournamentType)
+    {
+        $validated = $request->validate([
+            'groups' => 'required|array',
+            'groups.*.group_id' => 'required|exists:groups,id',
+            'groups.*.team_ids' => 'required|array|min:1',
+            'groups.*.team_ids.*' => 'exists:teams,id',
+        ]);
+
+        // Kiểm tra có trận đã completed không
+        $completedMatches = $tournamentType->matches()
+            ->where('status', 'completed')
+            ->exists();
+
+        if ($completedMatches) {
+            return ResponseHelper::error(
+                'Không thể sắp xếp lại. Đã có trận đấu hoàn thành.', 
+                400
+            );
+        }
+
+        DB::beginTransaction();
+        try {
+            // 1. Xóa các assignment cũ và matches cũ
+            foreach ($tournamentType->groups as $group) {
+                $group->teams()->detach();
+            }
+            $tournamentType->matches()->each(function ($match) {
+                $match->results()->delete();
+                $match->delete();
+            });
+            if ($tournamentType->format == TournamentType::FORMAT_MIXED) {
+                $tournamentType->advancementRules()->delete();
+            }
+
+            // 2. Gán đội vào các bảng
+            foreach ($validated['groups'] as $groupData) {
+                $group = Group::find($groupData['group_id']);
+                
+                // Sync teams với order
+                $syncData = [];
+                foreach ($groupData['team_ids'] as $order => $teamId) {
+                    $syncData[$teamId] = ['order' => $order];
+                }
+                $group->teams()->sync($syncData);
+            }
+
+            $this->generateMatchesForType($tournamentType);
+
+            DB::commit();
+            return ResponseHelper::success(
+                new TournamentTypeResource($tournamentType->fresh()), 
+                'Sắp xếp đội và tạo lịch thi đấu thành công'
+            );
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return ResponseHelper::error('Lỗi: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Generate matches với đội đã được assign vào bảng
+     */
+    protected function generateMatchesForTypeWithAssignedTeams(TournamentType $type)
+    {
+        $config = $type->format_specific_config ?? [];
+        $numLegs = $type->num_legs ?? 1;
+
+        switch ($type->format) {
+            case TournamentType::FORMAT_ROUND_ROBIN:
+                $teams = $type->tournament->teams()->with('members')->get();
+                $this->generateRoundRobin($type, $teams, $numLegs);
+                break;
+
+            case TournamentType::FORMAT_ELIMINATION:
+                $teams = $type->tournament->teams()->with('members')->get();
+                $this->generateElimination($type, $teams, $config, $numLegs);
+                break;
+
+            case TournamentType::FORMAT_MIXED:
+                $this->generateMixedWithAssignedTeams($type, $config, $numLegs);
+                break;
+        }
+    }
+
+    private function generateMixedWithAssignedTeams(TournamentType $type, $config, $numLegs)
+    {
+        $matchNumber = 0;
+        $mainConfig = is_array($config) && isset($config[0]) ? $config[0] : [];
+        $poolConfig = $mainConfig['pool_stage'] ?? [];
+        $numAdvancing = max(1, (int)($poolConfig['num_advancing_teams'] ?? 1));
+        $advancedToNext = filter_var($mainConfig['advanced_to_next_round'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $hasThirdPlace = filter_var($mainConfig['has_third_place_match'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+        $groups = $type->groups()->with('teams.members')->get();
+        $advancingByRank = collect();
+        $groupObjects = collect();
+
+        // ===== PHASE 2: TẠO VÒNG BẢNG =====
+        foreach ($groups as $group) {
+            $groupObjects->push($group);
+            
+            // ✅ LẤY ĐỘI TỪ PIVOT TABLE
+            $chunk = $group->teams; // Đã có relation và orderBy
+            $count = $chunk->count();
+
+            if ($count === 1) {
+                $matchNumber++;
+                $byeMatch = $type->matches()->create([
+                    'tournament_type_id' => $type->id,
+                    'home_team_id' => $chunk[0]->id,
+                    'away_team_id' => null,
+                    'round' => 1,
+                    'leg' => 1,
+                    'is_bye' => true,
+                    'status' => 'pending',
+                    'name_of_match' => "Trận đấu số {$matchNumber}",
+                ]);
+                
+                if (!isset($advancingByRank[0])) {
+                    $advancingByRank[0] = collect();
+                }
+                $advancingByRank[0]->push((object)[
+                    'team_id' => $chunk[0]->id,
+                    '_bye_match' => $byeMatch,
+                    '_group_id' => null,
+                    '_group_index' => $groups->search($group),
+                    '_rank' => 1,
+                ]);
+                continue;
+            }
+
+            // ✅ ROUND ROBIN VỚI ĐÚNG THỨ TỰ ĐÃ ASSIGN
+            $scheduleTeams = $chunk->pluck('id')->toArray();
+            $isOdd = $count % 2 !== 0;
+            if ($isOdd) {
+                $scheduleTeams[] = 'BYE';
+                $count++;
+            }
+            $totalRounds = $count - 1;
+
+            for ($leg = 1; $leg <= $numLegs; $leg++) {
+                $currentSchedule = $scheduleTeams;
+
+                for ($round = 1; $round <= $totalRounds; $round++) {
+                    $halfSize = $count / 2;
+                    $homeTeams = array_slice($currentSchedule, 0, $halfSize);
+                    $awayTeams = array_reverse(array_slice($currentSchedule, $halfSize));
+
+                    for ($i = 0; $i < $halfSize; $i++) {
+                        $homeId = $homeTeams[$i];
+                        $awayId = $awayTeams[$i];
+
+                        if ($homeId === 'BYE' || $awayId === 'BYE') {
+                            continue;
+                        }
+
+                        $matchNumber++;
+                        $isReturnLeg = ($leg % 2 === 0);
+                        $finalHomeId = $isReturnLeg ? $awayId : $homeId;
+                        $finalAwayId = $isReturnLeg ? $homeId : $awayId;
+
+                        $type->matches()->create([
+                            'group_id' => $group->id,
+                            'tournament_type_id' => $type->id,
+                            'home_team_id' => $finalHomeId,
+                            'away_team_id' => $finalAwayId,
+                            'round' => 1,
+                            'leg' => $leg,
+                            'is_bye' => false,
+                            'status' => 'pending',
+                            'name_of_match' => "Trận đấu số {$matchNumber}",
+                        ]);
+                    }
+
+                    $firstTeam = array_shift($currentSchedule);
+                    $lastTeam = array_pop($currentSchedule);
+                    array_unshift($currentSchedule, $firstTeam, $lastTeam);
+                }
+            }
+
+            // Thu thập placeholder
+            for ($k = 0; $k < min($numAdvancing, $chunk->count()); $k++) {
+                if (!isset($advancingByRank[$k])) {
+                    $advancingByRank[$k] = collect();
+                }
+                
+                $advancingByRank[$k]->push((object)[
+                    'team_id' => null,
+                    '_from_group' => $group->id,
+                    '_group_index' => $groups->search($group),
+                    '_rank' => $k + 1,
+                ]);
+            }
+        }
+
+        // ===== PHASE 3 & 4: Cross-matching và Knockout =====
+        // ... giữ nguyên logic cũ ...
+        $advancing = collect();
+        $firstPlaceTeams = $advancingByRank->get(0, collect());
+        $secondPlaceTeams = $advancingByRank->get(1, collect());
+        
+        $numFirstPlace = $firstPlaceTeams->count();
+        $numSecondPlace = $secondPlaceTeams->count();
+        
+        for ($i = 0; $i < max($numFirstPlace, $numSecondPlace); $i++) {
+            if ($i < $numFirstPlace) {
+                $advancing->push($firstPlaceTeams->get($i));
+            }
+            
+            $oppositeIndex = $numSecondPlace - 1 - $i;
+            if ($oppositeIndex >= 0 && $oppositeIndex < $numSecondPlace) {
+                $advancing->push($secondPlaceTeams->get($oppositeIndex));
+            }
+        }
+        
+        foreach ($advancingByRank as $rank => $teamsAtRank) {
+            if ($rank < 2) continue;
+            foreach ($teamsAtRank as $team) {
+                $advancing->push($team);
+            }
+        }
+
+        $totalAdvancing = $advancing->count();
+        $willHaveBye = ($totalAdvancing % 2 !== 0);
+        
+        if ($willHaveBye && !$advancedToNext) {
+            $advancing->push((object)[
+                'team_id' => null,
+                '_placeholder' => true,
+            ]);
+        }
+
+        $knockoutRounds = $this->generateKnockoutStage(
+            $type,
+            $advancing,
+            $hasThirdPlace,
+            $advancedToNext,
+            $numLegs,
+            $matchNumber
+        );
+
+        $this->createPoolAdvancementRules($type, $knockoutRounds, $advancing, $groupObjects);
+    }
+
+    /**
+     * Lấy groups với teams đã assign (nếu có)
+     * GET /api/tournament-types/{tournamentType}/groups-with-teams
+     */
+    public function getGroupsWithTeams(TournamentType $tournamentType)
+    {
+        if ($tournamentType->format !== TournamentType::FORMAT_MIXED) {
+            return ResponseHelper::error('Chỉ áp dụng cho format Mixed', 400);
+        }
+
+        $groups = $tournamentType->groups()->with('teams.members')->get();
+        
+        // ✅ NẾU CHƯA CÓ BẢNG -> TẠO MỚI
+        if ($groups->isEmpty()) {
+            $this->createEmptyGroups($tournamentType);
+            $groups = $tournamentType->groups()->with('teams.members')->get();
+        }
+
+        $availableTeams = $tournamentType->tournament->teams()
+            ->with('members')
+            ->whereNotIn('id', function($query) use ($tournamentType) {
+                $query->select('team_id')
+                    ->from('group_team')
+                    ->whereIn('group_id', $tournamentType->groups()->pluck('id'));
+            })
+            ->get();
+    
+        // ✅ LẤY SPORT_ID TỪ TOURNAMENT
+        $sportId = $tournamentType->tournament->sport_id ?? null;
+    
+        return ResponseHelper::success([
+            'groups' => $groups->map(fn($g) => [
+                'group_id' => $g->id,
+                'group_name' => $g->name,
+                'teams' => $g->teams->map(fn($t) => [
+                    'team_id' => $t->id,
+                    'team_name' => $t->name,
+                    'team_avatar' => $t->avatar,
+                    'vndupr_avg' => $this->calculateTeamVnduprAvg($t, $sportId), // ✅ THÊM VNDUPR
+                    'members' => $t->members->map(fn($m) => [
+                        'user_id' => $m->user_id ?? $m->id ?? null,
+                        'full_name' => $m->full_name ?? $m->user->full_name ?? 'Unknown',
+                        'avatar_url' => $m->avatar_url ?? $m->user->avatar_url ?? null,
+                    ]),
+                ]),
+            ]),
+            'available_teams' => $availableTeams->map(fn($t) => [
+                'team_id' => $t->id,
+                'team_name' => $t->name,
+                'team_avatar' => $t->avatar,
+                'vndupr_avg' => $this->calculateTeamVnduprAvg($t, $sportId), // ✅ THÊM VNDUPR
+                'members' => $t->members->map(fn($m) => [
+                    'user_id' => $m->user_id ?? $m->id ?? null,
+                    'full_name' => $m->full_name ?? $m->user->full_name ?? 'Unknown',
+                    'avatar_url' => $m->avatar_url ?? $m->user->avatar_url ?? null,
+                ]),
+            ]),
+            'config' => [
+                'num_groups' => $groups->count(),
+                'num_advancing' => $tournamentType->format_specific_config[0]['pool_stage']['num_advancing_teams'] ?? 1,
+            ]
+        ]);
+    }
+/**
+ * ✅ HÀM TÍNH ĐIỂM VNDUPR TRUNG BÌNH CỦA ĐỘI
+ */
+private function calculateTeamVnduprAvg($team, $sportId)
+{
+    if (!$sportId) {
+        return null;
+    }
+
+    // ✅ DEBUG: Kiểm tra cấu trúc members
+    // dd($team->members->first());
+
+    // ✅ XỬ LÝ NHIỀU TRƯỜNG HỢP RELATION
+    $userIds = collect($team->members)
+        ->map(function($member) {
+            // TH1: Member là User trực tiếp (hasMany users)
+            if (isset($member->id) && !isset($member->user_id)) {
+                return $member->id;
+            }
+            // TH2: Member là pivot/intermediate table (belongsToMany)
+            if (isset($member->user_id)) {
+                return $member->user_id;
+            }
+            // TH3: Member có relation user
+            if (isset($member->user) && isset($member->user->id)) {
+                return $member->user->id;
+            }
+            return null;
+        })
+        ->filter()
+        ->unique()
+        ->values()
+        ->all();
+
+    if (empty($userIds)) {
+        return null;
+    }
+
+    // Query điểm VNDUPR từ database
+    $scores = DB::table('user_sport as us')
+        ->join('user_sport_scores as uss', 'us.id', '=', 'uss.user_sport_id')
+        ->where('us.sport_id', $sportId)
+        ->where('uss.score_type', 'vndupr_score')
+        ->whereIn('us.user_id', $userIds)
+        ->pluck('uss.score_value', 'us.user_id')
+        ->map(fn($v) => (float)$v)
+        ->values()
+        ->all();
+
+    if (empty($scores)) {
+        return null;
+    }
+
+    // Tính trung bình
+    $average = array_sum($scores) / count($scores);
+    
+    return round($average, 2);
+}
 }

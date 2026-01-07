@@ -7,6 +7,7 @@ use App\Models\MiniParticipant;
 use App\Models\MiniTournament;
 use App\Http\Resources\MiniParticipantResource;
 use App\Models\MiniTournamentStaff;
+use App\Models\SuperAdminDraft;
 use App\Models\User;
 use App\Notifications\MiniTournamentCreatorInvitationNotification;
 use App\Notifications\MiniTournamentJoinConfirmedNotification;
@@ -113,9 +114,11 @@ class MiniParticipantController extends Controller
             return ResponseHelper::error('User này đã được mời hoặc đã tham gia.', 400);
         }
 
+        $isSuperAdmin = SuperAdminDraft::where('user_id', Auth::id())->exists();
+
         $participant = $miniTournament->participants()->create([
             'user_id' => $validated['user_id'],
-            'is_confirmed' => false,
+            'is_confirmed' => $isSuperAdmin,
             'invited_by' => Auth::id(),
         ]);
 
