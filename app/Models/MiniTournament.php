@@ -323,13 +323,13 @@ class MiniTournament extends Model
             ->when(
                 !empty($filter['keyword']),
                 fn($q) => $q->where(function ($kq) use ($filter) {
-                    $kq->where('name', 'like', '%' . $filter['keyword'] . '%')
+                    $kq->where('mini_tournaments.name', 'like', '%' . $filter['keyword'] . '%')
                         ->orWhereHas('competitionLocation', function ($locSub) use ($filter) {
-                            $locSub->where('name', 'like', '%' . $filter['keyword'] . '%')
-                                ->orWhere('address', 'like', '%' . $filter['keyword'] . '%')
+                            $locSub->where('competition_locations.name', 'like', '%' . $filter['keyword'] . '%')
+                                ->orWhere('competition_locations.address', 'like', '%' . $filter['keyword'] . '%')
                                 ->orWhereHas(
                                     'location',
-                                    fn($lq) => $lq->where('name', 'like', '%' . $filter['keyword'] . '%')
+                                    fn($lq) => $lq->where('locations.name', 'like', '%' . $filter['keyword'] . '%')
                                 );
                         });
                 })
