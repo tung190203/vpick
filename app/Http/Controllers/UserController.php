@@ -316,18 +316,21 @@ class UserController extends Controller
                 Storage::disk('public')->delete($oldPath);
             }
         }
-
-        $user->follows()->delete();
-        $user->followings()->delete();
-        $user->referee()->delete();
-        $user->playTimes()->delete();
-        $user->badges()->delete();
-        $user->sport()->detach();
-        $user->sports()->delete();
-        $user->vnduprScores()->delete();
-        $user->clubs()->detach();
-        $user->participants()->delete();
-        $user->miniParticipants()->delete();
+        $user->update([
+            'full_name' => 'Người dùng đã Xoá',
+            'email' => 'delete_' . $user->email,
+            'phone' => null,
+            'thumbnail' => null,
+            'gender' => null,
+            'date_of_birth' => null,
+            'latitude' => null,
+            'longitude' => null,
+            'address' => null,
+            'email_verified_at' => null,
+            'location_id' => null,
+            'about' => null,
+            'is_profile_completed' => 0,
+        ]);
 
         $user->delete();
 
