@@ -2211,62 +2211,62 @@ class TournamentTypeController extends Controller
             ]
         ]);
     }
-/**
- * ✅ HÀM TÍNH ĐIỂM VNDUPR TRUNG BÌNH CỦA ĐỘI
- */
-private function calculateTeamVnduprAvg($team, $sportId)
-{
-    if (!$sportId) {
-        return null;
-    }
-
-    // ✅ DEBUG: Kiểm tra cấu trúc members
-    // dd($team->members->first());
-
-    // ✅ XỬ LÝ NHIỀU TRƯỜNG HỢP RELATION
-    $userIds = collect($team->members)
-        ->map(function($member) {
-            // TH1: Member là User trực tiếp (hasMany users)
-            if (isset($member->id) && !isset($member->user_id)) {
-                return $member->id;
-            }
-            // TH2: Member là pivot/intermediate table (belongsToMany)
-            if (isset($member->user_id)) {
-                return $member->user_id;
-            }
-            // TH3: Member có relation user
-            if (isset($member->user) && isset($member->user->id)) {
-                return $member->user->id;
-            }
+    /**
+     * ✅ HÀM TÍNH ĐIỂM VNDUPR TRUNG BÌNH CỦA ĐỘI
+     */
+    private function calculateTeamVnduprAvg($team, $sportId)
+    {
+        if (!$sportId) {
             return null;
-        })
-        ->filter()
-        ->unique()
-        ->values()
-        ->all();
+        }
 
-    if (empty($userIds)) {
-        return null;
+        // ✅ DEBUG: Kiểm tra cấu trúc members
+        // dd($team->members->first());
+
+        // ✅ XỬ LÝ NHIỀU TRƯỜNG HỢP RELATION
+        $userIds = collect($team->members)
+            ->map(function($member) {
+                // TH1: Member là User trực tiếp (hasMany users)
+                if (isset($member->id) && !isset($member->user_id)) {
+                    return $member->id;
+                }
+                // TH2: Member là pivot/intermediate table (belongsToMany)
+                if (isset($member->user_id)) {
+                    return $member->user_id;
+                }
+                // TH3: Member có relation user
+                if (isset($member->user) && isset($member->user->id)) {
+                    return $member->user->id;
+                }
+                return null;
+            })
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        if (empty($userIds)) {
+            return null;
+        }
+
+        // Query điểm VNDUPR từ database
+        $scores = DB::table('user_sport as us')
+            ->join('user_sport_scores as uss', 'us.id', '=', 'uss.user_sport_id')
+            ->where('us.sport_id', $sportId)
+            ->where('uss.score_type', 'vndupr_score')
+            ->whereIn('us.user_id', $userIds)
+            ->pluck('uss.score_value', 'us.user_id')
+            ->map(fn($v) => (float)$v)
+            ->values()
+            ->all();
+
+        if (empty($scores)) {
+            return null;
+        }
+
+        // Tính trung bình
+        $average = array_sum($scores) / count($scores);
+        
+        return round($average, 2);
     }
-
-    // Query điểm VNDUPR từ database
-    $scores = DB::table('user_sport as us')
-        ->join('user_sport_scores as uss', 'us.id', '=', 'uss.user_sport_id')
-        ->where('us.sport_id', $sportId)
-        ->where('uss.score_type', 'vndupr_score')
-        ->whereIn('us.user_id', $userIds)
-        ->pluck('uss.score_value', 'us.user_id')
-        ->map(fn($v) => (float)$v)
-        ->values()
-        ->all();
-
-    if (empty($scores)) {
-        return null;
-    }
-
-    // Tính trung bình
-    $average = array_sum($scores) / count($scores);
-    
-    return round($average, 2);
-}
 }
