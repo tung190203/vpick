@@ -92,7 +92,7 @@
                 <Section title="Vòng bảng">
                     <div class="space-y-4">
                         <Counter label="Số bảng đấu" :value="tables" @update="tables = $event" />
-                        <Counter label="Số đội vào vòng loại" :value="teamsToKnockout"
+                        <Counter label="Số đội vào vòng loại mỗi bảng" :value="teamsToKnockout"
                             @update="teamsToKnockout = $event" />
                     </div>
                 </Section>
