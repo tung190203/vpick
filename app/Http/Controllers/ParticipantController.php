@@ -469,7 +469,7 @@ class ParticipantController extends Controller
 
     public function getCandidates(Request $request, $tournamentId)
     {
-        $tournament = Tournament::with('participants')->findOrFail($tournamentId);
+        $tournament = Tournament::withFullRelations()->findOrFail($tournamentId);
         $user = Auth::user();
 
         $validated = $request->validate([
@@ -537,13 +537,17 @@ class ParticipantController extends Controller
             // 3. Giới tính
             $query->tap(fn ($q) => $this->filterByGender($q, $tournament->gender_policy));
         }
-
-        // 4. Loại trừ người đã tham gia (áp dụng cho tất cả scope)
+    
+        // 4. Loại trừ người có ĐỒNG THỜI trong cả participant VÀ staff (áp dụng cho tất cả scope)
         $participantUserIds = $tournament->participants->pluck('user_id')->toArray();
-        $query->whereDoesntHave('participants', function ($q) use ($tournamentId) {
-            $q->where('tournament_id', $tournamentId);
-        });
-
+        $staffUserIds = $tournament->tournamentStaffs->pluck('user_id')->toArray();
+        
+        // Lấy những user có trong CẢ 2 mảng (giao của 2 tập hợp)
+        $excludedUserIds = array_intersect($participantUserIds, $staffUserIds);
+        
+        // Loại trừ những user có trong cả 2 bảng
+        $query->whereNotIn('users.id', $excludedUserIds);
+    
         // 5. Join để lấy level + filter level (chỉ khi scope !== 'all')
         if ($scope !== 'all') {
             $query->leftJoin('user_sport', function ($join) use ($tournament) {
@@ -627,7 +631,7 @@ class ParticipantController extends Controller
                     ];
                 }),
                 'is_friend' => $user->isFriendWith($u),
-                'is_participant' => in_array($u->id, $participantUserIds),
+                'is_participant' => in_array($u->id, $excludedUserIds),
             ];
         });
 
