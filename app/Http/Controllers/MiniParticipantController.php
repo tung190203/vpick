@@ -252,7 +252,7 @@ class MiniParticipantController extends Controller
 
     public function getCandidates(Request $request, $tournamentId)
     {
-        $miniTournament = MiniTournament::with('participants')->findOrFail($tournamentId);
+        $miniTournament = MiniTournament::withFullRelations()->findOrFail($tournamentId);
         $user = Auth::user();
     
         $validated = $request->validate([
@@ -329,10 +329,16 @@ class MiniParticipantController extends Controller
             }
         }
     
-        // 4. Loại trừ người đã tham gia (áp dụng cho tất cả scope)
+        // 4. Loại trừ người có ĐỒNG THỜI trong cả participant VÀ staff (áp dụng cho tất cả scope)
         $participantUserIds = $miniTournament->participants->pluck('user_id')->toArray();
-        if (!empty($participantUserIds)) {
-            $query->whereNotIn('users.id', $participantUserIds);
+        $staffUserIds = $miniTournament->miniTournamentStaffs->pluck('user_id')->toArray();
+        
+        // Lấy những user có trong CẢ 2 mảng (giao của 2 tập hợp)
+        $excludedUserIds = array_intersect($participantUserIds, $staffUserIds);
+        
+        // Loại trừ những user có trong cả 2 bảng
+        if (!empty($excludedUserIds)) {
+            $query->whereNotIn('users.id', $excludedUserIds);
         }
     
         // 5. Join để lấy level + filter level (chỉ khi scope !== 'all' và có sport_id)
@@ -392,7 +398,7 @@ class MiniParticipantController extends Controller
     
         // 🧮 Phân trang
         $paginated = $query->paginate($perPage);
-        $candidates = $paginated->getCollection()->map(function ($u) use ($user, $participantUserIds) {
+        $candidates = $paginated->getCollection()->map(function ($u) use ($user, $excludedUserIds) {
             return [
                 'id' => $u->id,
                 'name' => $u->full_name,
@@ -424,7 +430,7 @@ class MiniParticipantController extends Controller
                     ];
                 }),
                 'is_friend' => $user->isFriendWith($u),
-                'is_mini_participant' => in_array($u->id, $participantUserIds),
+                'is_mini_participant' => in_array($u->id, $excludedUserIds),
             ];
         });
     
