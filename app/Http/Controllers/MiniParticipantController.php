@@ -14,7 +14,9 @@ use App\Notifications\MiniTournamentJoinConfirmedNotification;
 use App\Notifications\MiniTournamentJoinRequestNotification;
 use App\Notifications\MiniTournamentRemovedNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class MiniParticipantController extends Controller
 {
@@ -254,57 +256,234 @@ class MiniParticipantController extends Controller
         $user = Auth::user();
     
         $validated = $request->validate([
-            'scope' => 'required|in:club,friends,area',
-            'club_id' => 'required_if:scope,club|exists:clubs,id'
+            'scope' => 'required|in:club,friends,area,all',
+            'club_id' => 'required_if:scope,club|exists:clubs,id',
+            'search' => 'sometimes|string|max:255',
+            'per_page' => 'sometimes|integer|min:1|max:200',
         ]);
     
+        $perPage = $validated['per_page'] ?? 20;
         $scope = $validated['scope'];
-        $candidates = collect();
     
+        // 🧮 Tính mid level cho sorting (nếu mini tournament có min/max level)
+        $midLevel = null;
+        if (isset($miniTournament->min_level) && isset($miniTournament->max_level) 
+            && $miniTournament->min_level !== null && $miniTournament->max_level !== null) {
+            $midLevel = (float)(($miniTournament->min_level + $miniTournament->max_level) / 2);
+        }
+    
+        // 🎯 Tùy theo phạm vi (scope)
         switch ($scope) {
             case 'club':
-                $candidates = User::whereHas(
-                    'clubs',
-                    fn($q) => $q->where('clubs.id', $validated['club_id'])
-                )->get();
+                $query = User::withFullRelations()
+                    ->whereHas('clubs', fn($q) => $q->where('clubs.id', $validated['club_id']));
                 break;
     
             case 'friends':
-                $candidates = $user->friends()->get();
+                $friendIds = DB::table('follows')
+                    ->where('user_id', $user->id)
+                    ->where('followable_type', User::class)
+                    ->pluck('followable_id');
+                
+                $query = User::withFullRelations()
+                    ->whereIn('users.id', $friendIds);
                 break;
     
             case 'area':
-                $candidates = User::where('location_id', $user->location_id)
-                    ->where('id', '!=', $user->id)
-                    ->get();
+                $query = User::withFullRelations()
+                    ->where('users.location_id', $user->location_id);
+                break;
+    
+            case 'all':
+                $query = User::withFullRelations();
                 break;
         }
     
-        // lấy danh sách id participant trong giải này
-        $participantUserIds = $miniTournament->participants->pluck('user_id')->toArray();
+        // 🔐 Visibility filter (trừ scope 'all')
+        if ($scope !== 'all') {
+            $query->whereIn('users.visibility', [
+                User::VISIBILITY_PUBLIC,
+                User::VISIBILITY_FRIEND_ONLY
+            ]);
+        } else {
+            $query->whereIn('users.visibility', [User::VISIBILITY_PUBLIC]);
+        }
     
-        // map theo format UI
-        $result = $candidates->map(function ($u) use ($user, $participantUserIds) {
-            $visibility = 'open';
-            if ($u->invite_mode === 'friend_only') {
-                $visibility = 'friend_only';
-            } elseif ($u->invite_mode === 'private') {
-                $visibility = 'private';
+        // ⚽ Filter theo setting của giải (chỉ áp dụng khi scope !== 'all')
+        if ($scope !== 'all') {
+            // 1. Có môn thể thao phù hợp (nếu mini tournament có sport_id)
+            if (isset($miniTournament->sport_id)) {
+                $query->whereHas('sports', function ($q) use ($miniTournament) {
+                    $q->where('sport_id', $miniTournament->sport_id);
+                });
             }
     
+            // 2. Tuổi (nếu mini tournament có age_group)
+            if (isset($miniTournament->age_group)) {
+                $query->tap(fn ($q) => $this->filterByAge($q, $miniTournament->age_group));
+            }
+    
+            // 3. Giới tính (nếu mini tournament có gender_policy)
+            if (isset($miniTournament->gender_policy)) {
+                $query->tap(fn ($q) => $this->filterByGender($q, $miniTournament->gender_policy));
+            }
+        }
+    
+        // 4. Loại trừ người đã tham gia (áp dụng cho tất cả scope)
+        $participantUserIds = $miniTournament->participants->pluck('user_id')->toArray();
+        if (!empty($participantUserIds)) {
+            $query->whereNotIn('users.id', $participantUserIds);
+        }
+    
+        // 5. Join để lấy level + filter level (chỉ khi scope !== 'all' và có sport_id)
+        if ($scope !== 'all' && isset($miniTournament->sport_id)) {
+            $query->leftJoin('user_sport', function ($join) use ($miniTournament) {
+                $join->on('users.id', '=', 'user_sport.user_id')
+                    ->where('user_sport.sport_id', $miniTournament->sport_id);
+            })
+            ->leftJoin('user_sport_scores', function ($join) {
+                $join->on('user_sport.id', '=', 'user_sport_scores.user_sport_id')
+                    ->where('user_sport_scores.score_type', 'vndupr_score');
+            });
+    
+            // 6. Filter level
+            if (isset($miniTournament->min_level)) {
+                $query->where('user_sport_scores.score_value', '>=', $miniTournament->min_level);
+            }
+            if (isset($miniTournament->max_level)) {
+                $query->where('user_sport_scores.score_value', '<=', $miniTournament->max_level);
+            }
+        }
+    
+        // 7. Select + Sort
+        if ($scope !== 'all') {
+            $query->select('users.*');
+            
+            if (isset($miniTournament->sport_id)) {
+                $query->selectRaw('user_sport_scores.score_value as level');
+                
+                if ($midLevel !== null) {
+                    $query->selectRaw(
+                        'ABS(user_sport_scores.score_value - ?) as level_diff',
+                        [$midLevel]
+                    );
+                }
+            }
+            
+            if (isset($miniTournament->location_id)) {
+                $query->selectRaw(
+                    'CASE WHEN users.location_id = ? THEN 1 ELSE 0 END as same_location',
+                    [$miniTournament->location_id]
+                )
+                ->orderByDesc('same_location');
+            }
+            
+            if ($midLevel !== null) {
+                $query->orderBy('level_diff');
+            }
+        } else {
+            $query->select('users.*');
+        }
+    
+        // 🔍 Tìm kiếm tên người dùng (áp dụng cho tất cả scope)
+        if (!empty($validated['search'])) {
+            $query->where('users.full_name', 'like', '%' . $validated['search'] . '%');
+        }
+    
+        // 🧮 Phân trang
+        $paginated = $query->paginate($perPage);
+        $candidates = $paginated->getCollection()->map(function ($u) use ($user, $participantUserIds) {
             return [
                 'id' => $u->id,
                 'name' => $u->full_name,
-                'gender' => $u->gender,
+                'visibility' => $u->visibility,
                 'age_group' => $u->age_group,
-                'avatar' => $u->avatar_url,
-                'visibility' => $visibility,
+                'avatar_url' => $u->avatar_url,
+                'thumbnail' => $u->thumbnail,
+                'gender' => $u->gender,
+                'gender_text' => $u->gender_text,
+                'play_times' => [],
+        
+                'sports' => $u->sports->map(function ($userSport) {
+                    $scores = $userSport->scores
+                        ->pluck('score_value', 'score_type')
+                        ->toArray();
+        
+                    return [
+                        'sport_id' => $userSport->sport_id,
+                        'sport_icon' => $userSport->sport?->icon,
+                        'sport_name' => $userSport->sport?->name,
+                        'scores' => [
+                            'personal_score' => $scores['personal_score'] ?? '0.000',
+                            'dupr_score'     => $scores['dupr_score'] ?? '0.000',
+                            'vndupr_score'   => $scores['vndupr_score'] ?? '0.000',
+                        ],
+                        'total_matches'     => $userSport->total_matches ?? 0,
+                        'total_tournaments' => $userSport->total_tournaments ?? 0,
+                        'total_prizes'      => $userSport->total_prizes ?? 0,
+                    ];
+                }),
                 'is_friend' => $user->isFriendWith($u),
-                'is_participant' => in_array($u->id, $participantUserIds), // 👈 thêm cờ này
+                'is_mini_participant' => in_array($u->id, $participantUserIds),
             ];
-        })->values();
+        });
     
-        return ResponseHelper::success($result, 'Danh sách ứng viên');
+        return ResponseHelper::success([
+            'result' => $candidates,
+        ], 'Danh sách ứng viên', 200, [
+            'current_page' => $paginated->currentPage(),
+            'last_page'    => $paginated->lastPage(),
+            'per_page'     => $paginated->perPage(),
+            'total'        => $paginated->total(),
+        ]);
+    }
+    
+    /**
+     * Lọc theo độ tuổi
+     */
+    private function filterByAge($query, $ageGroup)
+    {
+        $today = Carbon::today();
+    
+        switch ($ageGroup) {
+            case MiniTournament::YOUTH: // Dưới 18
+                $minDate = $today->copy()->subYears(18);
+                $query->where('date_of_birth', '>', $minDate);
+                break;
+    
+            case MiniTournament::ADULT: // 18-55
+                $minDate = $today->copy()->subYears(55);
+                $maxDate = $today->copy()->subYears(18);
+                $query->whereBetween('date_of_birth', [$minDate, $maxDate]);
+                break;
+    
+            case MiniTournament::SENIOR: // Trên 55
+                $maxDate = $today->copy()->subYears(55);
+                $query->where('date_of_birth', '<', $maxDate);
+                break;
+    
+            case MiniTournament::ALL_AGES:
+            default:
+                // Không lọc
+                break;
+        }
+    
+        return $query;
+    }
+    
+    /**
+     * Lọc theo giới tính
+     */
+    private function filterByGender($query, $genderPolicy)
+    {
+        if ($genderPolicy === MiniTournament::MALE) {
+            $query->where('gender', MiniTournament::MALE);
+        } elseif ($genderPolicy === MiniTournament::FEMALE) {
+            $query->where('gender', MiniTournament::FEMALE);
+        }
+        // MIXED: không lọc
+    
+        return $query;
     }
 
     private function notifyOrganizersJoinRequest(MiniTournament $tournament, MiniParticipant $participant)
