@@ -3,11 +3,6 @@ import {API_ENDPOINT} from "@/constants/index.js";
 
 const participantEndpoint = API_ENDPOINT.PARTICIPANT;
 
-export const inviteFriends = async (tournamentId) => {
-  return axiosInstance.post(`${participantEndpoint}/invite-friend/${tournamentId}`)
-    .then((response) => response.data);
-}
-
 export const sendInvitation = async (tournamentId, userIds) => {
   return axiosInstance.post(`${participantEndpoint}/invite-user/${tournamentId}`, {
     user_ids: userIds,
@@ -16,10 +11,6 @@ export const sendInvitation = async (tournamentId, userIds) => {
 
 export const inviteStaffs = async (tournamentId, data) => {
   return axiosInstance.post(`${participantEndpoint}/invite-staff/${tournamentId}`, data).then((response) => response.data)
-}
-
-export const suggests = async (tournamentId, data) => {
-  return axiosInstance.post(`${participantEndpoint}/suggestions/${tournamentId}`, data).then((response) => response.data);
 }
 
 export const listInviteUsers = async (tournamentId, params) => {

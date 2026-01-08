@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\MiniTournamentStaffController;
 use App\Http\Controllers\UserMatchStatsController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BannerController;
@@ -98,6 +99,10 @@ Route::middleware(['auth:api'])->group(function () {
         Route::post('/add/{tournamentId}', [TournamentStaffController::class, 'addStaff']);
     });
 
+    Route::prefix('mini-tournament-staff')->group(function () {
+        Route::post('/add/{tournamentId}', [MiniTournamentStaffController::class, 'addStaff']);
+    });
+
     Route::prefix('tournament-types')->group(function () {
         Route::post('/store', [TournamentTypeController::class, 'store']);
         Route::match(['put', 'patch'], '/{tournamentType}', [TournamentTypeController::class, 'update']);
@@ -126,13 +131,9 @@ Route::middleware(['auth:api'])->group(function () {
     Route::prefix('participants')->group(function () {
         Route::match(['get', 'post'], '/index/{tournamentId}', [ParticipantController::class, 'index']);
         Route::post('/join/{tournamentId}', [ParticipantController::class, 'join']);
-        Route::match(['get', 'post'], '/suggestions/{tournamentId}', [ParticipantController::class, 'suggestUsers']);
-        Route::match(['get', 'post'], '/invite-friend/{tournamentId}', [ParticipantController::class, 'inviteFriends']);
         Route::post('/confirm/{participantId}', [ParticipantController::class, 'confirm']);
         Route::post('/accept/{participantId}', [ParticipantController::class, 'acceptInvite']);
         Route::post('/decline/{participantId}', [ParticipantController::class, 'declineInvite']);
-        Route::match(['get', 'post'], '/invite/{tournamentId}', [ParticipantController::class, 'invite']);
-        Route::match(['get', 'post'], '/invite-staff/{tournamentId}', [ParticipantController::class, 'inviteStaff']);
         Route::post('/invite-user/{tournamentId}', [ParticipantController::class, 'inviteUsers']);
         Route::post('/delete/{participantId}', [ParticipantController::class, 'delete']);
         Route::post('/delete-staff/{staffId}', [ParticipantController::class, 'deleteStaff']);
