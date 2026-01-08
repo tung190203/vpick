@@ -545,9 +545,9 @@
       ].filter(Boolean)" :subtitle="'Hãy chia sẻ thông tin tới bạn bè để cùng tham gia giải đấu'" />
     </div>
 
-    <InviteGroup v-model="showInviteModal" :data="inviteGroupData" :clubs="clubs" :active-scope="activeScope"
+    <!-- <InviteGroup v-model="showInviteModal" :data="inviteGroupData" :clubs="clubs" :active-scope="activeScope"
       :selected-club="selectedClub" :search-query="searchQuery" @update:searchQuery="onSearchChange"
-      @change-scope="onScopeChange" @change-club="onClubChange" @invite="handleInvite" />
+      @change-scope="onScopeChange" @change-club="onClubChange" @invite="handleInvite" /> -->
     <DeleteConfirmationModal v-model="showDeleteModal" title="Xác nhận hủy bỏ giải đấu"
       message="Thao tác này không thể hoàn tác." confirmButtonText="Xác nhận" @confirm="removeTournament" />
     <DeleteConfirmationModal v-model="showDeleteTournamentTypeModal" title="Xác nhận thay đổi thể thức"
@@ -556,9 +556,21 @@
     <DeleteConfirmationModal v-model="showReGenerateBracketModal" title="Xác nhận chia lại cặp đấu"
       message="Thao tác này sẽ xoá toàn bộ các trận đấu và các kết quả" confirmButtonText="Xác nhận"
       @confirm="reGenerateMatches" />
-    <InviteGroup v-model="showInviteModal" :data="inviteGroupData" :clubs="clubs" :active-scope="activeScope"
+    <!-- <InviteGroup v-model="showInviteModal" :data="inviteGroupData" :clubs="clubs" :active-scope="activeScope"
       :selected-club="selectedClub" :search-query="searchQuery" @update:searchQuery="onSearchChange"
-      @change-scope="onScopeChange" @change-club="onClubChange" @invite="handleInviteUser" />
+      @change-scope="onScopeChange" @change-club="onClubChange" @invite="handleInviteUser" /> -->
+      <InviteGroup 
+        v-model="showInviteModal" 
+        :data="inviteGroupData" 
+        :clubs="clubs" 
+        :active-scope="activeScope"
+        :selected-club="selectedClub" 
+        :search-query="searchQuery" 
+        @update:searchQuery="onSearchChange"
+        @change-scope="onScopeChange" 
+        @change-club="onClubChange" 
+        @invite="handleInviteAction" 
+      />
     <EditTeamModal v-model="isOpenUpdateTeamModal" :data="selectedTeamDetail || {}" :isSaving="isSavingTeam"
       @update-info="handleUpdateInfo" @delete="handleDeleteTeam" />
     <CreateTeamModal v-model="isOpenCreateTeamModal" :isCreating="isLoading" @create-team="handleCreateInfo" />
@@ -616,6 +628,7 @@ import ScheduleTab from '@/components/molecules/ScheduleTab.vue'
 import ChatForm from '@/components/organisms/ChatForm.vue'
 import PlayerActionModal from '@/components/molecules/PlayerActionModal.vue'
 
+const inviteType = ref('participant')
 const userStore = useUserStore()
 const { getUser } = storeToRefs(userStore)
 const { formatDateTime } = useFormatDate()
@@ -725,6 +738,31 @@ const handleRemoveStaff = async (staffId) => {
     toast.error(error.response?.data?.message || 'Xóa người tổ chức thất bại');
   }
 };
+
+// Hàm xử lý thống nhất
+const handleInviteAction = async (user) => {
+  if (inviteType.value === 'staff') {
+    await inviteStaff(user.id);
+  } else {
+    await invite(user.id);
+  }
+  await detailTournament(id);
+}
+
+// Cập nhật các hàm mở modal
+const openInviteModalWithFriends = async () => {
+  inviteType.value = 'participant'
+  activeScope.value = 'friends'
+  await getInviteGroupData()
+  showInviteModal.value = true
+}
+
+const openInviteModalDefault = async () => {
+  inviteType.value = 'staff' // hoặc 'participant' tuỳ ngữ cảnh
+  activeScope.value = 'all'
+  await getInviteGroupData()
+  showInviteModal.value = true
+}
 
 const handleRemoveMember = async (memberId, teamId) => {
   try {
@@ -1395,17 +1433,6 @@ const confirmTournament = async () => {
   }
 }
 
-const openInviteModalWithFriends = async () => {
-  activeScope.value = 'friends'
-  await getInviteGroupData()
-  showInviteModal.value = true
-}
-
-const openInviteModalDefault = async () => {
-  activeScope.value = 'all'
-  await getInviteGroupData()
-  showInviteModal.value = true
-}
 onMounted(async () => {
   if (id) {
     await Promise.all([
