@@ -598,7 +598,7 @@ class ParticipantController extends Controller
 
         // 🧮 Phân trang
         $paginated = $query->paginate($perPage);
-        $candidates = $paginated->getCollection()->map(function ($u) use ($user, $participantUserIds) {
+        $candidates = $paginated->getCollection()->map(function ($u) use ($user, $excludedUserIds) {
 
             return [
                 'id' => $u->id,
