@@ -481,7 +481,8 @@ class UserMatchStatsController extends Controller
                     ];
                 }
 
-                $is_win = $match->winner_id == $myTeamId;
+                // ✅ is_win dựa vào myTeamId (đã swap)
+                $is_win = ($match->winner_id == $myTeamId);
             }
 
             $allMatches->push([
@@ -561,7 +562,8 @@ class UserMatchStatsController extends Controller
                     ];
                 }
 
-                $is_win = $mini->team_win_id == $myTeamId;
+                // ✅ is_win dựa vào myTeamId (đã swap)
+                $is_win = ($mini->team_win_id == $myTeamId);
             }
 
             $allMatches->push([
