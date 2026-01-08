@@ -14,16 +14,28 @@
                         </button>
                     </div>
 
-                    <!-- Tabs -->
-                    <div class="flex justify-center gap-2 px-3">
-                        <button v-for="tab in tabs" :key="tab.id" @click="setActiveTab(tab.id)" :class="[
-                            'px-3 py-2 rounded-full text-sm font-medium transition-colors',
-                            activeTab === tab.id
-                                ? 'bg-red-500 text-white'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        ]">
-                            {{ tab.label }}
-                        </button>
+                    <!-- Tabs with Swiper -->
+                    <div class="px-6 pb-4">
+                        <Swiper 
+                            :slides-per-view="'auto'" 
+                            :space-between="8" 
+                            :freeMode="true"
+                            :mousewheel="{ forceToAxis: true }" 
+                            :modules="modules" 
+                            class="swiper-container">
+                            <SwiperSlide v-for="tab in tabs" :key="tab.id" class="!w-auto">
+                                <button 
+                                    @click="setActiveTab(tab.id)" 
+                                    :class="[
+                                        'px-4 py-2 rounded-full text-sm font-semibold cursor-pointer transition select-none whitespace-nowrap',
+                                        activeTab === tab.id
+                                            ? 'bg-red-500 text-white'
+                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    ]">
+                                    {{ tab.label }}
+                                </button>
+                            </SwiperSlide>
+                        </Swiper>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 px-6 py-4">
@@ -62,9 +74,9 @@
                                         <img :src="user.avatar_url || defaultAvatar"
                                             @error="e => e.target.src = defaultAvatar"
                                             alt="User Avatar" class="w-full h-full object-cover" />
-                                            <div class="absolute -bottom-1 -left-1 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center border border-1 border-white">
-                                    <span class="text-white font-bold text-[9px]">{{ convertLevel(user) }}</span>
-                                </div>
+                                        <div class="absolute -bottom-1 -left-1 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center border border-1 border-white">
+                                            <span class="text-white font-bold text-[9px]">{{ convertLevel(user) }}</span>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -110,16 +122,25 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { XMarkIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
+import { Swiper, SwiperSlide } from 'swiper/vue'
+import { FreeMode, Mousewheel } from 'swiper/modules'
+import 'swiper/css'
+import 'swiper/css/free-mode'
 import maleIcon from '@/assets/images/male.svg'
 import femaleIcon from '@/assets/images/female.svg'
 
-const defaultAvatar = "/images/default-avatar.png";
+const defaultAvatar = "/images/default-avatar.png"
+const modules = [FreeMode, Mousewheel]
 
 const props = defineProps({
     modelValue: Boolean,
     data: Object,
     clubs: Array,
     searchQuery: String,
+    activeScope: {
+        type: String,
+        default: 'all'
+    }
 })
 
 const emit = defineEmits(['update:modelValue', 'invite', 'change-scope', 'change-club', 'update:searchQuery'])
@@ -143,13 +164,21 @@ const convertLevel = (user, sportId = 1) => {
 }
 
 const tabs = [
+    { id: 'all', label: 'Tất cả' },
     { id: 'club', label: 'Trong CLB của bạn' },
     { id: 'friends', label: 'Bạn bè của bạn' },
     { id: 'area', label: 'Trong khu vực của bạn' }
 ]
 
-const activeTab = ref('club')
+const activeTab = ref(props.activeScope || 'all')
 const selectedClub = ref('')
+
+// Watch prop để sync khi parent thay đổi
+watch(() => props.activeScope, (newScope) => {
+    if (newScope) {
+        activeTab.value = newScope
+    }
+})
 
 const localSearchQuery = ref(props.searchQuery || '')
 watch(() => props.searchQuery, val => localSearchQuery.value = val)
@@ -196,5 +225,22 @@ const setActiveTab = (tabId) => {
 .modal-enter-from .bg-white,
 .modal-leave-to .bg-white {
     transform: scale(0.9);
+}
+
+/* Swiper custom styles - Fix overflow */
+.swiper-container {
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+}
+
+:deep(.swiper-wrapper) {
+    display: flex;
+    align-items: center;
+}
+
+:deep(.swiper-slide) {
+    width: auto !important;
+    flex-shrink: 0;
 }
 </style>
