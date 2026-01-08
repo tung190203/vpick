@@ -204,7 +204,8 @@
                     Tham gia giải đấu
                   </button>
                 </div>
-                <div v-if="tournament.is_joined && !tournament.is_confirmed_by_organizer && tournament.is_invite_by_organizer">
+                <div
+                  v-if="tournament.is_joined && !tournament.is_confirmed_by_organizer && tournament.is_invite_by_organizer">
                   <button
                     class="flex items-center justify-center gap-2 bg-[#D72D36] hover:bg-white text-white hover:text-[#D72D36] border hover:border-[#D72D36] font-medium px-6 py-2 rounded-md transition"
                     @click="confirmTournament">
@@ -246,7 +247,7 @@
                       <UserCard v-for="(item, index) in tournament.tournament_staff" :key="index" :id="item.id"
                         :name="item.staff.name" :avatar="item.staff.avatar" :rating="getUserScore(item.staff)"
                         status="approved" @removeUser="handleRemoveStaff" />
-                      <UserCard :empty="true" @clickEmpty="showInviteStaffModal = true" v-if="isCreator" />
+                      <UserCard :empty="true" @clickEmpty="openInviteModalDefault" v-if="isCreator" />
                     </div>
                   </div>
                 </div>
@@ -260,7 +261,7 @@
                       }}
                     </h4>
                     <span class="text-[#207AD5] text-xs font-semibold cursor-pointer" v-if="isCreator"
-                      @click="showInviteFriendModal = true">Mời bạn
+                      @click="openInviteModalWithFriends">Mời bạn
                       bè</span>
                   </div>
                   <div v-if="tournament?.tournament_participants?.length">
@@ -271,7 +272,7 @@
                         @click="openActionModal(item)" />
                       <UserCard
                         v-if="tournament?.tournament_participants?.length < (tournament.max_team * tournament.player_per_team) && isCreator"
-                        :empty="true" @clickEmpty="showInviteFriendModal = true" />
+                        :empty="true" @clickEmpty="openInviteModalWithFriends" />
                     </div>
                   </div>
                   <div v-else>
@@ -348,7 +349,7 @@
                     <p class="text-gray-700">
                       Mời bạn bè tham gia giải đấu
                     </p>
-                    <button @click="showInviteStaffModal = true"
+                    <button @click="openInviteModalDefault"
                       class="flex items-center justify-center gap-2 bg-[#D72D36] hover:bg-red-500 text-white font-medium px-4 py-2 rounded-md transition">
                       Mời bạn
                     </button>
@@ -539,8 +540,7 @@
       <ShareAction :buttons="[
         { label: 'Gửi link', icon: LinkIcon, onClick: copyLink },
         { label: 'Quét mã QR', icon: QrCodeIcon, onClick: showQRCode },
-        isCreator ? { label: 'Mời người chơi', icon: UsersIcon, onClick: () => showInviteSuggestModal = true } : null,
-        isCreator ? { label: 'Mời nhóm', icon: UserMultiple, onClick: () => showInviteModal = true } : null,
+        isCreator ? { label: 'Mời nhóm', icon: UserMultiple, onClick: () => openInviteModalDefault() } : null,
         { label: 'Yêu cầu xác nhận KQ', icon: ClipboardDocumentCheckIcon }
       ].filter(Boolean)" :subtitle="'Hãy chia sẻ thông tin tới bạn bè để cùng tham gia giải đấu'" />
     </div>
@@ -556,16 +556,9 @@
     <DeleteConfirmationModal v-model="showReGenerateBracketModal" title="Xác nhận chia lại cặp đấu"
       message="Thao tác này sẽ xoá toàn bộ các trận đấu và các kết quả" confirmButtonText="Xác nhận"
       @confirm="reGenerateMatches" />
-    <InviteFriendModal v-model="showInviteFriendModal" :data="friendList" @invite="handleInviteFriend"
-      @loadMore="loadMoreFriends" :hasMore="hasMoreFriend" @search="handleSearchFriends" title="Mời bạn bè"
-      emptyText="Không có bạn bè phù hợp với yêu cầu" />
-
-    <InviteFriendModal v-model="showInviteSuggestModal" :data="suggestList" @invite="handleInviteSuggest"
-      @loadMore="loadMoreSuggests" :hasMore="hasMoreSuggests" @search="handleSearchSuggests" title="Mời vận động viên"
-      emptyText="Không có vận động viên phù hợp với yêu cầu" />
-    <InviteFriendModal v-model="showInviteStaffModal" :data="listUsers" @invite="handleInviteUser"
-      @loadMore="loadMoreUsers" :hasMore="hasMoreUsers" @search="handleSearchUsers" title="Mời người tổ chức"
-      emptyText="Không có người dùng phù hợp với yêu cầu" />
+    <InviteGroup v-model="showInviteModal" :data="inviteGroupData" :clubs="clubs" :active-scope="activeScope"
+      :selected-club="selectedClub" :search-query="searchQuery" @update:searchQuery="onSearchChange"
+      @change-scope="onScopeChange" @change-club="onClubChange" @invite="handleInviteUser" />
     <EditTeamModal v-model="isOpenUpdateTeamModal" :data="selectedTeamDetail || {}" :isSaving="isSavingTeam"
       @update-info="handleUpdateInfo" @delete="handleDeleteTeam" />
     <CreateTeamModal v-model="isOpenCreateTeamModal" :isCreating="isLoading" @create-team="handleCreateInfo" />
@@ -594,7 +587,6 @@ import {
 import UserCard from '@/components/molecules/UserCard.vue'
 import QRcodeModal from '@/components/molecules/QRcodeModal.vue'
 import InviteGroup from '@/components/molecules/InviteGroup.vue'
-import InviteFriendModal from '@/components/molecules/InviteFriendModal.vue'
 import * as TournamnetService from '@/service/tournament.js'
 import * as TournamentTypeService from '@/service/tournamentType.js'
 import * as TeamService from '@/service/team.js'
@@ -644,24 +636,12 @@ const listActiveTab = ref('staffs')
 const autoApprove = ref(false)
 const publicBracket = ref(false)
 const showInviteModal = ref(false)
-const showInviteFriendModal = ref(false)
-const showInviteSuggestModal = ref(false)
-const showInviteStaffModal = ref(false)
 const showDeleteModal = ref(false);
 const showDeleteTournamentTypeModal = ref(false);
 const showReGenerateBracketModal = ref(false);
 const isEditingDescription = ref(false);
 const descriptionModel = ref('');
-const friendList = ref([]);
-const suggestList = ref([])
-const listUsers = ref([]);
 const inviteGroupData = ref([]);
-const userMeta = ref({})
-const suggestMeta = ref({})
-const friendMeta = ref({})
-const searchFriendTerm = ref('')
-const searchUserTerm = ref('')
-const searchSuggestTerm = ref('')
 const listTeams = ref([])
 const isOpenUpdateTeamModal = ref(false)
 const isOpenCreateTeamModal = ref(false)
@@ -676,7 +656,7 @@ const isFetchingNonTeamUsers = ref(false);
 const isHandleOwnScore = ref(false);
 const ranks = ref([])
 const clubs = ref([])
-const activeScope = ref('club');
+const activeScope = ref('all');
 const selectedClub = ref(null);
 const searchQuery = ref('')
 const showQRCodeModal = ref(false);
@@ -716,15 +696,12 @@ const getMyClubs = async () => {
 
     if (clubs.value.length === 0) {
       selectedClub.value = null;
-      // Không có CLB → scope club vô hiệu → chuyển sang friends
-      activeScope.value = 'friends';
     } else {
       selectedClub.value = clubs.value[0].id;
     }
   } catch (e) {
     clubs.value = [];
     selectedClub.value = null;
-    activeScope.value = 'friends';
   }
 };
 
@@ -927,7 +904,7 @@ const getNonTeamParticipants = async () => {
       nonTeamParticipants.value = res?.participants || [];
     }
   } catch (error) {
-    toast.error( error.response?.data?.message || 'Đã xảy ra lỗi khi tải danh sách người chơi.');
+    toast.error(error.response?.data?.message || 'Đã xảy ra lỗi khi tải danh sách người chơi.');
   } finally {
     isFetchingNonTeamUsers.value = false;
   }
@@ -954,9 +931,6 @@ const confirmChangeType = () => {
   showDeleteTournamentTypeModal.value = true;
 };
 
-const confirmReGenerateBracket = () => {
-  showReGenerateBracketModal.value = true;
-};
 const startSetup = () => {
   showFormatType.value = true;
 };
@@ -1087,16 +1061,6 @@ const handleRemove = () => {
 
 const handleInvite = async (user) => {
   await invite(user.id);
-  await detailTournament(id);
-}
-
-const handleInviteFriend = async (friend) => {
-  await invite(friend.id);
-  await detailTournament(id);
-}
-
-const handleInviteSuggest = async (suggest) => {
-  await invite(suggest.id);
   await detailTournament(id);
 }
 
@@ -1273,10 +1237,6 @@ const reGenerateMatches = async () => {
 }
 
 const autoAssign = async () => {
-  // if(tournament.value && tournament.value.tournament_types.length > 0) {
-  //   toast.error('Thể thức đã được cài đặt, các đội đã được chia vào trận đấu không thể chia lại đội');
-  //   return;
-  // }
   try {
     const teamsResponse = await TeamService.autoAssignTeams(id)
     const teams = teamsResponse || []
@@ -1289,54 +1249,6 @@ const autoAssign = async () => {
     toast.success('Đã phân chia đội tự động thành công!')
   } catch (error) {
     toast.error(error.response?.data?.message || 'Đã xảy ra lỗi khi phân chia đội tự động.')
-  }
-}
-
-const getFriendList = async (page = 1) => {
-  try {
-    const response = await ParticipantService.inviteFriends(id, {
-      page,
-      name: searchFriendTerm.value
-    })
-    if (page === 1) {
-      friendList.value = response?.data?.invitations || []
-    } else {
-      friendList.value.push(...response?.data?.invitations)
-    }
-    friendMeta.value = response.meta || {}
-  } catch (error) {
-  }
-}
-
-const getUserList = async (page = 1) => {
-  try {
-    const response = await ParticipantService.inviteStaffs(id, {
-      page,
-      name: searchUserTerm.value
-    })
-    if (page === 1) {
-      listUsers.value = response?.data?.invitations || []
-    } else {
-      listUsers.value.push(...response?.data?.invitations)
-    }
-    userMeta.value = response.meta || {}
-  } catch (error) {
-  }
-}
-
-const getSuggestList = async (page = 1) => {
-  try {
-    const response = await ParticipantService.suggests(id, {
-      page,
-      name: searchSuggestTerm.value
-    })
-    if (page === 1) {
-      suggestList.value = response?.data?.suggestions || []
-    } else {
-      suggestList.value.push(...response?.data?.suggestions)
-    }
-    suggestMeta.value = response.meta || {}
-  } catch (error) {
   }
 }
 
@@ -1358,54 +1270,9 @@ const inviteStaff = async (userId) => {
   }
 };
 
-const handleSearchFriends = debounce(async (query) => {
-  searchFriendTerm.value = query
-  await getFriendList(1)
-}, 300)
-
-const handleSearchUsers = debounce(async (query) => {
-  searchUserTerm.value = query
-  await getUserList(1)
-}, 300)
-
-const handleSearchSuggests = debounce(async(query) => {
-  searchSuggestTerm.value = query
-  await getSuggestList(1)
-}, 300)
-
-const hasMoreFriend = computed(() => {
-  return friendMeta.value.current_page < friendMeta.value.last_page
-})
-
-const hasMoreUsers = computed(() => {
-  return userMeta.value.current_page < userMeta.value.last_page
-})
-
-const hasMoreSuggests = computed(() => {
-  return suggestMeta.value.current_page < suggestMeta.value.last_page
-})
-
-const loadMoreFriends = async () => {
-  if (hasMoreFriend.value) {
-    await getFriendList(friendMeta.value.current_page + 1)
-  }
-}
-
-const loadMoreSuggests = async () => {
-  if (hasMoreSuggests.value) {
-    await getSuggestList(suggestMeta.value.current_page + 1)
-  }
-}
-
-const loadMoreUsers = async () => {
-  if (hasMoreUsers.value) {
-    await getUserList(userMeta.value.current_page + 1)
-  }
-}
-
 const getTeams = async () => {
   try {
-    const response = await TeamService.getTeamsByTournamentId(id, {per_page:50})
+    const response = await TeamService.getTeamsByTournamentId(id, { per_page: 50 })
     listTeams.value = response.teams || []
   } catch (error) {
     return []
@@ -1515,7 +1382,7 @@ const joinerTournament = async () => {
 const confirmTournament = async () => {
   const participantId =
     tournament.value?.tournament_participants?.find(
-        p => p.user.id === getUser.value.id
+      p => p.user.id === getUser.value.id
     )?.id ?? null;
   try {
     const res = await ParticipantService.acceptInviteTournament(participantId)
@@ -1527,13 +1394,22 @@ const confirmTournament = async () => {
     toast.error(error.response?.data?.message || 'Lỗi khi thực hiện yêu cầu này')
   }
 }
+
+const openInviteModalWithFriends = async () => {
+  activeScope.value = 'friends'
+  await getInviteGroupData()
+  showInviteModal.value = true
+}
+
+const openInviteModalDefault = async () => {
+  activeScope.value = 'all'
+  await getInviteGroupData()
+  showInviteModal.value = true
+}
 onMounted(async () => {
   if (id) {
     await Promise.all([
       detailTournament(id),
-      getFriendList(),
-      getUserList(),
-      getSuggestList(),
       getTeams(),
       getListHasInvite(),
     ])
