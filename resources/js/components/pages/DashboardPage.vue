@@ -11,12 +11,12 @@
               <div class="mb-6 md:mb-0">
                 <div class="text-sm opacity-90 mb-1 text-[32px]">PICKI</div>
                 <div class="text-6xl font-bold leading-none mb-4 text-[100px]">{{
-                  homeData.user_info?.sports[0]?.scores.vndupr_score
+                  Number(homeData.user_info?.sports[0]?.scores?.vndupr_score || 0).toFixed(2)
                 }}
                 </div>
                 <div class="text-sm opacity-90 mb-1 text-[32px]">DUPR</div>
                 <div class="text-5xl font-bold leading-none text-[100px]">{{
-                  homeData.user_info?.sports[0]?.scores.dupr_score
+                  Number(homeData.user_info?.sports[0]?.scores.dupr_score || 0).toFixed(2)
                 }}</div>
               </div>
 
@@ -33,7 +33,7 @@
                           class="transition-all duration-1000 ease-out" />
                       </svg>
                       <div class="absolute inset-0 flex items-center justify-center text-3xl font-semibold">
-                        {{ homeData.user_info?.win_rate }}%
+                        {{ Number(homeData.user_info?.win_rate || 0).toFixed(1) }}%
                       </div>
                     </div>
                     <p class="text-[24px] font-medium">Chiến thắng</p>
