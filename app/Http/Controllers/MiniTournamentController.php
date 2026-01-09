@@ -69,6 +69,7 @@ class MiniTournamentController extends Controller
             'sport_id' => 'sometimes|integer|exists:sports,id',
             'status' => 'sometimes|in:upcoming,ongoing,completed,cancelled',
             'per_page' => 'sometimes|integer|min:1|max:200',
+            'keyword'  => 'nullable|string'
         ]);
         $nowVN = Carbon::now('Asia/Ho_Chi_Minh')->toDateString();
         $query = MiniTournament::withFullRelations();
@@ -80,13 +81,27 @@ class MiniTournamentController extends Controller
         if ($request->has('status')) {
             $query->where('status', $validated['status']);
         }
+    
+        // 🔥 keyword search (tên kèo + tên sân + địa chỉ sân)
+        if (!empty($validated['keyword'])) {
+            $kw = trim($validated['keyword']);
+    
+            $query->where(function ($q) use ($kw) {
+                $q->where('mini_tournaments.name', 'LIKE', "%{$kw}%")
+                  ->orWhereHas('competitionLocation', function ($loc) use ($kw) {
+                      $loc->where('competition_locations.name', 'LIKE', "%{$kw}%")
+                          ->orWhere('competition_locations.address', 'LIKE', "%{$kw}%");
+                  });
+            });
+        }
 
+        $query->whereDate('starts_at', '>=', $nowVN);
         $userId = auth()->id();
         $query->where(function ($q) use ($userId) {
             $q->where('is_private', 0)
                 ->orWhereHas('participants', fn($sub) => $sub->where('user_id', $userId));
         });
-        $query->whereDate('starts_at', '>=', $nowVN);
+    
         $miniTournaments = $query->paginate($validated['per_page'] ?? MiniTournament::PER_PAGE);
 
         $data = [
