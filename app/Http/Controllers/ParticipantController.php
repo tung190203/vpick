@@ -477,6 +477,9 @@ class ParticipantController extends Controller
             'club_id' => 'required_if:scope,club|exists:clubs,id',
             'search' => 'sometimes|string|max:255',
             'per_page' => 'sometimes|integer|min:1|max:200',
+            'lat' => 'required_if:scope,area|numeric',
+            'lng' => 'required_if:scope,area|numeric',
+            'radius' => 'required_if:scope,area|numeric|min:0.1|max:200',
         ]);
 
         $perPage = $validated['per_page'] ?? 20;
@@ -506,8 +509,32 @@ class ParticipantController extends Controller
                 break;
 
             case 'area':
+                $lat = $validated['lat'];
+                $lng = $validated['lng'];
+                $radius = $validated['radius'];
+
+                $haversine = "(6371 * acos(
+                        cos(radians(?))
+                        * cos(radians(users.latitude))
+                        * cos(radians(users.longitude) - radians(?))
+                        + sin(radians(?))
+                        * sin(radians(users.latitude))
+                    ))";
+
                 $query = User::withFullRelations()
-                    ->where('users.location_id', $user->location_id);
+                    ->whereNotNull('users.latitude')
+                    ->whereNotNull('users.longitude')
+                    ->whereRaw("$haversine <= ?", [
+                        $lat,
+                        $lng,
+                        $lat,
+                        $radius
+                    ])
+                    ->orderByRaw("$haversine asc", [
+                        $lat,
+                        $lng,
+                        $lat
+                    ]);
                 break;
             case 'all':
                 $query = User::withFullRelations();
