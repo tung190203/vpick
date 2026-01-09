@@ -1949,8 +1949,7 @@ class TournamentTypeController extends Controller
                 }
                 $group->teams()->sync($syncData);
             }
-
-            $this->generateMatchesForType($tournamentType);
+            $this->generateMatchesForTypeWithAssignedTeams($tournamentType);
 
             DB::commit();
             return ResponseHelper::success(
