@@ -1301,13 +1301,17 @@ class TournamentTypeController extends Controller
                     return 'match_' . $baseId;
                 })->values();
     
+                // ✅ XỬ LÝ TÊN ROUND
+                $roundName = $this->getRoundName($round, $grouped->count(), $type->format);
+                
+                // ✅ NẾU TẤT CẢ MATCHES TRONG ROUND LÀ THIRD PLACE
+                if ($roundMatches->every(fn($m) => $m->is_third_place ?? false)) {
+                    $roundName = 'Tranh hạng Ba';
+                }
+    
                 return [
                     'round' => $round,
-                    'round_name' => $this->getRoundName(
-                        $round,
-                        $grouped->count(),
-                        $type->format
-                    ),
+                    'round_name' => $roundName,
                     'matches' => $grouped->map(function ($matchGroup) use ($calculateLegDetails) {
     
                         $first = $matchGroup->first();
@@ -1536,9 +1540,17 @@ class TournamentTypeController extends Controller
             $sortedMatches = $roundMatches->sortBy('id')->values();
             $matchGroups = $sortedMatches->chunk($numLegs);
     
+            // ✅ XỬ LÝ TÊN ROUND
+            $roundName = $this->getRoundName($round, $matchGroups->count(), $type->format);
+            
+            // ✅ NẾU TẤT CẢ MATCHES TRONG ROUND LÀ THIRD PLACE
+            if ($roundMatches->every(fn($m) => $m->is_third_place ?? false)) {
+                $roundName = 'Tranh hạng Ba';
+            }
+    
             return [
                 'round' => $round,
-                'round_name' => $this->getRoundName($round, $matchGroups->count(), $type->format),
+                'round_name' => $roundName,
                 'matches' => $matchGroups->map(function ($matchGroup) use (
                     $calculateLegDetails,
                     $advancementRules
@@ -1617,6 +1629,7 @@ class TournamentTypeController extends Controller
                         'home_team' => $this->formatTeam($first->homeTeam, $homePlaceholder),
                         'away_team' => $this->formatTeam($first->awayTeam, $awayPlaceholder),
                         'is_bye' => $first->is_bye,
+                        'is_third_place' => $first->is_third_place ?? false, // ✅ THÊM FLAG
                         'legs' => $legs,
                         'aggregate_score' => [
                             'home' => $homeTotal,
