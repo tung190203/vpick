@@ -922,27 +922,80 @@ class MatchesController extends Controller
         }
 
         // Kiểm tra số set thắng
-        $setsPerMatch = $rules[0]['sets_per_match'] ?? 3;
-        $neededToWin = intdiv($setsPerMatch, 2) + 1;
+        // $setsPerMatch = $rules[0]['sets_per_match'] ?? 3;
+        // $neededToWin = intdiv($setsPerMatch, 2) + 1;
+
+        // $sets = $match->results->groupBy('set_number');
+        // $wins = [];
+
+        // foreach ($sets as $setResults) {
+        //     if ($setResults->count() < 2) continue;
+
+        //     $sorted = $setResults->sortByDesc('score')->values();
+
+        //     if ($sorted[0]->score !== $sorted[1]->score) {
+        //         $winnerTeamId = $sorted[0]->team_id;
+        //         $wins[$winnerTeamId] = ($wins[$winnerTeamId] ?? 0) + 1;
+        //     }
+        // }
+
+        // $maxWin = max($wins ?: [0]);
+
+        // if ($maxWin < $neededToWin) {
+        //     return ResponseHelper::error("Kết quả hiện tại chưa xác định được đội thắng", 400);
+        // }
 
         $sets = $match->results->groupBy('set_number');
         $wins = [];
+        $setsPerMatch = 0;
 
-        foreach ($sets as $setResults) {
-            if ($setResults->count() < 2) continue;
+        /**
+         * Xác định đội thắng từng set
+         */
+        foreach ($sets as $setNumber => $setResults) {
+            // mỗi set phải có đủ kết quả của 2 đội
+            if ($setResults->count() < 2) {
+                continue;
+            }
 
             $sorted = $setResults->sortByDesc('score')->values();
 
-            if ($sorted[0]->score !== $sorted[1]->score) {
-                $winnerTeamId = $sorted[0]->team_id;
-                $wins[$winnerTeamId] = ($wins[$winnerTeamId] ?? 0) + 1;
+            // nếu hoà điểm → bỏ qua set này
+            if ($sorted[0]->score === $sorted[1]->score) {
+                continue;
             }
+            $setsPerMatch++;
+
+            $winnerTeamId = $sorted[0]->team_id;
+            $wins[$winnerTeamId] = ($wins[$winnerTeamId] ?? 0) + 1;
         }
 
-        $maxWin = max($wins ?: [0]);
+        /**
+         * Không có set hợp lệ
+         */
+        if (empty($wins)) {
+            return ResponseHelper::error(
+                "Chưa có set hợp lệ để xác định đội thắng",
+                400
+            );
+        }
 
-        if ($maxWin < $neededToWin) {
-            return ResponseHelper::error("Kết quả hiện tại chưa xác định được đội thắng", 400);
+        /**
+         * Tìm đội thắng nhiều set nhất
+         */
+        $maxWins = max($wins);
+        $winnerTeamIds = array_keys(
+            array_filter($wins, fn ($count) => $count === $maxWins)
+        );
+
+        /**
+         * Nếu hoà số set thắng
+         */
+        if (count($winnerTeamIds) > 1) {
+            return ResponseHelper::error(
+                "Hai đội đang hoà số set thắng, chưa xác định được đội thắng",
+                400
+            );
         }
 
         // Thực hiện confirm
