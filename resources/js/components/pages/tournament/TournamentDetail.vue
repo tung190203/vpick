@@ -247,7 +247,7 @@
                       <UserCard v-for="(item, index) in tournament.tournament_staff" :key="index" :id="item.id"
                         :name="item.staff.name" :avatar="item.staff.avatar" :rating="getUserScore(item.staff)"
                         status="approved" @removeUser="handleRemoveStaff" />
-                      <UserCard :empty="true" @clickEmpty="openInviteModalDefault" v-if="isCreator" />
+                      <UserCard :empty="true" @clickEmpty="openInviteModalStaff" v-if="isCreator" />
                     </div>
                   </div>
                 </div>
@@ -349,7 +349,7 @@
                     <p class="text-gray-700">
                       Mời bạn bè tham gia giải đấu
                     </p>
-                    <button @click="openInviteModalDefault"
+                    <button @click="openInviteModalWithFriends"
                       class="flex items-center justify-center gap-2 bg-[#D72D36] hover:bg-red-500 text-white font-medium px-4 py-2 rounded-md transition">
                       Mời bạn
                     </button>
@@ -437,7 +437,7 @@
                       v-if="isCreator">Thay đổi thể thức</p>
                   </div>
                 </div>
-                <div v-if="isCreator"
+                <div v-if="isCreator && tournament?.tournament_types?.[0]?.format === FORMAT_MIXED"
                   class="border border-[#BBBFCC] rounded my-4 px-4 py-3 flex justify-between items-center cursor-pointer hover:shadow-md transition"
                   @click="openGroupsSortPage">
                   <div class="flex items-center gap-3">
@@ -752,6 +752,13 @@ const openInviteModalWithFriends = async () => {
 }
 
 const openInviteModalDefault = async () => {
+  inviteType.value = 'participant' // hoặc 'participant' tuỳ ngữ cảnh
+  activeScope.value = 'all'
+  await getInviteGroupData()
+  showInviteModal.value = true
+}
+
+const openInviteModalStaff = async () => {
   inviteType.value = 'staff' // hoặc 'participant' tuỳ ngữ cảnh
   activeScope.value = 'all'
   await getInviteGroupData()
