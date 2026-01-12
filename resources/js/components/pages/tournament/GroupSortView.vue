@@ -220,8 +220,8 @@ const fetchTeams = async () => {
             teamsPerGroup.value =
                 Math.ceil(total / (res.config.num_groups || groups.value.length));
         }
-    } catch {
-        toast.error('Không thể tải danh sách đội');
+    } catch(error) {
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi thực hiện thao tác');
     } finally {
         loading.value = false;
     }
@@ -241,8 +241,8 @@ const confirmAssignments = async () => {
         );
         toast.success('Đã lưu sắp xếp bảng đấu!');
         await fetchTeams();
-    } catch {
-        toast.error('Không thể lưu sắp xếp bảng đấu');
+    } catch(error) {
+        toast.error(error.response?.data?.message || 'Không thể lưu sắp xếp bảng đấu');
     } finally {
         loading.value = false;
     }
@@ -363,8 +363,8 @@ const autoAssignTeams = async() => {
         await TournamentTypeService.autoGenerateTeamAndMatches(tournamentTypeId.value);
         toast.success('Chia bảng thành công');
         await fetchTeams();
-    } catch {
-        toast.error('Không thể lưu sắp xếp bảng đấu');
+    } catch(error) {
+        toast.error(error.response?.data?.message || 'Không thể lưu sắp xếp bảng đấu');
     }
 }
 
