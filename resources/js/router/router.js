@@ -1,36 +1,36 @@
-import LoginPage from '@/components/pages/LoginPage.vue'
-import LoginSuccessPage from '@/components/pages/LoginSuccessPage.vue'
-import RegisterPage from '@/components/pages/RegisterPage.vue'
-import DashboardPage from '@/components/pages/DashboardPage.vue'
+import LoginPage from '@/components/pages/auth/login/LoginPage.vue'
+import LoginSuccessPage from '@/components/pages/auth/login/LoginSuccessPage.vue'
+import RegisterPage from '@/components/pages/auth/register/RegisterPage.vue'
+import DashboardPage from '@/components/pages/dashboard/DashboardPage.vue'
 import AppLayout from '@/layouts/AppLayout.vue'
 import AuthLayout from '@/layouts/AuthLayout.vue'
-import VerifyEmailPage from '@/components/pages/VerifyEmailPage.vue'
-import VerifyPage from '@/components/pages/VerifyPage.vue'
-import ProfilePage from '@/components/pages/ProfilePage.vue'
-import ForgotPasswordPage from '@/components/pages/ForgotPasswordPage.vue'
-import ResetPasswordPage from '@/components/pages/ResetPasswordPage.vue'
-import Leaderboard from '@/components/pages/Leaderboard.vue'
-import ClubPage from '@/components/pages/ClubPage.vue'
-import TournamentPage from '@/components/pages/TournamentPage.vue'
-import TournamentDetail from '@/components/pages/TournamentDetail.vue'
-import MiniTournamentDetail from '@/components/pages/MiniTournamentDetail.vue'
-import PrivacyPolicyPage from '@/components/pages/PrivacyPolicyPage.vue'
-import CreateMiniTournamentPage from '@/components/pages/CreateMiniTournamentPage.vue'
-import CreateTournamentPage from '@/components/pages/CreateTournamentPage.vue'
-import ForbiddenPage from '@/components/pages/ForbiddenPage.vue'
+import VerifyEmailPage from '@/components/pages/auth/verify/VerifyEmailPage.vue'
+import VerifyPage from '@/components/pages/auth/verify/VerifyPage.vue'
+import ProfilePage from '@/components/pages/profile/ProfilePage.vue'
+import ForgotPasswordPage from '@/components/pages/auth/password/ForgotPasswordPage.vue'
+import ResetPasswordPage from '@/components/pages/auth/password/ResetPasswordPage.vue'
+import Leaderboard from '@/components/pages/leader-board/Leaderboard.vue'
+import ClubPage from '@/components/pages/club/ClubPage.vue'
+import TournamentPage from '@/components/pages/tournament/TournamentPage.vue'
+import TournamentDetail from '@/components/pages/tournament/TournamentDetail.vue'
+import MiniTournamentDetail from '@/components/pages/mini-tournament/MiniTournamentDetail.vue'
+import PrivacyPolicyPage from '@/components/pages/legal/PrivacyPolicyPage.vue'
+import CreateMiniTournamentPage from '@/components/pages/mini-tournament/CreateMiniTournamentPage.vue'
+import CreateTournamentPage from '@/components/pages/tournament/CreateTournamentPage.vue'
+import ForbiddenPage from '@/components/pages/common/error/ForbiddenPage.vue'
 import AdminDashboard from '@/components/pages/admin/AdminDashboard.vue'
 import RefereeDashboard from '@/components/pages/referee/RefereeDashboard.vue'
-import OnboardingPage from "@/components/pages/Onboarding.vue"
-import CompleteRegistrationPage from '@/components/pages/CompleteRegistrationPage.vue'
-import VerifyChangePasswordPage from '@/components/pages/VerifyChangePasswordPage.vue'
-import CompleteProfilePage from '@/components/pages/CompleteProfilePage.vue'
-import UpdateProfilePage from '@/components/pages/UpdateProfilePage.vue'
-import NotFoundPage from '@/components/pages/NotFoundPage.vue'
-import TournamentBracketPage from '@/components/pages/TournamentBracketPage.vue'
-import MatchVerifyPage from '@/components/pages/MatchVerifyPage.vue'
-import NotificationsPage from '@/components/pages/NotificationsPage.vue'
-import SettingsPage from '@/components/pages/SettingsPage.vue'
-import MapPage from '@/components/pages/MapPage.vue'
+import OnboardingPage from "@/components/pages/onboarding/Onboarding.vue"
+import CompleteRegistrationPage from '@/components/pages/auth/register/CompleteRegistrationPage.vue'
+import VerifyChangePasswordPage from '@/components/pages/auth/verify/VerifyChangePasswordPage.vue'
+import CompleteProfilePage from '@/components/pages/profile/CompleteProfilePage.vue'
+import UpdateProfilePage from '@/components/pages/profile/UpdateProfilePage.vue'
+import NotFoundPage from '@/components/pages/common/error/NotFoundPage.vue'
+import TournamentBracketPage from '@/components/pages/tournament/TournamentBracketPage.vue'
+import MatchVerifyPage from '@/components/pages/mini-tournament/MatchVerifyPage.vue'
+import NotificationsPage from '@/components/pages/notifications/NotificationsPage.vue'
+import SettingsPage from '@/components/pages/profile/SettingsPage.vue'
+import MapPage from '@/components/pages/map/MapPage.vue'
 import { ROLE } from '@/constants/index.js'
 
 export const route = [
@@ -44,7 +44,7 @@ export const route = [
         component: OnboardingPage
       }
     ]
-  },  
+  },
   {
     path: '/complete-registration',
     component: AuthLayout,
@@ -55,7 +55,7 @@ export const route = [
         component: CompleteRegistrationPage
       }
     ]
-  },  
+  },
   {
     path: '/login',
     component: AuthLayout,
@@ -110,9 +110,9 @@ export const route = [
         path: '/match/:id/verify',
         name: 'match-verify',
         component: MatchVerifyPage,
-        meta: { 
+        meta: {
           role: [ROLE.REFEREE, ROLE.ADMIN, ROLE.PLAYER]
-        } 
+        }
       },
       {
         path: '/club',
@@ -126,9 +126,9 @@ export const route = [
         path: '/notifications',
         name: 'notifications',
         component: NotificationsPage,
-        meta: { 
+        meta: {
           role: [ROLE.REFEREE, ROLE.ADMIN, ROLE.PLAYER]
-        } 
+        }
       },
       {
         path: '/settings',
@@ -171,7 +171,7 @@ export const route = [
             component: TournamentBracketPage,
           }
         ]
-      },      
+      },
       {
         path: '/mini-tournament',
         meta: {
@@ -253,7 +253,7 @@ export const route = [
         component: ForgotPasswordPage
       }
     ]
-  },  
+  },
   {
     path: '/verify-change-password',
     component: AuthLayout,
@@ -264,7 +264,7 @@ export const route = [
         component: VerifyChangePasswordPage
       }
     ]
-  },  
+  },
   {
     path: '/reset-password',
     component: AuthLayout,
