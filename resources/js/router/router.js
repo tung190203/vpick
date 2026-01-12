@@ -27,6 +27,7 @@ import CompleteProfilePage from '@/components/pages/profile/CompleteProfilePage.
 import UpdateProfilePage from '@/components/pages/profile/UpdateProfilePage.vue'
 import NotFoundPage from '@/components/pages/common/error/NotFoundPage.vue'
 import TournamentBracketPage from '@/components/pages/tournament/TournamentBracketPage.vue'
+import GroupSortView from '@/components/pages/tournament/GroupSortView.vue'
 import MatchVerifyPage from '@/components/pages/mini-tournament/MatchVerifyPage.vue'
 import NotificationsPage from '@/components/pages/notifications/NotificationsPage.vue'
 import SettingsPage from '@/components/pages/profile/SettingsPage.vue'
@@ -169,6 +170,11 @@ export const route = [
             path: ':id/bracket',
             name: 'tournament-bracket',
             component: TournamentBracketPage,
+          },
+          {
+            path: ':id/groups/sort',
+            name: 'tournament-groups-sort',
+            component: GroupSortView
           }
         ]
       },
