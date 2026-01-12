@@ -20,7 +20,7 @@ import { ref, onMounted } from 'vue';
 import { toast } from 'vue3-toastify';
 import { ArrowLeftIcon } from '@heroicons/vue/24/solid';
 import { useRoute, useRouter } from 'vue-router';
-import * as TournamnetService from '@/service/tournament.js'
+import * as TournamentService from '@/service/tournament.js'
 import * as TournamentTypeService from '@/service/tournamentType.js'
 import BracketElimination from '@/components/molecules/BracketElimination.vue';
 import BracketMixed from '@/components/molecules/BracketMixed.vue';
@@ -35,7 +35,7 @@ const ranks = ref([])
 
 const detailTournament = async (tournamentId) => {
     try {
-        const response = await TournamnetService.getTournamentById(tournamentId)
+        const response = await TournamentService.getTournamentById(tournamentId)
         tournament.value = response
         if (tournament.value && tournament.value.tournament_types) {
             await getBracket(tournament.value.tournament_types[0]?.id)

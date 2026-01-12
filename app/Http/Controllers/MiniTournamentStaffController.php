@@ -23,8 +23,7 @@ class MiniTournamentStaffController extends Controller
         }
 
         $tournament->staff()->attach($staffId, [
-            'role' => MiniTournamentStaff::ROLE_ORGANIZER,
-            'is_invite_by_organizer' => true
+            'role' => MiniTournamentStaff::ROLE_ORGANIZER
         ]);
     
         return response()->json(['message' => 'Thêm người tổ chức thành công'], 201);

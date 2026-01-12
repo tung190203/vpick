@@ -27,3 +27,15 @@ export const reGenerateMatches = async (tournamentTypeId) => {
   return axiosInstance.post(`${tournamentTypeEndpoint}/${tournamentTypeId}/regenerate-matches`)
     .then((response) => response.data.data);
 }
+
+export const groupWithTeamsForSort = async(tournamentId) => {
+  return axiosInstance.get(`${tournamentTypeEndpoint}/${tournamentId}/groups-with-teams`).then((response) => response.data.data);
+}
+
+export const assignTeamsAndGenerate = async(tournamentTypeId, data) => {
+  return axiosInstance.post(`${tournamentTypeEndpoint}/${tournamentTypeId}/assign-teams-and-generate`, data).then((response) => response.data.data);
+}
+
+export const autoGenerateTeamAndMatches = async(tournamentTypeId) => {
+  return axiosInstance.post(`${tournamentTypeEndpoint}/${tournamentTypeId}/auto-generate-matches`).then((response) => response.data.data);
+}
