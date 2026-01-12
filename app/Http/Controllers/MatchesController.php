@@ -129,10 +129,6 @@ class MatchesController extends Controller
 
     private function calculateMatchWinner($match, $setsPerMatch)
     {
-        // Tính số set cần thắng (best-of logic). Ví dụ setsPerMatch = 3 -> need 2
-        $neededToWin = intdiv($setsPerMatch, 2) + 1;
-
-        // Thu danh sách team xuất hiện trong match results (unique)
         $teamIds = $match->results->pluck('team_id')->unique()->values()->all();
 
         // Nếu không đủ 2 đội (dữ liệu bất thường) thì không quyết định
@@ -156,11 +152,12 @@ class MatchesController extends Controller
         if (array_sum($setWins) === 0) {
             return;
         }
-
-        // Kiểm tra xem đã có team đạt ngưỡng thắng chưa
+    
+        // Tìm đội thắng nhiều set nhất
+        $maxWins = max($setWins);
         $winnerTeamId = null;
         foreach ($setWins as $teamId => $wins) {
-            if ($wins >= $neededToWin) {
+            if ($wins === $maxWins) {
                 $winnerTeamId = $teamId;
                 break;
             }
@@ -170,7 +167,12 @@ class MatchesController extends Controller
         $match->update([
             'winner_id' => $winnerTeamId
         ]);
+    
+        // Chỉ tiến vào vòng sau nếu là 1 leg (logic cũ)
+        $numLegs = $match->tournamentType->num_legs ?? 1;
+        
         if (
+            $numLegs == 1 && 
             $winnerTeamId &&
             in_array($match->tournamentType->format, [
                 TournamentType::FORMAT_MIXED,
@@ -912,7 +914,10 @@ class MatchesController extends Controller
         if (!$rules) {
             return ResponseHelper::error('Thể thức này chưa có luật thi đấu (match_rules).', 400);
         }
-
+    
+        $setsPerMatch = $rules[0]['sets_per_match'] ?? 3;
+        $numLegs = $match->tournamentType->num_legs ?? 1;
+    
         // ===================================
         // VALIDATE TOÀN BỘ KẾT QUẢ CÁC SET
         // ===================================
@@ -920,38 +925,13 @@ class MatchesController extends Controller
         if ($validationError) {
             return ResponseHelper::error($validationError, 400);
         }
-
-        // Kiểm tra số set thắng
-        // $setsPerMatch = $rules[0]['sets_per_match'] ?? 3;
-        // $neededToWin = intdiv($setsPerMatch, 2) + 1;
-
-        // $sets = $match->results->groupBy('set_number');
-        // $wins = [];
-
-        // foreach ($sets as $setResults) {
-        //     if ($setResults->count() < 2) continue;
-
-        //     $sorted = $setResults->sortByDesc('score')->values();
-
-        //     if ($sorted[0]->score !== $sorted[1]->score) {
-        //         $winnerTeamId = $sorted[0]->team_id;
-        //         $wins[$winnerTeamId] = ($wins[$winnerTeamId] ?? 0) + 1;
-        //     }
-        // }
-
-        // $maxWin = max($wins ?: [0]);
-
-        // if ($maxWin < $neededToWin) {
-        //     return ResponseHelper::error("Kết quả hiện tại chưa xác định được đội thắng", 400);
-        // }
-
+    
+        // ===================================
+        // XÁC ĐỊNH WINNER CỦA LEG (chỉ tính set thắng thực tế)
+        // ===================================
         $sets = $match->results->groupBy('set_number');
         $wins = [];
-        $setsPerMatch = 0;
-
-        /**
-         * Xác định đội thắng từng set
-         */
+    
         foreach ($sets as $setNumber => $setResults) {
             // mỗi set phải có đủ kết quả của 2 đội
             if ($setResults->count() < 2) {
@@ -964,8 +944,7 @@ class MatchesController extends Controller
             if ($sorted[0]->score === $sorted[1]->score) {
                 continue;
             }
-            $setsPerMatch++;
-
+    
             $winnerTeamId = $sorted[0]->team_id;
             $wins[$winnerTeamId] = ($wins[$winnerTeamId] ?? 0) + 1;
         }
@@ -985,20 +964,21 @@ class MatchesController extends Controller
          */
         $maxWins = max($wins);
         $winnerTeamIds = array_keys(
-            array_filter($wins, fn ($count) => $count === $maxWins)
+            array_filter($wins, fn($count) => $count === $maxWins)
         );
 
-        /**
-         * Nếu hoà số set thắng
-         */
         if (count($winnerTeamIds) > 1) {
             return ResponseHelper::error(
-                "Hai đội đang hoà số set thắng, chưa xác định được đội thắng",
+                "Hai đội đang hoà số set thắng trong các lượt, chưa xác định được đội thắng",
                 400
             );
         }
-
-        // Thực hiện confirm
+    
+        $legWinnerId = $winnerTeamIds[0];
+    
+        // ===================================
+        // XỬ LÝ CONFIRM
+        // ===================================
         if ($isOrganizer) {
             $match->home_team_confirm = true;
             $match->away_team_confirm = true;
@@ -1489,13 +1469,7 @@ class MatchesController extends Controller
             TournamentType::FORMAT_MIXED,
             TournamentType::FORMAT_ELIMINATION,
         ])) {
-            if ($numLegs == 1) {
-                // Nếu chỉ có 1 lượt: Chạy logic cũ đang hoạt động tốt của bạn
-                $this->advanceWinnerToNextRound($match, $finalWinnerId);
-            } else {
-                // Nếu có từ 2 lượt trở lên: Chạy logic mới để điền vào cả 2 trận (Leg 1 & Leg 2)
-                $this->syncWinnerToNextRoundLegs($match, $finalWinnerId);
-            }
+            $this->syncWinnerToNextRoundLegs($match, $finalWinnerId);
         }
 
         // ========================================
