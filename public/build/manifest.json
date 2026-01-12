@@ -12,18 +12,18 @@
     "src": "node_modules/leaflet/dist/images/marker-icon.png"
   },
   "resources/css/app.css": {
-    "file": "assets/app-BGVcsdWT.css",
+    "file": "assets/app-HXJgNZrK.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-DvWZkWkA.js",
+    "file": "assets/app-DumEn4to.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "css": [
-      "assets/app-DTnmXWho.css",
-      "assets/app-BGVcsdWT.css"
+      "assets/app-vRIcmvy2.css",
+      "assets/app-HXJgNZrK.css"
     ],
     "assets": [
       "assets/logo-splash-DOuQK6QO.svg",
@@ -37,6 +37,7 @@
       "assets/email-sent-DLgpSAAS.svg",
       "assets/male-gQsu98hE.svg",
       "assets/female-BwdMQ4_1.svg",
+      "assets/table_chart-BrDU_W9V.svg",
       "assets/branch-BNleCFR1.svg",
       "assets/mixed-CGHxHovp.svg",
       "assets/direct-DtKxnT17.svg",
@@ -44,6 +45,7 @@
       "assets/pickleball-banner-CEzsk-BQ.png",
       "assets/pickleball-banner-1-DkgNn8B4.png",
       "assets/pickleball-banner-2-BknHubJi.png",
+      "assets/dot-menu-CFmhjUHu.svg",
       "assets/default-image-DKJb-50o.jpeg",
       "assets/layers-BWBAp2CZ.png",
       "assets/layers-2x-Bpkbi35X.png",
@@ -69,6 +71,10 @@
   "resources/js/assets/images/direct.svg": {
     "file": "assets/direct-DtKxnT17.svg",
     "src": "resources/js/assets/images/direct.svg"
+  },
+  "resources/js/assets/images/dot-menu.svg": {
+    "file": "assets/dot-menu-CFmhjUHu.svg",
+    "src": "resources/js/assets/images/dot-menu.svg"
   },
   "resources/js/assets/images/email-sent.svg": {
     "file": "assets/email-sent-DLgpSAAS.svg",
@@ -125,5 +131,9 @@
   "resources/js/assets/images/splash-bg.png": {
     "file": "assets/splash-bg-hSO4uccQ.png",
     "src": "resources/js/assets/images/splash-bg.png"
+  },
+  "resources/js/assets/images/table_chart.svg": {
+    "file": "assets/table_chart-BrDU_W9V.svg",
+    "src": "resources/js/assets/images/table_chart.svg"
   }
 }
