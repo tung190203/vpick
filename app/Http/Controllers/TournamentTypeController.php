@@ -87,6 +87,8 @@ class TournamentTypeController extends Controller
             // ✅ TẠO BẢNG TRỐNG CHO FORMAT MIXED
             if ($type->format === TournamentType::FORMAT_MIXED) {
                 $this->createEmptyGroups($type);
+            } else {
+                $this->autoGenerateMatches($type);
             }
     
             DB::commit();
