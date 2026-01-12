@@ -437,6 +437,15 @@
                       v-if="isCreator">Thay đổi thể thức</p>
                   </div>
                 </div>
+                <div v-if="isCreator"
+                  class="border border-[#BBBFCC] rounded my-4 px-4 py-3 flex justify-between items-center cursor-pointer hover:shadow-md transition"
+                  @click="openGroupsSortPage">
+                  <div class="flex items-center gap-3">
+                    <img src="@/assets/images/table_chart.svg" class="w-5 h-5" alt="">
+                    <p>Sắp xếp bảng thi đấu</p>
+                  </div>
+                  <ChevronRightIcon class="w-5 h-5 text-gray-400" />
+                </div>
                 <div v-if="publicBracket == true || isCreator"
                   class="border border-[#BBBFCC] rounded my-4 px-4 py-3 flex justify-between items-center cursor-pointer hover:shadow-md transition"
                   @click="openBracketPage">
@@ -584,7 +593,7 @@ import {
 import UserCard from '@/components/molecules/UserCard.vue'
 import QRcodeModal from '@/components/molecules/QRcodeModal.vue'
 import InviteGroup from '@/components/molecules/InviteGroup.vue'
-import * as TournamnetService from '@/service/tournament.js'
+import * as TournamentService from '@/service/tournament.js'
 import * as TournamentTypeService from '@/service/tournamentType.js'
 import * as TeamService from '@/service/team.js'
 import * as ParticipantService from '@/service/participant.js'
@@ -814,6 +823,10 @@ const openBracketPage = () => {
   router.push({ name: 'tournament-bracket', param: { id: id } });
 };
 
+const openGroupsSortPage = () => {
+  router.push({ name: 'tournament-groups-sort', params: {id: id} });
+}
+
 function formatMatchCount(matches) {
   if (!matches) return "-";
   const { min, max } = matches;
@@ -1008,7 +1021,7 @@ const storeTournamentType = async (payload) => {
     await TournamentTypeService.createTournamentType(payload);
     toast.success('Thể thức thi đấu đã được lưu thành công!');
     showFormatType.value = false;
-    const response = await TournamnetService.getTournamentById(tournament.value.id);
+    const response = await TournamentService.getTournamentById(tournament.value.id);
     tournament.value.tournament_types = response.tournament_types;
     await getRanks();
   } catch (error) {
@@ -1113,7 +1126,7 @@ const getUserScore = (user) => {
 
 const detailTournament = async (tournamentId) => {
   try {
-    const response = await TournamnetService.getTournamentById(tournamentId)
+    const response = await TournamentService.getTournamentById(tournamentId)
     tournament.value = response
     autoApprove.value = response.auto_approve
     publicBracket.value = response.is_public_branch
@@ -1141,7 +1154,7 @@ const updateTournament = async (id, payload) => {
       }
       formData.append(key, value)
     }
-    await TournamnetService.updateTournament(id, formData)
+    await TournamentService.updateTournament(id, formData)
     toast.success('Cập nhật thông tin giải đấu thành công!')
   } catch (error) {
     toast.error(error.response?.data?.message || 'Đã xảy ra lỗi khi cập nhật thông tin giải đấu.')
@@ -1216,7 +1229,7 @@ const publicTournament = async () => {
 const removeTournament = async () => {
   const id = tournament.value.id
   try {
-    await TournamnetService.deleteTournament(id)
+    await TournamentService.deleteTournament(id)
     toast.success('Xoá giải đấu thành công!')
     setTimeout(() => {
       router.push('/')
