@@ -281,45 +281,53 @@ class MiniParticipantController extends Controller
                 $query = User::withFullRelations()
                     ->whereHas('clubs', fn($q) => $q->where('clubs.id', $validated['club_id']));
                 break;
-    
+
             case 'friends':
-                $friendIds = DB::table('follows')
-                    ->where('user_id', $user->id)
-                    ->where('followable_type', User::class)
-                    ->pluck('followable_id');
-                
                 $query = User::withFullRelations()
-                    ->whereIn('users.id', $friendIds);
+                    ->whereExists(function ($q) use ($user) {
+                        $q->select(DB::raw(1))
+                            ->from('follows as f1')
+                            ->whereColumn('f1.followable_id', 'users.id')
+                            ->where('f1.user_id', $user->id)
+                            ->where('f1.followable_type', User::class);
+                    })
+                    ->whereExists(function ($q) use ($user) {
+                        $q->select(DB::raw(1))
+                            ->from('follows as f2')
+                            ->whereColumn('f2.user_id', 'users.id')
+                            ->where('f2.followable_id', $user->id)
+                            ->where('f2.followable_type', User::class);
+                    });
                 break;
-    
-                case 'area':
-                    $lat = $validated['lat'];
-                    $lng = $validated['lng'];
-                    $radius = $validated['radius'];
-                
-                    $haversine = "(6371 * acos(
+
+            case 'area':
+                $lat = $validated['lat'];
+                $lng = $validated['lng'];
+                $radius = $validated['radius'];
+
+                $haversine = "(6371 * acos(
                         cos(radians(?))
                         * cos(radians(users.latitude))
                         * cos(radians(users.longitude) - radians(?))
                         + sin(radians(?))
                         * sin(radians(users.latitude))
                     ))";
-                
-                    $query = User::withFullRelations()
-                        ->whereNotNull('users.latitude')
-                        ->whereNotNull('users.longitude')
-                        ->whereRaw("$haversine <= ?", [
-                            $lat,
-                            $lng,
-                            $lat,
-                            $radius
-                        ])
-                        ->orderByRaw("$haversine asc", [
-                            $lat,
-                            $lng,
-                            $lat
-                        ]);
-                    break;
+
+                $query = User::withFullRelations()
+                    ->whereNotNull('users.latitude')
+                    ->whereNotNull('users.longitude')
+                    ->whereRaw("$haversine <= ?", [
+                        $lat,
+                        $lng,
+                        $lat,
+                        $radius
+                    ])
+                    ->orderByRaw("$haversine asc", [
+                        $lat,
+                        $lng,
+                        $lat
+                    ]);
+                break;
                 
             case 'all':
                 $query = User::withFullRelations();

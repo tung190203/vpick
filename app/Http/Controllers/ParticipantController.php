@@ -499,13 +499,21 @@ class ParticipantController extends Controller
                 break;
 
             case 'friends':
-                $friendIds = DB::table('follows')
-                    ->where('user_id', $user->id)
-                    ->where('followable_type', User::class)
-                    ->pluck('followable_id');
-                
                 $query = User::withFullRelations()
-                    ->whereIn('users.id', $friendIds);
+                    ->whereExists(function ($q) use ($user) {
+                        $q->select(DB::raw(1))
+                            ->from('follows as f1')
+                            ->whereColumn('f1.followable_id', 'users.id')
+                            ->where('f1.user_id', $user->id)
+                            ->where('f1.followable_type', User::class);
+                    })
+                    ->whereExists(function ($q) use ($user) {
+                        $q->select(DB::raw(1))
+                            ->from('follows as f2')
+                            ->whereColumn('f2.user_id', 'users.id')
+                            ->where('f2.followable_id', $user->id)
+                            ->where('f2.followable_type', User::class);
+                    });
                 break;
 
             case 'area':
