@@ -107,7 +107,7 @@ class TournamentTypeController extends Controller
 
         if ($completedMatches) {
             return ResponseHelper::error(
-                'Không thể generate lại. Đã có trận đấu hoàn thành.', 
+                'Không thể sắp xếp lại. Đã có trận đấu hoàn thành.',
                 400
             );
         }
