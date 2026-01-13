@@ -137,20 +137,28 @@
                                     </div>
                                 </div>
 
-                                <!-- <button @click="addSet" :disabled="isMaxSets"
-                                    class="w-full flex justify-center items-center gap-2 border p-3 rounded-lg text-[#838799] hover:bg-gray-100 transition-colors mb-6 disabled:opacity-50 disabled:cursor-not-allowed">
-                                    <PlusIcon class="w-5 h-5" />
-                                    <span class="text-sm font-semibold">
-                                        Thêm set {{ isMaxSets ? `(Tối đa ${maxSets} sets)` : '' }}
-                                    </span>
-                                </button> -->
                                 <button @click="addSet"
-                                    class="w-full flex justify-center items-center gap-2 border p-3 rounded-lg text-[#838799] hover:bg-gray-100 transition-colors mb-6 disabled:opacity-50 disabled:cursor-not-allowed">
+                                    class="w-full flex justify-center items-center gap-2 border p-3 rounded-lg text-[#838799] hover:bg-gray-100 transition-colors mb-6">
                                     <PlusIcon class="w-5 h-5" />
-                                    <span class="text-sm font-semibold">
-                                        Thêm set
-                                    </span>
+                                    <span class="text-sm font-semibold">Thêm set</span>
                                 </button>
+
+                                <!-- Nút tiến vào vòng trong -->
+                                <div v-if="shouldShowAdvanceButtons" class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                    <p class="text-sm text-gray-700 mb-3 text-center font-medium">
+                                        Trận đấu hòa! Chọn đội tiến vào vòng trong:
+                                    </p>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <button @click="handleAdvanceTeam(data.home_team.id)" :disabled="isAdvancing"
+                                            class="py-2 px-4 bg-blue-600 text-white rounded font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                            {{ data.home_team?.name || 'Team A' }}
+                                        </button>
+                                        <button @click="handleAdvanceTeam(data.away_team.id)" :disabled="isAdvancing"
+                                            class="py-2 px-4 bg-blue-600 text-white rounded font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                            {{ data.away_team?.name || 'Team B' }}
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -220,6 +228,7 @@ const isOpen = computed({
 })
 
 const isSaving = ref(false)
+const isAdvancing = ref(false)
 
 /* ===================== LEG LOGIC ===================== */
 const selectedLegIndex = ref(0)
@@ -236,17 +245,15 @@ const decrementCourt = () => {
     if (courtNumber.value > 1) courtNumber.value--
 }
 
-/* ===================== SCORES (⚠️ PHẢI KHAI BÁO TRƯỚC WATCH) ===================== */
+/* ===================== SCORES ===================== */
 const scores = ref([])
 
 /* ===================== INIT SCORES ===================== */
 const initializeScores = () => {
     if (currentLeg.value?.sets) {
         return Object.values(currentLeg.value.sets).map(setArray => ({
-            teamA:
-                setArray.find(s => s.team_id === props.data.home_team?.id)?.score || 0,
-            teamB:
-                setArray.find(s => s.team_id === props.data.away_team?.id)?.score || 0
+            teamA: setArray.find(s => s.team_id === props.data.home_team?.id)?.score || 0,
+            teamB: setArray.find(s => s.team_id === props.data.away_team?.id)?.score || 0
         }))
     }
     return [{ teamA: 0, teamB: 0 }]
@@ -272,13 +279,106 @@ watch(
     { deep: true }
 )
 
-/* ===================== MATCH RULES ===================== */
-const maxSets = computed(
-    () => props.tournament?.tournament_types?.[0]?.match_rules?.[0]?.sets_per_match || 3
-)
-// const isMaxSets = computed(() => scores.value.length >= maxSets.value)
+/* ===================== ADVANCE TEAM LOGIC ===================== */
+const calculateMatchStats = () => {
+    if (!props.data.legs || props.data.legs.length === 0) {
+        return { homeLegsWon: 0, awayLegsWon: 0, homeSetsWon: 0, awaySetsWon: 0, homePoints: 0, awayPoints: 0 }
+    }
 
-/* ===================== QR CODE (THEO LEG) ===================== */
+    let homeLegsWon = 0
+    let awayLegsWon = 0
+    let homeSetsWon = 0
+    let awaySetsWon = 0
+    let homePoints = 0
+    let awayPoints = 0
+
+    props.data.legs.forEach(leg => {
+        if (!leg.sets) return
+
+        const sets = Object.values(leg.sets)
+        let legHomeWins = 0
+        let legAwayWins = 0
+
+        sets.forEach(setArray => {
+            const homeSet = setArray.find(s => s.team_id === props.data.home_team?.id)
+            const awaySet = setArray.find(s => s.team_id === props.data.away_team?.id)
+
+            if (homeSet && awaySet) {
+                homePoints += homeSet.score || 0
+                awayPoints += awaySet.score || 0
+
+                if (homeSet.won_match === 1) {
+                    homeSetsWon++
+                    legHomeWins++
+                } else if (awaySet.won_match === 1) {
+                    awaySetsWon++
+                    legAwayWins++
+                }
+            }
+        })
+
+        // Xác định leg winner
+        if (legHomeWins > legAwayWins) {
+            homeLegsWon++
+        } else if (legAwayWins > legHomeWins) {
+            awayLegsWon++
+        }
+    })
+
+    return { homeLegsWon, awayLegsWon, homeSetsWon, awaySetsWon, homePoints, awayPoints }
+}
+
+const shouldShowAdvanceButtons = computed(() => {
+    // 1. Phải có leg
+    if (!props.data.legs || props.data.legs.length === 0) return false
+
+    // 2. Tất cả leg phải completed
+    const allLegsCompleted = props.data.legs.every(
+        leg => leg.status === 'completed'
+    )
+    if (!allLegsCompleted) return false
+
+    // 3. Nếu đã có winner thì không hiển thị
+    if (props.data.winner_id) return false
+
+    const stats = calculateMatchStats()
+
+    // 4. Phải có ít nhất 1 set hoặc 1 điểm được ghi nhận
+    const hasAnyResult =
+        stats.homeSetsWon > 0 ||
+        stats.awaySetsWon > 0 ||
+        stats.homePoints > 0 ||
+        stats.awayPoints > 0
+
+    if (!hasAnyResult) return false
+
+    // 5. Hòa hoàn toàn
+    return (
+        stats.homeLegsWon === stats.awayLegsWon &&
+        stats.homeSetsWon === stats.awaySetsWon &&
+        stats.homePoints === stats.awayPoints
+    )
+})
+
+
+const handleAdvanceTeam = async (teamId) => {
+    if (isAdvancing.value) return
+    
+    try {
+        isAdvancing.value = true
+        await MatchesServices.advanceTeamManual(props.data.id, { winner_team_id: teamId })
+        toast.success('Đội đã được chọn tiến vào vòng trong!')
+        emit('updated')
+        isOpen.value = false
+    } catch (error) {
+        const errorMsg = error.response?.data?.message || 'Có lỗi xảy ra khi chọn đội tiến vòng'
+        toast.error(errorMsg)
+    } finally {
+        isAdvancing.value = false
+    }
+}
+
+/* ===================== QR CODE ===================== */
 const qrCodeUrl = computed(() => {
     if (!currentLeg.value?.id) return ''
     return `${window.location.origin}/match/${currentLeg.value.id}/verify`
@@ -286,9 +386,7 @@ const qrCodeUrl = computed(() => {
 
 /* ===================== SCORE ACTIONS ===================== */
 const incrementScore = (idx, team) => {
-    const maxPoints =
-        props.tournament?.tournament_types?.[0]?.match_rules?.[0]?.max_points || 11
-
+    const maxPoints = props.tournament?.tournament_types?.[0]?.match_rules?.[0]?.max_points || 11
     if (team === 'A' && scores.value[idx].teamA < maxPoints) scores.value[idx].teamA++
     if (team === 'B' && scores.value[idx].teamB < maxPoints) scores.value[idx].teamB++
 }
@@ -299,7 +397,6 @@ const decrementScore = (idx, team) => {
 }
 
 const addSet = () => {
-    // if (!isMaxSets.value) scores.value.push({ teamA: 0, teamB: 0 })
     scores.value.push({ teamA: 0, teamB: 0 })
 }
 
@@ -365,14 +462,13 @@ const confirmMatchResult = async () => {
 
 /* ===================== UI HELPERS ===================== */
 const closeModal = () => {
-    if (!isSaving.value) isOpen.value = false
+    if (!isSaving.value && !isAdvancing.value) isOpen.value = false
 }
 
 const emptySlots = (team) => {
-    const members =
-        team === 'home'
-            ? props.data.home_team?.members?.length || 0
-            : props.data.away_team?.members?.length || 0
+    const members = team === 'home'
+        ? props.data.home_team?.members?.length || 0
+        : props.data.away_team?.members?.length || 0
 
     const slots = props.tournament.player_per_team - members
     return slots > 0 ? Array.from({ length: slots }, (_, i) => i + 1) : []
