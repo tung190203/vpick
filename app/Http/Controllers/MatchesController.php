@@ -1571,12 +1571,7 @@ class MatchesController extends Controller
         if (!$isOrganizer) {
             return ResponseHelper::error('Chỉ BTC mới có quyền thực hiện thao tác này', 403);
         }
-
-        // Kiểm tra trận đã hoàn thành chưa
-        if ($match->status !== Matches::STATUS_COMPLETED) {
-            return ResponseHelper::error('Trận đấu chưa hoàn thành', 400);
-        }
-
+    
         $winnerTeamId = $validated['winner_team_id'];
 
         // Validate winner_team_id có thuộc trận này không
@@ -1605,22 +1600,86 @@ class MatchesController extends Controller
 
         DB::beginTransaction();
         try {
+            $tournamentType = $match->tournamentType;
+            
             // 1. Cập nhật winner_id cho TẤT CẢ các legs
             foreach ($allLegs as $leg) {
                 $leg->update(['winner_id' => $winnerTeamId]);
             }
-
-            // 2. Tiến đội thắng vào vòng sau
-            if (in_array($match->tournamentType->format, [
+    
+            // 2. Cập nhật bảng xếp hạng (cần làm trước khi advance)
+            $this->recalculateRankings($match->tournament_type_id);
+    
+            // 3. ✅ XỬ LÝ ĐẶC BIỆT CHO ROUND 1 CỦA MIXED FORMAT (POOL STAGE)
+            if ((int) $match->round === 1 && $tournamentType->format === TournamentType::FORMAT_MIXED) {
+                // 3a. Tính toán vị trí của team trong bảng
+                $groupId = $match->group_id;
+                if (!$groupId) {
+                    throw new \Exception('Trận đấu không thuộc bảng nào');
+                }
+    
+                // Lấy tất cả teams trong bảng này
+                $allGroupMatches = Matches::where('group_id', $groupId)
+                    ->where('round', 1)
+                    ->get();
+    
+                $teamIdsInGroup = $allGroupMatches->pluck('home_team_id')
+                    ->merge($allGroupMatches->pluck('away_team_id'))
+                    ->unique()
+                    ->filter();
+    
+                // Lấy ranking hiện tại
+                $currentRankings = TeamRanking::where('tournament_type_id', $match->tournament_type_id)
+                    ->whereIn('team_id', $teamIdsInGroup)
+                    ->orderBy('rank', 'asc')
+                    ->get();
+    
+                // 3b. Tìm vị trí của winner_team trong bảng
+                $winnerRanking = $currentRankings->firstWhere('team_id', $winnerTeamId);
+                if (!$winnerRanking) {
+                    throw new \Exception('Không tìm thấy ranking của đội thắng');
+                }
+    
+                $rankInGroup = $currentRankings->search(function($r) use ($winnerTeamId) {
+                    return $r->team_id == $winnerTeamId;
+                }) + 1; // +1 vì index bắt đầu từ 0
+    
+                // 3c. Tìm PoolAdvancementRule tương ứng
+                $advancementRule = PoolAdvancementRule::where('group_id', $groupId)
+                    ->where('rank', $rankInGroup)
+                    ->first();
+    
+                if (!$advancementRule) {
+                    // Nếu không có rule cho rank này, có thể đội không đi tiếp
+                    // hoặc gọi checkAndAdvanceFromPool để xử lý toàn bộ bảng
+                    $this->checkAndAdvanceFromPool($match);
+                } else {
+                    // 3d. Đưa team vào trận knockout theo rule
+                    $nextMatch = Matches::find($advancementRule->next_match_id);
+                    if ($nextMatch) {
+                        $updateData = [];
+                        if ($advancementRule->next_position === 'home') {
+                            $updateData['home_team_id'] = $winnerTeamId;
+                        } else {
+                            $updateData['away_team_id'] = $winnerTeamId;
+                        }
+                        $updateData['status'] = Matches::STATUS_PENDING;
+                        
+                        $nextMatch->update($updateData);
+                    }
+    
+                    // Kiểm tra xem có cần xử lý các đội khác trong bảng không
+                    $this->checkAllPoolsCompleted($match->tournament_type_id);
+                }
+            }
+            // 4. Xử lý knockout bình thường
+            elseif (in_array($tournamentType->format, [
                 TournamentType::FORMAT_MIXED,
                 TournamentType::FORMAT_ELIMINATION,
             ])) {
                 $this->syncWinnerToNextRoundLegs($match, $winnerTeamId);
             }
-
-            // 3. Cập nhật bảng xếp hạng
-            $this->recalculateRankings($match->tournament_type_id);
-
+    
             DB::commit();
 
             return ResponseHelper::success(
@@ -1629,6 +1688,11 @@ class MatchesController extends Controller
                         ? $match->homeTeam
                         : $match->awayTeam,
                     'updated_legs' => $allLegs->pluck('id'),
+                    'advancement_info' => [
+                        'is_pool_stage' => ((int) $match->round === 1 && $tournamentType->format === TournamentType::FORMAT_MIXED),
+                        'group_id' => $match->group_id ?? null,
+                        'rank_in_group' => $rankInGroup ?? null,
+                    ]
                 ],
                 'Đã chọn đội thắng và tiến vào vòng trong thành công',
                 200
