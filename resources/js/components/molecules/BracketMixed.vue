@@ -20,33 +20,34 @@
 
                 <div v-else>
                     <div v-for="group in rank.group_rankings" :key="group.group_id"
-                        v-if="group.rankings && group.rankings.length"
                         class="bg-gray-100 rounded-lg shadow overflow-hidden mb-4">
-                        <!-- Group Header -->
-                        <div
-                            class="grid grid-cols-[40px_1fr_80px_80px] bg-gray-200 px-4 py-2 text-gray-600 font-semibold text-sm">
-                            <span>#</span>
-                            <span>Đội</span>
-                            <span class="text-center">Điểm</span>
-                            <span class="text-center">Hiệu số</span>
-                        </div>
-
-                        <!-- Teams -->
-                        <div class="divide-y divide-gray-200">
-                            <div v-for="(team, index) in group.rankings" :key="team.team_id"
-                                class="grid grid-cols-[40px_1fr_80px_80px] items-center px-4 py-3 bg-white hover:bg-blue-50 transition-colors duration-200">
-                                <span class="font-medium">{{ index + 1 }}</span>
-
-                                <div class="flex items-center gap-2">
-                                    <img :src="team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(team.team_name)}`"
-                                        class="w-8 h-8 rounded-full border" />
-                                    <p class="text-sm font-medium">{{ team.team_name }}</p>
-                                </div>
-
-                                <span class="text-center font-semibold">{{ team.points }}</span>
-                                <span class="text-center font-semibold">{{ team.point_diff }}</span>
+                        <template v-if="group.rankings && group.rankings.length">
+                            <!-- Group Header -->
+                            <div
+                                class="grid grid-cols-[20px_1fr_60px_60px] bg-gray-200 px-4 py-2 text-gray-600 font-semibold text-sm">
+                                <span>#</span>
+                                <span>Đội</span>
+                                <span class="text-center">Điểm</span>
+                                <span class="text-center">Hiệu số</span>
                             </div>
-                        </div>
+
+                            <!-- Teams -->
+                            <div class="divide-y divide-gray-200">
+                                <div v-for="(team, index) in group.rankings" :key="team.team_id"
+                                    class="grid grid-cols-[20px_1fr_60px_60px] items-center px-4 py-3 bg-white hover:bg-blue-50 transition-colors duration-200">
+                                    <span class="font-medium">{{ index + 1 }}</span>
+
+                                    <div class="flex items-center gap-2">
+                                        <img :src="team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(team.team_name)}`"
+                                            class="w-8 h-8 rounded-full border" />
+                                        <p class="text-sm font-medium">{{ team.team_name }}</p>
+                                    </div>
+
+                                    <span class="text-center font-semibold">{{ team.points }}</span>
+                                    <span class="text-center font-semibold">{{ team.point_diff }}</span>
+                                </div>
+                            </div>
+                        </template>
                     </div>
                 </div>
             </div>
@@ -76,7 +77,7 @@
                             </div>
                         </div>
 
-                        <!-- ✅ GỘP LEGS THÀNH 1 CARD -->
+                        <!-- GỘP LEGS THÀNH 1 CARD -->
                         <div v-for="match in group.matches" :key="match.match_id" :class="[
                             matchCardWrapperClass(match),
                             { 'opacity-50': isDragging && draggedTeam?.matchId === match.match_id }
@@ -105,7 +106,7 @@
                                     'bg-blue-100 ring-2 ring-blue-400': isDropTarget(match.match_id, 'home'),
                                     'cursor-move hover:bg-gray-100': canDragPoolStage(match),
                                     'cursor-pointer': !canDragPoolStage(match)
-                                }" :draggable="canDragPoolStage(match) ? 'true' : 'false'"
+                                }" :draggable="canDragPoolStage(match)"
                                     @dragstart="handleDragStart($event, match, 'home')" @dragend="handleDragEnd"
                                     @dragover.prevent="handleDragOver($event, match.match_id, 'home')"
                                     @dragleave="handleDragLeave($event)"
@@ -131,7 +132,7 @@
                                     'bg-blue-100 ring-2 ring-blue-400': isDropTarget(match.match_id, 'away'),
                                     'cursor-move hover:bg-gray-100': canDragPoolStage(match),
                                     'cursor-pointer': !canDragPoolStage(match)
-                                }" :draggable="canDragPoolStage(match) ? 'true' : 'false'"
+                                }" :draggable="canDragPoolStage(match)"
                                     @dragstart="handleDragStart($event, match, 'away')" @dragend="handleDragEnd"
                                     @dragover.prevent="handleDragOver($event, match.match_id, 'away')"
                                     @dragleave="handleDragLeave($event)"
@@ -177,7 +178,7 @@
                             </div>
                         </div>
 
-                        <!-- ✅ GỘP LEGS THÀNH 1 CARD -->
+                        <!-- GỘP LEGS THÀNH 1 CARD -->
                         <div v-for="match in roundData.matches" :key="match.match_id"
                             :class="matchCardWrapperClass(match)"
                             class="match-card bg-[#dcdee6] rounded-lg mb-4 w-64 flex flex-col cursor-pointer hover:shadow-lg transition-all"
@@ -322,9 +323,9 @@ const handleDragOver = (event, matchId, position) => {
 };
 
 const hasAnyRanking = computed(() => {
-  return rank.value?.group_rankings?.some(
-    g => g.rankings && g.rankings.length > 0
-  );
+    return props.rank?.group_rankings?.some(
+        g => g.rankings && g.rankings.length > 0
+    );
 });
 
 const handleDragLeave = (event) => {
@@ -363,10 +364,9 @@ const handleDrop = async (event, targetMatchId, targetPosition) => {
         : targetMatch.away_team;
 
     try {
-        // ✅ Payload cho Mixed format: from_team_id và to_team_id
         const payload = {
-            from_team_id: draggedTeam.value.teamId,  // Đội đang kéo
-            to_team_id: targetTeam.id,               // Đội bị thay thế
+            from_team_id: draggedTeam.value.teamId,
+            to_team_id: targetTeam.id,
         };
 
         await MatchesService.swapTeams(targetMatchId, payload);

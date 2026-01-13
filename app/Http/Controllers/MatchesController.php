@@ -1345,136 +1345,173 @@ class MatchesController extends Controller
     {
         $tournamentType = $match->tournamentType;
         $numLegs = $tournamentType->num_legs ?? 1;
-
-        // ========================================
-        // BƯỚC 1: Xử lý trường hợp chỉ có 1 leg
-        // ========================================
+    
         if ($numLegs == 1) {
             $this->calculateMatchWinner($match, $setsPerMatch);
             return;
         }
-        // Tính winner cho leg này trước
+    
         $this->calculateMatchWinner($match, $setsPerMatch);
-        // ========================================
-        // BƯỚC 3: Lấy TẤT CẢ các legs của cặp đấu này
-        // ========================================
+    
         $allLegs = Matches::where('tournament_type_id', $match->tournament_type_id)
             ->where('round', $match->round)
             ->where(function ($q) use ($match) {
                 $q->where(function ($q2) use ($match) {
-                    // Trường hợp leg 1: A vs B
                     $q2->where('home_team_id', $match->home_team_id)
                         ->where('away_team_id', $match->away_team_id);
                 })->orWhere(function ($q2) use ($match) {
-                    // Trường hợp leg 2: B vs A (đổi sân)
                     $q2->where('home_team_id', $match->away_team_id)
                         ->where('away_team_id', $match->home_team_id);
                 });
             })->with('results')->get();
-        // ========================================
-        // BƯỚC 4: Kiểm tra tất cả legs đã hoàn thành chưa
-        // ========================================
+    
         $allCompleted = $allLegs->every(fn($m) => $m->status === Matches::STATUS_COMPLETED);
-
+    
         if (!$allCompleted) {
             return;
         }
-        // ========================================
-        // BƯỚC 5: Tính tổng điểm aggregate từ TẤT CẢ các legs
-        // ========================================
-        // Xác định team gốc (theo leg đầu tiên hoặc match hiện tại)
-        $homeTeamId = $match->home_team_id;
-        $awayTeamId = $match->away_team_id;
-
-        // Nếu là leg 2 (đã đổi sân), lấy theo thứ tự gốc
-        if ($match->leg == 2) {
-            // Tìm leg 1 để lấy thứ tự team gốc
-            $leg1 = $allLegs->firstWhere('leg', 1);
-            if ($leg1) {
-                $homeTeamId = $leg1->home_team_id;
-                $awayTeamId = $leg1->away_team_id;
+    
+        $leg1 = $allLegs->firstWhere('leg', 1);
+        $homeTeamId = $leg1 ? $leg1->home_team_id : $match->home_team_id;
+        $awayTeamId = $leg1 ? $leg1->away_team_id : $match->away_team_id;
+    
+        // ===== BƯỚC 1: Đếm số LEGS thắng =====
+        $legWins = [
+            $homeTeamId => 0,
+            $awayTeamId => 0,
+        ];
+    
+        foreach ($allLegs as $leg) {
+            if ($leg->winner_id == $homeTeamId) {
+                $legWins[$homeTeamId]++;
+            } elseif ($leg->winner_id == $awayTeamId) {
+                $legWins[$awayTeamId]++;
             }
         }
-
-        $homeSetWins = 0;
-        $awaySetWins = 0;
-
+    
+        // ===== BƯỚC 2: Tính số SET thắng và điểm số =====
+        $teamStats = [
+            $homeTeamId => [
+                'set_wins' => 0,
+                'points_for' => 0,
+                'points_against' => 0
+            ],
+            $awayTeamId => [
+                'set_wins' => 0,
+                'points_for' => 0,
+                'points_against' => 0
+            ],
+        ];
+    
         foreach ($allLegs as $leg) {
             $legHomeId = $leg->home_team_id;
             $legAwayId = $leg->away_team_id;
-
+    
             foreach ($leg->results->groupBy('set_number') as $setNumber => $setResults) {
                 if ($setResults->count() < 2) {
                     continue;
                 }
-
+    
                 $homeResult = $setResults->firstWhere('team_id', $legHomeId);
                 $awayResult = $setResults->firstWhere('team_id', $legAwayId);
-
+    
                 if (!$homeResult || !$awayResult) {
                     continue;
                 }
-
+    
                 $homeScore = (int) $homeResult->score;
                 $awayScore = (int) $awayResult->score;
-
-                // Xác định người thắng set này
+    
+                // Cập nhật điểm ghi được và điểm bị ghi
+                if ($legHomeId == $homeTeamId) {
+                    $teamStats[$homeTeamId]['points_for'] += $homeScore;
+                    $teamStats[$homeTeamId]['points_against'] += $awayScore;
+                    $teamStats[$awayTeamId]['points_for'] += $awayScore;
+                    $teamStats[$awayTeamId]['points_against'] += $homeScore;
+                } else {
+                    $teamStats[$homeTeamId]['points_for'] += $awayScore;
+                    $teamStats[$homeTeamId]['points_against'] += $homeScore;
+                    $teamStats[$awayTeamId]['points_for'] += $homeScore;
+                    $teamStats[$awayTeamId]['points_against'] += $awayScore;
+                }
+    
+                // Đếm số SET thắng
                 if ($homeScore > $awayScore) {
-                    // Team home của leg này thắng set
                     if ($legHomeId == $homeTeamId) {
-                        $homeSetWins++;
+                        $teamStats[$homeTeamId]['set_wins']++;
                     } else {
-                        $awaySetWins++;
+                        $teamStats[$awayTeamId]['set_wins']++;
                     }
                 } elseif ($awayScore > $homeScore) {
-                    // Team away của leg này thắng set
                     if ($legAwayId == $homeTeamId) {
-                        $homeSetWins++;
+                        $teamStats[$homeTeamId]['set_wins']++;
                     } else {
-                        $awaySetWins++;
+                        $teamStats[$awayTeamId]['set_wins']++;
                     }
                 }
             }
         }
-
-        // ========================================
-        // BƯỚC 6: Xác định winner CUỐI CÙNG
-        // ========================================
+    
+        // ===== BƯỚC 3: Tính hiệu số =====
+        $homeSetWins = $teamStats[$homeTeamId]['set_wins'];
+        $awaySetWins = $teamStats[$awayTeamId]['set_wins'];
+        
+        $homePointDiff = $teamStats[$homeTeamId]['points_for'] - $teamStats[$homeTeamId]['points_against'];
+        $awayPointDiff = $teamStats[$awayTeamId]['points_for'] - $teamStats[$awayTeamId]['points_against'];
+    
+        // ===== BƯỚC 4: Xác định winner theo thứ tự ưu tiên =====
         $finalWinnerId = null;
-        if ($homeSetWins > $awaySetWins) {
+    
+        // 1️⃣ Ưu tiên số LEGS thắng
+        if ($legWins[$homeTeamId] > $legWins[$awayTeamId]) {
+            $finalWinnerId = $homeTeamId;
+        } elseif ($legWins[$awayTeamId] > $legWins[$homeTeamId]) {
+            $finalWinnerId = $awayTeamId;
+        }
+        // 2️⃣ Nếu bằng legs → Xét số SET thắng
+        elseif ($homeSetWins > $awaySetWins) {
             $finalWinnerId = $homeTeamId;
         } elseif ($awaySetWins > $homeSetWins) {
             $finalWinnerId = $awayTeamId;
-        } else {
+        }
+        // 3️⃣ Nếu bằng sets → Xét HIỆU SỐ ĐIỂM
+        elseif ($homePointDiff > $awayPointDiff) {
+            $finalWinnerId = $homeTeamId;
+        } elseif ($awayPointDiff > $homePointDiff) {
+            $finalWinnerId = $awayTeamId;
+        }
+        // 4️⃣ Nếu tất cả đều bằng nhau → Chờ BTC
+        else {
             return;
         }
-
+    
         if (!$finalWinnerId) {
             return;
         }
-
-        // ========================================
-        // BƯỚC 7: Cập nhật winner_id cho TẤT CẢ các legs
-        // ========================================
+    
+        // ===== BƯỚC 5: Cập nhật winner cho tất cả legs =====
         foreach ($allLegs as $leg) {
             if ($leg->winner_id !== $finalWinnerId) {
                 $leg->update(['winner_id' => $finalWinnerId]);
             }
         }
-
-        // ========================================
-        // BƯỚC 8: Tiến đội thắng vào vòng sau
-        // ========================================
+    
+        // ===== BƯỚC 6: Tiến vào vòng sau =====
+        // ✅ XỬ LÝ ĐẶC BIỆT CHO ROUND 1 CỦA MIXED FORMAT (POOL STAGE)
+        if ((int) $match->round === 1 && $tournamentType->format === TournamentType::FORMAT_MIXED) {
+            $this->checkAndAdvanceFromPool($match);
+            return; // Dừng ở đây, không cần gọi syncWinnerToNextRoundLegs
+        }
+    
+        // Xử lý các vòng knockout bình thường
         if (in_array($match->tournamentType->format, [
             TournamentType::FORMAT_MIXED,
             TournamentType::FORMAT_ELIMINATION,
         ])) {
             $this->syncWinnerToNextRoundLegs($match, $finalWinnerId);
         }
-
-        // ========================================
-        // BƯỚC 9: Cập nhật bảng xếp hạng
-        // ========================================
+    
+        // ===== BƯỚC 7: Cập nhật bảng xếp hạng =====
         $this->recalculateRankings($match->tournament_type_id);
     }
 
@@ -1515,6 +1552,90 @@ class MatchesController extends Controller
             }
 
             $nextLeg->update($updateData);
+        }
+    }
+
+    public function advanceTeamManual(Request $request, $matchId)
+    {
+        $validated = $request->validate([
+            'winner_team_id' => 'required|exists:teams,id',
+        ]);
+
+        $match = Matches::with('tournamentType.tournament.staff', 'homeTeam', 'awayTeam')
+            ->findOrFail($matchId);
+
+        // Kiểm tra quyền organizer
+        $tournament = $match->tournamentType->tournament;
+        $isOrganizer = $tournament->hasOrganizer(Auth::id());
+
+        if (!$isOrganizer) {
+            return ResponseHelper::error('Chỉ BTC mới có quyền thực hiện thao tác này', 403);
+        }
+
+        // Kiểm tra trận đã hoàn thành chưa
+        if ($match->status !== Matches::STATUS_COMPLETED) {
+            return ResponseHelper::error('Trận đấu chưa hoàn thành', 400);
+        }
+
+        $winnerTeamId = $validated['winner_team_id'];
+
+        // Validate winner_team_id có thuộc trận này không
+        if (!in_array($winnerTeamId, [$match->home_team_id, $match->away_team_id])) {
+            return ResponseHelper::error('Đội được chọn không thuộc trận đấu này', 400);
+        }
+
+        // Lấy TẤT CẢ các legs của cặp đấu này
+        $allLegs = Matches::where('tournament_type_id', $match->tournament_type_id)
+            ->where('round', $match->round)
+            ->where(function ($q) use ($match) {
+                $q->where(function ($q2) use ($match) {
+                    $q2->where('home_team_id', $match->home_team_id)
+                        ->where('away_team_id', $match->away_team_id);
+                })->orWhere(function ($q2) use ($match) {
+                    $q2->where('home_team_id', $match->away_team_id)
+                        ->where('away_team_id', $match->home_team_id);
+                });
+            })->get();
+
+        // Kiểm tra tất cả legs đã hoàn thành chưa
+        $allCompleted = $allLegs->every(fn($m) => $m->status === Matches::STATUS_COMPLETED);
+        if (!$allCompleted) {
+            return ResponseHelper::error('Tất cả các leg phải hoàn thành trước khi chọn đội thắng', 400);
+        }
+
+        DB::beginTransaction();
+        try {
+            // 1. Cập nhật winner_id cho TẤT CẢ các legs
+            foreach ($allLegs as $leg) {
+                $leg->update(['winner_id' => $winnerTeamId]);
+            }
+
+            // 2. Tiến đội thắng vào vòng sau
+            if (in_array($match->tournamentType->format, [
+                TournamentType::FORMAT_MIXED,
+                TournamentType::FORMAT_ELIMINATION,
+            ])) {
+                $this->syncWinnerToNextRoundLegs($match, $winnerTeamId);
+            }
+
+            // 3. Cập nhật bảng xếp hạng
+            $this->recalculateRankings($match->tournament_type_id);
+
+            DB::commit();
+
+            return ResponseHelper::success(
+                [
+                    'winner_team' => $winnerTeamId == $match->home_team_id
+                        ? $match->homeTeam
+                        : $match->awayTeam,
+                    'updated_legs' => $allLegs->pluck('id'),
+                ],
+                'Đã chọn đội thắng và tiến vào vòng trong thành công',
+                200
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ResponseHelper::error('Có lỗi xảy ra: ' . $e->getMessage(), 500);
         }
     }
 }
