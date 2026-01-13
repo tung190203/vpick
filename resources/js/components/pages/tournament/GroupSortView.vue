@@ -51,7 +51,7 @@
 
                             <span
                                 class="px-2.5 py-1 bg-blue-500 text-white text-xs font-medium rounded-full whitespace-nowrap flex-shrink-0">
-                                {{ team.vndupr_avg.toFixed(2) }} VNDUPR
+                                {{ team.vndupr_avg?.toFixed(2) ?? '—' }} VNDUPR
                             </span>
                         </div>
 
@@ -104,7 +104,7 @@
 
                                 <span
                                     class="px-2.5 py-1 bg-blue-500 text-white text-xs font-medium rounded-full whitespace-nowrap flex-shrink-0">
-                                    {{ team.vndupr_avg.toFixed(2) }} VNDUPR
+                                    {{ team.vndupr_avg?.toFixed(2) ?? '—' }} VNDUPR
                                 </span>
 
                                 <button @click="removeTeam(group.group_id, team.team_id)"
@@ -203,7 +203,6 @@ const getTournamentTypeId = async (id) => {
 };
 
 const fetchTeams = async () => {
-    loading.value = true;
     try {
         const res = await TournamentTypeService.groupWithTeamsForSort(
             tournamentTypeId.value
@@ -222,8 +221,6 @@ const fetchTeams = async () => {
         }
     } catch(error) {
         toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi thực hiện thao tác');
-    } finally {
-        loading.value = false;
     }
 };
 

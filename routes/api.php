@@ -126,6 +126,7 @@ Route::middleware(['auth:api'])->group(function () {
         // Xác nhận kết quả (QR Code)
         Route::get('/{matchId}/generate-qr', [MatchesController::class, 'generateQr']);
         Route::post('/confirm-result/{matchId}', [MatchesController::class, 'confirmResult']);
+        Route::post('/{matchId}/advance-team-manual', [MatchesController::class, 'advanceTeamManual']);
     });
 
     Route::prefix('participants')->group(function () {
