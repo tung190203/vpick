@@ -12,12 +12,12 @@
                 <div class="text-sm opacity-90 mb-1 text-[32px]">PICKI</div>
                 <div class="text-6xl font-bold leading-none mb-4 text-[100px]">{{
                   Number(homeData.user_info?.sports[0]?.scores?.vndupr_score || 0).toFixed(2)
-                }}
+                  }}
                 </div>
                 <div class="text-sm opacity-90 mb-1 text-[32px]">DUPR</div>
                 <div class="text-5xl font-bold leading-none text-[100px]">{{
                   Number(homeData.user_info?.sports[0]?.scores.dupr_score || 0).toFixed(2)
-                }}</div>
+                  }}</div>
               </div>
 
               <div class="flex flex-col items-end justify-between h-[264px]">
@@ -68,23 +68,33 @@
               <ArrowUpRightIcon class="w-4 h-4 text-gray-[#838799]" />
             </div>
           </div>
-          <div class="min-h-[220px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <template v-if="!homeData?.upcoming_mini_tournament?.length">
-              <div class="col-span-3 flex items-center justify-center text-gray-500 text-sm">
-                Không có kèo đấu nào sắp tới
-              </div>
-            </template>
-            <template v-else>
-              <div v-for="(mini, i) in homeData.upcoming_mini_tournament" :key="i"
-                class="bg-white rounded-[8px] shadow hover:shadow-lg p-4 transition-all relative cursor-pointer">
+
+          <template v-if="!homeData?.upcoming_mini_tournament?.length">
+            <div class="min-h-[220px] flex items-center justify-center text-gray-500 text-sm">
+              Không có kèo đấu nào sắp tới
+            </div>
+          </template>
+
+          <Swiper v-else :slides-per-view="'auto'" :space-between="16" :freeMode="true"
+            :mousewheel="{ forceToAxis: true }" :modules="modules" class="!pb-2">
+            <SwiperSlide v-for="(mini, i) in homeData.upcoming_mini_tournament" :key="i" class="!w-[320px]">
+              <!-- 🔥 GIỮ NGUYÊN CARD -->
+              <div
+                class="bg-white rounded-[8px] shadow hover:shadow-lg p-4 transition-all relative cursor-pointer h-full">
                 <div class="absolute top-4 right-4 text-red-500 cursor-pointer hover:text-red-600">
                   <BellAlertIcon class="w-5 h-5" />
                 </div>
 
                 <div @click="goToMiniTournamentDetail(mini.id)">
-                  <div class="text-base text-gray-700 font-semibold">{{ formatTime(mini.starts_at) }}</div>
-                  <div class="text-sm text-gray-500 mt-0.5">{{ formatDate(mini.starts_at) }}</div>
-                  <div class="text-base text-gray-900 font-bold mt-2 line-clamp-1 cursor-pointer">{{ mini.name }}</div>
+                  <div class="text-base text-gray-700 font-semibold">
+                    {{ formatTime(mini.starts_at) }}
+                  </div>
+                  <div class="text-sm text-gray-500 mt-0.5">
+                    {{ formatDate(mini.starts_at) }}
+                  </div>
+                  <div class="text-base text-gray-900 font-bold mt-2 line-clamp-1">
+                    {{ mini.name }}
+                  </div>
                 </div>
 
                 <div class="pt-4 border-gray-100" @click="goToMiniTournamentDetail(mini.id)">
@@ -113,8 +123,9 @@
                   </div>
                 </div>
               </div>
-            </template>
-          </div>
+              <!-- 🔥 END CARD -->
+            </SwiperSlide>
+          </Swiper>
         </section>
 
         <section>
@@ -125,38 +136,49 @@
               <ArrowUpRightIcon class="w-4 h-4 text-gray-[#838799]" />
             </div>
           </div>
-          <div class="min-h-[220px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <template v-if="!homeData?.upcoming_tournaments?.length">
-              <div class="col-span-3 flex items-center justify-center text-gray-500 text-sm">
-                Không có giải đấu nào sắp tới
-              </div>
-            </template>
 
-            <template v-else>
-              <div v-for="(t, i) in homeData.upcoming_tournaments" :key="i"
-                class="bg-white rounded-[8px] shadow hover:shadow-lg overflow-hidden transition-all p-[16px] cursor-pointer">
+          <template v-if="!homeData?.upcoming_tournaments?.length">
+            <div class="min-h-[220px] flex items-center justify-center text-gray-500 text-sm">
+              Không có giải đấu nào sắp tới
+            </div>
+          </template>
+
+          <Swiper v-else :slides-per-view="'auto'" :space-between="16" :freeMode="true"
+            :mousewheel="{ forceToAxis: true }" :modules="modules" class="!pb-2">
+            <SwiperSlide v-for="(t, i) in homeData.upcoming_tournaments" :key="i" class="!w-[320px]">
+              <!-- 🔥 GIỮ NGUYÊN CARD -->
+              <div
+                class="bg-white rounded-[8px] shadow hover:shadow-lg overflow-hidden transition-all p-[16px] cursor-pointer h-full">
                 <div class="relative h-40 rounded-[4px] cursor-pointer overflow-hidden"
                   @click="goToTournamentDetail(t.id)"
                   :style="!t.poster ? { backgroundColor: getRandomColor(t.id) } : {}">
                   <img v-if="t.poster" :src="t.poster" alt="" class="w-full h-full object-cover rounded-[4px]" />
                 </div>
                 <div class="py-4" @click="goToTournamentDetail(t.id)">
-                  <div class="text-sm font-bold text-gray-900 mb-2 cursor-pointer">{{ t.name }}</div>
+                  <div class="text-sm font-bold text-gray-900 mb-2 cursor-pointer">
+                    {{ t.name }}
+                  </div>
+
                   <div class="text-xs text-[#004D99] flex items-center">
                     <MapPinIcon class="w-4 h-4 mr-1 flex-shrink-0 mt-0.5 text-[#4392E0]" />
-                    <span class="line-clamp-1">{{ t.competition_location?.name ?? 'Không rõ' }}</span>
+                    <span class="line-clamp-1">
+                      {{ t.competition_location?.name ?? 'Không rõ' }}
+                    </span>
                   </div>
                   <div class="text-xs text-[#004D99] flex items-center my-2">
                     <CalendarDaysIcon class="w-4 h-4 mr-1 flex-shrink-0 mt-0.5 text-[#4392E0]" />
-                    <span class="line-clamp-1">{{ formatDate(t.start_date) }}</span>
+                    <span class="line-clamp-1">
+                      {{ formatDate(t.start_date) }}
+                    </span>
                   </div>
                   <p class="text-sm line-clamp-2">
                     {{ t.description }}
                   </p>
                 </div>
               </div>
-            </template>
-          </div>
+              <!-- 🔥 END CARD -->
+            </SwiperSlide>
+          </Swiper>
         </section>
       </div>
 
@@ -365,9 +387,10 @@ import {
 import QRcodeModal from '@/components/molecules/QRcodeModal.vue'
 import { MapPinIcon, CalendarDaysIcon } from "@heroicons/vue/24/solid";
 import { Swiper, SwiperSlide } from 'swiper/vue';
-import { Autoplay, Pagination } from 'swiper/modules';
+import { Autoplay, Pagination, FreeMode, Mousewheel } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/pagination';
+import 'swiper/css/free-mode'
 import { Html5Qrcode } from "html5-qrcode";
 import * as HomeService from "@/service/home";
 import * as FollowService from "@/service/follow";
@@ -378,7 +401,7 @@ import { storeToRefs } from "pinia";
 const userStore = useUserStore();
 const { getUser } = storeToRefs(userStore);
 const router = useRouter()
-const modules = [Autoplay, Pagination];
+const modules = [Autoplay, Pagination, FreeMode, Mousewheel];
 const BASE_STORAGE_URL = 'http://localhost:8000/storage/';
 const BASE_FRONTEND_URL = import.meta.env.VITE_FRONTEND_URL;
 const homeData = ref({});
@@ -412,8 +435,8 @@ const getPerformanceLevel = computed(() => {
 const getHomeData = async () => {
   try {
     const response = await HomeService.getHomeData({
-      mini_tournament_per_page: 3,
-      tournament_per_page: 3
+      mini_tournament_per_page: 50,
+      tournament_per_page: 50
     });
     homeData.value = response;
   } catch (error) {
