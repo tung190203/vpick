@@ -185,6 +185,7 @@ Route::middleware(['auth:api'])->group(function () {
         Route::post('/invite/{miniTournamentId}', [MiniParticipantController::class, 'invite']);
         Route::match(['get', 'post'], '/candidates/{miniTournamentId}', [MiniParticipantController::class, 'getCandidates']);
         Route::post('/delete/{participantId}', [MiniParticipantController::class, 'delete']);
+        Route::post('/delete-staff/{staffId}', [MiniParticipantController::class, 'deleteStaff']);
     });
     // Mini Match Routes
     Route::prefix('mini-matches')->group(function (): void {
