@@ -1482,6 +1482,9 @@ class MatchesController extends Controller
         }
         // 4️⃣ Nếu tất cả đều bằng nhau → Chờ BTC
         else {
+            foreach ($allLegs as $leg) {
+                $leg->update(['winner_id' => null]);
+            }
             return;
         }
     
