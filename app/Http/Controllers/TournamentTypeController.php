@@ -1428,9 +1428,7 @@ class TournamentTypeController extends Controller
                                 'home' => $homeTotal,
                                 'away' => $awayTotal,
                             ],
-                            'winner_team_id' =>
-                                $homeTotal > $awayTotal ? $homeTeamId :
-                                ($awayTotal > $homeTotal ? $awayTeamId : null),
+                            'winner_team_id' => $this->determineWinner($homeTotal, $awayTotal, $homeTeamId, $awayTeamId, $first, $matchGroup),
                             'next_match_id' => $first->next_match_id,
                             'next_position' => $first->next_position,
                         ];
@@ -1691,12 +1689,6 @@ class TournamentTypeController extends Controller
                         ];
                     })->values();
     
-                    $finalWinnerId = null;
-                    if ($matchGroup->every(fn ($l) => $l->status === 'completed')) {
-                        if ($homeTotal > $awayTotal) $finalWinnerId = $homeTeamId;
-                        elseif ($awayTotal > $homeTotal) $finalWinnerId = $awayTeamId;
-                    }
-    
                     return [
                         'match_id' => $first->id,
                         'home_team' => $this->formatTeam($first->homeTeam, $homePlaceholder),
@@ -1709,7 +1701,7 @@ class TournamentTypeController extends Controller
                             'home' => $homeTotal,
                             'away' => $awayTotal,
                         ],
-                        'winner_team_id' => $finalWinnerId,
+                        'winner_team_id' => $this->determineWinner($homeTotal, $awayTotal, $homeTeamId, $awayTeamId, $first, $matchGroup),
                         'status' => $matchGroup->every(fn ($l) => $l->status === 'completed') ? 'completed' : 'pending',
                     ];
                 })->values(),
@@ -2431,5 +2423,29 @@ class TournamentTypeController extends Controller
         $average = array_sum($scores);
         
         return round($average, 2);
+    }
+    private function determineWinner($homeTotal, $awayTotal, $homeTeamId, $awayTeamId, $firstMatch, $matchGroup)
+    {
+        if (!$matchGroup->every(fn($l) => $l->status === 'completed')) {
+            return null;
+        }
+
+        if ($homeTotal > $awayTotal) return $homeTeamId;
+        if ($awayTotal > $homeTotal) return $awayTeamId;
+
+        // TH HÒA → Kiểm tra advance thủ công
+        if ($homeTotal === $awayTotal && $firstMatch->next_match_id) {
+            $nextMatch = Matches::find($firstMatch->next_match_id);
+            if ($nextMatch) {
+                $advancedTeamId = ($firstMatch->next_position === 'home') 
+                    ? $nextMatch->home_team_id 
+                    : $nextMatch->away_team_id;
+                
+                if ($advancedTeamId === $homeTeamId) return $homeTeamId;
+                if ($advancedTeamId === $awayTeamId) return $awayTeamId;
+            }
+        }
+
+        return null;
     }
 }
