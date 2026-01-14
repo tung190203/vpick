@@ -179,6 +179,30 @@ export const route = [
         ]
       },
       {
+        path: '/tournament-detail',
+        meta: {
+          role: [ROLE.PLAYER]
+        },
+        children: [
+          {
+            path: ':id',
+            name: 'tournament-detail',
+            component: TournamentDetail,
+            props: true
+          },
+          {
+            path: ':id/bracket',
+            name: 'tournament-bracket',
+            component: TournamentBracketPage,
+          },
+          {
+            path: ':id/groups/sort',
+            name: 'tournament-groups-sort',
+            component: GroupSortView
+          }
+        ]
+      },
+      {
         path: '/mini-tournament',
         meta: {
           role: [ROLE.PLAYER]
@@ -194,6 +218,20 @@ export const route = [
             name: 'edit-mini-tournament',
             component: CreateMiniTournamentPage
           },
+          {
+            path: ':id',
+            name: 'mini-tournament-detail',
+            component: MiniTournamentDetail,
+            props: true
+          }
+        ]
+      },
+      {
+        path: '/mini-tournament-detail',
+        meta: {
+          role: [ROLE.PLAYER]
+        },
+        children: [
           {
             path: ':id',
             name: 'mini-tournament-detail',

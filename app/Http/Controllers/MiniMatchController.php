@@ -305,10 +305,11 @@ class MiniMatchController extends Controller
     public function addSetResult(Request $request, $matchId)
     {
         $validated = $request->validate([
-            'set_number' => 'required|integer|min:1',
-            'results' => 'required|array|min:2|max:2',
-            'results.*.team_id' => 'required|exists:mini_teams,id',
-            'results.*.score' => 'required|integer|min:0',
+            'sets' => 'required|array|min:1',
+            'sets.*.set_number' => 'required|integer|min:1',
+            'sets.*.results' => 'required|array|size:2',
+            'sets.*.results.*.team_id' => 'required|exists:mini_teams,id',
+            'sets.*.results.*.score' => 'required|integer|min:0',
         ]);
 
         $match = MiniMatch::withFullRelations()->findOrFail($matchId);
@@ -316,45 +317,57 @@ class MiniMatchController extends Controller
 
         // Kiểm tra quyền
         if (!$tournament->hasOrganizer(Auth::id())) {
-            return ResponseHelper::error('Người dùng không có quyền thêm kết quả trận đấu trong kèo đấu này', 403);
+            return ResponseHelper::error(
+                'Người dùng không có quyền thêm kết quả trận đấu trong kèo đấu này',
+                403
+            );
         }
 
         // Kiểm tra trận đấu còn editable không
         if (!$match->isEditable()) {
-            return ResponseHelper::error('Trận đấu này đã được xác nhận kết quả', 400);
+            return ResponseHelper::error(
+                'Trận đấu này đã được xác nhận kết quả',
+                400
+            );
         }
 
         // Validate team thuộc trận đấu
         $teamIds = [$match->team1_id, $match->team2_id];
-        $inputResults = collect($validated['results']);
-
-        if ($inputResults->count() !== 2) {
-            return ResponseHelper::error('Cần cung cấp điểm số cho cả hai đội', 400);
-        }
-
-        $teamA = $inputResults->firstWhere('team_id', $teamIds[0]);
-        $teamB = $inputResults->firstWhere('team_id', $teamIds[1]);
-
-        if (!$teamA || !$teamB) {
-            return ResponseHelper::error('Team không hợp lệ hoặc không thuộc trận đấu này', 400);
-        }
-
-        // Lưu vào database (không validate logic thắng thua)
-        DB::transaction(function () use ($match, $validated) {
-            // Xóa set cũ nếu có
-            MiniMatchResult::where('mini_match_id', $match->id)
-                ->where('set_number', $validated['set_number'])
-                ->delete();
-
-            // Lưu điểm số mới (won_set để null hoặc false tạm thời)
-            foreach ($validated['results'] as $res) {
-                MiniMatchResult::create([
-                    'mini_match_id' => $match->id,
-                    'team_id' => $res['team_id'],
-                    'score' => $res['score'],
-                    'set_number' => $validated['set_number'],
-                    'won_set' => false, // Sẽ được tính lại khi confirm
-                ]);
+    
+        DB::transaction(function () use ($validated, $match, $teamIds) {
+    
+            foreach ($validated['sets'] as $set) {
+                $inputResults = collect($set['results']);
+    
+                // Validate đủ 2 team
+                if ($inputResults->count() !== 2) {
+                    throw new \Exception('Cần cung cấp điểm số cho cả hai đội');
+                }
+    
+                $teamA = $inputResults->firstWhere('team_id', $teamIds[0]);
+                $teamB = $inputResults->firstWhere('team_id', $teamIds[1]);
+    
+                if (!$teamA || !$teamB) {
+                    throw new \Exception(
+                        'Team không hợp lệ hoặc không thuộc trận đấu này'
+                    );
+                }
+    
+                // Xóa set cũ (nếu update lại set)
+                MiniMatchResult::where('mini_match_id', $match->id)
+                    ->where('set_number', $set['set_number'])
+                    ->delete();
+    
+                // Lưu kết quả set
+                foreach ($set['results'] as $res) {
+                    MiniMatchResult::create([
+                        'mini_match_id' => $match->id,
+                        'team_id' => $res['team_id'],
+                        'score' => $res['score'],
+                        'set_number' => $set['set_number'],
+                        'won_set' => false, // sẽ tính khi confirm
+                    ]);
+                }
             }
 
             // Reset confirm
