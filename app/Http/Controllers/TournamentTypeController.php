@@ -1865,24 +1865,89 @@ class TournamentTypeController extends Controller
             })
             ->with('results')
             ->get();
-
-        $wins = $matches->where('winner_id', $teamId)->count();
-        $played = $matches->count();
-        
+    
+        // ✅ TÍNH ĐIỂM THEO LOGIC GIỐNG BRACKET
+        $totalPoints = 0;
+        $wins = 0;
+        $draws = 0; // ✅ THÊM SỐ TRẬN HÒA
         $pWon = 0;
         $pLost = 0;
-        foreach($matches as $m) {
-            $pWon += $m->results->where('team_id', $teamId)->sum('score');
-            $opponentResult = $m->results->where('team_id', '!=', $teamId)->first();
-            if ($opponentResult) $pLost += $opponentResult->score;
+    
+        // Group matches theo cặp đấu (leg 1, leg 2 cùng home/away)
+        $grouped = $matches->groupBy(function($match) {
+            $teams = [$match->home_team_id, $match->away_team_id];
+            sort($teams);
+            return implode('_', $teams);
+        });
+    
+        foreach ($grouped as $matchGroup) {
+            $homeTotal = 0;
+            $awayTotal = 0;
+            $baseHomeId = $matchGroup->first()->home_team_id;
+    
+            // Tính điểm từng leg
+            foreach ($matchGroup as $leg) {
+                $homeSetWins = 0;
+                $awaySetWins = 0;
+                
+                $sets = $leg->results->groupBy('set_number');
+                foreach ($sets as $setGroup) {
+                    $home = $setGroup->firstWhere('team_id', $leg->home_team_id);
+                    $away = $setGroup->firstWhere('team_id', $leg->away_team_id);
+                    
+                    $homeScore = (int)($home->score ?? 0);
+                    $awayScore = (int)($away->score ?? 0);
+                    
+                    if ($homeScore > $awayScore) $homeSetWins++;
+                    elseif ($awayScore > $homeScore) $awaySetWins++;
+    
+                    // Cộng dồn điểm cho tính point diff
+                    if ($leg->home_team_id == $teamId || $leg->away_team_id == $teamId) {
+                        $pWon += ($leg->home_team_id == $teamId) ? $homeScore : $awayScore;
+                        $pLost += ($leg->home_team_id == $teamId) ? $awayScore : $homeScore;
+                    }
+                }
+    
+                // Tính điểm leg (3-0)
+                $homeLegScore = 0;
+                $awayLegScore = 0;
+    
+                if ($leg->home_team_id == $baseHomeId) {
+                    $homeLegScore = ($homeSetWins > $awaySetWins) ? 3 : 0;
+                    $awayLegScore = ($awaySetWins > $homeSetWins) ? 3 : 0;
+                } else {
+                    $homeLegScore = ($awaySetWins > $homeSetWins) ? 3 : 0;
+                    $awayLegScore = ($homeSetWins > $awaySetWins) ? 3 : 0;
+                }
+    
+                $homeTotal += $homeLegScore;
+                $awayTotal += $awayLegScore;
+            }
+    
+            // ✅ XÁC ĐỊNH KẾT QUẢ: THẮNG / HÒA / THUA
+            $isHome = ($baseHomeId == $teamId);
+            $myScore = $isHome ? $homeTotal : $awayTotal;
+            $opponentScore = $isHome ? $awayTotal : $homeTotal;
+    
+            if ($myScore > $opponentScore) {
+                $wins++;
+                $totalPoints += 3; // Thắng = 3 điểm
+            } elseif ($myScore == $opponentScore) {
+                $draws++;
+                $totalPoints += 3;
+            }
+            // Thua = 0 điểm (không cộng gì)
         }
-
+    
+        $played = $grouped->count();
+    
         return [
             'team_id' => $teamId,
             'played' => $played,
             'wins' => $wins,
-            'losses' => $played - $wins,
-            'points' => $wins * 3,
+            'draws' => $draws, // ✅ THÊM TRẬN HÒA
+            'losses' => $played - $wins - $draws, // ✅ SỬA CÔNG THỨC
+            'points' => $totalPoints, // ✅ Dùng điểm đã tính chính xác
             'point_diff' => $pWon - $pLost,
             'win_rate' => $played > 0 ? round(($wins / $played) * 100, 2) : 0,
         ];
@@ -1986,23 +2051,32 @@ class TournamentTypeController extends Controller
      */
     public function assignTeamsAndGenerate(Request $request, TournamentType $tournamentType)
     {
-        $validated = $request->validate([
-            'groups' => 'required|array',
-            'groups.*.group_id' => 'required|exists:groups,id',
-            'groups.*.team_ids' => 'required|array|min:1',
-            'groups.*.team_ids.*' => 'exists:teams,id',
-        ]);
+        $isDraft = $request->boolean('is_draft');
+        $rules = [
+            'groups' => ['required', 'array'],
+            'groups.*.group_id' => ['required', 'exists:groups,id'],
+            'groups.*.team_ids' => ['present', 'array'], // 🔥 QUAN TRỌNG
+            'groups.*.team_ids.*' => ['exists:teams,id'],
+            'is_draft' => ['sometimes', 'boolean'],
+        ];
+        
+        // Publish mới bắt min:1
+        if (!$isDraft) {
+            $rules['groups.*.team_ids'][] = 'min:1';
+        }   
+    
+        $validated = $request->validate($rules);
+        if (!$isDraft) {
+            $completedMatches = $tournamentType->matches()
+                ->where('status', 'completed')
+                ->exists();
 
-        // Kiểm tra có trận đã completed không
-        $completedMatches = $tournamentType->matches()
-            ->where('status', 'completed')
-            ->exists();
-
-        if ($completedMatches) {
-            return ResponseHelper::error(
-                'Không thể sắp xếp lại. Đã có trận đấu hoàn thành.', 
-                400
-            );
+            if ($completedMatches) {
+                return ResponseHelper::error(
+                    'Không thể sắp xếp lại. Đã có trận đấu hoàn thành.',
+                    400
+                );
+            }
         }
 
         DB::beginTransaction();
@@ -2011,31 +2085,34 @@ class TournamentTypeController extends Controller
             foreach ($tournamentType->groups as $group) {
                 $group->teams()->detach();
             }
-            $tournamentType->matches()->each(function ($match) {
-                $match->results()->delete();
-                $match->delete();
-            });
-            if ($tournamentType->format == TournamentType::FORMAT_MIXED) {
-                $tournamentType->advancementRules()->delete();
+            if (!$isDraft) {
+                $tournamentType->matches()->each(function ($match) {
+                    $match->results()->delete();
+                    $match->delete();
+                });
+                if ($tournamentType->format === TournamentType::FORMAT_MIXED) {
+                    $tournamentType->advancementRules()->delete();
+                }
             }
-
-            // 2. Gán đội vào các bảng
             foreach ($validated['groups'] as $groupData) {
-                $group = Group::find($groupData['group_id']);
-                
-                // Sync teams với order
+                $group = Group::findOrFail($groupData['group_id']);
+    
                 $syncData = [];
                 foreach ($groupData['team_ids'] as $order => $teamId) {
                     $syncData[$teamId] = ['order' => $order];
                 }
                 $group->teams()->sync($syncData);
             }
-            $this->generateMatchesForTypeWithAssignedTeams($tournamentType);
-
+            if (!$isDraft) {
+                $this->generateMatchesForTypeWithAssignedTeams($tournamentType);
+            }
             DB::commit();
+    
             return ResponseHelper::success(
-                new TournamentTypeResource($tournamentType->fresh()), 
-                'Sắp xếp đội và tạo lịch thi đấu thành công'
+                new TournamentTypeResource($tournamentType->fresh()),
+                $isDraft
+                    ? 'Đã lưu tiến trình sắp xếp đội'
+                    : 'Sắp xếp đội và tạo lịch thi đấu thành công'
             );
         } catch (\Throwable $e) {
             DB::rollBack();
@@ -2345,7 +2422,7 @@ class TournamentTypeController extends Controller
         }
 
         // Tính trung bình
-        $average = array_sum($scores) / count($scores);
+        $average = array_sum($scores);
         
         return round($average, 2);
     }
