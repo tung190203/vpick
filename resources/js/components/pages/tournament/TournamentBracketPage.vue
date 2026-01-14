@@ -77,8 +77,14 @@ onMounted(async () => {
 });
 
 const goBack = () => {
-    router.back();
-};
+  router.push({
+    name: 'tournament-detail',
+    params: { id: id },
+    query: {
+      tab: route.query.tab
+    }
+  })
+}
 </script>
 
 <style scoped></style>
