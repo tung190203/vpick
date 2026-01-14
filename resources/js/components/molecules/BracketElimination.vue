@@ -294,7 +294,7 @@ const playerWrapperClass = (player) => {
 
   // Trận tranh hạng 3
   if (player.isThirdPlace) {
-    classes.push('bg-amber-500 text-white');
+    classes.push('bg-[#dddee5] text-white');
   } else if (player.status === 'pending' && hasScoreInSets(player)) {
     // Pending + có score → đỏ
     classes.push('border border-[#FBBF24]', 'bg-[#FBBF24]', 'text-white');
