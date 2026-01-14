@@ -1328,11 +1328,14 @@ class TournamentTypeController extends Controller
             ->orderBy('leg')
             ->get();
     
-        $maxRound = $matches->max('round') ?? 1;
+        // ✅ FIX: Tìm round chung kết (round cao nhất KHÔNG PHẢI tranh hạng 3)
+        $finalRound = $matches
+            ->filter(fn($m) => !($m->is_third_place ?? false))
+            ->max('round') ?? 1;
     
         $bracket = $matches
             ->groupBy('round')
-            ->map(function ($roundMatches, $round) use ($calculateLegDetails, $type, $maxRound) {
+            ->map(function ($roundMatches, $round) use ($calculateLegDetails, $type, $finalRound) {
     
                 // ✅ SỬA: Group 2 leg thành 1 match - Dùng match_pair_id hoặc logic ổn định
                 $grouped = $roundMatches->groupBy(function ($match) {
@@ -1372,7 +1375,7 @@ class TournamentTypeController extends Controller
                 return [
                     'round' => $round,
                     'round_name' => $roundName,
-                    'matches' => $grouped->map(function ($matchGroup) use ($calculateLegDetails, $round, $maxRound) {
+                    'matches' => $grouped->map(function ($matchGroup) use ($calculateLegDetails, $round, $finalRound) {
     
                         $first = $matchGroup->first();
                         $homeTeamId = $first->home_team_id;
@@ -1381,8 +1384,8 @@ class TournamentTypeController extends Controller
                         $homeTotal = 0;
                         $awayTotal = 0;
     
-                        // ✅ KIỂM TRA IS_FINAL
-                        $isFinal = ($round == $maxRound) && !($first->is_third_place ?? false);
+                        // ✅ FIX: Dùng $finalRound thay vì $maxRound
+                        $isFinal = ($round == $finalRound) && !($first->is_third_place ?? false);
     
                         $legs = $matchGroup->map(function ($leg) use (
                             $calculateLegDetails,
@@ -1419,7 +1422,7 @@ class TournamentTypeController extends Controller
                             'away_team' => $this->formatTeam($first->awayTeam),
                             'is_bye' => $first->is_bye,
                             'is_third_place' => $first->is_third_place ?? false,
-                            'is_final' => $isFinal, // ✅ THÊM FLAG
+                            'is_final' => $isFinal,
                             'legs' => $legs,
                             'aggregate_score' => [
                                 'home' => $homeTotal,
@@ -1592,13 +1595,16 @@ class TournamentTypeController extends Controller
             ->orderBy('leg')
             ->get();
     
-        $maxKnockoutRound = $knockoutMatches->max('round') ?? 2;
+        // ✅ FIX: Tìm round chung kết knockout (round cao nhất KHÔNG PHẢI tranh hạng 3)
+        $finalKnockoutRound = $knockoutMatches
+            ->filter(fn($m) => !($m->is_third_place ?? false))
+            ->max('round') ?? 2;
     
         $knockoutStage = $knockoutMatches->groupBy('round')->map(function ($roundMatches, $round) use (
             $calculateLegDetails,
             $type,
             $advancementRules,
-            $maxKnockoutRound
+            $finalKnockoutRound
         ) {
             $numLegs = (int) ($type->num_legs ?? 1);
             $sortedMatches = $roundMatches->sortBy('id')->values();
@@ -1617,7 +1623,7 @@ class TournamentTypeController extends Controller
                     $calculateLegDetails,
                     $advancementRules,
                     $round,
-                    $maxKnockoutRound
+                    $finalKnockoutRound
                 ) {
                     $first = $matchGroup->first();
     
@@ -1655,8 +1661,8 @@ class TournamentTypeController extends Controller
                     $homeTotal = 0;
                     $awayTotal = 0;
     
-                    // ✅ KIỂM TRA IS_FINAL
-                    $isFinal = ($round == $maxKnockoutRound) && !($first->is_third_place ?? false);
+                    // ✅ FIX: Dùng $finalKnockoutRound thay vì $maxKnockoutRound
+                    $isFinal = ($round == $finalKnockoutRound) && !($first->is_third_place ?? false);
     
                     $legs = $matchGroup->map(function ($leg) use (
                         $calculateLegDetails,
@@ -1697,7 +1703,7 @@ class TournamentTypeController extends Controller
                         'away_team' => $this->formatTeam($first->awayTeam, $awayPlaceholder),
                         'is_bye' => $first->is_bye,
                         'is_third_place' => $first->is_third_place ?? false,
-                        'is_final' => $isFinal, // ✅ THÊM FLAG
+                        'is_final' => $isFinal, // ✅ FIXED
                         'legs' => $legs,
                         'aggregate_score' => [
                             'home' => $homeTotal,
