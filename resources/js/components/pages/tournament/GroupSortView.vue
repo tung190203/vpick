@@ -1,22 +1,27 @@
 <template>
-    <div class="m-4 p-4 max-w-8xl h-[96%] rounded-md bg-white shadow-sm">
+    <div class="m-4 p-4 max-w-8xl h-[calc(100vh-7rem)] rounded-md bg-white shadow-sm flex flex-col">
         <div class="flex justify-between mb-4">
             <div class="flex items-center gap-4 mb-4">
-                <ArrowLeftIcon class="w-6 h-6 text-gray-600 hover:text-[#D72D36] cursor-pointer" @click="goBack" />
+                <ArrowLeftIcon class="w-6 h-6 text-gray-600 hover:text-[#D72D36] cursor-pointer" @click="handleGoBack" />
                 <h1 class="text-lg font-semibold">Sắp xếp bảng đấu</h1>
             </div>
-            <div>
+            <div class="flex gap-2">
                 <button
-                    class="w-full bg-secondary hover:bg-white border text-white px-4 py-2 rounded-md hover:text-[#D72D36] hover:border-[#D72D36] font-medium transition"
-                    @click="confirmAssignments" :disabled="loading">
-                    {{ loading ? 'Đang lưu...' : 'Xác nhận' }}
+                    class="w-full bg-[#FBBF24] hover:bg-white border text-white px-4 py-2 rounded-md hover:text-[#FBBF24] hover:border-[#FBBF24] font-medium transition whitespace-nowrap"
+                    @click="confirmAssignments(true)" :disabled="loading">
+                    {{ loading ? 'Đang lưu...' : 'Lưu nháp' }}
+                </button>
+                <button
+                    class="w-full bg-secondary hover:bg-white border text-white px-4 py-2 rounded-md hover:text-[#D72D36] hover:border-[#D72D36] font-medium transition whitespace-nowrap"
+                    @click="confirmAssignments(false)" :disabled="loading">
+                    {{ loading ? 'Đang lưu...' : 'Lưu & tạo nhánh đấu' }}
                 </button>
             </div>
         </div>
 
-        <div class="grid grid-cols-10 gap-4 h-[calc(100%-3rem)]">
+        <div class="grid grid-cols-10 gap-4 flex-1 overflow-hidden">
             <!-- Left Sidebar - Unassigned Teams -->
-            <div class="col-span-3 h-full bg-gray-100 rounded-lg p-4">
+            <div class="col-span-3 bg-gray-100 rounded-lg p-4 flex flex-col overflow-hidden">
                 <div class="flex flex-col h-full">
                     <!-- Header -->
                     <div class="flex justify-between items-center mb-3">
@@ -51,7 +56,7 @@
 
                             <span
                                 class="px-2.5 py-1 bg-blue-500 text-white text-xs font-medium rounded-full whitespace-nowrap flex-shrink-0">
-                                {{ team.vndupr_avg?.toFixed(2) ?? '—' }} VNDUPR
+                                {{ team.vndupr_avg?.toFixed(2) ?? '—' }} PICKI
                             </span>
                         </div>
 
@@ -63,7 +68,7 @@
             </div>
 
             <!-- Right Side - Tournament Brackets Grid -->
-            <div class="col-span-7 h-full">
+            <div class="col-span-7 overflow-y-auto custom-scrollbar-hide">
                 <div class="grid grid-cols-2 gap-4 h-full">
                     <!-- Dynamic Groups -->
                     <div v-for="group in groups" :key="group.group_id"
@@ -104,7 +109,7 @@
 
                                 <span
                                     class="px-2.5 py-1 bg-blue-500 text-white text-xs font-medium rounded-full whitespace-nowrap flex-shrink-0">
-                                    {{ team.vndupr_avg?.toFixed(2) ?? '—' }} VNDUPR
+                                    {{ team.vndupr_avg?.toFixed(2) ?? '—' }} PICKI
                                 </span>
 
                                 <button @click="removeTeam(group.group_id, team.team_id)"
@@ -125,11 +130,48 @@
                 </div>
             </div>
         </div>
+
+        <!-- Custom Confirmation Modal -->
+        <Transition name="modal">
+            <div v-if="showConfirmModal" class="fixed inset-0 z-50 flex items-center justify-center">
+                <!-- Backdrop -->
+                <div class="absolute inset-0 bg-black bg-opacity-50 transition-opacity" @click="handleModalCancel"></div>
+                
+                <!-- Modal -->
+                <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 transform transition-all">
+                    <!-- Header -->
+                    <div class="px-6 pt-5 pb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">{{ confirmModal.title }}</h3>
+                    </div>
+                    
+                    <!-- Body -->
+                    <div class="px-6 pb-4">
+                        <p class="text-sm text-gray-600 whitespace-pre-line">{{ confirmModal.message }}</p>
+                    </div>
+                    
+                    <!-- Footer -->
+                    <div class="px-6 py-4 bg-gray-50 rounded-b-lg flex gap-3 justify-end">
+                        <button
+                            @click="handleModalCancel"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
+                            {{ confirmModal.cancelText }}
+                        </button>
+                        <button
+                            @click="handleModalConfirm"
+                            :class="confirmModal.confirmClass"
+                            class="px-4 py-2 text-sm font-medium text-white rounded-md hover:opacity-90 transition-opacity">
+                            {{ confirmModal.confirmText }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </Transition>
     </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onUnmounted, reactive } from "vue";
+import { onBeforeRouteLeave } from 'vue-router';
 import { ArrowLeftIcon } from "@heroicons/vue/24/solid";
 import { toast } from 'vue3-toastify';
 import { useRouter, useRoute } from 'vue-router';
@@ -139,7 +181,81 @@ import * as TournamentService from '@/service/tournament.js'
 
 const router = useRouter();
 const route = useRoute();
-const goBack = () => router.back();
+
+/* ================= MODAL STATE ================= */
+const showConfirmModal = ref(false);
+const confirmModal = reactive({
+    title: '',
+    message: '',
+    confirmText: 'OK',
+    cancelText: 'Hủy',
+    confirmClass: 'bg-[#D72D36]',
+    onConfirm: null,
+    onCancel: null
+});
+
+const showModal = (config) => {
+    return new Promise((resolve) => {
+        confirmModal.title = config.title || 'Xác nhận';
+        confirmModal.message = config.message || '';
+        confirmModal.confirmText = config.confirmText || 'OK';
+        confirmModal.cancelText = config.cancelText || 'Hủy';
+        confirmModal.confirmClass = config.confirmClass || 'bg-[#D72D36]';
+        
+        confirmModal.onConfirm = () => resolve(true);
+        confirmModal.onCancel = () => resolve(false);
+        
+        showConfirmModal.value = true;
+    });
+};
+
+const handleModalConfirm = () => {
+    showConfirmModal.value = false;
+    if (confirmModal.onConfirm) {
+        confirmModal.onConfirm();
+    }
+};
+
+const handleModalCancel = () => {
+    showConfirmModal.value = false;
+    if (confirmModal.onCancel) {
+        confirmModal.onCancel();
+    }
+};
+
+/* ================= NAVIGATION ================= */
+const pendingNavigation = ref(null);
+
+const handleGoBack = async () => {
+    if (!hasUnsavedChanges.value) {
+        navigateBack();
+        return;
+    }
+
+    const confirmed = await showModal({
+        title: 'Thay đổi chưa được lưu',
+        message: 'Bạn có thay đổi chưa được lưu. Bạn có muốn lưu nháp trước khi rời đi?',
+        confirmText: 'Lưu nháp',
+        cancelText: 'Không lưu',
+        confirmClass: 'bg-[#FBBF24]'
+    });
+
+    if (confirmed) {
+        await confirmAssignments(true);
+        // Đợi 1.5s để toast hiển thị xong
+        await new Promise(resolve => setTimeout(resolve, 1500));
+    }
+    
+    navigateBack();
+};
+
+const navigateBack = () => {
+    router.push({
+        name: 'tournament-detail',
+        params: { id: tournamentId },
+        query: { tab: route.query.tab }
+    });
+};
 
 /* ================= STATE ================= */
 const unassignedTeams = ref([]);
@@ -156,6 +272,7 @@ const dragCounter = ref({});
 const loading = ref(false);
 const tournamentId = route.params.id;
 const tournamentTypeId = ref(null);
+const hasUnsavedChanges = ref(false);
 
 /* ================= HELPERS ================= */
 const findGroupById = (id) =>
@@ -224,7 +341,7 @@ const fetchTeams = async () => {
     }
 };
 
-const confirmAssignments = async () => {
+const confirmAssignments = async (isDraft = false) => {
     loading.value = true;
     try {
         await TournamentTypeService.assignTeamsAndGenerate(
@@ -233,13 +350,26 @@ const confirmAssignments = async () => {
                 groups: groups.value.map(g => ({
                     group_id: g.group_id,
                     team_ids: g.teams.map(t => t.team_id)
-                }))
+                })),
+                is_draft: isDraft
             }
         );
-        toast.success('Đã lưu sắp xếp bảng đấu!');
+
+        toast.success(
+            isDraft
+                ? 'Đã lưu nháp sắp xếp bảng đấu!'
+                : 'Đã lưu sắp xếp bảng đấu!'
+        );
+
         await fetchTeams();
-    } catch(error) {
-        toast.error(error.response?.data?.message || 'Không thể lưu sắp xếp bảng đấu');
+        hasUnsavedChanges.value = false;
+    } catch (error) {
+        toast.error(
+            error.response?.data?.message ||
+            (isDraft
+                ? 'Không thể lưu nháp sắp xếp bảng đấu'
+                : 'Không thể lưu sắp xếp bảng đấu')
+        );
     } finally {
         loading.value = false;
     }
@@ -269,6 +399,7 @@ const handleDragLeave = (e, groupId) => {
 const onDrop = (e, targetGroupId, targetTeam = null) => {
     e.preventDefault();
     if (!draggingTeam.value) return resetDrag();
+    hasUnsavedChanges.value = true;
 
     const team = draggingTeam.value;
     const source = sourceBang.value;
@@ -352,6 +483,7 @@ const removeTeam = (groupId, teamId) => {
     if (idx !== -1) {
         unassignedTeams.value.push(g.teams[idx]);
         g.teams.splice(idx, 1);
+        hasUnsavedChanges.value = true;
     }
 };
 
@@ -360,10 +492,59 @@ const autoAssignTeams = async() => {
         await TournamentTypeService.autoGenerateTeamAndMatches(tournamentTypeId.value);
         toast.success('Chia bảng thành công');
         await fetchTeams();
+        hasUnsavedChanges.value = true;
     } catch(error) {
         toast.error(error.response?.data?.message || 'Không thể lưu sắp xếp bảng đấu');
     }
 }
+
+const handleBeforeUnload = (event) => {
+    if (!hasUnsavedChanges.value) return;
+    event.preventDefault();
+    event.returnValue = '';
+};
+
+onMounted(() => {
+    window.addEventListener('beforeunload', handleBeforeUnload);
+});
+
+onUnmounted(() => {
+    window.removeEventListener('beforeunload', handleBeforeUnload);
+});
+
+onBeforeRouteLeave(async (to, from, next) => {
+    if (!hasUnsavedChanges.value) {
+        next();
+        return;
+    }
+
+    // Chặn navigation trước
+    next(false);
+    
+    // Hiển thị modal và đợi kết quả
+    const confirmed = await showModal({
+        title: 'Thay đổi chưa được lưu',
+        message: 'Bạn có thay đổi chưa được lưu. Bạn có muốn lưu nháp trước khi rời đi?',
+        confirmText: 'Lưu nháp & rời đi',
+        cancelText: 'Rời đi không lưu',
+        confirmClass: 'bg-[#FBBF24]'
+    });
+
+    if (confirmed) {
+        try {
+            await confirmAssignments(true);
+            hasUnsavedChanges.value = false;
+            // Đợi 1.5s để toast hiển thị xong
+            await new Promise(resolve => setTimeout(resolve, 1500));
+        } catch {
+            // Nếu lưu lỗi, không cho rời đi
+            return;
+        }
+    }
+    
+    // Sau khi xử lý xong, cho phép navigation
+    next();
+});
 
 /* ================= INIT ================= */
 onMounted(async () => {
@@ -380,5 +561,26 @@ onMounted(async () => {
 .custom-scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
+}
+
+.modal-enter-active,
+.modal-leave-active {
+    transition: opacity 0.2s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+    opacity: 0;
+}
+
+.modal-enter-active .relative,
+.modal-leave-active .relative {
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.modal-enter-from .relative,
+.modal-leave-to .relative {
+    transform: scale(0.95);
+    opacity: 0;
 }
 </style>

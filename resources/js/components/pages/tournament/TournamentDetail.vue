@@ -827,11 +827,11 @@ const handleUpdateOwnScore = debounce(async () => {
 })
 
 const openBracketPage = () => {
-  router.push({ name: 'tournament-bracket', param: { id: id } });
+  router.push({ name: 'tournament-bracket', param: { id: id }, query: {tab:activeTab.value} });
 };
 
 const openGroupsSortPage = () => {
-  router.push({ name: 'tournament-groups-sort', params: {id: id} });
+  router.push({ name: 'tournament-groups-sort', params: {id: id}, query: {tab: activeTab.value} });
 }
 
 function formatMatchCount(matches) {
@@ -1439,6 +1439,7 @@ const confirmTournament = async () => {
 }
 
 onMounted(async () => {
+  activeTab.value = route.query.tab || 'detail'
   if (id) {
     await Promise.all([
       detailTournament(id),
