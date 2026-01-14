@@ -510,7 +510,7 @@ class AuthController extends Controller
         try {
             $appleUser = Socialite::driver('sign-in-with-apple')->stateless()->user();
 
-            $name = $appleUser->user['name'] ?? ('PickiUser' . $appleUser->getId());
+            $name = $appleUser->user['name'] ?? ('PickiUser' . substr($appleUser->getId(), -6));
             $email = $appleUser->getEmail();
             $user = User::where('email', $email)
                 ->orWhere('apple_id', $appleUser->getId())
