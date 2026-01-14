@@ -734,7 +734,7 @@ class MiniMatchController extends Controller
                 $K = 0.3;
 
                 // 4. Chuẩn bị K theo total_matches
-                if ($user->is_anchor || $user->total_matches_has_anchor >= 10) {
+                if ($user->is_anchor) {
                     $K = 0.1;
                 } else {
                     if ($user->total_matches <= 10) {
