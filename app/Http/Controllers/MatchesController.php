@@ -1005,12 +1005,173 @@ class MatchesController extends Controller
     // ============================================
     // 3. VALIDATE ALL MATCH SETS - HÀM PHỤ
     // ============================================
+    // private function validateAllMatchSets($match, $rules)
+    // {
+    //     $pointsToWinSet = $rules['points_to_win_set'] ?? 11;
+    //     $winningRule = $rules['winning_rule'] ?? 2;
+    //     $maxPoints = $rules['max_points'] ?? $pointsToWinSet;
+
+    //     $homeTeamId = $match->home_team_id;
+    //     $awayTeamId = $match->away_team_id;
+
+    //     $sets = $match->results->groupBy('set_number');
+
+    //     if ($sets->isEmpty()) {
+    //         return 'Trận đấu chưa có kết quả nào';
+    //     }
+
+    //     foreach ($sets as $setNumber => $setResults) {
+    //         if ($setResults->count() !== 2) {
+    //             return "Set $setNumber: Thiếu điểm số của một trong hai đội";
+    //         }
+
+    //         $teamA = $setResults->firstWhere('team_id', $homeTeamId);
+    //         $teamB = $setResults->firstWhere('team_id', $awayTeamId);
+
+    //         if (!$teamA || !$teamB) {
+    //             return "Set $setNumber: Dữ liệu không hợp lệ";
+    //         }
+
+    //         $A = (int) $teamA->score;
+    //         $B = (int) $teamB->score;
+
+    //         // Validate logic thắng thua
+    //         $validation = $this->validateMatchSetScore(
+    //             $A,
+    //             $B,
+    //             $setNumber,
+    //             $pointsToWinSet,
+    //             $winningRule,
+    //             $maxPoints,
+    //             $homeTeamId,
+    //             $awayTeamId
+    //         );
+
+    //         if ($validation['error']) {
+    //             return $validation['message'];
+    //         }
+
+    //         // Cập nhật won_match với ID thực tế
+    //         $winnerTeamId = $validation['winner'];
+    //         $teamA->update(['won_match' => ($teamA->team_id == $winnerTeamId)]);
+    //         $teamB->update(['won_match' => ($teamB->team_id == $winnerTeamId)]);
+    //     }
+
+    //     return null; // Không có lỗi
+    // }
+
+    // // ============================================
+    // // 4. VALIDATE MATCH SET SCORE - LOGIC CHI TIẾT
+    // // ============================================
+    // private function validateMatchSetScore($A, $B, $setNumber, $pointsToWinSet, $winningRule, $maxPoints, $homeTeamId, $awayTeamId)
+    // {
+    //     if ($A < 0 || $B < 0) {
+    //         return ['error' => true, 'message' => "Set $setNumber: Điểm số không hợp lệ"];
+    //     }
+
+    //     $scoreDiff = abs($A - $B);
+    //     $isPointsToWinReached = ($A >= $pointsToWinSet || $B >= $pointsToWinSet);
+    //     $isMaxPointsReached = ($A == $maxPoints || $B == $maxPoints);
+    //     $winnerTeamId = null;
+    //     $isSetCompleted = false;
+
+    //     // Logic xác định thắng set
+    //     if ($pointsToWinSet == $maxPoints) {
+    //         if ($isMaxPointsReached) {
+    //             $isSetCompleted = true;
+    //             $winnerTeamId = $A > $B ? $homeTeamId : $awayTeamId;
+    //         }
+    //     } else {
+    //         if ($isPointsToWinReached && $scoreDiff >= $winningRule) {
+    //             $isSetCompleted = true;
+    //             $winnerTeamId = $A > $B ? $homeTeamId : $awayTeamId;
+    //         } elseif ($isMaxPointsReached) {
+    //             if ($A == $B) {
+    //                 return [
+    //                     'error' => true,
+    //                     'message' => "Set $setNumber: Điểm số hòa tại điểm tối đa $maxPoints. Set phải kết thúc với cách biệt."
+    //                 ];
+    //             }
+    //             $isSetCompleted = true;
+    //             $winnerTeamId = $A > $B ? $homeTeamId : $awayTeamId;
+    //         }
+    //     }
+
+    //     if (!$isSetCompleted) {
+    //         return [
+    //             'error' => true,
+    //             'message' => "Set $setNumber: Điểm số $A - $B chưa thỏa mãn luật thắng. Chỉ có thể lưu kết quả khi set đã hoàn thành."
+    //         ];
+    //     }
+
+    //     // Anti-cheat điểm số
+    //     $winningScore = max($A, $B);
+    //     $losingScore = min($A, $B);
+
+    //     if ($pointsToWinSet == $maxPoints) {
+    //         if ($winningScore != $maxPoints) {
+    //             return [
+    //                 'error' => true,
+    //                 'message' => "Set $setNumber: Điểm số $A - $B không hợp lệ với luật (thắng khi chạm $maxPoints)."
+    //             ];
+    //         }
+    //         if ($losingScore == $maxPoints) {
+    //             return [
+    //                 'error' => true,
+    //                 'message' => "Set $setNumber: Điểm số $A - $B không hợp lệ với luật (không thể hòa tại $maxPoints)."
+    //             ];
+    //         }
+    //     } else {
+    //         // Kết thúc trước maxPoints
+    //         if ($winningScore < $maxPoints) {
+    //             if (!($winningScore >= $pointsToWinSet && ($winningScore - $losingScore) >= $winningRule)) {
+    //                 return [
+    //                     'error' => true,
+    //                     'message' => "Set $setNumber: Điểm số $A - $B không hợp lệ với luật (trước $maxPoints)."
+    //                 ];
+    //             }
+
+    //             // Kiểm tra không kết thúc sớm hơn
+    //             for ($i = $pointsToWinSet; $i < $winningScore; $i++) {
+    //                 $diffAtPoint = $i - $losingScore;
+    //                 if ($diffAtPoint >= $winningRule) {
+    //                     return [
+    //                         'error' => true,
+    //                         'message' => "Set $setNumber: Điểm số $A - $B không hợp lệ. Set kết thúc sớm hơn tại $i - $losingScore."
+    //                     ];
+    //                 }
+    //             }
+    //         }
+    //         // Kết thúc tại maxPoints
+    //         else {
+    //             if (!($winningScore == $maxPoints && $winningScore > $losingScore)) {
+    //                 return [
+    //                     'error' => true,
+    //                     'message' => "Set $setNumber: Điểm số $A - $B không hợp lệ với luật (tại $maxPoints)."
+    //                 ];
+    //             }
+
+    //             for ($i = $pointsToWinSet; $i < $maxPoints; $i++) {
+    //                 $diffAtPoint = $i - $losingScore;
+    //                 if ($diffAtPoint >= $winningRule) {
+    //                     return [
+    //                         'error' => true,
+    //                         'message' => "Set $setNumber: Điểm số $A - $B không hợp lệ. Set kết thúc sớm hơn tại $i - $losingScore."
+    //                     ];
+    //                 }
+    //             }
+    //         }
+    //     }
+
+    //     if (!$winnerTeamId) {
+    //         return ['error' => true, 'message' => "Set $setNumber: Lỗi xác định người thắng."];
+    //     }
+
+    //     return ['error' => false, 'winner' => $winnerTeamId];
+    // }
     private function validateAllMatchSets($match, $rules)
     {
         $pointsToWinSet = $rules['points_to_win_set'] ?? 11;
-        $winningRule = $rules['winning_rule'] ?? 2;
-        $maxPoints = $rules['max_points'] ?? $pointsToWinSet;
-
         $homeTeamId = $match->home_team_id;
         $awayTeamId = $match->away_team_id;
 
@@ -1041,8 +1202,6 @@ class MatchesController extends Controller
                 $B,
                 $setNumber,
                 $pointsToWinSet,
-                $winningRule,
-                $maxPoints,
                 $homeTeamId,
                 $awayTeamId
             );
@@ -1061,111 +1220,30 @@ class MatchesController extends Controller
     }
 
     // ============================================
-    // 4. VALIDATE MATCH SET SCORE - LOGIC CHI TIẾT
+    // 4. VALIDATE MATCH SET SCORE - LOGIC ĐƠN GIẢN
     // ============================================
-    private function validateMatchSetScore($A, $B, $setNumber, $pointsToWinSet, $winningRule, $maxPoints, $homeTeamId, $awayTeamId)
+    private function validateMatchSetScore($A, $B, $setNumber, $pointsToWinSet, $homeTeamId, $awayTeamId)
     {
         if ($A < 0 || $B < 0) {
             return ['error' => true, 'message' => "Set $setNumber: Điểm số không hợp lệ"];
         }
 
-        $scoreDiff = abs($A - $B);
-        $isPointsToWinReached = ($A >= $pointsToWinSet || $B >= $pointsToWinSet);
-        $isMaxPointsReached = ($A == $maxPoints || $B == $maxPoints);
-        $winnerTeamId = null;
-        $isSetCompleted = false;
-
-        // Logic xác định thắng set
-        if ($pointsToWinSet == $maxPoints) {
-            if ($isMaxPointsReached) {
-                $isSetCompleted = true;
-                $winnerTeamId = $A > $B ? $homeTeamId : $awayTeamId;
-            }
-        } else {
-            if ($isPointsToWinReached && $scoreDiff >= $winningRule) {
-                $isSetCompleted = true;
-                $winnerTeamId = $A > $B ? $homeTeamId : $awayTeamId;
-            } elseif ($isMaxPointsReached) {
-                if ($A == $B) {
-                    return [
-                        'error' => true,
-                        'message' => "Set $setNumber: Điểm số hòa tại điểm tối đa $maxPoints. Set phải kết thúc với cách biệt."
-                    ];
-                }
-                $isSetCompleted = true;
-                $winnerTeamId = $A > $B ? $homeTeamId : $awayTeamId;
-            }
+        // Check 1: Không được hòa
+        if ($A == $B) {
+            return ['error' => true, 'message' => "Set $setNumber: Không được có tỉ số hòa ($A - $B)"];
         }
 
-        if (!$isSetCompleted) {
+        // Check 2: Ít nhất 1 đội phải đạt pointsToWinSet (11 điểm)
+        $winningScore = max($A, $B);
+        if ($winningScore < $pointsToWinSet) {
             return [
-                'error' => true,
-                'message' => "Set $setNumber: Điểm số $A - $B chưa thỏa mãn luật thắng. Chỉ có thể lưu kết quả khi set đã hoàn thành."
+                'error' => true, 
+                'message' => "Set $setNumber: Ít nhất 1 đội phải đạt $pointsToWinSet điểm (hiện tại: $A - $B)"
             ];
         }
 
-        // Anti-cheat điểm số
-        $winningScore = max($A, $B);
-        $losingScore = min($A, $B);
-
-        if ($pointsToWinSet == $maxPoints) {
-            if ($winningScore != $maxPoints) {
-                return [
-                    'error' => true,
-                    'message' => "Set $setNumber: Điểm số $A - $B không hợp lệ với luật (thắng khi chạm $maxPoints)."
-                ];
-            }
-            if ($losingScore == $maxPoints) {
-                return [
-                    'error' => true,
-                    'message' => "Set $setNumber: Điểm số $A - $B không hợp lệ với luật (không thể hòa tại $maxPoints)."
-                ];
-            }
-        } else {
-            // Kết thúc trước maxPoints
-            if ($winningScore < $maxPoints) {
-                if (!($winningScore >= $pointsToWinSet && ($winningScore - $losingScore) >= $winningRule)) {
-                    return [
-                        'error' => true,
-                        'message' => "Set $setNumber: Điểm số $A - $B không hợp lệ với luật (trước $maxPoints)."
-                    ];
-                }
-
-                // Kiểm tra không kết thúc sớm hơn
-                for ($i = $pointsToWinSet; $i < $winningScore; $i++) {
-                    $diffAtPoint = $i - $losingScore;
-                    if ($diffAtPoint >= $winningRule) {
-                        return [
-                            'error' => true,
-                            'message' => "Set $setNumber: Điểm số $A - $B không hợp lệ. Set kết thúc sớm hơn tại $i - $losingScore."
-                        ];
-                    }
-                }
-            }
-            // Kết thúc tại maxPoints
-            else {
-                if (!($winningScore == $maxPoints && $winningScore > $losingScore)) {
-                    return [
-                        'error' => true,
-                        'message' => "Set $setNumber: Điểm số $A - $B không hợp lệ với luật (tại $maxPoints)."
-                    ];
-                }
-
-                for ($i = $pointsToWinSet; $i < $maxPoints; $i++) {
-                    $diffAtPoint = $i - $losingScore;
-                    if ($diffAtPoint >= $winningRule) {
-                        return [
-                            'error' => true,
-                            'message' => "Set $setNumber: Điểm số $A - $B không hợp lệ. Set kết thúc sớm hơn tại $i - $losingScore."
-                        ];
-                    }
-                }
-            }
-        }
-
-        if (!$winnerTeamId) {
-            return ['error' => true, 'message' => "Set $setNumber: Lỗi xác định người thắng."];
-        }
+        // Xác định winner
+        $winnerTeamId = $A > $B ? $homeTeamId : $awayTeamId;
 
         return ['error' => false, 'winner' => $winnerTeamId];
     }
@@ -1212,10 +1290,30 @@ class MatchesController extends Controller
         $awayScore = $scores->get($match->away_team_id, 0);
         $totalScore = $homeScore + $awayScore;
 
-        $S_home = $totalScore > 0 ? $homeScore / $totalScore : 0;
-        $S_away = $totalScore > 0 ? $awayScore / $totalScore : 0;
+        // Xác định đội thắng (dựa trên tổng điểm)
+        if ($homeScore > $awayScore) {
+            $winnerTeamId = $match->home_team_id;
+        } elseif ($awayScore > $homeScore) {
+            $winnerTeamId = $match->away_team_id;
+        } else {
+            $winnerTeamId = null; // hòa (nếu có)
+        }
 
-        // Tính R (Average Rating)
+        // S_match
+        $S_match_home = $winnerTeamId === $match->home_team_id ? 1.0 : 0.0;
+        $S_match_away = $winnerTeamId === $match->away_team_id ? 1.0 : 0.0;
+
+        // S_points
+        $S_points_home = $totalScore > 0 ? $homeScore / $totalScore : 0;
+        $S_points_away = $totalScore > 0 ? $awayScore / $totalScore : 0;
+
+        // S_final
+        $S_home = 0.5 * $S_match_home + 0.5 * $S_points_home;
+        $S_away = 0.5 * $S_match_away + 0.5 * $S_points_away;
+
+        // =====================================================
+        // D. TÍNH R (AVERAGE RATING)
+        // =====================================================
         $sportId = $tournament->sport_id;
 
         $getAverageRating = function ($team, $sportId) {
@@ -1249,12 +1347,12 @@ class MatchesController extends Controller
         $E_away = 1 / (1 + pow(10, ($homeRating - $awayRating)));
 
         $teams = [
-            $match->home_team_id => [
+            [
                 'team' => $match->homeTeam,
                 'S' => $S_home,
                 'E' => $E_home,
             ],
-            $match->away_team_id => [
+            [
                 'team' => $match->awayTeam,
                 'S' => $S_away,
                 'E' => $E_away,
