@@ -386,9 +386,11 @@ const qrCodeUrl = computed(() => {
 
 /* ===================== SCORE ACTIONS ===================== */
 const incrementScore = (idx, team) => {
-    const maxPoints = props.tournament?.tournament_types?.[0]?.match_rules?.[0]?.max_points || 11
-    if (team === 'A' && scores.value[idx].teamA < maxPoints) scores.value[idx].teamA++
-    if (team === 'B' && scores.value[idx].teamB < maxPoints) scores.value[idx].teamB++
+    // const maxPoints = props.tournament?.tournament_types?.[0]?.match_rules?.[0]?.max_points || 11
+    // if (team === 'A' && scores.value[idx].teamA < maxPoints) scores.value[idx].teamA++
+    // if (team === 'B' && scores.value[idx].teamB < maxPoints) scores.value[idx].teamB++
+    if (team === 'A') scores.value[idx].teamA++
+    if (team === 'B') scores.value[idx].teamB++
 }
 
 const decrementScore = (idx, team) => {

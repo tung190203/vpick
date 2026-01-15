@@ -70,9 +70,9 @@ class TeamController extends Controller
         if ($tournament->max_team && $tournament->teams()->count() >= $tournament->max_team) {
             return ResponseHelper::error('Đã đạt số lượng đội tối đa cho giải đấu', 400);
         }
-        if ($tournament->tournamentTypes()->exists()) {
-            return ResponseHelper::error('Không thể tạo đội khi giải đấu đã có loại hình thi đấu', 400);
-        }
+        // if ($tournament->tournamentTypes()->exists()) {
+        //     return ResponseHelper::error('Không thể tạo đội khi giải đấu đã có loại hình thi đấu', 400);
+        // }
         $avatarPath = null;
         if ($request->hasFile('avatar')) {
             $avatarPath = $this->imageService->optimize(
@@ -184,9 +184,9 @@ class TeamController extends Controller
         if ($participants->isEmpty()) {
             return ResponseHelper::error('Cần ít nhất 1 người chơi để tiến hành phân chia đội', 400);
         }
-        if ($tournament->tournamentTypes()->exists()) {
-            return ResponseHelper::error('Không thể tự động chia lại đội khi giải đấu đã có loại hình thi đấu', 400);
-        }
+        // if ($tournament->tournamentTypes()->exists()) {
+        //     return ResponseHelper::error('Không thể tự động chia lại đội khi giải đấu đã có loại hình thi đấu', 400);
+        // }
 
         $maxPlayers = $tournament->player_per_team ?? 1;
         $maxTeams = $tournament->max_team ?? 1;
@@ -252,9 +252,9 @@ class TeamController extends Controller
             ]
         );
         $tournament = Team::findOrFail($teamId)->tournament;
-        if ($tournament->tournamentTypes()->exists()) {
-            return ResponseHelper::error('Không thể xoá thành viên khỏi đội khi giải đấu đã có loại hình thi đấu', 400);
-        }
+        // if ($tournament->tournamentTypes()->exists()) {
+        //     return ResponseHelper::error('Không thể xoá thành viên khỏi đội khi giải đấu đã có loại hình thi đấu', 400);
+        // }
 
         $team = Team::findOrFail($teamId);
         $team->members()->detach($request->user_id);
@@ -267,9 +267,9 @@ class TeamController extends Controller
         $team = Team::findOrFail($teamId);
         $tournament = Tournament::findOrFail($team->tournament_id);
         $tournamentTypeIds = $tournament->tournamentTypes()->pluck('id');
-        if ($tournament->tournamentTypes()->exists()) {
-            return ResponseHelper::error('Không thể xoá đội khi giải đấu đã có loại hình thi đấu', 400);
-        }
+        // if ($tournament->tournamentTypes()->exists()) {
+        //     return ResponseHelper::error('Không thể xoá đội khi giải đấu đã có loại hình thi đấu', 400);
+        // }
         if ($tournamentTypeIds->isEmpty()) {
             return $this->forceDeleteTeam($team);
         }

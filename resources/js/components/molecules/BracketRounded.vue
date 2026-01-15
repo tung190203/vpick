@@ -3,7 +3,7 @@
     <CreateMatch v-model="showCreateMatchModal" :data="detailData" :tournament="tournament" @updated="handleMatchUpdated" />
 
     <div class="col-span-3">
-  <div class="p-4 space-y-4">
+  <div class="p-4 space-y-4 max-w-[450px]">
     <!-- Header -->
     <div class="flex justify-between items-center p-4 bg-[#EDEEF2] rounded-md shadow">
       <h2 class="text-lg font-bold text-gray-800">Bảng xếp hạng</h2>
