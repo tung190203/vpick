@@ -437,7 +437,7 @@
                       v-if="isCreator">Thay đổi thể thức</p>
                   </div>
                 </div>
-                <div v-if="isCreator && tournament?.tournament_types?.[0]?.format === FORMAT_MIXED"
+                <div v-if="tournament?.tournament_types?.[0]?.format === FORMAT_MIXED"
                   class="border border-[#BBBFCC] rounded my-4 px-4 py-3 flex justify-between items-center cursor-pointer hover:shadow-md transition"
                   @click="openGroupsSortPage">
                   <div class="flex items-center gap-3">

@@ -182,26 +182,29 @@ const fetchMatchData = async () => {
 
 // Kết quả set
 const formattedScores = computed(() => {
-    if (!matchData.value || !matchData.value.legs || matchData.value.legs.length === 0) {
-        return []
-    }
+  if (!matchData.value?.legs?.length) return [];
 
-    const leg = matchData.value.legs[0];
-    const sets = leg.sets;
-    const scoresArray = [];
+  const leg = matchData.value.legs[0];
+  const sets = leg.sets ?? {};
+  const result = [];
 
-    Object.keys(sets).forEach(setKey => {
-        const setData = sets[setKey];
-        Object.keys(setData).forEach(setName => {
-            const scores = setData[setName];
-            const homeScore = scores.find(s => s.team_id === matchData.value.home_team?.id)?.score || 0;
-            const awayScore = scores.find(s => s.team_id === matchData.value.away_team?.id)?.score || 0;
-            scoresArray.push({ home: homeScore, away: awayScore });
-        });
+  Object.values(sets).forEach(scores => {
+    // scores === array [{team_id, score}, ...]
+
+    const homeScore =
+      scores.find(s => s.team_id === matchData.value.home_team?.id)?.score || 0;
+
+    const awayScore =
+      scores.find(s => s.team_id === matchData.value.away_team?.id)?.score || 0;
+
+    result.push({
+      home: homeScore,
+      away: awayScore
     });
+  });
 
-    return scoresArray;
-})
+  return result;
+});
 
 // Confirm match
 const confirmMatch = async () => {
