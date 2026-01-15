@@ -5,7 +5,7 @@
                 <ArrowLeftIcon class="w-6 h-6 text-gray-600 hover:text-[#D72D36] cursor-pointer" @click="handleGoBack" />
                 <h1 class="text-lg font-semibold">Sắp xếp bảng đấu</h1>
             </div>
-            <div class="flex gap-2">
+            <div class="flex gap-2" v-if="isCreator">
                 <button
                     class="w-full bg-[#FBBF24] hover:bg-white border text-white px-4 py-2 rounded-md hover:text-[#FBBF24] hover:border-[#FBBF24] font-medium transition whitespace-nowrap"
                     @click="confirmAssignments(true)" :disabled="loading">
@@ -29,7 +29,7 @@
                             <h2 class="text-sm font-semibold text-gray-700">ĐỘI CHƯA XẾP</h2>
                             <span class="text-gray-500 text-sm">• {{ unassignedTeams.length }}</span>
                         </div>
-                        <button @click="autoAssignTeams"
+                        <button @click="autoAssignTeams" v-if="isCreator"
                             class="text-red-500 text-xs font-medium hover:text-red-600 transition-colors">
                             Tự động xếp bảng
                         </button>
@@ -37,12 +37,20 @@
 
                     <!-- Unassigned Teams List -->
                     <div class="flex-1 space-y-2 overflow-y-auto custom-scrollbar-hide"
-                        @drop="onDrop($event, 'unassigned')" @dragover.prevent @dragenter.prevent>
-                        <div v-for="team in unassignedTeams" :key="team.team_id" :draggable="true"
-                            @dragstart="onDragStart($event, team, 'unassigned')" @dragend="onDragEnd"
-                            class="flex items-center gap-3 p-3 bg-white rounded-lg hover:bg-gray-50 transition-colors cursor-move"
-                            :class="{ 'opacity-50': draggingTeam?.team_id === team.team_id }">
-                            <img :src="dotMenu" alt="">
+                        @drop="isCreator && onDrop($event, 'unassigned')" 
+                        @dragover.prevent 
+                        @dragenter.prevent>
+                        <div v-for="team in unassignedTeams" :key="team.team_id" 
+                            :draggable="isCreator"
+                            @dragstart="isCreator && onDragStart($event, team, 'unassigned')" 
+                            @dragend="isCreator && onDragEnd"
+                            class="flex items-center gap-3 p-3 bg-white rounded-lg hover:bg-gray-50 transition-colors"
+                            :class="{ 
+                                'opacity-50': draggingTeam?.team_id === team.team_id,
+                                'cursor-move': isCreator,
+                                'cursor-default': !isCreator
+                            }">
+                            <img :src="dotMenu" alt="" v-if="isCreator">
 
                             <img :src="team.team_avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${team.team_id}`"
                                 :alt="team.team_name" class="w-10 h-10 rounded-full flex-shrink-0">
@@ -82,20 +90,27 @@
                         </div>
 
                         <div class="flex-1 space-y-2 overflow-y-auto custom-scrollbar-hide transition-all duration-200"
-                            @drop="onDrop($event, group.group_id)" @dragover.prevent
-                            @dragenter.prevent="handleDragEnter(group.group_id)"
-                            @dragleave.prevent="handleDragLeave($event, group.group_id)"
-                            :class="{ 'bg-blue-50 border-2 border-dashed border-blue-300 rounded-lg p-2': isDragging && dragOverBang === group.group_id }">
-                            <div v-for="team in group.teams" :key="team.team_id" :draggable="true"
-                                @dragstart="onDragStart($event, team, group.group_id)" @dragend="onDragEnd"
-                                @drop="onDrop($event, group.group_id, team)" @dragover.prevent="dropTargetTeam = team"
-                                @dragleave="dropTargetTeam = null" @dragenter.prevent
-                                class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg group hover:bg-gray-100 transition-colors cursor-move"
+                            @drop="isCreator && onDrop($event, group.group_id)" 
+                            @dragover.prevent
+                            @dragenter.prevent="isCreator && handleDragEnter(group.group_id)"
+                            @dragleave.prevent="isCreator && handleDragLeave($event, group.group_id)"
+                            :class="{ 'bg-blue-50 border-2 border-dashed border-blue-300 rounded-lg p-2': isCreator && isDragging && dragOverBang === group.group_id }">
+                            <div v-for="team in group.teams" :key="team.team_id" 
+                                :draggable="isCreator"
+                                @dragstart="isCreator && onDragStart($event, team, group.group_id)" 
+                                @dragend="isCreator && onDragEnd"
+                                @drop="isCreator && onDrop($event, group.group_id, team)" 
+                                @dragover.prevent="isCreator && (dropTargetTeam = team)"
+                                @dragleave="isCreator && (dropTargetTeam = null)" 
+                                @dragenter.prevent
+                                class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg group hover:bg-gray-100 transition-colors"
                                 :class="{
                                     'opacity-50': draggingTeam?.team_id === team.team_id,
-                                    'border-2 border-blue-400 bg-blue-50': isDragging && dropTargetTeam?.team_id === team.team_id
+                                    'border-2 border-blue-400 bg-blue-50': isCreator && isDragging && dropTargetTeam?.team_id === team.team_id,
+                                    'cursor-move': isCreator,
+                                    'cursor-default': !isCreator
                                 }">
-                                <img :src="dotMenu" alt="">
+                                <img :src="dotMenu" alt="" v-if="isCreator">
 
                                 <img :src="team.team_avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${team.team_id}`"
                                     :alt="team.team_name" class="w-10 h-10 rounded-full flex-shrink-0">
@@ -112,18 +127,15 @@
                                     {{ team.vndupr_avg?.toFixed(2) ?? '—' }} PICKI
                                 </span>
 
-                                <button @click="removeTeam(group.group_id, team.team_id)"
+                                <button v-if="isCreator" @click="removeTeam(group.group_id, team.team_id)"
                                     class="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-600 flex-shrink-0">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
+                                    <XMarkIcon class="w-6 h-6" />
                                 </button>
                             </div>
 
                             <div v-if="group.teams.length === 0"
                                 class="w-full py-12 border-2 border-dashed border-gray-300 rounded-lg text-gray-400 text-center text-xs">
-                                Kéo thả đội vào đây
+                                {{ isCreator ? 'Kéo thả đội vào đây' : 'Chưa có đội nào' }}
                             </div>
                         </div>
                     </div>
@@ -170,17 +182,21 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, reactive } from "vue";
+import { ref, onMounted, onUnmounted, reactive, computed } from "vue";
 import { onBeforeRouteLeave } from 'vue-router';
-import { ArrowLeftIcon } from "@heroicons/vue/24/solid";
+import { ArrowLeftIcon, XMarkIcon } from "@heroicons/vue/24/solid";
 import { toast } from 'vue3-toastify';
 import { useRouter, useRoute } from 'vue-router';
 import dotMenu from '@/assets/images/dot-menu.svg';
 import * as TournamentTypeService from '@/service/tournamentType.js'
 import * as TournamentService from '@/service/tournament.js'
+import { useUserStore } from '@/store/auth'
+import { storeToRefs } from 'pinia'
 
 const router = useRouter();
 const route = useRoute();
+const userStore = useUserStore()
+const { getUser } = storeToRefs(userStore)
 
 /* ================= MODAL STATE ================= */
 const showConfirmModal = ref(false);
@@ -224,10 +240,8 @@ const handleModalCancel = () => {
 };
 
 /* ================= NAVIGATION ================= */
-const pendingNavigation = ref(null);
-
 const handleGoBack = async () => {
-    if (!hasUnsavedChanges.value) {
+    if (!isCreator.value || !hasUnsavedChanges.value) {
         navigateBack();
         return;
     }
@@ -271,6 +285,7 @@ const dragCounter = ref({});
 
 const loading = ref(false);
 const tournamentId = route.params.id;
+const tournament = ref([]);
 const tournamentTypeId = ref(null);
 const hasUnsavedChanges = ref(false);
 
@@ -317,7 +332,14 @@ const getGroupBadgeClass = (group) => {
 const getTournamentTypeId = async (id) => {
     const res = await TournamentService.getTournamentById(id);
     tournamentTypeId.value = res?.tournament_types?.[0]?.id;
+    tournament.value = res
 };
+
+const isCreator = computed(() => {
+    return tournament.value?.tournament_staff?.some(
+        staff => staff.role === 1 && staff.staff?.id === getUser.value.id
+    )
+})
 
 const fetchTeams = async () => {
     try {
@@ -342,6 +364,8 @@ const fetchTeams = async () => {
 };
 
 const confirmAssignments = async (isDraft = false) => {
+    if (!isCreator.value) return;
+    
     loading.value = true;
     try {
         await TournamentTypeService.assignTeamsAndGenerate(
@@ -377,26 +401,37 @@ const confirmAssignments = async (isDraft = false) => {
 
 /* ================= DRAG ================= */
 const onDragStart = (e, team, source) => {
+    if (!isCreator.value) return;
+    
     draggingTeam.value = team;
     sourceBang.value = source;
     isDragging.value = true;
     e.dataTransfer.effectAllowed = 'move';
 };
 
-const onDragEnd = () => resetDrag();
+const onDragEnd = () => {
+    if (!isCreator.value) return;
+    resetDrag();
+};
 
 const handleDragEnter = (groupId) => {
+    if (!isCreator.value) return;
+    
     dragCounter.value[groupId] = (dragCounter.value[groupId] || 0) + 1;
     dragOverBang.value = groupId;
 };
 
 const handleDragLeave = (e, groupId) => {
+    if (!isCreator.value) return;
+    
     dragCounter.value[groupId]--;
     if (dragCounter.value[groupId] === 0) dragOverBang.value = null;
 };
 
 /* ================= DROP ================= */
 const onDrop = (e, targetGroupId, targetTeam = null) => {
+    if (!isCreator.value) return;
+    
     e.preventDefault();
     if (!draggingTeam.value) return resetDrag();
     hasUnsavedChanges.value = true;
@@ -476,6 +511,8 @@ const onDrop = (e, targetGroupId, targetTeam = null) => {
 
 /* ================= ACTION ================= */
 const removeTeam = (groupId, teamId) => {
+    if (!isCreator.value) return;
+    
     const g = findGroupById(groupId);
     if (!g) return;
 
@@ -488,6 +525,8 @@ const removeTeam = (groupId, teamId) => {
 };
 
 const autoAssignTeams = async() => {
+    if (!isCreator.value) return;
+    
     try {
         await TournamentTypeService.autoGenerateTeamAndMatches(tournamentTypeId.value);
         toast.success('Chia bảng thành công');
@@ -499,7 +538,7 @@ const autoAssignTeams = async() => {
 }
 
 const handleBeforeUnload = (event) => {
-    if (!hasUnsavedChanges.value) return;
+    if (!isCreator.value || !hasUnsavedChanges.value) return;
     event.preventDefault();
     event.returnValue = '';
 };
@@ -513,7 +552,7 @@ onUnmounted(() => {
 });
 
 onBeforeRouteLeave(async (to, from, next) => {
-    if (!hasUnsavedChanges.value) {
+    if (!isCreator.value || !hasUnsavedChanges.value) {
         next();
         return;
     }

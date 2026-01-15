@@ -29,6 +29,8 @@ class UserListResource extends JsonResource
                 'club_members',
                 fn () => $this->pivot->rank_in_club ?? null
             ),
+            'is_anchor' => (bool) $this->is_anchor,
+            'is_verify' => (bool) ($this->total_matches_has_anchor >= 10),
         ];
     }
 }

@@ -591,56 +591,78 @@ class MiniMatchController extends Controller
     // ============================================
     // 4. VALIDATE SET SCORE - LOGIC THẮNG THUA
     // ============================================
+    // private function validateSetScore($A, $B, $pointsToWinSet, $pointsDifference, $maxPoints, $team1Id, $team2Id)
+    // {
+    //     if ($A < 0 || $B < 0) {
+    //         return ['error' => true, 'message' => 'Điểm số không hợp lệ'];
+    //     }
+
+    //     $scoreDiff = abs($A - $B);
+    //     $isPointsToWinReached = ($A >= $pointsToWinSet || $B >= $pointsToWinSet);
+    //     $isMaxPointsReached = ($A == $maxPoints || $B == $maxPoints);
+    //     $winnerTeamId = null;
+
+    //     if ($pointsToWinSet == $maxPoints) {
+    //         // Trường hợp: 11-2-11
+    //         if (!$isMaxPointsReached) {
+    //             return ['error' => true, 'message' => "Chưa đạt điểm tối đa {$maxPoints}"];
+    //         }
+    //         $winnerTeamId = $A > $B ? $team1Id : $team2Id;
+    //     } else {
+    //         // Trường hợp: 11-2-15
+    //         if ($isPointsToWinReached && $scoreDiff >= $pointsDifference) {
+    //             $winnerTeamId = $A > $B ? $team1Id : $team2Id;
+    //         } elseif ($isMaxPointsReached) {
+    //             if ($A == $B) {
+    //                 return ['error' => true, 'message' => "Điểm số hòa tại điểm tối đa {$maxPoints}"];
+    //             }
+    //             $winnerTeamId = $A > $B ? $team1Id : $team2Id;
+    //         } else {
+    //             return ['error' => true, 'message' => 'Set chưa hoàn thành hoặc chưa đủ điều kiện thắng'];
+    //         }
+    //     }
+
+    //     // Anti-cheat
+    //     $winningScore = max($A, $B);
+    //     $losingScore = min($A, $B);
+
+    //     if ($pointsToWinSet == $maxPoints) {
+    //         if (!($winningScore == $maxPoints && $losingScore < $maxPoints)) {
+    //             return ['error' => true, 'message' => 'Điểm số không hợp lệ (anti-cheat)'];
+    //         }
+    //     } else {
+    //         if ($winningScore < $maxPoints) {
+    //             if ($winningScore < $pointsToWinSet || ($winningScore - $losingScore) < $pointsDifference) {
+    //                 return ['error' => true, 'message' => 'Điểm số không hợp lệ (anti-cheat)'];
+    //             }
+    //         } else {
+    //             if ($winningScore != $maxPoints || $winningScore <= $losingScore) {
+    //                 return ['error' => true, 'message' => 'Điểm số không hợp lệ (anti-cheat)'];
+    //             }
+    //         }
+    //     }
+
+    //     return ['error' => false, 'winner' => $winnerTeamId];
+    // }
     private function validateSetScore($A, $B, $pointsToWinSet, $pointsDifference, $maxPoints, $team1Id, $team2Id)
     {
         if ($A < 0 || $B < 0) {
             return ['error' => true, 'message' => 'Điểm số không hợp lệ'];
         }
 
-        $scoreDiff = abs($A - $B);
-        $isPointsToWinReached = ($A >= $pointsToWinSet || $B >= $pointsToWinSet);
-        $isMaxPointsReached = ($A == $maxPoints || $B == $maxPoints);
-        $winnerTeamId = null;
-
-        if ($pointsToWinSet == $maxPoints) {
-            // Trường hợp: 11-2-11
-            if (!$isMaxPointsReached) {
-                return ['error' => true, 'message' => "Chưa đạt điểm tối đa {$maxPoints}"];
-            }
-            $winnerTeamId = $A > $B ? $team1Id : $team2Id;
-        } else {
-            // Trường hợp: 11-2-15
-            if ($isPointsToWinReached && $scoreDiff >= $pointsDifference) {
-                $winnerTeamId = $A > $B ? $team1Id : $team2Id;
-            } elseif ($isMaxPointsReached) {
-                if ($A == $B) {
-                    return ['error' => true, 'message' => "Điểm số hòa tại điểm tối đa {$maxPoints}"];
-                }
-                $winnerTeamId = $A > $B ? $team1Id : $team2Id;
-            } else {
-                return ['error' => true, 'message' => 'Set chưa hoàn thành hoặc chưa đủ điều kiện thắng'];
-            }
+        // Check 1: Không được hòa
+        if ($A == $B) {
+            return ['error' => true, 'message' => 'Không được có tỉ số hòa'];
         }
 
-        // Anti-cheat
+        // Check 2: Ít nhất 1 đội phải đạt pointsToWinSet (11 điểm)
         $winningScore = max($A, $B);
-        $losingScore = min($A, $B);
-
-        if ($pointsToWinSet == $maxPoints) {
-            if (!($winningScore == $maxPoints && $losingScore < $maxPoints)) {
-                return ['error' => true, 'message' => 'Điểm số không hợp lệ (anti-cheat)'];
-            }
-        } else {
-            if ($winningScore < $maxPoints) {
-                if ($winningScore < $pointsToWinSet || ($winningScore - $losingScore) < $pointsDifference) {
-                    return ['error' => true, 'message' => 'Điểm số không hợp lệ (anti-cheat)'];
-                }
-            } else {
-                if ($winningScore != $maxPoints || $winningScore <= $losingScore) {
-                    return ['error' => true, 'message' => 'Điểm số không hợp lệ (anti-cheat)'];
-                }
-            }
+        if ($winningScore < $pointsToWinSet) {
+            return ['error' => true, 'message' => "Ít nhất 1 đội phải đạt {$pointsToWinSet} điểm"];
         }
+
+        // Xác định winner
+        $winnerTeamId = $A > $B ? $team1Id : $team2Id;
 
         return ['error' => false, 'winner' => $winnerTeamId];
     }
@@ -697,11 +719,24 @@ class MiniMatchController extends Controller
         $t1Score = $scores->get($match->team1_id, 0);
         $t2Score = $scores->get($match->team2_id, 0);
         $totalScore = $t1Score + $t2Score;
-
-        $S_t1 = $totalScore > 0 ? $t1Score / $totalScore : 0;
-        $S_t2 = $totalScore > 0 ? $t2Score / $totalScore : 0;
-
-        // Tận dụng dữ liệu đã load trong relation để tính Rating trung bình
+    
+        // S_match (thắng / thua)
+        $winnerTeamId = $match->team_win_id;
+    
+        $S_match_t1 = $winnerTeamId === $match->team1_id ? 1.0 : 0.0;
+        $S_match_t2 = $winnerTeamId === $match->team2_id ? 1.0 : 0.0;
+    
+        // S_points (tỷ lệ điểm)
+        $S_points_t1 = $totalScore > 0 ? $t1Score / $totalScore : 0;
+        $S_points_t2 = $totalScore > 0 ? $t2Score / $totalScore : 0;
+    
+        // S_final
+        $S_t1 = (0.5 * $S_match_t1) + (0.5 * $S_points_t1);
+        $S_t2 = (0.5 * $S_match_t2) + (0.5 * $S_points_t2);
+    
+        // =====================================================
+        // D. TÍNH RATING TRUNG BÌNH (E)
+        // =====================================================
         $calcAvgRating = function ($team) use ($sportId) {
             $ratings = $team->members->map(function ($member) use ($sportId) {
                 $userSport = $member->user->sports->where('sport_id', $sportId)->first();
