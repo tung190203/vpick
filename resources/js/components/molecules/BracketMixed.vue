@@ -192,7 +192,7 @@
                                 class="flex flex-col gap-3 rounded-lg shadow-md border border-[#dcdee6] bg-[#EDEEF2] px-4 py-3">
 
                                 <!-- HOME TEAM - DRAGGABLE -->
-                                <div class="flex justify-between items-center px-2 -mx-2 rounded transition-all" :class="{
+                                <div v-tooltip="match.home_team.name" class="flex justify-between items-center px-2 -mx-2 rounded transition-all" :class="{
                                     'bg-blue-100 ring-2 ring-blue-400': isDropTarget(match.match_id, 'home'),
                                     'cursor-move hover:bg-gray-100': canDragPoolStage(match),
                                     'cursor-pointer': !canDragPoolStage(match)
@@ -205,7 +205,7 @@
                                     <div class="flex items-center gap-2 pointer-events-none">
                                         <img :src="match.home_team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(match.home_team.name)}`"
                                             class="w-8 h-8 rounded-full" :alt="match.home_team.name" />
-                                        <p class="text-sm font-semibold text-[#3E414C]">
+                                        <p class="text-sm font-semibold text-[#3E414C] truncate max-w-[150px]">
                                             {{ match.home_team.name }}
                                         </p>
                                     </div>
@@ -218,7 +218,7 @@
                                 </div>
 
                                 <!-- AWAY TEAM - DRAGGABLE -->
-                                <div class="flex justify-between items-center px-2 -mx-2 rounded transition-all" :class="{
+                                <div v-tooltip="match.away_team.name" class="flex justify-between items-center px-2 -mx-2 rounded transition-all" :class="{
                                     'bg-blue-100 ring-2 ring-blue-400': isDropTarget(match.match_id, 'away'),
                                     'cursor-move hover:bg-gray-100': canDragPoolStage(match),
                                     'cursor-pointer': !canDragPoolStage(match)
@@ -231,7 +231,7 @@
                                     <div class="flex items-center gap-2 pointer-events-none">
                                         <img :src="match.away_team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(match.away_team.name)}`"
                                             class="w-8 h-8 rounded-full" :alt="match.away_team.name" />
-                                        <p class="text-sm font-semibold text-[#3E414C]">
+                                        <p class="text-sm font-semibold text-[#3E414C] truncate max-w-[150px]">
                                             {{ match.away_team.name }}
                                         </p>
                                     </div>
@@ -291,11 +291,11 @@
 
                             <div
                                 class="flex flex-col gap-3 rounded-lg shadow-md border border-[#dcdee6] bg-[#EDEEF2] px-4 py-3">
-                                <div class="flex justify-between items-center">
+                                <div v-tooltip="match.home_team.name" class="flex justify-between items-center">
                                     <div class="flex items-center gap-2">
                                         <img :src="match.home_team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(match.home_team.name)}`"
                                             class="w-8 h-8 rounded-full" :alt="match.home_team.name" />
-                                        <p class="text-sm font-semibold text-[#3E414C]">
+                                        <p class="text-sm font-semibold text-[#3E414C] truncate max-w-[150px]">
                                             {{ match.home_team.name }}
                                         </p>
                                     </div>
@@ -307,11 +307,11 @@
                                     </span>
                                 </div>
 
-                                <div class="flex justify-between items-center">
+                                <div v-tooltip="match.away_team.name" class="flex justify-between items-center">
                                     <div class="flex items-center gap-2">
                                         <img :src="match.away_team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(match.away_team.name)}`"
                                             class="w-8 h-8 rounded-full" :alt="match.away_team.name" />
-                                        <p class="text-sm font-semibold text-[#3E414C]">
+                                        <p class="text-sm font-semibold text-[#3E414C] truncate max-w-[150px]">
                                             {{ match.away_team.name }}
                                         </p>
                                     </div>

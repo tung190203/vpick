@@ -99,7 +99,7 @@
 
               <div class="flex flex-col gap-3 rounded-lg shadow-md border border-[#dcdee6] bg-[#EDEEF2] px-4 py-3">
                 
-                <div 
+                <div v-tooltip="match.home_team.name"
                   class="flex justify-between items-center px-2 -mx-2 rounded transition-all"
                   :class="{
                     'bg-blue-100 ring-2 ring-blue-400': isDropTarget(match.match_id, 'home'),
@@ -125,7 +125,7 @@
                   </span>
                 </div>
 
-                <div 
+                <div v-tooltip="match.away_team.name"
                   class="flex justify-between items-center px-2 -mx-2 rounded transition-all"
                   :class="{
                     'bg-blue-100 ring-2 ring-blue-400': isDropTarget(match.match_id, 'away'),
