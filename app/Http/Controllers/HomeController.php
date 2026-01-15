@@ -313,6 +313,8 @@ class HomeController extends Controller
                     'avatar_url' => $user->avatar_url,
                     'rank' => $user->rank,
                     'sports' => $user->relationLoaded('sports') && $user->sports ? UserSportResource::collection($user->sports) : [],
+                    'is_anchor' => (bool) $user->is_anchor,
+                    'is_verify' => (bool) ($user->total_matches_has_anchor >= 10)
                 ];
             }),
         ];
