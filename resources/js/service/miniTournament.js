@@ -17,3 +17,8 @@ export const updateMiniTournament = async (id, data) => {
   return axiosInstance.post(`${miniTournamentEndpoint}/update/${id}`, data)
     .then((response) => response.data.data);
 }
+
+export const deleteMiniTournament = async (id) => {
+    return axiosInstance.post(`${miniTournamentEndpoint}/delete/` + id)
+        .then((response) => response.data.data);
+}
