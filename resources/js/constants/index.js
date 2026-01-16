@@ -28,6 +28,9 @@ export const API_ENDPOINT = {
   TEAMS: '/teams',
   PARTICIPANT: '/participants',
   TOURNAMENT_STAFF: '/tournament-staff',
+  MINI_PARTICIPANT: '/mini-participants',
+  MINI_TOURNAMENT_STAFF  : '/mini-tournament-staff',
+  MINI_MATCHES: '/mini-matches',
   MESSAGE: {
     BASE: '/send-message',
     MINITOURNAMENT: () => `${API_ENDPOINT.MESSAGE.BASE}/mini-tournament`,

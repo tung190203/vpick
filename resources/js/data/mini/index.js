@@ -6,7 +6,7 @@ export const TABS = [
 ]
 
 export const SUB_TABS = [
-    { id: 'ranking', label: 'Xếp hạng' },
+    // { id: 'ranking', label: 'Xếp hạng' },
     { id: 'match', label: 'Trận đấu' },
     { id: 'your-match', label: 'Trận đấu của bạn' }
 ]
