@@ -13,9 +13,9 @@ import Leaderboard from '@/components/pages/leader-board/Leaderboard.vue'
 import ClubPage from '@/components/pages/club/ClubPage.vue'
 import TournamentPage from '@/components/pages/tournament/TournamentPage.vue'
 import TournamentDetail from '@/components/pages/tournament/TournamentDetail.vue'
-import MiniTournamentDetail from '@/components/pages/mini-tournament/MiniTournamentDetail.vue'
+import MiniTournamentDetail from '@/components/pages/mini-tournament/detail/MiniTournamentDetail.vue'
 import PrivacyPolicyPage from '@/components/pages/legal/PrivacyPolicyPage.vue'
-import CreateMiniTournamentPage from '@/components/pages/mini-tournament/CreateMiniTournamentPage.vue'
+import CreateMiniTournamentPage from '@/components/pages/mini-tournament/create/CreateMiniTournamentPage.vue'
 import CreateTournamentPage from '@/components/pages/tournament/CreateTournamentPage.vue'
 import ForbiddenPage from '@/components/pages/common/error/ForbiddenPage.vue'
 import AdminDashboard from '@/components/pages/admin/AdminDashboard.vue'
@@ -28,7 +28,8 @@ import UpdateProfilePage from '@/components/pages/profile/UpdateProfilePage.vue'
 import NotFoundPage from '@/components/pages/common/error/NotFoundPage.vue'
 import TournamentBracketPage from '@/components/pages/tournament/TournamentBracketPage.vue'
 import GroupSortView from '@/components/pages/tournament/GroupSortView.vue'
-import MatchVerifyPage from '@/components/pages/mini-tournament/MatchVerifyPage.vue'
+import MatchVerifyPage from '@/components/pages/tournament/MatchVerifyPage.vue'
+import MiniMatchVerifyPage from '@/components/pages/mini-tournament/MiniMatchVerifyPage.vue'
 import NotificationsPage from '@/components/pages/notifications/NotificationsPage.vue'
 import SettingsPage from '@/components/pages/profile/SettingsPage.vue'
 import MapPage from '@/components/pages/map/MapPage.vue'
@@ -115,6 +116,14 @@ export const route = [
           role: [ROLE.REFEREE, ROLE.ADMIN, ROLE.PLAYER]
         }
       },
+    {
+        path: '/mini-match/:id/verify',
+        name: 'mini-match-verify',
+        component: MiniMatchVerifyPage,
+        meta: {
+            role: [ROLE.REFEREE, ROLE.ADMIN, ROLE.PLAYER]
+        }
+    },
       {
         path: '/club',
         name: 'club',
