@@ -1,9 +1,11 @@
 <template>
     <Teleport to="body">
         <Transition name="modal">
-            <div v-if="isOpen"
+            <div
+                v-if="isOpen"
                 class="fixed inset-0 bg-black backdrop-blur-[1px] bg-opacity-50 flex items-center justify-center z-50 p-4"
-                @click.self="closeModal">
+                @click.self="closeModal"
+            >
                 <div class="bg-white rounded-lg shadow-xl w-full max-w-lg h-[90%] flex flex-col">
 
                     <!-- Header -->
@@ -14,44 +16,46 @@
                         </button>
                     </div>
 
-                    <!-- Tabs with Swiper -->
+                    <!-- Tabs -->
                     <div class="px-6 pb-4">
-                        <Swiper 
-                            :slides-per-view="'auto'" 
-                            :space-between="8" 
+                        <Swiper
+                            :slides-per-view="'auto'"
+                            :space-between="8"
                             :freeMode="true"
-                            :mousewheel="{ forceToAxis: true }" 
-                            :modules="modules" 
-                            class="swiper-container">
+                            :mousewheel="{ forceToAxis: true }"
+                            :modules="modules"
+                            class="swiper-container"
+                        >
                             <SwiperSlide v-for="tab in tabs" :key="tab.id" class="!w-auto">
-                                <button 
-                                    @click="setActiveTab(tab.id)" 
+                                <button
+                                    @click="setActiveTab(tab.id)"
                                     :class="[
                                         'px-4 py-2 rounded-full text-sm font-semibold cursor-pointer transition select-none whitespace-nowrap',
                                         activeTab === tab.id
                                             ? 'bg-red-500 text-white'
                                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                    ]">
+                                    ]"
+                                >
                                     {{ tab.label }}
                                 </button>
                             </SwiperSlide>
                         </Swiper>
                     </div>
 
+                    <!-- Radius -->
                     <div v-if="activeTab === 'area'" class="px-6 pb-4">
                         <div class="flex items-center justify-between mb-2">
                             <label class="text-sm font-medium text-gray-700">Bán kính tìm kiếm</label>
                             <span class="text-sm font-semibold text-red-600">{{ localRadius }} km</span>
                         </div>
-                        <input 
-                            type="range" 
+                        <input
+                            type="range"
                             v-model.number="localRadius"
-                            @input="onRadiusInput"
                             @change="onRadiusChange"
-                            min="1" 
-                            max="50" 
+                            min="1"
+                            max="50"
                             step="1"
-                            class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-red-600 custom-range" 
+                            class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-red-600 custom-range"
                             :style="sliderStyle"
                         />
                         <div class="flex justify-between text-xs text-gray-500 mt-1">
@@ -60,26 +64,39 @@
                         </div>
                     </div>
 
+                    <!-- Search -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 px-6 py-4">
                         <div :class="activeTab === 'club' ? '' : 'md:col-span-2'" class="relative flex items-center">
-                            <MagnifyingGlassIcon class="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                            <MagnifyingGlassIcon class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2" />
                             <input
                                 v-model="localSearchQuery"
                                 @input="onSearch"
                                 type="text"
                                 placeholder="Tìm kiếm"
-                                class="w-full pl-10 pr-4 py-2 h-10 border border-[#EDEEF2] bg-[#EDEEF2] rounded focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-[#838799]" />
+                                class="w-full pl-10 pr-4 py-2 h-10 border border-[#EDEEF2] bg-[#EDEEF2] rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
                         </div>
+
                         <div v-if="activeTab === 'club'" class="flex items-center">
-                            <select v-model="selectedClub" @change="$emit('change-club', selectedClub)"
-                                class="w-full px-4 py-2 h-10 border border-[#EDEEF2] bg-[#EDEEF2] rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-[#838799]">
+                            <select
+                                v-model="selectedClub"
+                                @change="$emit('change-club', selectedClub)"
+                                class="w-full px-4 py-2 h-10 border border-[#EDEEF2] bg-[#EDEEF2] rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
                                 <option value="">Chọn CLB</option>
-                                <option v-for="club in clubs" :key="club.id" :value="club.id">{{ club.name }}</option>
+                                <option v-for="club in clubs" :key="club.id" :value="club.id">
+                                    {{ club.name }}
+                                </option>
                             </select>
                         </div>
                     </div>
 
-                    <div class="flex-1 overflow-y-auto px-6 pb-6">
+                    <!-- User List -->
+                    <div
+                        ref="scrollContainer"
+                        class="flex-1 overflow-y-auto px-6 pb-6"
+                        @scroll="onScroll"
+                    >
                         <template v-if="filteredUsers.length === 0">
                             <div class="text-center text-gray-400 mt-10">
                                 Không tìm thấy người dùng.
@@ -87,51 +104,63 @@
                         </template>
 
                         <template v-else>
-                            <div v-for="user in filteredUsers" :key="user.id"
-                                class="flex items-center gap-3 py-3 border-b border-gray-100 last:border-b-0 cursor-pointer hover:bg-gray-50">
+                            <div
+                                v-for="user in filteredUsers"
+                                :key="user.id"
+                                class="flex items-center gap-3 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50"
+                            >
                                 <!-- Avatar -->
-                                <div class="relative flex-shrink-0">
-                                    <div
-                                        class="w-16 h-16 bg-red-300 rounded-full flex items-center justify-center overflow-hidden">
-                                        <img :src="user.avatar_url || defaultAvatar"
+                                <div class="relative">
+                                    <div class="w-16 h-16 bg-red-300 rounded-full overflow-hidden">
+                                        <img
+                                            :src="user.avatar_url || defaultAvatar"
                                             @error="e => e.target.src = defaultAvatar"
-                                            alt="User Avatar" class="w-full h-full object-cover" />
-                                        <div class="absolute -bottom-1 -left-1 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center border border-1 border-white">
-                                            <span class="text-white font-bold text-[9px]">{{ convertLevel(user) }}</span>
+                                            class="w-full h-full object-cover"
+                                        />
+                                        <div
+                                            class="absolute -bottom-1 -left-1 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center border border-white"
+                                        >
+                                            <span class="text-white text-[9px] font-bold">
+                                                {{ convertLevel(user) }}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- User Info -->
+                                <!-- Info -->
                                 <div class="flex-1 min-w-0">
-                                    <div class="flex items-center gap-2 flex-wrap">
+                                    <div class="flex items-center gap-2">
                                         <span class="font-semibold text-gray-800">{{ user.name }}</span>
-                                        <span :class="[
-                                            'px-2 py-0.5 rounded text-xs font-medium',
-                                            user.visibility === 'open'
-                                                ? 'bg-blue-100 text-blue-700'
-                                                : 'bg-green-100 text-green-700'
-                                        ]">
-                                            {{ user.visibility === 'open' ? 'Open' : 'Friend-Only' }}
-                                        </span>
                                     </div>
-                                    <div class="flex items-center gap-2 text-sm text-gray-500 mt-0.5">
-                                        <img :src="maleIcon" alt="male icon" class="w-4 h-4" v-if="user.gender == 1"/>
-                                        <img :src="femaleIcon" alt="female icon" class="w-4 h-4" v-else-if="user.gender == 2"/>
-                                        <img src="" alt="" v-else>
+                                    <div class="flex items-center gap-2 text-sm text-gray-500">
+                                        <img v-if="user.gender == 1" :src="maleIcon" class="w-4 h-4" />
+                                        <img v-else-if="user.gender == 2" :src="femaleIcon" class="w-4 h-4" />
                                         <span>{{ user.gender_text }}</span>
                                     </div>
                                 </div>
 
-                                <!-- Invite Button -->
-                                <button @click="inviteUser(user.id)" :disabled="user.invited" :class="[
-                                    'px-4 py-2 rounded-lg text-sm font-medium transition-colors flex-shrink-0',
-                                    user.invited
-                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                        : 'bg-blue-500 text-white hover:bg-blue-600'
-                                ]">
+                                <!-- Invite -->
+                                <button
+                                    @click="inviteUser(user.id)"
+                                    :disabled="user.invited"
+                                    :class="[
+                                        'px-4 py-2 rounded-lg text-sm',
+                                        user.invited
+                                            ? 'bg-gray-100 text-gray-400'
+                                            : 'bg-blue-500 text-white hover:bg-blue-600'
+                                    ]"
+                                >
                                     {{ user.invited ? 'Đã mời' : 'Mời bạn' }}
                                 </button>
+                            </div>
+
+                            <!-- Loading more -->
+                            <div v-if="isLoadingMore" class="text-center py-4 text-gray-400">
+                                Đang tải thêm...
+                            </div>
+
+                            <div v-else-if="!hasMore" class="text-center py-4 text-gray-400">
+                                Đã tải hết dữ liệu
                             </div>
                         </template>
                     </div>
@@ -151,7 +180,7 @@ import 'swiper/css/free-mode'
 import maleIcon from '@/assets/images/male.svg'
 import femaleIcon from '@/assets/images/female.svg'
 
-const defaultAvatar = "/images/default-avatar.png"
+const defaultAvatar = '/images/default-avatar.png'
 const modules = [FreeMode, Mousewheel]
 
 const props = defineProps({
@@ -159,35 +188,31 @@ const props = defineProps({
     data: Object,
     clubs: Array,
     searchQuery: String,
-    activeScope: {
-        type: String,
-        default: 'all'
-    },
-    currentRadius: {
-        type: Number,
-        default: 10
+    activeScope: String,
+    currentRadius: Number,
+    isLoadingMore: Boolean,
+    hasMore: {
+        type: Boolean,
+        default: true
     }
 })
 
-const emit = defineEmits(['update:modelValue', 'invite', 'change-scope', 'change-club', 'update:searchQuery', 'update:radius'])
+const emit = defineEmits([
+    'update:modelValue',
+    'invite',
+    'change-scope',
+    'change-club',
+    'update:searchQuery',
+    'update:radius',
+    'load-more'
+])
 
 const isOpen = computed({
     get: () => props.modelValue,
-    set: (value) => emit('update:modelValue', value)
+    set: val => emit('update:modelValue', val)
 })
 
-const closeModal = () => {
-    isOpen.value = false
-}
-
-const convertLevel = (user, sportId = 1) => {
-    if (!user?.sports || user.sports.length === 0) return '0'
-
-    const sport = user.sports.find(s => s.sport_id === sportId)
-    if (!sport?.scores?.vndupr_score) return '0'
-
-    return parseFloat(sport.scores.vndupr_score).toFixed(1)
-}
+const closeModal = () => (isOpen.value = false)
 
 const tabs = [
     { id: 'all', label: 'Tất cả' },
@@ -198,53 +223,54 @@ const tabs = [
 
 const activeTab = ref(props.activeScope || 'all')
 const selectedClub = ref('')
+const localSearchQuery = ref(props.searchQuery || '')
+const localRadius = ref(props.currentRadius || 10)
+const scrollContainer = ref(null)
 
-// Logic Bán Kính
-const localRadius = ref(props.currentRadius)
-watch(() => props.currentRadius, (newVal) => localRadius.value = newVal)
+watch(() => props.searchQuery, v => (localSearchQuery.value = v))
+watch(() => props.currentRadius, v => (localRadius.value = v))
 
 const sliderStyle = computed(() => {
-    const percentage = ((localRadius.value - 1) / (50 - 1)) * 100
+    const percent = ((localRadius.value - 1) / 49) * 100
     return {
-        background: `linear-gradient(to right, #dc2626 0%, #dc2626 ${percentage}%, #e5e7eb ${percentage}%, #e5e7eb 100%)`
+        background: `linear-gradient(to right,#dc2626 ${percent}%,#e5e7eb ${percent}%)`
     }
 })
 
-const onRadiusInput = () => { /* Cập nhật mượt mà qua v-model */ }
-const onRadiusChange = () => {
-    emit('update:radius', localRadius.value)
-}
-
-// Watch prop để sync khi parent thay đổi
-watch(() => props.activeScope, (newScope) => {
-    if (newScope) {
-        activeTab.value = newScope
-    }
-})
-
-const localSearchQuery = ref(props.searchQuery || '')
-watch(() => props.searchQuery, val => localSearchQuery.value = val)
-const onSearch = () => {
-    emit('update:searchQuery', localSearchQuery.value)
-}
-
-const filteredUsers = computed(() => {
-    return (props.data.result || []).filter(user =>
-        user.name.toLowerCase().includes(localSearchQuery.value.toLowerCase())
+const filteredUsers = computed(() =>
+    (props.data?.result || []).filter(u =>
+        u.name.toLowerCase().includes(localSearchQuery.value.toLowerCase())
     )
-})
+)
 
-const inviteUser = (userId) => {
-    const user = (props.data.result || []).find(u => u.id === userId)
+const onSearch = () => emit('update:searchQuery', localSearchQuery.value)
+const onRadiusChange = () => emit('update:radius', localRadius.value)
+
+const inviteUser = id => {
+    const user = props.data.result.find(u => u.id === id)
     if (user) {
         user.invited = true
         emit('invite', user)
     }
 }
 
-const setActiveTab = (tabId) => {
-    activeTab.value = tabId
-    emit('change-scope', tabId)
+const setActiveTab = tab => {
+    activeTab.value = tab
+    emit('change-scope', tab)
+}
+
+const onScroll = () => {
+    const el = scrollContainer.value
+    if (!el || props.isLoadingMore || !props.hasMore) return
+
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 50) {
+        emit('load-more')
+    }
+}
+
+const convertLevel = user => {
+    if (!user?.sports?.length) return '0'
+    return parseFloat(user.sports[0]?.scores?.vndupr_score || 0).toFixed(1)
 }
 </script>
 
@@ -253,65 +279,8 @@ const setActiveTab = (tabId) => {
 .modal-leave-active {
     transition: opacity 0.3s ease;
 }
-
 .modal-enter-from,
 .modal-leave-to {
     opacity: 0;
-}
-
-.modal-enter-active .bg-white,
-.modal-leave-active .bg-white {
-    transition: transform 0.3s ease;
-}
-
-.modal-enter-from .bg-white,
-.modal-leave-to .bg-white {
-    transform: scale(0.9);
-}
-
-/* Swiper custom styles - Fix overflow */
-.swiper-container {
-    overflow: hidden;
-    margin: 0;
-    padding: 0;
-}
-
-:deep(.swiper-wrapper) {
-    display: flex;
-    align-items: center;
-}
-
-:deep(.swiper-slide) {
-    width: auto !important;
-    flex-shrink: 0;
-}
-
-/* Custom Range Slider Styles */
-.custom-range {
-    -webkit-appearance: none;
-    appearance: none;
-}
-
-.custom-range::-webkit-slider-thumb {
-    appearance: none;
-    -webkit-appearance: none;
-    width: 20px;
-    height: 20px;
-    background: #ffffff;
-    border: 2px solid #dc2626;
-    border-radius: 50%;
-    cursor: pointer;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-}
-
-.custom-range::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    background: #ffffff;
-    border: 2px solid #dc2626;
-    border-radius: 50%;
-    cursor: pointer;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    border: none;
 }
 </style>
