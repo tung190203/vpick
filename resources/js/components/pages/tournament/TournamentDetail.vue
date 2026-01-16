@@ -496,8 +496,7 @@
                     </div>
                   </div>
                 </template>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 my-4 pb-4"
-                  :class="isCreator ? 'border-b' : ''">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 my-4 pb-4">
                   <div>
                     <p class="text-sm font-semibold uppercase">Giá trị điểm</p>
                     <ul class="mt-4 space-y-3">
@@ -529,8 +528,8 @@
                     </ul>
                   </div>
                 </div>
-                <p class="text-[#D72D36] text-sm cursor-pointer hover:underline"
-                  @click="showReGenerateBracketModal = true" v-if="isCreator">Chia lại cặp đấu</p>
+                <!-- <p class="text-[#D72D36] text-sm cursor-pointer hover:underline"
+                  @click="showReGenerateBracketModal = true" v-if="isCreator">Chia lại cặp đấu</p> -->
               </template>
             </div>
 
@@ -555,8 +554,7 @@
     </div>
 
     <InviteGroup v-model="showInviteModal" :data="inviteGroupData" :clubs="clubs" :active-scope="activeScope"
-      :selected-club="selectedClub" :search-query="searchQuery" @update:searchQuery="onSearchChange"
-      @change-scope="onScopeChange" @change-club="onClubChange" @invite="handleInviteAction" />
+      :selected-club="selectedClub" :search-query="searchQuery" :current-radius="currentRadius" @update:searchQuery="onSearchChange" @change-scope="onScopeChange" @change-club="onClubChange" @update:radius="onRadiusChange" @invite="handleInviteAction" />
     <DeleteConfirmationModal v-model="showDeleteModal" title="Xác nhận hủy bỏ giải đấu"
       message="Thao tác này không thể hoàn tác." confirmButtonText="Xác nhận" @confirm="removeTournament" />
     <DeleteConfirmationModal v-model="showDeleteTournamentTypeModal" title="Xác nhận thay đổi thể thức"
@@ -667,6 +665,10 @@ const activeScope = ref('all');
 const selectedClub = ref(null);
 const searchQuery = ref('')
 const showQRCodeModal = ref(false);
+const currentRadius = ref(10);
+const userLatitude = ref(null);
+const userLongitude = ref(null);
+
 const isDescriptionChanged = computed(() => {
   return descriptionModel.value !== tournament.value.description;
 });
@@ -785,6 +787,11 @@ const getInviteGroupData = async () => {
     scope: activeScope.value,
     per_page: 50,
     ...(activeScope.value === 'club' ? { club_id: selectedClub.value } : {}),
+    ...(activeScope.value === 'area' ? {
+      lat: userLatitude.value,
+      lng: userLongitude.value,
+      radius: currentRadius.value
+    } : {}),
     ...(searchQuery.value ? { search: searchQuery.value } : {})
   };
 
@@ -803,6 +810,9 @@ const onSearchChange = debounce(async (query) => {
 
 const onScopeChange = async (scope) => {
   activeScope.value = scope;
+  if (scope === 'area') {
+    await initializeUserLocation();
+  }
   await getInviteGroupData();
 };
 
@@ -810,6 +820,30 @@ const onScopeChange = async (scope) => {
 const onClubChange = async (clubId) => {
   selectedClub.value = clubId;
   await getInviteGroupData();
+};
+
+const onRadiusChange = debounce(async (radius) => {
+  currentRadius.value = radius;
+  await getInviteGroupData();
+}, 300);
+
+const initializeUserLocation = async () => {
+  if (getUser.value?.latitude && getUser.value?.longitude) {
+    userLatitude.value = getUser.value.latitude;
+    userLongitude.value = getUser.value.longitude;
+  } else {
+    try {
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject);
+      });
+      userLatitude.value = position.coords.latitude;
+      userLongitude.value = position.coords.longitude;
+    } catch (error) {
+      toast.error('Không thể lấy vị trí hiện tại. Vui lòng cho phép truy cập vị trí.');
+      userLatitude.value = null;
+      userLongitude.value = null;
+    }
+  }
 };
 
 const getRanks = async () => {
@@ -827,11 +861,11 @@ const handleUpdateOwnScore = debounce(async () => {
 })
 
 const openBracketPage = () => {
-  router.push({ name: 'tournament-bracket', param: { id: id }, query: {tab:activeTab.value} });
+  router.push({ name: 'tournament-bracket', param: { id: id }, query: { tab: activeTab.value } });
 };
 
 const openGroupsSortPage = () => {
-  router.push({ name: 'tournament-groups-sort', params: {id: id}, query: {tab: activeTab.value} });
+  router.push({ name: 'tournament-groups-sort', params: { id: id }, query: { tab: activeTab.value } });
 }
 
 function formatMatchCount(matches) {

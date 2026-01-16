@@ -38,6 +38,28 @@
                         </Swiper>
                     </div>
 
+                    <div v-if="activeTab === 'area'" class="px-6 pb-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="text-sm font-medium text-gray-700">Bán kính tìm kiếm</label>
+                            <span class="text-sm font-semibold text-red-600">{{ localRadius }} km</span>
+                        </div>
+                        <input 
+                            type="range" 
+                            v-model.number="localRadius"
+                            @input="onRadiusInput"
+                            @change="onRadiusChange"
+                            min="1" 
+                            max="50" 
+                            step="1"
+                            class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-red-600 custom-range" 
+                            :style="sliderStyle"
+                        />
+                        <div class="flex justify-between text-xs text-gray-500 mt-1">
+                            <span>1 km</span>
+                            <span>50 km</span>
+                        </div>
+                    </div>
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 px-6 py-4">
                         <div :class="activeTab === 'club' ? '' : 'md:col-span-2'" class="relative flex items-center">
                             <MagnifyingGlassIcon class="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2" />
@@ -140,10 +162,14 @@ const props = defineProps({
     activeScope: {
         type: String,
         default: 'all'
+    },
+    currentRadius: {
+        type: Number,
+        default: 10
     }
 })
 
-const emit = defineEmits(['update:modelValue', 'invite', 'change-scope', 'change-club', 'update:searchQuery'])
+const emit = defineEmits(['update:modelValue', 'invite', 'change-scope', 'change-club', 'update:searchQuery', 'update:radius'])
 
 const isOpen = computed({
     get: () => props.modelValue,
@@ -172,6 +198,22 @@ const tabs = [
 
 const activeTab = ref(props.activeScope || 'all')
 const selectedClub = ref('')
+
+// Logic Bán Kính
+const localRadius = ref(props.currentRadius)
+watch(() => props.currentRadius, (newVal) => localRadius.value = newVal)
+
+const sliderStyle = computed(() => {
+    const percentage = ((localRadius.value - 1) / (50 - 1)) * 100
+    return {
+        background: `linear-gradient(to right, #dc2626 0%, #dc2626 ${percentage}%, #e5e7eb ${percentage}%, #e5e7eb 100%)`
+    }
+})
+
+const onRadiusInput = () => { /* Cập nhật mượt mà qua v-model */ }
+const onRadiusChange = () => {
+    emit('update:radius', localRadius.value)
+}
 
 // Watch prop để sync khi parent thay đổi
 watch(() => props.activeScope, (newScope) => {
@@ -242,5 +284,34 @@ const setActiveTab = (tabId) => {
 :deep(.swiper-slide) {
     width: auto !important;
     flex-shrink: 0;
+}
+
+/* Custom Range Slider Styles */
+.custom-range {
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.custom-range::-webkit-slider-thumb {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #ffffff;
+    border: 2px solid #dc2626;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.custom-range::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: #ffffff;
+    border: 2px solid #dc2626;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    border: none;
 }
 </style>

@@ -17,6 +17,7 @@ class MiniTournamentStaffResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'id' => $this->pivot->id,
             'mini_tournament_id' => $this->pivot->mini_tournament_id,
             'user' => $this->pivot->user_id ? new UserListResource(User::with(['sports.scores', 'sports.sport'])->find($this->pivot->user_id)) : null,
             'role' => $this->pivot->role,

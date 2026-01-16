@@ -1,0 +1,143 @@
+<Teleport to="body">
+    <Transition name="modal">
+        <div v-if="isOpen"
+             class="fixed inset-0 bg-black backdrop-blur-[1px] bg-opacity-50 flex items-center justify-center z-50 p-4"
+             @click.self="closeModal">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl h-[85vh] max-h-[95vh] flex flex-col">
+                <div class="flex items-center justify-between p-6 border-b border-gray-200">
+                    <h2 class="text-2xl font-semibold text-gray-800">{{ 'Trận đấu' }}</h2>
+                    <button @click="closeModal" class="text-gray-400 hover:text-gray-600 transition-colors">
+                        <XMarkIcon class="w-6 h-6"/>
+                    </button>
+                </div>
+                <div class="p-6 overflow-y-auto flex-1">
+                    <div class="grid grid-cols-[2fr_3fr] gap-6">
+                        <div class="space-y-4">
+                            <div class="bg-white rounded-[8px] p-5">
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">Thông tin trận đấu</label>
+                                <div class="space-y-4">
+                                    <div>
+                                        <input v-model="miniMatchName" type="text" placeholder="Tên trận đấu"
+                                               class="w-full px-2 py-2 my-1 border rounded focus:outline-none placeholder:text-sm placeholder:text-[#BBBFCC] bg-[#EDEEF2]"/>
+                                    </div>
+                                    <div class="flex items-center justify-between gap-3">
+                                        <div class="flex items-center gap-2">
+                                            <ClipboardIcon class="w-6 h-6"/>
+                                            <span class="text-gray-700">Sân số</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <button @click="decrementYard"
+                                                    class="w-8 h-8 flex items-center justify-center bg-gray-800 text-white rounded hover:bg-gray-700 transition-colors">
+                                                <span class="text-lg">−</span>
+                                            </button>
+                                            <input v-model.number="yardNumber" type="text"
+                                                   class="w-16 text-center border border-gray-300 rounded px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                                            <button @click="incrementYard"
+                                                    class="w-8 h-8 flex items-center justify-center bg-gray-800 text-white rounded hover:bg-gray-700 transition-colors">
+                                                <span class="text-lg">+</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div
+                                        class="bg-[#EDEEF2] rounded-[4px] flex items-center gap-2 text-gray-700 mb-1 overflow-visible relative"
+                                        @click.stop>
+                                        <button @click="toggleOpenDate"
+                                                class="w-full flex items-center justify-between rounded-[4px] px-2 py-1 hover:bg-gray-200 transition-colors">
+                                            <div class="flex items-center">
+                                                <div class="w-9 h-9 flex items-center justify-center">
+                                                    <CalendarDaysIcon class="w-5 h-5 text-gray-700"/>
+                                                </div>
+                                                <span class="text-sm"
+                                                      :class="{ 'text-[#BBBFCC]': !formattedDate, 'text-gray-900 font-medium': formattedDate }">
+                                                    {{ formattedDate || 'Ngày & Giờ' }}
+                                                </span>
+                                            </div>
+                                            <ChevronDownIcon class="w-5 h-5 transition-transform text-gray-700"
+                                                             :class="{ 'rotate-180': openDate }"/>
+                                        </button>
+
+                                        <Transition name="fade">
+                                            <div v-if="openDate"
+                                                 class="absolute top-full left-0 right-0 mt-2 p-4 z-50 bg-white rounded-lg shadow-lg">
+                                                <VueDatePicker v-model="date" :locale="vi" inline auto-apply
+                                                               enable-time-picker/>
+                                            </div>
+                                        </Transition>
+                                    </div>
+
+                                    <div class="flex items-center gap-2 text-gray-700">
+                                        <MapPinIcon class="w-5 h-5"/>
+                                        <span class="truncate w-64">{{
+                                                miniTournament.competition_location?.name
+                                            }}</span>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="bg-white rounded-[8px] p-5">
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">Chọn đội</label>
+                                <div class="space-y-4">
+                                    <div class="grid grid-cols-[2fr_1fr_2fr] gap-4 items-stretch mb-6">
+                                        <div
+                                            class="border border-1 border-[#DCDEE6] bg-[#F2F7FC] rounded-lg p-3 flex flex-col">
+                                            <div class="text-center mb-4">
+                                                <input v-model="text_team1" type="text" class="w-32 text-center border border-gray-300 rounded px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                                            </div>
+                                            <div class="flex gap-2 justify-around items-stretch">
+                                                <UserCard v-for="user in team1Users || []" :key="user.id"
+                                                          :showHoverDelete="false" :name="user.full_name" :avatar="user.avatar_url"
+                                                          :size="12" :badgeSize="5" class="cursor-pointer" />
+                                                <UserCard v-for="n in emptySlots('team1')" :key="'empty-team1-' + n"
+                                                          v-if="isCreator"
+                                                          @clickEmpty="openInviteModalDefault('team1')"
+                                                          empty :size="12" :badgeSize="5" class="cursor-pointer"/>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex justify-center items-center">
+                                            <span class="text-sm font-bold">VS</span>
+                                        </div>
+
+                                        <div
+                                            class="border border-1 border-[#DCDEE6] bg-[#F2F7FC] rounded-lg p-3 flex flex-col">
+                                            <div class="text-center mb-4">
+                                                <input v-model="text_team2" type="text" class="w-32 text-center border border-gray-300 rounded px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                                            </div>
+                                            <div class="flex gap-2 justify-around items-stretch">
+                                                <UserCard v-for="user in team2Users || []" :key="user.id"
+                                                          :showHoverDelete="false" :name="user.full_name" :avatar="user.avatar_url"
+                                                          :size="12" :badgeSize="5" class="cursor-pointer" />
+                                                <UserCard v-for="n in emptySlots('team2')" :key="'empty-team2-' + n"
+                                                          empty v-if="isCreator"
+                                                          @clickEmpty="openInviteModalDefault('team2')"
+                                                          :size="12" :badgeSize="5" class="cursor-pointer"/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="px-4 py-4 bg-white rounded-b-lg border-t">
+                    <div class="flex gap-3">
+                        <button @click="saveMiniMatch" :disabled="isSaving"
+                                class="px-12 py-3 bg-red-500 text-white rounded font-medium hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                            {{ isSaving ? 'Đang lưu...' : 'Lưu' }}
+                        </button>
+
+                        <button @click="closeModal" :disabled="isSaving"
+                                class="px-12 py-3 bg-gray-200 text-gray-700 rounded font-medium hover:bg-gray-300 transition-colors disabled:opacity-50">
+                            Hủy
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </Transition>
+</Teleport>
+
+<InviteUserParticipant  v-model="showUserModal" :users="selectableUsers" @select="selectUserToTeam"/>
