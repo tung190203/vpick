@@ -1,0 +1,134 @@
+<div class="flex justify-start gap-2 mb-4">
+    <button v-for="tab in subtabs" :key="tab.id" @click="subActiveTab = tab.id" :class="[
+       'px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
+        subActiveTab === tab.id ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200']">
+        {{ tab.label }}
+    </button>
+</div>
+<template v-if="subActiveTab === 'ranking'">
+    <p>Hiển thị bảng xếp hạng tại đây.</p>
+</template>
+
+<template v-else-if="subActiveTab === 'match'">
+    <div class="grid grid-cols-2 gap-4" v-if="miniMatches.length > 0" >
+        <div v-for="match in miniMatches" :key="match.id" @click="showMiniMatchDetail(match.id)"
+             class="border border-[#BBBFCC] p-4 rounded-lg cursor-pointer hover:shadow-md transition">
+            <MiniMatchCard :matchTitle="match.name_of_match" :matchTime="formatDate(match.scheduled_at)"
+               :courtName="match.competition_location?.name || 'Chưa cập nhật'"
+               :team1="match.team1.members.map(m => ({
+                  id: m.user.id,
+                    name: m.user.full_name,
+                    avatar: m.user.avatar_url,
+                    rating: m.user.rating || 0,
+                    status: m.user.visibility
+               }))"
+               :team2="match.team2.members.map(m => ({
+                    id: m.user.id,
+                    name: m.user.full_name,
+                    avatar: m.user.avatar_url,
+                    rating: m.user.rating || 0,
+                    status: m.user.visibility
+               }))"
+               :sets="buildSets(match)"
+               :selected="selectedMiniMatches.includes(match.id)"
+               @update:selected="val => toggleSelectMiniMatch(match.id, val)"
+            />
+        </div>
+    </div>
+    <div v-else class="min-h-[200px] flex items-center justify-center">
+        <p class="text-center text-gray-500">Không có trận đấu nào.</p>
+    </div>
+    <div class="grid grid-cols-5 gap-4 mt-4">
+        <div class="col-span-2 flex justify-start items-center gap-4">
+            <div>
+                <span class="text-[#6B6F80] text-xs">Tổng số trận</span>
+                <p class="text[#3E414C] font-semibold">{{ countMiniMatches || 0 }} trận</p>
+            </div>
+            <div>
+                <span class="text-[#6B6F80] text-xs">Tổng thời lượng</span>
+                <p class="text[#3E414C] font-semibold">  {{totalTimeMiniMatches(countMiniMatches)}} tiếng</p>
+            </div>
+        </div>
+        <div class="col-span-3 flex justify-end items-center gap-4" v-if="props.isCreator">
+            <button @click="showCreateMiniMatchModal = true"
+                    class="bg-[#D72D36] border border-1 border-[#D72D36] text-white px-4 py-2 rounded hover:bg-red-700 transition">
+                Thêm trận đấu
+            </button>
+
+            <button
+                @click="confirmRemoval"
+                :disabled="selectedMiniMatches.length === 0"
+                :class="selectedMiniMatches.length === 0
+                ? 'bg-[#EDEEF2] border border-1 border-[#BBBFCC] text-[#BBBFCC] px-4 py-2 rounded transition cursor-not-allowed'
+                : 'flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium px-4 py-2 rounded-md transition'"
+                    >
+                Huỷ kèo đã chọn ({{ selectedMiniMatches.length }}/{{countMiniMatches}})
+            </button>
+        </div>
+    </div>
+</template>
+
+<template v-else-if="subActiveTab === 'your-match'">
+    <div class="grid grid-cols-2 gap-4" v-if="scheduledMyMiniMatches.length > 0" >
+        <div v-for="miniMatch in scheduledMyMiniMatches" :key="miniMatch.id" @click="showMiniMatchDetail(miniMatch.id)"
+             class="border border-[#BBBFCC] p-4 rounded-lg cursor-pointer hover:shadow-md transition">
+            <MiniMatchCard :matchTitle="miniMatch.name_of_match" :matchTime="formatDate(miniMatch.scheduled_at)"
+               :courtName="miniMatch.competition_location?.name || 'Chưa cập nhật'"
+               :team1="miniMatch.team1.members.map(m => ({
+                  id: m.user.id,
+                    name: m.user.full_name,
+                    avatar: m.user.avatar_url,
+                    rating: m.user.rating || 0,
+                    status: m.user.visibility
+               }))"
+               :team2="miniMatch.team2.members.map(m => ({
+                    id: m.user.id,
+                    name: m.user.full_name,
+                    avatar: m.user.avatar_url,
+                    rating: m.user.rating || 0,
+                    status: m.user.visibility
+               }))"
+               :sets="buildSets(miniMatch)"
+               :selected="selectedMiniMatches.includes(miniMatch.id)"
+               @update:selected="val => toggleSelectMiniMatch(miniMatch.id, val)"
+            />
+        </div>
+    </div>
+    <div v-else class="min-h-[200px] flex items-center justify-center">
+        <p class="text-center text-gray-500">Không có trận đấu nào.</p>
+    </div>
+
+    <div class="grid grid-cols-5 gap-4 mt-4">
+        <div class="col-span-2 flex justify-start items-center gap-4">
+            <div>
+                <span class="text-[#6B6F80] text-xs">Tổng số trận</span>
+                <p class="text[#3E414C] font-semibold">{{ countMyMiniMatches || 0 }} trận</p>
+            </div>
+            <div>
+                <span class="text-[#6B6F80] text-xs">Tổng thời lượng</span>
+                <p class="text[#3E414C] font-semibold">  {{totalTimeMiniMatches(countMyMiniMatches)}} tiếng</p>
+            </div>
+        </div>
+        <div class="col-span-3 flex justify-end items-center gap-4" v-if="props.isCreator">
+            <button @click="showCreateMiniMatchModal = true"
+                    class="bg-[#D72D36] border border-1 border-[#D72D36] text-white px-4 py-2 rounded hover:bg-red-700 transition">
+                Thêm trận đấu
+            </button>
+
+            <button
+                @click="confirmRemoval"
+                :disabled="selectedMiniMatches.length === 0"
+                :class="selectedMiniMatches.length === 0
+                ? 'bg-[#EDEEF2] border border-1 border-[#BBBFCC] text-[#BBBFCC] px-4 py-2 rounded transition cursor-not-allowed'
+                : 'flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium px-4 py-2 rounded-md transition'"
+            >
+                Huỷ kèo đã chọn ({{ selectedMiniMatches.length }}/{{countMyMiniMatches}})
+            </button>
+        </div>
+    </div>
+</template>
+
+<CreateMiniMatch v-model="showCreateMiniMatchModal" :miniTournament="props.data" :isCreator="props.isCreator"  @created="onMiniMatchCreated"/>
+<UpdateMiniMatch v-model="showUpdateMiniMatchModal" :data="detailData" :miniTournament="props.data" :isCreator="props.isCreator" @updated="onMiniMatchCreated" />
+<DeleteConfirmationModal v-model="showDeleteModal" title="Xác nhận hủy bỏ kèo đấu"
+        message="Thao tác này không thể hoàn tác." confirmButtonText="Xác nhận" @confirm="cancelSelectedMiniMatches" />

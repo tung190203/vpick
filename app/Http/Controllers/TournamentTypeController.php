@@ -7,7 +7,6 @@ use App\Http\Resources\TournamentTypeResource;
 use App\Models\Group;
 use App\Models\Matches;
 use App\Models\PoolAdvancementRule;
-use App\Models\TeamRanking;
 use App\Models\Tournament;
 use App\Models\TournamentType;
 use App\Services\TournamentService;
@@ -17,6 +16,15 @@ use Illuminate\Support\Facades\DB;
 
 class TournamentTypeController extends Controller
 {
+
+/**
+ * ============================================================================
+ * CONSTANTS - Thêm vào đầu class TournamentTypeController
+ * ============================================================================
+ */
+const PAIRING_MODE_SEQUENTIAL = 'sequential';  // Tuần tự: A-B, C-D, E-F, G-H
+const PAIRING_MODE_SYMMETRIC = 'symmetric';    // Đối xứng: A-H, B-G, C-F, D-E
+const PAIRING_MODE_MANUAL = 'manual'; 
     /**
      * Tạo mới một thể thức cho giải đấu
      */
@@ -597,9 +605,15 @@ class TournamentTypeController extends Controller
 
         $mainConfig = is_array($config) && isset($config[0]) ? $config[0] : [];        
         $poolConfig = $mainConfig['pool_stage'] ?? [];
+        $knockoutConfig = $mainConfig['knockout_stage'] ?? [];
+        
         $numAdvancing = max(1, (int)($poolConfig['num_advancing_teams'] ?? 1));
         $advancedToNext = filter_var($mainConfig['advanced_to_next_round'] ?? false, FILTER_VALIDATE_BOOLEAN);
         $hasThirdPlace = filter_var($mainConfig['has_third_place_match'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        
+        // ✅ LẤY PAIRING MODE TỪ CONFIG (MẶC ĐỊNH: SEQUENTIAL)
+        $pairingMode = $knockoutConfig['pairing_mode'] ?? null;  // Không set default ở đây
+        $manualPairings = $knockoutConfig['manual_pairings'] ?? null;
     
         // ✅ KIỂM TRA: Có groups với teams assigned không?
         $groups = $type->groups()->with('teams.members')->get();
@@ -752,39 +766,8 @@ class TournamentTypeController extends Controller
             }
         }
     
-        // ✅ Cross-matching pattern: Nhất A vs Nhì B, Nhất B vs Nhì A
-        $advancing = collect();
-        
-        // Lấy tất cả nhất bảng (rank 1)
-        $firstPlaceTeams = $advancingByRank->get(0, collect());
-        // Lấy tất cả nhì bảng (rank 2)
-        $secondPlaceTeams = $advancingByRank->get(1, collect());
-        
-        // Xếp theo pattern: Nhất A, Nhì B, Nhất B, Nhì A, Nhất C, Nhì D, Nhất D, Nhì C...
-        $numFirstPlace = $firstPlaceTeams->count();
-        $numSecondPlace = $secondPlaceTeams->count();
-        
-        for ($i = 0; $i < max($numFirstPlace, $numSecondPlace); $i++) {
-            // Thêm nhất bảng thứ i
-            if ($i < $numFirstPlace) {
-                $advancing->push($firstPlaceTeams->get($i));
-            }
-            
-            // Thêm nhì bảng đối diện (từ cuối lên)
-            $oppositeIndex = $numSecondPlace - 1 - $i;
-            if ($oppositeIndex >= 0 && $oppositeIndex < $numSecondPlace) {
-                $advancing->push($secondPlaceTeams->get($oppositeIndex));
-            }
-        }
-        
-        // Xử lý các hạng còn lại (nếu có hạng 3, 4...)
-        foreach ($advancingByRank as $rank => $teamsAtRank) {
-            if ($rank < 2) continue; // Đã xử lý rank 0, 1
-            
-            foreach ($teamsAtRank as $team) {
-                $advancing->push($team);
-            }
-        }
+        // ✅ SẮP XẾP ĐỘI ADVANCING THEO MODE ĐÃ CHỌN
+        $advancing = $this->arrangeAdvancingTeams($advancingByRank, $pairingMode, $manualPairings);
     
         // ✅ KIỂM TRA SỐ ĐỘI ADVANCING
         $totalAdvancing = $advancing->count();
@@ -2191,15 +2174,189 @@ class TournamentTypeController extends Controller
         }
     }
 
+    private function arrangeAdvancingTeams($advancingByRank, $pairingMode = null, $manualPairings = null)
+    {
+        // ✅ NORMALIZE: Trim và lowercase
+        $pairingMode = $pairingMode ? strtolower(trim($pairingMode)) : null;
+        
+        switch ($pairingMode) {
+            case self::PAIRING_MODE_SYMMETRIC:
+            case 'symmetric':
+                return $this->arrangeAdvancingTeamsSymmetric($advancingByRank);
+                
+            case self::PAIRING_MODE_MANUAL:
+            case 'manual':
+                return $this->arrangeAdvancingTeamsManual($advancingByRank, $manualPairings);
+                
+            case self::PAIRING_MODE_SEQUENTIAL:
+            case 'sequential':
+            case null:
+            case '':
+            default:
+                return $this->arrangeAdvancingTeamsSequential($advancingByRank);
+        }
+    }
+
+    /**
+     * ============================================================================
+     * PAIRING MODE 1: SEQUENTIAL (Tuần tự)
+     * ============================================================================
+     */
+    /**
+    * Pattern: Nhất A vs Nhì B, Nhất B vs Nhì A, Nhất C vs Nhì D, Nhất D vs Nhì C...
+    * Ví dụ 8 bảng: A-B, B-A, C-D, D-C, E-F, F-E, G-H, H-G
+    */
+    private function arrangeAdvancingTeamsSequential($advancingByRank)
+    {
+        $advancing = collect();
+        
+        $firstPlaceTeams = $advancingByRank->get(0, collect());
+        $secondPlaceTeams = $advancingByRank->get(1, collect());
+        
+        $numFirstPlace = $firstPlaceTeams->count();
+        $numSecondPlace = $secondPlaceTeams->count();
+        
+        // ✅ PATTERN TUẦN TỰ: Nhất A, Nhì B, Nhất B, Nhì A, Nhất C, Nhì D, Nhất D, Nhì C...
+        for ($i = 0; $i < max($numFirstPlace, $numSecondPlace); $i += 2) {
+            // Cặp thứ i: Nhất[i] vs Nhì[i+1]
+            if ($i < $numFirstPlace) {
+                $advancing->push($firstPlaceTeams->get($i));
+            }
+            if (($i + 1) < $numSecondPlace) {
+                $advancing->push($secondPlaceTeams->get($i + 1));
+            }
+            
+            // Cặp thứ i+1: Nhất[i+1] vs Nhì[i]
+            if (($i + 1) < $numFirstPlace) {
+                $advancing->push($firstPlaceTeams->get($i + 1));
+            }
+            if ($i < $numSecondPlace) {
+                $advancing->push($secondPlaceTeams->get($i));
+            }
+        }
+        
+        // Xử lý các hạng còn lại (hạng 3, 4...)
+        foreach ($advancingByRank as $rank => $teamsAtRank) {
+            if ($rank < 2) continue;
+            foreach ($teamsAtRank as $team) {
+                $advancing->push($team);
+            }
+        }
+        
+        return $advancing;
+    }
+
+    /**
+     * ============================================================================
+     * PAIRING MODE 2: SYMMETRIC (Đối xứng)
+     * ============================================================================
+     */
+    /**
+     * Pattern: Nhất A vs Nhì H, Nhất B vs Nhì G, Nhất C vs Nhì F, Nhất D vs Nhì E...
+     * Ví dụ 8 bảng: A-H, B-G, C-F, D-E, E-D, F-C, G-B, H-A
+     */
+    private function arrangeAdvancingTeamsSymmetric($advancingByRank)
+    {
+        $advancing = collect();
+        
+        $firstPlaceTeams = $advancingByRank->get(0, collect());
+        $secondPlaceTeams = $advancingByRank->get(1, collect());
+        
+        $numFirstPlace = $firstPlaceTeams->count();
+        $numSecondPlace = $secondPlaceTeams->count();
+        
+        // Pattern đối xứng: lấy từ 2 đầu mảng
+        for ($i = 0; $i < max($numFirstPlace, $numSecondPlace); $i++) {
+            // Thêm nhất bảng thứ i (A, B, C, D...)
+            if ($i < $numFirstPlace) {
+                $advancing->push($firstPlaceTeams->get($i));
+            }
+            
+            // Thêm nhì bảng đối xứng từ cuối lên (H, G, F, E...)
+            $oppositeIndex = $numSecondPlace - 1 - $i;
+            if ($oppositeIndex >= 0 && $oppositeIndex < $numSecondPlace) {
+                $advancing->push($secondPlaceTeams->get($oppositeIndex));
+            }
+        }
+        
+        // Xử lý các hạng còn lại
+        foreach ($advancingByRank as $rank => $teamsAtRank) {
+            if ($rank < 2) continue;
+            foreach ($teamsAtRank as $team) {
+                $advancing->push($team);
+            }
+        }
+        
+        return $advancing;
+    }
+
+    /**
+     * ============================================================================
+     * PAIRING MODE 3: MANUAL (Thủ công)
+     * ============================================================================
+     */
+    /**
+     * Sắp xếp theo danh sách thủ công
+     * $manualPairings format:
+     * [
+     *   ['group' => 'A', 'rank' => 1, 'position' => 0],  // Vị trí 0
+     *   ['group' => 'C', 'rank' => 2, 'position' => 1],  // Vị trí 1
+     *   ['group' => 'B', 'rank' => 1, 'position' => 2],  // Vị trí 2
+     *   ...
+     * ]
+     */
+    private function arrangeAdvancingTeamsManual($advancingByRank, $manualPairings)
+    {
+        if (empty($manualPairings)) {
+            // Fallback về sequential nếu không có manual config
+            return $this->arrangeAdvancingTeamsSequential($advancingByRank);
+        }
+        
+        $advancing = collect();
+        
+        // Tạo map để tra cứu nhanh: "groupId_rank" => team object
+        $teamMap = [];
+        foreach ($advancingByRank as $rank => $teamsAtRank) {
+            foreach ($teamsAtRank as $team) {
+                $groupId = $team->_from_group ?? null;
+                if ($groupId) {
+                    $key = "{$groupId}_{$rank}";
+                    $teamMap[$key] = $team;
+                }
+            }
+        }
+        
+        // Sắp xếp theo thứ tự manual
+        usort($manualPairings, fn($a, $b) => ($a['position'] ?? 0) <=> ($b['position'] ?? 0));
+        
+        foreach ($manualPairings as $pairing) {
+            $groupId = $pairing['group_id'] ?? null;
+            $rank = $pairing['rank'] ?? 1;
+            $key = "{$groupId}_{$rank}";
+            
+            if (isset($teamMap[$key])) {
+                $advancing->push($teamMap[$key]);
+            }
+        }
+        
+        return $advancing;
+    }
+
     private function generateMixedWithAssignedTeams(TournamentType $type, $config, $numLegs)
     {
         $matchNumber = 0;
         $mainConfig = is_array($config) && isset($config[0]) ? $config[0] : [];
         $poolConfig = $mainConfig['pool_stage'] ?? [];
+        $knockoutConfig = $mainConfig['knockout_stage'] ?? [];
+        
         $numAdvancing = max(1, (int)($poolConfig['num_advancing_teams'] ?? 1));
         $advancedToNext = filter_var($mainConfig['advanced_to_next_round'] ?? false, FILTER_VALIDATE_BOOLEAN);
         $hasThirdPlace = filter_var($mainConfig['has_third_place_match'] ?? false, FILTER_VALIDATE_BOOLEAN);
-
+        
+        // ✅ LẤY PAIRING MODE TỪ CONFIG (MẶC ĐỊNH: SEQUENTIAL)
+        $pairingMode = $knockoutConfig['pairing_mode'] ?? null;  // Không set default ở đây
+        $manualPairings = $knockoutConfig['manual_pairings'] ?? null;
+    
         $groups = $type->groups()->with('teams.members')->get();
         $advancingByRank = collect();
         $groupObjects = collect();
@@ -2301,34 +2458,10 @@ class TournamentTypeController extends Controller
                 ]);
             }
         }
-
-        // ===== PHASE 3 & 4: Cross-matching và Knockout =====
-        // ... giữ nguyên logic cũ ...
-        $advancing = collect();
-        $firstPlaceTeams = $advancingByRank->get(0, collect());
-        $secondPlaceTeams = $advancingByRank->get(1, collect());
-        
-        $numFirstPlace = $firstPlaceTeams->count();
-        $numSecondPlace = $secondPlaceTeams->count();
-        
-        for ($i = 0; $i < max($numFirstPlace, $numSecondPlace); $i++) {
-            if ($i < $numFirstPlace) {
-                $advancing->push($firstPlaceTeams->get($i));
-            }
-            
-            $oppositeIndex = $numSecondPlace - 1 - $i;
-            if ($oppositeIndex >= 0 && $oppositeIndex < $numSecondPlace) {
-                $advancing->push($secondPlaceTeams->get($oppositeIndex));
-            }
-        }
-        
-        foreach ($advancingByRank as $rank => $teamsAtRank) {
-            if ($rank < 2) continue;
-            foreach ($teamsAtRank as $team) {
-                $advancing->push($team);
-            }
-        }
-
+    
+        // ✅ SẮP XẾP ĐỘI ADVANCING THEO MODE ĐÃ CHỌN
+        $advancing = $this->arrangeAdvancingTeams($advancingByRank, $pairingMode, $manualPairings);
+    
         $totalAdvancing = $advancing->count();
         $willHaveBye = ($totalAdvancing % 2 !== 0);
         
@@ -2422,9 +2555,6 @@ class TournamentTypeController extends Controller
         if (!$sportId) {
             return null;
         }
-
-        // ✅ DEBUG: Kiểm tra cấu trúc members
-        // dd($team->members->first());
 
         // ✅ XỬ LÝ NHIỀU TRƯỜNG HỢP RELATION
         $userIds = collect($team->members)

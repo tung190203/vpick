@@ -19,9 +19,9 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-10 gap-4 flex-1 overflow-hidden">
+        <div class="grid gap-4 flex-1 overflow-hidden" :class="isCreator ? 'grid-cols-10' : 'grid-cols-1'">
             <!-- Left Sidebar - Unassigned Teams -->
-            <div class="col-span-3 bg-gray-100 rounded-lg p-4 flex flex-col overflow-hidden">
+            <div class="col-span-3 bg-gray-100 rounded-lg p-4 flex flex-col overflow-hidden" v-if="isCreator">
                 <div class="flex flex-col h-full">
                     <!-- Header -->
                     <div class="flex justify-between items-center mb-3">
@@ -76,8 +76,8 @@
             </div>
 
             <!-- Right Side - Tournament Brackets Grid -->
-            <div class="col-span-7 overflow-y-auto custom-scrollbar-hide">
-                <div class="grid grid-cols-2 gap-4 h-full">
+            <div class="overflow-y-auto custom-scrollbar-hide" :class="isCreator ? 'col-span-7' : 'col-span-1'">
+                <div class="grid gap-4 h-fit" :class="groupGridClass">
                     <!-- Dynamic Groups -->
                     <div v-for="group in groups" :key="group.group_id"
                         class="bg-white rounded-lg border border-gray-200 p-4 flex flex-col h-fit">
@@ -208,6 +208,19 @@ const confirmModal = reactive({
     confirmClass: 'bg-[#D72D36]',
     onConfirm: null,
     onCancel: null
+});
+
+const groupGridClass = computed(() => {
+    if (isCreator.value) {
+        return 'grid-cols-1 md:grid-cols-2';
+    }
+
+    return `
+        grid-cols-1
+        sm:grid-cols-2
+        lg:grid-cols-3
+        2xl:grid-cols-4
+    `;
 });
 
 const showModal = (config) => {

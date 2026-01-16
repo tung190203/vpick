@@ -260,7 +260,7 @@ class MiniTournament extends Model
     public function staff()
     {
         return $this->belongsToMany(User::class, 'mini_tournament_staff')
-            ->withPivot('role')
+            ->withPivot('role', 'id')
             ->withTimestamps();
     }
 
@@ -431,23 +431,23 @@ class MiniTournament extends Model
                             if ($slotStatus === 'one_slot') {
                                 $subQuery->orWhereRaw('(
                                 COALESCE(max_players, 0) - (
-                                    SELECT COUNT(*) 
-                                    FROM mini_participants 
+                                    SELECT COUNT(*)
+                                    FROM mini_participants
                                     WHERE mini_participants.mini_tournament_id = mini_tournaments.id
                                 )
                             ) >= 1');
                             } elseif ($slotStatus === 'two_slot') {
                                 $subQuery->orWhereRaw('(
                                 COALESCE(max_players, 0) - (
-                                    SELECT COUNT(*) 
-                                    FROM mini_participants 
+                                    SELECT COUNT(*)
+                                    FROM mini_participants
                                     WHERE mini_participants.mini_tournament_id = mini_tournaments.id
                                 )
                             ) >= 2');
                             } elseif ($slotStatus === 'full_slot') {
                                 $subQuery->orWhereRaw('(
-                                SELECT COUNT(*) 
-                                FROM mini_participants 
+                                SELECT COUNT(*)
+                                FROM mini_participants
                                 WHERE mini_participants.mini_tournament_id = mini_tournaments.id
                             ) = 0');
                             }
@@ -481,13 +481,13 @@ class MiniTournament extends Model
     public function scopeNearBy($query, $lat, $lng, $radiusKm)
     {
         $haversine = "(6371 * acos(
-            cos(radians(?)) 
-            * cos(radians(competition_locations.latitude)) 
-            * cos(radians(competition_locations.longitude) - radians(?)) 
-            + sin(radians(?)) 
+            cos(radians(?))
+            * cos(radians(competition_locations.latitude))
+            * cos(radians(competition_locations.longitude) - radians(?))
+            + sin(radians(?))
             * sin(radians(competition_locations.latitude))
         ))";
-    
+
         return $query->whereHas('competitionLocation', function ($q) use ($haversine, $lat, $lng, $radiusKm) {
             $q->whereRaw("$haversine < ?", [
                 $lat,

@@ -49,7 +49,7 @@ class MiniTournamentController extends Controller
                 if ($user) {
                     $user->notify(new MiniTournamentInvitationNotification($miniTournament));
                 }
-            }  
+            }
         }
 
         if ($request->hasFile('poster')) {
@@ -81,11 +81,11 @@ class MiniTournamentController extends Controller
         if ($request->has('status')) {
             $query->where('status', $validated['status']);
         }
-    
+
         // 🔥 keyword search (tên kèo + tên sân + địa chỉ sân)
         if (!empty($validated['keyword'])) {
             $kw = trim($validated['keyword']);
-    
+
             $query->where(function ($q) use ($kw) {
                 $q->where('mini_tournaments.name', 'LIKE', "%{$kw}%")
                   ->orWhereHas('competitionLocation', function ($loc) use ($kw) {
@@ -101,7 +101,7 @@ class MiniTournamentController extends Controller
             $q->where('is_private', 0)
                 ->orWhereHas('participants', fn($sub) => $sub->where('user_id', $userId));
         });
-    
+
         $miniTournaments = $query->paginate($validated['per_page'] ?? MiniTournament::PER_PAGE);
 
         $data = [
