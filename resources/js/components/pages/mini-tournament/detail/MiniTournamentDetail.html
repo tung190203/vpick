@@ -379,7 +379,7 @@
 
     <!-- Invite Group Modal -->
     <InviteGroup v-model="showInviteModal" :data="inviteGroupData" :clubs="clubs" :active-scope="activeScope"
-                 :selected-club="selectedClub" :search-query="searchQuery" @update:searchQuery="onSearchChange"
+                 :selected-club="selectedClub" :search-query="searchQuery" :current-radius="currentRadius" @update:radius="onRadiusChange" @update:searchQuery="onSearchChange"
                  @change-scope="onScopeChange" @change-club="onClubChange" @invite="handleInvite" />
     <DeleteConfirmationModal v-model="showDeleteModal" title="Xác nhận hủy bỏ kèo đấu" message="Thao tác này không thể hoàn tác." confirmButtonText="Xác nhận" @confirm="removeMiniTournament" />
     <DeleteConfirmationModal v-model="showDelineMiniParticipantModal" title="Xác nhận từ chối tham gia kèo đấu" message="Thao tác này không thể hoàn tác." confirmButtonText="Xác nhận" @confirm="declineMiniTournament" />

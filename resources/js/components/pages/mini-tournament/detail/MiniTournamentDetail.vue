@@ -83,6 +83,7 @@ export default {
         const inviteGroupData = ref([]);
         const selectedClub = ref(null);
         const clubs = ref([])
+        const currentRadius = ref(10);
         const showQRCodeModal = ref(false);
         const miniTournamentLink = window.location.href;
         const descriptionModel = ref('');
@@ -126,6 +127,11 @@ export default {
                 alert(`Link kèo đấu: ${miniTournamentLink}`);
             }
         }
+
+        const onRadiusChange = debounce(async (radius) => {
+            currentRadius.value = radius;
+            await getInviteGroupData();
+        }, 300);
 
         const goToEditPage = () => {
             router.push({
@@ -239,7 +245,7 @@ export default {
             if (activeScope.value === 'area') {
                 payload.lat = mini.value.competition_location.latitude
                 payload.lng = mini.value.competition_location.longitude
-                payload.radius = 100
+                payload.radius = currentRadius.value
             }
             try {
                 const resp = await MiniParticipantService.getMiniTournamentInviteGroups(id, payload);
@@ -522,7 +528,8 @@ export default {
             confirmMiniTournament,
             confirmDelineMiniParticipant,
             declineMiniTournament,
-            showDelineMiniParticipantModal
+            showDelineMiniParticipantModal,
+            onRadiusChange
         }
     }
 }
