@@ -221,11 +221,19 @@ const tabs = [
     { id: 'area', label: 'Trong khu vực của bạn' }
 ]
 
-const activeTab = ref(props.activeScope || 'all')
 const selectedClub = ref('')
 const localSearchQuery = ref(props.searchQuery || '')
 const localRadius = ref(props.currentRadius || 10)
 const scrollContainer = ref(null)
+const activeTab = ref('all')
+
+watch(
+  () => props.activeScope,
+  (val) => {
+    if (val) activeTab.value = val
+  },
+  { immediate: true }
+)
 
 watch(() => props.searchQuery, v => (localSearchQuery.value = v))
 watch(() => props.currentRadius, v => (localRadius.value = v))
