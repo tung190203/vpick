@@ -1,16 +1,96 @@
 <template>
-    <div class="grid grid-cols-10 gap-4">
+    <div class="grid grid-cols-[450px_1fr] gap-4">
         <CreateMatch v-model="showCreateMatchModal" :data="detailData" :tournament="tournament"
             @updated="handleMatchUpdated" />
-        <div class="col-span-3">
+
+        <!-- Ranking Modal - Full Screen -->
+        <Teleport to="body">
+            <Transition name="modal">
+            <div v-if="showRankingModal"
+                class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center"
+                @click.self="showRankingModal = false">
+                <div class="bg-white rounded-lg w-full h-full overflow-auto p-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Bảng xếp hạng chi tiết</h2>
+                        <button @click="showRankingModal = false"
+                            class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors">
+                            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div v-if="!hasAnyRanking" class="py-12 text-center text-gray-500 text-lg">
+                        Chưa có dữ liệu bảng xếp hạng
+                    </div>
+
+                    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
+                        <div v-for="group in rank.group_rankings" :key="group.group_id"
+                            class="bg-gray-100 rounded-lg shadow-lg overflow-hidden">
+                            <template v-if="group.rankings && group.rankings.length">
+                                <!-- Table Header -->
+                                <div
+                                    class="grid grid-cols-[40px_1fr_70px_70px] bg-gray-200 px-4 py-2 text-gray-600 font-semibold text-sm">
+                                    <span>#</span>
+                                    <span>{{ group.group_name }}</span>
+                                    <span class="text-center">Điểm</span>
+                                    <span class="text-center">Hiệu số</span>
+                                </div>
+
+                                <!-- Teams -->
+                                <div class="divide-y divide-gray-200">
+                                    <div v-for="(team, index) in group.rankings" :key="team.team_id"
+                                        class="grid grid-cols-[40px_1fr_70px_70px] items-center px-4 py-3 bg-white hover:bg-blue-50 transition-colors duration-200">
+                                        <span class="font-bold text-lg" :class="{
+                                            'text-yellow-500': index === 0,
+                                            'text-gray-400': index === 1,
+                                            'text-orange-500': index === 2
+                                        }">{{ index + 1 }}</span>
+
+                                        <div class="flex items-center gap-2 min-w-0">
+                                            <img :src="team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(team.team_name)}`"
+                                                class="w-10 h-10 rounded-full border-2 border-gray-300 flex-shrink-0" />
+                                            <p class="text-sm font-medium truncate">{{ team.team_name }}</p>
+                                        </div>
+
+                                        <span class="text-center font-bold text-lg text-blue-600">{{ team.points
+                                            }}</span>
+                                        <span class="text-center font-semibold" :class="{
+                                            'text-green-600': team.point_diff > 0,
+                                            'text-red-600': team.point_diff < 0,
+                                            'text-gray-600': team.point_diff === 0
+                                        }">
+                                            {{ team.point_diff > 0 ? '+' : '' }}{{ team.point_diff }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </Transition>
+        </Teleport>
+
+        <!-- Cột bảng xếp hạng - Fixed 450px -->
+        <div class="w-[450px]">
             <div class="p-4 space-y-4">
                 <!-- Header -->
                 <div class="flex justify-between items-center p-4 bg-[#EDEEF2] rounded-md">
                     <h2 class="text-lg font-bold text-gray-800">Bảng xếp hạng</h2>
-                    <button
-                        class="w-9 h-9 rounded-full shadow-lg flex items-center justify-center border border-[#BBBFCC] transition-colors duration-200 hover:bg-gray-100 hover:border-[#838799]">
-                        <PencilIcon class="w-5 h-5 text-[#838799] transition-colors duration-200 hover:text-black" />
-                    </button>
+                    <div class="flex gap-4">
+                        <button @click="showRankingModal = true"
+                            class="w-9 h-9 rounded-full shadow-lg flex items-center justify-center border border-[#BBBFCC] transition-colors duration-200 hover:bg-gray-100 hover:border-[#838799]">
+                            <ArrowsPointingOutIcon
+                                class="w-5 h-5 text-[#838799] transition-colors duration-200 hover:text-black" />
+                        </button>
+                        <button
+                            class="w-9 h-9 rounded-full shadow-lg flex items-center justify-center border border-[#BBBFCC] transition-colors duration-200 hover:bg-gray-100 hover:border-[#838799]">
+                            <PencilIcon
+                                class="w-5 h-5 text-[#838799] transition-colors duration-200 hover:text-black" />
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Groups -->
@@ -26,7 +106,7 @@
                             <div
                                 class="grid grid-cols-[20px_1fr_60px_60px] bg-gray-200 px-4 py-2 text-gray-600 font-semibold text-sm">
                                 <span>#</span>
-                                <span>Đội</span>
+                                <span>{{ group.group_name }}</span>
                                 <span class="text-center">Điểm</span>
                                 <span class="text-center">Hiệu số</span>
                             </div>
@@ -35,7 +115,11 @@
                             <div class="divide-y divide-gray-200">
                                 <div v-for="(team, index) in group.rankings" :key="team.team_id"
                                     class="grid grid-cols-[20px_1fr_60px_60px] items-center px-4 py-3 bg-white hover:bg-blue-50 transition-colors duration-200">
-                                    <span class="font-medium">{{ index + 1 }}</span>
+                                    <span class="font-bold text-lg" :class="{
+                                        'text-yellow-500': index === 0,
+                                        'text-gray-400': index === 1,
+                                        'text-orange-500': index === 2
+                                    }">{{ index + 1 }}</span>
 
                                     <div class="flex items-center gap-2">
                                         <img :src="team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(team.team_name)}`"
@@ -43,18 +127,24 @@
                                         <p class="text-sm font-medium">{{ team.team_name }}</p>
                                     </div>
 
-                                    <span class="text-center font-semibold">{{ team.points }}</span>
-                                    <span class="text-center font-semibold">{{ team.point_diff }}</span>
+                                    <span class="text-center font-bold text-lg text-blue-600">{{ team.points }}</span>
+                                    <span class="text-center font-semibold" :class="{
+                                        'text-green-600': team.point_diff > 0,
+                                        'text-red-600': team.point_diff < 0,
+                                        'text-gray-600': team.point_diff === 0
+                                    }">
+                                        {{ team.point_diff > 0 ? '+' : '' }}{{ team.point_diff }}
+                                    </span>
                                 </div>
                             </div>
                         </template>
                     </div>
                 </div>
             </div>
-
         </div>
 
-        <div class="col-span-7 p-4 pt-0">
+        <!-- Cột bracket - Chiếm phần còn lại -->
+        <div class="p-4 pt-0">
             <div class="overflow-x-auto h-full custom-scrollbar-hide">
                 <div class="flex w-max min-h-full pb-4">
 
@@ -102,7 +192,7 @@
                                 class="flex flex-col gap-3 rounded-lg shadow-md border border-[#dcdee6] bg-[#EDEEF2] px-4 py-3">
 
                                 <!-- HOME TEAM - DRAGGABLE -->
-                                <div class="flex justify-between items-center px-2 -mx-2 rounded transition-all" :class="{
+                                <div v-tooltip="match.home_team.name" class="flex justify-between items-center px-2 -mx-2 rounded transition-all" :class="{
                                     'bg-blue-100 ring-2 ring-blue-400': isDropTarget(match.match_id, 'home'),
                                     'cursor-move hover:bg-gray-100': canDragPoolStage(match),
                                     'cursor-pointer': !canDragPoolStage(match)
@@ -115,7 +205,7 @@
                                     <div class="flex items-center gap-2 pointer-events-none">
                                         <img :src="match.home_team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(match.home_team.name)}`"
                                             class="w-8 h-8 rounded-full" :alt="match.home_team.name" />
-                                        <p class="text-sm font-semibold text-[#3E414C]">
+                                        <p class="text-sm font-semibold text-[#3E414C] truncate max-w-[150px]">
                                             {{ match.home_team.name }}
                                         </p>
                                     </div>
@@ -128,7 +218,7 @@
                                 </div>
 
                                 <!-- AWAY TEAM - DRAGGABLE -->
-                                <div class="flex justify-between items-center px-2 -mx-2 rounded transition-all" :class="{
+                                <div v-tooltip="match.away_team.name" class="flex justify-between items-center px-2 -mx-2 rounded transition-all" :class="{
                                     'bg-blue-100 ring-2 ring-blue-400': isDropTarget(match.match_id, 'away'),
                                     'cursor-move hover:bg-gray-100': canDragPoolStage(match),
                                     'cursor-pointer': !canDragPoolStage(match)
@@ -141,7 +231,7 @@
                                     <div class="flex items-center gap-2 pointer-events-none">
                                         <img :src="match.away_team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(match.away_team.name)}`"
                                             class="w-8 h-8 rounded-full" :alt="match.away_team.name" />
-                                        <p class="text-sm font-semibold text-[#3E414C]">
+                                        <p class="text-sm font-semibold text-[#3E414C] truncate max-w-[150px]">
                                             {{ match.away_team.name }}
                                         </p>
                                     </div>
@@ -201,11 +291,11 @@
 
                             <div
                                 class="flex flex-col gap-3 rounded-lg shadow-md border border-[#dcdee6] bg-[#EDEEF2] px-4 py-3">
-                                <div class="flex justify-between items-center">
+                                <div v-tooltip="match.home_team.name" class="flex justify-between items-center">
                                     <div class="flex items-center gap-2">
                                         <img :src="match.home_team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(match.home_team.name)}`"
                                             class="w-8 h-8 rounded-full" :alt="match.home_team.name" />
-                                        <p class="text-sm font-semibold text-[#3E414C]">
+                                        <p class="text-sm font-semibold text-[#3E414C] truncate max-w-[150px]">
                                             {{ match.home_team.name }}
                                         </p>
                                     </div>
@@ -217,11 +307,11 @@
                                     </span>
                                 </div>
 
-                                <div class="flex justify-between items-center">
+                                <div v-tooltip="match.away_team.name" class="flex justify-between items-center">
                                     <div class="flex items-center gap-2">
                                         <img :src="match.away_team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(match.away_team.name)}`"
                                             class="w-8 h-8 rounded-full" :alt="match.away_team.name" />
-                                        <p class="text-sm font-semibold text-[#3E414C]">
+                                        <p class="text-sm font-semibold text-[#3E414C] truncate max-w-[150px]">
                                             {{ match.away_team.name }}
                                         </p>
                                     </div>
@@ -245,7 +335,7 @@
 
 <script setup>
 import { computed, ref } from "vue";
-import { PencilIcon, VideoCameraIcon } from "@heroicons/vue/24/solid";
+import { ArrowsPointingOutIcon, PencilIcon, VideoCameraIcon } from "@heroicons/vue/24/solid";
 import CreateMatch from '@/components/molecules/CreateMatch.vue';
 import * as MatchesService from '@/service/match.js';
 import { toast } from 'vue3-toastify';
@@ -272,6 +362,7 @@ const isDragging = ref(false);
 const draggedTeam = ref(null);
 const dropTargetMatch = ref(null);
 const dropTargetPosition = ref(null);
+const showRankingModal = ref(false);
 
 /* ===========================
    DRAG & DROP HANDLERS
@@ -533,5 +624,25 @@ const formatTime = (scheduledAt) => {
 .custom-scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
+}
+
+.modal-enter-active,
+.modal-leave-active {
+    transition: opacity 0.3s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+    opacity: 0;
+}
+
+.modal-enter-active .bg-white,
+.modal-leave-active .bg-white {
+    transition: transform 0.3s ease;
+}
+
+.modal-enter-from .bg-white,
+.modal-leave-to .bg-white {
+    transform: scale(0.9);
 }
 </style>

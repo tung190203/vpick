@@ -1795,52 +1795,81 @@ class TournamentTypeController extends Controller
         if (!$type) {
             return ResponseHelper::error('Tournament type not found', 404);
         }
-
-        // Lấy bảng xếp hạng đã được tính toán sẵn từ database
-        // Bảng này đã được sắp xếp theo đúng rankingRules (4, 1, 3...)
-        $savedRankings = TeamRanking::where('tournament_type_id', $type->id)
-            ->orderBy('rank', 'asc')
-            ->with(['team.members'])
-            ->get();
-
+    
         $groups = $type->groups()->get();
 
         // TH 1: Nếu không chia bảng (Tính rank chung)
         if ($groups->isEmpty()) {
-            $data = $savedRankings->map(function ($r) use ($type) {
-                // Lấy stats chi tiết nếu cần hiển thị (giống trong recalculate)
-                $stats = $this->getTeamStats($r->team_id, $type->id);
+            // ✅ LẤY TẤT CẢ ĐỘI THAM GIA GIẢI
+            $allTeams = $type->tournament->teams()->with('members')->get();
+            
+            // Tính stats cho từng đội
+            $rankings = $allTeams->map(function ($team) use ($type) {
+                $stats = $this->getTeamStats($team->id, $type->id);
                 return array_merge([
-                    'rank' => $r->rank,
-                    'team_name' => $r->team->name ?? 'Unknown',
-                    'team_avatar' => $r->team->avatar ??'',
+                    'team_id' => $team->id,
+                    'team_name' => $team->name ?? 'Unknown',
+                    'team_avatar' => $team->avatar ?? '',
                 ], $stats);
             });
-
-            return ResponseHelper::success(['rankings' => $data]);
+    
+            // ✅ SẮP XẾP THEO THỨ TỰ: Points → Point Diff → Wins
+            $rankings = $rankings->sortByDesc(function ($item) {
+                return [
+                    $item['points'],           // Ưu tiên 1: Điểm
+                    $item['point_diff'],       // Ưu tiên 2: Hiệu số
+                    $item['wins'],             // Ưu tiên 3: Số trận thắng
+                ];
+            })->values();
+    
+            // ✅ GÁN RANK SAU KHI ĐÃ SẮP XẾP
+            $rankings = $rankings->map(function ($item, $index) {
+                $item['rank'] = $index + 1;
+                return $item;
+            });
+    
+            return ResponseHelper::success(['rankings' => $rankings]);
         }
 
         // TH 2: Nếu có chia bảng
-        $groupRankings = $groups->map(function ($group) use ($type, $savedRankings) {
-            // Lọc ra các đội thuộc group này từ bảng rank đã sắp xếp
-            $rankInGroup = $savedRankings->filter(function($r) use ($group, $type) {
-                // Kiểm tra đội có trận đấu nào trong group này không
-                return Matches::where('group_id', $group->id)
-                    ->where(function($q) use ($r) {
-                        $q->where('home_team_id', $r->team_id)
-                        ->orWhere('away_team_id', $r->team_id);
-                    })->exists();
-            })->values();
-
-            $rankings = $rankInGroup->map(function ($r, $index) use ($type) {
-                $stats = $this->getTeamStats($r->team_id, $type->id);
+        $groupRankings = $groups->map(function ($group) use ($type) {
+            // ✅ LẤY TẤT CẢ ĐỘI TRONG BẢNG (từ group_team pivot table)
+            $teamsInGroup = $group->teams()->with('members')->get();
+            
+            // Nếu không có đội nào được assign vào bảng này
+            if ($teamsInGroup->isEmpty()) {
+                return [
+                    'group_id' => $group->id,
+                    'group_name' => $group->name,
+                    'rankings' => [],
+                ];
+            }
+    
+            // Tính stats cho từng đội
+            $rankings = $teamsInGroup->map(function ($team) use ($type, $group) {
+                $stats = $this->getTeamStatsInGroup($team->id, $type->id, $group->id);
                 return array_merge([
-                    'rank' => $index + 1, // Đánh lại hạng trong nội bộ bảng
-                    'team_name' => $r->team->name ?? 'Unknown',
-                    'team_avatar' => $r->team->avatar ?? '',
+                    'team_id' => $team->id,
+                    'team_name' => $team->name ?? 'Unknown',
+                    'team_avatar' => $team->avatar ?? '',
                 ], $stats);
             });
-
+    
+            // ✅ SẮP XẾP THEO THỨ TỰ: Points → Point Diff → Wins
+            $rankings = $rankings->sortByDesc(function ($item) {
+                return [
+                    $item['points'],
+                    $item['point_diff'],
+                    $item['wins'],
+                ];
+            })->values();
+    
+            // ✅ GÁN RANK SAU KHI ĐÃ SẮP XẾP
+            $rankings = $rankings->map(function ($item, $index) {
+                $item['rank'] = $index + 1;
+                return $item;
+            });
+    
             return [
                 'group_id' => $group->id,
                 'group_name' => $group->name,
@@ -1852,7 +1881,110 @@ class TournamentTypeController extends Controller
     }
 
     /**
-     * Hàm bổ trợ để lấy các chỉ số thắng/thua/hiệu số để hiển thị
+     * ✅ HÀM MỚI: Tính stats cho đội trong 1 group cụ thể
+     */
+    private function getTeamStatsInGroup($teamId, $tournamentTypeId, $groupId)
+    {
+        $matches = Matches::where('tournament_type_id', $tournamentTypeId)
+            ->where('group_id', $groupId) // ✅ Chỉ lấy trận trong group này
+            ->where('status', 'completed')
+            ->where(function ($query) use ($teamId) {
+                $query->where('home_team_id', $teamId)->orWhere('away_team_id', $teamId);
+            })
+            ->with('results')
+            ->get();
+    
+        return $this->calculateStatsFromMatches($matches, $teamId);
+    }
+    
+    /**
+     * ✅ REFACTOR: Tách logic tính toán stats ra hàm riêng
+     * ✅ MỖI LEG THẮNG = 3 ĐIỂM (không tính theo cặp đấu)
+     */
+    private function calculateStatsFromMatches($matches, $teamId)
+    {
+        // ✅ NẾU CHƯA CÓ TRẬN NÀO → TRẢ VỀ STATS RỖNG
+        if ($matches->isEmpty()) {
+            return [
+                'team_id' => $teamId,
+                'played' => 0,
+                'wins' => 0,
+                'draws' => 0,
+                'losses' => 0,
+                'points' => 0,
+                'point_diff' => 0,
+                'win_rate' => 0,
+            ];
+        }
+    
+        $totalPoints = 0;
+        $wins = 0;
+        $draws = 0;
+        $losses = 0;
+        $pWon = 0;
+        $pLost = 0;
+    
+        // ✅ TÍNH ĐIỂM TỪNG LEG (không group)
+        foreach ($matches as $leg) {
+            $homeSetWins = 0;
+            $awaySetWins = 0;
+            
+            $sets = $leg->results->groupBy('set_number');
+            foreach ($sets as $setGroup) {
+                $home = $setGroup->firstWhere('team_id', $leg->home_team_id);
+                $away = $setGroup->firstWhere('team_id', $leg->away_team_id);
+                
+                $homeScore = (int)($home->score ?? 0);
+                $awayScore = (int)($away->score ?? 0);
+                
+                if ($homeScore > $awayScore) $homeSetWins++;
+                elseif ($awayScore > $homeScore) $awaySetWins++;
+    
+                // Cộng dồn điểm cho tính point diff
+                if ($leg->home_team_id == $teamId) {
+                    $pWon += $homeScore;
+                    $pLost += $awayScore;
+                } elseif ($leg->away_team_id == $teamId) {
+                    $pWon += $awayScore;
+                    $pLost += $homeScore;
+                }
+            }
+    
+            // ✅ XÁC ĐỊNH THẮNG/THUA/HÒA CHO LEG NÀY
+            $isMyTeamHome = ($leg->home_team_id == $teamId);
+            $mySetWins = $isMyTeamHome ? $homeSetWins : $awaySetWins;
+            $opponentSetWins = $isMyTeamHome ? $awaySetWins : $homeSetWins;
+    
+            if ($mySetWins > $opponentSetWins) {
+                // ✅ THẮNG LEG NÀY → +3 ĐIỂM
+                $wins++;
+                $totalPoints += 3;
+            } elseif ($mySetWins == $opponentSetWins) {
+                // ✅ HÒA LEG NÀY → +1 ĐIỂM
+                $draws++;
+                $totalPoints += 1;
+            } else {
+                // ✅ THUA LEG NÀY → +0 ĐIỂM
+                $losses++;
+            }
+        }
+    
+        $played = $matches->count(); // Số leg đã chơi
+    
+        return [
+            'team_id' => $teamId,
+            'played' => $played,
+            'wins' => $wins,
+            'draws' => $draws,
+            'losses' => $losses,
+            'points' => $totalPoints,
+            'point_diff' => $pWon - $pLost,
+            'win_rate' => $played > 0 ? round(($wins / $played) * 100, 2) : 0,
+        ];
+    }
+    
+    /**
+     * ✅ CẬP NHẬT getTeamStats để dùng chung logic
      */
     private function getTeamStats($teamId, $tournamentTypeId)
     {
@@ -1864,91 +1996,7 @@ class TournamentTypeController extends Controller
             ->with('results')
             ->get();
     
-        // ✅ TÍNH ĐIỂM THEO LOGIC GIỐNG BRACKET
-        $totalPoints = 0;
-        $wins = 0;
-        $draws = 0; // ✅ THÊM SỐ TRẬN HÒA
-        $pWon = 0;
-        $pLost = 0;
-    
-        // Group matches theo cặp đấu (leg 1, leg 2 cùng home/away)
-        $grouped = $matches->groupBy(function($match) {
-            $teams = [$match->home_team_id, $match->away_team_id];
-            sort($teams);
-            return implode('_', $teams);
-        });
-    
-        foreach ($grouped as $matchGroup) {
-            $homeTotal = 0;
-            $awayTotal = 0;
-            $baseHomeId = $matchGroup->first()->home_team_id;
-    
-            // Tính điểm từng leg
-            foreach ($matchGroup as $leg) {
-                $homeSetWins = 0;
-                $awaySetWins = 0;
-                
-                $sets = $leg->results->groupBy('set_number');
-                foreach ($sets as $setGroup) {
-                    $home = $setGroup->firstWhere('team_id', $leg->home_team_id);
-                    $away = $setGroup->firstWhere('team_id', $leg->away_team_id);
-                    
-                    $homeScore = (int)($home->score ?? 0);
-                    $awayScore = (int)($away->score ?? 0);
-                    
-                    if ($homeScore > $awayScore) $homeSetWins++;
-                    elseif ($awayScore > $homeScore) $awaySetWins++;
-    
-                    // Cộng dồn điểm cho tính point diff
-                    if ($leg->home_team_id == $teamId || $leg->away_team_id == $teamId) {
-                        $pWon += ($leg->home_team_id == $teamId) ? $homeScore : $awayScore;
-                        $pLost += ($leg->home_team_id == $teamId) ? $awayScore : $homeScore;
-                    }
-                }
-    
-                // Tính điểm leg (3-0)
-                $homeLegScore = 0;
-                $awayLegScore = 0;
-    
-                if ($leg->home_team_id == $baseHomeId) {
-                    $homeLegScore = ($homeSetWins > $awaySetWins) ? 3 : 0;
-                    $awayLegScore = ($awaySetWins > $homeSetWins) ? 3 : 0;
-                } else {
-                    $homeLegScore = ($awaySetWins > $homeSetWins) ? 3 : 0;
-                    $awayLegScore = ($homeSetWins > $awaySetWins) ? 3 : 0;
-                }
-    
-                $homeTotal += $homeLegScore;
-                $awayTotal += $awayLegScore;
-            }
-    
-            // ✅ XÁC ĐỊNH KẾT QUẢ: THẮNG / HÒA / THUA
-            $isHome = ($baseHomeId == $teamId);
-            $myScore = $isHome ? $homeTotal : $awayTotal;
-            $opponentScore = $isHome ? $awayTotal : $homeTotal;
-    
-            if ($myScore > $opponentScore) {
-                $wins++;
-                $totalPoints += 3; // Thắng = 3 điểm
-            } elseif ($myScore == $opponentScore) {
-                $draws++;
-                $totalPoints += 3;
-            }
-            // Thua = 0 điểm (không cộng gì)
-        }
-    
-        $played = $grouped->count();
-    
-        return [
-            'team_id' => $teamId,
-            'played' => $played,
-            'wins' => $wins,
-            'draws' => $draws, // ✅ THÊM TRẬN HÒA
-            'losses' => $played - $wins - $draws, // ✅ SỬA CÔNG THỨC
-            'points' => $totalPoints, // ✅ Dùng điểm đã tính chính xác
-            'point_diff' => $pWon - $pLost,
-            'win_rate' => $played > 0 ? round(($wins / $played) * 100, 2) : 0,
-        ];
+        return $this->calculateStatsFromMatches($matches, $teamId);
     }
     public function getAdvancementStatus(TournamentType $tournamentType)
     {

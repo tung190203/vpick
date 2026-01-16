@@ -60,7 +60,7 @@
           <div class="px-4 space-y-1 bg-[#eceef2] rounded-br-[7px] rounded-bl-[7px] rounded-tl-[7px] rounded-tr-[7px]">
 
             <!-- HOME TEAM -->
-            <div class="space-y-1 rounded transition-all px-2 -mx-2" :class="{
+            <div v-tooltip="player.name" class="space-y-1 rounded transition-all px-2 -mx-2" :class="{
               'bg-blue-100 ring-2 ring-blue-400': isDropTarget(player.matchId, 'home'),
               'cursor-move hover:bg-gray-100': canDrag(player),
               'cursor-not-allowed': !canDrag(player)
@@ -74,7 +74,7 @@
               <div class="flex justify-between items-center pointer-events-none">
                 <div class="flex items-center gap-2">
                   <img :src="player.logo || placeholderFor(player.name)" class="w-8 h-8 rounded-full" />
-                  <p class="text-sm font-semibold text-[#3E414C]">{{ player.name }}</p>
+                  <p class="text-sm font-semibold text-[#3E414C] truncate max-w-[150px]">{{ player.name }}</p>
                 </div>
 
                 <span class="font-bold text-lg" :class="player.winnerId
@@ -89,7 +89,7 @@
             </div>
 
             <!-- AWAY TEAM -->
-            <div class="space-y-1 rounded transition-all px-2 -mx-2" :class="{
+            <div v-tooltip="player.opponent.name" class="space-y-1 rounded transition-all px-2 -mx-2" :class="{
               'bg-blue-100 ring-2 ring-blue-400': isDropTarget(player.matchId, 'away'),
               'cursor-move hover:bg-gray-100': canDrag(player),
               'cursor-not-allowed': !canDrag(player)
@@ -105,7 +105,7 @@
                 <div class="flex items-center gap-2">
                   <img :src="player.opponent.logo || placeholderFor(player.opponent.name)"
                     class="w-8 h-8 rounded-full" />
-                  <p class="text-sm font-semibold text-[#3E414C]">{{ player.opponent.name }}</p>
+                  <p class="text-sm font-semibold text-[#3E414C] truncate max-w-[150px]">{{ player.opponent.name }}</p>
                 </div>
 
                 <span class="font-bold text-lg" :class="player.winnerId
