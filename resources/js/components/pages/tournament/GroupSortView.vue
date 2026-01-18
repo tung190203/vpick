@@ -103,7 +103,7 @@
                                 @dragover.prevent="isCreator && (dropTargetTeam = team)"
                                 @dragleave="isCreator && (dropTargetTeam = null)" 
                                 @dragenter.prevent
-                                class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg group hover:bg-gray-100 transition-colors"
+                                class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg group hover:bg-gray-100 transition-colors" v-tooltip="team.team_name"
                                 :class="{
                                     'opacity-50': draggingTeam?.team_id === team.team_id,
                                     'border-2 border-blue-400 bg-blue-50': isCreator && isDragging && dropTargetTeam?.team_id === team.team_id,
