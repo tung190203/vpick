@@ -30,11 +30,11 @@ class MiniTournamentMessageSent implements ShouldBroadcast
      */
     public function broadcastOn(): array
     {
-        return [new PrivateChannel('mini-tournament.' . $this->message->tournament_id)];
+        return [new PrivateChannel('mini-tournament.' . $this->message->mini_tournament_id)];
     }
 
     public function broadcastAs()
     {
-        return 'message.sent';
+        return 'mini-tournament-sent';
     }
 }

@@ -243,7 +243,7 @@ const sendMessage = async () => {
   newMessage.value = ''
   try {
     sending.value = true
-    const res = await SendMessageService.sendMiniTournamentMessage(props.miniTournamentId, { type: 'text', content })
+    await SendMessageService.sendMiniTournamentMessage(props.miniTournamentId, { type: 'text', content })
     await nextTick()
     scrollToBottom(true)
   } catch (err) {
@@ -323,7 +323,7 @@ let echoChannel = null
 const setupRealtime = () => {
   if (!props.miniTournamentId) return
   echoChannel = window.Echo.private(`mini-tournament.${props.miniTournamentId}`)
-  echoChannel.listen('.message.sent', async (e) => {
+  echoChannel.listen('.mini-tournament-sent', async (e) => {
     const messageWithOwnership = addIsOwn(e.message)
     messages.value.push(messageWithOwnership)
     await nextTick()

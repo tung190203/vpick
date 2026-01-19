@@ -16,14 +16,17 @@
             <MiniMatchCard :matchTitle="match.name_of_match" :matchTime="formatDate(match.scheduled_at)"
                :courtName="match.competition_location?.name || 'Chưa cập nhật'"
                :miniMatchType="match.match_type"
+               :teamWinId="match.team_win_id"
                :team1="match.team1.members.map(m => ({
-                  id: m.user.id,
+                    id: m.user.id,
+                    team_id: match.team1.id,
                     name: m.user.full_name,
                     avatar: m.user.avatar_url,
                     rating: m.user.rating || 0,
                     status: m.user.visibility
                }))"
                :team2="match.team2.members.map(m => ({
+                    team_id: match.team2.id,
                     id: m.user.id,
                     name: m.user.full_name,
                     avatar: m.user.avatar_url,

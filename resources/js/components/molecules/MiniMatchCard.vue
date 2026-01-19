@@ -14,7 +14,7 @@
                     after:rotate-45 peer-checked:after:block"
             ></span>
           </label>
-          <div>
+          <div class="w-28">
             <h3 class="font-semibold text-gray-800">{{ matchTitle }}</h3>
             <p class="text-sm text-gray-500">{{ matchTime }}</p>
           </div>
@@ -28,7 +28,7 @@
       <!-- Match Teams -->
       <div class="grid grid-cols-[1fr_auto_1fr] gap-4 items-center mb-6" @click.stop>
         <!-- Team 1 -->
-        <div class="bg-gray-100 rounded-lg p-3">
+          <div class="rounded-lg p-3" :class="teamWinId === team1[0].team_id ? 'border-2 border-red-400 bg-red-50' : 'bg-gray-100'" @click.stop>
           <div class="flex justify-between gap-2">
             <UserCard
               v-for="player in team1"
@@ -55,7 +55,7 @@
         </div>
 
         <!-- Team 2 -->
-        <div class="border-2 border-red-400 bg-red-50 rounded-lg p-3" @click.stop>
+      <div class="rounded-lg p-3" :class="teamWinId === team2[0].team_id  ? 'border-2 border-red-400 bg-red-50' : 'bg-gray-100'" @click.stop>
           <div class="flex justify-between gap-2">
             <UserCard
               v-for="player in team2"
@@ -109,6 +109,7 @@ const props = defineProps({
     matchTime: String,
     courtName: String,
     miniMatchType: Number,
+    teamWinId: Number,
     team1: Array,
     team2: Array,
     sets: Array,

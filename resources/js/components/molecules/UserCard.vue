@@ -14,7 +14,7 @@
           class="w-full h-full object-cover cursor-pointer hover:scale-110 transition-transform duration-300" />
       </div>
 
-      <button 
+      <button
         v-if="!empty && showHoverDelete"
         @click.stop="showModal = true"
         class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center border-2 border-white
