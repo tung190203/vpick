@@ -42,4 +42,7 @@ return [
         'client_secret' => env('FACEBOOK_CLIENT_SECRET'),
         'redirect' => env('FACEBOOK_REDIRECT_URI'),
     ],
+    'firebase' => [
+        'project_id' => env('FIREBASE_PROJECT_ID'),
+    ]
 ];
