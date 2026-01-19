@@ -23,7 +23,9 @@ Broadcast::channel('mini-tournament.{tournamentId}', function ($user, $tournamen
     $tournament = MiniTournament::find($tournamentId);
     if (!$tournament) return false;
 
-    return $tournament?->all_users->pluck('id')->contains($user->id);
+    $hasAccess = $tournament?->all_users->pluck('id')->contains($user->id);
+
+    return $hasAccess;
 });
 
 Broadcast::channel('tournament.{tournamentId}', function ($user, $tournamentId) {
