@@ -18,6 +18,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\VerificationController;
 use App\Http\Controllers\ClubController;
 use App\Http\Controllers\CompetitionLocationYardController;
+use App\Http\Controllers\DeviceTokenController;
 use App\Http\Controllers\FacilityController;
 use App\Http\Controllers\FollowController;
 use App\Http\Controllers\HomeController;
@@ -75,6 +76,9 @@ Route::get('/verify-email', [VerificationController::class, 'verify']);
 Route::post('/resend-email', [VerificationController::class, 'resend']);
 
 Route::middleware(['auth:api'])->group(function () {
+    Route::post('/device-token/sync', [DeviceTokenController::class, 'sync']);
+    Route::post('/notifications/setting', [DeviceTokenController::class, 'update']);
+    Route::delete('/device-token/delete', [DeviceTokenController::class, 'destroy']);
     Route::get('/me', [AuthController::class, 'me']);
     Route::prefix('user')->group(function () {
         Route::match(['get', 'post'], '/index', [UserController::class, 'index']);
