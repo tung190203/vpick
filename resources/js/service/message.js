@@ -18,5 +18,10 @@ export const sendTournamentMessage = async (tournamentId, data) => {
 export const getMiniTournamentMessages = async (miniTournamentId, params) => {
   return axiosInstance.get(`${miniTournamentMessageEndpoint}/index/${miniTournamentId}`, {
     params,
-  }).then((response) => response.data.data);
+  }).then((response) => response.data);
+}
+
+export const sendMiniTournamentMessage = async (miniTournamentId, data) => {
+    return axiosInstance.post(`${miniTournamentMessageEndpoint}/${miniTournamentId}`, data)
+        .then((response) => response.data);
 }

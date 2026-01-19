@@ -26,7 +26,7 @@
       </div>
 
       <!-- Match Teams -->
-      <div class="grid grid-cols-[1fr_auto_1fr] gap-4 items-center mb-6">
+      <div class="grid grid-cols-[1fr_auto_1fr] gap-4 items-center mb-6" @click.stop>
         <!-- Team 1 -->
         <div class="bg-gray-100 rounded-lg p-3">
           <div class="flex justify-between gap-2">
@@ -41,6 +41,11 @@
               :badgeSize="5"
               :ratingSize="7"
             />
+              <div
+                  v-if="miniMatchType !== MATCH_TYPE_SINGLE && team1.length < 2"
+                  class="w-11 h-11 border-2 border-dashed border-gray-400 bg-[#EDEEF2] cursor-pointer rounded-full flex items-center justify-center">
+                  <PlusIcon class="w-11 h-11 text-gray-400"/>
+              </div>
           </div>
         </div>
 
@@ -50,7 +55,7 @@
         </div>
 
         <!-- Team 2 -->
-        <div class="border-2 border-red-400 bg-red-50 rounded-lg p-3">
+        <div class="border-2 border-red-400 bg-red-50 rounded-lg p-3" @click.stop>
           <div class="flex justify-between gap-2">
             <UserCard
               v-for="player in team2"
@@ -64,10 +69,9 @@
               :ratingSize="7"
             />
             <div
-              v-if="team2.length < 2"
-              class="w-11 h-11 border-2 border-dashed border-gray-400 bg-[#EDEEF2] cursor-pointer rounded-full flex items-center justify-center"
-            >
-              <PlusIcon class="w-6 h-6 text-gray-400" />
+              v-if="miniMatchType !== MATCH_TYPE_SINGLE && team2.length < 2"
+              class="w-11 h-11 border-2 border-dashed border-gray-400 bg-[#EDEEF2] cursor-pointer rounded-full flex items-center justify-center">
+              <PlusIcon class="w-11 h-11 text-gray-400"/>
             </div>
           </div>
         </div>
@@ -98,10 +102,13 @@
 import { CalendarIcon, PlusIcon } from '@heroicons/vue/24/outline'
 import UserCard from '@/components/molecules/UserCard.vue'
 
+const MATCH_TYPE_SINGLE = 2
+
 const props = defineProps({
     matchTitle: String,
     matchTime: String,
     courtName: String,
+    miniMatchType: Number,
     team1: Array,
     team2: Array,
     sets: Array,
