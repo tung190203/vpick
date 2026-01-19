@@ -3,6 +3,7 @@
 namespace App\Console;
 
 use App\Jobs\SendMiniTournamentRemindersJob;
+use App\Models\DeviceToken;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -15,6 +16,9 @@ class Kernel extends ConsoleKernel
     {
         // $schedule->command('inspire')->hourly();
         $schedule->job(new SendMiniTournamentRemindersJob())->everyMinute();
+        $schedule->call(function () {
+            DeviceToken::where('last_seen_at', '<', now()->subDays(60))->delete();
+        })->daily();        
     }
 
     /**
