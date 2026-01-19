@@ -33,6 +33,7 @@ import * as MiniTournamentStaffService from '@/service/miniTournamentStaff.js';
 import QRcodeModal from '@/components/molecules/QRcodeModal.vue';
 import DeleteConfirmationModal from '@/components/molecules/DeleteConfirmationModal.vue';
 import MiniMatchScheduleTab from '@/components/molecules/mini-match-schedule-tab/MiniMatchScheduleTab.vue'
+import ChatFormMiniTournament from '@/components/organisms/ChatFormMiniTournament.vue'
 
 export default {
     name: 'MiniTournamentDetail',
@@ -61,7 +62,8 @@ export default {
         UserCard,
         InviteGroup,
         ShareAction,
-        DeleteConfirmationModal
+        DeleteConfirmationModal,
+        ChatFormMiniTournament
     },
 
     setup() {
@@ -478,6 +480,7 @@ export default {
             CreditCardIcon,
             ClipboardDocumentCheckIcon,
             FaceSmileIcon,
+            ChatFormMiniTournament,
             DeleteConfirmationModal,
             QRcodeModal,
             UserCard,

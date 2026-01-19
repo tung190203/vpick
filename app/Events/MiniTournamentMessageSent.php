@@ -35,6 +35,6 @@ class MiniTournamentMessageSent implements ShouldBroadcast
 
     public function broadcastAs()
     {
-        return 'message.sent';
+        return 'mini-tournament-sent';
     }
 }
