@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\MiniMatchResource;
+use App\Models\DeviceToken;
 use App\Models\MiniMatch;
 use App\Models\MiniMatchResult;
 use App\Models\MiniParticipant;
@@ -14,6 +15,7 @@ use App\Models\VnduprHistory;
 use App\Notifications\MiniMatchCreatedNotification;
 use App\Notifications\MiniMatchResultConfirmedNotification;
 use App\Notifications\MiniMatchUpdatedNotification;
+use App\Services\FirebaseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -523,6 +525,59 @@ class MiniMatchController extends Controller
             }
         }
 
+        $confirmedByOrganizer = $isOrganizer;
+        $confirmedByPlayer    = !$isOrganizer && $userTeam;
+        $actorName = auth()->user()->full_name;
+
+        if ($confirmedByPlayer) {
+
+            $opponentTeam = $userTeam->id === $match->team1_id
+                ? $match->team2
+                : $match->team1;
+        
+            $recipientIds = $opponentTeam->members()
+                ->where('user_id', '!=', $currentUserId)
+                ->pluck('user_id')
+                ->toArray();
+        
+            $this->pushToUsers(
+                $recipientIds,
+                'Xác nhận kết quả kèo đấu',
+                "{$actorName} đã xác nhận kết quả kèo đấu",
+                [
+                    'type' => 'MINI_MATCH_CONFIRM',
+                    'match_id' => $match->id,
+                    'by' => 'player',
+                ]
+            );
+        }
+
+        if ($confirmedByOrganizer) {
+
+            $team1UserIds = $match->team1->members()
+                ->where('user_id', '!=', $currentUserId)
+                ->pluck('user_id')
+                ->toArray();
+        
+            $team2UserIds = $match->team2->members()
+                ->where('user_id', '!=', $currentUserId)
+                ->pluck('user_id')
+                ->toArray();
+        
+            $recipientIds = array_unique(array_merge($team1UserIds, $team2UserIds));
+        
+            $this->pushToUsers(
+                $recipientIds,
+                'Kết quả kèo đấu đã được xác nhận',
+                'Ban tổ chức đã xác nhận kết quả kèo đấu',
+                [
+                    'type' => 'MINI_MATCH_CONFIRM',
+                    'match_id' => $match->id,
+                    'by' => 'organizer',
+                ]
+            );
+        }        
+
         return ResponseHelper::success(
             new MiniMatchResource($result->refresh()),
             'Xác nhận kết quả thành công'
@@ -914,5 +969,29 @@ class MiniMatchController extends Controller
             200,
             $paginationMeta
         );
+    }
+
+    private function pushToUsers(array $userIds, string $title, string $body, array $data = [])
+    {
+        $devices = DeviceToken::whereIn('user_id', $userIds)
+            ->where('is_enabled', true)
+            ->get();
+
+        if ($devices->isEmpty()) return;
+
+        $firebase = app(FirebaseService::class);
+
+        foreach ($devices as $device) {
+            try {
+                $firebase->sendToUser(
+                    $device->token,
+                    $title,
+                    $body,
+                    $data
+                );
+            } catch (\Throwable $e) {
+                $device->update(['is_enabled' => false]);
+            }
+        }
     }
 }

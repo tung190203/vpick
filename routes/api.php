@@ -27,6 +27,7 @@ use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MiniTournamentController;
 use App\Http\Controllers\SendMessageController;
 use App\Http\Controllers\SportController;
+use App\Http\Controllers\SystemNotificationController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TournamentStaffController;
 use Illuminate\Support\Facades\Route;
@@ -263,5 +264,9 @@ Route::middleware(['auth:api'])->group(function () {
 
     Route::prefix('banners')->group(function () {
         Route::post('/store', [BannerController::class, 'store']);
+    });
+
+    Route::prefix('system-notification')->group(function () {
+        Route::post('/create', [SystemNotificationController::class, 'store']);
     });
 });
