@@ -14,8 +14,8 @@
                     after:rotate-45 peer-checked:after:block"
             ></span>
           </label>
-          <div class="w-28">
-            <h3 class="font-semibold text-gray-800">{{ matchTitle }}</h3>
+          <div class="min-w-[7rem] max-w-[7.5rem]">
+            <h3 class="font-semibold text-gray-800 break-words whitespace-normal">{{ matchTitle }}</h3>
             <p class="text-sm text-gray-500">{{ matchTime }}</p>
           </div>
         </div>
@@ -26,9 +26,9 @@
       </div>
 
       <!-- Match Teams -->
-      <div class="grid grid-cols-[1fr_auto_1fr] gap-4 items-center mb-6" @click.stop>
+      <div class="grid grid-cols-[1fr_auto_1fr] gap-4 items-center mb-6">
         <!-- Team 1 -->
-          <div class="rounded-lg p-3" :class="teamWinId === team1[0].team_id ? 'border-2 border-red-400 bg-red-50' : 'bg-gray-100'" @click.stop>
+          <div class="rounded-lg p-3" :class="teamWinId === team1[0].team_id ? 'border-2 border-red-400 bg-red-50' : 'bg-gray-100'">
           <div class="flex justify-between gap-2">
             <UserCard
               v-for="player in team1"
@@ -40,6 +40,7 @@
               :size="11"
               :badgeSize="5"
               :ratingSize="7"
+              :flagDelete="false"
             />
               <div
                   v-if="miniMatchType !== MATCH_TYPE_SINGLE && team1.length < 2"
@@ -55,7 +56,7 @@
         </div>
 
         <!-- Team 2 -->
-      <div class="rounded-lg p-3" :class="teamWinId === team2[0].team_id  ? 'border-2 border-red-400 bg-red-50' : 'bg-gray-100'" @click.stop>
+      <div class="rounded-lg p-3" :class="teamWinId === team2[0].team_id  ? 'border-2 border-red-400 bg-red-50' : 'bg-gray-100'">
           <div class="flex justify-between gap-2">
             <UserCard
               v-for="player in team2"
@@ -67,6 +68,7 @@
               :size="11"
               :badgeSize="5"
               :ratingSize="7"
+              :flagDelete="false"
             />
             <div
               v-if="miniMatchType !== MATCH_TYPE_SINGLE && team2.length < 2"

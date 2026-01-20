@@ -8,13 +8,14 @@ import CreateMiniMatch from '@/components/molecules/create-mini-match/CreateMini
 import UpdateMiniMatch from '@/components/molecules/update-mini-match/UpdateMiniMatch.vue';
 import {toast} from "vue3-toastify";
 import * as MiniMatchService from '@/service/miniMatch.js';
-import {ChevronRightIcon} from "@heroicons/vue/24/solid/index.js";
+import {ChevronLeftIcon, ChevronRightIcon} from "@heroicons/vue/24/solid/index.js";
 import DeleteConfirmationModal from '@/components/molecules/DeleteConfirmationModal.vue'
 
 
 export default {
     name: 'MiniTournamentDetail',
     components: {
+        ChevronLeftIcon,
         ChevronRightIcon,
         MiniMatchCard,
         CreateMiniMatch,
@@ -29,6 +30,10 @@ export default {
         data: {
             type: Object,
             required: true
+        },
+        sportId: {
+            type: Number,
+            required: false
         }
     },
 
@@ -60,6 +65,13 @@ export default {
             } catch (error) {
                 toast.error(error.response?.data?.message || 'Lấy trận thi đấu thất bại');
             }
+        }
+
+        const getUserRatingBySport = (user, sportId) => {
+            if (!user?.sports || !sportId) return 0
+
+            const sport = user.sports.find(s => s.sport_id === sportId)
+            return Number(sport?.scores?.vndupr_score).toFixed(1) ?? 0
         }
 
         const getMyMiniMatches = async (miniTournamentId) => {
@@ -237,7 +249,8 @@ export default {
             showMiniMatchDetail,
             detailData,
             props,
-            onMiniMatchCreated
+            onMiniMatchCreated,
+            getUserRatingBySport
         }
     }
 }

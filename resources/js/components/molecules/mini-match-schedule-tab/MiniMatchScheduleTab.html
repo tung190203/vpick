@@ -22,7 +22,7 @@
                     team_id: match.team1.id,
                     name: m.user.full_name,
                     avatar: m.user.avatar_url,
-                    rating: m.user.rating || 0,
+                    rating: getUserRatingBySport(m.user, props.sportId),
                     status: m.user.visibility
                }))"
                :team2="match.team2.members.map(m => ({
@@ -30,7 +30,7 @@
                     id: m.user.id,
                     name: m.user.full_name,
                     avatar: m.user.avatar_url,
-                    rating: m.user.rating || 0,
+                    rating: getUserRatingBySport(m.user, props.sportId),
                     status: m.user.visibility
                }))"
                :sets="buildSets(match)"
@@ -83,7 +83,7 @@
                   id: m.user.id,
                     name: m.user.full_name,
                     avatar: m.user.avatar_url,
-                    rating: m.user.rating || 0,
+                    rating: m.user.sports?.[0]?.scores?.vndupr_score || 0,
                     status: m.user.visibility
                }))"
                :team2="miniMatch.team2.members.map(m => ({
