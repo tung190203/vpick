@@ -3,9 +3,16 @@ import {API_ENDPOINT} from "@/constants/index.js";
 
 const miniMatchEndpoint = API_ENDPOINT.MINI_MATCHES;
 
-export const getListMiniMatches = async(mini_tournament_id, filter = '') => {
-
-    return axiosInstance.get(`${miniMatchEndpoint}/index/${mini_tournament_id}${filter}`).then((response) => response.data);
+export const getListMiniMatches = async (mini_tournament_id, { page = 1, filter = '' } = {}) => {
+    return axiosInstance.get(
+        `${miniMatchEndpoint}/index/${mini_tournament_id}`,
+        {
+            params: {
+                page,
+                filter
+            }
+        }
+    ).then(res => res.data)
 }
 
 export const deleteMiniMatches = async(data) => {
