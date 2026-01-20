@@ -15,7 +15,7 @@
       </div>
 
       <button
-        v-if="!empty && showHoverDelete"
+        v-if="!empty && showHoverDelete && flagDelete"
         @click.stop="showModal = true"
         class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center border-2 border-white
               opacity-0 group-hover:opacity-100 transition-opacity">
@@ -115,6 +115,10 @@ const props = defineProps({
     type: String,
     default: false,
   },
+    flagDelete: {
+        type: Boolean,
+        default: true,
+    },
 })
 
 const emit = defineEmits(['clickEmpty', 'removeUser'])

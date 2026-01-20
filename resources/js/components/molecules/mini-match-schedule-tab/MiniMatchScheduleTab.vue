@@ -8,13 +8,14 @@ import CreateMiniMatch from '@/components/molecules/create-mini-match/CreateMini
 import UpdateMiniMatch from '@/components/molecules/update-mini-match/UpdateMiniMatch.vue';
 import {toast} from "vue3-toastify";
 import * as MiniMatchService from '@/service/miniMatch.js';
-import {ChevronRightIcon} from "@heroicons/vue/24/solid/index.js";
+import {ChevronLeftIcon, ChevronRightIcon} from "@heroicons/vue/24/solid/index.js";
 import DeleteConfirmationModal from '@/components/molecules/DeleteConfirmationModal.vue'
 
 
 export default {
     name: 'MiniTournamentDetail',
     components: {
+        ChevronLeftIcon,
         ChevronRightIcon,
         MiniMatchCard,
         CreateMiniMatch,
@@ -29,6 +30,10 @@ export default {
         data: {
             type: Object,
             required: true
+        },
+        sportId: {
+            type: Number,
+            required: false
         }
     },
 
@@ -52,23 +57,88 @@ export default {
             showDeleteModal.value = true;
         };
 
-        const getMiniMatches = async (miniTournamentId) => {
+        const pagination = ref({
+            current_page: 1,
+            last_page: 1,
+            per_page: 10,
+            total: 0
+        })
+
+        const visiblePages = computed(() => {
+            const total = pagination.value.last_page
+            const current = pagination.value.current_page
+            const delta = 2
+
+            if (total <= 7) {
+                return Array.from({ length: total }, (_, i) => i + 1)
+            }
+
+            const pages = []
+            const left = Math.max(2, current - delta)
+            const right = Math.min(total - 1, current + delta)
+
+            pages.push(1)
+            if (left > 2) pages.push('...')
+
+            for (let i = left; i <= right; i++) {
+                pages.push(i)
+            }
+
+            if (right < total - 1) pages.push('...')
+            pages.push(total)
+
+            return pages
+        })
+
+        const getMiniMatches = async (miniTournamentId, page = 1) => {
             try {
-                const response = await MiniMatchService.getListMiniMatches(miniTournamentId)
-                miniMatches.value = response.data.matches;
-                countMiniMatches.value = response.meta.total;
+                const res = await MiniMatchService.getListMiniMatches(
+                    miniTournamentId,
+                    { page }
+                )
+
+                miniMatches.value = res.data.matches
+                pagination.value = res.meta
+                countMiniMatches.value = res.meta.total
+                selectedMiniMatches.value = []
             } catch (error) {
                 toast.error(error.response?.data?.message || 'Lấy trận thi đấu thất bại');
             }
         }
 
-        const getMyMiniMatches = async (miniTournamentId) => {
+        const getUserRatingBySport = (user, sportId) => {
+            if (!user?.sports || !sportId) return 0
+
+            const sport = user.sports.find(s => s.sport_id === sportId)
+            return Number(sport?.scores?.vndupr_score).toFixed(1) ?? 0
+        }
+
+        const getMyMiniMatches = async (miniTournamentId, page = 1) => {
             try {
-                const response = await MiniMatchService.getListMiniMatches(miniTournamentId, "?filter=my_matches");
-                scheduledMyMiniMatches.value = response.data.matches;
-                countMyMiniMatches.value = response.meta.total;
+                const res = await MiniMatchService.getListMiniMatches(
+                    miniTournamentId,
+                    { page, filter: 'my_matches' }
+                )
+                scheduledMyMiniMatches.value = res.data.matches
+                pagination.value = res.meta
+                countMyMiniMatches.value = res.meta.total
+                selectedMiniMatches.value = []
             } catch (error) {
                 toast.error(error.response?.data?.message || 'Lấy trận thi đấu thất bại');
+            }
+        }
+
+        const changePage = (page) => {
+            if (page < 1 || page > pagination.value.last_page) return
+
+            pagination.value.current_page = page
+
+            if (subActiveTab.value === 'match') {
+                getMiniMatches(props.data.id, page)
+            }
+
+            if (subActiveTab.value === 'your-match') {
+                getMyMiniMatches(props.data.id, page)
             }
         }
 
@@ -199,17 +269,34 @@ export default {
             }
         }
 
+        watch(subActiveTab, () => {
+            pagination.value.current_page = 1
+            selectedMiniMatches.value = []
+
+            if (!props.data?.id) return
+
+            if (subActiveTab.value === 'match') {
+                getMiniMatches(props.data.id, 1)
+            } else if (subActiveTab.value === 'your-match') {
+                getMyMiniMatches(props.data.id, 1)
+            }
+        })
+
         watch(
             () => props.data?.id,
-            async (miniTournamentId) => {
-                if (miniTournamentId) {
-                    await getMiniMatches(miniTournamentId);
-                    await getMyMiniMatches(miniTournamentId);
+            (miniTournamentId) => {
+                if (!miniTournamentId) return
+
+                pagination.value.current_page = 1
+
+                if (subActiveTab.value === 'your-match') {
+                    getMyMiniMatches(miniTournamentId, 1)
+                } else {
+                    getMiniMatches(miniTournamentId, 1)
                 }
             },
-
-            { immediate: true, deep: true }
-        );
+            { immediate: true }
+        )
 
         return {
             MiniMatchCard,
@@ -237,7 +324,11 @@ export default {
             showMiniMatchDetail,
             detailData,
             props,
-            onMiniMatchCreated
+            onMiniMatchCreated,
+            getUserRatingBySport,
+            pagination,
+            visiblePages,
+            changePage
         }
     }
 }

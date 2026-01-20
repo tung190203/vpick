@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\MatchDetailResource;
 use App\Http\Resources\MatchesResource;
+use App\Models\DeviceToken;
 use App\Models\Matches;
 use App\Models\Team;
 use App\Models\TeamRanking;
@@ -13,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\PoolAdvancementRule;
 use App\Models\VnduprHistory;
+use App\Services\FirebaseService;
 use App\Services\TournamentService;
 use Illuminate\Support\Facades\Auth;
 
@@ -996,6 +998,48 @@ class MatchesController extends Controller
 
         $match->save();
 
+        $confirmedByAdmin = $isOrganizer;
+        $confirmedByUser  = !$isOrganizer && $userTeam;
+
+        if ($confirmedByUser) {
+
+            $opponentTeam = $userTeam->id == $match->home_team_id
+                ? $match->awayTeam
+                : $match->homeTeam;
+        
+            $opponentUserIds = $opponentTeam->members->pluck('user_id')->toArray();
+        
+            $this->pushToUsers(
+                $opponentUserIds,
+                'Xác nhận kết quả trận đấu',
+                Auth::user()->full_name . ' đã xác nhận kết quả trận đấu. Vui lòng xác nhận kết quả',
+                [
+                    'type' => 'MATCH_CONFIRM',
+                    'match_id' => $match->id,
+                    'by' => 'player',
+                ]
+            );
+        }
+
+        if ($confirmedByAdmin) {
+
+            $homeUserIds = $match->homeTeam->members->pluck('user_id')->toArray();
+            $awayUserIds = $match->awayTeam->members->pluck('user_id')->toArray();
+        
+            $allUserIds = array_unique(array_merge($homeUserIds, $awayUserIds));
+        
+            $this->pushToUsers(
+                $allUserIds,
+                'Kết quả trận đấu đã được xác nhận',
+                'Ban tổ chức đã xác nhận kết quả trận đấu',
+                [
+                    'type' => 'MATCH_CONFIRM',
+                    'match_id' => $match->id,
+                    'by' => 'admin',
+                ]
+            );
+        }        
+
         return ResponseHelper::success(
             new MatchesResource($match->fresh('results')),
             'Xác nhận kết quả thành công'
@@ -1872,6 +1916,30 @@ class MatchesController extends Controller
             }
     
             $thirdMatch->update($updateData);
+        }
+    }
+
+    private function pushToUsers(array $userIds, string $title, string $body, array $data = [])
+    {
+        $devices = DeviceToken::whereIn('user_id', $userIds)
+            ->where('is_enabled', true)
+            ->get();
+
+        if ($devices->isEmpty()) return;
+
+        $firebase = app(FirebaseService::class);
+
+        foreach ($devices as $device) {
+            try {
+                $firebase->sendToUser(
+                    $device->token,
+                    $title,
+                    $body,
+                    $data
+                );
+            } catch (\Throwable $e) {
+                $device->update(['is_enabled' => false]);
+            }
         }
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\ListParticipantResource;
 use App\Http\Resources\ParticipantResource;
+use App\Models\DeviceToken;
 use App\Models\Participant;
 use App\Models\SuperAdminDraft;
 use App\Models\Tournament;
@@ -14,6 +15,7 @@ use App\Notifications\TournamentInvitationNotification;
 use App\Notifications\TournamentJoinConfirmedNotification;
 use App\Notifications\TournamentJoinRequestNotification;
 use App\Notifications\TournamentRemovedNotification;
+use App\Services\FirebaseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -201,12 +203,46 @@ class ParticipantController extends Controller
             'is_confirmed' => $tournament->auto_approve && !$tournament->is_private,
         ]);
 
+        $organizers = $tournament->staff()->wherePivot('role', TournamentStaff::ROLE_ORGANIZER)->get();
         if(!$participant->is_confirmed){
-            $organizers = $tournament->staff()->wherePivot('role', TournamentStaff::ROLE_ORGANIZER)->get();
-            foreach($organizers as $organizer){
-                if($organizer->id != Auth::id()){
-                    $organizer->notify( new TournamentJoinRequestNotification($participant));                    
+            foreach ($organizers as $organizer) {
+                if ($organizer->id === Auth::id()) {
+                    continue;
                 }
+        
+                // 📩 Notification DB
+                $organizer->notify(
+                    new TournamentJoinRequestNotification($participant)
+                );
+        
+                // 🔔 PUSH
+                $this->pushToUsers(
+                    [$organizer->id],
+                    'Yêu cầu tham gia giải đấu',
+                    $user->full_name . ' yêu cầu tham gia giải "' . $tournament->name . '"',
+                    [
+                        'type' => 'TOURNAMENT_JOIN_REQUEST',
+                        'tournament_id' => $tournament->id,
+                        'participant_id' => $participant->id,
+                    ]
+                );
+            }
+        }else {
+            foreach ($organizers as $organizer) {
+                if ($organizer->id === Auth::id()) {
+                    continue;
+                }
+        
+                $this->pushToUsers(
+                    [$organizer->id],
+                    'Người tham gia mới',
+                    $user->full_name . ' đã tham gia giải "' . $tournament->name . '"',
+                    [
+                        'type' => 'TOURNAMENT_JOINED',
+                        'tournament_id' => $tournament->id,
+                        'participant_id' => $participant->id,
+                    ]
+                );
             }
         }
 
@@ -678,5 +714,29 @@ class ParticipantController extends Controller
             'per_page'     => $paginated->perPage(),
             'total'        => $paginated->total(),
         ]);
+    }
+
+    private function pushToUsers(array $userIds, string $title, string $body, array $data = [])
+    {
+        if (empty($userIds)) return;
+
+        $devices = DeviceToken::whereIn('user_id', $userIds)
+            ->where('is_enabled', true)
+            ->get();
+
+        $firebase = app(FirebaseService::class);
+
+        foreach ($devices as $device) {
+            try {
+                $firebase->sendToUser(
+                    $device->token,
+                    $title,
+                    $body,
+                    $data
+                );
+            } catch (\Throwable $e) {
+                $device->update(['is_enabled' => false]);
+            }
+        }
     }
 }
