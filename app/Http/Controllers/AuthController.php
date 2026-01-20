@@ -4,11 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\UserResource;
+use App\Jobs\SendPushJob;
 use App\Mail\ResetPasswordMail;
 use App\Models\DeviceToken;
 use App\Models\User;
 use App\Notifications\VerifyEmailNotification;
-use App\Services\FirebaseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -677,27 +677,19 @@ class AuthController extends Controller
         $oldDevices = DeviceToken::where('user_id', $user->id)
             ->where('token', '!=', $currentToken)
             ->where('is_enabled', true)
-            ->get();
-
-        if ($oldDevices->isNotEmpty()) {
-            $firebase = app(FirebaseService::class);
-
-            foreach ($oldDevices as $device) {
-                try {
-                    $firebase->sendToUser(
-                        $device->token,
-                        'Đăng nhập thiết bị mới',
-                        'Tài khoản của bạn vừa được đăng nhập trên một thiết bị khác',
-                        [
-                            'type' => 'NEW_DEVICE_LOGIN',
-                            'platform' => $platform,
-                            'time' => now()->toDateTimeString(),
-                        ]
-                    );
-                } catch (\Throwable $e) {
-                    $device->update(['is_enabled' => false]);
-                }
-            }
+            ->exists();
+    
+        if ($oldDevices) {
+            SendPushJob::dispatch(
+                $user->id,
+                'Đăng nhập thiết bị mới',
+                'Tài khoản của bạn vừa được đăng nhập trên một thiết bị khác',
+                [
+                    'type' => 'NEW_DEVICE_LOGIN',
+                    'platform' => $platform,
+                    'time' => now()->toDateTimeString(),
+                ]
+            );
         }
 
         DeviceToken::updateOrCreate(

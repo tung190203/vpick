@@ -6,7 +6,7 @@ use App\Helpers\ResponseHelper;
 use App\Models\MiniParticipant;
 use App\Models\MiniTournament;
 use App\Http\Resources\MiniParticipantResource;
-use App\Models\DeviceToken;
+use App\Jobs\SendPushJob;
 use App\Models\MiniTournamentStaff;
 use App\Models\SuperAdminDraft;
 use App\Models\User;
@@ -14,7 +14,6 @@ use App\Notifications\MiniTournamentCreatorInvitationNotification;
 use App\Notifications\MiniTournamentJoinConfirmedNotification;
 use App\Notifications\MiniTournamentJoinRequestNotification;
 use App\Notifications\MiniTournamentRemovedNotification;
-use App\Services\FirebaseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -662,25 +661,8 @@ class MiniParticipantController extends Controller
 
     private function pushToUsers(array $userIds, string $title, string $body, array $data = [])
     {
-        if (empty($userIds)) return;
-
-        $devices = DeviceToken::whereIn('user_id', $userIds)
-            ->where('is_enabled', true)
-            ->get();
-
-        $firebase = app(FirebaseService::class);
-
-        foreach ($devices as $device) {
-            try {
-                $firebase->sendToUser(
-                    $device->token,
-                    $title,
-                    $body,
-                    $data
-                );
-            } catch (\Throwable $e) {
-                $device->update(['is_enabled' => false]);
-            }
+        foreach ($userIds as $userId) {
+            SendPushJob::dispatch($userId, $title, $body, $data);
         }
     }
 }

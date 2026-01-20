@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\MatchDetailResource;
 use App\Http\Resources\MatchesResource;
-use App\Models\DeviceToken;
+use App\Jobs\SendPushJob;
 use App\Models\Matches;
 use App\Models\Team;
 use App\Models\TeamRanking;
@@ -14,7 +14,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\PoolAdvancementRule;
 use App\Models\VnduprHistory;
-use App\Services\FirebaseService;
 use App\Services\TournamentService;
 use Illuminate\Support\Facades\Auth;
 
@@ -1921,25 +1920,8 @@ class MatchesController extends Controller
 
     private function pushToUsers(array $userIds, string $title, string $body, array $data = [])
     {
-        $devices = DeviceToken::whereIn('user_id', $userIds)
-            ->where('is_enabled', true)
-            ->get();
-
-        if ($devices->isEmpty()) return;
-
-        $firebase = app(FirebaseService::class);
-
-        foreach ($devices as $device) {
-            try {
-                $firebase->sendToUser(
-                    $device->token,
-                    $title,
-                    $body,
-                    $data
-                );
-            } catch (\Throwable $e) {
-                $device->update(['is_enabled' => false]);
-            }
+        foreach ($userIds as $userId) {
+            SendPushJob::dispatch($userId, $title, $body, $data);
         }
     }
 }
