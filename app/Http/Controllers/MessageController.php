@@ -6,9 +6,11 @@ use App\Events\ConversationRead;
 use App\Events\MessageSent;
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\PrivateMessageResource;
+use App\Models\DeviceToken;
 use App\Models\Message;
 use App\Models\User;
 use App\Notifications\PrivateMessageNotification;
+use App\Services\FirebaseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -43,6 +45,22 @@ class MessageController extends Controller
 
         $receiver = User::find($request->receiver_id);
         $receiver->notify(new PrivateMessageNotification($message));
+        $sender = auth()->user();
+        $pushBody = $message->message
+            ? $message->message
+            : 'Đã gửi một tệp đính kèm';
+
+        $this->pushToUser(
+            $receiver->id,
+            $sender->full_name,
+            $pushBody,
+            [
+                'type' => 'PRIVATE_MESSAGE',
+                'sender_id' => $sender->id,
+                'conversation_with' => $sender->id,
+                'message_id' => $message->id,
+            ]
+        );
 
         broadcast(new MessageSent($message))->toOthers();
 
@@ -100,5 +118,29 @@ class MessageController extends Controller
         ];
     
         return ResponseHelper::success($data, 'Lấy cuộc trò chuyện thành công', 200, $meta);
+    }
+
+    private function pushToUser(int $userId, string $title, string $body, array $data = [])
+    {
+        $devices = DeviceToken::where('user_id', $userId)
+            ->where('is_enabled', true)
+            ->get();
+
+        if ($devices->isEmpty()) return;
+
+        $firebase = app(FirebaseService::class);
+
+        foreach ($devices as $device) {
+            try {
+                $firebase->sendToUser(
+                    $device->token,
+                    $title,
+                    $body,
+                    $data
+                );
+            } catch (\Throwable $e) {
+                $device->update(['is_enabled' => false]);
+            }
+        }
     }
 }

@@ -97,4 +97,44 @@ class FirebaseService
                 $this->sendToDevice($device, $title, $body, $data)
             );
     }
+
+    public function sendToTopic(
+        string $topic,
+        string $title,
+        string $body,
+        array $data = []
+    ): bool {
+        $url = "https://fcm.googleapis.com/v1/projects/{$this->projectId}/messages:send";
+    
+        $payload = [
+            'message' => [
+                'topic' => $topic,
+                'notification' => [
+                    'title' => $title,
+                    'body' => $body,
+                    'sound' => 'noti_sound'
+                ],
+                'data' => array_map('strval', $data),
+            ],
+        ];
+    
+        try {
+            (new Client())->post($url, [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $this->getAccessToken(),
+                    'Content-Type' => 'application/json',
+                ],
+                'json' => $payload,
+            ]);
+    
+            return true;
+        } catch (\Throwable $e) {
+            Log::error('FCM topic push failed', [
+                'topic' => $topic,
+                'error' => $e->getMessage(),
+            ]);
+    
+            return false;
+        }
+    }
 }

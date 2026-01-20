@@ -6,6 +6,7 @@ use App\Helpers\ResponseHelper;
 use App\Models\MiniParticipant;
 use App\Models\MiniTournament;
 use App\Http\Resources\MiniParticipantResource;
+use App\Models\DeviceToken;
 use App\Models\MiniTournamentStaff;
 use App\Models\SuperAdminDraft;
 use App\Models\User;
@@ -13,6 +14,7 @@ use App\Notifications\MiniTournamentCreatorInvitationNotification;
 use App\Notifications\MiniTournamentJoinConfirmedNotification;
 use App\Notifications\MiniTournamentJoinRequestNotification;
 use App\Notifications\MiniTournamentRemovedNotification;
+use App\Services\FirebaseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -65,6 +67,7 @@ class MiniParticipantController extends Controller
         $miniTournament = MiniTournament::with('staff')->findOrFail($tournamentId);
 
         $this->checkMaxPlayers($miniTournament);
+        $organizerIds = $miniTournament->staff->where('role', MiniTournamentStaff::ROLE_ORGANIZER)->pluck('user_id')->unique()->toArray();
 
         $exists = MiniParticipant::where('mini_tournament_id', $tournamentId)
             ->where('user_id', Auth::id())
@@ -80,9 +83,37 @@ class MiniParticipantController extends Controller
             'is_confirmed' => $miniTournament->auto_approve && !$miniTournament->is_private,
         ]);
 
+        $organizerIds = $miniTournament->staff
+        ->where('role', MiniTournamentStaff::ROLE_ORGANIZER)
+        ->pluck('user_id')
+        ->toArray();
         if (!$participant->is_confirmed) {
             $this->notifyOrganizersJoinRequest($miniTournament, $participant);
+
+            $this->pushToUsers(
+                $organizerIds,
+                'Yêu cầu tham gia kèo đấu',
+                auth()->user()->full_name . ' muốn tham gia kèo đấu',
+                [
+                    'type' => 'MINI_TOURNAMENT_JOIN_REQUEST',
+                    'mini_tournament_id' => $miniTournament->id,
+                    'participant_id' => $participant->id,
+                ]
+            );
         }
+
+        if ($participant->is_confirmed) {
+            $this->pushToUsers(
+                $organizerIds,
+                'Người tham gia mới',
+                auth()->user()->full_name. 'đã tham gia kèo đấu "' . $miniTournament->name. '"',
+                [
+                    'type' => 'MINI_TOURNAMENT_JOINED',
+                    'mini_tournament_id' => $miniTournament->id,
+                    'participant_id' => $participant->id,
+                ]
+            );
+        }        
 
         return ResponseHelper::success(
             new MiniParticipantResource($participant->loadFullRelations()),
@@ -123,10 +154,26 @@ class MiniParticipantController extends Controller
             'is_confirmed' => $isSuperAdmin,
             'invited_by' => Auth::id(),
         ]);
-
-        User::find($validated['user_id'])
-            ->notify(new MiniTournamentCreatorInvitationNotification($participant));
-
+    
+        $user = User::find($validated['user_id']);
+    
+        // 📩 Notification DB
+        $user->notify(
+            new MiniTournamentCreatorInvitationNotification($participant)
+        );
+    
+        // 🔔 PUSH Notification
+        $this->pushToUsers(
+            [$user->id],
+            'Lời mời tham gia kèo đấu',
+            'Bạn được mời tham gia kèo đấu "' . $miniTournament->name . '"',
+            [
+                'type' => 'MINI_TOURNAMENT_INVITED',
+                'mini_tournament_id' => $miniTournament->id,
+                'participant_id' => $participant->id,
+            ]
+        );
+    
         return ResponseHelper::success(
             new MiniParticipantResource($participant->loadFullRelations()),
             'Đã gửi lời mời',
@@ -160,6 +207,17 @@ class MiniParticipantController extends Controller
             new MiniTournamentJoinConfirmedNotification($participant)
         );
 
+        $this->pushToUsers(
+            [$participant->user_id],
+            'Đã được duyệt tham gia',
+            'Bạn đã được duyệt tham gia kèo đấu',
+            [
+                'type' => 'MINI_TOURNAMENT_JOIN_CONFIRMED',
+                'mini_tournament_id' => $participant->mini_tournament_id,
+                'participant_id' => $participant->id,
+            ]
+        );
+
         return ResponseHelper::success(
             new MiniParticipantResource($participant->loadFullRelations()),
             'Duyệt thành công'
@@ -188,6 +246,22 @@ class MiniParticipantController extends Controller
 
         $participant->update(['is_confirmed' => true]);
 
+        $organizerIds = $participant->miniTournament->staff
+            ->where('role', MiniTournamentStaff::ROLE_ORGANIZER)
+            ->pluck('user_id')
+            ->toArray();
+
+        $this->pushToUsers(
+            $organizerIds,
+            'Lời mời được chấp nhận',
+            auth()->user()->full_name . ' đã chấp nhận lời mời tham gia',
+            [
+                'type' => 'MINI_TOURNAMENT_INVITE_ACCEPTED',
+                'mini_tournament_id' => $participant->mini_tournament_id,
+                'participant_id' => $participant->id,
+            ]
+        );
+
         return ResponseHelper::success(
             new MiniParticipantResource($participant->loadFullRelations()),
             'Chấp nhận lời mời thành công'
@@ -204,6 +278,18 @@ class MiniParticipantController extends Controller
         if ($participant->user_id !== Auth::id()) {
             return ResponseHelper::error('Không có quyền', 403);
         }
+
+        $organizerIds = $participant->miniTournament->staff->where('role', MiniTournamentStaff::ROLE_ORGANIZER)->pluck('user_id')->toArray();
+
+        $this->pushToUsers(
+            $organizerIds,
+            'Lời mời bị từ chối',
+            auth()->user()->full_name . ' đã từ chối lời mời tham gia',
+            [
+                'type' => 'MINI_TOURNAMENT_INVITE_DECLINED',
+                'mini_tournament_id' => $participant->mini_tournament_id,
+            ]
+        );
 
         $participant->delete();
 
@@ -227,6 +313,16 @@ class MiniParticipantController extends Controller
             new MiniTournamentRemovedNotification($participant)
         );
 
+        $this->pushToUsers(
+            [$participant->user_id],
+            'Bị xóa khỏi kèo đấu',
+            'Bạn đã bị xóa khỏi kèo đấu',
+            [
+                'type' => 'MINI_TOURNAMENT_REMOVED',
+                'mini_tournament_id' => $participant->mini_tournament_id,
+            ]
+        );
+
         return ResponseHelper::success(null, 'Đã xóa người tham gia');
     }
 
@@ -241,7 +337,7 @@ class MiniParticipantController extends Controller
         if (!$isOrganizer) {
             return ResponseHelper::error('Bạn không có quyền xoá nhân viên này', 403);
         }
-        if( $tournamentStaff->role === 'organizer') {
+        if( $tournamentStaff->role === MiniTournamentStaff::ROLE_ORGANIZER) {
             return ResponseHelper::error('Không thể xoá nhân viên với vai trò tổ chức', 400);
         }
         if ($tournamentStaff->user_id === Auth::id()) {
@@ -560,6 +656,30 @@ class MiniParticipantController extends Controller
                 $organizer->notify(
                     new MiniTournamentJoinRequestNotification($participant)
                 );
+            }
+        }
+    }
+
+    private function pushToUsers(array $userIds, string $title, string $body, array $data = [])
+    {
+        if (empty($userIds)) return;
+
+        $devices = DeviceToken::whereIn('user_id', $userIds)
+            ->where('is_enabled', true)
+            ->get();
+
+        $firebase = app(FirebaseService::class);
+
+        foreach ($devices as $device) {
+            try {
+                $firebase->sendToUser(
+                    $device->token,
+                    $title,
+                    $body,
+                    $data
+                );
+            } catch (\Throwable $e) {
+                $device->update(['is_enabled' => false]);
             }
         }
     }
