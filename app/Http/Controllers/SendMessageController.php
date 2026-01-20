@@ -6,6 +6,7 @@ use App\Events\MiniTournamentMessageSent;
 use App\Events\TournamentMessageSent;
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\MessageResource;
+use App\Models\DeviceToken;
 use App\Models\MiniTournament;
 use App\Models\MiniTournamentMessage;
 use App\Models\Tournament;
@@ -13,8 +14,10 @@ use App\Models\TournamentMessage;
 use App\Models\User;
 use App\Notifications\MiniTournamentMessageNotification;
 use App\Notifications\TournamentMessageNotification;
+use App\Services\FirebaseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class SendMessageController extends Controller
 {
@@ -65,6 +68,24 @@ class SendMessageController extends Controller
             }
         }
         broadcast(new MiniTournamentMessageSent(new MessageResource($message->load('user'))))->toOthers();
+
+        $recipientIds = $allUserIds
+            ->filter(fn ($id) => $id != Auth::id())
+            ->values()
+            ->toArray();
+
+        if (!empty($recipientIds)) {
+            $this->pushToUsers(
+                $recipientIds,
+                $tournament->name,
+                Auth::user()->full_name . ': ' . $this->formatChatPreview($message),
+                [
+                    'type' => 'MINI_TOURNAMENT_CHAT_MESSAGE',
+                    'mini_tournament_id' => $tournament->id,
+                    'message_id' => $message->id,
+                ]
+            );
+        }
 
         return ResponseHelper::success(new MessageResource($message->load('user')), 'Gửi tin nhắn thành công');
     }
@@ -143,6 +164,24 @@ class SendMessageController extends Controller
 
         broadcast(new TournamentMessageSent(new MessageResource($message->load('user'))))->toOthers();
 
+        $recipientIds = $allUserIds
+            ->filter(fn ($id) => $id != Auth::id())
+            ->values()
+            ->toArray();
+
+        if (!empty($recipientIds)) {
+            $this->pushToUsers(
+                $recipientIds,
+                $tournament->name,
+                Auth::user()->full_name . ': ' . $this->formatChatPreview($message),
+                [
+                    'type' => 'TOURNAMENT_CHAT_MESSAGE',
+                    'tournament_id' => $tournament->id,
+                    'message_id' => $message->id,
+                ]
+            );
+        }
+
         return ResponseHelper::success(new MessageResource($message->load('user')), 'Gửi tin nhắn thành công');
     }
 
@@ -179,5 +218,41 @@ class SendMessageController extends Controller
             200, 
             $meta
         );
+    }
+
+    private function pushToUsers(array $userIds, string $title, string $body, array $data = [])
+    {
+        $devices = DeviceToken::whereIn('user_id', $userIds)
+            ->where('is_enabled', true)
+            ->get();
+
+        if ($devices->isEmpty()) return;
+
+        $firebase = app(FirebaseService::class);
+
+        foreach ($devices as $device) {
+            try {
+                $firebase->sendToUser(
+                    $device->token,
+                    $title,
+                    $body,
+                    $data
+                );
+            } catch (\Throwable $e) {
+                $device->update(['is_enabled' => false]);
+            }
+        }
+    }
+
+    private function formatChatPreview($message): string
+    {
+        return match ($message->type) {
+            'text'  => Str::limit($message->content, 80),
+            'image' => 'Hình ảnh',
+            'voice' => 'Tin nhắn thoại',
+            'file'  => 'Tệp đính kèm',
+            'emoji' => $message->content,
+            default => 'Tin nhắn mới',
+        };
     }
 }

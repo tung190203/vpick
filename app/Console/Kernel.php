@@ -16,6 +16,7 @@ class Kernel extends ConsoleKernel
     {
         // $schedule->command('inspire')->hourly();
         $schedule->job(new SendMiniTournamentRemindersJob())->everyMinute();
+        $schedule->command('system:send-notifications')->everyMinute();
         $schedule->call(function () {
             DeviceToken::where('last_seen_at', '<', now()->subDays(60))->delete();
         })->daily();        
