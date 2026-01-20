@@ -53,6 +53,24 @@ class FirebaseService
                     'sound' => 'noti_sound'
                 ],
                 'data' => array_map('strval', $data),
+                
+                // Cấu hình riêng cho Android
+                'android' => [
+                    'notification' => [
+                        'sound' => 'noti_sound',
+                        'channel_id' => 'picki',
+                    ],
+                ],
+                
+                // Cấu hình riêng cho iOS
+                'apns' => [
+                    'payload' => [
+                        'aps' => [
+                            'sound' => 'noti_sound.aif',
+                            'badge' => 1,
+                        ],
+                    ],
+                ],
             ],
         ];
 
@@ -115,6 +133,24 @@ class FirebaseService
                     'sound' => 'noti_sound'
                 ],
                 'data' => array_map('strval', $data),
+                
+                // Cấu hình riêng cho Android
+                'android' => [
+                    'notification' => [
+                        'sound' => 'noti_sound',
+                        'channel_id' => 'picki',
+                    ],
+                ],
+                
+                // Cấu hình riêng cho iOS
+                'apns' => [
+                    'payload' => [
+                        'aps' => [
+                            'sound' => 'noti_sound.aif',
+                            'badge' => 1,
+                        ],
+                    ],
+                ],
             ],
         ];
     
