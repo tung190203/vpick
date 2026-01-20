@@ -124,7 +124,7 @@
                                     <div class="flex items-center gap-2">
                                         <img :src="team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(team.team_name)}`"
                                             class="w-8 h-8 rounded-full border" />
-                                        <p class="text-sm font-medium">{{ team.team_name }}</p>
+                                        <p class="text-sm font-medium max-w-[180px] whitespace-normal break-all">{{ team.team_name }}</p>
                                     </div>
 
                                     <span class="text-center font-bold text-lg text-blue-600">{{ team.points }}</span>

@@ -22,7 +22,7 @@
                     team_id: match.team1.id,
                     name: m.user.full_name,
                     avatar: m.user.avatar_url,
-                    rating: m.user.rating || 0,
+                    rating: getUserRatingBySport(m.user, props.sportId),
                     status: m.user.visibility
                }))"
                :team2="match.team2.members.map(m => ({
@@ -30,7 +30,7 @@
                     id: m.user.id,
                     name: m.user.full_name,
                     avatar: m.user.avatar_url,
-                    rating: m.user.rating || 0,
+                    rating: getUserRatingBySport(m.user, props.sportId),
                     status: m.user.visibility
                }))"
                :sets="buildSets(match)"
@@ -41,6 +41,33 @@
     </div>
     <div v-else class="min-h-[200px] flex items-center justify-center">
         <p class="text-center text-gray-500">Không có trận đấu nào.</p>
+    </div>
+    <div v-if="pagination.last_page > 1" class="mt-10 flex justify-center items-center gap-2">
+        <!-- Previous Button -->
+        <button @click="changePage(pagination.current_page - 1)" :disabled="pagination.current_page === 1"
+                class="w-10 h-10 flex items-center justify-center rounded-md border border-gray-300 text-gray-600 bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition">
+            <ChevronLeftIcon class="w-5 h-5" />
+        </button>
+
+        <!-- Page Numbers -->
+        <template v-for="page in visiblePages" :key="page">
+            <button v-if="page !== '...'" @click="changePage(page)" :class="[
+                    'w-10 h-10 flex items-center justify-center rounded-md border text-sm font-medium transition',
+                    page === pagination.current_page
+                        ? 'bg-primary text-white border-primary'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                ]">
+                {{ page }}
+            </button>
+            <span v-else class="w-10 h-10 flex items-center justify-center text-gray-500">...</span>
+        </template>
+
+        <!-- Next Button -->
+        <button @click="changePage(pagination.current_page + 1)"
+                :disabled="pagination.current_page === pagination.last_page"
+                class="w-10 h-10 flex items-center justify-center rounded-md border border-gray-300 text-gray-600 bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition">
+            <ChevronRightIcon class="w-5 h-5" />
+        </button>
     </div>
     <div class="grid grid-cols-5 gap-4 mt-4">
         <div class="col-span-2 flex justify-start items-center gap-4">
@@ -78,25 +105,53 @@
              class="border border-[#BBBFCC] p-4 rounded-lg cursor-pointer hover:shadow-md transition">
             <MiniMatchCard :matchTitle="miniMatch.name_of_match" :matchTime="formatDate(miniMatch.scheduled_at)"
                :courtName="miniMatch.competition_location?.name || 'Chưa cập nhật'"
-               :miniMatchType="match.match_type"
+               :miniMatchType="miniMatch.match_type"
+               :teamWinId="miniMatch.team_win_id"
                :team1="miniMatch.team1.members.map(m => ({
                   id: m.user.id,
                     name: m.user.full_name,
                     avatar: m.user.avatar_url,
-                    rating: m.user.rating || 0,
+                    rating: getUserRatingBySport(m.user, props.sportId),
                     status: m.user.visibility
                }))"
                :team2="miniMatch.team2.members.map(m => ({
                     id: m.user.id,
                     name: m.user.full_name,
                     avatar: m.user.avatar_url,
-                    rating: m.user.rating || 0,
+                    rating: getUserRatingBySport(m.user, props.sportId),
                     status: m.user.visibility
                }))"
                :sets="buildSets(miniMatch)"
                :selected="selectedMiniMatches.includes(miniMatch.id)"
                @update:selected="val => toggleSelectMiniMatch(miniMatch.id, val)"
             />
+        </div>
+        <div v-if="pagination.last_page > 1" class="mt-10 flex justify-center items-center gap-2">
+            <!-- Previous Button -->
+            <button @click="changePage(pagination.current_page - 1)" :disabled="pagination.current_page === 1"
+                    class="w-10 h-10 flex items-center justify-center rounded-md border border-gray-300 text-gray-600 bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition">
+                <ChevronLeftIcon class="w-5 h-5" />
+            </button>
+
+            <!-- Page Numbers -->
+            <template v-for="page in visiblePages" :key="page">
+                <button v-if="page !== '...'" @click="changePage(page)" :class="[
+                    'w-10 h-10 flex items-center justify-center rounded-md border text-sm font-medium transition',
+                    page === pagination.current_page
+                        ? 'bg-primary text-white border-primary'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                ]">
+                    {{ page }}
+                </button>
+                <span v-else class="w-10 h-10 flex items-center justify-center text-gray-500">...</span>
+            </template>
+
+            <!-- Next Button -->
+            <button @click="changePage(pagination.current_page + 1)"
+                    :disabled="pagination.current_page === pagination.last_page"
+                    class="w-10 h-10 flex items-center justify-center rounded-md border border-gray-300 text-gray-600 bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition">
+                <ChevronRightIcon class="w-5 h-5" />
+            </button>
         </div>
     </div>
     <div v-else class="min-h-[200px] flex items-center justify-center">
