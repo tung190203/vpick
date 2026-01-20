@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\UserResource;
 use App\Mail\ResetPasswordMail;
+use App\Models\DeviceToken;
 use App\Models\User;
 use App\Notifications\VerifyEmailNotification;
+use App\Services\FirebaseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -29,6 +31,8 @@ class AuthController extends Controller
         $request->validate([
             'login' => 'required|string',
             'password' => 'nullable|string',
+            'token' => 'sometimes|string',
+            'platform' => 'sometimes|in:ios,android'
         ]);
 
         $loginField = filter_var($request->login, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
@@ -71,6 +75,10 @@ class AuthController extends Controller
         $refreshToken = JWTAuth::claims(['type' => 'refresh', 'exp' => now()->addDays(30)->timestamp])->fromUser($user);
         $user->last_login = now();
         $user->save();
+
+        if($request->token && $request->platform) {
+            $this->handleDeviceLogin($user, $request->token, $request->platform);
+        }
 
         return ResponseHelper::success($this->responseWithToken($accessToken, $refreshToken, $user), 'Đăng nhập thành công');
     }
@@ -300,7 +308,12 @@ class AuthController extends Controller
 
     public function loginWithGoogle(Request $request)
     {
-        $request->validate(['id_token' => 'required|string']);
+        $request->validate([
+            'id_token' => 'required|string',
+            'token' => 'sometimes|string',
+            'platform' => 'sometimes|in:ios,android',
+        ]);
+
         $idToken = $request->input('id_token');
         $validClients = [
             'android' => config('services.google.android_client_id'),
@@ -350,6 +363,10 @@ class AuthController extends Controller
         $user->last_login = now();
         $user->save();
 
+        if($request->token && $request->platform) {
+            $this->handleDeviceLogin($user, $request->token, $request->platform);
+        }
+
         $response = $this->responseWithToken($accessToken, $refreshToken, $user);
         $response['platform'] = $platform;
         $response['status_code'] = 'VERIFIED';
@@ -364,7 +381,11 @@ class AuthController extends Controller
 
     public function loginWithFacebook(Request $request)
     {
-        $request->validate(['access_token' => 'required|string']);
+        $request->validate([
+            'access_token' => 'required|string',
+            'token' => 'sometimes|string',
+            'platform' => 'sometimes|in:ios,android',
+        ]);
         $accessToken = $request->input('access_token');
 
         try {
@@ -428,7 +449,9 @@ class AuthController extends Controller
             // Cập nhật last_login
             $user->last_login = now();
             $user->save();
-
+            if($request->token && $request->platform) {
+                $this->handleDeviceLogin($user, $request->token, $request->platform);
+            }
             // Response
             $response = $this->responseWithToken($accessTokenJWT, $refreshTokenJWT, $user);
             $response['platform'] = 'mobile';
@@ -558,7 +581,11 @@ class AuthController extends Controller
 
     public function loginWithApple(Request $request)
     {
-        $request->validate(['id_token' => 'required|string']);
+        $request->validate([
+            'id_token' => 'required|string',
+            'token' => 'sometimes|string',
+            'platform' => 'sometimes|in:ios,android',
+        ]);
         $idToken = $request->input('id_token');
         try {
             $jwks = Http::get('https://appleid.apple.com/auth/keys')->json();
@@ -615,6 +642,9 @@ class AuthController extends Controller
             $user->last_login = now();
             $user->save();
 
+            if($request->token && $request->platform) {
+                $this->handleDeviceLogin($user, $request->token, $request->platform);
+            }
             $response = $this->responseWithToken($accessToken, $refreshToken, $user);
             $response['status_code'] = 'VERIFIED';
             return ResponseHelper::success($response, 'Đăng nhập bằng Apple thành công');
@@ -640,5 +670,46 @@ class AuthController extends Controller
             ],
             'user' => new UserResource($user->loadFullRelations()),
         ];
+    }
+
+    private function handleDeviceLogin(User $user, string $currentToken, string $platform)
+    {
+        $oldDevices = DeviceToken::where('user_id', $user->id)
+            ->where('token', '!=', $currentToken)
+            ->where('is_enabled', true)
+            ->get();
+
+        if ($oldDevices->isNotEmpty()) {
+            $firebase = app(FirebaseService::class);
+
+            foreach ($oldDevices as $device) {
+                try {
+                    $firebase->sendToUser(
+                        $device->token,
+                        'Đăng nhập thiết bị mới',
+                        'Tài khoản của bạn vừa được đăng nhập trên một thiết bị khác',
+                        [
+                            'type' => 'NEW_DEVICE_LOGIN',
+                            'platform' => $platform,
+                            'time' => now()->toDateTimeString(),
+                        ]
+                    );
+                } catch (\Throwable $e) {
+                    $device->update(['is_enabled' => false]);
+                }
+            }
+        }
+
+        DeviceToken::updateOrCreate(
+            [
+                'token' => $currentToken,
+                'user_id' => $user->id,
+            ],
+            [
+                'platform' => $platform,
+                'last_seen_at' => now(),
+                'is_enabled' => true,
+            ]
+        );
     }
 }

@@ -6,9 +6,11 @@ use App\Helpers\ResponseHelper;
 use App\Http\Resources\FollowResource;
 use App\Http\Resources\UserResource;
 use App\Models\CompetitionLocation;
+use App\Models\DeviceToken;
 use App\Models\Follow;
 use App\Models\User;
 use App\Notifications\FollowNotification;
+use App\Services\FirebaseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -96,6 +98,34 @@ class FollowController extends Controller
         }
 
         $followable = $follow->followable;
+
+        if ($followable instanceof User && $followable->id !== Auth::id()) {
+
+            $devices = DeviceToken::where('user_id', $followable->id)
+                ->where('is_enabled', true)
+                ->get();
+        
+            if ($devices->isNotEmpty()) {
+                $firebase = app(FirebaseService::class);
+        
+                foreach ($devices as $device) {
+                    try {
+                        $firebase->sendToUser(
+                            $device->token,
+                            'Bạn có người theo dõi mới',
+                            Auth::user()->full_name . ' vừa theo dõi bạn',
+                            [
+                                'type' => 'FOLLOW',
+                                'follower_id' => Auth::id(),
+                                'followable_id' => $followable->id,
+                            ]
+                        );
+                    } catch (\Throwable $e) {
+                        $device->update(['is_enabled' => false]);
+                    }
+                }
+            }
+        }
 
         // Gửi notification cho chủ thể được follow
         if (method_exists($followable, 'notify')) {
