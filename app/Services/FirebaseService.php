@@ -50,7 +50,6 @@ class FirebaseService
                 'notification' => [
                     'title' => $title,
                     'body' => $body,
-                    'sound' => 'noti_sound'
                 ],
                 'data' => array_map('strval', $data),
                 
@@ -130,7 +129,6 @@ class FirebaseService
                 'notification' => [
                     'title' => $title,
                     'body' => $body,
-                    'sound' => 'noti_sound'
                 ],
                 'data' => array_map('strval', $data),
                 
