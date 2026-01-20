@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\ListParticipantResource;
 use App\Http\Resources\ParticipantResource;
-use App\Models\DeviceToken;
+use App\Jobs\SendPushJob;
 use App\Models\Participant;
 use App\Models\SuperAdminDraft;
 use App\Models\Tournament;
@@ -15,7 +15,6 @@ use App\Notifications\TournamentInvitationNotification;
 use App\Notifications\TournamentJoinConfirmedNotification;
 use App\Notifications\TournamentJoinRequestNotification;
 use App\Notifications\TournamentRemovedNotification;
-use App\Services\FirebaseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -718,25 +717,8 @@ class ParticipantController extends Controller
 
     private function pushToUsers(array $userIds, string $title, string $body, array $data = [])
     {
-        if (empty($userIds)) return;
-
-        $devices = DeviceToken::whereIn('user_id', $userIds)
-            ->where('is_enabled', true)
-            ->get();
-
-        $firebase = app(FirebaseService::class);
-
-        foreach ($devices as $device) {
-            try {
-                $firebase->sendToUser(
-                    $device->token,
-                    $title,
-                    $body,
-                    $data
-                );
-            } catch (\Throwable $e) {
-                $device->update(['is_enabled' => false]);
-            }
+        foreach ($userIds as $userId) {
+            SendPushJob::dispatch($userId, $title, $body, $data);
         }
     }
 }
