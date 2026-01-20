@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\MiniMatchResource;
-use App\Models\DeviceToken;
+use App\Jobs\SendPushJob;
 use App\Models\MiniMatch;
 use App\Models\MiniMatchResult;
 use App\Models\MiniParticipant;
@@ -15,7 +15,6 @@ use App\Models\VnduprHistory;
 use App\Notifications\MiniMatchCreatedNotification;
 use App\Notifications\MiniMatchResultConfirmedNotification;
 use App\Notifications\MiniMatchUpdatedNotification;
-use App\Services\FirebaseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -973,25 +972,8 @@ class MiniMatchController extends Controller
 
     private function pushToUsers(array $userIds, string $title, string $body, array $data = [])
     {
-        $devices = DeviceToken::whereIn('user_id', $userIds)
-            ->where('is_enabled', true)
-            ->get();
-
-        if ($devices->isEmpty()) return;
-
-        $firebase = app(FirebaseService::class);
-
-        foreach ($devices as $device) {
-            try {
-                $firebase->sendToUser(
-                    $device->token,
-                    $title,
-                    $body,
-                    $data
-                );
-            } catch (\Throwable $e) {
-                $device->update(['is_enabled' => false]);
-            }
+        foreach ($userIds as $userId) {
+            SendPushJob::dispatch($userId, $title, $body, $data);
         }
     }
 }
