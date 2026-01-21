@@ -168,22 +168,6 @@ export const route = [
             path: '',
             name: 'tournament',
             component: TournamentPage
-          },
-          {
-            path: ':id',
-            name: 'tournament-detail',
-            component: TournamentDetail,
-            props: true
-          },
-          {
-            path: ':id/bracket',
-            name: 'tournament-bracket',
-            component: TournamentBracketPage,
-          },
-          {
-            path: ':id/groups/sort',
-            name: 'tournament-groups-sort',
-            component: GroupSortView
           }
         ]
       },
@@ -226,12 +210,6 @@ export const route = [
             path: ':id/edit',
             name: 'edit-mini-tournament',
             component: CreateMiniTournamentPage
-          },
-          {
-            path: ':id',
-            name: 'mini-tournament-detail',
-            component: MiniTournamentDetail,
-            props: true
           }
         ]
       },
