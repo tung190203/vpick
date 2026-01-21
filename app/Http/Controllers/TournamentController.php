@@ -4,20 +4,26 @@ namespace App\Http\Controllers;
 
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\TournamentResource;
+use App\Http\Controllers\TournamentTypeController;
 use App\Models\Matches;
 use App\Models\Tournament;
 use App\Models\TournamentStaff;
 use App\Services\ImageOptimizationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class TournamentController extends Controller
 {
     protected $imageService;
+    protected $tournamentTypeController;
 
-    public function __construct(ImageOptimizationService $imageService)
-    {
+    public function __construct(
+        ImageOptimizationService $imageService,
+        TournamentTypeController $tournamentTypeController
+    ) {
         $this->imageService = $imageService;
+        $this->tournamentTypeController = $tournamentTypeController;
     }
     public function store(Request $request)
     {
@@ -151,9 +157,9 @@ class TournamentController extends Controller
             'is_own_score' => 'nullable|boolean',
             'status' => 'nullable|in:' . implode(',', Tournament::STATUS),
         ]);
-    
+
         $tournament = Tournament::findOrFail($id);
-    
+
         DB::transaction(function () use ($validated, $tournament, $request) {
             if ($request->hasFile('poster')) {
                 $this->imageService->deleteOldImage($tournament->poster);
@@ -172,9 +178,9 @@ class TournamentController extends Controller
             $tournament->fill($validated);
             $tournament->save();
         });
-    
+
         $tournament = Tournament::withBasicRelations()->find($tournament->id);
-    
+
         return ResponseHelper::success(new TournamentResource($tournament), 'Cập nhật giải đấu thành công');
     }
 
@@ -204,5 +210,46 @@ class TournamentController extends Controller
         });
 
         return ResponseHelper::success(null, 'Xoá giải đấu thành công');
+    }
+
+    /**
+     * Lấy bracket cho tournament với cấu trúc mới
+     * Trả về: poolStage, leftSide, rightSide, finalMatch, thirdPlaceMatch
+     *
+     * Route: GET /api/tournaments/{id}/bracket
+     * Alias: GET /api/tournament-detail/{id}/bracket (backward compatible)
+     *
+     * @param int $id Tournament ID
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getBracket($id)
+    {
+        try {
+            $tournament = Tournament::with('tournamentTypes')->find($id);
+
+            if (!$tournament) {
+                return ResponseHelper::error('Giải đấu không tồn tại', 404);
+            }
+
+            $tournamentType = $tournament->tournamentTypes->first();
+
+            if (!$tournamentType) {
+                return ResponseHelper::error('Giải đấu chưa có tournament type', 404);
+            }
+
+            // Sử dụng getBracketNew cho format Mixed, getBracket cho các format khác
+            if ($tournamentType->format === \App\Models\TournamentType::FORMAT_MIXED) {
+                return $this->tournamentTypeController->getBracketNew($tournamentType);
+            } else {
+                return $this->tournamentTypeController->getBracket($tournamentType);
+            }
+        } catch (\Throwable $e) {
+            Log::error('Error in getBracket', [
+                'id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return ResponseHelper::error('Lỗi khi lấy bracket: ' . $e->getMessage(), 500);
+        }
     }
 }
