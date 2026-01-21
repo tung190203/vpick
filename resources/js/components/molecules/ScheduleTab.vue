@@ -125,8 +125,8 @@
                     </button>
                 </div>
 
-                <template v-if="currentMixedStage === 'pool' && mixedBracket.pool_stage">
-                    <div v-for="group in mixedBracket.pool_stage" :key="group.group_id" class="mb-6">
+                <template v-if="currentMixedStage === 'pool' && mixedBracket.poolStage">
+                    <div v-for="group in mixedBracket.poolStage" :key="group.group_id" class="mb-6">
                         <div class="bg-[#EDEEF2] px-4 py-3 rounded-lg mb-4">
                             <h3 class="font-bold text-[#3E414C]">{{ group.group_name }}</h3>
                         </div>
@@ -164,14 +164,10 @@
                     </div>
                 </template>
 
-                <template v-if="currentMixedStage === 'knockout' && mixedBracket.knockout_stage">
+                <template v-if="currentMixedStage === 'knockout' && (mixedBracket.leftSide || mixedBracket.rightSide || mixedBracket.finalMatch)">
                     <div v-if="currentKnockoutRound" class="mb-6 cursor-pointer">
                         <div class="grid grid-cols-2 items-center mb-4 uppercase px-2">
-                            <p v-if="currentKnockoutRound.matches.length === 1" class="text-sm font-semibold">
-                                {{ currentKnockoutRound.matches[0].is_third_place == 1 ? 'Tranh hạng 3' : currentKnockoutRound.round_name }} •
-                                {{ currentKnockoutRound.matches.length }} trận đấu
-                            </p>
-                            <p v-else class="text-sm font-semibold">
+                            <p class="text-sm font-semibold">
                                 {{ currentKnockoutRound.round_name }} • {{ currentKnockoutRound.matches.length }} trận đấu
                             </p>
                             <p class="text-sm font-semibold text-right">{{ getKnockoutStatusText(currentKnockoutRound.matches) }}</p>
@@ -183,28 +179,28 @@
                                 <div :class="['flex justify-between items-center text-xs font-medium px-4 py-2 rounded-tl-lg rounded-tr-lg bg-[#dcdee6] text-[#838799]']">
                                     <span class="uppercase">{{ match.match_label || `Trận ${match.match_id}` }}</span>
                                     <div class="flex items-center gap-2">
-                                        <span class="text-xs">{{ match.legs[0]?.scheduled_at ? formatDate(match.legs[0].scheduled_at) : 'Chưa xác định' }}</span>
+                                        <span class="text-xs">{{ match.scheduled_at ? formatDate(match.scheduled_at) : 'Chưa xác định' }}</span>
                                     </div>
                                 </div>
 
                                 <div class="flex flex-col gap-3 rounded-lg shadow-md border border-[#dcdee6] bg-[#EDEEF2] px-4 py-3">
                                     <div class="flex justify-between items-center">
                                         <div class="flex items-center gap-2">
-                                            <img :src="match.home_team.logo || 'https://placehold.co/40x40'" class="w-8 h-8 rounded-full object-cover" :alt="match.home_team.name" />
-                                            <p class="text-sm font-semibold text-[#3E414C]">{{ match.home_team.name }}</p>
+                                            <img :src="match.home_team?.team_avatar || match.home_team?.logo || 'https://placehold.co/40x40'" class="w-8 h-8 rounded-full object-cover" :alt="match.home_team?.name" />
+                                            <p class="text-sm font-semibold text-[#3E414C]">{{ match.home_team?.name || 'TBD' }}</p>
                                         </div>
-                                        <span :class="['font-bold text-lg', match.winner_team_id === match.home_team.id ? 'text-[#D72D36]' : 'text-[#3E414C]']">
-                                            {{ match.aggregate_score?.home ?? 0 }}
+                                        <span :class="['font-bold text-lg', match.winner_team_id === match.home_team?.id ? 'text-[#D72D36]' : 'text-[#3E414C]']">
+                                            {{ match.home_score ?? 0 }}
                                         </span>
                                     </div>
 
                                     <div class="flex justify-between items-center">
                                         <div class="flex items-center gap-2">
-                                            <img :src="match.away_team.logo || 'https://placehold.co/40x40'" class="w-8 h-8 rounded-full object-cover" :alt="match.away_team.name" />
-                                            <p class="text-sm font-semibold text-[#3E414C]">{{ match.away_team.name }}</p>
+                                            <img :src="match.away_team?.team_avatar || match.away_team?.logo || 'https://placehold.co/40x40'" class="w-8 h-8 rounded-full object-cover" :alt="match.away_team?.name" />
+                                            <p class="text-sm font-semibold text-[#3E414C]">{{ match.away_team?.name || 'TBD' }}</p>
                                         </div>
-                                        <span :class="['font-bold text-lg', match.winner_team_id === match.away_team.id ? 'text-[#D72D36]' : 'text-[#3E414C]']">
-                                            {{ match.aggregate_score?.away ?? 0 }}
+                                        <span :class="['font-bold text-lg', match.winner_team_id === match.away_team?.id ? 'text-[#D72D36]' : 'text-[#3E414C]']">
+                                            {{ match.away_score ?? 0 }}
                                         </span>
                                     </div>
                                 </div>
@@ -212,13 +208,13 @@
                         </div>
                     </div>
 
-                    <div v-if="mixedBracket.knockout_stage && mixedBracket.knockout_stage.length > 1" class="flex justify-center items-center gap-4 mt-4">
+                    <div v-if="allKnockoutRounds.length > 1" class="flex justify-center items-center gap-4 mt-4">
                         <button @click="previousKnockoutRound" :disabled="!hasPreviousKnockoutRound" :class="[
                             'px-4 py-2 rounded-lg text-sm font-medium transition-all',
                             hasPreviousKnockoutRound ? 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200 cursor-pointer' : 'bg-gray-100 text-gray-400 cursor-not-allowed border'
                         ]">← Vòng trước</button>
 
-                        <span class="text-sm text-gray-600">Vòng {{ currentKnockoutRoundIndex + 1 }} / {{ mixedBracket.knockout_stage.length }}</span>
+                        <span class="text-sm text-gray-600">Vòng {{ currentKnockoutRoundIndex + 1 }} / {{ allKnockoutRounds.length }}</span>
 
                         <button @click="nextKnockoutRound" :disabled="!hasNextKnockoutRound" :class="[
                             'px-4 py-2 rounded-lg text-sm font-medium transition-all',
@@ -368,8 +364,8 @@
             <div v-show="showRankingModal"
                 class="fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-center justify-center p-4"
                 @click.self="showRankingModal = false">
-                <div class="bg-white rounded-lg w-full h-full overflow-auto shadow-2xl max-w-[95vw] max-h-[95vh]">
-                    <div class="sticky top-0 bg-white z-10 flex justify-between items-center p-4 border-b border-gray-200">
+                <div class="bg-white rounded-lg w-full h-full overflow-hidden shadow-2xl max-w-[95vw] max-h-[95vh] flex flex-col">
+                    <div class="sticky top-0 bg-white z-10 flex justify-between items-center p-4 border-b border-gray-200 flex-shrink-0">
                         <h2 class="text-2xl font-bold text-gray-800">Sơ đồ thi đấu</h2>
                         <button @click="showRankingModal = false"
                             class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors">
@@ -379,10 +375,13 @@
                         </button>
                     </div>
 
-                    <BracketMixedPreview
-                        :bracketData="mixedBracket"
-                        :rankData="rank"
-                    />
+                    <div class="flex-1 overflow-hidden">
+                        <BracketMixedPreview
+                            :tournamentTypeId="data?.tournament_types?.[0]?.id"
+                            :bracketData="mixedBracket"
+                            :rankData="rank"
+                        />
+                    </div>
                 </div>
             </div>
         </Transition>
@@ -436,23 +435,29 @@ const hasAnyRanking = computed(() => {
 
 const getMatches = async (tournamentTypeId) => {
     try {
-        const response = await TournamentTypeService.getBracketByTournamentTypeId(tournamentTypeId)
-
         if (props.data.tournament_types?.[0]?.format === 1) {
+            // Sử dụng API bracket-new cho format Mixed
+            const response = await TournamentTypeService.getBracketNewByTournamentTypeId(tournamentTypeId)
             mixedBracket.value = {
-                pool_stage: response.pool_stage || [],
-                knockout_stage: response.knockout_stage || []
+                poolStage: response.poolStage || [],
+                leftSide: response.leftSide || [],
+                rightSide: response.rightSide || [],
+                finalMatch: response.finalMatch || null,
+                thirdPlaceMatch: response.thirdPlaceMatch || null
             }
             currentMixedStage.value = 'pool'
             currentKnockoutRoundIndex.value = 0
-        } else if (props.data.tournament_types?.[0]?.format === 2) {
-            eliminationBracket.value = response.bracket || []
-            currentEliminationRoundIndex.value = 0
         } else {
-            matches.value = response.matches || []
-            if (matches.value.length > 0) {
-                const rounds = [...new Set(matches.value.map(m => m.round))].sort((a, b) => parseInt(a) - parseInt(b))
-                if (rounds.length > 0) currentRound.value = rounds[0]
+            const response = await TournamentTypeService.getBracketByTournamentTypeId(tournamentTypeId)
+            if (props.data.tournament_types?.[0]?.format === 2) {
+                eliminationBracket.value = response.bracket || []
+                currentEliminationRoundIndex.value = 0
+            } else {
+                matches.value = response.matches || []
+                if (matches.value.length > 0) {
+                    const rounds = [...new Set(matches.value.map(m => m.round))].sort((a, b) => parseInt(a) - parseInt(b))
+                    if (rounds.length > 0) currentRound.value = rounds[0]
+                }
             }
         }
     } catch (error) {
@@ -472,17 +477,46 @@ const getDetailMatches = async (id) => {
     }
 }
 
-const currentKnockoutRound = computed(() => mixedBracket.value.knockout_stage?.[currentKnockoutRoundIndex.value] || null)
+const allKnockoutRounds = computed(() => {
+    const rounds = []
+    // Thêm leftSide rounds
+    if (mixedBracket.value.leftSide) {
+        rounds.push(...mixedBracket.value.leftSide)
+    }
+    // Thêm rightSide rounds
+    if (mixedBracket.value.rightSide) {
+        rounds.push(...mixedBracket.value.rightSide)
+    }
+    // Thêm final match nếu có
+    if (mixedBracket.value.finalMatch) {
+        rounds.push({
+            round_name: mixedBracket.value.finalMatch.round_name || 'Chung kết',
+            matches: [mixedBracket.value.finalMatch]
+        })
+    }
+    // Thêm third place match nếu có
+    if (mixedBracket.value.thirdPlaceMatch) {
+        rounds.push({
+            round_name: 'Tranh hạng Ba',
+            matches: [mixedBracket.value.thirdPlaceMatch]
+        })
+    }
+    // Sắp xếp theo round number
+    return rounds.sort((a, b) => (a.round || 0) - (b.round || 0))
+})
+
+const currentKnockoutRound = computed(() => allKnockoutRounds.value[currentKnockoutRoundIndex.value] || null)
 const hasPreviousKnockoutRound = computed(() => currentKnockoutRoundIndex.value > 0)
-const hasNextKnockoutRound = computed(() => currentKnockoutRoundIndex.value < (mixedBracket.value.knockout_stage?.length || 0) - 1)
+const hasNextKnockoutRound = computed(() => currentKnockoutRoundIndex.value < allKnockoutRounds.value.length - 1)
 const previousKnockoutRound = () => { if (hasPreviousKnockoutRound.value) currentKnockoutRoundIndex.value-- }
 const nextKnockoutRound = () => { if (hasNextKnockoutRound.value) currentKnockoutRoundIndex.value++ }
 
 const getKnockoutStatusText = (matches) => {
-    const completedCount = matches.filter(m => m.legs.some(leg => leg.is_completed)).length
-    const pendingCount = matches.filter(m => m.legs.every(leg => leg.status === 'pending')).length
-    if (completedCount === matches.length) return `Chờ xác nhận • ${pendingCount}`
-    return `Chờ xác nhận • ${pendingCount}`
+    if (!matches || matches.length === 0) return 'Chưa có trận đấu'
+    const completedCount = matches.filter(m => m.status === 'completed').length
+    const pendingCount = matches.filter(m => m.status === 'pending').length
+    if (completedCount === matches.length) return `Hoàn thành • ${completedCount}`
+    return `Đang diễn ra • ${completedCount}/${matches.length}`
 }
 
 const groupedMatchesByRound = computed(() => {
