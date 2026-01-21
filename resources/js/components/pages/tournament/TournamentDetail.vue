@@ -296,7 +296,7 @@
                   <div class="border border-[#BBBFCC] rounded flex items-center justify-between p-4 mb-4"
                     v-for="team in listTeams" :key="team.id">
                     <div class="flex items-center gap-3 min-w-0 max-w-[500px]">
-                      <div class="relative w-[4.875rem] h-[4.875rem]" @click="openEditTeamModal(team)">
+                      <div class="relative w-[4.875rem] h-[4.875rem] flex-shrink-0" @click="openEditTeamModal(team)">
                         <div class="w-full h-full rounded-lg overflow-hidden" v-if="team.avatar">
                           <img :src="team.avatar" alt="User" class="w-full h-full object-cover" />
                         </div>
