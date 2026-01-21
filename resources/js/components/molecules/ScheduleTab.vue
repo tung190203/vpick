@@ -377,6 +377,7 @@
 
                     <div class="flex-1 overflow-hidden">
                         <BracketMixedPreview
+                            v-if="data?.tournament_types?.[0]?.format === 1"
                             :tournamentTypeId="data?.tournament_types?.[0]?.id"
                             :bracketData="mixedBracket"
                             :rankData="rank"

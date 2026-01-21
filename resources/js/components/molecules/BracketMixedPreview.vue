@@ -893,6 +893,18 @@ const thirdPlaceMatch = computed(() => {
 
 <style scoped>
 /**
+ * Background image cho bracket container
+ * Thay đổi đường dẫn image theo nhu cầu
+ */
+.bg-image-container {
+    background-image: url('@/assets/images/bracket-bg.png'); /* Thay đổi đường dẫn tại đây */
+    background-size: 100% 90%;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed; /* Giữ background cố định khi scroll */
+}
+
+/**
  * Scrollbar styling: Luôn hiển thị thanh cuộn ngang
  */
 .bracket-scroll-container {
