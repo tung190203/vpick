@@ -1701,7 +1701,13 @@ const PAIRING_MODE_MANUAL = 'manual';
 
     private function getRankText(int $rank): string
     {
-        return $this->bracketService->getRankText($rank);
+        return match($rank) {
+            1 => 'Nhất',
+            2 => 'Nhì',
+            3 => 'Ba',
+            4 => 'Tư',
+            default => "Hạng {$rank}",
+        };
     }
 
     /**
@@ -1712,12 +1718,11 @@ const PAIRING_MODE_MANUAL = 'manual';
         return $this->bracketService->formatTeam($team, $placeholderText);
     }
 
+
     /**
      * Lấy bracket với cấu trúc mới: poolStage, leftSide, rightSide, finalMatch
      * Logic chia nhánh đẩy hết về backend, FE chỉ render
      * Hỗ trợ Mixed format (có pool stage + knockout stage)
-     * 
-     * @internal Chỉ được gọi từ TournamentController, không phải public API
      */
     public function getBracketNew(TournamentType $tournamentType)
     {
@@ -2166,7 +2171,16 @@ const PAIRING_MODE_MANUAL = 'manual';
      */
     private function getTeamStatsInGroup($teamId, $tournamentTypeId, $groupId)
     {
-        return $this->standingsService->getTeamStatsInGroup($teamId, $tournamentTypeId, $groupId);
+        $matches = Matches::where('tournament_type_id', $tournamentTypeId)
+            ->where('group_id', $groupId) // ✅ Chỉ lấy trận trong group này
+            ->where('status', 'completed')
+            ->where(function ($query) use ($teamId) {
+                $query->where('home_team_id', $teamId)->orWhere('away_team_id', $teamId);
+            })
+            ->with('results')
+            ->get();
+
+        return $this->calculateStatsFromMatches($matches, $teamId);
     }
 
     /**
@@ -2260,7 +2274,15 @@ const PAIRING_MODE_MANUAL = 'manual';
      */
     private function getTeamStats($teamId, $tournamentTypeId)
     {
-        return $this->standingsService->getTeamStats($teamId, $tournamentTypeId);
+        $matches = Matches::where('tournament_type_id', $tournamentTypeId)
+            ->where('status', 'completed')
+            ->where(function ($query) use ($teamId) {
+                $query->where('home_team_id', $teamId)->orWhere('away_team_id', $teamId);
+            })
+            ->with('results')
+            ->get();
+
+        return $this->calculateStatsFromMatches($matches, $teamId);
     }
     public function getAdvancementStatus(TournamentType $tournamentType)
     {
@@ -2457,7 +2479,25 @@ const PAIRING_MODE_MANUAL = 'manual';
 
     private function arrangeAdvancingTeams($advancingByRank, $pairingMode = null, $manualPairings = null)
     {
-        return $this->teamPairingService->arrangeAdvancingTeams($advancingByRank, $pairingMode, $manualPairings);
+        // ✅ NORMALIZE: Trim và lowercase
+        $pairingMode = $pairingMode ? strtolower(trim($pairingMode)) : null;
+
+        switch ($pairingMode) {
+            case self::PAIRING_MODE_SYMMETRIC:
+            case 'symmetric':
+                return $this->arrangeAdvancingTeamsSymmetric($advancingByRank);
+
+            case self::PAIRING_MODE_MANUAL:
+            case 'manual':
+                return $this->arrangeAdvancingTeamsManual($advancingByRank, $manualPairings);
+
+            case self::PAIRING_MODE_SEQUENTIAL:
+            case 'sequential':
+            case null:
+            case '':
+            default:
+                return $this->arrangeAdvancingTeamsSequential($advancingByRank);
+        }
     }
 
     /**

@@ -101,7 +101,7 @@ Route::middleware(['auth:api'])->group(function () {
         Route::get('/{id}/bracket', [TournamentController::class, 'getBracket']);
     });
 
-    // Alias route để backward compatible
+    // Alias route để backward compatible - sử dụng TournamentController::getBracket
     Route::get('/tournament-detail/{id}/bracket', [TournamentController::class, 'getBracket']);
 
     Route::prefix('tournament-staff')->group(function () {
@@ -268,9 +268,5 @@ Route::middleware(['auth:api'])->group(function () {
 
     Route::prefix('banners')->group(function () {
         Route::post('/store', [BannerController::class, 'store']);
-    });
-
-    Route::prefix('system-notification')->group(function () {
-        Route::post('/create', [SystemNotificationController::class, 'store']);
     });
 });

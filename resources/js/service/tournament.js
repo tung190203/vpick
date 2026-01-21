@@ -27,3 +27,8 @@ export const deleteTournament = async (id) => {
   return axiosInstance.post(`${tournamentEndpoint}/delete`, { id })
     .then((response) => response.data.data);
 }
+
+export const getBracketByTournamentId = async (tournamentId) => {
+  return axiosInstance.get(`/tournament-detail/${tournamentId}/bracket`)
+    .then((response) => response.data.data);
+}

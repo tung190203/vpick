@@ -37,8 +37,8 @@ const detailTournament = async (tournamentId) => {
     try {
         const response = await TournamentService.getTournamentById(tournamentId)
         tournament.value = response
-        if (tournament.value && tournament.value.tournament_types) {
-            await getBracket(tournament.value.tournament_types[0]?.id)
+        if (tournament.value && tournament.value.tournament_types && tournament.value.tournament_types[0]) {
+            await getBracket(tournament.value.tournament_types[0].id)
         }
     } catch (error) {
         toast.error(error.response?.data?.message || 'Lấy thông tin giải đấu thất bại');
@@ -55,8 +55,8 @@ const getBracket = async (tournamentTypeId) => {
 }
 
 const loadBracketData = async () => {
-    if (tournament.value && tournament.value.tournament_types) {
-        await getBracket(tournament.value.tournament_types[0]?.id)
+    if (tournament.value && tournament.value.tournament_types && tournament.value.tournament_types[0]) {
+        await getBracket(tournament.value.tournament_types[0].id)
         await getRanks()
     }
 }
