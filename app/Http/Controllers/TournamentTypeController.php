@@ -1716,6 +1716,8 @@ const PAIRING_MODE_MANUAL = 'manual';
      * Lấy bracket với cấu trúc mới: poolStage, leftSide, rightSide, finalMatch
      * Logic chia nhánh đẩy hết về backend, FE chỉ render
      * Hỗ trợ Mixed format (có pool stage + knockout stage)
+     * 
+     * @internal Chỉ được gọi từ TournamentController, không phải public API
      */
     public function getBracketNew(TournamentType $tournamentType)
     {
