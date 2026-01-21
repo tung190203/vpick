@@ -24,7 +24,7 @@ class TournamentTypeController extends Controller
  */
 const PAIRING_MODE_SEQUENTIAL = 'sequential';  // Tuần tự: A-B, C-D, E-F, G-H
 const PAIRING_MODE_SYMMETRIC = 'symmetric';    // Đối xứng: A-H, B-G, C-F, D-E
-const PAIRING_MODE_MANUAL = 'manual'; 
+const PAIRING_MODE_MANUAL = 'manual';
     /**
      * Tạo mới một thể thức cho giải đấu
      */
@@ -91,14 +91,14 @@ const PAIRING_MODE_MANUAL = 'manual';
                 $type->num_legs = $validated['num_legs'];
                 $type->save();
             }
-    
+
             // ✅ TẠO BẢNG TRỐNG CHO FORMAT MIXED
             if ($type->format === TournamentType::FORMAT_MIXED) {
                 $this->createEmptyGroups($type);
             } else {
                 $this->autoGenerateMatches($type);
             }
-    
+
             DB::commit();
             return ResponseHelper::success(new TournamentTypeResource($type), 'Tạo thể thức thành công');
         } catch (\Throwable $e) {
@@ -139,7 +139,7 @@ const PAIRING_MODE_MANUAL = 'manual';
 
             DB::commit();
             return ResponseHelper::success(
-                new TournamentTypeResource($tournamentType->fresh()), 
+                new TournamentTypeResource($tournamentType->fresh()),
                 'Tự động tạo lịch thi đấu thành công'
             );
         } catch (\Throwable $e) {
@@ -147,7 +147,7 @@ const PAIRING_MODE_MANUAL = 'manual';
             return ResponseHelper::error('Lỗi: ' . $e->getMessage(), 500);
         }
     }
-    
+
     /**
      * ✅ TẠO CÁC BẢNG TRỐNG DỰA VÀO CONFIG
      */
@@ -157,10 +157,10 @@ const PAIRING_MODE_MANUAL = 'manual';
         $mainConfig = is_array($config) && isset($config[0]) ? $config[0] : [];
         $poolConfig = $mainConfig['pool_stage'] ?? [];
         $numGroups = max(1, (int)($poolConfig['number_competing_teams'] ?? 2));
-    
+
         // Xóa groups cũ nếu có
         $type->groups()->delete();
-    
+
         // Tạo groups mới
         for ($i = 0; $i < $numGroups; $i++) {
             $type->groups()->create([
@@ -209,15 +209,15 @@ const PAIRING_MODE_MANUAL = 'manual';
             // ✅ KIỂM TRA SỐ BẢNG CÓ THAY ĐỔI KHÔNG
             $oldNumGroups = $tournamentType->groups()->count();
             $newNumGroups = null;
-            
+
             if (!empty($validated['format_specific_config'])) {
-                $mainConfig = is_array($validated['format_specific_config']) && isset($validated['format_specific_config'][0]) 
-                    ? $validated['format_specific_config'][0] 
+                $mainConfig = is_array($validated['format_specific_config']) && isset($validated['format_specific_config'][0])
+                    ? $validated['format_specific_config'][0]
                     : $validated['format_specific_config'];
                 $poolConfig = $mainConfig['pool_stage'] ?? [];
                 $newNumGroups = max(1, (int)($poolConfig['number_competing_teams'] ?? 2));
             }
-    
+
             // Xoá toàn bộ cấu hình cũ trước khi cập nhật
             $tournamentType->match_rules = [];
             $tournamentType->format_specific_config = [];
@@ -249,12 +249,12 @@ const PAIRING_MODE_MANUAL = 'manual';
             }
 
             $tournamentType->save();
-    
+
             // ✅ NẾU SỐ BẢNG THAY ĐỔI -> TẠO LẠI BẢNG TRỐNG
-            if ($tournamentType->format === TournamentType::FORMAT_MIXED && 
-                $newNumGroups !== null && 
+            if ($tournamentType->format === TournamentType::FORMAT_MIXED &&
+                $newNumGroups !== null &&
                 $newNumGroups !== $oldNumGroups) {
-                
+
                 // Xóa assignment và matches cũ
                 foreach ($tournamentType->groups as $group) {
                     $group->teams()->detach();
@@ -263,14 +263,14 @@ const PAIRING_MODE_MANUAL = 'manual';
                     $match->results()->delete();
                     $match->delete();
                 });
-                
+
                 // Tạo lại groups
                 $this->createEmptyGroups($tournamentType);
             } else {
                 // ✅ NẾU KHÔNG THAY ĐỔI SỐ BẢNG -> CHỈ REGENERATE MATCHES
                 $this->generateMatchesForType($tournamentType);
             }
-    
+
             DB::commit();
             return ResponseHelper::success(new TournamentTypeResource($tournamentType->fresh()), 'Cập nhật thể thức thành công');
         } catch (\Throwable $e) {
@@ -298,7 +298,7 @@ const PAIRING_MODE_MANUAL = 'manual';
 
         if ($completedMatches) {
             return ResponseHelper::error(
-                'Không thể chia lại cặp đấu. Đã có trận đấu hoàn thành thuộc thể thức này.', 
+                'Không thể chia lại cặp đấu. Đã có trận đấu hoàn thành thuộc thể thức này.',
                 400
             );
         }
@@ -346,7 +346,7 @@ const PAIRING_MODE_MANUAL = 'manual';
             $scheduleTeams[] = 'BYE';
             $teamCount++;
         }
-        $totalRounds = $teamCount - 1; 
+        $totalRounds = $teamCount - 1;
         $matches = [];
         $matchNumber = 0;
 
@@ -362,11 +362,11 @@ const PAIRING_MODE_MANUAL = 'manual';
                     $awayId = $awayTeams[$i];
 
                     if ($homeId === 'BYE' || $awayId === 'BYE') {
-                        continue; 
+                        continue;
                     }
-                    
+
                     $matchNumber++;
-                    
+
                     $isReturnLeg = ($leg % 2 === 0);
                     $finalHomeId = ($isReturnLeg) ? $awayId : $homeId;
                     $finalAwayId = ($isReturnLeg) ? $homeId : $awayId;
@@ -382,7 +382,7 @@ const PAIRING_MODE_MANUAL = 'manual';
                         'updated_at' => now(),
                     ];
                 }
-                
+
                 $firstTeam = array_shift($scheduleTeams);
                 $lastTeam = array_pop($scheduleTeams);
                 array_unshift($scheduleTeams, $firstTeam, $lastTeam);
@@ -537,7 +537,7 @@ const PAIRING_MODE_MANUAL = 'manual';
             foreach ($currRoundPairs as $pairIndex => $pair) {
                 $nextPairIndex = floor($pairIndex / 2);
                 $nextPos = ($pairIndex % 2 === 0) ? 'home' : 'away';
-                
+
                 $nextPair = $nextRoundPairs[$nextPairIndex] ?? null;
                 if ($nextPair) {
                     $targetMatchId = $nextPair->match_ids[0];
@@ -603,22 +603,22 @@ const PAIRING_MODE_MANUAL = 'manual';
     {
         $matchNumber = 0;
 
-        $mainConfig = is_array($config) && isset($config[0]) ? $config[0] : [];        
+        $mainConfig = is_array($config) && isset($config[0]) ? $config[0] : [];
         $poolConfig = $mainConfig['pool_stage'] ?? [];
         $knockoutConfig = $mainConfig['knockout_stage'] ?? [];
-        
+
         $numAdvancing = max(1, (int)($poolConfig['num_advancing_teams'] ?? 1));
         $advancedToNext = filter_var($mainConfig['advanced_to_next_round'] ?? false, FILTER_VALIDATE_BOOLEAN);
         $hasThirdPlace = filter_var($mainConfig['has_third_place_match'] ?? false, FILTER_VALIDATE_BOOLEAN);
-        
+
         // ✅ LẤY PAIRING MODE TỪ CONFIG (MẶC ĐỊNH: SEQUENTIAL)
         $pairingMode = $knockoutConfig['pairing_mode'] ?? null;  // Không set default ở đây
         $manualPairings = $knockoutConfig['manual_pairings'] ?? null;
-    
+
         // ✅ KIỂM TRA: Có groups với teams assigned không?
         $groups = $type->groups()->with('teams.members')->get();
         $hasAssignedTeams = $groups->isNotEmpty() && $groups->some(fn($g) => $g->teams->isNotEmpty());
-    
+
         if ($hasAssignedTeams) {
             // ✅ TRƯỜNG HỢP 1: ĐÃ ASSIGN TEAMS VÀO BẢNG
             $chunks = $groups->map(fn($g) => $g->teams)->filter(fn($chunk) => $chunk->count() > 0)->values();
@@ -626,18 +626,18 @@ const PAIRING_MODE_MANUAL = 'manual';
             // ✅ TRƯỜNG HỢP 2: AUTO GENERATE - CHIA ĐỘI TỰ ĐỘNG (LOGIC CŨ)
             $teamCount = $teams->count();
             if ($teamCount < 2) return;
-    
-            $numGroups = max(1, (int)($poolConfig['number_competing_teams'] ?? 2)); 
+
+            $numGroups = max(1, (int)($poolConfig['number_competing_teams'] ?? 2));
             $baseTeamsPerGroup = floor($teamCount / $numGroups);
             $remainder = $teamCount % $numGroups;
-            
+
             $chunks = collect();
             $offset = 0;
             for ($i = 0; $i < $numGroups; $i++) {
                 $groupSize = $baseTeamsPerGroup + ($i < $remainder ? 1 : 0);
                 if ($groupSize > 0) {
                     $groupTeams = $teams->slice($offset, $groupSize)->values();
-                    $chunks->push($groupTeams);               
+                    $chunks->push($groupTeams);
                     // ✅ LƯU TEAMS VÀO GROUP_TEAM
                     $group = $groups->get($i);
                     if ($group) {
@@ -647,26 +647,26 @@ const PAIRING_MODE_MANUAL = 'manual';
                         }
                         $group->teams()->sync($syncData);
                     }
-                    
+
                     $offset += $groupSize;
                 }
             }
-        
+
             $chunks = $chunks->filter(fn($chunk) => $chunk->count() > 0)->values();
         }
         $advancingByRank = collect();
         $groupObjects = collect();
-    
+
         // ===== PHASE 2: TẠO VÒNG BẢNG (ROUND ROBIN) =====
         foreach ($chunks as $index => $chunk) {
             $chunk = $chunk->values();
             $count = $chunk->count();
-    
+
             // Nếu chỉ có 1 đội trong group -> tạo bye match
             if ($count === 1) {
                 $matchNumber++;
                     $group = $type->groups()->create(['name' => 'Bảng ' . chr(65 + $index)]);
-    
+
                 $byeMatch = $type->matches()->create([
                     'tournament_type_id' => $type->id,
                     'home_team_id' => $chunk[0]->id,
@@ -677,7 +677,7 @@ const PAIRING_MODE_MANUAL = 'manual';
                     'status' => 'pending',
                     'name_of_match' => "Trận đấu số {$matchNumber}",
                 ]);
-                
+
                 if (!isset($advancingByRank[0])) {
                     $advancingByRank[0] = collect();
                 }
@@ -690,14 +690,14 @@ const PAIRING_MODE_MANUAL = 'manual';
                 ]);
                 continue;
             }
-    
+
             // ✅ Group bình thường (2+ đội)
             $group = $groups->get($index);
             if (!$group) {
                 continue;
             }
             $groupObjects->push($group);
-    
+
             // Thuật toán Round Robin (Circle Method)
             $scheduleTeams = $chunk->pluck('id')->toArray();
             $isOdd = $count % 2 !== 0;
@@ -706,31 +706,31 @@ const PAIRING_MODE_MANUAL = 'manual';
                 $count++;
             }
             $totalRounds = $count - 1;
-    
+
             // Tạo matches cho từng leg
             for ($leg = 1; $leg <= $numLegs; $leg++) {
                 $currentSchedule = $scheduleTeams; // Reset schedule mỗi leg
-    
+
                 for ($round = 1; $round <= $totalRounds; $round++) {
                     $halfSize = $count / 2;
                     $homeTeams = array_slice($currentSchedule, 0, $halfSize);
                     $awayTeams = array_reverse(array_slice($currentSchedule, $halfSize));
-    
+
                     for ($i = 0; $i < $halfSize; $i++) {
                         $homeId = $homeTeams[$i];
                         $awayId = $awayTeams[$i];
-    
+
                         if ($homeId === 'BYE' || $awayId === 'BYE') {
                             continue;
                         }
-    
+
                         $matchNumber++;
-    
+
                         // Đảo sân cho lượt về
                         $isReturnLeg = ($leg % 2 === 0);
                         $finalHomeId = $isReturnLeg ? $awayId : $homeId;
                         $finalAwayId = $isReturnLeg ? $homeId : $awayId;
-    
+
                         $type->matches()->create([
                             'group_id' => $group->id,
                             'tournament_type_id' => $type->id,
@@ -743,20 +743,20 @@ const PAIRING_MODE_MANUAL = 'manual';
                             'name_of_match' => "Trận đấu số {$matchNumber}",
                         ]);
                     }
-    
+
                     // Rotate schedule (Circle Method)
                     $firstTeam = array_shift($currentSchedule);
                     $lastTeam = array_pop($currentSchedule);
                     array_unshift($currentSchedule, $firstTeam, $lastTeam);
                 }
             }
-    
+
             // Thu thập placeholder theo hạng cho knockout
             for ($k = 0; $k < min($numAdvancing, $chunk->count()); $k++) {
                 if (!isset($advancingByRank[$k])) {
                     $advancingByRank[$k] = collect();
                 }
-                
+
                 $advancingByRank[$k]->push((object)[
                     'team_id' => null,
                     '_from_group' => $group->id,
@@ -765,14 +765,14 @@ const PAIRING_MODE_MANUAL = 'manual';
                 ]);
             }
         }
-    
+
         // ✅ SẮP XẾP ĐỘI ADVANCING THEO MODE ĐÃ CHỌN
         $advancing = $this->arrangeAdvancingTeams($advancingByRank, $pairingMode, $manualPairings);
-    
+
         // ✅ KIỂM TRA SỐ ĐỘI ADVANCING
         $totalAdvancing = $advancing->count();
         $willHaveBye = ($totalAdvancing % 2 !== 0);
-        
+
         // ✅ CHỈ CHO PHÉP BEST LOSER KHI CẦN THIẾT
         if ($willHaveBye && !$advancedToNext) {
             // Padding thêm 1 placeholder rỗng để tránh lỗi
@@ -781,7 +781,7 @@ const PAIRING_MODE_MANUAL = 'manual';
                 '_placeholder' => true,
             ]);
         }
-    
+
         // ===== PHASE 4: TẠO KNOCKOUT STAGE =====
         $knockoutRounds = $this->generateKnockoutStage(
             $type,
@@ -791,7 +791,7 @@ const PAIRING_MODE_MANUAL = 'manual';
             $numLegs,
             $matchNumber
         );
-    
+
         // ===== PHASE 5: TẠO POOL ADVANCEMENT RULES =====
         $this->createPoolAdvancementRules($type, $knockoutRounds, $advancing, $groupObjects);
     }
@@ -801,27 +801,27 @@ const PAIRING_MODE_MANUAL = 'manual';
         $teamList = is_array($teams) ? collect($teams) : $teams->values();
         $roundIndex = 2;
         $rounds = collect();
-    
+
         while ($teamList->count() > 1) {
             $matchIds = collect();
             $nextRoundTeams = collect();
             $teamCount = $teamList->count();
             $numMatches = intdiv($teamCount, 2);
             $hasBye = ($teamCount % 2 === 1);
-            
+
             // Tạo các trận đấu bình thường
             for ($i = 0; $i < $numMatches; $i++) {
                 $homeIdx = $i * 2;
                 $awayIdx = $i * 2 + 1;
-                
+
                 $home = $teamList->get($homeIdx);
                 $away = $teamList->get($awayIdx);
                 $firstMatchId = null;
-                
+
                 for ($leg = 1; $leg <= $numLegs; $leg++) {
                     $isReturn = ($leg % 2 === 0);
                     $matchNumber++;
-                    
+
                     $match = $type->matches()->create([
                         'tournament_type_id' => $type->id,
                         'home_team_id' => $isReturn ? $this->getTeamId($away) : $this->getTeamId($home),
@@ -832,25 +832,25 @@ const PAIRING_MODE_MANUAL = 'manual';
                         'is_bye' => false,
                         'name_of_match' => "Trận đấu số {$matchNumber}",
                     ]);
-    
+
                     if ($leg === 1) {
                         $firstMatchId = $match->id;
                     }
                 }
-    
+
                 $matchIds->push($firstMatchId);
-                
+
                 $nextRoundTeams->push((object)[
                     'team_id' => null,
                     '_from_match' => $firstMatchId,
                 ]);
             }
-    
+
             // Xử lý đội bye
             if ($hasBye) {
                 $byeTeam = $teamList->get($teamCount - 1);
                 $byeTeamId = $this->getTeamId($byeTeam);
-    
+
                 if ($advancedToNext) {
                     // ✅ FIX: Tạo trận bye vs best loser và THÊM VÀO $matchIds
                     $firstByeMatchId = null;
@@ -871,10 +871,10 @@ const PAIRING_MODE_MANUAL = 'manual';
                             $firstByeMatchId = $byeMatch->id;
                         }
                     }
-    
+
                     // ✅ QUAN TRỌNG: Thêm bye match vào matchIds để nó được link
                     $matchIds->push($firstByeMatchId);
-                    
+
                     $nextRoundTeams->push((object)[
                         'team_id' => null,
                         '_from_match' => $firstByeMatchId,
@@ -892,64 +892,64 @@ const PAIRING_MODE_MANUAL = 'manual';
                         'is_bye' => true,
                         'name_of_match' => "Trận đấu số {$matchNumber}",
                     ]);
-    
+
                     $matchIds->push($byeMatch->id);
-                    
+
                     $nextRoundTeams->push((object)[
                         'team_id' => $byeTeamId,
                         '_bye_match' => $byeMatch,
                     ]);
                 }
             }
-    
+
             $rounds->put($roundIndex, $matchIds);
             $teamList = $nextRoundTeams;
             $roundIndex++;
         }
-    
+
         if ($rounds->isEmpty()) {
             return collect();
         }
-        
+
         // Link các trận vào round tiếp theo
         $finalRound = $roundIndex - 1;
         for ($r = 2; $r < $finalRound; $r++) {
             $currMatchIds = $rounds->get($r, collect());
             $nextMatchIds = $rounds->get($r + 1, collect());
-            
+
             foreach ($currMatchIds as $idx => $matchId) {
                 $match = $type->matches()->find($matchId);
                 if (!$match) continue;
-                
+
                 // ✅ FIX: Bỏ điều kiện skip bye match để link được
                 // Trước: if ($match->is_bye && !$match->away_team_id) continue;
                 // Sau: Cho phép link cả bye match
-                
+
                 $targetIdx = intdiv($idx, 2);
                 $targetId = $nextMatchIds->get($targetIdx);
                 if (!$targetId) continue;
-                
+
                 $position = ($idx % 2 === 0) ? 'home' : 'away';
-                
+
                 $match->update([
                     'next_match_id' => $targetId,
                     'next_position' => $position,
                 ]);
             }
         }
-        
+
         // Xử lý trận tranh hạng 3
         if ($hasThirdPlace) {
             $semiRound = $finalRound - 1;
             $semiIds = $rounds->get($semiRound, collect());
-            
+
             if ($semiIds->count() >= 2) {
                 $firstSemiId = $semiIds->get(0);
                 $secondSemiId = $semiIds->get(1);
                 $firstThirdPlaceId = null;
-                
+
                 for ($leg = 1; $leg <= $numLegs; $leg++) {
-                    $matchNumber++; 
+                    $matchNumber++;
                     $third = $type->matches()->create([
                         'tournament_type_id' => $type->id,
                         'round' => $finalRound + 1,
@@ -958,12 +958,12 @@ const PAIRING_MODE_MANUAL = 'manual';
                         'status' => 'pending',
                         'name_of_match' => "Trận đấu số {$matchNumber}",
                     ]);
-                
+
                     if ($leg === 1) {
                         $firstThirdPlaceId = $third->id;
                     }
                 }
-                
+
                 DB::table('matches')
                     ->where('id', $firstSemiId)
                     ->update([
@@ -978,7 +978,7 @@ const PAIRING_MODE_MANUAL = 'manual';
                     ]);
             }
         }
-    
+
         return $rounds;
     }
 
@@ -987,7 +987,7 @@ const PAIRING_MODE_MANUAL = 'manual';
         if (!($knockoutRounds instanceof Collection)) {
             $knockoutRounds = collect($knockoutRounds);
         }
-        
+
         $firstRoundMatchIds = $knockoutRounds->get(2, collect());
         if ($firstRoundMatchIds->isEmpty()) {
             return;
@@ -997,7 +997,7 @@ const PAIRING_MODE_MANUAL = 'manual';
 
         $allRound2Matches = Matches::where('tournament_type_id', $type->id)
             ->where('round', 2)
-            ->orderBy('id', 'asc') 
+            ->orderBy('id', 'asc')
             ->get();
 
         if ($allRound2Matches->isEmpty()) {
@@ -1014,7 +1014,7 @@ const PAIRING_MODE_MANUAL = 'manual';
             // Xác định cặp đấu và vị trí (đội thứ 1 vào Home cặp 1, đội thứ 2 vào Away cặp 1,...)
             $pairIndex = intdiv($knockoutIndex, 2);
             $basePosition = ($knockoutIndex % 2 === 0) ? 'home' : 'away';
-            
+
             $matchPair = $matchPairs->get($pairIndex);
             if (!$matchPair) {
                 $knockoutIndex++;
@@ -1026,7 +1026,7 @@ const PAIRING_MODE_MANUAL = 'manual';
 
                 foreach ($matchPair as $legMatch) {
                     $isReturnLeg = ($legMatch->leg % 2 === 0);
-                    $actualPosition = $isReturnLeg 
+                    $actualPosition = $isReturnLeg
                         ? ($basePosition === 'home' ? 'away' : 'home')
                         : $basePosition;
 
@@ -1044,7 +1044,7 @@ const PAIRING_MODE_MANUAL = 'manual';
             elseif (property_exists($placeholder, 'team_id') && $placeholder->team_id) {
                 foreach ($matchPair as $legMatch) {
                     $isReturnLeg = ($legMatch->leg % 2 === 0);
-                    $actualPosition = $isReturnLeg 
+                    $actualPosition = $isReturnLeg
                         ? ($basePosition === 'home' ? 'away' : 'home')
                         : $basePosition;
 
@@ -1064,34 +1064,34 @@ const PAIRING_MODE_MANUAL = 'manual';
     public function applyPoolAdvancement(TournamentType $type)
     {
         $groups = $type->groups()->with(['matches'])->get();
-        
+
         foreach ($groups as $group) {
             $matches = $group->matches;
-            
+
             // Tính standings
             $standings = TournamentService::calculateGroupStandings($matches);
-            
+
             // ✅ Lấy TẤT CẢ các rules cho group này (bao gồm cả các legs)
             $rules = PoolAdvancementRule::where('group_id', $group->id)
                 ->orderBy('rank')
                 ->orderBy('next_match_id') // ← Sắp xếp theo match để xử lý tuần tự
                 ->get();
-            
+
             // ✅ Group rules theo rank để xử lý từng đội
             $rulesByRank = $rules->groupBy('rank');
-            
+
             foreach ($rulesByRank as $rank => $rulesForRank) {
                 // Lấy team theo ranking
                 $teamAtRank = $standings->get($rank - 1);
                 if (!$teamAtRank) continue;
-                
+
                 $advancingTeamId = $teamAtRank['team_id'];
-                
+
                 // ✅ Cập nhật TẤT CẢ các legs của đội này
                 foreach ($rulesForRank as $rule) {
                     $targetMatch = Matches::find($rule->next_match_id);
                     if (!$targetMatch) continue;
-                    
+
                     $targetMatch->update([
                         $rule->next_position . '_team_id' => $advancingTeamId,
                         'status' => 'pending',
@@ -1116,17 +1116,17 @@ const PAIRING_MODE_MANUAL = 'manual';
     {
         try {
             $format = $tournamentType->format;
-            
+
             switch ($format) {
                 case TournamentType::FORMAT_ROUND_ROBIN:
                     return $this->getRoundRobinSchedule($tournamentType);
-                    
+
                 case TournamentType::FORMAT_ELIMINATION:
                     return $this->getEliminationBracket($tournamentType);
-                    
+
                 case TournamentType::FORMAT_MIXED:
                     return $this->getMixedBracket($tournamentType);
-                    
+
                 default:
                     return ResponseHelper::error('Format không hợp lệ', 400);
             }
@@ -1144,17 +1144,17 @@ const PAIRING_MODE_MANUAL = 'manual';
             ->with(['homeTeam.members', 'awayTeam.members', 'results'])
             ->get();
         $totalRounds = $allMatches->max('round') ?? 1;
-    
+
         // 1. Nhóm theo Round trước để tạo cấu trúc giống Bracket của Elimination
         $rounds = $allMatches->groupBy('round')->map(function ($roundMatches, $round) use ($type, $totalRounds) {
-            
+
             // 2. Trong mỗi Round, nhóm các Leg thành 1 cặp đấu
             $groupedMatches = $roundMatches->groupBy(function ($match) {
                 $teams = [$match->home_team_id, $match->away_team_id];
                 sort($teams);
                 return implode('_', $teams);
             })->values();
-    
+
             return [
                 'round' => $round,
                 'round_name' => "Vòng " . $round, // Hoặc dùng hàm getRoundName nếu muốn
@@ -1162,19 +1162,19 @@ const PAIRING_MODE_MANUAL = 'manual';
                     $leg1 = $legs->firstWhere('leg', 1) ?? $legs->first();
                     $baseHomeId = $leg1->home_team_id;
                     $baseAwayId = $leg1->away_team_id;
-    
+
                     $homeTotal = 0;
                     $awayTotal = 0;
 
                     $isFinal = ($round == $totalRounds) && ($legs->count() > 0);
-    
+
                     // 3. Format Legs giống hệt Elimination
                     $formattedLegs = $legs->map(function ($leg) use ($baseHomeId, $baseAwayId, &$homeTotal, &$awayTotal) {
                         $res = $this->calculateSingleMatchWins($leg); // Hàm tính set thắng 2-1, 2-0...
-                        
+
                         $homeLegScore = 0;
                         $awayLegScore = 0;
-    
+
                         // Logic tính điểm thắng (3đ cho thắng trận, 0đ cho thua) giống Elimination
                         if ($leg->home_team_id == $baseHomeId) {
                             $homeLegScore = ($res['home'] > $res['away']) ? 3 : 0;
@@ -1183,12 +1183,12 @@ const PAIRING_MODE_MANUAL = 'manual';
                             $homeLegScore = ($res['away'] > $res['home']) ? 3 : 0;
                             $awayLegScore = ($res['home'] > $res['away']) ? 3 : 0;
                         }
-    
+
                         if ($leg->status === 'completed') {
                             $homeTotal += $homeLegScore;
                             $awayTotal += $awayLegScore;
                         }
-    
+
                         return [
                             'id' => $leg->id,
                             'leg' => $leg->leg,
@@ -1204,7 +1204,7 @@ const PAIRING_MODE_MANUAL = 'manual';
                             })
                         ];
                     })->values();
-    
+
                     return [
                         'match_id' => $leg1->id,
                         'home_team' => $this->formatTeam($leg1->homeTeam),
@@ -1221,14 +1221,14 @@ const PAIRING_MODE_MANUAL = 'manual';
                 })->values()
             ];
         })->values();
-    
+
         return ResponseHelper::success([
             'format' => TournamentType::FORMAT_ROUND_ROBIN,
             'format_type_text' => 'round_robin',
             'bracket' => $rounds, // Dùng key 'bracket' để FE dùng chung logic map
         ]);
     }
-    
+
     // Hàm bổ trợ tính set thắng
     private function calculateSingleMatchWins($match) {
         $homeWins = 0; $awayWins = 0;
@@ -1251,32 +1251,32 @@ const PAIRING_MODE_MANUAL = 'manual';
         $calculateLegDetails = function ($leg) {
             $homeTeamId = $leg->home_team_id;
             $awayTeamId = $leg->away_team_id;
-    
+
             $sets = [];
             $homeSetWins = 0;
             $awaySetWins = 0;
-    
+
             $groupedSets = $leg->results->groupBy('set_number');
-    
+
             foreach ($groupedSets as $setNumber => $setGroup) {
                 $home = $setGroup->firstWhere('team_id', $homeTeamId);
                 $away = $setGroup->firstWhere('team_id', $awayTeamId);
-    
+
                 $homeScore = (int) ($home->score ?? 0);
                 $awayScore = (int) ($away->score ?? 0);
-    
+
                 if ($homeScore > $awayScore) {
                     $homeSetWins++;
                 } elseif ($awayScore > $homeScore) {
                     $awaySetWins++;
                 }
-    
+
                 $sets['set_' . $setNumber] = [
                     ['team_id' => $homeTeamId, 'score' => $homeScore],
                     ['team_id' => $awayTeamId, 'score' => $awayScore],
                 ];
             }
-    
+
             // 👉 QUYẾT ĐỊNH THẮNG LEG
             if ($homeSetWins > $awaySetWins) {
                 return [
@@ -1286,7 +1286,7 @@ const PAIRING_MODE_MANUAL = 'manual';
                     'winner_team_id' => $homeTeamId,
                 ];
             }
-    
+
             if ($awaySetWins > $homeSetWins) {
                 return [
                     'sets' => $sets,
@@ -1295,7 +1295,7 @@ const PAIRING_MODE_MANUAL = 'manual';
                     'winner_team_id' => $awayTeamId,
                 ];
             }
-    
+
             // Không đủ dữ liệu → chưa xác định
             return [
                 'sets' => $sets,
@@ -1304,72 +1304,72 @@ const PAIRING_MODE_MANUAL = 'manual';
                 'winner_team_id' => null,
             ];
         };
-    
+
         $matches = $type->matches()
             ->with(['homeTeam.members', 'awayTeam.members', 'results'])
             ->orderBy('round')
             ->orderBy('leg')
             ->get();
-    
+
         // ✅ FIX: Tìm round chung kết (round cao nhất KHÔNG PHẢI tranh hạng 3)
         $finalRound = $matches
             ->filter(fn($m) => !($m->is_third_place ?? false))
             ->max('round') ?? 1;
-    
+
         $bracket = $matches
             ->groupBy('round')
             ->map(function ($roundMatches, $round) use ($calculateLegDetails, $type, $finalRound) {
-    
+
                 // ✅ SỬA: Group 2 leg thành 1 match - Dùng match_pair_id hoặc logic ổn định
                 $grouped = $roundMatches->groupBy(function ($match) {
                     // Nếu có match_pair_id (nên thêm vào DB)
                     if (isset($match->match_pair_id)) {
                         return 'pair_' . $match->match_pair_id;
                     }
-                    
+
                     // TH1: Dùng next_match_id + next_position (ổn định nhất)
                     if ($match->next_match_id && $match->next_position) {
                         return 'to_' . $match->next_match_id . '_' . $match->next_position;
                     }
-                    
+
                     // TH2: Trận cuối (Final/Third Place) - không có next
                     if ($match->is_third_place) {
                         return 'third_place_' . $match->round;
                     }
-                    
+
                     if (!$match->next_match_id) {
                         return 'final_' . $match->round;
                     }
-                    
+
                     // TH3: Fallback - gom theo min ID của 2 leg
                     // Leg 1 & 2 thường có ID liên tiếp
                     $baseId = floor($match->id / 2) * 2;
                     return 'match_' . $baseId;
                 })->values();
-    
+
                 // ✅ XỬ LÝ TÊN ROUND
                 $roundName = $this->getRoundName($round, $grouped->count(), $type->format);
-                
+
                 // ✅ NẾU TẤT CẢ MATCHES TRONG ROUND LÀ THIRD PLACE
                 if ($roundMatches->every(fn($m) => $m->is_third_place ?? false)) {
                     $roundName = 'Tranh hạng Ba';
                 }
-    
+
                 return [
                     'round' => $round,
                     'round_name' => $roundName,
                     'matches' => $grouped->map(function ($matchGroup) use ($calculateLegDetails, $round, $finalRound) {
-    
+
                         $first = $matchGroup->first();
                         $homeTeamId = $first->home_team_id;
                         $awayTeamId = $first->away_team_id;
-    
+
                         $homeTotal = 0;
                         $awayTotal = 0;
-    
+
                         // ✅ FIX: Dùng $finalRound thay vì $maxRound
                         $isFinal = ($round == $finalRound) && !($first->is_third_place ?? false);
-    
+
                         $legs = $matchGroup->map(function ($leg) use (
                             $calculateLegDetails,
                             &$homeTotal,
@@ -1385,7 +1385,7 @@ const PAIRING_MODE_MANUAL = 'manual';
                                     $awayTotal += 3;
                                 }
                             }
-    
+
                             return [
                                 'id' => $leg->id,
                                 'leg' => $leg->leg,
@@ -1398,7 +1398,7 @@ const PAIRING_MODE_MANUAL = 'manual';
                                 'sets' => $details['sets'],
                             ];
                         })->values();
-    
+
                         return [
                             'match_id' => $first->id,
                             'home_team' => $this->formatTeam($first->homeTeam),
@@ -1418,7 +1418,7 @@ const PAIRING_MODE_MANUAL = 'manual';
                     })->values(),
                 ];
             })->values();
-    
+
         return ResponseHelper::success([
             'format' => TournamentType::FORMAT_ELIMINATION,
             'format_type_text' => 'elimination',
@@ -1432,29 +1432,29 @@ const PAIRING_MODE_MANUAL = 'manual';
         $calculateLegDetails = function ($leg) {
             $homeTeamId = $leg->home_team_id;
             $awayTeamId = $leg->away_team_id;
-    
+
             $sets = [];
             $homeSetWins = 0;
             $awaySetWins = 0;
-    
+
             $groupedSets = $leg->results->groupBy('set_number');
-    
+
             foreach ($groupedSets as $setNumber => $setGroup) {
                 $home = $setGroup->firstWhere('team_id', $homeTeamId);
                 $away = $setGroup->firstWhere('team_id', $awayTeamId);
-    
+
                 $homeScore = (int) ($home->score ?? 0);
                 $awayScore = (int) ($away->score ?? 0);
-    
+
                 if ($homeScore > $awayScore) $homeSetWins++;
                 elseif ($awayScore > $homeScore) $awaySetWins++;
-    
+
                 $sets['set_' . $setNumber] = [
                     ['team_id' => $homeTeamId, 'score' => $homeScore],
                     ['team_id' => $awayTeamId, 'score' => $awayScore],
                 ];
             }
-    
+
             if ($homeSetWins > $awaySetWins) {
                 return [
                     'sets' => $sets,
@@ -1463,7 +1463,7 @@ const PAIRING_MODE_MANUAL = 'manual';
                     'winner_team_id' => $homeTeamId,
                 ];
             }
-    
+
             if ($awaySetWins > $homeSetWins) {
                 return [
                     'sets' => $sets,
@@ -1472,7 +1472,7 @@ const PAIRING_MODE_MANUAL = 'manual';
                     'winner_team_id' => $awayTeamId,
                 ];
             }
-    
+
             return [
                 'sets' => $sets,
                 'home_score_calculated' => 0,
@@ -1480,7 +1480,7 @@ const PAIRING_MODE_MANUAL = 'manual';
                 'winner_team_id' => null,
             ];
         };
-    
+
         // ===== POOL STAGE =====
         $poolMatches = $type->matches()
             ->with(['homeTeam.members', 'awayTeam.members', 'group', 'results'])
@@ -1488,21 +1488,21 @@ const PAIRING_MODE_MANUAL = 'manual';
             ->orderBy('group_id')
             ->orderBy('leg')
             ->get();
-    
+
         $poolStage = $poolMatches->groupBy('group_id')->map(function ($groupMatches, $groupId) use ($calculateLegDetails) {
             $group = $groupMatches->first()->group;
-    
+
             $grouped = $groupMatches->groupBy(function ($match) {
                 if (!$match->home_team_id && !$match->away_team_id) {
                     return 'match_' . $match->id;
                 }
-    
+
                 return collect([
                     $match->home_team_id,
                     $match->away_team_id,
                 ])->sort()->implode('_');
             })->values();
-    
+
             return [
                 'group_id' => $groupId,
                 'group_name' => $group?->name ?? 'Bye',
@@ -1510,10 +1510,10 @@ const PAIRING_MODE_MANUAL = 'manual';
                     $first = $matchGroup->first();
                     $homeTeamId = $first->home_team_id;
                     $awayTeamId = $first->away_team_id;
-    
+
                     $homeTotal = 0;
                     $awayTotal = 0;
-    
+
                     $legs = $matchGroup->map(function ($leg) use (
                         $calculateLegDetails,
                         &$homeTotal,
@@ -1522,12 +1522,12 @@ const PAIRING_MODE_MANUAL = 'manual';
                         $awayTeamId
                     ) {
                         $details = $calculateLegDetails($leg);
-    
+
                         if ($leg->status === 'completed') {
                             if ($details['winner_team_id'] === $homeTeamId) $homeTotal += 3;
                             elseif ($details['winner_team_id'] === $awayTeamId) $awayTotal += 3;
                         }
-    
+
                         return [
                             'id' => $leg->id,
                             'leg' => $leg->leg,
@@ -1540,7 +1540,7 @@ const PAIRING_MODE_MANUAL = 'manual';
                             'sets' => $details['sets'],
                         ];
                     })->values();
-    
+
                     return [
                         'match_id' => $first->id,
                         'home_team' => $this->formatTeam($first->homeTeam),
@@ -1561,13 +1561,13 @@ const PAIRING_MODE_MANUAL = 'manual';
                 'standings' => $this->calculateGroupStandings($groupMatches),
             ];
         })->values();
-    
+
         // ===== ADVANCEMENT RULES =====
         $advancementRules = PoolAdvancementRule::where('tournament_type_id', $type->id)
             ->with('group')
             ->get()
             ->groupBy('next_match_id');
-    
+
         // ===== KNOCKOUT STAGE =====
         $knockoutMatches = $type->matches()
             ->with(['homeTeam.members', 'awayTeam.members', 'results'])
@@ -1575,12 +1575,12 @@ const PAIRING_MODE_MANUAL = 'manual';
             ->orderBy('round')
             ->orderBy('leg')
             ->get();
-    
+
         // ✅ FIX: Tìm round chung kết knockout (round cao nhất KHÔNG PHẢI tranh hạng 3)
         $finalKnockoutRound = $knockoutMatches
             ->filter(fn($m) => !($m->is_third_place ?? false))
             ->max('round') ?? 2;
-    
+
         $knockoutStage = $knockoutMatches->groupBy('round')->map(function ($roundMatches, $round) use (
             $calculateLegDetails,
             $type,
@@ -1590,13 +1590,13 @@ const PAIRING_MODE_MANUAL = 'manual';
             $numLegs = (int) ($type->num_legs ?? 1);
             $sortedMatches = $roundMatches->sortBy('id')->values();
             $matchGroups = $sortedMatches->chunk($numLegs);
-    
+
             $roundName = $this->getRoundName($round, $matchGroups->count(), $type->format);
-            
+
             if ($roundMatches->every(fn($m) => $m->is_third_place ?? false)) {
                 $roundName = 'Tranh hạng Ba';
             }
-    
+
             return [
                 'round' => $round,
                 'round_name' => $roundName,
@@ -1607,44 +1607,44 @@ const PAIRING_MODE_MANUAL = 'manual';
                     $finalKnockoutRound
                 ) {
                     $first = $matchGroup->first();
-    
+
                     $homeTeamId = $first->home_team_id;
                     $awayTeamId = $first->away_team_id;
-    
+
                     // ===== PLACEHOLDER LOGIC ĐÚNG THEO Ý MÀY =====
                     $rulesForThisMatch = $advancementRules->get($first->id, collect());
-    
+
                     $homePlaceholder = null;
                     $awayPlaceholder = null;
-    
+
                     foreach ($rulesForThisMatch as $rule) {
                         $text = trim(
                             $this->getRankText($rule->rank) . ' ' . ($rule->group?->name ?? '')
                         );
-    
+
                         if ($rule->next_position === 'home') $homePlaceholder = $text;
                         if ($rule->next_position === 'away') $awayPlaceholder = $text;
                     }
-    
+
                     // 👉 RULE BỊ LẺ ⇒ SINH "NHÌ TỐT NHẤT"
                     if ($rulesForThisMatch->count() === 1) {
                         $onlyRule = $rulesForThisMatch->first();
-    
+
                         if ($onlyRule->next_position === 'home' && !$awayPlaceholder) {
                             $awayPlaceholder = 'Nhì tốt nhất';
                         }
-    
+
                         if ($onlyRule->next_position === 'away' && !$homePlaceholder) {
                             $homePlaceholder = 'Nhì tốt nhất';
                         }
                     }
-    
+
                     $homeTotal = 0;
                     $awayTotal = 0;
-    
+
                     // ✅ FIX: Dùng $finalKnockoutRound thay vì $maxKnockoutRound
                     $isFinal = ($round == $finalKnockoutRound) && !($first->is_third_place ?? false);
-    
+
                     $legs = $matchGroup->map(function ($leg) use (
                         $calculateLegDetails,
                         &$homeTotal,
@@ -1653,12 +1653,12 @@ const PAIRING_MODE_MANUAL = 'manual';
                         $awayTeamId
                     ) {
                         $details = $calculateLegDetails($leg);
-    
+
                         if ($leg->status === 'completed') {
                             if ($details['winner_team_id'] === $homeTeamId) $homeTotal += 3;
                             elseif ($details['winner_team_id'] === $awayTeamId) $awayTotal += 3;
                         }
-    
+
                         return [
                             'id' => $leg->id,
                             'leg' => $leg->leg,
@@ -1671,7 +1671,7 @@ const PAIRING_MODE_MANUAL = 'manual';
                             'sets' => $details['sets'],
                         ];
                     })->values();
-    
+
                     return [
                         'match_id' => $first->id,
                         'home_team' => $this->formatTeam($first->homeTeam, $homePlaceholder),
@@ -1690,7 +1690,7 @@ const PAIRING_MODE_MANUAL = 'manual';
                 })->values(),
             ];
         })->values();
-    
+
         return ResponseHelper::success([
             'format' => TournamentType::FORMAT_MIXED,
             'format_type_text' => 'mixed',
@@ -1698,24 +1698,338 @@ const PAIRING_MODE_MANUAL = 'manual';
             'knockout_stage' => $knockoutStage,
         ]);
     }
-    
+
     private function getRankText(int $rank): string
     {
         return match($rank) {
             1 => 'Nhất',
-            2 => 'Nhì', 
+            2 => 'Nhì',
             3 => 'Ba',
             4 => 'Tư',
             default => "Hạng {$rank}",
         };
     }
-    
+
     /**
      * Format team data
      */
     private function formatTeam($team, $placeholderText = null)
     {
         return TournamentService::formatTeam($team, $placeholderText);
+    }
+
+    /**
+     * Lấy bracket với cấu trúc mới: poolStage, leftSide, rightSide, finalMatch
+     * Logic chia nhánh đẩy hết về backend, FE chỉ render
+     * Hỗ trợ Mixed format (có pool stage + knockout stage)
+     */
+    public function getBracketNew(TournamentType $tournamentType)
+    {
+        try {
+            $format = $tournamentType->format;
+
+            // Chỉ hỗ trợ Mixed format cho bây giờ
+            if ($format !== TournamentType::FORMAT_MIXED) {
+                return ResponseHelper::error('API này hiện chỉ hỗ trợ format Mixed', 400);
+            }
+
+            return $this->getMixedBracketNew($tournamentType);
+        } catch (\Throwable $e) {
+            return ResponseHelper::error('Lỗi khi lấy bracket: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Lấy bracket Mixed format với cấu trúc mới
+     */
+    private function getMixedBracketNew(TournamentType $type)
+    {
+        $calculateLegDetails = function ($leg) {
+            $homeTeamId = $leg->home_team_id;
+            $awayTeamId = $leg->away_team_id;
+
+            $sets = [];
+            $homeSetWins = 0;
+            $awaySetWins = 0;
+
+            $groupedSets = $leg->results->groupBy('set_number');
+
+            foreach ($groupedSets as $setNumber => $setGroup) {
+                $home = $setGroup->firstWhere('team_id', $homeTeamId);
+                $away = $setGroup->firstWhere('team_id', $awayTeamId);
+
+                $homeScore = (int) ($home->score ?? 0);
+                $awayScore = (int) ($away->score ?? 0);
+
+                if ($homeScore > $awayScore) $homeSetWins++;
+                elseif ($awayScore > $homeScore) $awaySetWins++;
+
+                $sets['set_' . $setNumber] = [
+                    ['team_id' => $homeTeamId, 'score' => $homeScore],
+                    ['team_id' => $awayTeamId, 'score' => $awayScore],
+                ];
+            }
+
+            if ($homeSetWins > $awaySetWins) {
+                return [
+                    'sets' => $sets,
+                    'home_score_calculated' => 3,
+                    'away_score_calculated' => 0,
+                    'winner_team_id' => $homeTeamId,
+                ];
+            }
+
+            if ($awaySetWins > $homeSetWins) {
+                return [
+                    'sets' => $sets,
+                    'home_score_calculated' => 0,
+                    'away_score_calculated' => 3,
+                    'winner_team_id' => $awayTeamId,
+                ];
+            }
+
+            return [
+                'sets' => $sets,
+                'home_score_calculated' => 0,
+                'away_score_calculated' => 0,
+                'winner_team_id' => null,
+            ];
+        };
+
+        // ===== POOL STAGE (Round 1) =====
+        $poolMatches = $type->matches()
+            ->with(['homeTeam.members', 'awayTeam.members', 'group', 'results'])
+            ->where('round', 1)
+            ->orderBy('group_id')
+            ->orderBy('leg')
+            ->get();
+
+        $poolStage = $poolMatches->groupBy('group_id')->map(function ($groupMatches, $groupId) use ($calculateLegDetails) {
+            $group = $groupMatches->first()->group;
+
+            $grouped = $groupMatches->groupBy(function ($match) {
+                if (!$match->home_team_id && !$match->away_team_id) {
+                    return 'match_' . $match->id;
+                }
+                return collect([$match->home_team_id, $match->away_team_id])->sort()->implode('_');
+            })->values();
+
+            $matchesData = $grouped->map(function ($matchGroup) use ($calculateLegDetails) {
+                $first = $matchGroup->first();
+                $homeTeamId = $first->home_team_id;
+                $awayTeamId = $first->away_team_id;
+
+                $homeTotal = 0;
+                $awayTotal = 0;
+
+                // Lấy leg đầu tiên để lấy scheduled_at, court
+                $firstLeg = $matchGroup->first();
+
+                // Tính status từ tất cả legs
+                $status = $matchGroup->every(fn($l) => $l->status === 'completed') ? 'completed' :
+                         ($matchGroup->some(fn($l) => $l->status === 'pending') ? 'pending' : 'cancelled');
+
+                // Tính tổng score từ các legs
+                $matchGroup->each(function ($leg) use ($calculateLegDetails, &$homeTotal, &$awayTotal, $homeTeamId, $awayTeamId) {
+                    $details = $calculateLegDetails($leg);
+                    if ($leg->status === 'completed') {
+                        if ($details['winner_team_id'] === $homeTeamId) $homeTotal += 3;
+                        elseif ($details['winner_team_id'] === $awayTeamId) $awayTotal += 3;
+                    }
+                });
+
+                return [
+                    'match_id' => $first->id,
+                    'home_team' => $this->formatTeam($first->homeTeam),
+                    'away_team' => $this->formatTeam($first->awayTeam),
+                    'home_score' => $homeTotal,
+                    'away_score' => $awayTotal,
+                    'status' => $status,
+                    'is_bye' => $first->is_bye,
+                    'is_third_place' => false,
+                    'scheduled_at' => $firstLeg->scheduled_at,
+                    'court' => $firstLeg->court,
+                    'winner_team_id' => $homeTotal > $awayTotal ? $homeTeamId : ($awayTotal > $homeTotal ? $awayTeamId : null),
+                ];
+            })->values();
+
+            return [
+                'group_id' => $groupId,
+                'group_name' => $group?->name ?? 'Bảng ' . $groupId,
+                'matches' => $matchesData,
+                'standings' => $this->calculateGroupStandings($groupMatches),
+            ];
+        })->values();
+
+        // ===== KNOCKOUT STAGE (Round >= 2) =====
+        $knockoutMatches = $type->matches()
+            ->with(['homeTeam.members', 'awayTeam.members', 'results'])
+            ->where('round', '>=', 2)
+            ->orderBy('round')
+            ->orderBy('leg')
+            ->get();
+
+        $finalKnockoutRound = $knockoutMatches
+            ->filter(fn($m) => !($m->is_third_place ?? false))
+            ->max('round') ?? 2;
+
+        $allKnockoutRounds = $knockoutMatches->groupBy('round')->map(function ($roundMatches, $round) use ($calculateLegDetails, $type, $finalKnockoutRound) {
+            $numLegs = (int) ($type->num_legs ?? 1);
+            $sortedMatches = $roundMatches->sortBy('id')->values();
+            $matchGroups = $sortedMatches->chunk($numLegs);
+
+            $roundName = $this->getRoundName($round, $matchGroups->count(), $type->format);
+            if ($roundMatches->every(fn($m) => $m->is_third_place ?? false)) {
+                $roundName = 'Tranh hạng Ba';
+            }
+
+            $matchesData = $matchGroups->map(function ($matchGroup) use ($calculateLegDetails, $round, $finalKnockoutRound) {
+                $first = $matchGroup->first();
+                $homeTeamId = $first->home_team_id;
+                $awayTeamId = $first->away_team_id;
+
+                $homeTotal = 0;
+                $awayTotal = 0;
+
+                $firstLeg = $matchGroup->first();
+                $status = $matchGroup->every(fn($l) => $l->status === 'completed') ? 'completed' :
+                         ($matchGroup->some(fn($l) => $l->status === 'pending') ? 'pending' : 'cancelled');
+
+                $matchGroup->each(function ($leg) use ($calculateLegDetails, &$homeTotal, &$awayTotal, $homeTeamId, $awayTeamId) {
+                    $details = $calculateLegDetails($leg);
+                    if ($leg->status === 'completed') {
+                        if ($details['winner_team_id'] === $homeTeamId) $homeTotal += 3;
+                        elseif ($details['winner_team_id'] === $awayTeamId) $awayTotal += 3;
+                    }
+                });
+
+                return [
+                    'match_id' => $first->id,
+                    'home_team' => $this->formatTeam($first->homeTeam),
+                    'away_team' => $this->formatTeam($first->awayTeam),
+                    'home_score' => $homeTotal,
+                    'away_score' => $awayTotal,
+                    'status' => $status,
+                    'is_bye' => $first->is_bye,
+                    'is_third_place' => $first->is_third_place ?? false,
+                    'scheduled_at' => $firstLeg->scheduled_at,
+                    'court' => $firstLeg->court,
+                    'winner_team_id' => $this->determineWinner($homeTotal, $awayTotal, $homeTeamId, $awayTeamId, $first, $matchGroup),
+                    'next_match_id' => $first->next_match_id,
+                    'next_position' => $first->next_position,
+                ];
+            })->values();
+
+            return [
+                'round' => $round,
+                'round_name' => $roundName,
+                'matches' => $matchesData,
+            ];
+        })->values();
+
+        // Chia knockout thành leftSide, rightSide, finalMatch
+        $leftSide = collect();
+        $rightSide = collect();
+        $finalMatch = null;
+        $thirdPlaceMatch = null;
+
+        foreach ($allKnockoutRounds as $roundData) {
+            $round = $roundData['round'];
+            $isFinalRound = $round == $finalKnockoutRound;
+
+            if ($isFinalRound) {
+                $finalMatchData = $roundData['matches']->first(function ($match) {
+                    return !($match['is_third_place'] ?? false);
+                });
+
+                if ($finalMatchData) {
+                    $finalMatch = [
+                        'match_id' => $finalMatchData['match_id'],
+                        'round' => $round,
+                        'round_name' => $roundData['round_name'],
+                        'home_team' => $finalMatchData['home_team'],
+                        'away_team' => $finalMatchData['away_team'],
+                        'home_score' => $finalMatchData['home_score'],
+                        'away_score' => $finalMatchData['away_score'],
+                        'status' => $finalMatchData['status'],
+                        'is_bye' => $finalMatchData['is_bye'],
+                        'is_third_place' => false,
+                        'scheduled_at' => $finalMatchData['scheduled_at'],
+                        'court' => $finalMatchData['court'],
+                        'winner_team_id' => $finalMatchData['winner_team_id'],
+                    ];
+                }
+
+                $thirdPlaceData = $roundData['matches']->first(function ($match) {
+                    return $match['is_third_place'] ?? false;
+                });
+
+                if ($thirdPlaceData) {
+                    $thirdPlaceMatch = [
+                        'match_id' => $thirdPlaceData['match_id'],
+                        'round' => $round,
+                        'round_name' => 'Tranh hạng Ba',
+                        'home_team' => $thirdPlaceData['home_team'],
+                        'away_team' => $thirdPlaceData['away_team'],
+                        'home_score' => $thirdPlaceData['home_score'],
+                        'away_score' => $thirdPlaceData['away_score'],
+                        'status' => $thirdPlaceData['status'],
+                        'is_bye' => $thirdPlaceData['is_bye'],
+                        'is_third_place' => true,
+                        'scheduled_at' => $thirdPlaceData['scheduled_at'],
+                        'court' => $thirdPlaceData['court'],
+                        'winner_team_id' => $thirdPlaceData['winner_team_id'],
+                    ];
+                }
+                continue;
+            }
+
+            $leftMatches = collect();
+            $rightMatches = collect();
+
+            foreach ($roundData['matches'] as $match) {
+                if ($match['next_match_id'] && $match['next_position']) {
+                    if ($match['next_position'] === 'home') {
+                        $leftMatches->push($match);
+                    } else {
+                        $rightMatches->push($match);
+                    }
+                } else {
+                    // Fallback: chia đều
+                    if ($match['match_id'] % 2 == 0) {
+                        $leftMatches->push($match);
+                    } else {
+                        $rightMatches->push($match);
+                    }
+                }
+            }
+
+            if ($leftMatches->isNotEmpty()) {
+                $leftSide->push([
+                    'round' => $round,
+                    'round_name' => $roundData['round_name'],
+                    'matches' => $leftMatches->values()->all(),
+                ]);
+            }
+
+            if ($rightMatches->isNotEmpty()) {
+                $rightSide->push([
+                    'round' => $round,
+                    'round_name' => $roundData['round_name'],
+                    'matches' => $rightMatches->values()->all(),
+                ]);
+            }
+        }
+
+        return ResponseHelper::success([
+            'format' => TournamentType::FORMAT_MIXED,
+            'format_type_text' => 'mixed',
+            'poolStage' => $poolStage->values()->all(),
+            'leftSide' => $leftSide->values()->all(),
+            'rightSide' => $rightSide->values()->all(),
+            'finalMatch' => $finalMatch,
+            'thirdPlaceMatch' => $thirdPlaceMatch,
+        ]);
     }
 
     /**
@@ -1778,14 +2092,14 @@ const PAIRING_MODE_MANUAL = 'manual';
         if (!$type) {
             return ResponseHelper::error('Tournament type not found', 404);
         }
-    
+
         $groups = $type->groups()->get();
 
         // TH 1: Nếu không chia bảng (Tính rank chung)
         if ($groups->isEmpty()) {
             // ✅ LẤY TẤT CẢ ĐỘI THAM GIA GIẢI
             $allTeams = $type->tournament->teams()->with('members')->get();
-            
+
             // Tính stats cho từng đội
             $rankings = $allTeams->map(function ($team) use ($type) {
                 $stats = $this->getTeamStats($team->id, $type->id);
@@ -1795,7 +2109,7 @@ const PAIRING_MODE_MANUAL = 'manual';
                     'team_avatar' => $team->avatar ?? '',
                 ], $stats);
             });
-    
+
             // ✅ SẮP XẾP THEO THỨ TỰ: Points → Point Diff → Wins
             $rankings = $rankings->sortByDesc(function ($item) {
                 return [
@@ -1804,13 +2118,13 @@ const PAIRING_MODE_MANUAL = 'manual';
                     $item['wins'],             // Ưu tiên 3: Số trận thắng
                 ];
             })->values();
-    
+
             // ✅ GÁN RANK SAU KHI ĐÃ SẮP XẾP
             $rankings = $rankings->map(function ($item, $index) {
                 $item['rank'] = $index + 1;
                 return $item;
             });
-    
+
             return ResponseHelper::success(['rankings' => $rankings]);
         }
 
@@ -1818,7 +2132,7 @@ const PAIRING_MODE_MANUAL = 'manual';
         $groupRankings = $groups->map(function ($group) use ($type) {
             // ✅ LẤY TẤT CẢ ĐỘI TRONG BẢNG (từ group_team pivot table)
             $teamsInGroup = $group->teams()->with('members')->get();
-            
+
             // Nếu không có đội nào được assign vào bảng này
             if ($teamsInGroup->isEmpty()) {
                 return [
@@ -1827,7 +2141,7 @@ const PAIRING_MODE_MANUAL = 'manual';
                     'rankings' => [],
                 ];
             }
-    
+
             // Tính stats cho từng đội
             $rankings = $teamsInGroup->map(function ($team) use ($type, $group) {
                 $stats = $this->getTeamStatsInGroup($team->id, $type->id, $group->id);
@@ -1837,7 +2151,7 @@ const PAIRING_MODE_MANUAL = 'manual';
                     'team_avatar' => $team->avatar ?? '',
                 ], $stats);
             });
-    
+
             // ✅ SẮP XẾP THEO THỨ TỰ: Points → Point Diff → Wins
             $rankings = $rankings->sortByDesc(function ($item) {
                 return [
@@ -1846,13 +2160,13 @@ const PAIRING_MODE_MANUAL = 'manual';
                     $item['wins'],
                 ];
             })->values();
-    
+
             // ✅ GÁN RANK SAU KHI ĐÃ SẮP XẾP
             $rankings = $rankings->map(function ($item, $index) {
                 $item['rank'] = $index + 1;
                 return $item;
             });
-    
+
             return [
                 'group_id' => $group->id,
                 'group_name' => $group->name,
@@ -1876,10 +2190,10 @@ const PAIRING_MODE_MANUAL = 'manual';
             })
             ->with('results')
             ->get();
-    
+
         return $this->calculateStatsFromMatches($matches, $teamId);
     }
-    
+
     /**
      * ✅ REFACTOR: Tách logic tính toán stats ra hàm riêng
      * ✅ MỖI LEG THẮNG = 3 ĐIỂM (không tính theo cặp đấu)
@@ -1899,30 +2213,30 @@ const PAIRING_MODE_MANUAL = 'manual';
                 'win_rate' => 0,
             ];
         }
-    
+
         $totalPoints = 0;
         $wins = 0;
         $draws = 0;
         $losses = 0;
         $pWon = 0;
         $pLost = 0;
-    
+
         // ✅ TÍNH ĐIỂM TỪNG LEG (không group)
         foreach ($matches as $leg) {
             $homeSetWins = 0;
             $awaySetWins = 0;
-            
+
             $sets = $leg->results->groupBy('set_number');
             foreach ($sets as $setGroup) {
                 $home = $setGroup->firstWhere('team_id', $leg->home_team_id);
                 $away = $setGroup->firstWhere('team_id', $leg->away_team_id);
-                
+
                 $homeScore = (int)($home->score ?? 0);
                 $awayScore = (int)($away->score ?? 0);
-                
+
                 if ($homeScore > $awayScore) $homeSetWins++;
                 elseif ($awayScore > $homeScore) $awaySetWins++;
-    
+
                 // Cộng dồn điểm cho tính point diff
                 if ($leg->home_team_id == $teamId) {
                     $pWon += $homeScore;
@@ -1932,12 +2246,12 @@ const PAIRING_MODE_MANUAL = 'manual';
                     $pLost += $homeScore;
                 }
             }
-    
+
             // ✅ XÁC ĐỊNH THẮNG/THUA/HÒA CHO LEG NÀY
             $isMyTeamHome = ($leg->home_team_id == $teamId);
             $mySetWins = $isMyTeamHome ? $homeSetWins : $awaySetWins;
             $opponentSetWins = $isMyTeamHome ? $awaySetWins : $homeSetWins;
-    
+
             if ($mySetWins > $opponentSetWins) {
                 // ✅ THẮNG LEG NÀY → +3 ĐIỂM
                 $wins++;
@@ -1951,9 +2265,9 @@ const PAIRING_MODE_MANUAL = 'manual';
                 $losses++;
             }
         }
-    
+
         $played = $matches->count(); // Số leg đã chơi
-    
+
         return [
             'team_id' => $teamId,
             'played' => $played,
@@ -1965,7 +2279,7 @@ const PAIRING_MODE_MANUAL = 'manual';
             'win_rate' => $played > 0 ? round(($wins / $played) * 100, 2) : 0,
         ];
     }
-    
+
     /**
      * ✅ CẬP NHẬT getTeamStats để dùng chung logic
      */
@@ -1978,7 +2292,7 @@ const PAIRING_MODE_MANUAL = 'manual';
             })
             ->with('results')
             ->get();
-    
+
         return $this->calculateStatsFromMatches($matches, $teamId);
     }
     public function getAdvancementStatus(TournamentType $tournamentType)
@@ -2046,7 +2360,7 @@ const PAIRING_MODE_MANUAL = 'manual';
 
         if ($completedMatches) {
             return ResponseHelper::error(
-                'Không thể chia lại cặp đấu. Đã có trận đấu hoàn thành thuộc thể thức này.', 
+                'Không thể chia lại cặp đấu. Đã có trận đấu hoàn thành thuộc thể thức này.',
                 400
             );
         }
@@ -2061,12 +2375,12 @@ const PAIRING_MODE_MANUAL = 'manual';
             $tournamentType->matches()->each(function ($match) {
                 $match->results()->delete();
                 $match->delete();
-            });        
+            });
             $this->generateMatchesForType($tournamentType);
 
             DB::commit();
             return ResponseHelper::success(
-                new TournamentTypeResource($tournamentType->fresh()), 
+                new TournamentTypeResource($tournamentType->fresh()),
                 'Chia lại cặp đấu thành công.'
             );
         } catch (\Throwable $e) {
@@ -2088,12 +2402,12 @@ const PAIRING_MODE_MANUAL = 'manual';
             'groups.*.team_ids.*' => ['exists:teams,id'],
             'is_draft' => ['sometimes', 'boolean'],
         ];
-        
+
         // Publish mới bắt min:1
         if (!$isDraft) {
             $rules['groups.*.team_ids'][] = 'min:1';
-        }   
-    
+        }
+
         $validated = $request->validate($rules);
         if (!$isDraft) {
             $completedMatches = $tournamentType->matches()
@@ -2125,7 +2439,7 @@ const PAIRING_MODE_MANUAL = 'manual';
             }
             foreach ($validated['groups'] as $groupData) {
                 $group = Group::findOrFail($groupData['group_id']);
-    
+
                 $syncData = [];
                 foreach ($groupData['team_ids'] as $order => $teamId) {
                     $syncData[$teamId] = ['order' => $order];
@@ -2136,7 +2450,7 @@ const PAIRING_MODE_MANUAL = 'manual';
                 $this->generateMatchesForTypeWithAssignedTeams($tournamentType);
             }
             DB::commit();
-    
+
             return ResponseHelper::success(
                 new TournamentTypeResource($tournamentType->fresh()),
                 $isDraft
@@ -2178,16 +2492,16 @@ const PAIRING_MODE_MANUAL = 'manual';
     {
         // ✅ NORMALIZE: Trim và lowercase
         $pairingMode = $pairingMode ? strtolower(trim($pairingMode)) : null;
-        
+
         switch ($pairingMode) {
             case self::PAIRING_MODE_SYMMETRIC:
             case 'symmetric':
                 return $this->arrangeAdvancingTeamsSymmetric($advancingByRank);
-                
+
             case self::PAIRING_MODE_MANUAL:
             case 'manual':
                 return $this->arrangeAdvancingTeamsManual($advancingByRank, $manualPairings);
-                
+
             case self::PAIRING_MODE_SEQUENTIAL:
             case 'sequential':
             case null:
@@ -2209,13 +2523,13 @@ const PAIRING_MODE_MANUAL = 'manual';
     private function arrangeAdvancingTeamsSequential($advancingByRank)
     {
         $advancing = collect();
-        
+
         $firstPlaceTeams = $advancingByRank->get(0, collect());
         $secondPlaceTeams = $advancingByRank->get(1, collect());
-        
+
         $numFirstPlace = $firstPlaceTeams->count();
         $numSecondPlace = $secondPlaceTeams->count();
-        
+
         // ✅ PATTERN TUẦN TỰ: Nhất A, Nhì B, Nhất B, Nhì A, Nhất C, Nhì D, Nhất D, Nhì C...
         for ($i = 0; $i < max($numFirstPlace, $numSecondPlace); $i += 2) {
             // Cặp thứ i: Nhất[i] vs Nhì[i+1]
@@ -2225,7 +2539,7 @@ const PAIRING_MODE_MANUAL = 'manual';
             if (($i + 1) < $numSecondPlace) {
                 $advancing->push($secondPlaceTeams->get($i + 1));
             }
-            
+
             // Cặp thứ i+1: Nhất[i+1] vs Nhì[i]
             if (($i + 1) < $numFirstPlace) {
                 $advancing->push($firstPlaceTeams->get($i + 1));
@@ -2234,7 +2548,7 @@ const PAIRING_MODE_MANUAL = 'manual';
                 $advancing->push($secondPlaceTeams->get($i));
             }
         }
-        
+
         // Xử lý các hạng còn lại (hạng 3, 4...)
         foreach ($advancingByRank as $rank => $teamsAtRank) {
             if ($rank < 2) continue;
@@ -2242,7 +2556,7 @@ const PAIRING_MODE_MANUAL = 'manual';
                 $advancing->push($team);
             }
         }
-        
+
         return $advancing;
     }
 
@@ -2258,27 +2572,27 @@ const PAIRING_MODE_MANUAL = 'manual';
     private function arrangeAdvancingTeamsSymmetric($advancingByRank)
     {
         $advancing = collect();
-        
+
         $firstPlaceTeams = $advancingByRank->get(0, collect());
         $secondPlaceTeams = $advancingByRank->get(1, collect());
-        
+
         $numFirstPlace = $firstPlaceTeams->count();
         $numSecondPlace = $secondPlaceTeams->count();
-        
+
         // Pattern đối xứng: lấy từ 2 đầu mảng
         for ($i = 0; $i < max($numFirstPlace, $numSecondPlace); $i++) {
             // Thêm nhất bảng thứ i (A, B, C, D...)
             if ($i < $numFirstPlace) {
                 $advancing->push($firstPlaceTeams->get($i));
             }
-            
+
             // Thêm nhì bảng đối xứng từ cuối lên (H, G, F, E...)
             $oppositeIndex = $numSecondPlace - 1 - $i;
             if ($oppositeIndex >= 0 && $oppositeIndex < $numSecondPlace) {
                 $advancing->push($secondPlaceTeams->get($oppositeIndex));
             }
         }
-        
+
         // Xử lý các hạng còn lại
         foreach ($advancingByRank as $rank => $teamsAtRank) {
             if ($rank < 2) continue;
@@ -2286,7 +2600,7 @@ const PAIRING_MODE_MANUAL = 'manual';
                 $advancing->push($team);
             }
         }
-        
+
         return $advancing;
     }
 
@@ -2311,9 +2625,9 @@ const PAIRING_MODE_MANUAL = 'manual';
             // Fallback về sequential nếu không có manual config
             return $this->arrangeAdvancingTeamsSequential($advancingByRank);
         }
-        
+
         $advancing = collect();
-        
+
         // Tạo map để tra cứu nhanh: "groupId_rank" => team object
         $teamMap = [];
         foreach ($advancingByRank as $rank => $teamsAtRank) {
@@ -2325,20 +2639,20 @@ const PAIRING_MODE_MANUAL = 'manual';
                 }
             }
         }
-        
+
         // Sắp xếp theo thứ tự manual
         usort($manualPairings, fn($a, $b) => ($a['position'] ?? 0) <=> ($b['position'] ?? 0));
-        
+
         foreach ($manualPairings as $pairing) {
             $groupId = $pairing['group_id'] ?? null;
             $rank = $pairing['rank'] ?? 1;
             $key = "{$groupId}_{$rank}";
-            
+
             if (isset($teamMap[$key])) {
                 $advancing->push($teamMap[$key]);
             }
         }
-        
+
         return $advancing;
     }
 
@@ -2348,15 +2662,15 @@ const PAIRING_MODE_MANUAL = 'manual';
         $mainConfig = is_array($config) && isset($config[0]) ? $config[0] : [];
         $poolConfig = $mainConfig['pool_stage'] ?? [];
         $knockoutConfig = $mainConfig['knockout_stage'] ?? [];
-        
+
         $numAdvancing = max(1, (int)($poolConfig['num_advancing_teams'] ?? 1));
         $advancedToNext = filter_var($mainConfig['advanced_to_next_round'] ?? false, FILTER_VALIDATE_BOOLEAN);
         $hasThirdPlace = filter_var($mainConfig['has_third_place_match'] ?? false, FILTER_VALIDATE_BOOLEAN);
-        
+
         // ✅ LẤY PAIRING MODE TỪ CONFIG (MẶC ĐỊNH: SEQUENTIAL)
         $pairingMode = $knockoutConfig['pairing_mode'] ?? null;  // Không set default ở đây
         $manualPairings = $knockoutConfig['manual_pairings'] ?? null;
-    
+
         $groups = $type->groups()->with('teams.members')->get();
         $advancingByRank = collect();
         $groupObjects = collect();
@@ -2364,7 +2678,7 @@ const PAIRING_MODE_MANUAL = 'manual';
         // ===== PHASE 2: TẠO VÒNG BẢNG =====
         foreach ($groups as $group) {
             $groupObjects->push($group);
-            
+
             // ✅ LẤY ĐỘI TỪ PIVOT TABLE
             $chunk = $group->teams; // Đã có relation và orderBy
             $count = $chunk->count();
@@ -2381,7 +2695,7 @@ const PAIRING_MODE_MANUAL = 'manual';
                     'status' => 'pending',
                     'name_of_match' => "Trận đấu số {$matchNumber}",
                 ]);
-                
+
                 if (!isset($advancingByRank[0])) {
                     $advancingByRank[0] = collect();
                 }
@@ -2449,7 +2763,7 @@ const PAIRING_MODE_MANUAL = 'manual';
                 if (!isset($advancingByRank[$k])) {
                     $advancingByRank[$k] = collect();
                 }
-                
+
                 $advancingByRank[$k]->push((object)[
                     'team_id' => null,
                     '_from_group' => $group->id,
@@ -2458,13 +2772,13 @@ const PAIRING_MODE_MANUAL = 'manual';
                 ]);
             }
         }
-    
+
         // ✅ SẮP XẾP ĐỘI ADVANCING THEO MODE ĐÃ CHỌN
         $advancing = $this->arrangeAdvancingTeams($advancingByRank, $pairingMode, $manualPairings);
-    
+
         $totalAdvancing = $advancing->count();
         $willHaveBye = ($totalAdvancing % 2 !== 0);
-        
+
         if ($willHaveBye && !$advancedToNext) {
             $advancing->push((object)[
                 'team_id' => null,
@@ -2495,7 +2809,7 @@ const PAIRING_MODE_MANUAL = 'manual';
         }
 
         $groups = $tournamentType->groups()->with('teams.members')->get();
-        
+
         // ✅ NẾU CHƯA CÓ BẢNG -> TẠO MỚI
         if ($groups->isEmpty()) {
             $this->createEmptyGroups($tournamentType);
@@ -2510,10 +2824,10 @@ const PAIRING_MODE_MANUAL = 'manual';
                     ->whereIn('group_id', $tournamentType->groups()->pluck('id'));
             })
             ->get();
-    
+
         // ✅ LẤY SPORT_ID TỪ TOURNAMENT
         $sportId = $tournamentType->tournament->sport_id ?? null;
-    
+
         return ResponseHelper::success([
             'groups' => $groups->map(fn($g) => [
                 'group_id' => $g->id,
@@ -2599,7 +2913,7 @@ const PAIRING_MODE_MANUAL = 'manual';
 
         // Tính trung bình
         $average = array_sum($scores);
-        
+
         return round($average, 2);
     }
     private function determineWinner($homeTotal, $awayTotal, $homeTeamId, $awayTeamId, $firstMatch, $matchGroup)
@@ -2615,10 +2929,10 @@ const PAIRING_MODE_MANUAL = 'manual';
         if ($homeTotal === $awayTotal && $firstMatch->next_match_id) {
             $nextMatch = Matches::find($firstMatch->next_match_id);
             if ($nextMatch) {
-                $advancedTeamId = ($firstMatch->next_position === 'home') 
-                    ? $nextMatch->home_team_id 
+                $advancedTeamId = ($firstMatch->next_position === 'home')
+                    ? $nextMatch->home_team_id
                     : $nextMatch->away_team_id;
-                
+
                 if ($advancedTeamId === $homeTeamId) return $homeTeamId;
                 if ($advancedTeamId === $awayTeamId) return $awayTeamId;
             }
