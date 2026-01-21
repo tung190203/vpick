@@ -14,7 +14,7 @@
                     after:rotate-45 peer-checked:after:block"
             ></span>
           </label>
-          <div class="min-w-[7rem] max-w-[7.5rem]">
+            <div class="sm:min-w-[3rem] lg:min-w-[7rem] max-w-[7.5rem]">
             <h3 class="font-semibold text-gray-800 break-words whitespace-normal">{{ matchTitle }}</h3>
             <p class="text-sm text-gray-500">{{ matchTime }}</p>
           </div>
@@ -26,11 +26,11 @@
       </div>
 
       <!-- Match Teams -->
-      <div class="grid grid-cols-[1fr_auto_1fr] gap-4 items-center mb-6">
+        <div class="grid grid-cols-1 gap-4 mb-6 lg:grid-cols-[1fr_auto_1fr] lg:items-center">
         <!-- Team 1 -->
-          <div class="rounded-lg p-3" :class="teamWinId === team1[0].team_id ? 'border-2 border-red-400 bg-red-50' : 'bg-gray-100'">
-          <div class="flex justify-between gap-2">
-            <UserCard
+          <div class="rounded-lg p-3 min-h-[72px] flex items-center" :class="teamWinId === team1[0].team_id ? 'border-2 border-red-400 bg-red-50' : 'bg-gray-100'">
+              <div class="flex items-center justify-center gap-2 flex-nowrap">
+              <UserCard
               v-for="player in team1"
               :key="player.id"
               :name="player.name"
@@ -51,14 +51,14 @@
         </div>
 
         <!-- VS -->
-        <div class="flex justify-center">
-          <span class="text-[1rem] font-bold text-gray-400">VS</span>
+            <div class="flex justify-center items-center">
+            <span class="text-[1rem] font-bold text-gray-400">VS</span>
         </div>
 
         <!-- Team 2 -->
-      <div class="rounded-lg p-3" :class="teamWinId === team2[0].team_id  ? 'border-2 border-red-400 bg-red-50' : 'bg-gray-100'">
-          <div class="flex justify-between gap-2">
-            <UserCard
+      <div class="rounded-lg p-3 min-h-[72px] flex items-center" :class="teamWinId === team2[0].team_id  ? 'border-2 border-red-400 bg-red-50' : 'bg-gray-100'">
+          <div class="flex items-center justify-center gap-2 flex-nowrap">
+          <UserCard
               v-for="player in team2"
               :key="player.id"
               :name="player.name"
