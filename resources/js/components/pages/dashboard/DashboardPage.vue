@@ -145,34 +145,37 @@
 
           <Swiper v-else :slides-per-view="'auto'" :space-between="16" :freeMode="true"
             :mousewheel="{ forceToAxis: true }" :modules="modules" class="!pb-2">
-            <SwiperSlide v-for="(t, i) in homeData.upcoming_tournaments" :key="i" class="!w-[320px]">
-              <!-- 🔥 GIỮ NGUYÊN CARD -->
+            <SwiperSlide v-for="(t, i) in homeData.upcoming_tournaments" :key="i" class="!w-[320px] !h-auto">
+              <!-- 🔥 CARD CỐ ĐỊNH CHIỀU CAO -->
               <div
-                class="bg-white rounded-[8px] shadow hover:shadow-lg overflow-hidden transition-all p-[16px] cursor-pointer h-full">
-                <div class="relative h-40 rounded-[4px] cursor-pointer overflow-hidden"
+                class="bg-white rounded-[8px] shadow hover:shadow-lg overflow-hidden transition-all p-[16px] cursor-pointer flex flex-col"
+                style="height: 340px;">
+                <div class="relative h-40 rounded-[4px] cursor-pointer overflow-hidden flex-shrink-0"
                   @click="goToTournamentDetail(t.id)"
                   :style="!t.poster ? { backgroundColor: getRandomColor(t.id) } : {}">
                   <img v-if="t.poster" :src="t.poster" alt="" class="w-full h-full object-cover rounded-[4px]" />
                 </div>
-                <div class="py-4" @click="goToTournamentDetail(t.id)">
-                  <div class="text-sm font-bold text-gray-900 mb-2 cursor-pointer">
-                    {{ t.name }}
-                  </div>
+                <div class="py-4 flex-1 flex flex-col justify-between" @click="goToTournamentDetail(t.id)">
+                  <div>
+                    <div class="text-sm font-bold text-gray-900 mb-2 cursor-pointer line-clamp-2">
+                      {{ t.name }}
+                    </div>
 
-                  <div class="text-xs text-[#004D99] flex items-center">
-                    <MapPinIcon class="w-4 h-4 mr-1 flex-shrink-0 mt-0.5 text-[#4392E0]" />
-                    <span class="line-clamp-1">
-                      {{ t.competition_location?.name ?? 'Không rõ' }}
-                    </span>
+                    <div class="text-xs text-[#004D99] flex items-center">
+                      <MapPinIcon class="w-4 h-4 mr-1 flex-shrink-0 mt-0.5 text-[#4392E0]" />
+                      <span class="line-clamp-1">
+                        {{ t.competition_location?.name ?? 'Không rõ' }}
+                      </span>
+                    </div>
+                    <div class="text-xs text-[#004D99] flex items-center my-2">
+                      <CalendarDaysIcon class="w-4 h-4 mr-1 flex-shrink-0 mt-0.5 text-[#4392E0]" />
+                      <span class="line-clamp-1">
+                        {{ formatDate(t.start_date) }}
+                      </span>
+                    </div>
                   </div>
-                  <div class="text-xs text-[#004D99] flex items-center my-2">
-                    <CalendarDaysIcon class="w-4 h-4 mr-1 flex-shrink-0 mt-0.5 text-[#4392E0]" />
-                    <span class="line-clamp-1">
-                      {{ formatDate(t.start_date) }}
-                    </span>
-                  </div>
-                  <p class="text-sm line-clamp-2">
-                    {{ t.description }}
+                  <p class="text-sm line-clamp-2 text-gray-600">
+                    {{ t.description || '' }}
                   </p>
                 </div>
               </div>
