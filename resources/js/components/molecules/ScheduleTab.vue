@@ -20,7 +20,7 @@
                 {{ tab.label }}
             </button>
         </div>
-        
+
         <button v-if="scheduleActiveTab === 'ranking'" @click="showRankingModal = true"
             class="px-4 py-2 bg-[#D72D36] text-white rounded-lg text-sm font-medium hover:bg-[#b91c1c] transition-colors flex items-center gap-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -49,10 +49,10 @@
                                 'text-gray-400': index === 1,
                                 'text-orange-500': index === 2
                             }">{{ index + 1 }}</span>
-                            <div class="flex items-center gap-2">
-                                <img :src="team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(team.team_name)}`" 
+                            <div class="flex items-start gap-2 min-w-0">
+                                <img :src="team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(team.team_name)}`"
                                     alt="logo team" class="w-8 h-8 rounded-full border border-gray-300" />
-                                <p class="text-gray-800 font-medium text-sm">{{ team.team_name }}</p>
+                                <p class="text-gray-800 font-medium text-sm break-words whitespace-normal leading-snug min-w-0">{{ team.team_name }}</p>
                             </div>
                             <span class="text-center font-bold text-lg text-blue-600">{{ team.points }}</span>
                             <span class="text-center font-semibold" :class="{
@@ -86,10 +86,10 @@
                                 'text-gray-400': index === 1,
                                 'text-orange-500': index === 2
                             }">{{ index + 1 }}</span>
-                            <div class="flex items-center gap-2">
-                                <img :src="team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(team.team_name)}`" 
+                            <div class="flex items-start gap-2 min-w-0">
+                                <img :src="team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(team.team_name)}`"
                                     alt="logo team" class="w-8 h-8 rounded-full border border-gray-300" />
-                                <p class="text-gray-800 font-medium text-sm">{{ team.team_name }}</p>
+                                <p class="text-gray-800 font-medium text-sm break-words whitespace-normal leading-snug min-w-0">{{ team.team_name }}</p>
                             </div>
                             <span class="text-center font-bold text-lg text-blue-600">{{ team.points }}</span>
                             <span class="text-center font-semibold" :class="{
@@ -362,7 +362,7 @@
     </template>
 
     <CreateMatch v-model="showCreateMatchModal" :data="detailData" :tournament="data" />
-    
+
     <Teleport to="body">
         <Transition name="modal">
             <div v-if="showRankingModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center" @click.self="showRankingModal = false">
@@ -381,7 +381,7 @@
                     </div>
 
                     <template v-else>
-                        <div v-if="data.tournament_types?.[0]?.format === 1 && rank.group_rankings" 
+                        <div v-if="data.tournament_types?.[0]?.format === 1 && rank.group_rankings"
                              class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
                             <div v-for="group in rank.group_rankings" :key="group.group_id" class="bg-gray-100 rounded-lg shadow-lg overflow-hidden">
                                 <template v-if="group.rankings && group.rankings.length">
@@ -400,7 +400,7 @@
                                                 'text-orange-500': index === 2
                                             }">{{ index + 1 }}</span>
                                             <div class="flex items-center gap-2 min-w-0">
-                                                <img :src="team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(team.team_name)}`" 
+                                                <img :src="team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(team.team_name)}`"
                                                     class="w-10 h-10 rounded-full border-2 border-gray-300 flex-shrink-0" />
                                                 <p class="text-sm font-medium truncate">{{ team.team_name }}</p>
                                             </div>
@@ -438,7 +438,7 @@
                                             }">{{ index + 1 }}</span>
                                         </div>
                                         <div class="flex items-center gap-4">
-                                            <img :src="team.team_avatar || `https://placehold.co/56x56/BBBFCC/3E414C?text=${getTeamInitials(team.team_name)}`" 
+                                            <img :src="team.team_avatar || `https://placehold.co/56x56/BBBFCC/3E414C?text=${getTeamInitials(team.team_name)}`"
                                                 class="w-14 h-14 rounded-full border-2 border-gray-300 shadow-sm" />
                                             <p class="text-gray-800 font-bold text-lg">{{ team.team_name }}</p>
                                         </div>
