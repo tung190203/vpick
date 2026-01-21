@@ -49,7 +49,7 @@
                                 'text-gray-400': index === 1,
                                 'text-orange-500': index === 2
                             }">{{ index + 1 }}</span>
-                            <div class="flex items-start gap-2 min-w-0">
+                            <div class="flex items-center gap-2">
                                 <img :src="team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(team.team_name)}`"
                                     alt="logo team" class="w-8 h-8 rounded-full border border-gray-300" />
                                 <p class="text-gray-800 font-medium text-sm break-words whitespace-normal leading-snug min-w-0">{{ team.team_name }}</p>
@@ -86,7 +86,7 @@
                                 'text-gray-400': index === 1,
                                 'text-orange-500': index === 2
                             }">{{ index + 1 }}</span>
-                            <div class="flex items-start gap-2 min-w-0">
+                            <div class="flex items-center gap-2">
                                 <img :src="team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(team.team_name)}`"
                                     alt="logo team" class="w-8 h-8 rounded-full border border-gray-300" />
                                 <p class="text-gray-800 font-medium text-sm break-words whitespace-normal leading-snug min-w-0">{{ team.team_name }}</p>
@@ -125,8 +125,8 @@
                     </button>
                 </div>
 
-                <template v-if="currentMixedStage === 'pool' && mixedBracket.pool_stage">
-                    <div v-for="group in mixedBracket.pool_stage" :key="group.group_id" class="mb-6">
+                <template v-if="currentMixedStage === 'pool' && mixedBracket.poolStage">
+                    <div v-for="group in mixedBracket.poolStage" :key="group.group_id" class="mb-6">
                         <div class="bg-[#EDEEF2] px-4 py-3 rounded-lg mb-4">
                             <h3 class="font-bold text-[#3E414C]">{{ group.group_name }}</h3>
                         </div>
@@ -164,14 +164,10 @@
                     </div>
                 </template>
 
-                <template v-if="currentMixedStage === 'knockout' && mixedBracket.knockout_stage">
+                <template v-if="currentMixedStage === 'knockout' && (mixedBracket.leftSide || mixedBracket.rightSide || mixedBracket.finalMatch)">
                     <div v-if="currentKnockoutRound" class="mb-6 cursor-pointer">
                         <div class="grid grid-cols-2 items-center mb-4 uppercase px-2">
-                            <p v-if="currentKnockoutRound.matches.length === 1" class="text-sm font-semibold">
-                                {{ currentKnockoutRound.matches[0].is_third_place == 1 ? 'Tranh hạng 3' : currentKnockoutRound.round_name }} •
-                                {{ currentKnockoutRound.matches.length }} trận đấu
-                            </p>
-                            <p v-else class="text-sm font-semibold">
+                            <p class="text-sm font-semibold">
                                 {{ currentKnockoutRound.round_name }} • {{ currentKnockoutRound.matches.length }} trận đấu
                             </p>
                             <p class="text-sm font-semibold text-right">{{ getKnockoutStatusText(currentKnockoutRound.matches) }}</p>
@@ -183,28 +179,28 @@
                                 <div :class="['flex justify-between items-center text-xs font-medium px-4 py-2 rounded-tl-lg rounded-tr-lg bg-[#dcdee6] text-[#838799]']">
                                     <span class="uppercase">{{ match.match_label || `Trận ${match.match_id}` }}</span>
                                     <div class="flex items-center gap-2">
-                                        <span class="text-xs">{{ match.legs[0]?.scheduled_at ? formatDate(match.legs[0].scheduled_at) : 'Chưa xác định' }}</span>
+                                        <span class="text-xs">{{ match.scheduled_at ? formatDate(match.scheduled_at) : 'Chưa xác định' }}</span>
                                     </div>
                                 </div>
 
                                 <div class="flex flex-col gap-3 rounded-lg shadow-md border border-[#dcdee6] bg-[#EDEEF2] px-4 py-3">
                                     <div class="flex justify-between items-center">
                                         <div class="flex items-center gap-2">
-                                            <img :src="match.home_team.logo || 'https://placehold.co/40x40'" class="w-8 h-8 rounded-full object-cover" :alt="match.home_team.name" />
-                                            <p class="text-sm font-semibold text-[#3E414C]">{{ match.home_team.name }}</p>
+                                            <img :src="match.home_team?.team_avatar || match.home_team?.logo || 'https://placehold.co/40x40'" class="w-8 h-8 rounded-full object-cover" :alt="match.home_team?.name" />
+                                            <p class="text-sm font-semibold text-[#3E414C]">{{ match.home_team?.name || 'TBD' }}</p>
                                         </div>
-                                        <span :class="['font-bold text-lg', match.winner_team_id === match.home_team.id ? 'text-[#D72D36]' : 'text-[#3E414C]']">
-                                            {{ match.aggregate_score?.home ?? 0 }}
+                                        <span :class="['font-bold text-lg', match.winner_team_id === match.home_team?.id ? 'text-[#D72D36]' : 'text-[#3E414C]']">
+                                            {{ match.home_score ?? 0 }}
                                         </span>
                                     </div>
 
                                     <div class="flex justify-between items-center">
                                         <div class="flex items-center gap-2">
-                                            <img :src="match.away_team.logo || 'https://placehold.co/40x40'" class="w-8 h-8 rounded-full object-cover" :alt="match.away_team.name" />
-                                            <p class="text-sm font-semibold text-[#3E414C]">{{ match.away_team.name }}</p>
+                                            <img :src="match.away_team?.team_avatar || match.away_team?.logo || 'https://placehold.co/40x40'" class="w-8 h-8 rounded-full object-cover" :alt="match.away_team?.name" />
+                                            <p class="text-sm font-semibold text-[#3E414C]">{{ match.away_team?.name || 'TBD' }}</p>
                                         </div>
-                                        <span :class="['font-bold text-lg', match.winner_team_id === match.away_team.id ? 'text-[#D72D36]' : 'text-[#3E414C]']">
-                                            {{ match.aggregate_score?.away ?? 0 }}
+                                        <span :class="['font-bold text-lg', match.winner_team_id === match.away_team?.id ? 'text-[#D72D36]' : 'text-[#3E414C]']">
+                                            {{ match.away_score ?? 0 }}
                                         </span>
                                     </div>
                                 </div>
@@ -212,13 +208,13 @@
                         </div>
                     </div>
 
-                    <div v-if="mixedBracket.knockout_stage && mixedBracket.knockout_stage.length > 1" class="flex justify-center items-center gap-4 mt-4">
+                    <div v-if="allKnockoutRounds.length > 1" class="flex justify-center items-center gap-4 mt-4">
                         <button @click="previousKnockoutRound" :disabled="!hasPreviousKnockoutRound" :class="[
                             'px-4 py-2 rounded-lg text-sm font-medium transition-all',
                             hasPreviousKnockoutRound ? 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200 cursor-pointer' : 'bg-gray-100 text-gray-400 cursor-not-allowed border'
                         ]">← Vòng trước</button>
 
-                        <span class="text-sm text-gray-600">Vòng {{ currentKnockoutRoundIndex + 1 }} / {{ mixedBracket.knockout_stage.length }}</span>
+                        <span class="text-sm text-gray-600">Vòng {{ currentKnockoutRoundIndex + 1 }} / {{ allKnockoutRounds.length }}</span>
 
                         <button @click="nextKnockoutRound" :disabled="!hasNextKnockoutRound" :class="[
                             'px-4 py-2 rounded-lg text-sm font-medium transition-all',
@@ -365,96 +361,28 @@
 
     <Teleport to="body">
         <Transition name="modal">
-            <div v-if="showRankingModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center" @click.self="showRankingModal = false">
-                <div class="bg-white rounded-lg w-full h-full overflow-auto p-8 shadow-2xl">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-2xl font-bold text-gray-800">Bảng xếp hạng chi tiết</h2>
-                        <button @click="showRankingModal = false" class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors">
+            <div v-show="showRankingModal"
+                class="fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-center justify-center p-4"
+                @click.self="showRankingModal = false">
+                <div class="bg-white rounded-lg w-full h-full overflow-hidden shadow-2xl max-w-[95vw] max-h-[95vh] flex flex-col">
+                    <div class="sticky top-0 bg-white z-10 flex justify-between items-center p-4 border-b border-gray-200 flex-shrink-0">
+                        <h2 class="text-2xl font-bold text-gray-800">Sơ đồ thi đấu</h2>
+                        <button @click="showRankingModal = false"
+                            class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors">
                             <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                             </svg>
                         </button>
                     </div>
 
-                    <div v-if="!hasAnyRanking" class="py-12 text-center text-gray-500 text-lg">
-                        Chưa có dữ liệu bảng xếp hạng
+                    <div class="flex-1 overflow-hidden">
+                        <BracketMixedPreview
+                            v-if="data?.tournament_types?.[0]?.format === 1"
+                            :tournamentId="data?.id"
+                            :bracketData="mixedBracket"
+                            :rankData="rank"
+                        />
                     </div>
-
-                    <template v-else>
-                        <div v-if="data.tournament_types?.[0]?.format === 1 && rank.group_rankings"
-                             class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
-                            <div v-for="group in rank.group_rankings" :key="group.group_id" class="bg-gray-100 rounded-lg shadow-lg overflow-hidden">
-                                <template v-if="group.rankings && group.rankings.length">
-                                    <div class="grid grid-cols-[40px_1fr_70px_70px] bg-gray-200 px-4 py-2 text-gray-600 font-semibold text-sm">
-                                        <span>#</span>
-                                        <span>{{ group.group_name }}</span>
-                                        <span class="text-center">Điểm</span>
-                                        <span class="text-center">Hiệu số</span>
-                                    </div>
-                                    <div class="divide-y divide-gray-200">
-                                        <div v-for="(team, index) in group.rankings" :key="team.team_id"
-                                            class="grid grid-cols-[40px_1fr_70px_70px] items-center px-4 py-3 bg-white hover:bg-blue-50 transition-colors duration-200">
-                                            <span class="font-bold text-lg" :class="{
-                                                'text-yellow-500': index === 0,
-                                                'text-gray-400': index === 1,
-                                                'text-orange-500': index === 2
-                                            }">{{ index + 1 }}</span>
-                                            <div class="flex items-center gap-2 min-w-0">
-                                                <img :src="team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(team.team_name)}`"
-                                                    class="w-10 h-10 rounded-full border-2 border-gray-300 flex-shrink-0" />
-                                                <p class="text-sm font-medium truncate">{{ team.team_name }}</p>
-                                            </div>
-                                            <span class="text-center font-bold text-lg text-blue-600">{{ team.points }}</span>
-                                            <span class="text-center font-semibold" :class="{
-                                                'text-green-600': team.point_diff > 0,
-                                                'text-red-600': team.point_diff < 0,
-                                                'text-gray-600': team.point_diff === 0
-                                            }">
-                                                {{ team.point_diff > 0 ? '+' : '' }}{{ team.point_diff }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
-
-                        <div v-else-if="rank.rankings" class="max-w-5xl mx-auto">
-                            <div class="bg-white rounded-xl shadow-xl overflow-hidden border border-gray-200">
-                                <div class="grid grid-cols-[60px_1fr_100px_100px] bg-gray-100 px-6 py-4 text-gray-700 font-bold text-base border-b-2 border-gray-200">
-                                    <span class="text-center">#</span>
-                                    <span>Đội</span>
-                                    <span class="text-center">Điểm</span>
-                                    <span class="text-center">Hiệu số</span>
-                                </div>
-                                <div class="divide-y divide-gray-200">
-                                    <div v-for="(team, index) in rank.rankings" :key="team.team_id"
-                                        class="grid grid-cols-[60px_1fr_100px_100px] items-center px-6 py-5 hover:bg-blue-50 transition-colors">
-                                        <div class="flex justify-center">
-                                            <span class="font-bold text-2xl w-10 h-10 rounded-full flex items-center justify-center" :class="{
-                                                'bg-yellow-400 text-white': index === 0,
-                                                'bg-gray-300 text-white': index === 1,
-                                                'bg-orange-400 text-white': index === 2,
-                                                'text-gray-600 border border-gray-200': index > 2
-                                            }">{{ index + 1 }}</span>
-                                        </div>
-                                        <div class="flex items-center gap-4">
-                                            <img :src="team.team_avatar || `https://placehold.co/56x56/BBBFCC/3E414C?text=${getTeamInitials(team.team_name)}`"
-                                                class="w-14 h-14 rounded-full border-2 border-gray-300 shadow-sm" />
-                                            <p class="text-gray-800 font-bold text-lg">{{ team.team_name }}</p>
-                                        </div>
-                                        <span class="text-center font-bold text-3xl text-blue-600">{{ team.points }}</span>
-                                        <span class="text-center font-bold text-2xl" :class="{
-                                            'text-green-600': team.point_diff > 0,
-                                            'text-red-600': team.point_diff < 0,
-                                            'text-gray-600': team.point_diff === 0
-                                        }">
-                                            {{ team.point_diff > 0 ? '+' : '' }}{{ team.point_diff }}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </template>
                 </div>
             </div>
         </Transition>
@@ -463,10 +391,11 @@
 
 <script setup>
 import CreateMatch from '@/components/molecules/CreateMatch.vue'
+import BracketMixedPreview from '@/components/molecules/BracketMixedPreview.vue'
 import { ref, watch, computed } from 'vue'
 import { SCHEDULE_TABS } from '@/data/tournament/index.js'
 import { toast } from 'vue3-toastify';
-import * as TournamentTypeService from '@/service/tournamentType.js'
+import * as TournamentService from '@/service/tournament.js'
 import * as MatchesService from '@/service/match.js'
 
 const scheduleTabs = SCHEDULE_TABS
@@ -505,22 +434,30 @@ const hasAnyRanking = computed(() => {
     return props.rank?.rankings && props.rank.rankings.length > 0;
 });
 
-const getMatches = async (tournamentTypeId) => {
+const getMatches = async (tournamentId) => {
     try {
-        const response = await TournamentTypeService.getBracketByTournamentTypeId(tournamentTypeId)
+        if (!tournamentId) return;
+
+        const response = await TournamentService.getBracketByTournamentId(tournamentId)
 
         if (props.data.tournament_types?.[0]?.format === 1) {
+            // Format Mixed - sử dụng cấu trúc mới
             mixedBracket.value = {
-                pool_stage: response.pool_stage || [],
-                knockout_stage: response.knockout_stage || []
+                poolStage: response.poolStage || [],
+                leftSide: response.leftSide || [],
+                rightSide: response.rightSide || [],
+                finalMatch: response.finalMatch || null,
+                thirdPlaceMatch: response.thirdPlaceMatch || null
             }
             currentMixedStage.value = 'pool'
             currentKnockoutRoundIndex.value = 0
         } else if (props.data.tournament_types?.[0]?.format === 2) {
+            // Format Elimination
             eliminationBracket.value = response.bracket || []
             currentEliminationRoundIndex.value = 0
         } else {
-            matches.value = response.matches || []
+            // Format Round Robin
+            matches.value = response.bracket || []
             if (matches.value.length > 0) {
                 const rounds = [...new Set(matches.value.map(m => m.round))].sort((a, b) => parseInt(a) - parseInt(b))
                 if (rounds.length > 0) currentRound.value = rounds[0]
@@ -543,17 +480,46 @@ const getDetailMatches = async (id) => {
     }
 }
 
-const currentKnockoutRound = computed(() => mixedBracket.value.knockout_stage?.[currentKnockoutRoundIndex.value] || null)
+const allKnockoutRounds = computed(() => {
+    const rounds = []
+    // Thêm leftSide rounds
+    if (mixedBracket.value.leftSide) {
+        rounds.push(...mixedBracket.value.leftSide)
+    }
+    // Thêm rightSide rounds
+    if (mixedBracket.value.rightSide) {
+        rounds.push(...mixedBracket.value.rightSide)
+    }
+    // Thêm final match nếu có
+    if (mixedBracket.value.finalMatch) {
+        rounds.push({
+            round_name: mixedBracket.value.finalMatch.round_name || 'Chung kết',
+            matches: [mixedBracket.value.finalMatch]
+        })
+    }
+    // Thêm third place match nếu có
+    if (mixedBracket.value.thirdPlaceMatch) {
+        rounds.push({
+            round_name: 'Tranh hạng Ba',
+            matches: [mixedBracket.value.thirdPlaceMatch]
+        })
+    }
+    // Sắp xếp theo round number
+    return rounds.sort((a, b) => (a.round || 0) - (b.round || 0))
+})
+
+const currentKnockoutRound = computed(() => allKnockoutRounds.value[currentKnockoutRoundIndex.value] || null)
 const hasPreviousKnockoutRound = computed(() => currentKnockoutRoundIndex.value > 0)
-const hasNextKnockoutRound = computed(() => currentKnockoutRoundIndex.value < (mixedBracket.value.knockout_stage?.length || 0) - 1)
+const hasNextKnockoutRound = computed(() => currentKnockoutRoundIndex.value < allKnockoutRounds.value.length - 1)
 const previousKnockoutRound = () => { if (hasPreviousKnockoutRound.value) currentKnockoutRoundIndex.value-- }
 const nextKnockoutRound = () => { if (hasNextKnockoutRound.value) currentKnockoutRoundIndex.value++ }
 
 const getKnockoutStatusText = (matches) => {
-    const completedCount = matches.filter(m => m.legs.some(leg => leg.is_completed)).length
-    const pendingCount = matches.filter(m => m.legs.every(leg => leg.status === 'pending')).length
-    if (completedCount === matches.length) return `Chờ xác nhận • ${pendingCount}`
-    return `Chờ xác nhận • ${pendingCount}`
+    if (!matches || matches.length === 0) return 'Chưa có trận đấu'
+    const completedCount = matches.filter(m => m.status === 'completed').length
+    const pendingCount = matches.filter(m => m.status === 'pending').length
+    if (completedCount === matches.length) return `Hoàn thành • ${completedCount}`
+    return `Đang diễn ra • ${completedCount}/${matches.length}`
 }
 
 const groupedMatchesByRound = computed(() => {
@@ -631,9 +597,9 @@ const getTeamInitials = (name) => {
 };
 
 watch(
-    () => props.data?.tournament_types?.[0]?.id,
-    async (newTournamentTypeId) => {
-        if (newTournamentTypeId) await getMatches(newTournamentTypeId);
+    () => props.data?.id,
+    async (newTournamentId) => {
+        if (newTournamentId) await getMatches(newTournamentId);
     },
     { immediate: true, deep: true }
 );
@@ -659,6 +625,11 @@ watch(
     opacity: 0;
 }
 
+.modal-enter-to,
+.modal-leave-from {
+    opacity: 1;
+}
+
 .modal-enter-active .bg-white,
 .modal-leave-active .bg-white {
     transition: transform 0.3s ease;
@@ -667,5 +638,10 @@ watch(
 .modal-enter-from .bg-white,
 .modal-leave-to .bg-white {
     transform: scale(0.95);
+}
+
+.modal-enter-to .bg-white,
+.modal-leave-from .bg-white {
+    transform: scale(1);
 }
 </style>
