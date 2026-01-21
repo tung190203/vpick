@@ -379,11 +379,13 @@ class MatchesController extends Controller
         if (is_array($config) && isset($config[0])) {
             $config = $config[0];
         }
-
-        // Mảng các Rule ID (ví dụ: [1, 2, 3])
-        $rankingRules = $config['ranking'] ?? [1, 3];
-
-        // 2. Lấy tất cả các group
+    
+        // ✅ FIX: Ép kiểu về INTEGER ngay từ đầu
+        $rankingRules = collect($config['ranking'] ?? [1, 3])
+            ->map(fn($id) => (int)$id)
+            ->toArray();
+    
+        // 1. Lấy tất cả các groups
         $groups = DB::table('groups')
             ->join('matches', 'groups.id', '=', 'matches.group_id')
             ->where('matches.tournament_type_id', $tournamentTypeId)
@@ -399,47 +401,72 @@ class MatchesController extends Controller
         foreach ($groups as $group) {
             $groupMatches = Matches::where('group_id', $group->id)
                 ->where('round', 1)
+                ->where('status', 'completed')
                 ->with(['homeTeam.members', 'awayTeam.members', 'results'])
                 ->get();
-
+    
+            if ($groupMatches->isEmpty()) continue;
+    
             $standings = TournamentService::calculateGroupStandings($groupMatches);
-            $advancementRules = PoolAdvancementRule::where('group_id', $group->id)->pluck('rank')->toArray();
-
+            
+            // Lấy danh sách rank đi tiếp
+            $advancementRules = PoolAdvancementRule::where('group_id', $group->id)
+                ->pluck('rank')
+                ->toArray();
+    
             foreach ($standings as $index => $standing) {
                 $rank = $index + 1;
-                if (!in_array($rank, $advancementRules)) {
-                    $allGroupStandings->push([
-                        'team_id' => $standing['team']['id'],
-                        'points' => $standing['points'] ?? 0,
-                        'win_rate' => $standing['win_rate'] ?? 0, // Cần đảm bảo hàm calculateGroupStandings có trả về cái này
-                        'sets_won' => $standing['sets_won'] ?? 0,
-                        'points_won' => $standing['points_won'] ?? 0, // Tổng điểm ghi được (không phải point BXH)
-                        // Thêm các trường khác nếu cần để map với hằng số
-                    ]);
+                
+                // CHỈ LẤY ĐỘI KHÔNG ĐI TIẾP
+                if (in_array($rank, $advancementRules)) {
+                    continue;
                 }
+    
+                // CHUẨN HÓA DỮ LIỆU
+                $allGroupStandings->push([
+                    'team_id' => $standing['team']['id'],
+                    'group_name' => $group->name,
+                    'rank_in_group' => $rank,
+                    
+                    // Điểm BXH
+                    'points' => $standing['points'] ?? 0,
+                    
+                    // Tỷ lệ thắng
+                    'win_rate' => isset($standing['wins'], $standing['played']) && $standing['played'] > 0
+                        ? round(($standing['wins'] / $standing['played']) * 100, 2)
+                        : 0,
+                    
+                    // Hiệu số set
+                    'set_diff' => ($standing['sets_won'] ?? 0) - ($standing['sets_lost'] ?? 0),
+                    
+                    // Hiệu số điểm
+                    'point_diff' => ($standing['points_for'] ?? $standing['points_won'] ?? 0) 
+                                  - ($standing['points_against'] ?? $standing['points_lost'] ?? 0),
+                ]);
             }
         }
-
-        if ($allGroupStandings->isEmpty()) return;
-
-        // 4. Sắp xếp Best Losers dựa trên mảng Ranking trong Config
+    
+        if ($allGroupStandings->isEmpty()) {
+            return;
+        }
+    
+        // 3. SẮP XẾP BEST LOSERS
         $bestLosers = $allGroupStandings->sort(function ($a, $b) use ($rankingRules) {
             foreach ($rankingRules as $ruleId) {
                 $field = null;
-
-                // Map từ Const sang key trong mảng $standing
-                switch ((int)$ruleId) {
-                    case 1: // RANKING_WIN_DRAW_LOSE_POINTS
+    
+                switch ($ruleId) { // ✅ Đã là INT rồi
+                    case TournamentType::RANKING_WIN_DRAW_LOSE_POINTS: // 1
                         $field = 'points';
                         break;
-                    case 2: // RANKING_WIN_RATE
+                    case TournamentType::RANKING_WIN_RATE: // 2
                         $field = 'win_rate';
                         break;
-                    case 3: // RANKING_SETS_WON
-                        $field = 'sets_won';
+                    case TournamentType::RANKING_SETS_WON: // 3
+                        $field = 'set_diff';
                         break;
-                    case 4: // RANKING_POINTS_WON
-                        $field = 'points_won';
+                    case TournamentType::RANKING_POINTS_WON: // 4
+                        $field = 'point_diff';
                         break;
                         // Rule 5 (Head-to-head) bỏ qua khi so sánh giữa các bảng khác nhau
                         // Rule 6 (Random) xử lý sau cùng nếu cần
@@ -447,36 +474,101 @@ class MatchesController extends Controller
 
                 if ($field && isset($a[$field], $b[$field])) {
                     if ($a[$field] != $b[$field]) {
-                        return $b[$field] <=> $a[$field]; // Sắp xếp giảm dần
+                        return $b[$field] <=> $a[$field];
                     }
                 }
             }
-            return 0;
+            
+            // ✅ CRITICAL FALLBACK: Luôn dùng point_diff nếu chưa được dùng
+            if (!in_array(TournamentType::RANKING_POINTS_WON, $rankingRules)) {
+                if ($a['point_diff'] != $b['point_diff']) {
+                    return $b['point_diff'] <=> $a['point_diff'];
+                }
+            }
+            
+            // Sau đó mới dùng set_diff (nếu chưa dùng)
+            if (!in_array(TournamentType::RANKING_SETS_WON, $rankingRules)) {
+                if ($a['set_diff'] != $b['set_diff']) {
+                    return $b['set_diff'] <=> $a['set_diff'];
+                }
+            }
+            
+            return $a['team_id'] <=> $b['team_id'];
         })->values();
-
-        // 5. Gán best losers vào các trận bye
+    
+        // 4. GÁN BEST LOSERS VÀO BYE MATCHES
+        $numLegs = $tournamentType->num_legs ?? 1;
+        $leg1ByeMatches = $byeMatches->where('leg', 1);
+    
         $loserIndex = 0;
-        foreach ($byeMatches as $byeMatch) {
-            if ($loserIndex >= $bestLosers->count()) break;
-
+    
+        foreach ($leg1ByeMatches as $leg1Match) {
+            if ($loserIndex >= $bestLosers->count()) {
+                break;
+            }
+    
             $bestLoser = $bestLosers[$loserIndex];
-
-            $updateData = [];
-            if ($byeMatch->home_team_id === null) {
-                $updateData = ['home_team_id' => $bestLoser['team_id']];
-            } elseif ($byeMatch->away_team_id === null) {
-                $updateData = ['away_team_id' => $bestLoser['team_id']];
+    
+            // ✅ FIX: Xác định vị trí cần điền ở Leg 1
+            $positionToFill = null;
+            $existingTeamId = null;
+    
+            if ($leg1Match->home_team_id && !$leg1Match->away_team_id) {
+                $positionToFill = 'away';
+                $existingTeamId = $leg1Match->home_team_id;
+            } elseif (!$leg1Match->home_team_id && $leg1Match->away_team_id) {
+                $positionToFill = 'home';
+                $existingTeamId = $leg1Match->away_team_id;
+            } else {
+                continue;
             }
+    
+            // CẬP NHẬT LEG 1
+            $leg1Match->update([
+                $positionToFill . '_team_id' => $bestLoser['team_id'],
+                'is_bye' => false,
+                'status' => Matches::STATUS_PENDING
+            ]);
+            $leg1Match->refresh();
+    
+            // ✅ TÌM VÀ CẬP NHẬT CÁC LEG KHÁC (theo round + teams)
+            $allOtherLegs = Matches::where('tournament_type_id', $tournamentTypeId)
+                ->where('round', $leg1Match->round)
+                ->where('id', '!=', $leg1Match->id) // Loại chính nó
+                ->where(function($query) use ($leg1Match) {
+                    // Tìm matches có chứa 1 trong 2 teams của leg 1
+                    $query->where('home_team_id', $leg1Match->home_team_id)
+                          ->orWhere('home_team_id', $leg1Match->away_team_id)
+                          ->orWhere('away_team_id', $leg1Match->home_team_id)
+                          ->orWhere('away_team_id', $leg1Match->away_team_id);
+                })
+                ->orderBy('leg')
+                ->get();
 
-            if (!empty($updateData)) {
-                $updateData['is_bye'] = false;
-                $updateData['status'] = Matches::STATUS_PENDING; // Nên dùng Const
-                $byeMatch->update($updateData);
-                $loserIndex++;
+            // ✅ CẬP NHẬT CÁC LEG KHÁC
+            foreach ($allOtherLegs as $leg) {
+                if ($leg->leg % 2 === 0) {
+                    // Leg chẵn: Đảo
+                    $leg->update([
+                        'home_team_id' => $leg1Match->away_team_id,
+                        'away_team_id' => $leg1Match->home_team_id,
+                        'is_bye' => false,
+                        'status' => Matches::STATUS_PENDING
+                    ]);
+                } else {
+                    // Leg lẻ: Giữ nguyên
+                    $leg->update([
+                        'home_team_id' => $leg1Match->home_team_id,
+                        'away_team_id' => $leg1Match->away_team_id,
+                        'is_bye' => false,
+                        'status' => Matches::STATUS_PENDING
+                    ]);
+                }
             }
+    
+            $loserIndex++;
         }
     }
-
     private function recalculateRankings($tournamentTypeId)
     {
         $tournamentType = TournamentType::find($tournamentTypeId);
@@ -1549,16 +1641,12 @@ class MatchesController extends Controller
             $legAwayId = $leg->away_team_id;
     
             foreach ($leg->results->groupBy('set_number') as $setNumber => $setResults) {
-                if ($setResults->count() < 2) {
-                    continue;
-                }
+                if ($setResults->count() < 2) continue;
     
                 $homeResult = $setResults->firstWhere('team_id', $legHomeId);
                 $awayResult = $setResults->firstWhere('team_id', $legAwayId);
     
-                if (!$homeResult || !$awayResult) {
-                    continue;
-                }
+                if (!$homeResult || !$awayResult) continue;
     
                 $homeScore = (int) $homeResult->score;
                 $awayScore = (int) $awayResult->score;
@@ -1608,32 +1696,23 @@ class MatchesController extends Controller
             $finalWinnerId = $homeTeamId;
         } elseif ($legWins[$awayTeamId] > $legWins[$homeTeamId]) {
             $finalWinnerId = $awayTeamId;
-        }
-        // 2️⃣ Nếu bằng legs → Xét số SET thắng
-        elseif ($homeSetWins > $awaySetWins) {
+        } elseif ($homeSetWins > $awaySetWins) {
             $finalWinnerId = $homeTeamId;
         } elseif ($awaySetWins > $homeSetWins) {
             $finalWinnerId = $awayTeamId;
-        }
-        // 3️⃣ Nếu bằng sets → Xét HIỆU SỐ ĐIỂM
-        elseif ($homePointDiff > $awayPointDiff) {
+        } elseif ($homePointDiff > $awayPointDiff) {
             $finalWinnerId = $homeTeamId;
         } elseif ($awayPointDiff > $homePointDiff) {
             $finalWinnerId = $awayTeamId;
         }
-        // 4️⃣ Nếu tất cả đều bằng nhau → Chờ BTC
-        else {
+        if (!$finalWinnerId) {
             foreach ($allLegs as $leg) {
                 $leg->update(['winner_id' => null]);
             }
             return;
         }
     
-        if (!$finalWinnerId) {
-            return;
-        }
-    
-        // ===== BƯỚC 5: Cập nhật winner cho tất cả legs =====
+        // Cập nhật winner cho tất cả legs
         foreach ($allLegs as $leg) {
             if ($leg->winner_id !== $finalWinnerId) {
                 $leg->update(['winner_id' => $finalWinnerId]);
@@ -1644,7 +1723,7 @@ class MatchesController extends Controller
         // ✅ XỬ LÝ ĐẶC BIỆT CHO ROUND 1 CỦA MIXED FORMAT (POOL STAGE)
         if ((int) $match->round === 1 && $tournamentType->format === TournamentType::FORMAT_MIXED) {
             $this->checkAndAdvanceFromPool($match);
-            return; // Dừng ở đây, không cần gọi syncWinnerToNextRoundLegs
+            return;
         }
     
         // Xử lý các vòng knockout bình thường
@@ -1652,8 +1731,10 @@ class MatchesController extends Controller
             TournamentType::FORMAT_MIXED,
             TournamentType::FORMAT_ELIMINATION,
         ])) {
-            $this->syncWinnerToNextRoundLegs($match, $finalWinnerId);
-            $this->handleLoserAdvancement($match);
+            $this->syncWinnerToNextRoundLegs($leg1, $finalWinnerId);
+            $this->handleLoserAdvancement($leg1);
+        } else {
+            \Log::info('ℹ️ Not a knockout format - skipping advancement');
         }
     
         // ===== BƯỚC 7: Cập nhật bảng xếp hạng =====
@@ -1663,40 +1744,67 @@ class MatchesController extends Controller
     private function syncWinnerToNextRoundLegs($match, $finalWinnerId)
     {
         $nextMatchId = $match->next_match_id;
-        $nextPosition = $match->next_position; // 'home' hoặc 'away'
-
-        if (!$nextMatchId || !$finalWinnerId) return;
-
-        // 1. Tìm trận đấu đích được trỏ tới
-        $targetMatch = Matches::find($nextMatchId);
-        if (!$targetMatch) return;
-
-        // 2. Lấy TẤT CẢ các legs của cặp đấu đó ở vòng sau (dựa vào tên và vòng)
-        $nextRoundLegs = Matches::where('tournament_type_id', $match->tournament_type_id)
-            ->where('round', $targetMatch->round)
-            ->where('name_of_match', $targetMatch->name_of_match)
+        $nextPosition = $match->next_position;
+    
+        if (!$nextMatchId || !$finalWinnerId) {
+            return;
+        }
+    
+        // 1. Tìm trận đấu đích (Leg 1 của vòng sau)
+        $targetLeg1 = Matches::find($nextMatchId);
+        if (!$targetLeg1) {
+            return;
+        }
+    
+        // 2. ✅ CẬP NHẬT LEG 1 TRƯỚC
+        if ($nextPosition === 'home') {
+            $targetLeg1->update([
+                'home_team_id' => $finalWinnerId,
+                'status' => Matches::STATUS_PENDING,
+                'is_bye' => $targetLeg1->away_team_id ? false : $targetLeg1->is_bye,
+            ]);
+        } else {
+            $targetLeg1->update([
+                'away_team_id' => $finalWinnerId,
+                'status' => Matches::STATUS_PENDING,
+                'is_bye' => $targetLeg1->home_team_id ? false : $targetLeg1->is_bye,
+            ]);
+        }
+        $targetLeg1->refresh();
+    
+        // 3. ✅ TÌM VÀ CẬP NHẬT CÁC LEG KHÁC (theo round + teams)
+        $allOtherLegs = Matches::where('tournament_type_id', $match->tournament_type_id)
+            ->where('round', $targetLeg1->round)
+            ->where('id', '!=', $targetLeg1->id) // Loại chính nó (leg 1)
+            ->where(function($query) use ($targetLeg1) {
+                // Tìm matches có chứa 1 trong 2 teams của leg 1
+                $query->where('home_team_id', $targetLeg1->home_team_id)
+                      ->orWhere('home_team_id', $targetLeg1->away_team_id)
+                      ->orWhere('away_team_id', $targetLeg1->home_team_id)
+                      ->orWhere('away_team_id', $targetLeg1->away_team_id);
+            })
+            ->orderBy('leg')
             ->get();
-
-        foreach ($nextRoundLegs as $nextLeg) {
-            $updateData = [];
-
-            if ($nextPosition === 'home') {
-                // Lượt đi (Leg lẻ): Bạn là Home | Lượt về (Leg chẵn): Bạn là Away
-                if ($nextLeg->leg % 2 !== 0) {
-                    $updateData['home_team_id'] = $finalWinnerId;
-                } else {
-                    $updateData['away_team_id'] = $finalWinnerId;
-                }
+    
+        // 4. ✅ CẬP NHẬT CÁC LEG KHÁC
+        foreach ($allOtherLegs as $leg) {
+            if ($leg->leg % 2 === 0) {
+                // Leg chẵn: Đảo home ↔ away
+                $leg->update([
+                    'home_team_id' => $targetLeg1->away_team_id,
+                    'away_team_id' => $targetLeg1->home_team_id,
+                    'is_bye' => false,
+                    'status' => Matches::STATUS_PENDING
+                ]);
             } else {
-                // Lượt đi (Leg lẻ): Bạn là Away | Lượt về (Leg chẵn): Bạn là Home
-                if ($nextLeg->leg % 2 !== 0) {
-                    $updateData['away_team_id'] = $finalWinnerId;
-                } else {
-                    $updateData['home_team_id'] = $finalWinnerId;
-                }
+                // Leg lẻ: Giữ nguyên như leg 1
+                $leg->update([
+                    'home_team_id' => $targetLeg1->home_team_id,
+                    'away_team_id' => $targetLeg1->away_team_id,
+                    'is_bye' => false,
+                    'status' => Matches::STATUS_PENDING
+                ]);
             }
-
-            $nextLeg->update($updateData);
         }
     }
 
@@ -1852,11 +1960,36 @@ class MatchesController extends Controller
         // ✅ Tìm leg 1 của cặp đấu này để lấy thông tin loser advancement
         $leg1 = Matches::where('tournament_type_id', $match->tournament_type_id)
             ->where('round', $match->round)
-            ->where('name_of_match', $match->name_of_match)
             ->where('leg', 1)
+            ->where(function($q) use ($match) {
+                // Tìm leg 1 có cùng next_match_id (cùng cặp đấu)
+                if ($match->next_match_id) {
+                    $q->where('next_match_id', $match->next_match_id)
+                      ->where('next_position', $match->next_position);
+                } else {
+                    // Nếu là trận cuối, tìm theo teams
+                    $q->where(function($q2) use ($match) {
+                        $q2->where('home_team_id', $match->home_team_id)
+                           ->where('away_team_id', $match->away_team_id);
+                    })->orWhere(function($q2) use ($match) {
+                        $q2->where('home_team_id', $match->away_team_id)
+                           ->where('away_team_id', $match->home_team_id);
+                    });
+                }
+            })
             ->first();
     
-        // Nếu không tìm thấy leg 1 hoặc leg 1 không có loser_next_match_id thì return
+        // Nếu không tìm thấy leg 1, thử tìm trong cùng round với is_bye = false
+        if (!$leg1) {
+            $allLegsInRound = Matches::where('tournament_type_id', $match->tournament_type_id)
+                ->where('round', $match->round)
+                ->where('is_bye', false)
+                ->orderBy('leg')
+                ->get();
+            
+            $leg1 = $allLegsInRound->firstWhere('leg', 1);
+        }
+        
         if (!$leg1 || !$leg1->loser_next_match_id) {
             return;
         }
@@ -1864,9 +1997,31 @@ class MatchesController extends Controller
         // Lấy TẤT CẢ legs của cặp đấu này
         $allLegs = Matches::where('tournament_type_id', $match->tournament_type_id)
             ->where('round', $match->round)
-            ->where('name_of_match', $match->name_of_match)
+            ->where(function($q) use ($leg1) {
+                if ($leg1->next_match_id) {
+                    $q->where('next_match_id', $leg1->next_match_id)
+                      ->where('next_position', $leg1->next_position);
+                }
+            })
             ->with('results')
             ->get();
+    
+        // Nếu không tìm thấy bằng next_match, tìm theo teams
+        if ($allLegs->count() < 2) {
+            $allLegs = Matches::where('tournament_type_id', $match->tournament_type_id)
+                ->where('round', $match->round)
+                ->where(function($q) use ($leg1) {
+                    $q->where(function($q2) use ($leg1) {
+                        $q2->where('home_team_id', $leg1->home_team_id)
+                           ->where('away_team_id', $leg1->away_team_id);
+                    })->orWhere(function($q2) use ($leg1) {
+                        $q2->where('home_team_id', $leg1->away_team_id)
+                           ->where('away_team_id', $leg1->home_team_id);
+                    });
+                })
+                ->with('results')
+                ->get();
+        }
     
         // Kiểm tra tất cả legs đã hoàn thành chưa
         $allCompleted = $allLegs->every(fn($l) => $l->status === Matches::STATUS_COMPLETED);
@@ -1895,7 +2050,8 @@ class MatchesController extends Controller
         // Lấy TẤT CẢ legs của trận tranh hạng 3
         $thirdPlaceMatches = Matches::where('tournament_type_id', $match->tournament_type_id)
             ->where('round', $loserNextMatch->round)
-            ->where('name_of_match', $loserNextMatch->name_of_match)
+            ->where('is_third_place', true)
+            ->orderBy('leg')
             ->get();
     
         // Fill loser vào tất cả legs
