@@ -16,12 +16,23 @@ use Illuminate\Support\Facades\DB;
 
 class TournamentTypeController extends Controller
 {
+    /**
+     * ============================================================================
+     * DEPENDENCY INJECTION - Services
+     * ============================================================================
+     */
+    public function __construct(
+        private \App\Services\TournamentType\MatchGeneratorService $matchGenerator,
+        private \App\Services\TournamentType\BracketService $bracketService,
+        private \App\Services\TournamentType\StandingsService $standingsService,
+        private \App\Services\TournamentType\TeamPairingService $teamPairingService
+    ) {}
 
-/**
- * ============================================================================
- * CONSTANTS - Thêm vào đầu class TournamentTypeController
- * ============================================================================
- */
+ /**
+  * ============================================================================
+  * CONSTANTS - Thêm vào đầu class TournamentTypeController
+  * ============================================================================
+  */
 const PAIRING_MODE_SEQUENTIAL = 'sequential';  // Tuần tự: A-B, C-D, E-F, G-H
 const PAIRING_MODE_SYMMETRIC = 'symmetric';    // Đối xứng: A-H, B-G, C-F, D-E
 const PAIRING_MODE_MANUAL = 'manual';
@@ -1102,11 +1113,7 @@ const PAIRING_MODE_MANUAL = 'manual';
     }
     private function getTeamId($placeholder)
     {
-        if (!$placeholder) return null;
-        if (is_object($placeholder) && isset($placeholder->team_id)) {
-            return $placeholder->team_id;
-        }
-        return null;
+        return $this->matchGenerator->getTeamId($placeholder);
     }
      /**
      * Lấy toàn bộ bracket cho tournament type
@@ -1230,16 +1237,9 @@ const PAIRING_MODE_MANUAL = 'manual';
     }
 
     // Hàm bổ trợ tính set thắng
-    private function calculateSingleMatchWins($match) {
-        $homeWins = 0; $awayWins = 0;
-        $sets = $match->results->groupBy('set_number');
-        foreach ($sets as $set) {
-            $h = $set->firstWhere('team_id', $match->home_team_id);
-            $a = $set->firstWhere('team_id', '!=', $match->home_team_id);
-            if ((int)($h->score ?? 0) > (int)($a->score ?? 0)) $homeWins++;
-            elseif ((int)($a->score ?? 0) > (int)($h->score ?? 0)) $awayWins++;
-        }
-        return ['home' => $homeWins, 'away' => $awayWins];
+    private function calculateSingleMatchWins($match)
+    {
+        return $this->bracketService->calculateSingleMatchWins($match);
     }
 
     /**
@@ -1701,13 +1701,7 @@ const PAIRING_MODE_MANUAL = 'manual';
 
     private function getRankText(int $rank): string
     {
-        return match($rank) {
-            1 => 'Nhất',
-            2 => 'Nhì',
-            3 => 'Ba',
-            4 => 'Tư',
-            default => "Hạng {$rank}",
-        };
+        return $this->bracketService->getRankText($rank);
     }
 
     /**
@@ -1715,7 +1709,7 @@ const PAIRING_MODE_MANUAL = 'manual';
      */
     private function formatTeam($team, $placeholderText = null)
     {
-        return TournamentService::formatTeam($team, $placeholderText);
+        return $this->bracketService->formatTeam($team, $placeholderText);
     }
 
     /**
@@ -2063,7 +2057,7 @@ const PAIRING_MODE_MANUAL = 'manual';
      */
     private function calculateGroupStandings($groupMatches)
     {
-        return TournamentService::calculateGroupStandings($groupMatches);
+        return $this->standingsService->calculateGroupStandings($groupMatches);
     }
 
     /**
@@ -2071,19 +2065,7 @@ const PAIRING_MODE_MANUAL = 'manual';
      */
     private function getRoundName($round, $pairCount, $format)
     {
-        if ($round === 1 && $format == TournamentType::FORMAT_MIXED) {
-            return 'Vòng bảng';
-        }
-
-        return match ($pairCount) {
-            1 => 'Chung kết',
-            2 => 'Bán kết',
-            4 => 'Tứ kết',
-            8 => 'Vòng 1/8',
-            16 => 'Vòng 1/16',
-            32 => 'Vòng 1/32',
-            default => "Vòng {$round}",
-        };
+        return $this->bracketService->getRoundName($round, $pairCount, $format);
     }
 
     public function getRank($tournament_id)
@@ -2182,16 +2164,7 @@ const PAIRING_MODE_MANUAL = 'manual';
      */
     private function getTeamStatsInGroup($teamId, $tournamentTypeId, $groupId)
     {
-        $matches = Matches::where('tournament_type_id', $tournamentTypeId)
-            ->where('group_id', $groupId) // ✅ Chỉ lấy trận trong group này
-            ->where('status', 'completed')
-            ->where(function ($query) use ($teamId) {
-                $query->where('home_team_id', $teamId)->orWhere('away_team_id', $teamId);
-            })
-            ->with('results')
-            ->get();
-
-        return $this->calculateStatsFromMatches($matches, $teamId);
+        return $this->standingsService->getTeamStatsInGroup($teamId, $tournamentTypeId, $groupId);
     }
 
     /**
@@ -2285,15 +2258,7 @@ const PAIRING_MODE_MANUAL = 'manual';
      */
     private function getTeamStats($teamId, $tournamentTypeId)
     {
-        $matches = Matches::where('tournament_type_id', $tournamentTypeId)
-            ->where('status', 'completed')
-            ->where(function ($query) use ($teamId) {
-                $query->where('home_team_id', $teamId)->orWhere('away_team_id', $teamId);
-            })
-            ->with('results')
-            ->get();
-
-        return $this->calculateStatsFromMatches($matches, $teamId);
+        return $this->standingsService->getTeamStats($teamId, $tournamentTypeId);
     }
     public function getAdvancementStatus(TournamentType $tournamentType)
     {
@@ -2490,25 +2455,7 @@ const PAIRING_MODE_MANUAL = 'manual';
 
     private function arrangeAdvancingTeams($advancingByRank, $pairingMode = null, $manualPairings = null)
     {
-        // ✅ NORMALIZE: Trim và lowercase
-        $pairingMode = $pairingMode ? strtolower(trim($pairingMode)) : null;
-
-        switch ($pairingMode) {
-            case self::PAIRING_MODE_SYMMETRIC:
-            case 'symmetric':
-                return $this->arrangeAdvancingTeamsSymmetric($advancingByRank);
-
-            case self::PAIRING_MODE_MANUAL:
-            case 'manual':
-                return $this->arrangeAdvancingTeamsManual($advancingByRank, $manualPairings);
-
-            case self::PAIRING_MODE_SEQUENTIAL:
-            case 'sequential':
-            case null:
-            case '':
-            default:
-                return $this->arrangeAdvancingTeamsSequential($advancingByRank);
-        }
+        return $this->teamPairingService->arrangeAdvancingTeams($advancingByRank, $pairingMode, $manualPairings);
     }
 
     /**
