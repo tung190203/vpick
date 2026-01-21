@@ -49,7 +49,7 @@
                                 'text-gray-400': index === 1,
                                 'text-orange-500': index === 2
                             }">{{ index + 1 }}</span>
-                            <div class="flex items-start gap-2 min-w-0">
+                            <div class="flex items-center gap-2">
                                 <img :src="team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(team.team_name)}`"
                                     alt="logo team" class="w-8 h-8 rounded-full border border-gray-300" />
                                 <p class="text-gray-800 font-medium text-sm break-words whitespace-normal leading-snug min-w-0">{{ team.team_name }}</p>
@@ -86,7 +86,7 @@
                                 'text-gray-400': index === 1,
                                 'text-orange-500': index === 2
                             }">{{ index + 1 }}</span>
-                            <div class="flex items-start gap-2 min-w-0">
+                            <div class="flex items-center gap-2">
                                 <img :src="team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(team.team_name)}`"
                                     alt="logo team" class="w-8 h-8 rounded-full border border-gray-300" />
                                 <p class="text-gray-800 font-medium text-sm break-words whitespace-normal leading-snug min-w-0">{{ team.team_name }}</p>
@@ -365,96 +365,24 @@
 
     <Teleport to="body">
         <Transition name="modal">
-            <div v-if="showRankingModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center" @click.self="showRankingModal = false">
-                <div class="bg-white rounded-lg w-full h-full overflow-auto p-8 shadow-2xl">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-2xl font-bold text-gray-800">Bảng xếp hạng chi tiết</h2>
-                        <button @click="showRankingModal = false" class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors">
+            <div v-show="showRankingModal"
+                class="fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-center justify-center p-4"
+                @click.self="showRankingModal = false">
+                <div class="bg-white rounded-lg w-full h-full overflow-auto shadow-2xl max-w-[95vw] max-h-[95vh]">
+                    <div class="sticky top-0 bg-white z-10 flex justify-between items-center p-4 border-b border-gray-200">
+                        <h2 class="text-2xl font-bold text-gray-800">Sơ đồ thi đấu</h2>
+                        <button @click="showRankingModal = false"
+                            class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors">
                             <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                             </svg>
                         </button>
                     </div>
 
-                    <div v-if="!hasAnyRanking" class="py-12 text-center text-gray-500 text-lg">
-                        Chưa có dữ liệu bảng xếp hạng
-                    </div>
-
-                    <template v-else>
-                        <div v-if="data.tournament_types?.[0]?.format === 1 && rank.group_rankings"
-                             class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
-                            <div v-for="group in rank.group_rankings" :key="group.group_id" class="bg-gray-100 rounded-lg shadow-lg overflow-hidden">
-                                <template v-if="group.rankings && group.rankings.length">
-                                    <div class="grid grid-cols-[40px_1fr_70px_70px] bg-gray-200 px-4 py-2 text-gray-600 font-semibold text-sm">
-                                        <span>#</span>
-                                        <span>{{ group.group_name }}</span>
-                                        <span class="text-center">Điểm</span>
-                                        <span class="text-center">Hiệu số</span>
-                                    </div>
-                                    <div class="divide-y divide-gray-200">
-                                        <div v-for="(team, index) in group.rankings" :key="team.team_id"
-                                            class="grid grid-cols-[40px_1fr_70px_70px] items-center px-4 py-3 bg-white hover:bg-blue-50 transition-colors duration-200">
-                                            <span class="font-bold text-lg" :class="{
-                                                'text-yellow-500': index === 0,
-                                                'text-gray-400': index === 1,
-                                                'text-orange-500': index === 2
-                                            }">{{ index + 1 }}</span>
-                                            <div class="flex items-center gap-2 min-w-0">
-                                                <img :src="team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(team.team_name)}`"
-                                                    class="w-10 h-10 rounded-full border-2 border-gray-300 flex-shrink-0" />
-                                                <p class="text-sm font-medium truncate">{{ team.team_name }}</p>
-                                            </div>
-                                            <span class="text-center font-bold text-lg text-blue-600">{{ team.points }}</span>
-                                            <span class="text-center font-semibold" :class="{
-                                                'text-green-600': team.point_diff > 0,
-                                                'text-red-600': team.point_diff < 0,
-                                                'text-gray-600': team.point_diff === 0
-                                            }">
-                                                {{ team.point_diff > 0 ? '+' : '' }}{{ team.point_diff }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
-
-                        <div v-else-if="rank.rankings" class="max-w-5xl mx-auto">
-                            <div class="bg-white rounded-xl shadow-xl overflow-hidden border border-gray-200">
-                                <div class="grid grid-cols-[60px_1fr_100px_100px] bg-gray-100 px-6 py-4 text-gray-700 font-bold text-base border-b-2 border-gray-200">
-                                    <span class="text-center">#</span>
-                                    <span>Đội</span>
-                                    <span class="text-center">Điểm</span>
-                                    <span class="text-center">Hiệu số</span>
-                                </div>
-                                <div class="divide-y divide-gray-200">
-                                    <div v-for="(team, index) in rank.rankings" :key="team.team_id"
-                                        class="grid grid-cols-[60px_1fr_100px_100px] items-center px-6 py-5 hover:bg-blue-50 transition-colors">
-                                        <div class="flex justify-center">
-                                            <span class="font-bold text-2xl w-10 h-10 rounded-full flex items-center justify-center" :class="{
-                                                'bg-yellow-400 text-white': index === 0,
-                                                'bg-gray-300 text-white': index === 1,
-                                                'bg-orange-400 text-white': index === 2,
-                                                'text-gray-600 border border-gray-200': index > 2
-                                            }">{{ index + 1 }}</span>
-                                        </div>
-                                        <div class="flex items-center gap-4">
-                                            <img :src="team.team_avatar || `https://placehold.co/56x56/BBBFCC/3E414C?text=${getTeamInitials(team.team_name)}`"
-                                                class="w-14 h-14 rounded-full border-2 border-gray-300 shadow-sm" />
-                                            <p class="text-gray-800 font-bold text-lg">{{ team.team_name }}</p>
-                                        </div>
-                                        <span class="text-center font-bold text-3xl text-blue-600">{{ team.points }}</span>
-                                        <span class="text-center font-bold text-2xl" :class="{
-                                            'text-green-600': team.point_diff > 0,
-                                            'text-red-600': team.point_diff < 0,
-                                            'text-gray-600': team.point_diff === 0
-                                        }">
-                                            {{ team.point_diff > 0 ? '+' : '' }}{{ team.point_diff }}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </template>
+                    <BracketMixedPreview
+                        :bracketData="mixedBracket"
+                        :rankData="rank"
+                    />
                 </div>
             </div>
         </Transition>
@@ -463,6 +391,7 @@
 
 <script setup>
 import CreateMatch from '@/components/molecules/CreateMatch.vue'
+import BracketMixedPreview from '@/components/molecules/BracketMixedPreview.vue'
 import { ref, watch, computed } from 'vue'
 import { SCHEDULE_TABS } from '@/data/tournament/index.js'
 import { toast } from 'vue3-toastify';
@@ -659,6 +588,11 @@ watch(
     opacity: 0;
 }
 
+.modal-enter-to,
+.modal-leave-from {
+    opacity: 1;
+}
+
 .modal-enter-active .bg-white,
 .modal-leave-active .bg-white {
     transition: transform 0.3s ease;
@@ -667,5 +601,10 @@ watch(
 .modal-enter-from .bg-white,
 .modal-leave-to .bg-white {
     transform: scale(0.95);
+}
+
+.modal-enter-to .bg-white,
+.modal-leave-from .bg-white {
+    transform: scale(1);
 }
 </style>
