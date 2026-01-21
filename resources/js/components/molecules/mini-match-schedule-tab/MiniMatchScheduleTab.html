@@ -10,7 +10,7 @@
 </template>
 
 <template v-else-if="subActiveTab === 'match'">
-    <div class="grid grid-cols-2 gap-4" v-if="miniMatches.length > 0" >
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4" v-if="miniMatches.length > 0" >
         <div v-for="match in miniMatches" :key="match.id" @click="showMiniMatchDetail(match.id)"
              class="border border-[#BBBFCC] p-4 rounded-lg cursor-pointer hover:shadow-md transition">
             <MiniMatchCard :matchTitle="match.name_of_match" :matchTime="formatDate(match.scheduled_at)"
@@ -100,7 +100,7 @@
 </template>
 
 <template v-else-if="subActiveTab === 'your-match'">
-    <div class="grid grid-cols-2 gap-4" v-if="scheduledMyMiniMatches.length > 0" >
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4" v-if="scheduledMyMiniMatches.length > 0" >
         <div v-for="miniMatch in scheduledMyMiniMatches" :key="miniMatch.id" @click="showMiniMatchDetail(miniMatch.id)"
              class="border border-[#BBBFCC] p-4 rounded-lg cursor-pointer hover:shadow-md transition">
             <MiniMatchCard :matchTitle="miniMatch.name_of_match" :matchTime="formatDate(miniMatch.scheduled_at)"

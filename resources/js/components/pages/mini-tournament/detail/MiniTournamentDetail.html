@@ -28,7 +28,7 @@
                     <div v-if="activeTab === 'detail'" key="detail">
                         <!-- Title -->
                         <div class="flex flex-wrap items-center gap-2 mb-4">
-                            <h3 class="font-semibold text-gray-900 text-[20px]">
+                            <h3 class="font-semibold text-gray-900 text-[20px] break-words whitespace-normal min-w-0">
                                 {{ mini.name }}
                             </h3>
                             <LockClosedIcon v-if="mini.is_private" class="w-5 h-5" />
