@@ -374,10 +374,11 @@
  * - Nhánh trái: từ trái sang giữa
  * - Nhánh phải: từ phải sang giữa (sử dụng flex-row-reverse)
  *
- * Data source: API api/tournament-types/{id}/bracket-new
+ * Data source: API /api/tournaments/{id}/bracket (mới) hoặc /api/tournament-types/{id}/bracket-new (cũ, backward compatible)
  */
 import { computed, defineComponent, h, ref, onMounted, watch } from "vue";
 import { VideoCameraIcon } from "@heroicons/vue/24/solid";
+import * as TournamentService from '@/service/tournament.js'
 import * as TournamentTypeService from '@/service/tournamentType.js'
 import { toast } from 'vue3-toastify'
 
@@ -654,6 +655,10 @@ const MatchCard = defineComponent({
 });
 
 const props = defineProps({
+    tournamentId: {
+        type: [Number, String],
+        default: null
+    },
     tournamentTypeId: {
         type: [Number, String],
         default: null
@@ -789,7 +794,19 @@ const mergeStandingsIntoPoolStage = () => {
 
 const fetchBracketData = async () => {
     try {
-        const response = await TournamentTypeService.getBracketNewByTournamentTypeId(props.tournamentTypeId)
+        let response;
+
+        // Ưu tiên dùng API mới với tournamentId
+        if (props.tournamentId) {
+            response = await TournamentService.getBracketByTournamentId(props.tournamentId)
+        } else if (props.tournamentTypeId) {
+            // Fallback về API cũ nếu chỉ có tournamentTypeId (backward compatible)
+            response = await TournamentTypeService.getBracketNewByTournamentTypeId(props.tournamentTypeId)
+        } else {
+            toast.error('Thiếu tournament ID hoặc tournament type ID')
+            return
+        }
+
         bracket.value = {
             poolStage: response.poolStage || [],
             leftSide: response.leftSide || [],
@@ -813,7 +830,7 @@ onMounted(() => {
             thirdPlaceMatch: props.bracketData.thirdPlaceMatch || null
         }
         mergeStandingsIntoPoolStage()
-    } else if (props.tournamentTypeId) {
+    } else if (props.tournamentId || props.tournamentTypeId) {
         fetchBracketData()
     } else {
         mergeStandingsIntoPoolStage()
