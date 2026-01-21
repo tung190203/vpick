@@ -6,27 +6,63 @@
         <!-- Control Buttons -->
         <div class="fixed top-6 right-6 z-[10000] flex gap-4">
             <!-- Fullscreen Toggle -->
-            <button 
+            <button
                 @click="toggleFullscreen"
                 class="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full border border-white/20 transition-all group shadow-xl"
                 :title="isFullscreen ? 'Thoát toàn màn hình' : 'Toàn màn hình'"
             >
-                <svg v-if="!isFullscreen" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                <svg
+                    v-if="!isFullscreen"
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="w-6 h-6 text-white group-hover:scale-110 transition-transform"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
+                    />
                 </svg>
-                <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                <svg
+                    v-else
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="w-6 h-6 text-white group-hover:scale-110 transition-transform"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                    />
                 </svg>
             </button>
 
             <!-- Close Button -->
-            <button 
+            <button
+                v-if="!isFullscreen"
                 @click="emit('close')"
                 class="p-3 bg-red-500/20 hover:bg-red-500/40 backdrop-blur-md rounded-full border border-red-500/20 transition-all group shadow-xl"
                 title="Đóng"
             >
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white group-hover:rotate-90 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="w-6 h-6 text-white group-hover:rotate-90 transition-transform"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                    />
                 </svg>
             </button>
         </div>
@@ -34,8 +70,8 @@
         <div
             ref="bracketContent"
             class="flex flex-nowrap justify-center items-stretch gap-20 lg:gap-5 min-w-max min-h-[950px] py-10 px-10 transition-transform duration-300 origin-center"
-            :style="{ 
-                transform: `scale(${scale})`
+            :style="{
+                transform: `scale(${scale})`,
             }"
         >
             <!-- Left Side -->
@@ -48,13 +84,26 @@
                     <div
                         class="flex flex-col items-center justify-center opacity-70 bg-white/90 backdrop-blur-sm rounded-xl p-4 border border-white/20 shadow-sm mb-8 w-full"
                     >
-                        <span class="font-black text-gray-800 text-sm uppercase tracking-wider">{{ round.round_name }}</span>
-                        <span class="text-[10px] text-gray-500 font-medium mt-1">
-                            {{ round.matches?.[0]?.scheduled_at ? formatDateTime(round.matches[0].scheduled_at) : "Chưa xếp lịch" }}
+                        <span
+                            class="font-black text-gray-800 text-sm uppercase tracking-wider"
+                            >{{ round.round_name }}</span
+                        >
+                        <span
+                            class="text-[10px] text-gray-500 font-medium mt-1"
+                        >
+                            {{
+                                round.matches?.[0]?.scheduled_at
+                                    ? formatDateTime(
+                                          round.matches[0].scheduled_at,
+                                      )
+                                    : "Chưa xếp lịch"
+                            }}
                         </span>
                     </div>
 
-                    <div class="flex flex-col flex-1 justify-around w-full min-h-[200px]">
+                    <div
+                        class="flex flex-col flex-1 justify-around w-full min-h-[200px]"
+                    >
                         <div
                             v-for="(pair, pIdx) in chunkMatches(round.matches)"
                             :key="`left-pair-${pIdx}`"
@@ -66,9 +115,17 @@
                                     <MatchCard
                                         :match="pair[0]"
                                         side="left"
-                                        :round-type="getRoundType(round.round_name)"
+                                        :round-type="
+                                            getRoundType(round.round_name)
+                                        "
                                         :match-index="pIdx * 2"
-                                        :previous-matches="getPreviousMatches(round, leftRounds, rIdx)"
+                                        :previous-matches="
+                                            getPreviousMatches(
+                                                round,
+                                                leftRounds,
+                                                rIdx,
+                                            )
+                                        "
                                         :round-name="round.round_name"
                                         :is-right-side="false"
                                     />
@@ -79,9 +136,17 @@
                                     <MatchCard
                                         :match="pair[1]"
                                         side="left"
-                                        :round-type="getRoundType(round.round_name)"
+                                        :round-type="
+                                            getRoundType(round.round_name)
+                                        "
                                         :match-index="pIdx * 2 + 1"
-                                        :previous-matches="getPreviousMatches(round, leftRounds, rIdx)"
+                                        :previous-matches="
+                                            getPreviousMatches(
+                                                round,
+                                                leftRounds,
+                                                rIdx,
+                                            )
+                                        "
                                         :round-name="round.round_name"
                                         :is-right-side="false"
                                     />
@@ -97,13 +162,23 @@
                                     <MatchCard
                                         :match="pair[0]"
                                         side="left"
-                                        :round-type="getRoundType(round.round_name)"
+                                        :round-type="
+                                            getRoundType(round.round_name)
+                                        "
                                         :match-index="pIdx"
-                                        :previous-matches="getPreviousMatches(round, leftRounds, rIdx)"
+                                        :previous-matches="
+                                            getPreviousMatches(
+                                                round,
+                                                leftRounds,
+                                                rIdx,
+                                            )
+                                        "
                                         :round-name="round.round_name"
                                         :is-right-side="false"
                                     />
-                                    <div class="connector-line-right-full"></div>
+                                    <div
+                                        class="connector-line-right-full"
+                                    ></div>
                                 </div>
                             </template>
                         </div>
@@ -112,14 +187,23 @@
             </div>
 
             <!-- Center (Finals) -->
-            <div class="flex flex-col items-center px-4 relative self-stretch min-w-[320px] z-50">
+            <div
+                class="flex flex-col items-center px-4 relative self-stretch min-w-[320px] z-50"
+            >
                 <div class="w-full h-[72px] mb-8"></div>
 
-                <div class="flex-1 flex flex-col justify-around w-full relative">
+                <div
+                    class="flex-1 flex flex-col justify-around w-full relative"
+                >
                     <div class="flex flex-col items-center relative">
                         <div class="relative">
-                            <div class="absolute -top-10 left-0 right-0 flex flex-col items-center whitespace-nowrap">
-                                <span class="text-yellow-400 text-xl font-bold uppercase tracking-wider">Chung Kết</span>
+                            <div
+                                class="absolute -top-10 left-0 right-0 flex flex-col items-center whitespace-nowrap"
+                            >
+                                <span
+                                    class="text-yellow-400 text-xl font-bold uppercase tracking-wider"
+                                    >Chung Kết</span
+                                >
                             </div>
 
                             <MatchCard
@@ -127,7 +211,12 @@
                                 :is-final="true"
                                 round-type="final"
                                 :match-index="0"
-                                :previous-matches="[...(leftRounds[leftRounds.length - 1]?.matches || []), ...(rightRounds[rightRounds.length - 1]?.matches || [])]"
+                                :previous-matches="[
+                                    ...(leftRounds[leftRounds.length - 1]
+                                        ?.matches || []),
+                                    ...(rightRounds[rightRounds.length - 1]
+                                        ?.matches || []),
+                                ]"
                                 round-name="Chung kết"
                                 :is-right-side="false"
                             />
@@ -135,8 +224,12 @@
                     </div>
                 </div>
 
-                <div class="absolute bottom-28 left-0 right-0 flex flex-col items-center pb-4 opacity-90 scale-95">
-                    <div class="text-gray-400 text-[10px] font-bold uppercase tracking-wider mb-1">
+                <div
+                    class="absolute bottom-28 left-0 right-0 flex flex-col items-center pb-4 opacity-90 scale-95"
+                >
+                    <div
+                        class="text-gray-400 text-[10px] font-bold uppercase tracking-wider mb-1"
+                    >
                         Tranh hạng 3
                     </div>
                     <MatchCard
@@ -149,7 +242,9 @@
             </div>
 
             <!-- Right Side -->
-            <div class="flex gap-12 lg:gap-20 flex-row-reverse min-w-[200px] items-stretch">
+            <div
+                class="flex gap-12 lg:gap-20 flex-row-reverse min-w-[200px] items-stretch"
+            >
                 <div
                     v-for="(round, rIdx) in rightRounds"
                     :key="`right-${rIdx}`"
@@ -158,15 +253,27 @@
                     <div
                         class="flex flex-col items-center justify-center opacity-70 bg-white/90 backdrop-blur-sm rounded-xl p-4 border border-white/20 shadow-sm mb-8 w-full"
                     >
-                        <span class="font-black text-gray-800 text-sm uppercase tracking-wider">
+                        <span
+                            class="font-black text-gray-800 text-sm uppercase tracking-wider"
+                        >
                             {{ round.round_name || round.title }}
                         </span>
-                        <span class="text-[10px] text-gray-500 font-medium mt-1">
-                            {{ round.matches?.[0]?.scheduled_at ? formatDateTime(round.matches[0].scheduled_at) : "Chưa xếp lịch" }}
+                        <span
+                            class="text-[10px] text-gray-500 font-medium mt-1"
+                        >
+                            {{
+                                round.matches?.[0]?.scheduled_at
+                                    ? formatDateTime(
+                                          round.matches[0].scheduled_at,
+                                      )
+                                    : "Chưa xếp lịch"
+                            }}
                         </span>
                     </div>
 
-                    <div class="flex flex-col flex-1 justify-around w-full min-h-[200px]">
+                    <div
+                        class="flex flex-col flex-1 justify-around w-full min-h-[200px]"
+                    >
                         <div
                             v-for="(pair, pIdx) in chunkMatches(round.matches)"
                             :key="`right-pair-${pIdx}`"
@@ -174,26 +281,46 @@
                             :class="pair.length === 2 ? 'flex-1' : ''"
                         >
                             <template v-if="pair.length === 2">
-                                <div class="relative flex items-center flex-row-reverse z-10">
+                                <div
+                                    class="relative flex items-center flex-row-reverse z-10"
+                                >
                                     <MatchCard
                                         :match="pair[0]"
                                         side="right"
-                                        :round-type="getRoundType(round.round_name)"
+                                        :round-type="
+                                            getRoundType(round.round_name)
+                                        "
                                         :match-index="pIdx * 2"
-                                        :previous-matches="getPreviousMatches(round, rightRounds, rIdx)"
+                                        :previous-matches="
+                                            getPreviousMatches(
+                                                round,
+                                                rightRounds,
+                                                rIdx,
+                                            )
+                                        "
                                         :round-name="round.round_name"
                                         :is-right-side="true"
                                     />
                                     <div class="connector-h-left"></div>
                                 </div>
 
-                                <div class="relative flex items-center flex-row-reverse z-10">
+                                <div
+                                    class="relative flex items-center flex-row-reverse z-10"
+                                >
                                     <MatchCard
                                         :match="pair[1]"
                                         side="right"
-                                        :round-type="getRoundType(round.round_name)"
+                                        :round-type="
+                                            getRoundType(round.round_name)
+                                        "
                                         :match-index="pIdx * 2 + 1"
-                                        :previous-matches="getPreviousMatches(round, rightRounds, rIdx)"
+                                        :previous-matches="
+                                            getPreviousMatches(
+                                                round,
+                                                rightRounds,
+                                                rIdx,
+                                            )
+                                        "
                                         :round-name="round.round_name"
                                         :is-right-side="true"
                                     />
@@ -205,13 +332,23 @@
                             </template>
 
                             <template v-else>
-                                <div class="relative flex items-center flex-row-reverse z-10">
+                                <div
+                                    class="relative flex items-center flex-row-reverse z-10"
+                                >
                                     <MatchCard
                                         :match="pair[0]"
                                         side="right"
-                                        :round-type="getRoundType(round.round_name)"
+                                        :round-type="
+                                            getRoundType(round.round_name)
+                                        "
                                         :match-index="pIdx"
-                                        :previous-matches="getPreviousMatches(round, rightRounds, rIdx)"
+                                        :previous-matches="
+                                            getPreviousMatches(
+                                                round,
+                                                rightRounds,
+                                                rIdx,
+                                            )
+                                        "
                                         :round-name="round.round_name"
                                         :is-right-side="true"
                                     />
@@ -227,12 +364,20 @@
 </template>
 
 <script setup>
-import { computed, defineComponent, h, ref, onMounted, onUnmounted, defineEmits } from "vue";
+import {
+    computed,
+    defineComponent,
+    h,
+    ref,
+    onMounted,
+    onUnmounted,
+    defineEmits,
+} from "vue";
 import { VideoCameraIcon } from "@heroicons/vue/24/solid";
-import * as TournamentService from '@/service/tournament.js'
-import { toast } from 'vue3-toastify'
+import * as TournamentService from "@/service/tournament.js";
+import { toast } from "vue3-toastify";
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(["close"]);
 
 const bracketContainer = ref(null);
 const bracketContent = ref(null);
@@ -241,23 +386,25 @@ const scale = ref(1);
 
 const updateScale = () => {
     if (!bracketContainer.value || !bracketContent.value) return;
-    
+
     const padding = 20;
     const containerWidth = bracketContainer.value.clientWidth - padding;
     const containerHeight = bracketContainer.value.clientHeight - padding;
-    
+
     const contentWidth = bracketContent.value.offsetWidth;
     const contentHeight = bracketContent.value.offsetHeight;
-    
+
     const scaleX = containerWidth / contentWidth;
     const scaleY = containerHeight / contentHeight;
-        scale.value = Math.min(scaleX, scaleY);
+    scale.value = Math.min(scaleX, scaleY);
 };
 
 const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
-        bracketContainer.value?.requestFullscreen().catch(err => {
-            console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+        bracketContainer.value?.requestFullscreen().catch((err) => {
+            console.error(
+                `Error attempting to enable full-screen mode: ${err.message}`,
+            );
         });
     } else {
         document.exitFullscreen();
@@ -266,140 +413,218 @@ const toggleFullscreen = () => {
 
 const handleFullscreenChange = () => {
     isFullscreen.value = !!document.fullscreenElement;
-    setTimeout(updateScale, 100); 
+    setTimeout(updateScale, 100);
 };
 
 let resizeObserver = null;
 
 const handleKeyDown = (e) => {
-    if (e.key === 'Escape') {
-        emit('close');
+    if (e.key === "Escape") {
+        emit("close");
     }
 };
 
 onMounted(() => {
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    window.addEventListener('resize', updateScale);
-    window.addEventListener('keydown', handleKeyDown);
-    
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    window.addEventListener("resize", updateScale);
+    window.addEventListener("keydown", handleKeyDown);
+
     resizeObserver = new ResizeObserver(() => {
         updateScale();
     });
     if (bracketContent.value) {
         resizeObserver.observe(bracketContent.value);
     }
-    
+
     setTimeout(updateScale, 500); // Initial calculation
 });
 
 onUnmounted(() => {
-    document.removeEventListener('fullscreenchange', handleFullscreenChange);
-    window.removeEventListener('resize', updateScale);
-    window.removeEventListener('keydown', handleKeyDown);
+    document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    window.removeEventListener("resize", updateScale);
+    window.removeEventListener("keydown", handleKeyDown);
     if (resizeObserver) {
         resizeObserver.disconnect();
     }
 });
 
-
 const getRound16Label = (matchIndex, isRightSide) => {
-    const groupLetters = isRightSide ? ['E', 'F', 'G', 'H'] : ['A', 'B', 'C', 'D']
-    
-    const matchNum = Math.floor(matchIndex / 2) 
-    const isHome = (matchIndex % 2) === 0      
-    const pairBase = Math.floor(matchNum / 2) * 2
-    const g1 = groupLetters[pairBase]
-    const g2 = groupLetters[pairBase + 1]
+    const groupLetters = isRightSide
+        ? ["E", "F", "G", "H"]
+        : ["A", "B", "C", "D"];
+
+    const matchNum = Math.floor(matchIndex / 2);
+    const isHome = matchIndex % 2 === 0;
+    const pairBase = Math.floor(matchNum / 2) * 2;
+    const g1 = groupLetters[pairBase];
+    const g2 = groupLetters[pairBase + 1];
 
     if (matchNum % 2 === 0) {
-        return isHome ? `Nhất bảng ${g1}` : `Nhì bảng ${g2}`
+        return isHome ? `Nhất bảng ${g1}` : `Nhì bảng ${g2}`;
     } else {
-        return isHome ? `Nhất bảng ${g2}` : `Nhì bảng ${g1}`
+        return isHome ? `Nhất bảng ${g2}` : `Nhì bảng ${g1}`;
     }
-}
+};
 
 const getQuarterLabel = (matchIndex, isRightSide) => {
-    const baseMatch = isRightSide ? 5 : 1
-    return `Thắng Trận ${baseMatch + matchIndex}`
-}
+    // Nếu có 4 bảng, Tứ kết là vòng bắt đầu
+    if (groupCount.value === 4) {
+        const groupLetters = isRightSide ? ["C", "D"] : ["A", "B"];
+        const matchNum = Math.floor(matchIndex / 2); // Trận 0 hoặc 1 của mỗi bên
+        const isHome = matchIndex % 2 === 0;
+
+        const g1 = groupLetters[matchNum === 0 ? 0 : 1];
+        const g2 = groupLetters[matchNum === 0 ? 1 : 0];
+
+        return isHome ? `Nhất bảng ${g1}` : `Nhì bảng ${g2}`;
+    }
+
+    // Nếu có 8 bảng, Tứ kết là vòng 2 (sau vòng 1/8)
+    const baseMatch = isRightSide ? 5 : 1;
+    return `Thắng Trận ${baseMatch + Math.floor(matchIndex / 2)}`;
+};
 
 const getSemiLabel = (matchIndex, isRightSide) => {
-    const baseQF = isRightSide ? 3 : 1
-    return `Thắng Tứ kết ${baseQF + matchIndex}`
-}
+    // Nếu có 2 bảng, Bán kết là vòng bắt đầu
+    if (groupCount.value === 2) {
+        const isHome = matchIndex % 2 === 0;
+        if (!isRightSide) {
+            return isHome ? `Nhất bảng A` : `Nhì bảng B`;
+        } else {
+            return isHome ? `Nhất bảng B` : `Nhì bảng A`;
+        }
+    }
+
+    const baseQF = isRightSide ? 3 : 1;
+    return `Thắng Tứ kết ${baseQF + Math.floor(matchIndex / 2)}`;
+};
 
 const getFinalLabel = (matchIndex) => {
-    return matchIndex === 0 ? 'Thắng Bán kết 1' : 'Thắng Bán kết 2'
-}
+    return matchIndex % 2 === 0 ? "Thắng Bán kết 1" : "Thắng Bán kết 2";
+};
 
 const getThirdPlaceLabel = (matchIndex) => {
-    return matchIndex === 0 ? 'Thua Bán kết 1' : 'Thua Bán kết 2'
-}
+    return matchIndex === 0 ? "Thua Bán kết 1" : "Thua Bán kết 2";
+};
 
-const getMatchLabel = (team, roundType, matchIndex, isRightSide, previousMatches, roundName) => {
-    if (team && (team.name || team.team_name) && team.name !== 'TBD' && team.team_name !== 'TBD') {
-        return team.name || team.team_name
+const getMatchLabel = (
+    team,
+    roundType,
+    matchIndex,
+    isRightSide,
+    previousMatches,
+    roundName,
+) => {
+    if (
+        team &&
+        (team.name || team.team_name) &&
+        team.name !== "TBD" &&
+        team.team_name !== "TBD"
+    ) {
+        return team.name || team.team_name;
     }
 
-    const name = roundName?.toLowerCase() || '';
-    if (roundType === 'round16' || name.includes('16') || name.includes('1/8')) {
-        return getRound16Label(matchIndex, isRightSide)
+    const name = roundName?.toLowerCase() || "";
+    if (
+        roundType === "round16" ||
+        name.includes("16") ||
+        name.includes("1/8")
+    ) {
+        return getRound16Label(matchIndex, isRightSide);
     }
 
-    if (roundType === 'quarter' || name.includes('tứ kết')) {
-        return getQuarterLabel(matchIndex, isRightSide)
+    if (roundType === "quarter" || name.includes("tứ kết")) {
+        return getQuarterLabel(matchIndex, isRightSide);
     }
 
-    if (roundType === 'semi' || name.includes('bán kết')) {
-        return getSemiLabel(matchIndex, isRightSide)
+    if (roundType === "semi" || name.includes("bán kết")) {
+        return getSemiLabel(matchIndex, isRightSide);
     }
 
-    if (roundType === 'final' || name.includes('chung kết')) {
-        return getFinalLabel(matchIndex)
+    if (roundType === "final" || name.includes("chung kết")) {
+        return getFinalLabel(matchIndex);
     }
 
-    if (roundType === 'third_place' || name.includes('tranh hạng 3')) {
-        return getThirdPlaceLabel(matchIndex)
+    if (roundType === "third_place" || name.includes("tranh hạng 3")) {
+        return getThirdPlaceLabel(matchIndex);
     }
 
-    return 'Chưa xác định'
-}
+    return "Chưa xác định";
+};
 
 const MatchCard = defineComponent({
-    props: ["match", "side", "isFinal", "roundType", "matchIndex", "previousMatches", "roundName", "isRightSide"],
+    props: [
+        "match",
+        "side",
+        "isFinal",
+        "roundType",
+        "matchIndex",
+        "previousMatches",
+        "roundName",
+        "isRightSide",
+    ],
     setup(props, { emit }) {
-        const getMatchLabelLocal = (team, roundType, matchIndex, isRightSide, previousMatches, roundName) => {
-            if (team && team.name && team.name !== 'TBD' && team.team_name && team.team_name !== 'TBD') {
-                return team.name || team.team_name
+        const getMatchLabelLocal = (
+            team,
+            roundType,
+            matchIndex,
+            isRightSide,
+            previousMatches,
+            roundName,
+        ) => {
+            if (
+                team &&
+                team.name &&
+                team.name !== "TBD" &&
+                team.team_name &&
+                team.team_name !== "TBD"
+            ) {
+                return team.name || team.team_name;
             }
-            return getMatchLabel(team, roundType, matchIndex, isRightSide, previousMatches, roundName)
-        }
+            return getMatchLabel(
+                team,
+                roundType,
+                matchIndex,
+                isRightSide,
+                previousMatches,
+                roundName,
+            );
+        };
 
         const getTeamName = (team, position) => {
-            const hasValidTeamName = team &&
+            const hasValidTeamName =
+                team &&
                 (team.name || team.team_name) &&
-                team.name !== 'TBD' &&
-                team.team_name !== 'TBD' &&
-                team.placeholder !== 'TBD';
+                team.name !== "TBD" &&
+                team.team_name !== "TBD" &&
+                team.placeholder !== "TBD";
 
             if (hasValidTeamName) {
                 return team.name || team.team_name;
             }
 
-            const roundType = props.roundType || (props.isFinal ? 'final' : '')
-            const matchIdx = props.matchIndex || 0
-            const isRight = props.isRightSide || false
-            const prevMatches = props.previousMatches || null
-            const rName = props.roundName || ''
+            const roundType = props.roundType || (props.isFinal ? "final" : "");
+            const matchIdx = props.matchIndex || 0;
+            const isRight = props.isRightSide || false;
+            const prevMatches = props.previousMatches || null;
+            const rName = props.roundName || "";
 
-            const finalMatchIndex = matchIdx * 2 + (position === 'home' ? 0 : 1)
+            const finalMatchIndex =
+                matchIdx * 2 + (position === "home" ? 0 : 1);
 
-            return getMatchLabelLocal(null, roundType, finalMatchIndex, isRight, prevMatches, rName);
+            return getMatchLabelLocal(
+                null,
+                roundType,
+                finalMatchIndex,
+                isRight,
+                prevMatches,
+                rName,
+            );
         };
         const getTeamAvatar = (team) => {
-             if (team?.team_avatar) return team.team_avatar;
-             const name = team?.name || team?.placeholder || "T";
-             return `https://placehold.co/40x40/BBBFCC/3E414C?text=${name.charAt(0)}`;
+            if (team?.team_avatar) return team.team_avatar;
+            const name = team?.name || team?.placeholder || "T";
+            return `https://placehold.co/40x40/BBBFCC/3E414C?text=${name.charAt(0)}`;
         };
         const isWinner = (teamId) =>
             props.match.status === "completed" &&
@@ -414,7 +639,7 @@ const MatchCard = defineComponent({
                     minute: "2-digit",
                 });
             } catch (e) {
-                console.error('Error formatting time:', e)
+                console.error("Error formatting time:", e);
                 return "Chưa xếp lịch";
             }
         };
@@ -437,7 +662,11 @@ const MatchCard = defineComponent({
                             class: "flex justify-between items-center px-3 py-1.5 bg-gray-50 border-b border-gray-100 text-[10px] text-gray-500 uppercase font-bold",
                         },
                         [
-                            h("span", { class: props.isFinal ? "text-xs" : "" }, `Sân ${props.match.court || 1}`),
+                            h(
+                                "span",
+                                { class: props.isFinal ? "text-xs" : "" },
+                                `Sân ${props.match.court || 1}`,
+                            ),
                             props.match.status === "in_progress"
                                 ? h(
                                       "span",
@@ -482,7 +711,9 @@ const MatchCard = defineComponent({
                                             ),
                                             class: [
                                                 "rounded-full object-cover bg-gray-200 flex-shrink-0",
-                                                props.isFinal ? "w-10 h-10" : "w-6 h-6"
+                                                props.isFinal
+                                                    ? "w-10 h-10"
+                                                    : "w-6 h-6",
                                             ],
                                         }),
                                         h(
@@ -490,7 +721,9 @@ const MatchCard = defineComponent({
                                             {
                                                 class: [
                                                     "font-medium truncate",
-                                                    props.isFinal ? "text-sm max-w-[180px]" : "text-xs max-w-[140px]",
+                                                    props.isFinal
+                                                        ? "text-sm max-w-[180px]"
+                                                        : "text-xs max-w-[140px]",
                                                     isWinner(
                                                         props.match.home_team
                                                             ?.id,
@@ -499,7 +732,10 @@ const MatchCard = defineComponent({
                                                         : "text-gray-600",
                                                 ],
                                             },
-                                            getTeamName(props.match.home_team, 'home'),
+                                            getTeamName(
+                                                props.match.home_team,
+                                                "home",
+                                            ),
                                         ),
                                     ],
                                 ),
@@ -508,7 +744,9 @@ const MatchCard = defineComponent({
                                     {
                                         class: [
                                             "font-bold",
-                                            props.isFinal ? "text-lg" : "text-sm",
+                                            props.isFinal
+                                                ? "text-lg"
+                                                : "text-sm",
                                             isWinner(props.match.home_team?.id)
                                                 ? "text-green-600"
                                                 : "text-gray-400",
@@ -541,7 +779,9 @@ const MatchCard = defineComponent({
                                             ),
                                             class: [
                                                 "rounded-full object-cover bg-gray-200 flex-shrink-0",
-                                                props.isFinal ? "w-10 h-10" : "w-6 h-6"
+                                                props.isFinal
+                                                    ? "w-10 h-10"
+                                                    : "w-6 h-6",
                                             ],
                                         }),
                                         h(
@@ -549,7 +789,9 @@ const MatchCard = defineComponent({
                                             {
                                                 class: [
                                                     "font-medium truncate",
-                                                    props.isFinal ? "text-sm max-w-[180px]" : "text-xs max-w-[140px]",
+                                                    props.isFinal
+                                                        ? "text-sm max-w-[180px]"
+                                                        : "text-xs max-w-[140px]",
                                                     isWinner(
                                                         props.match.away_team
                                                             ?.id,
@@ -558,7 +800,10 @@ const MatchCard = defineComponent({
                                                         : "text-gray-600",
                                                 ],
                                             },
-                                            getTeamName(props.match.away_team, 'away'),
+                                            getTeamName(
+                                                props.match.away_team,
+                                                "away",
+                                            ),
                                         ),
                                     ],
                                 ),
@@ -567,7 +812,9 @@ const MatchCard = defineComponent({
                                     {
                                         class: [
                                             "font-bold",
-                                            props.isFinal ? "text-lg" : "text-sm",
+                                            props.isFinal
+                                                ? "text-lg"
+                                                : "text-sm",
                                             isWinner(props.match.away_team?.id)
                                                 ? "text-green-600"
                                                 : "text-gray-400",
@@ -586,42 +833,87 @@ const MatchCard = defineComponent({
 const props = defineProps({
     tournamentId: {
         type: [Number, String],
-        default: null
+        default: null,
     },
     tournamentTypeId: {
         type: [Number, String],
-        default: null
+        default: null,
     },
     bracketData: {
         type: Object,
-        default: () => ({})
+        default: () => ({}),
     },
     rankData: {
         type: Object,
-        default: () => ({})
-    }
-})
+        default: () => ({}),
+    },
+});
 
-const bracket = ref({})
+const bracket = ref({});
 
 const getTeamName = (team) => team?.name || "Chưa xác định";
 const getTeamAvatar = (team) =>
     team?.team_avatar ||
     `https://placehold.co/40x40/BBBFCC/3E414C?text=${(team?.name || "T").charAt(0)}`;
 
+const groupCount = computed(() => {
+    if (!props.rankData) return 0;
+
+    // Nếu là format Mixed, dữ liệu bảng nằm trong group_rankings
+    if (
+        props.rankData.group_rankings &&
+        Array.isArray(props.rankData.group_rankings)
+    ) {
+        return props.rankData.group_rankings.length;
+    }
+
+    // Nếu là format khác (Round Robin/Elimination), có thể nằm trong rankings
+    if (props.rankData.rankings && Array.isArray(props.rankData.rankings)) {
+        return 1; // Coi như 1 bảng lớn
+    }
+
+    return 0;
+});
+
+const createPlaceholderRounds = (isRightSide) => {
+    const count = groupCount.value;
+    const rounds = [];
+    const baseId = isRightSide ? 100 : 1;
+
+    // Nếu có 8 bảng -> Bắt đầu từ Vòng 1/8 (4 trận mỗi bên)
+    if (count > 4) {
+        rounds.push(createPlaceholderRound("Vòng 1/8", 4, baseId));
+        rounds.push(createPlaceholderRound("Tứ kết", 2, baseId + 10));
+        rounds.push(createPlaceholderRound("Bán kết", 1, baseId + 20));
+    }
+    // Nếu có 4 bảng -> Bắt đầu từ Tứ kết (2 trận mỗi bên)
+    else if (count > 2) {
+        rounds.push(createPlaceholderRound("Tứ kết", 2, baseId));
+        rounds.push(createPlaceholderRound("Bán kết", 1, baseId + 10));
+    }
+    // Nếu có 2 bảng -> Bắt đầu từ Bán kết (1 trận mỗi bên)
+    else {
+        rounds.push(createPlaceholderRound("Bán kết", 1, baseId));
+    }
+
+    return rounds;
+};
+
 const createPlaceholderMatch = (id) => ({
     match_id: `placeholder-${id}`,
-    status: 'pending',
+    status: "pending",
     scheduled_at: null,
     home_team: null,
     away_team: null,
     home_score: 0,
-    away_score: 0
+    away_score: 0,
 });
 
 const createPlaceholderRound = (name, matchCount, startId) => ({
     round_name: name,
-    matches: Array.from({ length: matchCount }, (_, i) => createPlaceholderMatch(startId + i))
+    matches: Array.from({ length: matchCount }, (_, i) =>
+        createPlaceholderMatch(startId + i),
+    ),
 });
 
 const formatDateTime = (scheduledAt) => {
@@ -632,13 +924,26 @@ const formatDateTime = (scheduledAt) => {
             return "Chưa xếp lịch";
         }
         const day = date.getDate();
-        const monthNames = ["Th1", "Th2", "Th3", "Th4", "Th5", "Th6", "Th7", "Th8", "Th9", "Th10", "Th11", "Th12"];
+        const monthNames = [
+            "Th1",
+            "Th2",
+            "Th3",
+            "Th4",
+            "Th5",
+            "Th6",
+            "Th7",
+            "Th8",
+            "Th9",
+            "Th10",
+            "Th11",
+            "Th12",
+        ];
         const month = monthNames[date.getMonth()];
-        const hours = date.getHours().toString().padStart(2, '0');
-        const minutes = date.getMinutes().toString().padStart(2, '0');
+        const hours = date.getHours().toString().padStart(2, "0");
+        const minutes = date.getMinutes().toString().padStart(2, "0");
         return `${day} ${month} - ${hours}:${minutes}`;
     } catch (e) {
-        console.error('Error formatting date time:', e)
+        console.error("Error formatting date time:", e);
         return "Chưa xếp lịch";
     }
 };
@@ -653,13 +958,13 @@ const chunkMatches = (matches) => {
 };
 
 const getRoundType = (roundName) => {
-    if (!roundName) return '';
+    if (!roundName) return "";
     const name = roundName.toLowerCase();
-    if (name.includes('16') || name.includes('1/8')) return 'round16';
-    if (name.includes('tứ kết') || name.includes('quarter')) return 'quarter';
-    if (name.includes('bán kết') || name.includes('semi')) return 'semi';
-    if (name.includes('chung kết') || name.includes('final')) return 'final';
-    return '';
+    if (name.includes("16") || name.includes("1/8")) return "round16";
+    if (name.includes("tứ kết") || name.includes("quarter")) return "quarter";
+    if (name.includes("bán kết") || name.includes("semi")) return "semi";
+    if (name.includes("chung kết") || name.includes("final")) return "final";
+    return "";
 };
 
 const getPreviousMatches = (currentRound, allRounds, currentRoundIndex) => {
@@ -668,28 +973,30 @@ const getPreviousMatches = (currentRound, allRounds, currentRoundIndex) => {
     return previousRound?.matches || null;
 };
 
-
-
 const fetchBracketData = async () => {
     try {
         if (!props.tournamentId) {
-            toast.error('Thiếu tournament ID')
-            return
+            toast.error("Thiếu tournament ID");
+            return;
         }
 
-        const response = await TournamentService.getBracketByTournamentId(props.tournamentId)
+        const response = await TournamentService.getBracketByTournamentId(
+            props.tournamentId,
+        );
 
         bracket.value = {
             poolStage: response.poolStage || [],
             leftSide: response.leftSide || [],
             rightSide: response.rightSide || [],
             finalMatch: response.finalMatch || null,
-            thirdPlaceMatch: response.thirdPlaceMatch || null
-        }
+            thirdPlaceMatch: response.thirdPlaceMatch || null,
+        };
     } catch (error) {
-        toast.error(error.response?.data?.message || 'Lấy dữ liệu bracket thất bại')
+        toast.error(
+            error.response?.data?.message || "Lấy dữ liệu bracket thất bại",
+        );
     }
-}
+};
 
 onMounted(() => {
     if (props.bracketData && Object.keys(props.bracketData).length > 0) {
@@ -698,37 +1005,33 @@ onMounted(() => {
             leftSide: props.bracketData.leftSide || [],
             rightSide: props.bracketData.rightSide || [],
             finalMatch: props.bracketData.finalMatch || null,
-            thirdPlaceMatch: props.bracketData.thirdPlaceMatch || null
-        }
+            thirdPlaceMatch: props.bracketData.thirdPlaceMatch || null,
+        };
     } else if (props.tournamentId) {
-        fetchBracketData()
+        fetchBracketData();
     }
-})
-
+});
 
 const leftRounds = computed(() => {
-    const data = (bracket.value.leftSide || []).sort((a, b) => a.round - b.round);
+    const data = (bracket.value.leftSide || []).sort(
+        (a, b) => a.round - b.round,
+    );
     if (data.length > 0) return data;
-
-    return [
-        createPlaceholderRound('Vòng 1/8', 4, 50),
-        createPlaceholderRound('Tứ kết', 2, 100),
-        createPlaceholderRound('Bán kết', 1, 102)
-    ];
+    return createPlaceholderRounds(false);
 });
 
 const rightRounds = computed(() => {
     const data = (bracket.value.rightSide || [])
-        .filter((r) => !r.matches.some((m) => m.is_third_place === true || m.is_third_place === 1))
+        .filter(
+            (r) =>
+                !r.matches.some(
+                    (m) => m.is_third_place === true || m.is_third_place === 1,
+                ),
+        )
         .sort((a, b) => a.round - b.round);
 
     if (data.length > 0) return data;
-
-    return [
-        createPlaceholderRound('Vòng 1/8', 4, 150),
-        createPlaceholderRound('Tứ kết', 2, 200),
-        createPlaceholderRound('Bán kết', 1, 202)
-    ];
+    return createPlaceholderRounds(true);
 });
 
 const finalMatch = computed(() => {
@@ -739,17 +1042,18 @@ const finalMatch = computed(() => {
 const thirdPlaceMatch = computed(() => {
     const rightSide = bracket.value.rightSide || [];
     for (const round of rightSide) {
-        const match = round.matches.find((m) => m.is_third_place === true || m.is_third_place === 1);
+        const match = round.matches.find(
+            (m) => m.is_third_place === true || m.is_third_place === 1,
+        );
         if (match) return match;
     }
-    return bracket.value.thirdPlaceMatch || createPlaceholderMatch('3rd');
+    return bracket.value.thirdPlaceMatch || createPlaceholderMatch("3rd");
 });
-
 </script>
 
 <style scoped>
 .bg-image-container {
-    background-image: url('@/assets/images/bracket-bg.png');
+    background-image: url("@/assets/images/bracket-bg.png");
     background-size: 100% 100%;
     background-position: center;
     background-repeat: no-repeat;
