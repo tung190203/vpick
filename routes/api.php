@@ -98,7 +98,11 @@ Route::middleware(['auth:api'])->group(function () {
         Route::get('/{id}', [TournamentController::class, 'show']);
         Route::post('/update/{id}', [TournamentController::class, 'update']);
         Route::post('/delete', [TournamentController::class, 'destroy']);
+        Route::get('/{id}/bracket', [TournamentController::class, 'getBracket']);
     });
+
+    // Alias route để backward compatible
+    Route::get('/tournament-detail/{id}/bracket', [TournamentController::class, 'getBracket']);
 
     Route::prefix('tournament-staff')->group(function () {
         Route::post('/add/{tournamentId}', [TournamentStaffController::class, 'addStaff']);
