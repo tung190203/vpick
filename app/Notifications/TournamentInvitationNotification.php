@@ -61,8 +61,8 @@ class TournamentInvitationNotification extends Notification implements ShouldQue
     public function toArray(object $notifiable): array
     {
         return [
-            'mini_tournament_id' => $this->tournament->id,
-            'message' => "Bạn được mời tham gia kèo đấu: {$this->tournament->name}",
+            'tournament_id' => $this->tournament->id,
+            'message' => "Bạn được mời tham gia giải đấu: {$this->tournament->name}",
             'invited_by' => auth()->id(),
         ];
     }
