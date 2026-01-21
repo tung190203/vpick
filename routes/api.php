@@ -101,7 +101,7 @@ Route::middleware(['auth:api'])->group(function () {
         Route::get('/{id}/bracket', [TournamentController::class, 'getBracket']);
     });
 
-    // Alias route để backward compatible
+    // Alias route để backward compatible - sử dụng TournamentController::getBracket
     Route::get('/tournament-detail/{id}/bracket', [TournamentController::class, 'getBracket']);
 
     Route::prefix('tournament-staff')->group(function () {
@@ -118,7 +118,6 @@ Route::middleware(['auth:api'])->group(function () {
         Route::get('/{tournamentType}', [TournamentTypeController::class, 'show']);
         Route::delete('/{tournamentType}', [TournamentTypeController::class, 'destroy']);
         Route::get('/{tournamentType}/bracket', [TournamentTypeController::class, 'getBracket']);
-        Route::get('/{tournamentType}/bracket-new', [TournamentTypeController::class, 'getBracketNew']);
         Route::get('/{tournamentId}/rank', [TournamentTypeController::class, 'getRank']);
         Route::get('/{tournamentType}/advancement-status', [TournamentTypeController::class, 'getAdvancementStatus']);
         Route::post('/{tournamentType}/regenerate-matches', [TournamentTypeController::class, 'regenerateMatches']);

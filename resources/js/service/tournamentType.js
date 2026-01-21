@@ -18,10 +18,6 @@ export const getBracketByTournamentTypeId = async (tournamentTypeId) => {
     .then((response) => response.data.data);
 }
 
-export const getBracketNewByTournamentTypeId = async (tournamentTypeId) => {
-  return axiosInstance.get(`${tournamentTypeEndpoint}/${tournamentTypeId}/bracket-new`)
-    .then((response) => response.data.data);
-}
 
 export const getRanks = async (tournamentId) => {
   return axiosInstance.get(`${tournamentTypeEndpoint}/${tournamentId}/rank`)

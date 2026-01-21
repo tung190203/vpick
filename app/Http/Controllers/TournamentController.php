@@ -237,7 +237,12 @@ class TournamentController extends Controller
                 return ResponseHelper::error('Giải đấu chưa có tournament type', 404);
             }
 
-            return $this->tournamentTypeController->getBracketNew($tournamentType);
+            // Sử dụng getBracketNew cho format Mixed, getBracket cho các format khác
+            if ($tournamentType->format === \App\Models\TournamentType::FORMAT_MIXED) {
+                return $this->tournamentTypeController->getBracketNew($tournamentType);
+            } else {
+                return $this->tournamentTypeController->getBracket($tournamentType);
+            }
         } catch (\Throwable $e) {
             Log::error('Error in getBracket', [
                 'id' => $id,

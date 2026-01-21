@@ -29,6 +29,6 @@ export const deleteTournament = async (id) => {
 }
 
 export const getBracketByTournamentId = async (tournamentId) => {
-  return axiosInstance.get(`${tournamentEndpoint}/${tournamentId}/bracket`)
+  return axiosInstance.get(`/tournament-detail/${tournamentId}/bracket`)
     .then((response) => response.data.data);
 }

@@ -378,7 +378,7 @@
                     <div class="flex-1 overflow-hidden">
                         <BracketMixedPreview
                             v-if="data?.tournament_types?.[0]?.format === 1"
-                            :tournamentTypeId="data?.tournament_types?.[0]?.id"
+                            :tournamentId="data?.id"
                             :bracketData="mixedBracket"
                             :rankData="rank"
                         />
@@ -395,7 +395,7 @@ import BracketMixedPreview from '@/components/molecules/BracketMixedPreview.vue'
 import { ref, watch, computed } from 'vue'
 import { SCHEDULE_TABS } from '@/data/tournament/index.js'
 import { toast } from 'vue3-toastify';
-import * as TournamentTypeService from '@/service/tournamentType.js'
+import * as TournamentService from '@/service/tournament.js'
 import * as MatchesService from '@/service/match.js'
 
 const scheduleTabs = SCHEDULE_TABS
@@ -434,11 +434,14 @@ const hasAnyRanking = computed(() => {
     return props.rank?.rankings && props.rank.rankings.length > 0;
 });
 
-const getMatches = async (tournamentTypeId) => {
+const getMatches = async (tournamentId) => {
     try {
+        if (!tournamentId) return;
+
+        const response = await TournamentService.getBracketByTournamentId(tournamentId)
+
         if (props.data.tournament_types?.[0]?.format === 1) {
-            // Sử dụng API bracket-new cho format Mixed
-            const response = await TournamentTypeService.getBracketNewByTournamentTypeId(tournamentTypeId)
+            // Format Mixed - sử dụng cấu trúc mới
             mixedBracket.value = {
                 poolStage: response.poolStage || [],
                 leftSide: response.leftSide || [],
@@ -448,17 +451,16 @@ const getMatches = async (tournamentTypeId) => {
             }
             currentMixedStage.value = 'pool'
             currentKnockoutRoundIndex.value = 0
+        } else if (props.data.tournament_types?.[0]?.format === 2) {
+            // Format Elimination
+            eliminationBracket.value = response.bracket || []
+            currentEliminationRoundIndex.value = 0
         } else {
-            const response = await TournamentTypeService.getBracketByTournamentTypeId(tournamentTypeId)
-            if (props.data.tournament_types?.[0]?.format === 2) {
-                eliminationBracket.value = response.bracket || []
-                currentEliminationRoundIndex.value = 0
-            } else {
-                matches.value = response.matches || []
-                if (matches.value.length > 0) {
-                    const rounds = [...new Set(matches.value.map(m => m.round))].sort((a, b) => parseInt(a) - parseInt(b))
-                    if (rounds.length > 0) currentRound.value = rounds[0]
-                }
+            // Format Round Robin
+            matches.value = response.bracket || []
+            if (matches.value.length > 0) {
+                const rounds = [...new Set(matches.value.map(m => m.round))].sort((a, b) => parseInt(a) - parseInt(b))
+                if (rounds.length > 0) currentRound.value = rounds[0]
             }
         }
     } catch (error) {
@@ -595,9 +597,9 @@ const getTeamInitials = (name) => {
 };
 
 watch(
-    () => props.data?.tournament_types?.[0]?.id,
-    async (newTournamentTypeId) => {
-        if (newTournamentTypeId) await getMatches(newTournamentTypeId);
+    () => props.data?.id,
+    async (newTournamentId) => {
+        if (newTournamentId) await getMatches(newTournamentId);
     },
     { immediate: true, deep: true }
 );

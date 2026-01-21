@@ -379,7 +379,6 @@
 import { computed, defineComponent, h, ref, onMounted, watch } from "vue";
 import { VideoCameraIcon } from "@heroicons/vue/24/solid";
 import * as TournamentService from '@/service/tournament.js'
-import * as TournamentTypeService from '@/service/tournamentType.js'
 import { toast } from 'vue3-toastify'
 
 /**
@@ -794,18 +793,12 @@ const mergeStandingsIntoPoolStage = () => {
 
 const fetchBracketData = async () => {
     try {
-        let response;
-
-        // Ưu tiên dùng API mới với tournamentId
-        if (props.tournamentId) {
-            response = await TournamentService.getBracketByTournamentId(props.tournamentId)
-        } else if (props.tournamentTypeId) {
-            // Fallback về API cũ nếu chỉ có tournamentTypeId (backward compatible)
-            response = await TournamentTypeService.getBracketNewByTournamentTypeId(props.tournamentTypeId)
-        } else {
-            toast.error('Thiếu tournament ID hoặc tournament type ID')
+        if (!props.tournamentId) {
+            toast.error('Thiếu tournament ID')
             return
         }
+
+        const response = await TournamentService.getBracketByTournamentId(props.tournamentId)
 
         bracket.value = {
             poolStage: response.poolStage || [],
@@ -830,7 +823,7 @@ onMounted(() => {
             thirdPlaceMatch: props.bracketData.thirdPlaceMatch || null
         }
         mergeStandingsIntoPoolStage()
-    } else if (props.tournamentId || props.tournamentTypeId) {
+    } else if (props.tournamentId) {
         fetchBracketData()
     } else {
         mergeStandingsIntoPoolStage()
