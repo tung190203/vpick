@@ -12,18 +12,18 @@
     "src": "node_modules/leaflet/dist/images/marker-icon.png"
   },
   "resources/css/app.css": {
-    "file": "assets/app-RHSxG778.css",
+    "file": "assets/app-B5RJA7OR.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-DMnWRler.js",
+    "file": "assets/app-Cj7cJFrj.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "css": [
-      "assets/app-D5RavDW5.css",
-      "assets/app-RHSxG778.css"
+      "assets/app-B6l5AQP1.css",
+      "assets/app-B5RJA7OR.css"
     ],
     "assets": [
       "assets/logo-splash-DOuQK6QO.svg",
@@ -47,6 +47,7 @@
       "assets/pickleball-banner-2-BknHubJi.png",
       "assets/dot-menu-CFmhjUHu.svg",
       "assets/default-image-DKJb-50o.jpeg",
+      "assets/bracket-bg-CYVuQJVB.png",
       "assets/layers-BWBAp2CZ.png",
       "assets/layers-2x-Bpkbi35X.png",
       "assets/marker-icon-hN30_KVU.png"
@@ -55,6 +56,10 @@
   "resources/js/assets/images/apple-icon.svg": {
     "file": "assets/apple-icon-CGsfVH1K.svg",
     "src": "resources/js/assets/images/apple-icon.svg"
+  },
+  "resources/js/assets/images/bracket-bg.png": {
+    "file": "assets/bracket-bg-CYVuQJVB.png",
+    "src": "resources/js/assets/images/bracket-bg.png"
   },
   "resources/js/assets/images/branch.svg": {
     "file": "assets/branch-BNleCFR1.svg",
