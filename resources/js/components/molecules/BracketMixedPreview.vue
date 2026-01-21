@@ -119,7 +119,7 @@
                     <div class="flex flex-col items-center relative">
                         <div class="relative">
                             <div class="absolute -top-10 left-0 right-0 flex flex-col items-center whitespace-nowrap">
-                                <span class="text-gray-500 text-xl font-bold uppercase tracking-wider">Chung Kết</span>
+                                <span class="text-yellow-400 text-xl font-bold uppercase tracking-wider">Chung Kết</span>
                             </div>
 
                             <MatchCard
@@ -289,7 +289,7 @@ onMounted(() => {
         resizeObserver.observe(bracketContent.value);
     }
     
-    setTimeout(updateScale, 500); 
+    setTimeout(updateScale, 500); // Initial calculation
 });
 
 onUnmounted(() => {
