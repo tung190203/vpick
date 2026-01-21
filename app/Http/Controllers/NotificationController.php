@@ -26,24 +26,30 @@ class NotificationController extends Controller
             $query = $user->notifications()
                 ->whereNotNull('read_at')
                 ->latest();
+        } else {
+            $query = $user->notifications()->latest();
         }
-
-        $notifications = $query->paginate($validated['per_page'] ?? self::DEFAULT_PER_PAGE);
+    
+        $notifications = $query->paginate(
+            $validated['per_page'] ?? self::DEFAULT_PER_PAGE
+        );
+    
+        // ✅ GLOBAL COUNT (KHÔNG PHỤ THUỘC FILTER)
+        $totalCount = $user->notifications()->count();
         $unreadCount = $user->unreadNotifications()->count();
-        $data = [
+        $readCount = $totalCount - $unreadCount;
+    
+        return ResponseHelper::success([
             'notifications' => NotificationResource::collection($notifications),
-        ];
-
-        $meta = [
+        ], 'Lấy danh sách thông báo thành công', 200, [
             'current_page' => $notifications->currentPage(),
             'per_page' => $notifications->perPage(),
-            'total' => $notifications->total(),
-            'last_page' => $notifications->lastPage(),
+            'total'        => $totalCount,
             'unread_count' => $unreadCount,
-        ];
-    
-        return ResponseHelper::success($data, 'Lấy danh sách thông báo thành công', 200, $meta);
-    }
+            'read_count'   => $readCount,
+            'last_page'    => $notifications->lastPage(),
+        ]);
+    }    
 
     public function markAsRead(Request $request)
     {

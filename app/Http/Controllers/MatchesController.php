@@ -1931,6 +1931,44 @@ class MatchesController extends Controller
                 TournamentType::FORMAT_ELIMINATION,
             ])) {
                 $this->syncWinnerToNextRoundLegs($match, $winnerTeamId);
+                
+                // 4b. ✅ XỬ LÝ ĐỘI THUA VÀO TRẬN TRANH HẠNG 3
+                $leg1 = $allLegs->firstWhere('leg', 1);
+                if ($leg1 && $leg1->loser_next_match_id) {
+                    // Xác định đội thua
+                    $loserTeamId = ($winnerTeamId == $match->home_team_id) 
+                        ? $match->away_team_id 
+                        : $match->home_team_id;
+    
+                    // Lấy TẤT CẢ legs của trận tranh hạng 3
+                    $loserNextMatch = Matches::find($leg1->loser_next_match_id);
+                    if ($loserNextMatch) {
+                        $thirdPlaceMatches = Matches::where('tournament_type_id', $match->tournament_type_id)
+                            ->where('round', $loserNextMatch->round)
+                            ->where('is_third_place', true)
+                            ->orderBy('leg')
+                            ->get();
+    
+                        // Fill loser vào tất cả legs của trận tranh hạng 3
+                        foreach ($thirdPlaceMatches as $thirdMatch) {
+                            $position = $leg1->loser_next_position;
+                            
+                            $updateData = ['status' => Matches::STATUS_PENDING];
+                            
+                            // Xử lý đảo vị trí cho leg chẵn/lẻ
+                            if ($thirdMatch->leg % 2 !== 0) {
+                                // Leg lẻ: giữ nguyên position
+                                $updateData[$position . '_team_id'] = $loserTeamId;
+                            } else {
+                                // Leg chẵn: đảo position
+                                $reversePosition = ($position === 'home') ? 'away' : 'home';
+                                $updateData[$reversePosition . '_team_id'] = $loserTeamId;
+                            }
+    
+                            $thirdMatch->update($updateData);
+                        }
+                    }
+                }
             }
     
             DB::commit();
@@ -1945,6 +1983,7 @@ class MatchesController extends Controller
                         'is_pool_stage' => ((int) $match->round === 1 && $tournamentType->format === TournamentType::FORMAT_MIXED),
                         'group_id' => $match->group_id ?? null,
                         'rank_in_group' => $rankInGroup ?? null,
+                        'third_place_advanced' => isset($loserTeamId) && isset($thirdPlaceMatches) && $thirdPlaceMatches->isNotEmpty(),
                     ]
                 ],
                 'Đã chọn đội thắng và tiến vào vòng trong thành công',
