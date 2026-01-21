@@ -381,6 +381,7 @@
                             :tournamentId="data?.id"
                             :bracketData="mixedBracket"
                             :rankData="rank"
+                            @close="showRankingModal = false"
                         />
                     </div>
                 </div>
