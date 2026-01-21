@@ -118,6 +118,7 @@ Route::middleware(['auth:api'])->group(function () {
         Route::get('/{tournamentType}', [TournamentTypeController::class, 'show']);
         Route::delete('/{tournamentType}', [TournamentTypeController::class, 'destroy']);
         Route::get('/{tournamentType}/bracket', [TournamentTypeController::class, 'getBracket']);
+        Route::get('/{tournamentType}/bracket-new', [TournamentTypeController::class, 'getBracketNew']);
         Route::get('/{tournamentId}/rank', [TournamentTypeController::class, 'getRank']);
         Route::get('/{tournamentType}/advancement-status', [TournamentTypeController::class, 'getAdvancementStatus']);
         Route::post('/{tournamentType}/regenerate-matches', [TournamentTypeController::class, 'regenerateMatches']);
@@ -268,9 +269,5 @@ Route::middleware(['auth:api'])->group(function () {
 
     Route::prefix('banners')->group(function () {
         Route::post('/store', [BannerController::class, 'store']);
-    });
-
-    Route::prefix('system-notification')->group(function () {
-        Route::post('/create', [SystemNotificationController::class, 'store']);
     });
 });
