@@ -80,8 +80,23 @@
                                     :getVisibilityText="getVisibilityText" @select="focusItemAuto" />
                             </template>
 
-                            <div v-if="visibleItems < listData.length" class="text-center py-2 text-sm text-gray-500">
+                            <div v-if="activeTab === 'match' && isLoadingMoreMatches" class="text-center py-4 text-sm text-gray-500">
+                                <div class="flex items-center justify-center gap-2">
+                                    <svg class="animate-spin h-4 w-4 text-[#4392E0]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span>Đang tải thêm...</span>
+                                </div>
+                            </div>
+                            <div v-else-if="activeTab !== 'match' && visibleItems < listData.length" class="text-center py-2 text-sm text-gray-500">
                                 Đang tải thêm...
+                            </div>
+                            <div v-else-if="activeTab === 'match' && !isLoadingMoreMatches && 
+                                ((activeMatchTab === 'mini' && miniMatchPage >= miniMatchLastPage) || 
+                                 (activeMatchTab === 'tournament' && tournamentPage >= tournamentLastPage)) && 
+                                listData.length > 0" class="text-center py-4 text-sm text-gray-500">
+                                Đã hiển thị tất cả
                             </div>
                         </div>
                     </div>
@@ -837,6 +852,14 @@ const activeTab = ref('courts');
 const activeMatchTab = ref('mini'); // 'mini' (Kèo đấu) or 'tournament' (Giải đấu)
 const matchesMini = ref([]);
 const matchesTournament = ref([]);
+// Pagination state for matches
+const miniMatchPage = ref(1);
+const tournamentPage = ref(1);
+const miniMatchPerPage = ref(15);
+const tournamentPerPage = ref(15);
+const miniMatchLastPage = ref(1);
+const tournamentLastPage = ref(1);
+const isLoadingMoreMatches = ref(false);
 const isShowMyFollow = ref(false);
 const isShowFavoritePlayer = ref(false);
 const isConnected = ref(false);
@@ -976,6 +999,11 @@ const listData = computed(() => {
 
 const displayedListData = computed(() => {
     const data = listData.value;
+    // For match tab, show all loaded data (pagination handled by API)
+    if (activeTab.value === 'match') {
+        return data;
+    }
+    // For other tabs, use visibleItems slicing
     return data.slice(0, visibleItems.value);
 });
 
@@ -990,11 +1018,24 @@ const searchResultText = computed(() => {
 })
 
 // Scroll handler cho infinite loading
-const handleScroll = (event) => {
+const handleScroll = async (event) => {
     const target = event.target;
     const scrollPercentage = (target.scrollTop + target.clientHeight) / target.scrollHeight;
 
-    if (scrollPercentage > 0.8 && visibleItems.value < listData.value.length) {
+    // For match tab, load more from API when scrolling
+    if (activeTab.value === 'match' && scrollPercentage > 0.8) {
+        const currentData = activeMatchTab.value === 'mini' ? matchesMini.value : matchesTournament.value;
+        const hasMore = activeMatchTab.value === 'mini' 
+            ? miniMatchPage.value < miniMatchLastPage.value
+            : tournamentPage.value < tournamentLastPage.value;
+        
+        if (hasMore && !isLoadingMoreMatches.value) {
+            await loadMoreMatches();
+        }
+    }
+    
+    // For other tabs, just show more items from existing data
+    if (activeTab.value !== 'match' && scrollPercentage > 0.8 && visibleItems.value < listData.value.length) {
         visibleItems.value = Math.min(
             visibleItems.value + itemsPerLoad.value,
             listData.value.length
@@ -1145,13 +1186,22 @@ const getListUser = async (bounds = null) => {
     }
 };
 
-const getListMatches = async (bounds = null) => {
+const getListMatches = async (bounds = null, isLoadMore = false) => {
     try {
         const params = {
             keyword: searchMatch.value?.trim() || undefined,
             sport_id: selectedSportId.value || undefined,
             is_followed: isShowMyFollow.value ? 1 : 0 || undefined,
         };
+
+        // Always use pagination for list view
+        if (activeMatchTab.value === 'mini') {
+            params.mini_tournament_page = isLoadMore ? miniMatchPage.value : 1;
+            params.mini_tournament_per_page = miniMatchPerPage.value;
+        } else {
+            params.tournament_page = isLoadMore ? tournamentPage.value : 1;
+            params.tournament_per_page = tournamentPerPage.value;
+        }
 
         if (bounds) {
             params.min_lat = bounds.getSouth();
@@ -1173,21 +1223,55 @@ const getListMatches = async (bounds = null) => {
 
         const res = await MapService.getMatchesData(params);
         
-        matchesMap.value.clear();
+        if (!isLoadMore) {
+            matchesMap.value.clear();
+        }
 
         if (res && typeof res === 'object' && !Array.isArray(res)) {
              const mini = (res.mini_tournaments?.data || []).map(m => ({ ...m, id: `mini_${m.id}`, original_id: m.id, type: 'mini' }));
              const tour = (res.tournaments?.data || []).map(t => ({ ...t, id: `tour_${t.id}`, original_id: t.id, type: 'tournament' }));
              
-             matchesMini.value = mini;
-             matchesTournament.value = tour;
+             // Update pagination meta
+             if (res.mini_tournaments?.meta) {
+                 miniMatchLastPage.value = res.mini_tournaments.meta.last_page || 1;
+                 if (!isLoadMore) {
+                     miniMatchPage.value = res.mini_tournaments.meta.current_page || 1;
+                 } else {
+                     // Update current page when loading more
+                     miniMatchPage.value = res.mini_tournaments.meta.current_page || miniMatchPage.value;
+                 }
+             }
+             if (res.tournaments?.meta) {
+                 tournamentLastPage.value = res.tournaments.meta.last_page || 1;
+                 if (!isLoadMore) {
+                     tournamentPage.value = res.tournaments.meta.current_page || 1;
+                 } else {
+                     // Update current page when loading more
+                     tournamentPage.value = res.tournaments.meta.current_page || tournamentPage.value;
+                 }
+             }
 
-             const dataToShow = activeMatchTab.value === 'mini' ? mini : tour;
-             mergeData(matchesMap.value, dataToShow, hasActiveFilters.value);
+             if (isLoadMore) {
+                 // Append new data when loading more - only for active tab
+                 if (activeMatchTab.value === 'mini') {
+                     matchesMini.value = [...matchesMini.value, ...mini];
+                 } else {
+                     matchesTournament.value = [...matchesTournament.value, ...tour];
+                 }
+             } else {
+                 // Replace data on initial load or filter
+                 matchesMini.value = mini;
+                 matchesTournament.value = tour;
+             }
+
+             const dataToShow = activeMatchTab.value === 'mini' ? matchesMini.value : matchesTournament.value;
+             mergeData(matchesMap.value, dataToShow, !isLoadMore && hasActiveFilters.value);
              
         } else {
-            matchesMini.value = [];
-            matchesTournament.value = [];
+            if (!isLoadMore) {
+                matchesMini.value = [];
+                matchesTournament.value = [];
+            }
         }
         
         quantityMatches.value = matchesMap.value.size;
@@ -1197,8 +1281,40 @@ const getListMatches = async (bounds = null) => {
     }
 };
 
+const loadMoreMatches = async () => {
+    if (isLoadingMoreMatches.value) return;
+    
+    isLoadingMoreMatches.value = true;
+    try {
+        if (activeMatchTab.value === 'mini') {
+            miniMatchPage.value += 1;
+        } else {
+            tournamentPage.value += 1;
+        }
+        
+        await getListMatches(currentBounds.value, true);
+        
+        // Update markers with new data
+        clearAllMarkers();
+        addMatchMarkers(matches.value, router, focusItemAuto, false, defaultImage);
+    } catch (error) {
+        // Revert page on error
+        if (activeMatchTab.value === 'mini') {
+            miniMatchPage.value -= 1;
+        } else {
+            tournamentPage.value -= 1;
+        }
+    } finally {
+        isLoadingMoreMatches.value = false;
+    }
+};
+
 // Watch activeMatchTab to reload markers
 watch(activeMatchTab, () => {
+    // Reset pagination when switching tabs
+    miniMatchPage.value = 1;
+    tournamentPage.value = 1;
+    
     matchesMap.value.clear();
     const dataToShow = activeMatchTab.value === 'mini' ? matchesMini.value : matchesTournament.value;
     mergeData(matchesMap.value, dataToShow, true); // Treat like filter change
@@ -1290,6 +1406,9 @@ const applyFilter = async () => {
     if (activeTab.value === 'courts') {
         courtsMap.value.clear();
     } else if (activeTab.value === 'match') {
+        // Reset pagination when applying filter
+        miniMatchPage.value = 1;
+        tournamentPage.value = 1;
         matchesMap.value.clear();
     } else if (activeTab.value === 'players') {
         usersMap.value.clear();
@@ -1507,6 +1626,9 @@ watch(activeTab, (newTab) => {
     if (newTab === 'courts') {
         courtsMap.value.clear();
     } else if (newTab === 'match') {
+        // Reset pagination when switching to match tab
+        miniMatchPage.value = 1;
+        tournamentPage.value = 1;
         matchesMap.value.clear();
     } else if (newTab === 'players') {
         usersMap.value.clear();
