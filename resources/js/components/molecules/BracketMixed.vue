@@ -290,206 +290,21 @@
                         </div>
 
                         <!-- GỘP LEGS THÀNH 1 CARD -->
-                        <div
+                        <PoolStageMatchCard
                             v-for="match in group.matches"
                             :key="match.match_id"
-                            :class="[
-                                matchCardWrapperClass(match),
-                                {
-                                    'opacity-50':
-                                        isDragging &&
-                                        draggedTeam?.matchId === match.match_id,
-                                },
-                            ]"
-                            class="match-card bg-[#dcdee6] rounded-lg mb-4 w-64 flex flex-col transition-all"
-                        >
-                            <div
-                                :class="matchHeaderContentClass(match)"
-                                class="flex justify-between items-center text-xs font-medium text-[#838799] px-4 py-2 bg-[#dcdee6] rounded-tl-lg rounded-tr-lg"
-                            >
-                                <span class="uppercase"
-                                    >SÂN {{ match.legs?.[0]?.court || 1 }}</span
-                                >
-                                <div class="flex items-center gap-2">
-                                    <span
-                                        v-if="hasAnyLegInProgress(match)"
-                                        class="text-white font-bold text-xs flex items-center"
-                                    >
-                                        <VideoCameraIcon class="w-4 h-4 mr-1" />
-                                        Trực tiếp
-                                    </span>
-                                    <span class="text-xs" v-else>
-                                        {{
-                                            formatTime(
-                                                match.legs?.[0]?.scheduled_at,
-                                            )
-                                        }}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div
-                                class="flex flex-col gap-3 rounded-lg shadow-md border border-[#dcdee6] bg-[#EDEEF2] px-4 py-3"
-                            >
-                                <!-- HOME TEAM - DRAGGABLE -->
-                                <div
-                                    v-tooltip="match.home_team.name"
-                                    class="flex justify-between items-center px-2 -mx-2 rounded transition-all"
-                                    :class="{
-                                        'bg-blue-100 ring-2 ring-blue-400':
-                                            isDropTarget(
-                                                match.match_id,
-                                                'home',
-                                            ),
-                                        'cursor-move hover:bg-gray-100':
-                                            canDragPoolStage(match),
-                                        'cursor-pointer':
-                                            !canDragPoolStage(match),
-                                    }"
-                                    :draggable="canDragPoolStage(match)"
-                                    @dragstart="
-                                        handleDragStart($event, match, 'home')
-                                    "
-                                    @dragend="handleDragEnd"
-                                    @dragover.prevent="
-                                        handleDragOver(
-                                            $event,
-                                            match.match_id,
-                                            'home',
-                                        )
-                                    "
-                                    @dragleave="handleDragLeave($event)"
-                                    @drop.prevent.stop="
-                                        handleDrop(
-                                            $event,
-                                            match.match_id,
-                                            'home',
-                                        )
-                                    "
-                                    @click="
-                                        !isDragging
-                                            ? handleMatchClick(match.match_id)
-                                            : null
-                                    "
-                                >
-                                    <div
-                                        class="flex items-center gap-2 pointer-events-none"
-                                    >
-                                        <img
-                                            :src="
-                                                match.home_team.team_avatar ||
-                                                `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(match.home_team.name)}`
-                                            "
-                                            class="w-8 h-8 rounded-full"
-                                            :alt="match.home_team.name"
-                                        />
-                                        <p
-                                            class="text-sm font-semibold text-[#3E414C] truncate max-w-[150px]"
-                                        >
-                                            {{ match.home_team.name }}
-                                        </p>
-                                    </div>
-                                    <span
-                                        class="font-bold text-lg pointer-events-none"
-                                        :class="[
-                                            {
-                                                'text-green-700': isWinner(
-                                                    match,
-                                                    'home',
-                                                ),
-                                            },
-                                            {
-                                                'text-red-700': isLoser(
-                                                    match,
-                                                    'home',
-                                                ),
-                                            },
-                                        ]"
-                                    >
-                                        {{ match.aggregate_score?.home ?? 0 }}
-                                    </span>
-                                </div>
-
-                                <!-- AWAY TEAM - DRAGGABLE -->
-                                <div
-                                    v-tooltip="match.away_team.name"
-                                    class="flex justify-between items-center px-2 -mx-2 rounded transition-all"
-                                    :class="{
-                                        'bg-blue-100 ring-2 ring-blue-400':
-                                            isDropTarget(
-                                                match.match_id,
-                                                'away',
-                                            ),
-                                        'cursor-move hover:bg-gray-100':
-                                            canDragPoolStage(match),
-                                        'cursor-pointer':
-                                            !canDragPoolStage(match),
-                                    }"
-                                    :draggable="canDragPoolStage(match)"
-                                    @dragstart="
-                                        handleDragStart($event, match, 'away')
-                                    "
-                                    @dragend="handleDragEnd"
-                                    @dragover.prevent="
-                                        handleDragOver(
-                                            $event,
-                                            match.match_id,
-                                            'away',
-                                        )
-                                    "
-                                    @dragleave="handleDragLeave($event)"
-                                    @drop.prevent.stop="
-                                        handleDrop(
-                                            $event,
-                                            match.match_id,
-                                            'away',
-                                        )
-                                    "
-                                    @click="
-                                        !isDragging
-                                            ? handleMatchClick(match.match_id)
-                                            : null
-                                    "
-                                >
-                                    <div
-                                        class="flex items-center gap-2 pointer-events-none"
-                                    >
-                                        <img
-                                            :src="
-                                                match.away_team.team_avatar ||
-                                                `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(match.away_team.name)}`
-                                            "
-                                            class="w-8 h-8 rounded-full"
-                                            :alt="match.away_team.name"
-                                        />
-                                        <p
-                                            class="text-sm font-semibold text-[#3E414C] truncate max-w-[150px]"
-                                        >
-                                            {{ match.away_team.name }}
-                                        </p>
-                                    </div>
-                                    <span
-                                        class="font-bold text-lg pointer-events-none"
-                                        :class="[
-                                            {
-                                                'text-green-700': isWinner(
-                                                    match,
-                                                    'away',
-                                                ),
-                                            },
-                                            {
-                                                'text-red-700': isLoser(
-                                                    match,
-                                                    'away',
-                                                ),
-                                            },
-                                        ]"
-                                    >
-                                        {{ match.aggregate_score?.away ?? 0 }}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
+                            :match="match"
+                            :is-dragging="isDragging"
+                            :dragged-team="draggedTeam"
+                            :drop-target-match="dropTargetMatch"
+                            :drop-target-position="dropTargetPosition"
+                            @match-click="handleMatchClick"
+                            @drag-start="handleDragStart"
+                            @drag-end="handleDragEnd"
+                            @drag-over="handleDragOver"
+                            @drag-leave="handleDragLeave"
+                            @drop="handleDrop"
+                        />
                     </div>
 
                     <!-- KNOCKOUT STAGE -->
@@ -661,6 +476,7 @@ import {
     VideoCameraIcon,
 } from "@heroicons/vue/24/solid";
 import CreateMatch from "@/components/molecules/CreateMatch.vue";
+import PoolStageMatchCard from "@/components/molecules/PoolStageMatchCard.vue";
 import * as MatchesService from "@/service/match.js";
 import { toast } from "vue3-toastify";
 
@@ -696,7 +512,7 @@ const canDragPoolStage = (match) => {
     return match.legs?.every((leg) => leg.status === "pending");
 };
 
-const handleDragStart = (event, match, position) => {
+const handleDragStart = ({ event, match, position }) => {
     if (!canDragPoolStage(match)) {
         event.preventDefault();
         return;
@@ -723,7 +539,7 @@ const handleDragEnd = () => {
     dropTargetPosition.value = null;
 };
 
-const handleDragOver = (event, matchId, position) => {
+const handleDragOver = ({ event, matchId, position }) => {
     if (!draggedTeam.value) return;
 
     // Không cho drop vào chính vị trí đang drag
@@ -746,7 +562,7 @@ const hasAnyRanking = computed(() => {
     );
 });
 
-const handleDragLeave = (event) => {
+const handleDragLeave = ({ event }) => {
     const rect = event.currentTarget.getBoundingClientRect();
     const x = event.clientX;
     const y = event.clientY;
@@ -757,7 +573,7 @@ const handleDragLeave = (event) => {
     }
 };
 
-const handleDrop = async (event, targetMatchId, targetPosition) => {
+const handleDrop = async ({ event, matchId: targetMatchId, position: targetPosition }) => {
     event.preventDefault();
     event.stopPropagation();
 

@@ -242,134 +242,15 @@
 
                         <template v-if="group.matches && group.matches.length > 0">
                             <div
-                                class="grid grid-cols-1 md:grid-cols-2 gap-3 px-2 cursor-pointer"
+                                class="grid grid-cols-1 md:grid-cols-2 gap-3 px-2"
                             >
-                                <div
+                                <PoolStageMatchCard
                                     v-for="match in group.matches"
                                     :key="match.match_id"
-                                    @click="getDetailMatches(match.match_id)"
-                                    class="match-card bg-[#dcdee6] rounded-lg w-full flex flex-col"
-                                >
-                                    <div
-                                        class="flex justify-between items-center text-xs font-medium text-[#838799] px-4 py-2 bg-[#dcdee6] rounded-tl-lg rounded-tr-lg"
-                                    >
-                                        <span class="uppercase"
-                                            >Sân {{ match.court || 1 }}</span
-                                        >
-                                        <div class="flex items-center gap-2">
-                                            <span
-                                                v-if="match.status === 'in_progress'"
-                                                class="text-red-500 flex items-center gap-1"
-                                            >
-                                                <svg
-                                                    class="w-3 h-3"
-                                                    fill="currentColor"
-                                                    viewBox="0 0 20 20"
-                                                >
-                                                    <path
-                                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
-                                                    />
-                                                </svg>
-                                                Live
-                                            </span>
-                                            <span class="text-xs">{{
-                                                match.scheduled_at
-                                                    ? formatDate(
-                                                          match.scheduled_at,
-                                                      )
-                                                    : "Chưa xác định"
-                                            }}</span>
-                                        </div>
-                                    </div>
-
-                                    <div
-                                        class="flex flex-col gap-3 rounded-lg shadow-md border border-[#dcdee6] bg-[#EDEEF2] px-4 py-3"
-                                    >
-                                        <div
-                                            class="flex justify-between items-center"
-                                            :class="{
-                                                'bg-green-50': match.winner_team_id === match.home_team?.id && match.status === 'completed'
-                                            }"
-                                        >
-                                            <div
-                                                class="flex items-center gap-2"
-                                            >
-                                                <img
-                                                    :src="
-                                                        match.home_team
-                                                            ?.team_avatar ||
-                                                        match.home_team?.logo ||
-                                                        'https://placehold.co/40x40'
-                                                    "
-                                                    class="w-8 h-8 rounded-full object-cover"
-                                                    :alt="match.home_team?.name"
-                                                />
-                                                <p
-                                                    class="text-sm font-semibold text-[#3E414C]"
-                                                    :class="{
-                                                        'font-bold': match.winner_team_id === match.home_team?.id && match.status === 'completed'
-                                                    }"
-                                                >
-                                                    {{
-                                                        match.home_team?.name ||
-                                                        match.home_team?.team_name ||
-                                                        "TBD"
-                                                    }}
-                                                </p>
-                                            </div>
-                                            <span
-                                                class="font-bold text-lg"
-                                                :class="{
-                                                    'text-green-600': match.winner_team_id === match.home_team?.id && match.status === 'completed',
-                                                    'text-[#3E414C]': !(match.winner_team_id === match.home_team?.id && match.status === 'completed')
-                                                }"
-                                                >{{ match.home_score ?? 0 }}</span
-                                            >
-                                        </div>
-
-                                        <div
-                                            class="flex justify-between items-center"
-                                            :class="{
-                                                'bg-green-50': match.winner_team_id === match.away_team?.id && match.status === 'completed'
-                                            }"
-                                        >
-                                            <div
-                                                class="flex items-center gap-2"
-                                            >
-                                                <img
-                                                    :src="
-                                                        match.away_team
-                                                            ?.team_avatar ||
-                                                        match.away_team?.logo ||
-                                                        'https://placehold.co/40x40'
-                                                    "
-                                                    class="w-8 h-8 rounded-full object-cover"
-                                                    :alt="match.away_team?.name"
-                                                />
-                                                <p
-                                                    class="text-sm font-semibold text-[#3E414C]"
-                                                    :class="{
-                                                        'font-bold': match.winner_team_id === match.away_team?.id && match.status === 'completed'
-                                                    }"
-                                                >
-                                                    {{
-                                                        match.away_team?.name ||
-                                                        match.away_team?.team_name ||
-                                                        "TBD"
-                                                    }}
-                                                </p>
-                                            </div>
-                                            <span
-                                                class="font-bold text-lg"
-                                                :class="{
-                                                    'text-green-600': match.winner_team_id === match.away_team?.id && match.status === 'completed',
-                                                    'text-[#3E414C]': !(match.winner_team_id === match.away_team?.id && match.status === 'completed')
-                                                }"
-                                                >{{ match.away_score ?? 0 }}</span
-                                            >
-                                        </div>
-                                    </div>
-                                </div>
+                                    :match="match"
+                                    :enable-drag-drop="false"
+                                    @match-click="getDetailMatches"
+                                />
                             </div>
                         </template>
                         <template v-else>
@@ -410,130 +291,13 @@
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 px-2">
-                            <div
+                            <PoolStageMatchCard
                                 v-for="match in currentKnockoutRound.matches"
                                 :key="match.match_id"
-                                @click="getDetailMatches(match.match_id)"
-                                class="match-card rounded-lg w-full flex flex-col bg-[#dcdee6]"
-                            >
-                                <div
-                                    class="flex justify-between items-center text-xs font-medium px-4 py-2 rounded-tl-lg rounded-tr-lg bg-[#dcdee6] text-[#838799]"
-                                >
-                                    <span class="uppercase">{{
-                                        match.match_label ||
-                                        match.round_name ||
-                                        `Trận ${match.match_id}`
-                                    }}</span>
-                                    <div class="flex items-center gap-2">
-                                        <span
-                                            v-if="match.status === 'in_progress'"
-                                            class="text-red-500 flex items-center gap-1"
-                                        >
-                                            <svg
-                                                class="w-3 h-3"
-                                                fill="currentColor"
-                                                viewBox="0 0 20 20"
-                                            >
-                                                <path
-                                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
-                                                />
-                                            </svg>
-                                            Live
-                                        </span>
-                                        <span class="text-xs">{{
-                                            match.scheduled_at
-                                                ? formatDate(match.scheduled_at)
-                                                : "Chưa xác định"
-                                        }}</span>
-                                    </div>
-                                </div>
-
-                                <div
-                                    class="flex flex-col gap-3 rounded-lg shadow-md border border-[#dcdee6] bg-[#EDEEF2] px-4 py-3"
-                                >
-                                    <div
-                                        class="flex justify-between items-center"
-                                        :class="{
-                                            'bg-green-50': match.winner_team_id === match.home_team?.id && match.status === 'completed'
-                                        }"
-                                    >
-                                        <div class="flex items-center gap-2">
-                                            <img
-                                                :src="
-                                                    match.home_team
-                                                        ?.team_avatar ||
-                                                    match.home_team?.logo ||
-                                                    'https://placehold.co/40x40'
-                                                "
-                                                class="w-8 h-8 rounded-full object-cover"
-                                                :alt="match.home_team?.name || match.home_team?.team_name"
-                                            />
-                                            <p
-                                                class="text-sm font-semibold text-[#3E414C]"
-                                                :class="{
-                                                    'font-bold': match.winner_team_id === match.home_team?.id && match.status === 'completed'
-                                                }"
-                                            >
-                                                {{
-                                                    match.home_team?.name ||
-                                                    match.home_team?.team_name ||
-                                                    "TBD"
-                                                }}
-                                            </p>
-                                        </div>
-                                        <span
-                                            class="font-bold text-lg"
-                                            :class="{
-                                                'text-green-600': match.winner_team_id === match.home_team?.id && match.status === 'completed',
-                                                'text-[#3E414C]': !(match.winner_team_id === match.home_team?.id && match.status === 'completed')
-                                            }"
-                                        >
-                                            {{ match.home_score ?? 0 }}
-                                        </span>
-                                    </div>
-
-                                    <div
-                                        class="flex justify-between items-center"
-                                        :class="{
-                                            'bg-green-50': match.winner_team_id === match.away_team?.id && match.status === 'completed'
-                                        }"
-                                    >
-                                        <div class="flex items-center gap-2">
-                                            <img
-                                                :src="
-                                                    match.away_team
-                                                        ?.team_avatar ||
-                                                    match.away_team?.logo ||
-                                                    'https://placehold.co/40x40'
-                                                "
-                                                class="w-8 h-8 rounded-full object-cover"
-                                                :alt="match.away_team?.name || match.away_team?.team_name"
-                                            />
-                                            <p
-                                                class="text-sm font-semibold text-[#3E414C]"
-                                                :class="{
-                                                    'font-bold': match.winner_team_id === match.away_team?.id && match.status === 'completed'
-                                                }"
-                                            >
-                                                {{
-                                                    match.away_team?.name ||
-                                                    match.away_team?.team_name ||
-                                                    "TBD"
-                                                }}
-                                            </p>
-                                        </div>
-                                        <span
-                                            class="font-bold text-lg"
-                                            :class="{
-                                                'text-green-600': match.winner_team_id === match.away_team?.id && match.status === 'completed',
-                                                'text-[#3E414C]': !(match.winner_team_id === match.away_team?.id && match.status === 'completed')
-                                            }"
-                                        >
-                                            {{ match.away_score ?? 0 }}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
+                                :match="match"
+                                :enable-drag-drop="false"
+                                @match-click="getDetailMatches"
+                            />
                         </div>
                     </div>
 
@@ -603,102 +367,13 @@
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 px-2">
-                        <div
+                        <PoolStageMatchCard
                             v-for="match in currentEliminationRound.matches"
                             :key="match.match_id"
-                            @click="getDetailMatches(match.match_id)"
-                            :class="[
-                                'match-card rounded-xl w-full flex flex-col',
-                                match.is_third_place
-                                    ? 'bg-amber-100 border-2 border-amber-500 bg-amber-500'
-                                    : 'bg-[#dcdee6]',
-                            ]"
-                        >
-                            <div
-                                :class="[
-                                    'flex justify-between items-center text-xs font-medium px-4 py-2 rounded-tl-lg rounded-tr-lg',
-                                    match.is_third_place
-                                        ? 'bg-amber-500 text-white'
-                                        : 'bg-[#dcdee6] text-[#838799]',
-                                ]"
-                            >
-                                <span class="uppercase">{{
-                                    match.match_label ||
-                                    (match.is_third_place
-                                        ? "Tranh hạng 3"
-                                        : `Trận ${match.match_id}`)
-                                }}</span>
-                                <div class="flex items-center gap-2">
-                                    <span class="text-xs">{{
-                                        match.legs[0]?.scheduled_at
-                                            ? formatDate(
-                                                  match.legs[0].scheduled_at,
-                                              )
-                                            : "Chưa xác định"
-                                    }}</span>
-                                </div>
-                            </div>
-
-                            <div
-                                class="flex flex-col gap-3 rounded-lg shadow-md border border-[#dcdee6] bg-[#EDEEF2] px-4 py-3"
-                            >
-                                <div class="flex justify-between items-center">
-                                    <div class="flex items-center gap-2">
-                                        <img
-                                            :src="
-                                                match.home_team.logo ||
-                                                'https://placehold.co/40x40'
-                                            "
-                                            class="w-8 h-8 rounded-full object-cover"
-                                            :alt="match.home_team.name"
-                                        />
-                                        <p
-                                            class="text-sm font-semibold text-[#3E414C]"
-                                        >
-                                            {{ match.home_team.name }}
-                                        </p>
-                                    </div>
-                                    <span
-                                        class="font-bold text-lg"
-                                        :class="{
-                                            'text-[#D72D36]':
-                                                match.winner_team_id ===
-                                                match.home_team.id,
-                                        }"
-                                    >
-                                        {{ match.aggregate_score.home }}
-                                    </span>
-                                </div>
-
-                                <div class="flex justify-between items-center">
-                                    <div class="flex items-center gap-2">
-                                        <img
-                                            :src="
-                                                match.away_team.logo ||
-                                                'https://placehold.co/40x40'
-                                            "
-                                            class="w-8 h-8 rounded-full object-cover"
-                                            :alt="match.away_team.name"
-                                        />
-                                        <p
-                                            class="text-sm font-semibold text-[#3E414C]"
-                                        >
-                                            {{ match.away_team.name }}
-                                        </p>
-                                    </div>
-                                    <span
-                                        class="font-bold text-lg"
-                                        :class="{
-                                            'text-[#D72D36]':
-                                                match.winner_team_id ===
-                                                match.away_team.id,
-                                        }"
-                                    >
-                                        {{ match.aggregate_score.away }}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
+                            :match="match"
+                            :enable-drag-drop="false"
+                            @match-click="getDetailMatches"
+                        />
                     </div>
                 </div>
 
@@ -757,96 +432,28 @@
                     </div>
 
                     <div
-                        class="grid grid-cols-1 md:grid-cols-2 gap-3 px-2 cursor-pointer"
+                        class="grid grid-cols-1 md:grid-cols-2 gap-3 px-2"
                     >
-                        <div
+                        <PoolStageMatchCard
                             v-for="match in currentRoundMatches"
                             :key="match.id"
-                            class="match-card bg-[#dcdee6] rounded-lg w-full flex flex-col"
-                            @click="getDetailMatches(match.id)"
-                        >
-                            <div
-                                class="flex justify-between items-center text-xs font-medium text-[#838799] px-4 py-2 bg-[#dcdee6] rounded-tl-lg rounded-tr-lg"
-                            >
-                                <span class="uppercase"
-                                    >SÂN {{ match.court }}</span
-                                >
-                                <div class="flex items-center gap-2">
-                                    <span
-                                        v-if="match.scheduled_at"
-                                        class="text-xs"
-                                        >{{
-                                            formatDate(match.scheduled_at)
-                                        }}</span
-                                    >
-                                    <span v-else class="text-xs"
-                                        >Chưa xác định</span
-                                    >
-                                </div>
-                            </div>
-
-                            <div
-                                class="flex flex-col gap-3 rounded-lg shadow-md border border-[#dcdee6] bg-[#EDEEF2] px-4 py-3"
-                            >
-                                <div class="flex justify-between items-center">
-                                    <div class="flex items-center gap-2">
-                                        <img
-                                            :src="
-                                                match.home_team.logo ||
-                                                'https://placehold.co/40x40'
-                                            "
-                                            class="w-8 h-8 rounded-full object-cover"
-                                            :alt="match.home_team.name"
-                                        />
-                                        <p
-                                            class="text-sm font-semibold text-[#3E414C]"
-                                        >
-                                            {{ match.home_team.name }}
-                                        </p>
-                                    </div>
-                                    <span
-                                        class="font-bold text-lg"
-                                        :class="{
-                                            'text-[#D72D36]':
-                                                match.is_completed &&
-                                                match.home_score >
-                                                    match.away_score,
-                                        }"
-                                    >
-                                        {{ match.home_score }}
-                                    </span>
-                                </div>
-
-                                <div class="flex justify-between items-center">
-                                    <div class="flex items-center gap-2">
-                                        <img
-                                            :src="
-                                                match.away_team.logo ||
-                                                'https://placehold.co/40x40'
-                                            "
-                                            class="w-8 h-8 rounded-full object-cover"
-                                            :alt="match.away_team.name"
-                                        />
-                                        <p
-                                            class="text-sm font-semibold text-[#3E414C]"
-                                        >
-                                            {{ match.away_team.name }}
-                                        </p>
-                                    </div>
-                                    <span
-                                        class="font-bold text-lg"
-                                        :class="{
-                                            'text-[#D72D36]':
-                                                match.is_completed &&
-                                                match.away_score >
-                                                    match.home_score,
-                                        }"
-                                    >
-                                        {{ match.away_score }}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
+                            :match="{
+                                ...match,
+                                match_id: match.id,
+                                status: match.is_completed ? 'completed' : 'pending',
+                                home_score: match.home_score,
+                                away_score: match.away_score,
+                                winner_team_id: match.is_completed && match.home_score > match.away_score
+                                    ? match.home_team?.id
+                                    : (match.is_completed && match.away_score > match.home_score
+                                        ? match.away_team?.id
+                                        : null),
+                                home_team: match.home_team,
+                                away_team: match.away_team,
+                            }"
+                            :enable-drag-drop="false"
+                            @match-click="getDetailMatches"
+                        />
                     </div>
                 </div>
 
@@ -949,6 +556,7 @@
 <script setup>
 import CreateMatch from "@/components/molecules/CreateMatch.vue";
 import BracketMixedPreview from "@/components/molecules/BracketMixedPreview.vue";
+import PoolStageMatchCard from "@/components/molecules/PoolStageMatchCard.vue";
 import { ref, watch, computed } from "vue";
 import { SCHEDULE_TABS } from "@/data/tournament/index.js";
 import { toast } from "vue3-toastify";
