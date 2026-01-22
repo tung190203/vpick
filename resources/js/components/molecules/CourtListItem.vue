@@ -4,8 +4,8 @@
       :class="[
         'border rounded-lg cursor-pointer transition-all overflow-hidden flex h-fit px-2 items-center',
         court.id === selected
-          ? 'border-blue-500 shadow-md'
-          : 'border-gray-200 hover:border-gray-300 shadow-md'
+          ? 'border-red-500 shadow-md ring-1 ring-red-500'
+          : 'border-gray-200 shadow-sm'
       ]"
     >
       <div class="w-28 h-28 flex-shrink-0 relative overflow-hidden bg-gray-100 rounded-md">

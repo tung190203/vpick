@@ -4,8 +4,8 @@
       :class="[
         'border rounded-lg cursor-pointer transition-all overflow-hidden flex h-fit p-2 items-center gap-3',
         user.id === selected
-          ? 'border-blue-500 shadow-md'
-          : 'border-gray-200 hover:border-gray-300 shadow-md'
+          ? 'border-red-500 shadow-md ring-1 ring-red-500'
+          : 'border-gray-200 shadow-sm'
       ]"
     >
       <UserCard
