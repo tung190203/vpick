@@ -295,7 +295,7 @@
                 <template v-if="listTeams && listTeams.length">
                   <div class="border border-[#BBBFCC] rounded flex items-center justify-between p-4 mb-4"
                     v-for="team in listTeams" :key="team.id">
-                    <div class="flex items-center gap-3 min-w-0 max-w-[500px]">
+                      <div class="flex items-center gap-3 min-w-0 flex-1 px-2">
                       <div class="relative w-[4.875rem] h-[4.875rem] flex-shrink-0" @click="openEditTeamModal(team)">
                         <div class="w-full h-full rounded-lg overflow-hidden" v-if="team.avatar">
                           <img :src="team.avatar" alt="User" class="w-full h-full object-cover" />
@@ -309,10 +309,10 @@
                           <PencilIcon class="w-4 h-4" />
                         </button>
                       </div>
-                      <p class="font-medium text-gray-900 max-w-full whitespace-normal break-words">{{ team.name }}</p>
+                      <p class="font-medium text-gray-900 break-words whitespace-normal leading-snug min-w-0">{{ team.name }}</p>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-2">
+                    <div class="grid grid-cols-2 gap-2 flex-shrink-0">
                       <UserCard v-for="(member, index) in team.members" :key="index" :name="member.full_name"
                         :id="member.id" :avatar="member.avatar" :rating="getUserScore(member)"
                         :status="member.is_confirmed == true ? 'approved' : 'pending'"
