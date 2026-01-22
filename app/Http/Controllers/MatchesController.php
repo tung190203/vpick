@@ -536,11 +536,14 @@ class MatchesController extends Controller
                 ->where('round', $leg1Match->round)
                 ->where('id', '!=', $leg1Match->id) // Loại chính nó
                 ->where(function($query) use ($leg1Match) {
-                    // Tìm matches có chứa 1 trong 2 teams của leg 1
-                    $query->where('home_team_id', $leg1Match->home_team_id)
-                          ->orWhere('home_team_id', $leg1Match->away_team_id)
-                          ->orWhere('away_team_id', $leg1Match->home_team_id)
-                          ->orWhere('away_team_id', $leg1Match->away_team_id);
+                    // Tìm matches có CẢ HAI teams giống với leg1Match (có thể đảo vị trí)
+                    $query->where(function($q) use ($leg1Match) {
+                        $q->where('home_team_id', $leg1Match->home_team_id)
+                          ->where('away_team_id', $leg1Match->away_team_id);
+                    })->orWhere(function($q) use ($leg1Match) {
+                        $q->where('home_team_id', $leg1Match->away_team_id)
+                          ->where('away_team_id', $leg1Match->home_team_id);
+                    });
                 })
                 ->orderBy('leg')
                 ->get();
@@ -1098,7 +1101,7 @@ class MatchesController extends Controller
                 ? $match->awayTeam
                 : $match->homeTeam;
         
-            $opponentUserIds = $opponentTeam->members->pluck('user_id')->toArray();
+            $opponentUserIds = $opponentTeam->members->pluck('id')->toArray();
         
             $this->pushToUsers(
                 $opponentUserIds,
@@ -1114,8 +1117,8 @@ class MatchesController extends Controller
 
         if ($confirmedByAdmin) {
 
-            $homeUserIds = $match->homeTeam->members->pluck('user_id')->toArray();
-            $awayUserIds = $match->awayTeam->members->pluck('user_id')->toArray();
+            $homeUserIds = $match->homeTeam->members->pluck('id')->toArray();
+            $awayUserIds = $match->awayTeam->members->pluck('id')->toArray();
         
             $allUserIds = array_unique(array_merge($homeUserIds, $awayUserIds));
         
@@ -1773,15 +1776,19 @@ class MatchesController extends Controller
         $targetLeg1->refresh();
     
         // 3. ✅ TÌM VÀ CẬP NHẬT CÁC LEG KHÁC (theo round + teams)
+        // CHỈ tìm các legs của CÙNG CẶP ĐẤU (cùng 2 teams, có thể đảo vị trí)
         $allOtherLegs = Matches::where('tournament_type_id', $match->tournament_type_id)
             ->where('round', $targetLeg1->round)
             ->where('id', '!=', $targetLeg1->id) // Loại chính nó (leg 1)
             ->where(function($query) use ($targetLeg1) {
-                // Tìm matches có chứa 1 trong 2 teams của leg 1
-                $query->where('home_team_id', $targetLeg1->home_team_id)
-                      ->orWhere('home_team_id', $targetLeg1->away_team_id)
-                      ->orWhere('away_team_id', $targetLeg1->home_team_id)
-                      ->orWhere('away_team_id', $targetLeg1->away_team_id);
+                // Tìm matches có CẢ HAI teams giống với targetLeg1 (có thể đảo vị trí)
+                $query->where(function($q) use ($targetLeg1) {
+                    $q->where('home_team_id', $targetLeg1->home_team_id)
+                      ->where('away_team_id', $targetLeg1->away_team_id);
+                })->orWhere(function($q) use ($targetLeg1) {
+                    $q->where('home_team_id', $targetLeg1->away_team_id)
+                      ->where('away_team_id', $targetLeg1->home_team_id);
+                });
             })
             ->orderBy('leg')
             ->get();
