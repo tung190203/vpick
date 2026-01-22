@@ -444,6 +444,7 @@ export default {
         }
 
         onMounted(async () => {
+            activeTab.value = route.query.tab || 'detail'
             if (id) {
                 await detailMiniTournament(id)
             }

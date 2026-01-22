@@ -50,8 +50,28 @@
                                     @select="focusItemAuto" />
                             </template>
                             <template v-else-if="activeTab === 'match'">
+                                <!-- Sub tabs -->
+                                <div class="grid grid-cols-2 gap-2 mb-3">
+                                    <button @click="activeMatchTab = 'mini'" :class="[
+                                        'py-1.5 text-sm font-medium rounded transition-colors',
+                                        activeMatchTab === 'mini' 
+                                            ? 'bg-red-50 text-[#D72D36] border border-[#D72D36]'
+                                            : 'text-gray-500 hover:bg-gray-50 border'
+                                    ]">
+                                        Kèo đấu
+                                    </button>
+                                    <button @click="activeMatchTab = 'tournament'" :class="[
+                                        'py-1.5 text-sm font-medium rounded transition-colors',
+                                        activeMatchTab === 'tournament'
+                                            ? 'bg-red-50 text-[#D72D36] border border-[#D72D36]'
+                                            : 'text-gray-500 hover:bg-gray-50 border'
+                                    ]">
+                                        Giải đấu
+                                    </button>
+                                </div>
+
                                 <MatchListItem v-for="(match, index) in displayedListData" :key="match.id ?? index"
-                                    :match="match" />
+                                    :match="match" :selected="selectedMatches" @select="focusItemAuto" :defaultImage="defaultImage"/>
                             </template>
                             <template v-else-if="activeTab === 'players'">
                                 <UserListItem v-for="user in displayedListData" :key="user.id" :user="user"
@@ -814,6 +834,9 @@ const matchesMap = ref(new Map());
 const isInitialLoad = ref(true);
 const isLoadingMap = ref(false);
 const activeTab = ref('courts');
+const activeMatchTab = ref('mini'); // 'mini' (Kèo đấu) or 'tournament' (Giải đấu)
+const matchesMini = ref([]);
+const matchesTournament = ref([]);
 const isShowMyFollow = ref(false);
 const isShowFavoritePlayer = ref(false);
 const isConnected = ref(false);
@@ -943,7 +966,10 @@ const matches = computed(() => Array.from(matchesMap.value.values()));
 // Convert Map sang Array
 const listData = computed(() => {
     if (activeTab.value === 'courts') return courts.value;
-    if (activeTab.value === 'match') return matches.value;
+    if (activeTab.value === 'match') {
+        if (activeMatchTab.value === 'mini') return matchesMini.value;
+        if (activeMatchTab.value === 'tournament') return matchesTournament.value;
+    }
     if (activeTab.value === 'players') return users.value;
     return [];
 });
@@ -1146,13 +1172,40 @@ const getListMatches = async (bounds = null) => {
         });
 
         const res = await MapService.getMatchesData(params);
-        mergeData(matchesMap.value, res || [], hasActiveFilters.value);
+        
+        matchesMap.value.clear();
+
+        if (res && typeof res === 'object' && !Array.isArray(res)) {
+             const mini = (res.mini_tournaments?.data || []).map(m => ({ ...m, id: `mini_${m.id}`, original_id: m.id, type: 'mini' }));
+             const tour = (res.tournaments?.data || []).map(t => ({ ...t, id: `tour_${t.id}`, original_id: t.id, type: 'tournament' }));
+             
+             matchesMini.value = mini;
+             matchesTournament.value = tour;
+
+             const dataToShow = activeMatchTab.value === 'mini' ? mini : tour;
+             mergeData(matchesMap.value, dataToShow, hasActiveFilters.value);
+             
+        } else {
+            matchesMini.value = [];
+            matchesTournament.value = [];
+        }
+        
         quantityMatches.value = matchesMap.value.size;
     } catch (error) {
         console.error("Error fetching match data:", error);
         toast.error(error.response?.data?.message || "Lỗi khi tải dữ liệu trận đấu");
     }
 };
+
+// Watch activeMatchTab to reload markers
+watch(activeMatchTab, () => {
+    matchesMap.value.clear();
+    const dataToShow = activeMatchTab.value === 'mini' ? matchesMini.value : matchesTournament.value;
+    mergeData(matchesMap.value, dataToShow, true); // Treat like filter change
+    quantityMatches.value = matchesMap.value.size; // Cập nhật số lượng
+    clearAllMarkers();
+    addMatchMarkers(matches.value, router, focusItemAuto, true, defaultImage);
+});
 
 const getListSports = async () => {
     try {
@@ -1195,7 +1248,7 @@ const loadTabContent = async (tab, bounds = null) => {
             addCourtMarkers(courts.value, toHourMinute, defaultImage, focusItemAuto, shouldUpdate);
         } else if (tab === 'match') {
             await getListMatches(bounds);
-            addMatchMarkers(matches.value, focusItemAuto, shouldUpdate);
+            addMatchMarkers(matches.value, router, focusItemAuto, shouldUpdate, defaultImage);
         } else if (tab === 'players') {
             await getListUser(bounds);
             addUserMarkers(users.value, defaultImage, maleIcon, femaleIcon, getVisibilityText, getUserRating, router, focusItemAuto, shouldUpdate);

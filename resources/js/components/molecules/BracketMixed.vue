@@ -290,21 +290,23 @@
                         </div>
 
                         <!-- GỘP LEGS THÀNH 1 CARD -->
-                        <PoolStageMatchCard
-                            v-for="match in group.matches"
-                            :key="match.match_id"
-                            :match="match"
-                            :is-dragging="isDragging"
-                            :dragged-team="draggedTeam"
-                            :drop-target-match="dropTargetMatch"
-                            :drop-target-position="dropTargetPosition"
-                            @match-click="handleMatchClick"
-                            @drag-start="handleDragStart"
-                            @drag-end="handleDragEnd"
-                            @drag-over="handleDragOver"
-                            @drag-leave="handleDragLeave"
-                            @drop="handleDrop"
-                        />
+                        <div class="flex flex-col w-full items-center">
+                            <PoolStageMatchCard
+                                v-for="match in group.matches"
+                                :key="match.match_id"
+                                :match="match"
+                                :is-dragging="isDragging"
+                                :dragged-team="draggedTeam"
+                                :drop-target-match="dropTargetMatch"
+                                :drop-target-position="dropTargetPosition"
+                                @match-click="handleMatchClick"
+                                @drag-start="handleDragStart"
+                                @drag-end="handleDragEnd"
+                                @drag-over="handleDragOver"
+                                @drag-leave="handleDragLeave"
+                                @drop="handleDrop"
+                            />
+                        </div>
                     </div>
 
                     <!-- KNOCKOUT STAGE -->
@@ -345,121 +347,18 @@
                         </div>
 
                         <!-- GỘP LEGS THÀNH 1 CARD -->
-                        <div
-                            v-for="match in roundData.matches"
-                            :key="match.match_id"
-                            :class="matchCardWrapperClass(match)"
-                            class="match-card bg-[#dcdee6] rounded-lg mb-4 w-64 flex flex-col cursor-pointer hover:shadow-lg transition-all"
-                            @click="handleMatchClick(match.match_id)"
-                        >
-                            <div
-                                :class="matchHeaderContentClass(match)"
-                                class="flex justify-between items-center text-xs font-medium text-[#838799] px-4 py-2 bg-[#dcdee6] rounded-tl-lg rounded-tr-lg"
-                            >
-                                <span class="uppercase"
-                                    >SÂN {{ match.legs?.[0]?.court || 1 }}</span
-                                >
-                                <div class="flex items-center gap-2">
-                                    <span
-                                        v-if="hasAnyLegInProgress(match)"
-                                        class="text-white font-bold text-xs flex items-center"
-                                    >
-                                        <VideoCameraIcon class="w-4 h-4 mr-1" />
-                                        Trực tiếp
-                                    </span>
-                                    <span class="text-xs" v-else>
-                                        {{
-                                            formatTime(
-                                                match.legs?.[0]?.scheduled_at,
-                                            )
-                                        }}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div
-                                class="flex flex-col gap-3 rounded-lg shadow-md border border-[#dcdee6] bg-[#EDEEF2] px-4 py-3"
-                            >
-                                <div
-                                    v-tooltip="match.home_team.name"
-                                    class="flex justify-between items-center"
-                                >
-                                    <div class="flex items-center gap-2">
-                                        <img
-                                            :src="
-                                                match.home_team.team_avatar ||
-                                                `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(match.home_team.name)}`
-                                            "
-                                            class="w-8 h-8 rounded-full"
-                                            :alt="match.home_team.name"
-                                        />
-                                        <p
-                                            class="text-sm font-semibold text-[#3E414C] truncate max-w-[150px]"
-                                        >
-                                            {{ match.home_team.name }}
-                                        </p>
-                                    </div>
-                                    <span
-                                        class="font-bold text-lg"
-                                        :class="[
-                                            {
-                                                'text-green-700': isWinner(
-                                                    match,
-                                                    'home',
-                                                ),
-                                            },
-                                            {
-                                                'text-red-700': isLoser(
-                                                    match,
-                                                    'home',
-                                                ),
-                                            },
-                                        ]"
-                                    >
-                                        {{ match.aggregate_score?.home ?? 0 }}
-                                    </span>
-                                </div>
-
-                                <div
-                                    v-tooltip="match.away_team.name"
-                                    class="flex justify-between items-center"
-                                >
-                                    <div class="flex items-center gap-2">
-                                        <img
-                                            :src="
-                                                match.away_team.team_avatar ||
-                                                `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(match.away_team.name)}`
-                                            "
-                                            class="w-8 h-8 rounded-full"
-                                            :alt="match.away_team.name"
-                                        />
-                                        <p
-                                            class="text-sm font-semibold text-[#3E414C] truncate max-w-[150px]"
-                                        >
-                                            {{ match.away_team.name }}
-                                        </p>
-                                    </div>
-                                    <span
-                                        class="font-bold text-lg"
-                                        :class="[
-                                            {
-                                                'text-green-700': isWinner(
-                                                    match,
-                                                    'away',
-                                                ),
-                                            },
-                                            {
-                                                'text-red-700': isLoser(
-                                                    match,
-                                                    'away',
-                                                ),
-                                            },
-                                        ]"
-                                    >
-                                        {{ match.aggregate_score?.away ?? 0 }}
-                                    </span>
-                                </div>
-                            </div>
+                        <div class="flex flex-col w-full">
+                            <PoolStageMatchCard
+                                v-for="match in roundData.matches"
+                                :key="match.match_id"
+                                :match="match"
+                                :is-dragging="isDragging"
+                                :dragged-team="draggedTeam"
+                                :drop-target-match="dropTargetMatch"
+                                :drop-target-position="dropTargetPosition"
+                                :enable-drag-drop="false"
+                                @match-click="handleMatchClick"
+                            />
                         </div>
                     </div>
                 </div>
@@ -469,11 +368,10 @@
 </template>
 
 <script setup>
-import { computed, ref } from "vue";
+import { computed, ref, onMounted, nextTick, watch } from "vue";
 import {
     ArrowsPointingOutIcon,
     PencilIcon,
-    VideoCameraIcon,
 } from "@heroicons/vue/24/solid";
 import CreateMatch from "@/components/molecules/CreateMatch.vue";
 import PoolStageMatchCard from "@/components/molecules/PoolStageMatchCard.vue";
@@ -695,8 +593,17 @@ const hasAnyLegInProgress = (match) => {
 };
 
 const hasAnyLegStarted = (match) => {
-    return match.legs?.some((leg) =>
-        ["in_progress", "completed"].includes(leg.status),
+    // 1. Có leg đã hoàn thành hoặc đang đấu
+    const hasActiveLeg = match.legs?.some(leg => ['in_progress', 'completed'].includes(leg.status));
+    if (hasActiveLeg) return true;
+
+    // 2. Leg chưa đấu (pending) nhưng đã có điểm
+    return match.legs?.some(leg => 
+        leg.status === 'pending' && 
+        leg.sets &&
+        Object.values(leg.sets).some(setArray => 
+            setArray.some(teamScore => teamScore.score > 0)
+        )
     );
 };
 
@@ -770,6 +677,57 @@ const formatTime = (scheduledAt) => {
         return "Chưa xác định";
     }
 };
+
+/* ===========================
+   SYNC CARD HEIGHTS
+=========================== */
+const syncCardHeights = () => {
+    nextTick(() => {
+        setTimeout(() => {
+            const columns = document.querySelectorAll('.round-column');
+            if (columns.length === 0) return;
+
+            // Tìm số lượng thẻ tối đa trong các cột
+            const maxMatches = Math.max(
+                ...Array.from(columns).map(col =>
+                    col.querySelectorAll('.match-card').length
+                )
+            );
+
+            // Với mỗi hàng (index), đồng bộ chiều cao
+            for (let i = 0; i < maxMatches; i++) {
+                const cardsInRow = Array.from(columns)
+                    .map(col => {
+                        const cards = col.querySelectorAll('.match-card');
+                        return cards[i] || null;
+                    })
+                    .filter(Boolean);
+
+                if (cardsInRow.length === 0) continue;
+
+                // Tìm chiều cao lớn nhất trong hàng (thẻ có tên dài nhất)
+                const maxHeight = Math.max(
+                    ...cardsInRow.map(card => card.offsetHeight)
+                );
+
+                // Set chiều cao cho tất cả các thẻ trong hàng
+                cardsInRow.forEach(card => {
+                    card.style.height = `${maxHeight}px`;
+                });
+            }
+        }, 100);
+    });
+};
+
+// Đồng bộ chiều cao khi component mount
+onMounted(() => {
+    syncCardHeights();
+});
+
+// Đồng bộ chiều cao khi bracket thay đổi
+watch(() => props.bracket, () => {
+    syncCardHeights();
+}, { deep: true, immediate: false });
 </script>
 
 <style scoped>

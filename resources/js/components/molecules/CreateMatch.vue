@@ -187,6 +187,34 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Confirmation Modal -->
+                <div v-if="showConfirmClose" 
+                    class="absolute inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50"
+                    @click.self="handleCancelClose">
+                    <div class="bg-white rounded-lg shadow-xl w-full max-w-sm p-6 transform transition-all">
+                        <h3 class="text-lg font-medium leading-6 text-gray-900 mb-2">
+                            Lưu thay đổi?
+                        </h3>
+                        <p class="text-sm text-gray-500 mb-6">
+                            Bạn có thay đổi chưa được lưu. Bạn có muốn lưu lại trước khi đóng không?
+                        </p>
+                        <div class="flex flex-col gap-3">
+                            <button @click="handleConfirmSave"
+                                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none sm:text-sm">
+                                Lưu và Đóng
+                            </button>
+                            <button @click="handleDiscard"
+                                class="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:text-sm">
+                                Không lưu
+                            </button>
+                            <button @click="handleCancelClose"
+                                class="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-gray-100 text-base font-medium text-gray-700 hover:bg-gray-200 focus:outline-none sm:text-sm">
+                                Hủy
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </Transition>
     </Teleport>
@@ -463,9 +491,7 @@ const confirmMatchResult = async () => {
 }
 
 /* ===================== UI HELPERS ===================== */
-const closeModal = () => {
-    if (!isSaving.value && !isAdvancing.value) isOpen.value = false
-}
+
 
 const emptySlots = (team) => {
     const members = team === 'home'
@@ -474,5 +500,65 @@ const emptySlots = (team) => {
 
     const slots = props.tournament.player_per_team - members
     return slots > 0 ? Array.from({ length: slots }, (_, i) => i + 1) : []
+}
+
+/* ===================== CLOSE CONFIRMATION ===================== */
+const showConfirmClose = ref(false)
+const initialCourtNumber = ref(1)
+const initialScores = ref([])
+
+// Cập nhật state ban đầu khi dữ liệu thay đổi
+const updateInitialState = () => {
+    initialCourtNumber.value = courtNumber.value
+    initialScores.value = JSON.parse(JSON.stringify(scores.value))
+}
+
+watch(
+    [currentLeg, () => props.data],
+    () => {
+        // Đợi 1 tick để scores được init xong trong watch ở trên
+        setTimeout(() => {
+            updateInitialState()
+        }, 0)
+    },
+    { immediate: true, deep: true }
+)
+
+const hasUnsavedChanges = computed(() => {
+    const isCourtChanged = courtNumber.value !== initialCourtNumber.value
+    const isScoresChanged = JSON.stringify(scores.value) !== JSON.stringify(initialScores.value)
+    return isCourtChanged || isScoresChanged
+})
+
+// Override closeModal
+const closeModal = () => {
+    if (isSaving.value || isAdvancing.value) return
+
+    // Nếu trận đấu đã hoàn thành thì không cần check unsaved changes (vì không lưu được)
+    if (currentLeg.value?.status === 'completed') {
+        isOpen.value = false
+        return
+    }
+
+    if (hasUnsavedChanges.value) {
+        showConfirmClose.value = true
+    } else {
+        isOpen.value = false
+    }
+}
+
+const handleConfirmSave = async () => {
+    await saveMatch()
+    showConfirmClose.value = false
+    isOpen.value = false
+}
+
+const handleDiscard = () => {
+    showConfirmClose.value = false
+    isOpen.value = false
+}
+
+const handleCancelClose = () => {
+    showConfirmClose.value = false
 }
 </script>

@@ -6,9 +6,12 @@
                 'opacity-50':
                     isDragging &&
                     draggedTeam?.matchId === match.match_id,
+                'fill-available': fillAvailable,
+                'w-64': !fillAvailable
             },
+
         ]"
-        class="match-card bg-[#dcdee6] rounded-lg mb-4 w-full flex flex-col transition-all"
+        class="match-card bg-[#dcdee6] rounded-lg mb-4 flex flex-col transition-all"
     >
         <div
             :class="matchHeaderContentClass"
@@ -32,12 +35,12 @@
         </div>
 
         <div
-            class="flex flex-col gap-3 rounded-lg shadow-md border border-[#dcdee6] bg-[#EDEEF2] px-4 py-3"
+            class="flex flex-col gap-3 rounded-lg shadow-md border border-[#dcdee6] bg-[#EDEEF2] px-4 py-3 flex-1 justify-between"
         >
             <!-- HOME TEAM - DRAGGABLE -->
             <div
                 v-tooltip="match.home_team.name"
-                class="flex justify-between items-center px-2 -mx-2 rounded transition-all"
+                class="flex justify-between items-start px-2 -mx-2 rounded transition-all py-2 min-h-[48px]"
                 :class="{
                     'bg-blue-100 ring-2 ring-blue-400':
                         isDropTarget(match.match_id, 'home'),
@@ -55,21 +58,21 @@
                 @click="!isDragging ? $emit('match-click', match.match_id) : null"
             >
                 <div
-                    class="flex items-center gap-2 pointer-events-none"
+                    class="flex items-center gap-2 pointer-events-none flex-1 min-w-0"
                 >
                     <img
                         :src="homeTeamAvatar"
-                        class="w-8 h-8 rounded-full"
+                        class="w-8 h-8 rounded-full flex-shrink-0"
                         :alt="match.home_team.name"
                     />
                     <p
-                        class="text-sm font-semibold text-[#3E414C] truncate max-w-[150px]"
+                        class="text-sm font-semibold text-[#3E414C] break-words leading-tight"
                     >
                         {{ match.home_team.name }}
                     </p>
                 </div>
                 <span
-                    class="font-bold text-lg pointer-events-none"
+                    class="font-bold text-lg pointer-events-none flex-shrink-0 ml-2 self-start mt-0.5"
                     :class="[
                         {
                             'text-green-700': isHomeWinner,
@@ -86,7 +89,7 @@
             <!-- AWAY TEAM - DRAGGABLE -->
             <div
                 v-tooltip="match.away_team.name"
-                class="flex justify-between items-center px-2 -mx-2 rounded transition-all"
+                class="flex justify-between items-start px-2 -mx-2 rounded transition-all py-2 min-h-[48px]"
                 :class="{
                     'bg-blue-100 ring-2 ring-blue-400':
                         isDropTarget(match.match_id, 'away'),
@@ -95,30 +98,30 @@
                     'cursor-pointer':
                         !canDrag,
                 }"
-                :draggable="canDrag"
-                @dragstart="handleDragStart($event, match, 'away')"
-                @dragend="handleDragEnd"
-                @dragover.prevent="handleDragOver($event, match.match_id, 'away')"
-                @dragleave="handleDragLeave($event)"
-                @drop.prevent.stop="handleDrop($event, match.match_id, 'away')"
+                :draggable="enableDragDrop && canDrag"
+                @dragstart="enableDragDrop ? handleDragStart($event, match, 'away') : null"
+                @dragend="enableDragDrop ? handleDragEnd() : null"
+                @dragover.prevent="enableDragDrop ? handleDragOver($event, match.match_id, 'away') : null"
+                @dragleave="enableDragDrop ? handleDragLeave($event) : null"
+                @drop.prevent.stop="enableDragDrop ? handleDrop($event, match.match_id, 'away') : null"
                 @click="!isDragging ? $emit('match-click', match.match_id) : null"
             >
                 <div
-                    class="flex items-center gap-2 pointer-events-none"
+                    class="flex items-center gap-2 pointer-events-none flex-1 min-w-0"
                 >
                     <img
                         :src="awayTeamAvatar"
-                        class="w-8 h-8 rounded-full"
+                        class="w-8 h-8 rounded-full flex-shrink-0"
                         :alt="match.away_team.name"
                     />
                     <p
-                        class="text-sm font-semibold text-[#3E414C] truncate max-w-[150px]"
+                        class="text-sm font-semibold text-[#3E414C] break-words leading-tight"
                     >
                         {{ match.away_team.name }}
                     </p>
                 </div>
                 <span
-                    class="font-bold text-lg pointer-events-none"
+                    class="font-bold text-lg pointer-events-none flex-shrink-0 ml-2 self-start mt-0.5"
                     :class="[
                         {
                             'text-green-700': isAwayWinner,
@@ -164,6 +167,10 @@ const props = defineProps({
         type: Boolean,
         default: true,
     },
+    fillAvailable: {
+      type: Boolean,
+      default:false
+    }
 });
 
 const emit = defineEmits(['match-click', 'drag-start', 'drag-end', 'drag-over', 'drag-leave', 'drop']);
@@ -298,3 +305,10 @@ const handleDrop = (event, matchId, position) => {
     emit('drop', { event, matchId, position });
 };
 </script>
+
+
+<style scoped>
+  .fill-available {
+    width: -webkit-fill-available;
+  }
+</style>
