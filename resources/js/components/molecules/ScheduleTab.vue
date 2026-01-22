@@ -49,7 +49,7 @@
                                 'text-gray-400': index === 1,
                                 'text-orange-500': index === 2
                             }">{{ index + 1 }}</span>
-                            <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-2 min-w-0">
                                 <img :src="team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(team.team_name)}`"
                                     alt="logo team" class="w-8 h-8 rounded-full border border-gray-300" />
                                 <p class="text-gray-800 font-medium text-sm break-words whitespace-normal leading-snug min-w-0">{{ team.team_name }}</p>
@@ -86,7 +86,7 @@
                                 'text-gray-400': index === 1,
                                 'text-orange-500': index === 2
                             }">{{ index + 1 }}</span>
-                            <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-2 min-w-0">
                                 <img :src="team.team_avatar || `https://placehold.co/40x40/BBBFCC/3E414C?text=${getTeamInitials(team.team_name)}`"
                                     alt="logo team" class="w-8 h-8 rounded-full border border-gray-300" />
                                 <p class="text-gray-800 font-medium text-sm break-words whitespace-normal leading-snug min-w-0">{{ team.team_name }}</p>
