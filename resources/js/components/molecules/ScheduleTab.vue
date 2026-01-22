@@ -232,7 +232,7 @@
                     <div
                         v-for="group in mixedBracket.poolStage"
                         :key="group.group_id"
-                        class="mb-6"
+                        class="mb-6 "
                     >
                         <div class="bg-[#EDEEF2] px-4 py-3 rounded-lg mb-4">
                             <h3 class="font-bold text-[#3E414C]">
@@ -242,7 +242,7 @@
 
                         <template v-if="group.matches && group.matches.length > 0">
                             <div
-                                class="grid grid-cols-1 md:grid-cols-2 gap-3 px-2"
+                                class="grid grid-cols-1 md:grid-cols-2 gap-3 px-2 justify-items-center"
                             >
                                 <PoolStageMatchCard
                                     v-for="match in group.matches"
@@ -250,6 +250,7 @@
                                     :match="match"
                                     :enable-drag-drop="false"
                                     @match-click="getDetailMatches"
+                                    :fillAvailable="true"
                                 />
                             </div>
                         </template>
@@ -290,7 +291,7 @@
                             </p>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 px-2">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 px-2 justify-items-center">
                             <PoolStageMatchCard
                                 v-for="match in currentKnockoutRound.matches"
                                 :key="match.match_id"

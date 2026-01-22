@@ -333,7 +333,8 @@ const redirectByType = (n) => {
       if (!d.tournament_id) return
       router.push({
         name: 'tournament-detail',
-        params: { id: d.tournament_id }
+        params: { id: d.tournament_id },
+        query: { tab: 'discuss' }
       })
       break
 
@@ -341,7 +342,8 @@ const redirectByType = (n) => {
       if (!d.mini_tournament_id) return
       router.push({
         name: 'mini-tournament-detail',
-        params: { id: d.mini_tournament_id }
+        params: { id: d.mini_tournament_id },
+        query: { tab: 'chat' }
       })
       break
 
@@ -349,7 +351,8 @@ const redirectByType = (n) => {
       if (!d.mini_tournament_id) return
       router.push({
         name: 'mini-tournament-detail',
-        params: { id: d.mini_tournament_id }
+        params: { id: d.mini_tournament_id },
+        query: { tab: 'matches' }
       })
       break
 
@@ -357,7 +360,8 @@ const redirectByType = (n) => {
       if (!d.mini_tournament_id) return
       router.push({
         name: 'mini-tournament-detail',
-        params: { id: d.mini_tournament_id }
+        params: { id: d.mini_tournament_id },
+        query: { tab: 'matches' }
       })
       break
 

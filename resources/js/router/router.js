@@ -26,6 +26,7 @@ import VerifyChangePasswordPage from '@/components/pages/auth/verify/VerifyChang
 import CompleteProfilePage from '@/components/pages/profile/CompleteProfilePage.vue'
 import UpdateProfilePage from '@/components/pages/profile/UpdateProfilePage.vue'
 import NotFoundPage from '@/components/pages/common/error/NotFoundPage.vue'
+import UnderConstructionPage from '@/components/pages/common/error/UnderConstructionPage.vue'
 import TournamentBracketPage from '@/components/pages/tournament/TournamentBracketPage.vue'
 import GroupSortView from '@/components/pages/tournament/GroupSortView.vue'
 import MatchVerifyPage from '@/components/pages/tournament/MatchVerifyPage.vue'
@@ -98,6 +99,14 @@ export const route = [
         component: ProfilePage,
         meta: {
           role: [ROLE.PLAYER, ROLE.ADMIN, ROLE.REFEREE]
+        }
+      },
+      {
+        path: '/friends',
+        name: 'friends',
+        component: UnderConstructionPage,
+        meta: {
+          role: [ROLE.PLAYER]
         }
       },
       {
@@ -333,6 +342,11 @@ export const route = [
     path: '/privacy-policy',
     name: 'privacy-policy',
     component: PrivacyPolicyPage
+  },
+  {
+    path: '/under-construction',
+    name: 'under-construction',
+    component: UnderConstructionPage
   },
   {
     path: '/not-found',

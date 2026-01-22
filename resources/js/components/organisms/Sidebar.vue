@@ -335,12 +335,13 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useUserStore } from "@/store/auth";
 import { storeToRefs } from "pinia";
 import { toast } from "vue3-toastify";
 import { ROLE } from "@/constants/index";
+import * as NotificationService from '@/service/notifications'
 
 import {
     BellIcon,
@@ -395,6 +396,16 @@ const handleLogout = async () => {
     }
 };
 
+const loadData = async () => {
+  const res = await NotificationService.getNotifications({
+    type: 'all',
+    page: 1,
+    per_page: 1,
+  })
+
+  hasNotification.value = res.meta.unread_count > 0;
+}
+
 const mobileLinkClass = (path) => {
     const base = "flex items-center h-12 px-3 rounded-xl transition-all w-full text-left";
     const active = "bg-red-600 text-white";
@@ -408,6 +419,10 @@ const mobileLinkClass = (path) => {
 const goToProfile = (id) => {
     router.push({ name: 'profile', params: { id } });
 };
+
+onMounted(async () => {
+  await loadData();
+})
 </script>
 
 <style scoped>
