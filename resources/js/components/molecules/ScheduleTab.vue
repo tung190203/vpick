@@ -250,6 +250,7 @@
                                     :match="match"
                                     :enable-drag-drop="false"
                                     @match-click="getDetailMatches"
+                                    :fillAvailable="true"
                                 />
                             </div>
                         </template>

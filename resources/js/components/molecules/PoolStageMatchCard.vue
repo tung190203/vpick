@@ -6,9 +6,12 @@
                 'opacity-50':
                     isDragging &&
                     draggedTeam?.matchId === match.match_id,
+                'fill-available': fillAvailable,
+                'w-64': !fillAvailable
             },
+
         ]"
-        class="match-card bg-[#dcdee6] rounded-lg mb-4 w-64 flex flex-col transition-all"
+        class="match-card bg-[#dcdee6] rounded-lg mb-4 flex flex-col transition-all"
     >
         <div
             :class="matchHeaderContentClass"
@@ -164,6 +167,10 @@ const props = defineProps({
         type: Boolean,
         default: true,
     },
+    fillAvailable: {
+      type: Boolean,
+      default:false
+    }
 });
 
 const emit = defineEmits(['match-click', 'drag-start', 'drag-end', 'drag-over', 'drag-leave', 'drop']);
@@ -298,3 +305,10 @@ const handleDrop = (event, matchId, position) => {
     emit('drop', { event, matchId, position });
 };
 </script>
+
+
+<style scoped>
+  .fill-available {
+    width: -webkit-fill-available;
+  }
+</style>

@@ -19,6 +19,30 @@ const escapeHtml = (text) => {
   return div.innerHTML;
 };
 
+const formatDateText = (date) => {
+  if (!date) return '';
+  const d = new Date(date);
+  const days = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'];
+  const dayName = days[d.getDay()];
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  return `${dayName}, ${day}/${month}`;
+};
+
+const formatTimeRange = (start, duration_minutes) => {
+  if (!start || !duration_minutes) return '';
+  const startTime = new Date(start);
+  const endTime = new Date(startTime.getTime() + duration_minutes * 60000);
+  
+  const formatTime = (date) => {
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+  
+  return `${formatTime(startTime)} - ${formatTime(endTime)}`;
+};
+
 const createMarkerIcon = (iconUrl) => {
   return new L.Icon({
     iconUrl,
@@ -38,6 +62,17 @@ const defaultMarkerIcon = createMarkerIcon('https://raw.githubusercontent.com/po
 const clockIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 18px; height: 18px; display: inline-block; vertical-align: middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>`;
 const phoneIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 18px; height: 18px; display: inline-block; vertical-align: middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" /></svg>`;
 const mapPinIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 18px; height: 18px; display: inline-block; vertical-align: middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" /></svg>`;
+
+// Match Icons (for match popup)
+const calendarIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" /></svg>`;
+const calendarDaysIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9 6V9m0 0h-3.75m3.75 0h3.75" /></svg>`;
+const clockIconSmall = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>`;
+const mapPinIconSmall = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" /></svg>`;
+const lockIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 10px; height: 10px; display: inline-block; vertical-align: middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>`;
+const lockOpenIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 10px; height: 10px; display: inline-block; vertical-align: middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5V6.75a4.5 4.5 0 1 1 9 0v3.75M3.75 21.75h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H3.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>`;
+const flagIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width: 10px; height: 10px; display: inline-block; vertical-align: middle;"><path fill-rule="evenodd" d="M3 2.25a.75.75 0 0 1 .75.75v16.5a.75.75 0 0 1-1.5 0V3A.75.75 0 0 1 3 2.25ZM19.5 3a.75.75 0 0 0-1.5 0v7.5a.75.75 0 0 0 1.5 0V3Zm-5.25 0a.75.75 0 0 0-1.5 0v16.5a.75.75 0 0 0 1.5 0V3ZM12 9a.75.75 0 0 1 .75.75v7.5a.75.75 0 0 1-1.5 0v-7.5A.75.75 0 0 1 12 9Zm-3.75-6a.75.75 0 0 0-1.5 0v16.5a.75.75 0 0 0 1.5 0V3Z" clip-rule="evenodd" /></svg>`;
+const starIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 10px; height: 10px; display: inline-block; vertical-align: middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" /></svg>`;
+const userGroupIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 10px; height: 10px; display: inline-block; vertical-align: middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" /></svg>`;
 
 // --- COMPOSABLE ---
 export function useMap() {
@@ -536,15 +571,346 @@ export function useMap() {
     }
   };
 
-  const addMatchMarkers = (matchesData, onMarkerClick, shouldUpdate = false) => {
+  const addMatchMarkers = (matchesData, router, onMarkerClick, shouldUpdate = false, defaultImage = '') => {
     const dataToAdd = shouldUpdate ? updateMarkers(matchesData) : matchesData;
     const batchMarkers = [];
     
     dataToAdd.forEach(match => {
-      if (!match.latitude || !match.longitude || isNaN(match.latitude) || isNaN(match.longitude)) return;
+      // Handle both direct lat/lng and nested in competition_location
+      const lat = match.competition_location?.latitude || match.latitude;
+      const lng = match.competition_location?.longitude || match.longitude;
 
-      const m = L.marker([match.latitude, match.longitude], { icon: defaultMarkerIcon })
-        .bindPopup(`Thông tin trận đấu: ${escapeHtml(match.name)}`);
+      if (!lat || !lng || isNaN(lat) || isNaN(lng)) return;
+
+      const locationName = match.competition_location?.name || match.competition_location?.address || '';
+      const matchImage = match.poster || defaultImage;
+      
+      let popupContent = '';
+
+      // Tournament Layout
+      if (match.type === 'tournament') {
+        const dateText = formatDateText(match.start_date || match.starts_at);
+        const description = match.description || match.rules || '';
+        
+        popupContent = `
+          <div id="match-popup-${match.id}" style="
+            overflow: hidden; 
+            background: white; 
+            cursor: pointer;
+            font-family: system-ui, -apple-system, sans-serif;
+            min-width: 280px;
+            max-width: 320px;
+          ">
+            <div style="display: flex; align-items: flex-start; padding: 12px; gap: 12px;">
+              <div style="
+                width: 112px; 
+                height: 112px; 
+                flex-shrink: 0; 
+                background: #f3f4f6; 
+                border-radius: 6px; 
+                overflow: hidden; 
+                border: 1px solid #f3f4f6;
+              ">
+                <img src="${matchImage}" 
+                  onerror="this.onerror=null;this.src='${defaultImage}'"
+                  style="width: 100%; height: 100%; object-fit: cover;" />
+              </div>
+
+              <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; height: 80px;">
+                <div>
+                  <h4 style="
+                    font-weight: 700; 
+                    color: #111827; 
+                    font-size: 14px; 
+                    line-height: 1.25; 
+                    margin: 0 0 4px 0;
+                    display: -webkit-box;
+                    -webkit-line-clamp: 2;
+                    -webkit-box-orient: vertical;
+                    overflow: hidden;
+                  ">${escapeHtml(match.name)}</h4>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 4px; padding-top: 8px;">
+                  ${locationName ? `
+                    <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #4b5563;">
+                      <span style="color: #4392e0; display: flex; align-items: center;">${mapPinIconSmall}</span>
+                      <span style="
+                        font-weight: 500;
+                        display: -webkit-box;
+                        -webkit-line-clamp: 1;
+                        -webkit-box-orient: vertical;
+                        overflow: hidden;
+                      ">${escapeHtml(locationName)}</span>
+                    </div>
+                  ` : ''}
+                  <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #4b5563;">
+                    <span style="color: #4392e0; display: flex; align-items: center;">${calendarIcon}</span>
+                    <span style="font-weight: 500; text-transform: capitalize;">${escapeHtml(dateText)}</span>
+                  </div>
+
+                  ${description ? `
+                    <p style="
+                      font-size: 12px; 
+                      color: #6b7280; 
+                      font-weight: 500; 
+                      margin: 4px 0 0 0;
+                      display: -webkit-box;
+                      -webkit-line-clamp: 2;
+                      -webkit-box-orient: vertical;
+                      overflow: hidden;
+                    ">${escapeHtml(description)}</p>
+                  ` : ''}
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      } 
+      // Mini Layout
+      else {
+        const dateText = formatDateText(match.starts_at);
+        const timeRange = formatTimeRange(match.starts_at, match.duration_minutes);
+        const organizer = match.staff?.organizer?.[0]?.user || match.creator || match.user;
+        const organizerName = organizer?.full_name || organizer?.name || '';
+        const organizerAvatar = organizer?.avatar_url || organizer?.avatar || defaultImage;
+        const participants = match.participants || [];
+        const joinedCount = match.joined_count || 0;
+        
+        // Build badges HTML
+        let badgesHtml = '';
+        if (match.is_private !== undefined) {
+          badgesHtml += `
+            <span style="
+              display: inline-flex; 
+              align-items: center; 
+              border-radius: 9999px; 
+              padding: 2px 8px; 
+              gap: 4px; 
+              font-size: 10px; 
+              font-weight: 500; 
+              color: white; 
+              background: #1f2937; 
+              white-space: nowrap;
+              margin-right: 8px;
+            ">
+              ${match.is_private ? lockIcon : lockOpenIcon}
+              ${match.is_private ? 'Private' : 'Public'}
+            </span>
+          `;
+        }
+        if (match.min_rating !== null || match.max_rating !== null) {
+          badgesHtml += `
+            <span style="
+              display: inline-flex; 
+              align-items: center; 
+              gap: 4px; 
+              border-radius: 9999px; 
+              background: #1f2937; 
+              padding: 2px 8px; 
+              font-size: 10px; 
+              font-weight: 500; 
+              color: white; 
+              white-space: nowrap;
+              margin-right: 8px;
+            ">
+              ${flagIcon}
+              ${match.min_rating || ''} - ${match.max_rating || ''}
+            </span>
+          `;
+        }
+        if (match.is_dupr) {
+          badgesHtml += `
+            <span style="
+              display: inline-flex; 
+              align-items: center; 
+              gap: 4px; 
+              border-radius: 9999px; 
+              background: #1f2937; 
+              padding: 2px 8px; 
+              font-size: 10px; 
+              font-weight: 500; 
+              color: white; 
+              white-space: nowrap;
+              margin-right: 8px;
+            ">
+              ${starIcon}
+              DUPR
+            </span>
+          `;
+        }
+        if (match.max_players) {
+          badgesHtml += `
+            <span style="
+              display: inline-flex; 
+              align-items: center; 
+              gap: 4px; 
+              border-radius: 9999px; 
+              background: #1f2937; 
+              padding: 2px 8px; 
+              font-size: 10px; 
+              font-weight: 500; 
+              color: white; 
+              white-space: nowrap;
+              margin-right: 8px;
+            ">
+              ${userGroupIcon}
+              Max ${match.max_players}
+            </span>
+          `;
+        }
+        
+        // Build participants avatars HTML
+        let participantsHtml = '';
+        if (participants.length > 0) {
+          const displayParticipants = participants.slice(0, 2);
+          participantsHtml = `
+            <div style="display: flex; overflow: hidden; padding: 4px 0;">
+              ${displayParticipants.map((p, idx) => `
+                <img src="${p.user?.avatar_url || defaultImage}" 
+                  onerror="this.onerror=null;this.src='${defaultImage}'"
+                  style="
+                    width: 40px; 
+                    height: 40px; 
+                    border-radius: 50%; 
+                    border: 2px solid white; 
+                    object-fit: cover;
+                    ${idx > 0 ? 'margin-left: -8px;' : ''}
+                  " />
+              `).join('')}
+              ${participants.length > 3 ? `
+                <div style="
+                  display: flex; 
+                  align-items: center; 
+                  justify-content: center; 
+                  width: 32px; 
+                  height: 32px; 
+                  border-radius: 50%; 
+                  border: 2px solid white; 
+                  background: #fef2f2; 
+                  color: #D72D36; 
+                  font-size: 12px; 
+                  font-weight: 700;
+                  margin-left: -8px;
+                ">
+                  +${participants.length - 3}
+                </div>
+              ` : ''}
+            </div>
+          `;
+        } else if (joinedCount > 0) {
+          participantsHtml = `
+            <div style="
+              display: flex; 
+              align-items: center; 
+              justify-content: center; 
+              width: 32px; 
+              height: 32px; 
+              border-radius: 50%; 
+              background: #fef2f2; 
+              color: #D72D36; 
+              font-size: 12px; 
+              font-weight: 700;
+              border: 1px solid #fee2e2;
+            ">
+              +${joinedCount}
+            </div>
+          `;
+        }
+        
+        popupContent = `
+          <div id="match-popup-${match.id}" style="
+            overflow: hidden; 
+            background: white; 
+            cursor: pointer;
+            font-family: system-ui, -apple-system, sans-serif;
+            min-width: 280px;
+            max-width: 320px;
+          ">
+            <div style="padding-top: 12px;padding-bottom: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                <!-- Left Content -->
+                <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px;">
+                  <div>
+                    <h3 style="
+                      font-weight: 700; 
+                      color: #111827; 
+                      font-size: 16px; 
+                      line-height: 1.375; 
+                      margin: 0;
+                      display: -webkit-box;
+                      -webkit-line-clamp: 2;
+                      -webkit-box-orient: vertical;
+                      overflow: hidden;
+                    ">${escapeHtml(match.name)}</h3>
+                    ${locationName ? `
+                      <div style="display: flex; align-items: center; gap: 4px; margin-top: 4px; font-size: 12px; color: #3b82f6; font-weight: 500;">
+                        ${mapPinIconSmall}
+                        <span style="
+                          display: -webkit-box;
+                          -webkit-line-clamp: 1;
+                          -webkit-box-orient: vertical;
+                          overflow: hidden;
+                        ">${escapeHtml(locationName)}</span>
+                      </div>
+                    ` : ''}
+                  </div>
+
+                  <!-- Date & Time -->
+                  <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #4b5563;">
+                      <span style="color: #3b82f6; display: flex; align-items: center;">${calendarDaysIcon}</span>
+                      <span style="font-weight: 500; text-transform: capitalize;">${escapeHtml(dateText)}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #4b5563;">
+                      <span style="color: #3b82f6; display: flex; align-items: center;">${clockIconSmall}</span>
+                      <span style="font-weight: 500;">${escapeHtml(timeRange)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Right: Participants -->
+                ${participantsHtml ? `
+                  <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 12px;">
+                    ${participantsHtml}
+                  </div>
+                ` : ''}
+              </div>
+              
+              <!-- Creator & Badges Footer -->
+              <div style="display: flex; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid #f3f4f6; height: 40px;">
+                <div style="display: flex; align-items: center; gap: 8px; padding-right: 8px; height: 100%; overflow: hidden;">
+                  ${organizerName ? `
+                    <img src="${organizerAvatar}" 
+                      onerror="this.onerror=null;this.src='${defaultImage}'"
+                      style="
+                        width: 24px; 
+                        height: 24px; 
+                        border-radius: 50%; 
+                        object-fit: cover; 
+                        border: 1px solid #e5e7eb;
+                      " />
+                    <span style="
+                      font-size: 12px; 
+                      color: #374151; 
+                      font-weight: 500; 
+                      white-space: nowrap; 
+                      overflow: hidden; 
+                      text-overflow: ellipsis;
+                    ">${escapeHtml(organizerName)}</span>
+                  ` : ''}
+                </div>
+              </div>
+              <div style="overflow: hidden; display: flex; align-items: center; gap: 4px; padding-top:4px">
+                ${badgesHtml}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      const m = L.marker([lat, lng], { icon: defaultMarkerIcon })
+        .bindPopup(popupContent, { maxWidth: 350, className: 'match-popup' });
 
       markers[match.id] = m;
       batchMarkers.push(m);
@@ -552,6 +918,19 @@ export function useMap() {
       if (onMarkerClick) {
         m.on('click', () => onMarkerClick(match));
       }
+
+      m.on('popupopen', () => {
+        const el = document.getElementById(`match-popup-${match.id}`);
+        if (el) {
+            el.onclick = () => {
+                if (match.type === 'mini') {
+                    router.push(`/mini-tournament-detail/${match.original_id || match.id}`);
+                } else if (match.type === 'tournament') {
+                    router.push(`/tournament-detail/${match.original_id || match.id}`);
+                }
+            };
+        }
+      });
     });
     if (batchMarkers.length) {
       markerClusterGroup.addLayers(batchMarkers);

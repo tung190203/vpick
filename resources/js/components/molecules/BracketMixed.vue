@@ -290,7 +290,7 @@
                         </div>
 
                         <!-- GỘP LEGS THÀNH 1 CARD -->
-                        <div class="flex flex-col w-full items-stretch">
+                        <div class="flex flex-col w-full items-center">
                             <PoolStageMatchCard
                                 v-for="match in group.matches"
                                 :key="match.match_id"
@@ -593,8 +593,17 @@ const hasAnyLegInProgress = (match) => {
 };
 
 const hasAnyLegStarted = (match) => {
-    return match.legs?.some((leg) =>
-        ["in_progress", "completed"].includes(leg.status),
+    // 1. Có leg đã hoàn thành hoặc đang đấu
+    const hasActiveLeg = match.legs?.some(leg => ['in_progress', 'completed'].includes(leg.status));
+    if (hasActiveLeg) return true;
+
+    // 2. Leg chưa đấu (pending) nhưng đã có điểm
+    return match.legs?.some(leg => 
+        leg.status === 'pending' && 
+        leg.sets &&
+        Object.values(leg.sets).some(setArray => 
+            setArray.some(teamScore => teamScore.score > 0)
+        )
     );
 };
 
