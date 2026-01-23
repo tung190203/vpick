@@ -31,7 +31,14 @@
                 </svg>
             </button>
         </div>
-
+        <div class="w-full mb-8 flex justify-center absolute top-16 left-0">
+                    <img
+                        :src="bannerImage"
+                        alt="Tournament Banner"
+                        class="max-w-[692px] w-full h-auto object-contain"
+                        style="max-height: 300px;"
+                    />
+                </div>
         <div ref="bracketContent"
             class="flex flex-nowrap justify-center items-stretch gap-20 lg:gap-5 min-w-max min-h-[950px] py-10 px-10 transition-transform duration-300 origin-center"
             :style="{
@@ -219,7 +226,7 @@ import {
 import { VideoCameraIcon } from "@heroicons/vue/24/solid";
 import * as TournamentService from "@/service/tournament.js";
 import { toast } from "vue3-toastify";
-
+import bannerImage from "@/assets/images/bracket_banner.png";
 const emit = defineEmits(["close"]);
 
 const bracketContainer = ref(null);
