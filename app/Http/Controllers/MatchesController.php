@@ -579,7 +579,12 @@ class MatchesController extends Controller
 
         // Ép kiểu mảng ranking rules về Integer ngay từ đầu để tránh lỗi switch-case
         $config = $tournamentType->format_specific_config ?? [];
-        $rankingRules = collect($config['ranking'] ?? [1, 2])->map(fn($id) => (int)$id)->toArray();
+        if (is_array($config) && isset($config[0])) {
+            $config = $config[0];
+        }
+        $rankingRules = collect($config['ranking'] ?? [1, 2])
+            ->map(fn($id) => (int)$id)
+            ->toArray();
 
         $tournament_id = $tournamentType->tournament_id;
 
@@ -1310,6 +1315,7 @@ class MatchesController extends Controller
     private function validateAllMatchSets($match, $rules)
     {
         $pointsToWinSet = $rules['points_to_win_set'] ?? 11;
+        $winningRule = $rules['winning_rule'] ?? 2;
         $homeTeamId = $match->home_team_id;
         $awayTeamId = $match->away_team_id;
 
@@ -1341,7 +1347,8 @@ class MatchesController extends Controller
                 $setNumber,
                 $pointsToWinSet,
                 $homeTeamId,
-                $awayTeamId
+                $awayTeamId,
+                $winningRule
             );
 
             if ($validation['error']) {
@@ -1360,7 +1367,7 @@ class MatchesController extends Controller
     // ============================================
     // 4. VALIDATE MATCH SET SCORE - LOGIC ĐƠN GIẢN
     // ============================================
-    private function validateMatchSetScore($A, $B, $setNumber, $pointsToWinSet, $homeTeamId, $awayTeamId)
+    private function validateMatchSetScore($A, $B, $setNumber, $pointsToWinSet, $homeTeamId, $awayTeamId, $winningRule)
     {
         if ($A < 0 || $B < 0) {
             return ['error' => true, 'message' => "Set $setNumber: Điểm số không hợp lệ"];
@@ -1377,6 +1384,15 @@ class MatchesController extends Controller
             return [
                 'error' => true, 
                 'message' => "Set $setNumber: Ít nhất 1 đội phải đạt $pointsToWinSet điểm (hiện tại: $A - $B)"
+            ];
+        }
+
+        // Check 3: Tính cách biệt điểm
+        $scoreDiff = abs($A - $B);
+        if ($scoreDiff < $winningRule) {
+            return [
+                'error' => true,
+                'message' => "Set $setNumber: Điểm cách biệt phải lớn hơn hoặc bằng $winningRule"
             ];
         }
 
