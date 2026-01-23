@@ -222,9 +222,11 @@ import {
     onMounted,
     onUnmounted,
     defineEmits,
+    watch,
 } from "vue";
 import { VideoCameraIcon } from "@heroicons/vue/24/solid";
 import * as TournamentService from "@/service/tournament.js";
+import * as TournamentTypeService from "@/service/tournamentType.js";
 import { toast } from "vue3-toastify";
 import bannerImage from "@/assets/images/bracket_banner.png";
 const emit = defineEmits(["close"]);
@@ -287,6 +289,14 @@ onMounted(() => {
     }
 
     setTimeout(updateScale, 500);
+    
+    // Initialize bracket data
+    updateBracketFromProps();
+    
+    // Tự động refresh mỗi 30 giây (30000ms) để cập nhật realtime
+    refreshInterval.value = setInterval(() => {
+        refreshBracketData();
+    }, 30000); // 30 giây
 });
 
 onUnmounted(() => {
@@ -295,6 +305,12 @@ onUnmounted(() => {
     window.removeEventListener("keydown", handleKeyDown);
     if (resizeObserver) {
         resizeObserver.disconnect();
+    }
+    
+    // Clear interval khi component unmount
+    if (refreshInterval.value) {
+        clearInterval(refreshInterval.value);
+        refreshInterval.value = null;
     }
 });
 
@@ -420,6 +436,150 @@ const MatchCard = defineComponent({
         "isRightSide",
     ],
     setup(props, { emit }) {
+        // Computed để tính điểm số từ match (từ nhiều nguồn)
+        const getMatchScores = () => {
+            const match = props.match;
+            let homeScore = 0;
+            let awayScore = 0;
+            
+            // Ưu tiên 1: aggregate_score
+            if (match.aggregate_score) {
+                homeScore = Number(match.aggregate_score.home) || 0;
+                awayScore = Number(match.aggregate_score.away) || 0;
+            }
+            
+            // Ưu tiên 2: home_score/away_score trực tiếp
+            if (homeScore === 0 && awayScore === 0) {
+                homeScore = Number(match.home_score) || 0;
+                awayScore = Number(match.away_score) || 0;
+            }
+            
+            // Ưu tiên 3: Tính từ legs nếu có
+            if (homeScore === 0 && awayScore === 0 && match?.legs && Array.isArray(match.legs)) {
+                match.legs.forEach(leg => {
+                    if (leg?.sets && typeof leg.sets === 'object' && !Array.isArray(leg.sets)) {
+                        Object.values(leg.sets).forEach(setArray => {
+                            if (Array.isArray(setArray)) {
+                                setArray.forEach(teamScore => {
+                                    if (typeof teamScore === 'object' && teamScore !== null) {
+                                        const score = Number(teamScore.score) || 0;
+                                        if (teamScore.team_id === match.home_team?.id) {
+                                            homeScore += score;
+                                        } else if (teamScore.team_id === match.away_team?.id) {
+                                            awayScore += score;
+                                        }
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+            }
+            
+            return { homeScore, awayScore };
+        };
+        
+        // Helper function để kiểm tra match đã có điểm nhưng chưa completed
+        // Đơn giản: nếu có bất kỳ điểm số nào > 0 và status chưa completed → màu vàng
+        const hasAnyLegStarted = () => {
+            const match = props.match;
+            
+            // Nếu match đã completed → màu xanh (không phải vàng)
+            if (match.status === 'completed') return false;
+            
+            // Kiểm tra 1: Status in_progress → màu vàng
+            if (match.status === 'in_progress') return true;
+            
+            // Kiểm tra 2: Tính điểm số từ match
+            const { homeScore, awayScore } = getMatchScores();
+            if (homeScore > 0 || awayScore > 0) {
+                return true;
+            }
+            
+            // Kiểm tra 3: Có legs với status in_progress hoặc completed
+            if (match?.legs && Array.isArray(match.legs) && match.legs.length > 0) {
+                const hasActiveLeg = match.legs.some(leg =>
+                    leg && ['in_progress', 'completed'].includes(leg.status)
+                );
+                if (hasActiveLeg) return true;
+            }
+            
+            return false;
+        };
+
+        // Computed để xác định màu card
+        const getCardClasses = () => {
+            const match = props.match;
+            const baseClasses = [
+                "bg-white rounded-lg shadow-sm border overflow-hidden z-10",
+                props.isFinal ? "w-80 py-2" : "w-64",
+            ];
+
+            const hasStarted = hasAnyLegStarted();
+            const isInProgress = match.status === 'in_progress';
+            const isCompleted = match.status === 'completed';
+            
+            // Debug: Bật để xem match data thực tế
+            const { homeScore, awayScore } = getMatchScores();
+            if (homeScore > 0 || awayScore > 0) {
+                console.log('Match Card Debug:', {
+                    matchId: match.match_id || match.id,
+                    status: match.status,
+                    home_score: match.home_score,
+                    away_score: match.away_score,
+                    aggregate_score: match.aggregate_score,
+                    calculatedHomeScore: homeScore,
+                    calculatedAwayScore: awayScore,
+                    hasLegs: !!match.legs,
+                    legsCount: match.legs?.length || 0,
+                    hasStarted,
+                    isInProgress,
+                    isCompleted,
+                    willShowYellow: hasStarted || isInProgress
+                });
+            }
+
+            if (isCompleted) {
+                return [
+                    ...baseClasses,
+                    "border-green-500 shadow-md bg-green-500",
+                ];
+            } else if (hasStarted || isInProgress) {
+                return [
+                    ...baseClasses,
+                    "border-[#FBBF24] shadow-md !bg-[#FBBF24]",
+                ];
+            }
+
+            return [
+                ...baseClasses,
+                "border-gray-200",
+            ];
+        };
+
+        // Computed để xác định màu header
+        const getHeaderClasses = () => {
+            const match = props.match;
+            const baseClasses = "flex justify-between items-center px-3 py-1.5 border-b text-[10px] uppercase font-bold";
+
+            if (match.status === 'completed') {
+                return [
+                    baseClasses,
+                    "text-white bg-green-500 border-green-600",
+                ];
+            } else if (hasAnyLegStarted() || match.status === 'in_progress') {
+                return [
+                    baseClasses,
+                    "text-white !bg-[#FBBF24] border-[#F59E0B]",
+                ];
+            }
+
+            return [
+                baseClasses,
+                "bg-gray-50 border-gray-100 text-gray-500",
+            ];
+        };
+
         const getMatchLabelLocal = (
             team,
             roundType,
@@ -505,17 +665,15 @@ const MatchCard = defineComponent({
                 "div",
                 {
                     class: [
-                        "bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden z-10",
-                        props.isFinal
-                            ? "w-80 border-yellow-400 ring-4 ring-yellow-100 shadow-xl py-2"
-                            : "w-64",
+                        ...getCardClasses(),
+                        props.isFinal ? "ring-4 ring-yellow-100 shadow-xl" : "",
                     ],
                 },
                 [
                     h(
                         "div",
                         {
-                            class: "flex justify-between items-center px-3 py-1.5 bg-gray-50 border-b border-gray-100 text-[10px] text-gray-500 uppercase font-bold",
+                            class: getHeaderClasses(),
                         },
                         [
                             h(
@@ -608,7 +766,7 @@ const MatchCard = defineComponent({
                                                 : "text-gray-400",
                                         ],
                                     },
-                                    props.match.home_score ?? "-",
+                                    props.match.home_score ?? props.match.aggregate_score?.home ?? "-",
                                 ),
                             ],
                         ),
@@ -676,7 +834,7 @@ const MatchCard = defineComponent({
                                                 : "text-gray-400",
                                         ],
                                     },
-                                    props.match.away_score ?? "-",
+                                    props.match.away_score ?? props.match.aggregate_score?.away ?? "-",
                                 ),
                             ],
                         ),
@@ -706,6 +864,7 @@ const props = defineProps({
 });
 
 const bracket = ref({});
+const refreshInterval = ref(null); // Lưu interval ID để clear khi unmount
 
 const getTeamName = (team) => team?.name || "Chưa xác định";
 const getTeamAvatar = (team) =>
@@ -825,10 +984,12 @@ const getPreviousMatches = (currentRound, allRounds, currentRoundIndex) => {
 const fetchBracketData = async () => {
     try {
         if (!props.tournamentId) {
-            toast.error("Thiếu tournament ID");
+            // Nếu không có tournamentId, không fetch
             return;
         }
 
+        // Dùng API getBracketByTournamentId để đảm bảo tương thích với BracketMixedPreview
+        // (BracketMixedPreview cần leftSide/rightSide, không phải knockout_stage)
         const response = await TournamentService.getBracketByTournamentId(
             props.tournamentId,
         );
@@ -842,32 +1003,233 @@ const fetchBracketData = async () => {
             has_third_place_match: response.has_third_place_match,
         };
     } catch (error) {
-        toast.error(
-            error.response?.data?.message || "Lấy dữ liệu bracket thất bại",
-        );
+        // Không hiển thị error khi auto-refresh để tránh spam
+        console.error("Lỗi khi fetch bracket data:", error);
     }
 };
 
-onMounted(() => {
+const updateBracketFromProps = () => {
     if (props.bracketData && Object.keys(props.bracketData).length > 0) {
+        // Giữ nguyên logic cũ - dùng leftSide/rightSide nếu có
         bracket.value = {
-            poolStage: props.bracketData.poolStage || [],
-            leftSide: props.bracketData.leftSide || [],
-            rightSide: props.bracketData.rightSide || [],
-            finalMatch: props.bracketData.finalMatch || null,
-            thirdPlaceMatch: props.bracketData.thirdPlaceMatch || null,
+            poolStage: props.bracketData.poolStage || props.bracketData.pool_stage || [],
+            leftSide: props.bracketData.leftSide || props.bracketData.left_side || [],
+            rightSide: props.bracketData.rightSide || props.bracketData.right_side || [],
+            finalMatch: props.bracketData.finalMatch || props.bracketData.final_match || null,
+            thirdPlaceMatch: props.bracketData.thirdPlaceMatch || props.bracketData.third_place_match || null,
             has_third_place_match: props.bracketData.has_third_place_match,
+            knockout_stage: props.bracketData.knockout_stage || [],
         };
     } else if (props.tournamentId) {
         fetchBracketData();
     }
-});
+};
+
+// Function để refresh bracket data (dùng cho auto-refresh)
+const refreshBracketData = async () => {
+    // Luôn fetch từ API để có dữ liệu mới nhất (realtime)
+    if (props.tournamentId) {
+        await fetchBracketData();
+    } else if (props.bracketData && Object.keys(props.bracketData).length > 0) {
+        // Nếu không có tournamentId nhưng có bracketData, update từ props
+        // (Trường hợp này ít xảy ra vì thường có tournamentId)
+        updateBracketFromProps();
+    }
+};
+
+
+// Watch bracketData để refresh khi có update điểm
+watch(
+    () => props.bracketData,
+    (newData, oldData) => {
+        if (newData && Object.keys(newData).length > 0) {
+            updateBracketFromProps();
+        }
+    },
+    { deep: true, immediate: false }
+);
+
+// Watch bracket.value để trigger re-render khi có thay đổi
+watch(
+    () => bracket.value,
+    () => {
+        // Force re-render khi bracket thay đổi
+    },
+    { deep: true }
+);
+
+// Helper function để normalize match data - đảm bảo có đủ legs và sets
+const normalizeMatch = (match) => {
+    if (!match) return match;
+    
+    // Nếu match đã có legs và đúng format, normalize sets
+    if (match.legs && Array.isArray(match.legs) && match.legs.length > 0) {
+        const normalizedLegs = match.legs.map(leg => {
+            // Nếu sets đã đúng format (object với key set_1, set_2, ...), giữ nguyên
+            if (leg.sets && typeof leg.sets === 'object' && !Array.isArray(leg.sets)) {
+                const hasValidSets = Object.keys(leg.sets).some(key => key.startsWith('set_'));
+                if (hasValidSets) {
+                    // Đảm bảo sets có đúng format với team_id và score
+                    const normalizedSets = {};
+                    Object.keys(leg.sets).forEach(key => {
+                        if (key.startsWith('set_')) {
+                            const setArray = leg.sets[key];
+                            if (Array.isArray(setArray)) {
+                                normalizedSets[key] = setArray.map(item => {
+                                    if (typeof item === 'object' && item !== null) {
+                                        return {
+                                            team_id: item.team_id,
+                                            score: item.score || 0,
+                                        };
+                                    }
+                                    return item;
+                                });
+                            } else {
+                                normalizedSets[key] = setArray;
+                            }
+                        }
+                    });
+                    return {
+                        ...leg,
+                        sets: normalizedSets,
+                    };
+                }
+            }
+            
+            // Nếu sets không đúng format, cần convert
+            let sets = {};
+            if (leg.sets) {
+                if (Array.isArray(leg.sets)) {
+                    leg.sets.forEach((set, index) => {
+                        const key = `set_${index + 1}`;
+                        sets[key] = Array.isArray(set) ? set : [set];
+                    });
+                } else if (typeof leg.sets === 'object') {
+                    sets = leg.sets;
+                }
+            }
+            
+            return {
+                ...leg,
+                sets: sets,
+            };
+        });
+        
+        // Tính toán điểm số từ legs nếu chưa có
+        let homeScore = match.home_score || match.aggregate_score?.home || 0;
+        let awayScore = match.away_score || match.aggregate_score?.away || 0;
+        
+        // Nếu chưa có điểm số, tính từ legs
+        if (homeScore === 0 && awayScore === 0 && normalizedLegs.length > 0) {
+            normalizedLegs.forEach(leg => {
+                if (leg.sets && typeof leg.sets === 'object') {
+                    Object.values(leg.sets).forEach(setArray => {
+                        if (Array.isArray(setArray)) {
+                            setArray.forEach(teamScore => {
+                                if (teamScore.team_id === match.home_team?.id) {
+                                    homeScore += Number(teamScore.score) || 0;
+                                } else if (teamScore.team_id === match.away_team?.id) {
+                                    awayScore += Number(teamScore.score) || 0;
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        }
+        
+        return {
+            ...match,
+            legs: normalizedLegs,
+            // Đảm bảo có aggregate_score và home_score/away_score
+            aggregate_score: match.aggregate_score || {
+                home: homeScore,
+                away: awayScore,
+            },
+            home_score: homeScore,
+            away_score: awayScore,
+        };
+    }
+    
+    // Nếu không có legs, tạo từ match data (fallback)
+    const homeTeamId = match.home_team?.id;
+    const awayTeamId = match.away_team?.id;
+    
+    let sets = {};
+    if (match.results && Array.isArray(match.results)) {
+        match.results.forEach(result => {
+            const setNum = result.set_number || 1;
+            const key = `set_${setNum}`;
+            if (!sets[key]) sets[key] = [];
+            sets[key].push({
+                team_id: result.team_id,
+                score: result.score || 0,
+            });
+        });
+    } else if (match.home_score !== undefined && match.away_score !== undefined) {
+        sets = {
+            set_1: [
+                { team_id: homeTeamId, score: match.home_score || 0 },
+                { team_id: awayTeamId, score: match.away_score || 0 },
+            ],
+        };
+    }
+    
+    const legs = [
+        {
+            id: match.match_id || match.id,
+            leg: 1,
+            court: match.court || 1,
+            status: match.status || 'pending',
+            scheduled_at: match.scheduled_at,
+            is_completed: match.status === 'completed',
+            sets: sets,
+        },
+    ];
+    
+    // Tính điểm số từ sets nếu có
+    let homeScore = match.home_score || match.aggregate_score?.home || 0;
+    let awayScore = match.away_score || match.aggregate_score?.away || 0;
+    
+    if (homeScore === 0 && awayScore === 0 && Object.keys(sets).length > 0) {
+        Object.values(sets).forEach(setArray => {
+            if (Array.isArray(setArray)) {
+                setArray.forEach(teamScore => {
+                    if (teamScore.team_id === match.home_team?.id) {
+                        homeScore += Number(teamScore.score) || 0;
+                    } else if (teamScore.team_id === match.away_team?.id) {
+                        awayScore += Number(teamScore.score) || 0;
+                    }
+                });
+            }
+        });
+    }
+    
+    return {
+        ...match,
+        legs: legs,
+        // Đảm bảo có aggregate_score và home_score/away_score
+        aggregate_score: match.aggregate_score || {
+            home: homeScore,
+            away: awayScore,
+        },
+        home_score: homeScore,
+        away_score: awayScore,
+    };
+};
+
 
 const leftRounds = computed(() => {
     const data = (bracket.value.leftSide || []).sort(
         (a, b) => a.round - b.round,
     );
-    if (data.length > 0) return data;
+    if (data.length > 0) {
+        // Normalize matches trong mỗi round
+        return data.map(round => ({
+            ...round,
+            matches: (round.matches || []).map(match => normalizeMatch(match)),
+        }));
+    }
     return createPlaceholderRounds(false);
 });
 
@@ -881,12 +1243,18 @@ const rightRounds = computed(() => {
         )
         .sort((a, b) => a.round - b.round);
 
-    if (data.length > 0) return data;
+    if (data.length > 0) {
+        // Normalize matches trong mỗi round
+        return data.map(round => ({
+            ...round,
+            matches: (round.matches || []).map(match => normalizeMatch(match)),
+        }));
+    }
     return createPlaceholderRounds(true);
 });
 
 const finalMatch = computed(() => {
-    if (bracket.value.finalMatch) return bracket.value.finalMatch;
+    if (bracket.value.finalMatch) return normalizeMatch(bracket.value.finalMatch);
     return createPlaceholderMatch(999);
 });
 
@@ -896,9 +1264,10 @@ const thirdPlaceMatch = computed(() => {
         const match = round.matches.find(
             (m) => m.is_third_place === true || m.is_third_place === 1,
         );
-        if (match) return match;
+        if (match) return normalizeMatch(match);
     }
-    return bracket.value.thirdPlaceMatch || createPlaceholderMatch("3rd");
+    if (bracket.value.thirdPlaceMatch) return normalizeMatch(bracket.value.thirdPlaceMatch);
+    return createPlaceholderMatch("3rd");
 });
 
 const hasThirdPlaceMatch = computed(() => {
