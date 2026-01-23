@@ -181,8 +181,21 @@ const hasAnyLegInProgress = computed(() => {
 });
 
 const hasAnyLegStarted = computed(() => {
-    return props.match.legs?.some((leg) =>
-        ['in_progress', 'completed'].includes(leg.status),
+    if (!props.match?.legs) return false;
+
+    // 1. Có leg đã hoàn thành hoặc đang đấu
+    const hasActiveLeg = props.match.legs.some(leg =>
+        ['in_progress', 'completed'].includes(leg.status)
+    );
+    if (hasActiveLeg) return true;
+
+    // 2. Leg pending nhưng đã có điểm
+    return props.match.legs.some(leg =>
+        leg.status === 'pending' &&
+        leg.sets &&
+        Object.values(leg.sets).some(setArray =>
+            setArray.some(teamScore => teamScore.score > 0)
+        )
     );
 });
 
