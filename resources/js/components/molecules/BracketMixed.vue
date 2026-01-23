@@ -525,14 +525,6 @@ const findMatchById = (matchId) => {
     }
     return null;
 };
-
-const isDropTarget = (matchId, position) => {
-    return (
-        dropTargetMatch.value === matchId &&
-        dropTargetPosition.value === position
-    );
-};
-
 /* ===========================
    GET DETAIL MATCH
 =========================== */
@@ -588,72 +580,6 @@ const roundHeaderClass = (roundName, isPoolStage) => {
     return "border-l border-white";
 };
 
-const hasAnyLegInProgress = (match) => {
-    return match.legs?.some((leg) => leg.status === "in_progress");
-};
-
-const hasAnyLegStarted = (match) => {
-    // 1. Có leg đã hoàn thành hoặc đang đấu
-    const hasActiveLeg = match.legs?.some(leg => ['in_progress', 'completed'].includes(leg.status));
-    if (hasActiveLeg) return true;
-
-    // 2. Leg chưa đấu (pending) nhưng đã có điểm
-    return match.legs?.some(leg => 
-        leg.status === 'pending' && 
-        leg.sets &&
-        Object.values(leg.sets).some(setArray => 
-            setArray.some(teamScore => teamScore.score > 0)
-        )
-    );
-};
-
-const matchCardWrapperClass = (match) => {
-    if (match.status === "completed") {
-        return "border border-green-500 shadow-md bg-green-500";
-    } else if (hasAnyLegStarted(match)) {
-        return "border border-[#FBBF24] shadow-md !bg-[#FBBF24]";
-    }
-    return "border";
-};
-
-const matchHeaderContentClass = (match) => {
-    if (match.status === "completed") {
-        return "text-white bg-green-500";
-    } else if (hasAnyLegStarted(match)) {
-        return "text-white !bg-[#FBBF24]";
-    }
-    return "text-[#838799]";
-};
-
-/* ===========================
-   WINNER/LOSER LOGIC
-=========================== */
-const isWinner = (match, position) => {
-    if (!match.aggregate_score || match.status !== "completed") return false;
-
-    const homeScore = match.aggregate_score.home ?? 0;
-    const awayScore = match.aggregate_score.away ?? 0;
-
-    if (position === "home") {
-        return homeScore > awayScore;
-    } else {
-        return awayScore > homeScore;
-    }
-};
-
-const isLoser = (match, position) => {
-    if (!match.aggregate_score || match.status !== "completed") return false;
-
-    const homeScore = match.aggregate_score.home ?? 0;
-    const awayScore = match.aggregate_score.away ?? 0;
-
-    if (position === "home") {
-        return homeScore < awayScore;
-    } else {
-        return awayScore < homeScore;
-    }
-};
-
 /* ===========================
    UTILITY
 =========================== */
@@ -664,18 +590,6 @@ const getTeamInitials = (name) => {
         return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
     }
     return name.substring(0, 2).toUpperCase();
-};
-
-const formatTime = (scheduledAt) => {
-    if (!scheduledAt) return "Chưa xác định";
-    try {
-        const date = new Date(scheduledAt);
-        const hours = date.getHours().toString().padStart(2, "0");
-        const minutes = date.getMinutes().toString().padStart(2, "0");
-        return `${hours}:${minutes}`;
-    } catch {
-        return "Chưa xác định";
-    }
 };
 
 /* ===========================
