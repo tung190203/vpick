@@ -159,7 +159,7 @@
 
                         <template v-if="group.matches && group.matches.length > 0">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 px-2 justify-items-center">
-                                <PoolStageMatchCard v-for="match in group.matches" :key="match.match_id" 
+                                <PoolStageMatchCard v-for="match in group.matches" :key="match.match_id"
                                     :match="normalizeMatchForCard(match)"
                                     :enable-drag-drop="false" @match-click="getDetailMatches" :fillAvailable="true" />
                             </div>
@@ -297,8 +297,8 @@
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 px-2">
-                        <PoolStageMatchCard v-for="match in currentRoundMatches" :key="match.id" 
-                            :match="normalizeMatchForCard(match)" 
+                        <PoolStageMatchCard v-for="match in currentRoundMatches" :key="match.id"
+                            :match="normalizeMatchForCard(match)"
                             :enable-drag-drop="false" @match-click="getDetailMatches" />
                     </div>
                 </div>
@@ -440,17 +440,17 @@ const getMatches = async (tournamentId) => {
 
             // Xử lý knockout stage từ response
             const knockoutStage = response.knockout_stage || [];
-            
+
             // Nếu không có leftSide/rightSide, dùng knockout_stage làm leftSide (cho BracketMixedPreview)
             // BracketMixedPreview cần leftSide/rightSide để hiển thị
             let leftSide = response.leftSide || response.left_side || [];
             let rightSide = response.rightSide || response.right_side || [];
-            
+
             // Nếu không có leftSide/rightSide nhưng có knockout_stage, dùng knockout_stage
             if (leftSide.length === 0 && rightSide.length === 0 && knockoutStage.length > 0) {
                 leftSide = knockoutStage;
             }
-            
+
             mixedBracket.value = {
                 poolStage: normalizedPoolStage,
                 leftSide: leftSide,
