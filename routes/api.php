@@ -76,6 +76,9 @@ Route::prefix('auth')->group(function () {
 Route::get('/verify-email', [VerificationController::class, 'verify']);
 Route::post('/resend-email', [VerificationController::class, 'resend']);
 
+// Public route - không cần accessToken
+Route::get('/tournament-detail/{id}/bracket', [TournamentController::class, 'getBracket']);
+
 Route::middleware(['auth:api'])->group(function () {
     Route::post('/device-token/sync', [DeviceTokenController::class, 'sync']);
     Route::post('/notifications/setting', [DeviceTokenController::class, 'update']);
@@ -100,9 +103,6 @@ Route::middleware(['auth:api'])->group(function () {
         Route::post('/delete', [TournamentController::class, 'destroy']);
         Route::get('/{id}/bracket', [TournamentController::class, 'getBracket']);
     });
-
-    // Alias route để backward compatible - sử dụng TournamentController::getBracket
-    Route::get('/tournament-detail/{id}/bracket', [TournamentController::class, 'getBracket']);
 
     Route::prefix('tournament-staff')->group(function () {
         Route::post('/add/{tournamentId}', [TournamentStaffController::class, 'addStaff']);
