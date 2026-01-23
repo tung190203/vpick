@@ -2082,6 +2082,20 @@ const PAIRING_MODE_MANUAL = 'manual';
             return ResponseHelper::error('Tournament type not found', 404);
         }
 
+        // Lấy ranking rules từ config, hỗ trợ cả dạng [{...}] và object trực tiếp
+        $config = $type->format_specific_config ?? [];
+        if (is_array($config) && isset($config[0])) {
+            $config = $config[0];
+        }
+        $rankingRules = collect($config['ranking'] ?? [1, 4, 5])
+            ->map(fn($id) => (int)$id)
+            ->toArray();
+
+        // Lấy toàn bộ trận đã hoàn thành để dùng cho rule đối đầu (5)
+        $allMatches = Matches::where('tournament_type_id', $type->id)
+            ->where('status', 'completed')
+            ->get();
+
         $groups = $type->groups()->get();
 
         // TH 1: Nếu không chia bảng (Tính rank chung)
@@ -2099,13 +2113,52 @@ const PAIRING_MODE_MANUAL = 'manual';
                 ], $stats);
             });
 
-            // ✅ SẮP XẾP THEO THỨ TỰ: Points → Point Diff → Wins
-            $rankings = $rankings->sortByDesc(function ($item) {
-                return [
-                    $item['points'],           // Ưu tiên 1: Điểm
-                    $item['point_diff'],       // Ưu tiên 2: Hiệu số
-                    $item['wins'],             // Ưu tiên 3: Số trận thắng
-                ];
+            // ✅ SẮP XẾP THEO rankingRules (1,4,5...) giống TeamRanking, có dùng đối đầu
+            $rankings = $rankings->sort(function ($a, $b) use ($rankingRules, $allMatches) {
+                // Đội đã đánh luôn đứng trên đội chưa đánh
+                if (($a['played'] ?? 0) == 0 && ($b['played'] ?? 0) > 0) return 1;
+                if (($b['played'] ?? 0) == 0 && ($a['played'] ?? 0) > 0) return -1;
+
+                foreach ($rankingRules as $ruleId) {
+                    switch ($ruleId) {
+                        case TournamentType::RANKING_WIN_DRAW_LOSE_POINTS: // 1
+                            if ($a['points'] !== $b['points']) {
+                                return $b['points'] <=> $a['points'];
+                            }
+                            break;
+                        case TournamentType::RANKING_WIN_RATE: // 2
+                            if (($a['win_rate'] ?? 0) !== ($b['win_rate'] ?? 0)) {
+                                return ($b['win_rate'] ?? 0) <=> ($a['win_rate'] ?? 0);
+                            }
+                            break;
+                        case TournamentType::RANKING_SETS_WON: // 3
+                            // getRank không có sets_won, bỏ qua hoặc có thể map từ stats nếu cần mở rộng sau
+                            break;
+                        case TournamentType::RANKING_POINTS_WON: // 4
+                            if ($a['point_diff'] !== $b['point_diff']) {
+                                return $b['point_diff'] <=> $a['point_diff'];
+                            }
+                            break;
+                        case TournamentType::RANKING_HEAD_TO_HEAD: // 5
+                            $h2h = $this->getHeadToHeadResultForRank(
+                                $a['team_id'],
+                                $b['team_id'],
+                                $allMatches
+                            );
+                            if ($h2h !== 0) {
+                                return $h2h;
+                            }
+                            break;
+                        case TournamentType::RANKING_RANDOM_DRAW: // 6
+                            return $a['team_id'] <=> $b['team_id'];
+                    }
+                }
+
+                // Fallback cuối cùng: hiệu số điểm rồi id
+                if ($a['point_diff'] !== $b['point_diff']) {
+                    return $b['point_diff'] <=> $a['point_diff'];
+                }
+                return $a['team_id'] <=> $b['team_id'];
             })->values();
 
             // ✅ GÁN RANK SAU KHI ĐÃ SẮP XẾP
@@ -2118,7 +2171,7 @@ const PAIRING_MODE_MANUAL = 'manual';
         }
 
         // TH 2: Nếu có chia bảng
-        $groupRankings = $groups->map(function ($group) use ($type) {
+        $groupRankings = $groups->map(function ($group) use ($type, $rankingRules, $allMatches) {
             // ✅ LẤY TẤT CẢ ĐỘI TRONG BẢNG (từ group_team pivot table)
             $teamsInGroup = $group->teams()->with('members')->get();
 
@@ -2141,13 +2194,53 @@ const PAIRING_MODE_MANUAL = 'manual';
                 ], $stats);
             });
 
-            // ✅ SẮP XẾP THEO THỨ TỰ: Points → Point Diff → Wins
-            $rankings = $rankings->sortByDesc(function ($item) {
-                return [
-                    $item['points'],
-                    $item['point_diff'],
-                    $item['wins'],
-                ];
+            // Chỉ dùng các trận thuộc group này cho rule đối đầu
+            $groupMatches = $allMatches->where('group_id', $group->id)->values();
+
+            // ✅ SẮP XẾP THEO rankingRules (1,4,5...) giống TeamRanking, có dùng đối đầu trong group
+            $rankings = $rankings->sort(function ($a, $b) use ($rankingRules, $groupMatches) {
+                // Đội đã đánh luôn đứng trên đội chưa đánh
+                if (($a['played'] ?? 0) == 0 && ($b['played'] ?? 0) > 0) return 1;
+                if (($b['played'] ?? 0) == 0 && ($a['played'] ?? 0) > 0) return -1;
+
+                foreach ($rankingRules as $ruleId) {
+                    switch ($ruleId) {
+                        case TournamentType::RANKING_WIN_DRAW_LOSE_POINTS: // 1
+                            if ($a['points'] !== $b['points']) {
+                                return $b['points'] <=> $a['points'];
+                            }
+                            break;
+                        case TournamentType::RANKING_WIN_RATE: // 2
+                            if (($a['win_rate'] ?? 0) !== ($b['win_rate'] ?? 0)) {
+                                return ($b['win_rate'] ?? 0) <=> ($a['win_rate'] ?? 0);
+                            }
+                            break;
+                        case TournamentType::RANKING_SETS_WON: // 3
+                            break;
+                        case TournamentType::RANKING_POINTS_WON: // 4
+                            if ($a['point_diff'] !== $b['point_diff']) {
+                                return $b['point_diff'] <=> $a['point_diff'];
+                            }
+                            break;
+                        case TournamentType::RANKING_HEAD_TO_HEAD: // 5
+                            $h2h = $this->getHeadToHeadResultForRank(
+                                $a['team_id'],
+                                $b['team_id'],
+                                $groupMatches
+                            );
+                            if ($h2h !== 0) {
+                                return $h2h;
+                            }
+                            break;
+                        case TournamentType::RANKING_RANDOM_DRAW: // 6
+                            return $a['team_id'] <=> $b['team_id'];
+                    }
+                }
+
+                if ($a['point_diff'] !== $b['point_diff']) {
+                    return $b['point_diff'] <=> $a['point_diff'];
+                }
+                return $a['team_id'] <=> $b['team_id'];
             })->values();
 
             // ✅ GÁN RANK SAU KHI ĐÃ SẮP XẾP
@@ -2283,6 +2376,41 @@ const PAIRING_MODE_MANUAL = 'manual';
             ->get();
 
         return $this->calculateStatsFromMatches($matches, $teamId);
+    }
+    
+    /**
+     * So sánh đối đầu phục vụ getRank (dùng local matches truyền vào)
+     * Return: -1 nếu team A thắng, 1 nếu team B thắng, 0 nếu hòa hoặc chưa gặp
+     */
+    private function getHeadToHeadResultForRank($teamA, $teamB, $matches)
+    {
+        $h2hMatches = $matches->filter(function ($match) use ($teamA, $teamB) {
+            return ($match->home_team_id == $teamA && $match->away_team_id == $teamB) ||
+                ($match->home_team_id == $teamB && $match->away_team_id == $teamA);
+        });
+
+        if ($h2hMatches->isEmpty()) {
+            return 0;
+        }
+
+        $teamAWins = 0;
+        $teamBWins = 0;
+
+        foreach ($h2hMatches as $match) {
+            if ($match->winner_id == $teamA) {
+                $teamAWins++;
+            } elseif ($match->winner_id == $teamB) {
+                $teamBWins++;
+            }
+        }
+
+        if ($teamAWins > $teamBWins) {
+            return -1;
+        } elseif ($teamBWins > $teamAWins) {
+            return 1;
+        }
+
+        return 0;
     }
     public function getAdvancementStatus(TournamentType $tournamentType)
     {
