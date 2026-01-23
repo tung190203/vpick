@@ -12,18 +12,18 @@
     "src": "node_modules/leaflet/dist/images/marker-icon.png"
   },
   "resources/css/app.css": {
-    "file": "assets/app-CFp-dsK8.css",
+    "file": "assets/app-Bmkfp8om.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-orvs2sLw.js",
+    "file": "assets/app-x67MTlIK.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "css": [
-      "assets/app-CE6O3jFW.css",
-      "assets/app-CFp-dsK8.css"
+      "assets/app-C6KAoYEl.css",
+      "assets/app-Bmkfp8om.css"
     ],
     "assets": [
       "assets/logo-splash-DOuQK6QO.svg",
@@ -42,6 +42,7 @@
       "assets/mixed-CGHxHovp.svg",
       "assets/direct-DtKxnT17.svg",
       "assets/round-robin-BIBoWfnl.svg",
+      "assets/bracket_banner-BPBAgU1S.png",
       "assets/pickleball-banner-CEzsk-BQ.png",
       "assets/pickleball-banner-1-DkgNn8B4.png",
       "assets/pickleball-banner-2-BknHubJi.png",
@@ -60,6 +61,10 @@
   "resources/js/assets/images/bracket-bg.png": {
     "file": "assets/bracket-bg-CYVuQJVB.png",
     "src": "resources/js/assets/images/bracket-bg.png"
+  },
+  "resources/js/assets/images/bracket_banner.png": {
+    "file": "assets/bracket_banner-BPBAgU1S.png",
+    "src": "resources/js/assets/images/bracket_banner.png"
   },
   "resources/js/assets/images/branch.svg": {
     "file": "assets/branch-BNleCFR1.svg",
