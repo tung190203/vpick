@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\SportResource;
 use App\Models\Sport;
+use App\Models\User;
 use Illuminate\Http\Request;
 use App\Services\ImageOptimizationService;
 use Illuminate\Support\Facades\Storage;
@@ -74,6 +75,9 @@ class SportController extends Controller
             'icon' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:5120',
             'name' => 'sometimes|string|max:255'
         ]);
+        if(!User::isAdmin(auth()->user()->id)) {
+            return ResponseHelper::error('Bạn không có quyền cập nhật môn thể thao', 403);
+        }
         $sport = Sport::findOrFail($sportid);
         if ($request->filled('name')) {
             $sport->name = $request->name;

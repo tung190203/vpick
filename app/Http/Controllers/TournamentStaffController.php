@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\ResponseHelper;
 use App\Models\Tournament;
 use App\Models\TournamentStaff;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class TournamentStaffController extends Controller
 {
@@ -15,6 +17,11 @@ class TournamentStaffController extends Controller
         ]);
     
         $tournament = Tournament::findOrFail($tournamentId);
+        $isOrganizer = $tournament->hasOrganizer(Auth::id());
+
+        if (!$isOrganizer) {
+            return ResponseHelper::error('Bạn không có quyền thêm người tổ chức', 403);
+        }
         $staffId = $validatedData['staff_id'];
         if ($tournament->staff()->where('user_id', $staffId)->exists()) {
             return response()->json([

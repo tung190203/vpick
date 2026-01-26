@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\ResponseHelper;
 use App\Models\SystemNotification;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class SystemNotificationController extends Controller
@@ -16,6 +17,10 @@ class SystemNotificationController extends Controller
             'data' => 'sometimes|array',
             'scheduled_at' => 'required|date|after:now',
         ]);
+
+        if (!User::isAdmin(auth()->user()->id)) {
+            return ResponseHelper::error('Bạn không có quyền tạo thông báo hệ thống', 403);
+        }
 
         $notification = SystemNotification::create([
             'title' => $validated['title'],

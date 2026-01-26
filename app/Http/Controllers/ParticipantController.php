@@ -276,6 +276,10 @@ class ParticipantController extends Controller
     public function acceptInvite($participantId)
     {
         $participant = Participant::with('tournament')->findOrFail($participantId);
+        $isOrganizer = $participant->tournament->hasOrganizer(Auth::id());
+        if (!$isOrganizer) {
+            return ResponseHelper::error('Bạn không có quyền xác nhận người tham gia này', 403);
+        }
         if ($participant && $participant->is_confirmed) {
             return ResponseHelper::error('Người tham gia đã được xác nhận', 400);
         }
@@ -302,6 +306,10 @@ class ParticipantController extends Controller
     public function declineInvite($participantId)
     {
         $participant = Participant::with('tournament')->findOrFail($participantId);
+        $isOrganizer = $participant->tournament->hasOrganizer(Auth::id());
+        if (!$isOrganizer) {
+            return ResponseHelper::error('Bạn không có quyền từ chối lời mời tham gia này', 403);
+        }
         if ($participant->is_confirmed) {
             return ResponseHelper::error('Người tham gia đã được xác nhận, không thể từ chối', 400);
         }

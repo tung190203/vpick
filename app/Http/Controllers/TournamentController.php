@@ -10,6 +10,7 @@ use App\Models\Tournament;
 use App\Models\TournamentStaff;
 use App\Services\ImageOptimizationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -159,6 +160,10 @@ class TournamentController extends Controller
         ]);
 
         $tournament = Tournament::findOrFail($id);
+        $isOrganizer = $tournament->hasOrganizer(Auth::id());
+        if (!$isOrganizer) {
+            return ResponseHelper::error('Bạn không có quyền thay đổi giải đấu', 400);
+        }
 
         DB::transaction(function () use ($validated, $tournament, $request) {
             if ($request->hasFile('poster')) {
