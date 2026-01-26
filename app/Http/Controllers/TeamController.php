@@ -12,6 +12,7 @@ use App\Models\Team;
 use App\Models\Tournament;
 use App\Services\ImageOptimizationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class TeamController extends Controller
 {
@@ -70,6 +71,10 @@ class TeamController extends Controller
         if ($tournament->max_team && $tournament->teams()->count() >= $tournament->max_team) {
             return ResponseHelper::error('Đã đạt số lượng đội tối đa cho giải đấu', 400);
         }
+        $isOrganizer = $tournament->hasOrganizer(Auth::id());
+        if (!$isOrganizer) {
+            return ResponseHelper::error('Bạn không có quyền tạo đội', 400);
+        }
         // if ($tournament->tournamentTypes()->exists()) {
         //     return ResponseHelper::error('Không thể tạo đội khi giải đấu đã có loại hình thi đấu', 400);
         // }
@@ -105,6 +110,11 @@ class TeamController extends Controller
         );
 
         $team = Team::findOrFail($request->route('teamId'));
+        $tournament = $team->tournament;
+        $isOrganizer = $tournament->hasOrganizer(Auth::id());
+        if (!$isOrganizer) {
+            return ResponseHelper::error('Bạn không có quyền thay đổi vào đội', 400);
+        }
         if (isset($validated['name'])) {
             $team->name = $validated['name'];
         }
@@ -147,6 +157,10 @@ class TeamController extends Controller
 
         $team = Team::findOrFail($teamId);
         $tournament = $team->tournament;
+        $isOrganizer = $tournament->hasOrganizer(Auth::id());
+        if (!$isOrganizer) {
+            return ResponseHelper::error('Bạn không có quyền thêm người vào đội', 400);
+        }
         $participant = Participant::where('user_id', $request->user_id)
             ->where('tournament_id', $tournament->id)
             ->where('is_confirmed', true)
@@ -175,6 +189,10 @@ class TeamController extends Controller
     public function autoAssignTeams($tournamentId)
     {
         $tournament = Tournament::findOrFail($tournamentId);
+        $isOrganizer = $tournament->hasOrganizer(Auth::id());
+        if (!$isOrganizer) {
+            return ResponseHelper::error('Bạn không có quyền tự động chia đội', 400);
+        }
 
         $participants = Participant::where('tournament_id', $tournamentId)
             ->where('is_confirmed', true)
@@ -252,6 +270,10 @@ class TeamController extends Controller
             ]
         );
         $tournament = Team::findOrFail($teamId)->tournament;
+        $isOrganizer = $tournament->hasOrganizer(Auth::id());
+        if (!$isOrganizer) {
+            return ResponseHelper::error('Bạn không có quyền xoá thành viên khỏi đội', 400);
+        }
         // if ($tournament->tournamentTypes()->exists()) {
         //     return ResponseHelper::error('Không thể xoá thành viên khỏi đội khi giải đấu đã có loại hình thi đấu', 400);
         // }
@@ -265,7 +287,11 @@ class TeamController extends Controller
     public function deleteTeam($teamId)
     {
         $team = Team::findOrFail($teamId);
-        $tournament = Tournament::findOrFail($team->tournament_id);
+        $tournament = $team->tournament;
+        $isOrganizer = $tournament->hasOrganizer(Auth::id());
+        if (!$isOrganizer) {
+            return ResponseHelper::error('Bạn không có quyền xoá đội', 400);
+        }
         $tournamentTypeIds = $tournament->tournamentTypes()->pluck('id');
         // if ($tournament->tournamentTypes()->exists()) {
         //     return ResponseHelper::error('Không thể xoá đội khi giải đấu đã có loại hình thi đấu', 400);
