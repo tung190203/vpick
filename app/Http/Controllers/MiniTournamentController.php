@@ -133,6 +133,11 @@ class MiniTournamentController extends Controller
     {
         $miniTournament = MiniTournament::findOrFail($id);
         $data = $request->validated();
+        $isOrganizer = $miniTournament->hasOrganizer(Auth::id());
+
+        if (!$isOrganizer) {
+            return ResponseHelper::error('Bạn không có quyền cập nhật kèo đấu', 403);
+        }
 
         $miniTournament->update($data);
 
@@ -163,6 +168,11 @@ class MiniTournamentController extends Controller
     public function destroy(Request $request, $id)
     {
         $miniTournament = MiniTournament::find($id);
+        $isOrganizer = $miniTournament->hasOrganizer(Auth::id());
+
+        if (!$isOrganizer) {
+            return ResponseHelper::error('Bạn không có quyền huỷ kèo đấu', 403);
+        }
 
         if(!$miniTournament) {
             return ResponseHelper::error('Kèo đấu không tồn tại', 404);

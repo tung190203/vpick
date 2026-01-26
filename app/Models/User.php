@@ -572,4 +572,9 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
             'id'             // local key của UserSport
         );
     }
+
+    public static function isAdmin($userId)
+    {
+        return User::where('id', $userId)->where('role', self::ADMIN)->exists();
+    }
 }

@@ -853,11 +853,12 @@ class MiniMatchController extends Controller
                 }
 
                 // 5. Tính R_new
-                if ($hasAnchorInMatch) {
-                    $R_new = $R_old + ($W * $K * ($data['S'] - $data['E']));
-                } else {
-                    $R_new = $R_old;
-                }
+                // if ($hasAnchorInMatch) {
+                //     $R_new = $R_old + ($W * $K * ($data['S'] - $data['E']));
+                // } else {
+                //     $R_new = $R_old;
+                // }
+                $R_new = $R_old + ($W * $K * ($data['S'] - $data['E']));
 
                 // 6. Lưu History & Update Score
                 VnduprHistory::create([
