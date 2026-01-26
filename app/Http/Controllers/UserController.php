@@ -344,6 +344,10 @@ class UserController extends Controller
         ]);
 
         $user = $request->user();
+
+        if ($user->id !== auth()->id()) {
+            return ResponseHelper::error('Bạn không có quyền thay đổi email người dùng này', 403);
+        }
         
         if (!Hash::check($request->password, $user->password)) {
             return ResponseHelper::error('Mật khẩu không đúng', 401, [
@@ -384,6 +388,9 @@ class UserController extends Controller
         ]);
 
         $user = $request->user();
+        if ($user->id !== auth()->id()) {
+            return ResponseHelper::error('Bạn không có quyền thay đổi email người dùng này', 403);
+        }
 
         $record = DB::table('verification_codes')
             ->where('type', 'email_change')
@@ -434,6 +441,9 @@ class UserController extends Controller
         $request->validate(['new_email' => 'required|email']);
         
         $user = $request->user();
+        if ($user->id !== auth()->id()) {
+            return ResponseHelper::error('Bạn không có quyền thay đổi email người dùng này', 403);
+        }
 
         $record = DB::table('verification_codes')
             ->where('type', 'email_change')

@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\ResponseHelper;
 use App\Models\MiniTournament;
 use App\Models\MiniTournamentStaff;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class MiniTournamentStaffController extends Controller
 {
@@ -15,17 +17,21 @@ class MiniTournamentStaffController extends Controller
         ]);
     
         $tournament = MiniTournament::findOrFail($tournamentId);
+
+        $isOrganizer = $tournament->hasOrganizer(Auth::id());
+
+        if (!$isOrganizer) {
+            return ResponseHelper::error('Bạn không có quyền thêm người tổ chức', 403);
+        }
         $staffId = $validatedData['staff_id'];
         if ($tournament->staff()->where('user_id', $staffId)->exists()) {
-            return response()->json([
-                'message' => 'Người dùng này đã là người tổ chức của giải đấu.'
-            ], 409);
+            return ResponseHelper::error('Người dùng này đã là người tổ chức của giải đấu.', 409);
         }
 
         $tournament->staff()->attach($staffId, [
             'role' => MiniTournamentStaff::ROLE_ORGANIZER
         ]);
     
-        return response()->json(['message' => 'Thêm người tổ chức thành công'], 201);
+        return ResponseHelper::success(['message' => 'Thêm người tổ chức thành công'], 201);
     }
 }

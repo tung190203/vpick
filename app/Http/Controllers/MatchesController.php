@@ -1562,9 +1562,10 @@ class MatchesController extends Controller
                     }
                 }
 
-                $R_new = $hasAnchorInMatch
-                    ? $R_old + ($W * $K * ($S - $E))
-                    : $R_old;
+                // $R_new = $hasAnchorInMatch
+                //     ? $R_old + ($W * $K * ($S - $E))
+                //     : $R_old;
+                $R_new = $R_old + ($W * $K * ($S - $E));
 
                 VnduprHistory::create([
                     'user_id' => $user->id,

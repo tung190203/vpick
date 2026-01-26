@@ -79,7 +79,7 @@ Route::post('/resend-email', [VerificationController::class, 'resend']);
 // Public route - không cần accessToken
 Route::get('/tournament-detail/{id}/bracket', [TournamentController::class, 'getBracket']);
 
-Route::middleware(['auth:api'])->group(function () {
+Route::middleware(['auth:api', 'throttle:api'])->group(function () {
     Route::post('/device-token/sync', [DeviceTokenController::class, 'sync']);
     Route::post('/notifications/setting', [DeviceTokenController::class, 'update']);
     Route::delete('/device-token/delete', [DeviceTokenController::class, 'destroy']);
