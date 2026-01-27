@@ -213,6 +213,8 @@ class HomeController extends Controller
             'win_rate'    => round($winRate, 2),
             'performance' => round($performance, 2),
             'sports'      => $sports,
+            'is_anchor' => (bool) $user->is_anchor,
+            'is_verify' => (bool) ($user->total_matches_has_anchor >= 10),
         ];
         $nowVN = Carbon::now('Asia/Ho_Chi_Minh')->toDateString();
     

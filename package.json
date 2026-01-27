@@ -26,6 +26,7 @@
         "canvas-confetti": "^1.9.3",
         "chart.js": "^4.5.0",
         "date-fns": "^4.1.0",
+        "dayjs": "^1.11.19",
         "floating-vue": "^5.2.2",
         "html5-qrcode": "^2.3.8",
         "laravel-echo": "^2.2.6",
