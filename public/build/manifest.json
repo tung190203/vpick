@@ -12,18 +12,18 @@
     "src": "node_modules/leaflet/dist/images/marker-icon.png"
   },
   "resources/css/app.css": {
-    "file": "assets/app-Bmkfp8om.css",
+    "file": "assets/app-Cr787zt9.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-CW-Rulpg.js",
+    "file": "assets/app-7iENgwB3.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "css": [
-      "assets/app-C6KAoYEl.css",
-      "assets/app-Bmkfp8om.css"
+      "assets/app-BeszrMxF.css",
+      "assets/app-Cr787zt9.css"
     ],
     "assets": [
       "assets/logo-splash-DOuQK6QO.svg",
@@ -31,12 +31,25 @@
       "assets/facebook-icon-Bc72ncmI.svg",
       "assets/apple-icon-CGsfVH1K.svg",
       "assets/dashboard-bg-j02aDZD4.svg",
+      "assets/verify-icon-CHuF86z6.svg",
       "assets/logo-Cjt_sWcG.svg",
       "assets/logo-explain-uBrkVQw0.svg",
       "assets/splash-bg-hSO4uccQ.png",
       "assets/email-sent-DLgpSAAS.svg",
       "assets/male-gQsu98hE.svg",
       "assets/female-BwdMQ4_1.svg",
+      "assets/club-default-thumbnail-BMB6u-Xk.svg",
+      "assets/message-BVPXKeTQ.svg",
+      "assets/shield_check-CyzNzu79.svg",
+      "assets/money-C7hmL1Qq.svg",
+      "assets/triangle_up-DXJ6pDIh.svg",
+      "assets/triangle_down-CinOsVQe.svg",
+      "assets/groups-fkXl6yAe.svg",
+      "assets/bar_chart-CXFbfFAU.svg",
+      "assets/monetization_on-CZxB7JWE.svg",
+      "assets/calendar-DPet6D_v.svg",
+      "assets/fund-B6BDFoYo.svg",
+      "assets/notifications-DL0MjeJt.svg",
       "assets/table_chart-BrDU_W9V.svg",
       "assets/branch-BNleCFR1.svg",
       "assets/mixed-CGHxHovp.svg",
@@ -58,6 +71,10 @@
     "file": "assets/apple-icon-CGsfVH1K.svg",
     "src": "resources/js/assets/images/apple-icon.svg"
   },
+  "resources/js/assets/images/bar_chart.svg": {
+    "file": "assets/bar_chart-CXFbfFAU.svg",
+    "src": "resources/js/assets/images/bar_chart.svg"
+  },
   "resources/js/assets/images/bracket-bg.png": {
     "file": "assets/bracket-bg-CYVuQJVB.png",
     "src": "resources/js/assets/images/bracket-bg.png"
@@ -69,6 +86,14 @@
   "resources/js/assets/images/branch.svg": {
     "file": "assets/branch-BNleCFR1.svg",
     "src": "resources/js/assets/images/branch.svg"
+  },
+  "resources/js/assets/images/calendar.svg": {
+    "file": "assets/calendar-DPet6D_v.svg",
+    "src": "resources/js/assets/images/calendar.svg"
+  },
+  "resources/js/assets/images/club-default-thumbnail.svg": {
+    "file": "assets/club-default-thumbnail-BMB6u-Xk.svg",
+    "src": "resources/js/assets/images/club-default-thumbnail.svg"
   },
   "resources/js/assets/images/dashboard-bg.svg": {
     "file": "assets/dashboard-bg-j02aDZD4.svg",
@@ -98,9 +123,17 @@
     "file": "assets/female-BwdMQ4_1.svg",
     "src": "resources/js/assets/images/female.svg"
   },
+  "resources/js/assets/images/fund.svg": {
+    "file": "assets/fund-B6BDFoYo.svg",
+    "src": "resources/js/assets/images/fund.svg"
+  },
   "resources/js/assets/images/google-icon.svg": {
     "file": "assets/google-icon-Db3x1qGV.svg",
     "src": "resources/js/assets/images/google-icon.svg"
+  },
+  "resources/js/assets/images/groups.svg": {
+    "file": "assets/groups-fkXl6yAe.svg",
+    "src": "resources/js/assets/images/groups.svg"
   },
   "resources/js/assets/images/logo-explain.svg": {
     "file": "assets/logo-explain-uBrkVQw0.svg",
@@ -118,9 +151,25 @@
     "file": "assets/male-gQsu98hE.svg",
     "src": "resources/js/assets/images/male.svg"
   },
+  "resources/js/assets/images/message.svg": {
+    "file": "assets/message-BVPXKeTQ.svg",
+    "src": "resources/js/assets/images/message.svg"
+  },
   "resources/js/assets/images/mixed.svg": {
     "file": "assets/mixed-CGHxHovp.svg",
     "src": "resources/js/assets/images/mixed.svg"
+  },
+  "resources/js/assets/images/monetization_on.svg": {
+    "file": "assets/monetization_on-CZxB7JWE.svg",
+    "src": "resources/js/assets/images/monetization_on.svg"
+  },
+  "resources/js/assets/images/money.svg": {
+    "file": "assets/money-C7hmL1Qq.svg",
+    "src": "resources/js/assets/images/money.svg"
+  },
+  "resources/js/assets/images/notifications.svg": {
+    "file": "assets/notifications-DL0MjeJt.svg",
+    "src": "resources/js/assets/images/notifications.svg"
   },
   "resources/js/assets/images/pickleball-banner-1.png": {
     "file": "assets/pickleball-banner-1-DkgNn8B4.png",
@@ -138,6 +187,10 @@
     "file": "assets/round-robin-BIBoWfnl.svg",
     "src": "resources/js/assets/images/round-robin.svg"
   },
+  "resources/js/assets/images/shield_check.svg": {
+    "file": "assets/shield_check-CyzNzu79.svg",
+    "src": "resources/js/assets/images/shield_check.svg"
+  },
   "resources/js/assets/images/splash-bg.png": {
     "file": "assets/splash-bg-hSO4uccQ.png",
     "src": "resources/js/assets/images/splash-bg.png"
@@ -145,5 +198,17 @@
   "resources/js/assets/images/table_chart.svg": {
     "file": "assets/table_chart-BrDU_W9V.svg",
     "src": "resources/js/assets/images/table_chart.svg"
+  },
+  "resources/js/assets/images/triangle_down.svg": {
+    "file": "assets/triangle_down-CinOsVQe.svg",
+    "src": "resources/js/assets/images/triangle_down.svg"
+  },
+  "resources/js/assets/images/triangle_up.svg": {
+    "file": "assets/triangle_up-DXJ6pDIh.svg",
+    "src": "resources/js/assets/images/triangle_up.svg"
+  },
+  "resources/js/assets/images/verify-icon.svg": {
+    "file": "assets/verify-icon-CHuF86z6.svg",
+    "src": "resources/js/assets/images/verify-icon.svg"
   }
 }
