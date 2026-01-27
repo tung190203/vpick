@@ -197,4 +197,40 @@ class ClubNotificationController extends Controller
 
         return ResponseHelper::success($types, 'Lấy danh sách loại thông báo thành công');
     }
+
+    public function send($clubId, $notificationId)
+    {
+        $notification = ClubNotification::where('club_id', $clubId)->findOrFail($notificationId);
+        $userId = auth()->id();
+
+        $club = $notification->club;
+        $member = $club->members()->where('user_id', $userId)->first();
+        if (!$member || !in_array($member->role, ['admin', 'manager', 'secretary'])) {
+            return ResponseHelper::error('Chỉ admin/manager/secretary mới có quyền gửi thông báo', 403);
+        }
+
+        if ($notification->status === 'sent') {
+            return ResponseHelper::error('Thông báo đã được gửi', 422);
+        }
+
+        $notification->update([
+            'status' => 'sent',
+            'sent_at' => now(),
+        ]);
+
+        if (empty($notification->recipients()->count())) {
+            $allMembers = $club->activeMembers()->pluck('user_id');
+            foreach ($allMembers as $memberUserId) {
+                $notification->recipients()->firstOrCreate([
+                    'user_id' => $memberUserId,
+                ], [
+                    'is_read' => false,
+                ]);
+            }
+        }
+
+        $notification->load(['type', 'creator', 'recipients.user']);
+
+        return ResponseHelper::success($notification, 'Gửi thông báo thành công');
+    }
 }

@@ -170,4 +170,68 @@ class ClubWalletController extends Controller
             'last_page' => $transactions->lastPage(),
         ], 'Lấy danh sách giao dịch thành công');
     }
+
+    public function getFundOverview(Request $request, $clubId)
+    {
+        $club = Club::findOrFail($clubId);
+        
+        $validated = $request->validate([
+            'date_from' => 'sometimes|date',
+            'date_to' => 'sometimes|date|after_or_equal:date_from',
+        ]);
+
+        $mainWallet = $club->mainWallet;
+        if (!$mainWallet) {
+            return ResponseHelper::success([
+                'balance' => 0,
+                'total_income' => 0,
+                'total_expense' => 0,
+                'pending_transactions' => 0,
+                'active_collections' => 0,
+            ], 'Lấy tổng quan quỹ thành công');
+        }
+
+        $query = $mainWallet->transactions()->where('status', 'confirmed');
+
+        if (!empty($validated['date_from'])) {
+            $query->whereDate('created_at', '>=', $validated['date_from']);
+        }
+
+        if (!empty($validated['date_to'])) {
+            $query->whereDate('created_at', '<=', $validated['date_to']);
+        }
+
+        $totalIncome = (clone $query)->where('direction', 'in')->sum('amount');
+        $totalExpense = (clone $query)->where('direction', 'out')->sum('amount');
+        $pendingTransactions = $mainWallet->transactions()->where('status', 'pending')->count();
+        $activeCollections = $club->fundCollections()->where('status', 'active')->count();
+
+        return ResponseHelper::success([
+            'balance' => $mainWallet->balance,
+            'total_income' => $totalIncome,
+            'total_expense' => $totalExpense,
+            'pending_transactions' => $pendingTransactions,
+            'active_collections' => $activeCollections,
+        ], 'Lấy tổng quan quỹ thành công');
+    }
+
+    public function getFundQrCode($clubId)
+    {
+        $club = Club::findOrFail($clubId);
+        $mainWallet = $club->mainWallet;
+
+        if (!$mainWallet) {
+            return ResponseHelper::error('CLB chưa có ví chính', 404);
+        }
+
+        if (!$mainWallet->qr_code_url) {
+            return ResponseHelper::error('Ví chưa có mã QR thanh toán', 404);
+        }
+
+        return ResponseHelper::success([
+            'club_id' => $club->id,
+            'wallet_id' => $mainWallet->id,
+            'qr_code_url' => $mainWallet->qr_code_url,
+        ], 'Lấy mã QR thanh toán quỹ CLB thành công');
+    }
 }

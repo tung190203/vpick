@@ -234,4 +234,28 @@ class ClubMemberController extends Controller
 
         return ResponseHelper::success($member, 'Yêu cầu tham gia đã bị từ chối');
     }
+
+    public function statistics($clubId)
+    {
+        $club = Club::findOrFail($clubId);
+
+        $statistics = [
+            'total' => $club->members()->count(),
+            'by_role' => [
+                'admin' => $club->members()->where('role', 'admin')->count(),
+                'manager' => $club->members()->where('role', 'manager')->count(),
+                'treasurer' => $club->members()->where('role', 'treasurer')->count(),
+                'secretary' => $club->members()->where('role', 'secretary')->count(),
+                'member' => $club->members()->where('role', 'member')->count(),
+            ],
+            'by_status' => [
+                'active' => $club->members()->where('status', 'active')->count(),
+                'inactive' => $club->members()->where('status', 'inactive')->count(),
+                'suspended' => $club->members()->where('status', 'suspended')->count(),
+                'pending' => $club->members()->where('status', 'pending')->count(),
+            ],
+        ];
+
+        return ResponseHelper::success($statistics, 'Lấy thống kê thành viên thành công');
+    }
 }
