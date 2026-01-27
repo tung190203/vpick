@@ -37,9 +37,9 @@
       text: 'text-blue-600 hover:underline'
     },
     secondary: {
-      solid: 'bg-gray-600 text-white hover:bg-gray-700',
-      outline: 'border border-gray-600 text-gray-600 hover:bg-gray-100',
-      text: 'text-gray-600 hover:underline'
+      solid: 'bg-[#EDEEF2] text-[#838799] hover:bg-gray-200',
+      outline: 'border border-gray-300 text-gray-500 hover:bg-gray-50',
+      text: 'text-gray-500 hover:underline'
     },
     danger: {
       solid: 'bg-red-600 text-white hover:bg-red-700',
@@ -57,7 +57,8 @@
   const computedClass = computed(() => {
     const variantClass = colorMap[props.color]?.[props.variant] || ''
     const sizeClass = sizeMap[props.size] || ''
-    return `inline-flex items-center justify-center font-medium transition ${variantClass} ${sizeClass}`
+    const disabledClass = 'disabled:opacity-50 disabled:cursor-not-allowed'
+    return `inline-flex items-center justify-center font-medium transition ${variantClass} ${sizeClass} ${disabledClass}`
   })
   </script>
   

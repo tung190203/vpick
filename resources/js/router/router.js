@@ -11,6 +11,7 @@ import ForgotPasswordPage from '@/components/pages/auth/password/ForgotPasswordP
 import ResetPasswordPage from '@/components/pages/auth/password/ResetPasswordPage.vue'
 import Leaderboard from '@/components/pages/leader-board/Leaderboard.vue'
 import ClubPage from '@/components/pages/club/ClubPage.vue'
+import ClubDetailPage from '@/components/pages/club/ClubDetailPage.vue'
 import TournamentPage from '@/components/pages/tournament/TournamentPage.vue'
 import TournamentDetail from '@/components/pages/tournament/TournamentDetail.vue'
 import MiniTournamentDetail from '@/components/pages/mini-tournament/detail/MiniTournamentDetail.vue'
@@ -37,6 +38,7 @@ import MapPage from '@/components/pages/map/MapPage.vue'
 import { ROLE } from '@/constants/index.js'
 
 export const route = [
+  // --- AUTH ROUTES ---
   {
     path: '/onboarding',
     component: AuthLayout,
@@ -82,6 +84,74 @@ export const route = [
     ]
   },
   {
+    path: '/verify',
+    component: AuthLayout,
+    children: [
+      {
+        path: '',
+        name: 'verify',
+        component: VerifyPage
+      }
+    ]
+  },
+  {
+    path: '/forgot-password',
+    component: AuthLayout,
+    children: [
+      {
+        path: '',
+        name: 'forgot-password',
+        component: ForgotPasswordPage
+      }
+    ]
+  },
+  {
+    path: '/verify-change-password',
+    component: AuthLayout,
+    children: [
+      {
+        path: '',
+        name: 'verify-change-password',
+        component: VerifyChangePasswordPage
+      }
+    ]
+  },
+  {
+    path: '/reset-password',
+    component: AuthLayout,
+    children: [
+      {
+        path: '',
+        name: 'reset-password',
+        component: ResetPasswordPage
+      }
+    ]
+  },
+  {
+    path: '/complete-profile',
+    component: AuthLayout,
+    children: [
+      {
+        path: '',
+        name: 'complete-profile',
+        component: CompleteProfilePage
+      }
+    ]
+  },
+  {
+    path: '/update-profile',
+    component: AuthLayout,
+    children: [
+      {
+        path: '',
+        name: 'update-profile',
+        component: UpdateProfilePage
+      }
+    ]
+  },
+
+  // --- APP ROUTES ---
+  {
     path: '/',
     component: AppLayout,
     children: [
@@ -125,21 +195,41 @@ export const route = [
           role: [ROLE.REFEREE, ROLE.ADMIN, ROLE.PLAYER]
         }
       },
-    {
+      {
         path: '/mini-match/:id/verify',
         name: 'mini-match-verify',
         component: MiniMatchVerifyPage,
         meta: {
-            role: [ROLE.REFEREE, ROLE.ADMIN, ROLE.PLAYER]
+          role: [ROLE.REFEREE, ROLE.ADMIN, ROLE.PLAYER]
         }
-    },
+      },
       {
         path: '/club',
-        name: 'club',
-        component: ClubPage,
         meta: {
           role: [ROLE.PLAYER]
-        }
+        },
+        children: [
+          {
+            path: '',
+            name: 'club',
+            component: ClubPage,
+          },
+          // {
+          //   path: 'create',
+          //   name: 'create-club',
+          //   component: CreateClubPage,
+          // },
+          // {
+          //   path: ':id/edit',
+          //   name: 'edit-club',
+          //   component: CreateClubPage,
+          // },
+          {
+            path: ':id',
+            name: 'club-detail',
+            component: ClubDetailPage,
+          }
+        ]
       },
       {
         path: '/notifications',
@@ -259,9 +349,11 @@ export const route = [
         meta: {
           role: [ROLE.REFEREE]
         }
-      },
+      }
     ]
   },
+
+  // --- GENERAL & ERROR ROUTES ---
   {
     path: '/login-success',
     name: 'login-success',
@@ -271,72 +363,6 @@ export const route = [
     path: '/verify-email',
     name: 'verify-email',
     component: VerifyEmailPage
-  },
-  {
-    path: '/verify',
-    component: AuthLayout,
-    children: [
-      {
-        path: '',
-        name: 'verify',
-        component: VerifyPage
-      }
-    ]
-  },
-  {
-    path: '/forgot-password',
-    component: AuthLayout,
-    children: [
-      {
-        path: '',
-        name: 'forgot-password',
-        component: ForgotPasswordPage
-      }
-    ]
-  },
-  {
-    path: '/verify-change-password',
-    component: AuthLayout,
-    children: [
-      {
-        path: '',
-        name: 'verify-change-password',
-        component: VerifyChangePasswordPage
-      }
-    ]
-  },
-  {
-    path: '/reset-password',
-    component: AuthLayout,
-    children: [
-      {
-        path: '',
-        name: 'reset-password',
-        component: ResetPasswordPage
-      }
-    ]
-  },
-  {
-    path: '/complete-profile',
-    component: AuthLayout,
-    children: [
-      {
-        path: '',
-        name: 'complete-profile',
-        component: CompleteProfilePage
-      }
-    ]
-  },
-  {
-    path: '/update-profile',
-    component: AuthLayout,
-    children: [
-      {
-        path: '',
-        name: 'update-profile',
-        component: UpdateProfilePage
-      }
-    ]
   },
   {
     path: '/privacy-policy',
