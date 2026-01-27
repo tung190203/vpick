@@ -14,14 +14,21 @@ class ClubNotification extends Model
         'club_notification_type_id',
         'title',
         'content',
+        'attachment_url',
+        'priority',
+        'status',
         'metadata',
         'is_pinned',
+        'scheduled_at',
+        'sent_at',
         'created_by',
     ];
 
     protected $casts = [
         'metadata' => 'array',
         'is_pinned' => 'boolean',
+        'scheduled_at' => 'datetime',
+        'sent_at' => 'datetime',
     ];
 
     // ========== RELATIONSHIPS ==========
@@ -68,7 +75,50 @@ class ClubNotification extends Model
         return $query->orderBy('created_at', 'desc');
     }
 
+    public function scopeDraft($query)
+    {
+        return $query->where('status', 'draft');
+    }
+
+    public function scopeScheduled($query)
+    {
+        return $query->where('status', 'scheduled');
+    }
+
+    public function scopeSent($query)
+    {
+        return $query->where('status', 'sent');
+    }
+
+    public function scopeByPriority($query, $priority)
+    {
+        return $query->where('priority', $priority);
+    }
+
     // ========== HELPER METHODS ==========
+
+    public function isDraft()
+    {
+        return $this->status === 'draft';
+    }
+
+    public function isScheduled()
+    {
+        return $this->status === 'scheduled';
+    }
+
+    public function isSent()
+    {
+        return $this->status === 'sent';
+    }
+
+    public function markAsSent()
+    {
+        $this->update([
+            'status' => 'sent',
+            'sent_at' => now(),
+        ]);
+    }
 
     public function togglePin()
     {

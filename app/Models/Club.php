@@ -16,6 +16,7 @@ class Club extends Model
         'name',
         'location',
         'logo_url',
+        'status',
         'created_by',
     ];
 

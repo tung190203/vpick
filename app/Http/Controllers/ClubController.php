@@ -62,10 +62,20 @@ class ClubController extends Controller
                 'name' => $request->name,
                 'location' => $request->location,
                 'logo_url' => $logoPath,
+                'status' => 'active',
                 'created_by' => $request->created_by,
             ]);
-            $club->members()->attach($request->created_by, ['is_manager' => true]);
-            $club->load('members');
+            
+            // Tạo member với role admin
+            ClubMember::create([
+                'club_id' => $club->id,
+                'user_id' => $request->created_by,
+                'role' => 'admin',
+                'status' => 'active',
+                'joined_at' => now(),
+            ]);
+            
+            $club->load('members.user');
 
             return ResponseHelper::success(new ClubResource($club), 'Tạo câu lạc bộ thành công');
         });
@@ -75,18 +85,19 @@ class ClubController extends Controller
     {
         $club = Club::withFullRelations()->findOrFail($id);
 
-        $members = $club->members
-            ->map(function ($member) {
-                $member->club_score = $member->vnduprScores->first()?->score_value ?? 0;
-                return $member;
-            })
-            ->sortByDesc('club_score')
-            ->values();
+        // Load members với user và vnduprScores
+        $members = $club->members()->with(['user.vnduprScores'])->get();
+        
+        $members = $members->map(function ($member) {
+            $user = $member->user;
+            $member->user->club_score = $user->vnduprScores->first()?->score_value ?? 0;
+            return $member;
+        })->sortByDesc(function ($member) {
+            return $member->user->club_score ?? 0;
+        })->values();
 
         $members->each(function ($member, $index) {
-            if ($member->pivot) {
-                $member->pivot->rank_in_club = $index + 1;
-            }
+            $member->rank_in_club = $index + 1;
         });
 
         $club->setRelation('members', $members);
@@ -134,11 +145,17 @@ class ClubController extends Controller
         $club = Club::findOrFail($id);
         $userId = auth()->id();
 
-        if ($club->members()->where('user_id', $userId)->exists()) {
+        if ($club->hasMember($userId)) {
             return ResponseHelper::error('Người dùng đã là thành viên của câu lạc bộ này', 409);
         }
 
-        $club->members()->attach($userId);
+        // Tạo join request
+        ClubMember::create([
+            'club_id' => $club->id,
+            'user_id' => $userId,
+            'role' => 'member',
+            'status' => 'pending',
+        ]);
 
         return ResponseHelper::success(new ClubResource($club->load('members')), 'Tham gia câu lạc bộ thành công');
     }
@@ -147,7 +164,8 @@ class ClubController extends Controller
     {
         $userId = auth()->id();
         $clubs = Club::whereHas('members', function ($query) use ($userId) {
-            $query->where('user_id', $userId);
+            $query->where('user_id', $userId)
+                  ->where('status', 'active');
         })->withFullRelations()->get();
 
         return ResponseHelper::success(ClubResource::collection($clubs), 'Lấy danh sách câu lạc bộ của tôi thành công');

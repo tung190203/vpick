@@ -11,14 +11,22 @@ class ClubActivity extends Model
 
     protected $fillable = [
         'club_id',
+        'mini_tournament_id',
         'title',
         'description',
         'type',
+        'is_recurring',
+        'recurring_schedule',
         'start_time',
         'end_time',
         'location',
+        'reminder_minutes',
         'status',
         'created_by',
+    ];
+
+    protected $casts = [
+        'is_recurring' => 'boolean',
     ];
 
     protected $casts = [
@@ -36,6 +44,11 @@ class ClubActivity extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function miniTournament()
+    {
+        return $this->belongsTo(MiniTournament::class);
     }
 
     public function participants()

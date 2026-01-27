@@ -12,6 +12,7 @@ class ClubProfile extends Model
     protected $fillable = [
         'club_id',
         'description',
+        'cover_image_url',
         'phone',
         'email',
         'website',
