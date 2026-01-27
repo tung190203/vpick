@@ -50,26 +50,31 @@ class ClubController extends Controller
             'name' => 'required|string|max:255|unique:clubs',
             'location' => 'nullable|string',
             'logo_url' => 'nullable|image|max:2048',
-            'created_by' => 'required|exists:users,id',
         ]);
 
-        return DB::transaction(function () use ($request) {
+        $userId = auth()->id();
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập để tạo CLB', 401);
+        }
+
+        return DB::transaction(function () use ($request, $userId) {
             $logoPath = null;
             if ($request->hasFile('logo_url')) {
                 $logoPath = $request->file('logo_url')->store('logos', 'public');
             }
+            
             $club = Club::create([
                 'name' => $request->name,
                 'location' => $request->location,
                 'logo_url' => $logoPath,
                 'status' => 'active',
-                'created_by' => $request->created_by,
+                'created_by' => $userId,
             ]);
             
-            // Tạo member với role admin
+            // Tự động tạo member với role admin cho người tạo CLB
             ClubMember::create([
                 'club_id' => $club->id,
-                'user_id' => $request->created_by,
+                'user_id' => $userId,
                 'role' => 'admin',
                 'status' => 'active',
                 'joined_at' => now(),
@@ -131,7 +136,6 @@ class ClubController extends Controller
             'name' => $request->name ?? $club->name,
             'location' => $request->location ?? $club->location,
             'logo_url' => $logoPath ?? $club->logo_url,
-            'created_by' => $request->created_by ?? $club->created_by,
         ]);
 
         return ResponseHelper::success(new ClubResource($club->refresh()), 'Cập nhật câu lạc bộ thành công');
