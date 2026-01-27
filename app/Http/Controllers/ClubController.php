@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Helpers\ResponseHelper;
 use Illuminate\Http\Request;
-use App\Models\Club;
-use App\Models\ClubMember;
+use App\Models\Club\Club;
+use App\Models\Club\ClubMember;
 use App\Http\Resources\ClubResource;
 use Illuminate\Support\Facades\DB;
 
@@ -47,7 +47,7 @@ class ClubController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|unique:clubs',
+            'name' => 'required|string|max:255|unique:clubs',
             'location' => 'nullable|string',
             'logo_url' => 'nullable|image|max:2048',
             'created_by' => 'required|exists:users,id',
@@ -90,10 +90,12 @@ class ClubController extends Controller
         
         $members = $members->map(function ($member) {
             $user = $member->user;
-            $member->user->club_score = $user->vnduprScores->first()?->score_value ?? 0;
+            if ($user) {
+                $member->user->club_score = $user->vnduprScores?->first()?->score_value ?? 0;
+            }
             return $member;
         })->sortByDesc(function ($member) {
-            return $member->user->club_score ?? 0;
+            return $member->user?->club_score ?? 0;
         })->values();
 
         $members->each(function ($member, $index) {

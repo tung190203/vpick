@@ -21,7 +21,7 @@ class ListClubResource extends JsonResource
             'logo_url' => $this->logo_url,
             'created_by' => $this->created_by,
             'quantity_members' => $this->whenLoaded('members', fn() => $this->members->count(), 0),
-            'highest_score' => $this->whenLoaded('members', fn() => $this->members->max(fn($m) => $m->vnduprScores->first()?->score_value ?? 0), 0),
+            'highest_score' => $this->whenLoaded('members', fn() => $this->members->max(fn($m) => $m->user?->vnduprScores?->first()?->score_value ?? 0), 0),
         ];
     }
 }
