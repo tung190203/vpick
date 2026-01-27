@@ -2,6 +2,11 @@
 
 namespace App\Http\Controllers\Club;
 
+use App\Enums\ClubActivityStatus;
+use App\Enums\ClubFundCollectionStatus;
+use App\Enums\ClubMemberRole;
+use App\Enums\ClubMemberStatus;
+use App\Enums\ClubWalletTransactionStatus;
 use App\Helpers\ResponseHelper;
 use App\Models\Club\Club;
 use App\Http\Controllers\Controller;
@@ -21,17 +26,17 @@ class ClubDashboardController extends Controller
         $memberStats = [
             'total' => $club->members()->count(),
             'by_role' => [
-                'admin' => $club->members()->where('role', 'admin')->count(),
-                'manager' => $club->members()->where('role', 'manager')->count(),
-                'treasurer' => $club->members()->where('role', 'treasurer')->count(),
-                'secretary' => $club->members()->where('role', 'secretary')->count(),
-                'member' => $club->members()->where('role', 'member')->count(),
+                'admin' => $club->members()->where('role', ClubMemberRole::Admin)->count(),
+                'manager' => $club->members()->where('role', ClubMemberRole::Manager)->count(),
+                'treasurer' => $club->members()->where('role', ClubMemberRole::Treasurer)->count(),
+                'secretary' => $club->members()->where('role', ClubMemberRole::Secretary)->count(),
+                'member' => $club->members()->where('role', ClubMemberRole::Member)->count(),
             ],
             'by_status' => [
-                'pending' => $club->members()->where('status', 'pending')->count(),
-                'active' => $club->members()->where('status', 'active')->count(),
-                'inactive' => $club->members()->where('status', 'inactive')->count(),
-                'suspended' => $club->members()->where('status', 'suspended')->count(),
+                'pending' => $club->members()->where('status', ClubMemberStatus::Pending)->count(),
+                'active' => $club->members()->where('status', ClubMemberStatus::Active)->count(),
+                'inactive' => $club->members()->where('status', ClubMemberStatus::Inactive)->count(),
+                'suspended' => $club->members()->where('status', ClubMemberStatus::Suspended)->count(),
             ],
         ];
 
@@ -39,15 +44,15 @@ class ClubDashboardController extends Controller
         $financialStats = [
             'total_wallets' => $club->wallets()->count(),
             'main_wallet_balance' => $mainWallet ? $mainWallet->balance : 0,
-            'pending_transactions' => $mainWallet ? $mainWallet->transactions()->where('status', 'pending')->count() : 0,
-            'active_collections' => $club->fundCollections()->where('status', 'active')->count(),
+            'pending_transactions' => $mainWallet ? $mainWallet->transactions()->where('status', ClubWalletTransactionStatus::Pending)->count() : 0,
+            'active_collections' => $club->fundCollections()->where('status', ClubFundCollectionStatus::Active)->count(),
         ];
 
         $activityStats = [
             'total' => $club->activities()->count(),
-            'scheduled' => $club->activities()->where('status', 'scheduled')->count(),
-            'ongoing' => $club->activities()->where('status', 'ongoing')->count(),
-            'completed' => $club->activities()->where('status', 'completed')->count(),
+            'scheduled' => $club->activities()->where('status', ClubActivityStatus::Scheduled)->count(),
+            'ongoing' => $club->activities()->where('status', ClubActivityStatus::Ongoing)->count(),
+            'completed' => $club->activities()->where('status', ClubActivityStatus::Completed)->count(),
         ];
 
         $notificationStats = [

@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ClubMemberRole;
+use App\Enums\ClubMemberStatus;
 use App\Helpers\ResponseHelper;
 use Illuminate\Http\Request;
 use App\Models\Club\Club;
 use App\Models\Club\ClubMember;
 use App\Http\Resources\ClubResource;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class ClubController extends Controller
 {
@@ -75,8 +78,8 @@ class ClubController extends Controller
             ClubMember::create([
                 'club_id' => $club->id,
                 'user_id' => $userId,
-                'role' => 'admin',
-                'status' => 'active',
+                'role' => \App\Enums\ClubMemberRole::Admin,
+                'status' => \App\Enums\ClubMemberStatus::Active,
                 'joined_at' => now(),
             ]);
             
@@ -160,26 +163,45 @@ class ClubController extends Controller
         $club = Club::findOrFail($clubId);
         $userId = auth()->id();
 
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập để tham gia CLB', 401);
+        }
+
+        // Check nếu đã là member (bất kỳ status nào)
         if ($club->hasMember($userId)) {
             return ResponseHelper::error('Người dùng đã là thành viên của câu lạc bộ này', 409);
         }
 
+        // Check nếu đã có pending request
+        $existingRequest = $club->members()
+            ->where('user_id', $userId)
+            ->where('status', 'pending')
+            ->first();
+
+        if ($existingRequest) {
+            return ResponseHelper::error('Bạn đã gửi yêu cầu tham gia. Vui lòng chờ duyệt', 409);
+        }
+
+        return DB::transaction(function () use ($club, $userId) {
         // Tạo join request
-        ClubMember::create([
+        $member = ClubMember::create([
             'club_id' => $club->id,
             'user_id' => $userId,
-            'role' => 'member',
-            'status' => 'pending',
+            'role' => \App\Enums\ClubMemberRole::Member,
+            'status' => \App\Enums\ClubMemberStatus::Pending,
         ]);
 
-        return ResponseHelper::success(new ClubResource($club->load('members')), 'Tham gia câu lạc bộ thành công');
+            $club->load('members.user');
+
+            return ResponseHelper::success(new ClubResource($club), 'Yêu cầu tham gia đã được gửi', 201);
+        });
     }
 
     public function myClubs(Request $request)
     {
         $userId = auth()->id();
         $validated = $request->validate([
-            'role' => 'sometimes|in:member,admin,manager,treasurer,secretary',
+            'role' => ['sometimes', \Illuminate\Validation\Rule::enum(\App\Enums\ClubMemberRole::class)],
         ]);
 
         $query = Club::whereHas('members', function ($q) use ($userId, $validated) {

@@ -2,6 +2,12 @@
 
 namespace App\Http\Controllers\Club;
 
+use App\Enums\ClubFundCollectionStatus;
+use App\Enums\ClubFundContributionStatus;
+use App\Enums\ClubWalletTransactionDirection;
+use App\Enums\ClubWalletTransactionSourceType;
+use App\Enums\ClubWalletTransactionStatus;
+use App\Enums\PaymentMethod;
 use App\Helpers\ResponseHelper;
 use App\Models\Club\Club;
 use App\Models\Club\ClubFundCollection;
@@ -9,6 +15,7 @@ use App\Models\Club\ClubFundContribution;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class ClubFundContributionController extends Controller
 {
@@ -20,7 +27,7 @@ class ClubFundContributionController extends Controller
             'page' => 'sometimes|integer|min:1',
             'per_page' => 'sometimes|integer|min:1|max:100',
             'user_id' => 'sometimes|exists:users,id',
-            'status' => 'sometimes|in:pending,confirmed,rejected',
+            'status' => ['sometimes', Rule::enum(ClubFundContributionStatus::class)],
         ]);
 
         $query = $collection->contributions()->with(['user', 'walletTransaction']);
@@ -50,13 +57,13 @@ class ClubFundContributionController extends Controller
         $collection = ClubFundCollection::where('club_id', $clubId)->findOrFail($collectionId);
         $userId = auth()->id();
 
-        if ($collection->status !== 'active') {
+        if ($collection->status !== ClubFundCollectionStatus::Active) {
             return ResponseHelper::error('Đợt thu không còn hoạt động', 422);
         }
 
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01',
-            'payment_method' => 'required|in:cash,bank_transfer,qr_code,other',
+            'payment_method' => ['required', Rule::enum(PaymentMethod::class)],
             'reference_code' => 'nullable|string|max:255',
             'description' => 'nullable|string',
         ]);
@@ -118,7 +125,7 @@ class ClubFundContributionController extends Controller
             return ResponseHelper::error('Chỉ admin/manager/treasurer mới có quyền xác nhận', 403);
         }
 
-        if ($contribution->status !== 'pending') {
+        if ($contribution->status !== ClubFundContributionStatus::Pending) {
             return ResponseHelper::error('Chỉ có thể xác nhận đóng góp đang pending', 422);
         }
 

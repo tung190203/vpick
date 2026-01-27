@@ -2,6 +2,7 @@
 
 namespace App\Models\Club;
 
+use App\Enums\ClubActivityStatus;
 use App\Models\User;
 use App\Models\MiniTournament;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -28,6 +29,7 @@ class ClubActivity extends Model
     ];
 
     protected $casts = [
+        'status' => ClubActivityStatus::class,
         'is_recurring' => 'boolean',
         'start_time' => 'datetime',
         'end_time' => 'datetime',
@@ -55,27 +57,27 @@ class ClubActivity extends Model
 
     public function acceptedParticipants()
     {
-        return $this->hasMany(ClubActivityParticipant::class)->where('status', 'accepted');
+        return $this->hasMany(ClubActivityParticipant::class)->where('status', \App\Enums\ClubActivityParticipantStatus::Accepted);
     }
 
     public function attendedParticipants()
     {
-        return $this->hasMany(ClubActivityParticipant::class)->where('status', 'attended');
+        return $this->hasMany(ClubActivityParticipant::class)->where('status', \App\Enums\ClubActivityParticipantStatus::Attended);
     }
 
     public function scopeScheduled($query)
     {
-        return $query->where('status', 'scheduled');
+        return $query->where('status', ClubActivityStatus::Scheduled);
     }
 
     public function scopeOngoing($query)
     {
-        return $query->where('status', 'ongoing');
+        return $query->where('status', ClubActivityStatus::Ongoing);
     }
 
     public function scopeCompleted($query)
     {
-        return $query->where('status', 'completed');
+        return $query->where('status', ClubActivityStatus::Completed);
     }
 
     public function scopeByType($query, $type)
@@ -90,26 +92,26 @@ class ClubActivity extends Model
 
     public function isScheduled()
     {
-        return $this->status === 'scheduled';
+        return $this->status === ClubActivityStatus::Scheduled;
     }
 
     public function isOngoing()
     {
-        return $this->status === 'ongoing';
+        return $this->status === ClubActivityStatus::Ongoing;
     }
 
     public function isCompleted()
     {
-        return $this->status === 'completed';
+        return $this->status === ClubActivityStatus::Completed;
     }
 
     public function canBeCancelled()
     {
-        return $this->status === 'scheduled';
+        return $this->status === ClubActivityStatus::Scheduled;
     }
 
     public function markAsCompleted()
     {
-        $this->update(['status' => 'completed']);
+        $this->update(['status' => ClubActivityStatus::Completed]);
     }
 }

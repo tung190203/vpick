@@ -2,6 +2,7 @@
 
 namespace App\Models\Club;
 
+use App\Enums\ClubMonthlyFeePaymentStatus;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -22,6 +23,7 @@ class ClubMonthlyFeePayment extends Model
     ];
 
     protected $casts = [
+        'status' => ClubMonthlyFeePaymentStatus::class,
         'amount' => 'decimal:2',
         'period' => 'date',
         'paid_at' => 'datetime',
@@ -49,17 +51,17 @@ class ClubMonthlyFeePayment extends Model
 
     public function scopePending($query)
     {
-        return $query->where('status', 'pending');
+        return $query->where('status', ClubMonthlyFeePaymentStatus::Pending);
     }
 
     public function scopePaid($query)
     {
-        return $query->where('status', 'paid');
+        return $query->where('status', ClubMonthlyFeePaymentStatus::Paid);
     }
 
     public function scopeFailed($query)
     {
-        return $query->where('status', 'failed');
+        return $query->where('status', ClubMonthlyFeePaymentStatus::Failed);
     }
 
     public function scopeByPeriod($query, $period)
@@ -70,7 +72,7 @@ class ClubMonthlyFeePayment extends Model
     public function markAsPaid()
     {
         $this->update([
-            'status' => 'paid',
+            'status' => ClubMonthlyFeePaymentStatus::Paid,
             'paid_at' => now(),
         ]);
     }
@@ -78,7 +80,7 @@ class ClubMonthlyFeePayment extends Model
     public function markAsFailed()
     {
         $this->update([
-            'status' => 'failed',
+            'status' => ClubMonthlyFeePaymentStatus::Failed,
         ]);
     }
 }

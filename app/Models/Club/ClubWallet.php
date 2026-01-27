@@ -2,6 +2,7 @@
 
 namespace App\Models\Club;
 
+use App\Enums\ClubWalletType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -16,6 +17,10 @@ class ClubWallet extends Model
         'qr_code_url',
     ];
 
+    protected $casts = [
+        'type' => ClubWalletType::class,
+    ];
+
     public function club()
     {
         return $this->belongsTo(Club::class);
@@ -28,28 +33,28 @@ class ClubWallet extends Model
 
     public function confirmedTransactions()
     {
-        return $this->hasMany(ClubWalletTransaction::class)->where('status', 'confirmed');
+        return $this->hasMany(ClubWalletTransaction::class)->where('status', \App\Enums\ClubWalletTransactionStatus::Confirmed);
     }
 
     public function getBalanceAttribute()
     {
-        $in = $this->confirmedTransactions()->where('direction', 'in')->sum('amount');
-        $out = $this->confirmedTransactions()->where('direction', 'out')->sum('amount');
+        $in = $this->confirmedTransactions()->where('direction', \App\Enums\ClubWalletTransactionDirection::In)->sum('amount');
+        $out = $this->confirmedTransactions()->where('direction', \App\Enums\ClubWalletTransactionDirection::Out)->sum('amount');
         return $in - $out;
     }
 
     public function isMain()
     {
-        return $this->type === 'main';
+        return $this->type === ClubWalletType::Main;
     }
 
     public function isFund()
     {
-        return $this->type === 'fund';
+        return $this->type === ClubWalletType::Fund;
     }
 
     public function isDonation()
     {
-        return $this->type === 'donation';
+        return $this->type === ClubWalletType::Donation;
     }
 }

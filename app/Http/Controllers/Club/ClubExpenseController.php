@@ -2,12 +2,17 @@
 
 namespace App\Http\Controllers\Club;
 
+use App\Enums\ClubWalletTransactionDirection;
+use App\Enums\ClubWalletTransactionSourceType;
+use App\Enums\ClubWalletTransactionStatus;
+use App\Enums\PaymentMethod;
 use App\Helpers\ResponseHelper;
 use App\Models\Club\Club;
 use App\Models\Club\ClubExpense;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class ClubExpenseController extends Controller
 {
@@ -81,12 +86,12 @@ class ClubExpenseController extends Controller
             $mainWallet = $club->mainWallet;
             if ($mainWallet) {
                 $transaction = $mainWallet->transactions()->create([
-                    'direction' => 'out',
+                    'direction' => ClubWalletTransactionDirection::Out,
                     'amount' => $validated['amount'],
-                    'source_type' => 'expense',
+                    'source_type' => ClubWalletTransactionSourceType::Expense,
                     'source_id' => $expense->id,
                     'payment_method' => $validated['payment_method'],
-                    'status' => 'pending',
+                    'status' => ClubWalletTransactionStatus::Pending,
                     'reference_code' => $validated['reference_code'] ?? null,
                     'description' => $validated['description'] ?? null,
                     'created_by' => $userId,

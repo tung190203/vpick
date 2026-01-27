@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Club;
 
+use App\Enums\ClubMemberRole;
+use App\Enums\ClubNotificationPriority;
+use App\Enums\ClubNotificationStatus;
 use App\Helpers\ResponseHelper;
 use App\Models\Club\Club;
 use App\Models\Club\ClubNotification;
@@ -9,6 +12,7 @@ use App\Models\Club\ClubNotificationType;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class ClubNotificationController extends Controller
 {
@@ -20,7 +24,7 @@ class ClubNotificationController extends Controller
             'page' => 'sometimes|integer|min:1',
             'per_page' => 'sometimes|integer|min:1|max:100',
             'is_pinned' => 'sometimes|boolean',
-            'status' => 'sometimes|in:draft,scheduled,sent,cancelled',
+            'status' => ['sometimes', Rule::enum(ClubNotificationStatus::class)],
             'type_id' => 'sometimes|exists:club_notification_types,id',
         ]);
 
@@ -55,8 +59,8 @@ class ClubNotificationController extends Controller
         $club = Club::findOrFail($clubId);
         $userId = auth()->id();
 
-        $member = $club->members()->where('user_id', $userId)->first();
-        if (!$member || !in_array($member->role, ['admin', 'manager', 'secretary'])) {
+        $member = $club->activeMembers()->where('user_id', $userId)->first();
+        if (!$member || !in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary])) {
             return ResponseHelper::error('Chỉ admin/manager/secretary mới có quyền tạo thông báo', 403);
         }
 
@@ -65,8 +69,8 @@ class ClubNotificationController extends Controller
             'title' => 'required|string|max:255',
             'content' => 'required|string',
             'attachment_url' => 'nullable|string',
-            'priority' => 'sometimes|in:low,normal,high,urgent',
-            'status' => 'sometimes|in:draft,scheduled,sent,cancelled',
+            'priority' => ['sometimes', Rule::enum(ClubNotificationPriority::class)],
+            'status' => ['sometimes', Rule::enum(ClubNotificationStatus::class)],
             'metadata' => 'nullable|array',
             'is_pinned' => 'sometimes|boolean',
             'scheduled_at' => 'nullable|date|after:now',
@@ -81,8 +85,8 @@ class ClubNotificationController extends Controller
                 'title' => $validated['title'],
                 'content' => $validated['content'],
                 'attachment_url' => $validated['attachment_url'] ?? null,
-                'priority' => $validated['priority'] ?? 'normal',
-                'status' => $validated['status'] ?? 'draft',
+                'priority' => $validated['priority'] ?? ClubNotificationPriority::Normal,
+                'status' => $validated['status'] ?? ClubNotificationStatus::Draft,
                 'metadata' => $validated['metadata'] ?? null,
                 'is_pinned' => $validated['is_pinned'] ?? false,
                 'scheduled_at' => $validated['scheduled_at'] ?? null,
@@ -120,8 +124,8 @@ class ClubNotificationController extends Controller
 
         if ($notification->created_by !== $userId) {
             $club = $notification->club;
-            $member = $club->members()->where('user_id', $userId)->first();
-            if (!$member || !in_array($member->role, ['admin', 'manager', 'secretary'])) {
+            $member = $club->activeMembers()->where('user_id', $userId)->first();
+            if (!$member || !in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary])) {
                 return ResponseHelper::error('Không có quyền cập nhật thông báo này', 403);
             }
         }
@@ -130,8 +134,8 @@ class ClubNotificationController extends Controller
             'title' => 'sometimes|string|max:255',
             'content' => 'sometimes|string',
             'attachment_url' => 'nullable|string',
-            'priority' => 'sometimes|in:low,normal,high,urgent',
-            'status' => 'sometimes|in:draft,scheduled,sent,cancelled',
+            'priority' => ['sometimes', Rule::enum(ClubNotificationPriority::class)],
+            'status' => ['sometimes', Rule::enum(ClubNotificationStatus::class)],
             'metadata' => 'nullable|array',
             'scheduled_at' => 'nullable|date',
         ]);
@@ -149,8 +153,8 @@ class ClubNotificationController extends Controller
 
         if ($notification->created_by !== $userId) {
             $club = $notification->club;
-            $member = $club->members()->where('user_id', $userId)->first();
-            if (!$member || !in_array($member->role, ['admin', 'manager', 'secretary'])) {
+            $member = $club->activeMembers()->where('user_id', $userId)->first();
+            if (!$member || !in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary])) {
                 return ResponseHelper::error('Không có quyền xóa thông báo này', 403);
             }
         }
@@ -166,8 +170,8 @@ class ClubNotificationController extends Controller
         $userId = auth()->id();
 
         $club = $notification->club;
-        $member = $club->members()->where('user_id', $userId)->first();
-        if (!$member || !in_array($member->role, ['admin', 'manager', 'secretary'])) {
+        $member = $club->activeMembers()->where('user_id', $userId)->first();
+        if (!$member || !in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary])) {
             return ResponseHelper::error('Chỉ admin/manager/secretary mới có quyền ghim thông báo', 403);
         }
 
@@ -204,7 +208,7 @@ class ClubNotificationController extends Controller
         $userId = auth()->id();
 
         $club = $notification->club;
-        $member = $club->members()->where('user_id', $userId)->first();
+        $member = $club->activeMembers()->where('user_id', $userId)->first();
         if (!$member || !in_array($member->role, ['admin', 'manager', 'secretary'])) {
             return ResponseHelper::error('Chỉ admin/manager/secretary mới có quyền gửi thông báo', 403);
         }

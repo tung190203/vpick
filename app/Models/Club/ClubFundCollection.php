@@ -2,6 +2,7 @@
 
 namespace App\Models\Club;
 
+use App\Enums\ClubFundCollectionStatus;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -25,6 +26,7 @@ class ClubFundCollection extends Model
     ];
 
     protected $casts = [
+        'status' => ClubFundCollectionStatus::class,
         'target_amount' => 'decimal:2',
         'collected_amount' => 'decimal:2',
         'start_date' => 'date',
@@ -48,22 +50,22 @@ class ClubFundCollection extends Model
 
     public function confirmedContributions()
     {
-        return $this->hasMany(ClubFundContribution::class)->where('status', 'confirmed');
+        return $this->hasMany(ClubFundContribution::class)->where('status', \App\Enums\ClubFundContributionStatus::Confirmed);
     }
 
     public function scopeActive($query)
     {
-        return $query->where('status', 'active');
+        return $query->where('status', ClubFundCollectionStatus::Active);
     }
 
     public function scopePending($query)
     {
-        return $query->where('status', 'pending');
+        return $query->where('status', ClubFundCollectionStatus::Pending);
     }
 
     public function scopeCompleted($query)
     {
-        return $query->where('status', 'completed');
+        return $query->where('status', ClubFundCollectionStatus::Completed);
     }
 
     public function getProgressPercentageAttribute()
@@ -74,12 +76,12 @@ class ClubFundCollection extends Model
 
     public function isActive()
     {
-        return $this->status === 'active';
+        return $this->status === ClubFundCollectionStatus::Active;
     }
 
     public function isCompleted()
     {
-        return $this->status === 'completed' || $this->collected_amount >= $this->target_amount;
+        return $this->status === ClubFundCollectionStatus::Completed || $this->collected_amount >= $this->target_amount;
     }
 
     public function updateCollectedAmount()

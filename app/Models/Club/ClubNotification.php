@@ -2,6 +2,8 @@
 
 namespace App\Models\Club;
 
+use App\Enums\ClubNotificationPriority;
+use App\Enums\ClubNotificationStatus;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -26,6 +28,8 @@ class ClubNotification extends Model
     ];
 
     protected $casts = [
+        'priority' => ClubNotificationPriority::class,
+        'status' => ClubNotificationStatus::class,
         'metadata' => 'array',
         'is_pinned' => 'boolean',
         'scheduled_at' => 'datetime',
@@ -74,17 +78,17 @@ class ClubNotification extends Model
 
     public function scopeDraft($query)
     {
-        return $query->where('status', 'draft');
+        return $query->where('status', ClubNotificationStatus::Draft);
     }
 
     public function scopeScheduled($query)
     {
-        return $query->where('status', 'scheduled');
+        return $query->where('status', ClubNotificationStatus::Scheduled);
     }
 
     public function scopeSent($query)
     {
-        return $query->where('status', 'sent');
+        return $query->where('status', ClubNotificationStatus::Sent);
     }
 
     public function scopeByPriority($query, $priority)
@@ -94,23 +98,23 @@ class ClubNotification extends Model
 
     public function isDraft()
     {
-        return $this->status === 'draft';
+        return $this->status === ClubNotificationStatus::Draft;
     }
 
     public function isScheduled()
     {
-        return $this->status === 'scheduled';
+        return $this->status === ClubNotificationStatus::Scheduled;
     }
 
     public function isSent()
     {
-        return $this->status === 'sent';
+        return $this->status === ClubNotificationStatus::Sent;
     }
 
     public function markAsSent()
     {
         $this->update([
-            'status' => 'sent',
+            'status' => ClubNotificationStatus::Sent,
             'sent_at' => now(),
         ]);
     }

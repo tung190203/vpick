@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Club;
 
+use App\Enums\ClubFundCollectionStatus;
 use App\Helpers\ResponseHelper;
 use App\Models\Club\Club;
 use App\Models\Club\ClubFundCollection;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ClubFundCollectionController extends Controller
 {
@@ -17,7 +19,7 @@ class ClubFundCollectionController extends Controller
         $validated = $request->validate([
             'page' => 'sometimes|integer|min:1',
             'per_page' => 'sometimes|integer|min:1|max:100',
-            'status' => 'sometimes|in:pending,active,completed,cancelled',
+            'status' => ['sometimes', Rule::enum(ClubFundCollectionStatus::class)],
         ]);
 
         $query = $club->fundCollections()->with(['creator', 'contributions.user']);
@@ -51,7 +53,7 @@ class ClubFundCollectionController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'target_amount' => 'required|numeric|min:0.01',
-            'currency' => 'sometimes|string|max:3|default:VND',
+            'currency' => 'sometimes|string|max:3',
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after:start_date',
             'qr_code_url' => 'nullable|string',
@@ -66,7 +68,7 @@ class ClubFundCollectionController extends Controller
             'currency' => $validated['currency'] ?? 'VND',
             'start_date' => $validated['start_date'],
             'end_date' => $validated['end_date'] ?? null,
-            'status' => 'pending',
+            'status' => ClubFundCollectionStatus::Pending,
             'qr_code_url' => $validated['qr_code_url'] ?? null,
             'created_by' => $userId,
         ]);
@@ -125,11 +127,11 @@ class ClubFundCollectionController extends Controller
             return ResponseHelper::error('Chỉ admin/manager/treasurer mới có quyền hủy đợt thu', 403);
         }
 
-        if (!in_array($collection->status, ['pending', 'active'])) {
+        if (!in_array($collection->status, [ClubFundCollectionStatus::Pending, ClubFundCollectionStatus::Active])) {
             return ResponseHelper::error('Chỉ có thể hủy đợt thu đang pending hoặc active', 422);
         }
 
-        $collection->update(['status' => 'cancelled']);
+        $collection->update(['status' => ClubFundCollectionStatus::Cancelled]);
 
         return ResponseHelper::success([], 'Đợt thu đã được hủy');
     }

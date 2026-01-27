@@ -2,12 +2,18 @@
 
 namespace App\Http\Controllers\Club;
 
+use App\Enums\ClubMonthlyFeePaymentStatus;
+use App\Enums\ClubWalletTransactionDirection;
+use App\Enums\ClubWalletTransactionSourceType;
+use App\Enums\ClubWalletTransactionStatus;
+use App\Enums\PaymentMethod;
 use App\Helpers\ResponseHelper;
 use App\Models\Club\Club;
 use App\Models\Club\ClubMonthlyFeePayment;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class ClubMonthlyFeePaymentController extends Controller
 {
@@ -59,7 +65,7 @@ class ClubMonthlyFeePaymentController extends Controller
             'club_monthly_fee_id' => 'required|exists:club_monthly_fees,id',
             'period' => 'required|date',
             'amount' => 'required|numeric|min:0.01',
-            'payment_method' => 'required|in:cash,bank_transfer,qr_code,other',
+            'payment_method' => ['required', Rule::enum(PaymentMethod::class)],
             'reference_code' => 'nullable|string|max:255',
             'description' => 'nullable|string',
         ]);
@@ -123,7 +129,7 @@ class ClubMonthlyFeePaymentController extends Controller
         
         $validated = $request->validate([
             'page' => 'sometimes|integer|min:1',
-            'status' => 'sometimes|in:pending,paid,failed',
+            'status' => ['sometimes', Rule::enum(ClubMonthlyFeePaymentStatus::class)],
         ]);
 
         $query = ClubMonthlyFeePayment::where('club_id', $clubId)
@@ -162,11 +168,11 @@ class ClubMonthlyFeePaymentController extends Controller
 
         $stats = [
             'total_payments' => $query->count(),
-            'paid_count' => (clone $query)->where('status', 'paid')->count(),
-            'pending_count' => (clone $query)->where('status', 'pending')->count(),
-            'failed_count' => (clone $query)->where('status', 'failed')->count(),
+            'paid_count' => (clone $query)->where('status', ClubMonthlyFeePaymentStatus::Paid)->count(),
+            'pending_count' => (clone $query)->where('status', ClubMonthlyFeePaymentStatus::Pending)->count(),
+            'failed_count' => (clone $query)->where('status', ClubMonthlyFeePaymentStatus::Failed)->count(),
             'total_amount' => (clone $query)->sum('amount'),
-            'paid_amount' => (clone $query)->where('status', 'paid')->sum('amount'),
+            'paid_amount' => (clone $query)->where('status', ClubMonthlyFeePaymentStatus::Paid)->sum('amount'),
         ];
 
         return ResponseHelper::success($stats, 'Lấy thống kê thanh toán thành công');

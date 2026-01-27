@@ -2,6 +2,10 @@
 
 namespace App\Models\Club;
 
+use App\Enums\ClubWalletTransactionDirection;
+use App\Enums\ClubWalletTransactionSourceType;
+use App\Enums\ClubWalletTransactionStatus;
+use App\Enums\PaymentMethod;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -26,6 +30,10 @@ class ClubWalletTransaction extends Model
     ];
 
     protected $casts = [
+        'direction' => ClubWalletTransactionDirection::class,
+        'source_type' => ClubWalletTransactionSourceType::class,
+        'payment_method' => PaymentMethod::class,
+        'status' => ClubWalletTransactionStatus::class,
         'amount' => 'decimal:2',
         'confirmed_at' => 'datetime',
     ];
@@ -52,43 +60,43 @@ class ClubWalletTransaction extends Model
 
     public function scopePending($query)
     {
-        return $query->where('status', 'pending');
+        return $query->where('status', ClubWalletTransactionStatus::Pending);
     }
 
     public function scopeConfirmed($query)
     {
-        return $query->where('status', 'confirmed');
+        return $query->where('status', ClubWalletTransactionStatus::Confirmed);
     }
 
     public function scopeIncoming($query)
     {
-        return $query->where('direction', 'in');
+        return $query->where('direction', ClubWalletTransactionDirection::In);
     }
 
     public function scopeOutgoing($query)
     {
-        return $query->where('direction', 'out');
+        return $query->where('direction', ClubWalletTransactionDirection::Out);
     }
 
     public function isPending()
     {
-        return $this->status === 'pending';
+        return $this->status === ClubWalletTransactionStatus::Pending;
     }
 
     public function isConfirmed()
     {
-        return $this->status === 'confirmed';
+        return $this->status === ClubWalletTransactionStatus::Confirmed;
     }
 
     public function isRejected()
     {
-        return $this->status === 'rejected';
+        return $this->status === ClubWalletTransactionStatus::Rejected;
     }
 
     public function confirm($userId)
     {
         $this->update([
-            'status' => 'confirmed',
+            'status' => ClubWalletTransactionStatus::Confirmed,
             'confirmed_by' => $userId,
             'confirmed_at' => now(),
         ]);
@@ -97,7 +105,7 @@ class ClubWalletTransaction extends Model
     public function reject($userId)
     {
         $this->update([
-            'status' => 'rejected',
+            'status' => ClubWalletTransactionStatus::Rejected,
             'confirmed_by' => $userId,
             'confirmed_at' => now(),
         ]);

@@ -2,6 +2,8 @@
 
 namespace App\Models\Club;
 
+use App\Enums\ClubMemberRole;
+use App\Enums\ClubMemberStatus;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -31,6 +33,8 @@ class ClubMember extends Model
     ];
 
     protected $casts = [
+        'role' => ClubMemberRole::class,
+        'status' => ClubMemberStatus::class,
         'reviewed_at' => 'datetime',
         'joined_at' => 'datetime',
         'left_at' => 'datetime',
@@ -54,12 +58,12 @@ class ClubMember extends Model
 
     public function scopeActive($query)
     {
-        return $query->where('status', 'active');
+        return $query->where('status', ClubMemberStatus::Active);
     }
 
     public function scopePending($query)
     {
-        return $query->where('status', 'pending');
+        return $query->where('status', ClubMemberStatus::Pending);
     }
 
     public function scopeByRole($query, $role)
@@ -69,26 +73,26 @@ class ClubMember extends Model
 
     public function isAdmin()
     {
-        return $this->role === 'admin';
+        return $this->role === ClubMemberRole::Admin;
     }
 
     public function isManager()
     {
-        return in_array($this->role, ['admin', 'manager']);
+        return in_array($this->role, [ClubMemberRole::Admin, ClubMemberRole::Manager]);
     }
 
     public function canManageFinance()
     {
-        return in_array($this->role, ['admin', 'manager', 'treasurer']);
+        return in_array($this->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Treasurer]);
     }
 
     public function canManageMembers()
     {
-        return in_array($this->role, ['admin', 'manager']);
+        return in_array($this->role, [ClubMemberRole::Admin, ClubMemberRole::Manager]);
     }
 
     public function isJoinRequest()
     {
-        return $this->status === 'pending';
+        return $this->status === ClubMemberStatus::Pending;
     }
 }

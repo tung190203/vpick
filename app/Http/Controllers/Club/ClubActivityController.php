@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\Club;
 
+use App\Enums\ClubActivityStatus;
+use App\Enums\ClubMemberRole;
 use App\Helpers\ResponseHelper;
 use App\Models\Club\Club;
 use App\Models\Club\ClubActivity;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ClubActivityController extends Controller
 {
@@ -18,7 +21,7 @@ class ClubActivityController extends Controller
             'page' => 'sometimes|integer|min:1',
             'per_page' => 'sometimes|integer|min:1|max:100',
             'type' => 'sometimes|in:meeting,practice,match,tournament,event,other',
-            'status' => 'sometimes|in:scheduled,ongoing,completed,cancelled',
+            'status' => ['sometimes', Rule::enum(ClubActivityStatus::class)],
             'date_from' => 'sometimes|date',
             'date_to' => 'sometimes|date|after_or_equal:date_from',
         ]);
@@ -58,8 +61,8 @@ class ClubActivityController extends Controller
         $club = Club::findOrFail($clubId);
         $userId = auth()->id();
 
-        $member = $club->members()->where('user_id', $userId)->first();
-        if (!$member || !in_array($member->role, ['admin', 'manager', 'secretary'])) {
+        $member = $club->activeMembers()->where('user_id', $userId)->first();
+        if (!$member || !in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary])) {
             return ResponseHelper::error('Chỉ admin/manager/secretary mới có quyền tạo hoạt động', 403);
         }
 
@@ -88,7 +91,7 @@ class ClubActivityController extends Controller
             'end_time' => $validated['end_time'] ?? null,
             'location' => $validated['location'] ?? null,
             'reminder_minutes' => $validated['reminder_minutes'] ?? 15,
-            'status' => 'scheduled',
+            'status' => ClubActivityStatus::Scheduled,
             'created_by' => $userId,
         ]);
 
@@ -141,8 +144,8 @@ class ClubActivityController extends Controller
         $userId = auth()->id();
 
         $club = $activity->club;
-        $member = $club->members()->where('user_id', $userId)->first();
-        if (!$member || !in_array($member->role, ['admin', 'manager', 'secretary']) || $activity->created_by !== $userId) {
+        $member = $club->activeMembers()->where('user_id', $userId)->first();
+        if (!$member || !in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary]) || $activity->created_by !== $userId) {
             return ResponseHelper::error('Không có quyền xóa hoạt động này', 403);
         }
 
@@ -161,8 +164,8 @@ class ClubActivityController extends Controller
         $userId = auth()->id();
 
         $club = $activity->club;
-        $member = $club->members()->where('user_id', $userId)->first();
-        if (!$member || !in_array($member->role, ['admin', 'manager', 'secretary'])) {
+        $member = $club->activeMembers()->where('user_id', $userId)->first();
+        if (!$member || !in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary])) {
             return ResponseHelper::error('Chỉ admin/manager/secretary mới có quyền đánh dấu hoàn thành', 403);
         }
 

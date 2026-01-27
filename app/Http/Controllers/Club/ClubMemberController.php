@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Club;
 
+use App\Enums\ClubMemberRole;
+use App\Enums\ClubMemberStatus;
 use App\Helpers\ResponseHelper;
 use App\Models\Club\Club;
 use App\Models\Club\ClubMember;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class ClubMemberController extends Controller
 {
@@ -19,8 +22,8 @@ class ClubMemberController extends Controller
             'page' => 'sometimes|integer|min:1',
             'per_page' => 'sometimes|integer|min:1|max:100',
             'search' => 'sometimes|string|max:255',
-            'role' => 'sometimes|in:member,admin,manager,treasurer,secretary',
-            'status' => 'sometimes|in:pending,active,inactive,suspended',
+            'role' => ['sometimes', Rule::enum(ClubMemberRole::class)],
+            'status' => ['sometimes', Rule::enum(ClubMemberStatus::class)],
         ]);
 
         $query = $club->members()->with(['user', 'reviewer']);
@@ -45,17 +48,17 @@ class ClubMemberController extends Controller
         $statistics = [
             'total' => $club->members()->count(),
             'by_role' => [
-                'admin' => $club->members()->where('role', 'admin')->count(),
-                'manager' => $club->members()->where('role', 'manager')->count(),
-                'treasurer' => $club->members()->where('role', 'treasurer')->count(),
-                'secretary' => $club->members()->where('role', 'secretary')->count(),
-                'member' => $club->members()->where('role', 'member')->count(),
+                'admin' => $club->members()->where('role', ClubMemberRole::Admin)->count(),
+                'manager' => $club->members()->where('role', ClubMemberRole::Manager)->count(),
+                'treasurer' => $club->members()->where('role', ClubMemberRole::Treasurer)->count(),
+                'secretary' => $club->members()->where('role', ClubMemberRole::Secretary)->count(),
+                'member' => $club->members()->where('role', ClubMemberRole::Member)->count(),
             ],
             'by_status' => [
-                'pending' => $club->members()->where('status', 'pending')->count(),
-                'active' => $club->members()->where('status', 'active')->count(),
-                'inactive' => $club->members()->where('status', 'inactive')->count(),
-                'suspended' => $club->members()->where('status', 'suspended')->count(),
+                'pending' => $club->members()->where('status', ClubMemberStatus::Pending)->count(),
+                'active' => $club->members()->where('status', ClubMemberStatus::Active)->count(),
+                'inactive' => $club->members()->where('status', ClubMemberStatus::Inactive)->count(),
+                'suspended' => $club->members()->where('status', ClubMemberStatus::Suspended)->count(),
             ],
         ];
 
@@ -74,14 +77,20 @@ class ClubMemberController extends Controller
         $club = Club::findOrFail($clubId);
         $userId = auth()->id();
 
+        // Chỉ admin/manager mới có quyền thêm member trực tiếp
+        if (!$club->canManage($userId)) {
+            return ResponseHelper::error('Chỉ admin/manager mới có quyền thêm thành viên', 403);
+        }
+
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
-            'role' => 'sometimes|in:member,admin,manager,treasurer,secretary',
+            'role' => ['sometimes', Rule::enum(ClubMemberRole::class)],
             'position' => 'nullable|string|max:255',
             'message' => 'nullable|string',
-            'status' => 'sometimes|in:pending,active',
+            'status' => ['sometimes', Rule::enum(ClubMemberStatus::class)],
         ]);
 
+        // Check duplicate member (bất kỳ status nào)
         if ($club->hasMember($validated['user_id'])) {
             return ResponseHelper::error('Người dùng đã là thành viên của CLB này', 409);
         }
@@ -90,11 +99,11 @@ class ClubMemberController extends Controller
             $member = ClubMember::create([
                 'club_id' => $club->id,
                 'user_id' => $validated['user_id'],
-                'role' => $validated['role'] ?? 'member',
+                'role' => $validated['role'] ?? ClubMemberRole::Member,
                 'position' => $validated['position'] ?? null,
-                'status' => $validated['status'] ?? 'active',
+                'status' => $validated['status'] ?? ClubMemberStatus::Active,
                 'message' => $validated['message'] ?? null,
-                'joined_at' => $validated['status'] === 'active' ? now() : null,
+                'joined_at' => ($validated['status'] ?? ClubMemberStatus::Active) === ClubMemberStatus::Active ? now() : null,
             ]);
 
             $member->load(['user', 'club']);
@@ -128,25 +137,25 @@ class ClubMemberController extends Controller
         }
 
         $validated = $request->validate([
-            'role' => 'sometimes|in:member,admin,manager,treasurer,secretary',
+            'role' => ['sometimes', Rule::enum(ClubMemberRole::class)],
             'position' => 'nullable|string|max:255',
-            'status' => 'sometimes|in:pending,active,inactive,suspended',
+            'status' => ['sometimes', Rule::enum(ClubMemberStatus::class)],
             'notes' => 'nullable|string',
             'rejection_reason' => 'nullable|string',
         ]);
 
         return DB::transaction(function () use ($member, $validated, $userId) {
-            if (isset($validated['status']) && $validated['status'] === 'active' && $member->status === 'pending') {
+            if (isset($validated['status']) && $validated['status'] === ClubMemberStatus::Active && $member->status === ClubMemberStatus::Pending) {
                 $member->update([
-                    'status' => 'active',
+                    'status' => ClubMemberStatus::Active,
                     'reviewed_by' => $userId,
                     'reviewed_at' => now(),
                     'joined_at' => now(),
                     'role' => $validated['role'] ?? $member->role,
                 ]);
-            } elseif (isset($validated['rejection_reason']) && $member->status === 'pending') {
+            } elseif (isset($validated['rejection_reason']) && $member->status === ClubMemberStatus::Pending) {
                 $member->update([
-                    'status' => 'inactive',
+                    'status' => ClubMemberStatus::Inactive,
                     'reviewed_by' => $userId,
                     'reviewed_at' => now(),
                     'rejection_reason' => $validated['rejection_reason'],
@@ -179,7 +188,7 @@ class ClubMemberController extends Controller
     public function approve(Request $request, $clubId, $memberId)
     {
         $member = ClubMember::where('club_id', $clubId)
-            ->where('status', 'pending')
+            ->where('status', ClubMemberStatus::Pending)
             ->findOrFail($memberId);
 
         $club = $member->club;
@@ -190,12 +199,12 @@ class ClubMemberController extends Controller
         }
 
         $validated = $request->validate([
-            'role' => 'sometimes|in:member,admin,manager,treasurer,secretary',
+            'role' => ['sometimes', Rule::enum(ClubMemberRole::class)],
         ]);
 
         $member->update([
-            'status' => 'active',
-            'role' => $validated['role'] ?? 'member',
+            'status' => ClubMemberStatus::Active,
+            'role' => $validated['role'] ?? ClubMemberRole::Member,
             'reviewed_by' => $userId,
             'reviewed_at' => now(),
             'joined_at' => now(),
@@ -209,7 +218,7 @@ class ClubMemberController extends Controller
     public function reject(Request $request, $clubId, $memberId)
     {
         $member = ClubMember::where('club_id', $clubId)
-            ->where('status', 'pending')
+            ->where('status', ClubMemberStatus::Pending)
             ->findOrFail($memberId);
 
         $club = $member->club;
@@ -224,7 +233,7 @@ class ClubMemberController extends Controller
         ]);
 
         $member->update([
-            'status' => 'inactive',
+            'status' => ClubMemberStatus::Inactive,
             'reviewed_by' => $userId,
             'reviewed_at' => now(),
             'rejection_reason' => $validated['rejection_reason'],
@@ -242,17 +251,17 @@ class ClubMemberController extends Controller
         $statistics = [
             'total' => $club->members()->count(),
             'by_role' => [
-                'admin' => $club->members()->where('role', 'admin')->count(),
-                'manager' => $club->members()->where('role', 'manager')->count(),
-                'treasurer' => $club->members()->where('role', 'treasurer')->count(),
-                'secretary' => $club->members()->where('role', 'secretary')->count(),
-                'member' => $club->members()->where('role', 'member')->count(),
+                'admin' => $club->members()->where('role', ClubMemberRole::Admin)->count(),
+                'manager' => $club->members()->where('role', ClubMemberRole::Manager)->count(),
+                'treasurer' => $club->members()->where('role', ClubMemberRole::Treasurer)->count(),
+                'secretary' => $club->members()->where('role', ClubMemberRole::Secretary)->count(),
+                'member' => $club->members()->where('role', ClubMemberRole::Member)->count(),
             ],
             'by_status' => [
-                'active' => $club->members()->where('status', 'active')->count(),
-                'inactive' => $club->members()->where('status', 'inactive')->count(),
-                'suspended' => $club->members()->where('status', 'suspended')->count(),
-                'pending' => $club->members()->where('status', 'pending')->count(),
+                'active' => $club->members()->where('status', ClubMemberStatus::Active)->count(),
+                'inactive' => $club->members()->where('status', ClubMemberStatus::Inactive)->count(),
+                'suspended' => $club->members()->where('status', ClubMemberStatus::Suspended)->count(),
+                'pending' => $club->members()->where('status', ClubMemberStatus::Pending)->count(),
             ],
         ];
 

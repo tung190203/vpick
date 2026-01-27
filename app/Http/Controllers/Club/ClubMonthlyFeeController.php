@@ -40,7 +40,7 @@ class ClubMonthlyFeeController extends Controller
 
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01',
-            'currency' => 'sometimes|string|max:3|default:VND',
+            'currency' => 'sometimes|string|max:3',
             'due_day' => 'required|integer|min:1|max:31',
             'is_active' => 'sometimes|boolean',
         ]);

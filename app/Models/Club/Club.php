@@ -35,12 +35,12 @@ class Club extends Model
 
     public function activeMembers()
     {
-        return $this->hasMany(ClubMember::class)->where('status', 'active');
+        return $this->hasMany(ClubMember::class)->where('status', \App\Enums\ClubMemberStatus::Active);
     }
 
     public function pendingJoinRequests()
     {
-        return $this->hasMany(ClubMember::class)->where('status', 'pending');
+        return $this->hasMany(ClubMember::class)->where('status', \App\Enums\ClubMemberStatus::Pending);
     }
 
     public function profile()
@@ -55,7 +55,7 @@ class Club extends Model
 
     public function mainWallet()
     {
-        return $this->hasOne(ClubWallet::class)->where('type', 'main');
+        return $this->hasOne(ClubWallet::class)->where('type', \App\Enums\ClubWalletType::Main);
     }
 
     public function monthlyFees()
@@ -134,17 +134,17 @@ class Club extends Model
 
     public function canManage($userId)
     {
-        $member = $this->members()->where('user_id', $userId)->first();
+        $member = $this->activeMembers()->where('user_id', $userId)->first();
         if (!$member) return false;
         
-        return in_array($member->role, ['admin', 'manager']);
+        return in_array($member->role, [\App\Enums\ClubMemberRole::Admin, \App\Enums\ClubMemberRole::Manager]);
     }
 
     public function canManageFinance($userId)
     {
-        $member = $this->members()->where('user_id', $userId)->first();
+        $member = $this->activeMembers()->where('user_id', $userId)->first();
         if (!$member) return false;
         
-        return in_array($member->role, ['admin', 'manager', 'treasurer']);
+        return in_array($member->role, [\App\Enums\ClubMemberRole::Admin, \App\Enums\ClubMemberRole::Manager, \App\Enums\ClubMemberRole::Treasurer]);
     }
 }

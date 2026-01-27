@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Club;
 
+use App\Enums\ClubActivityParticipantStatus;
+use App\Enums\ClubMemberRole;
 use App\Helpers\ResponseHelper;
 use App\Models\Club\Club;
 use App\Models\Club\ClubActivity;
 use App\Models\Club\ClubActivityParticipant;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ClubActivityParticipantController extends Controller
 {
@@ -16,7 +19,7 @@ class ClubActivityParticipantController extends Controller
         $activity = ClubActivity::where('club_id', $clubId)->findOrFail($activityId);
 
         $validated = $request->validate([
-            'status' => 'sometimes|in:invited,accepted,declined,attended,absent',
+            'status' => ['sometimes', Rule::enum(ClubActivityParticipantStatus::class)],
         ]);
 
         $query = $activity->participants()->with('user');
@@ -30,8 +33,8 @@ class ClubActivityParticipantController extends Controller
         return ResponseHelper::success([
             'data' => $participants,
             'total' => $participants->count(),
-            'read_count' => $participants->where('status', 'accepted')->count(),
-            'unread_count' => $participants->where('status', 'invited')->count(),
+            'read_count' => $participants->where('status', ClubActivityParticipantStatus::Accepted)->count(),
+            'unread_count' => $participants->where('status', ClubActivityParticipantStatus::Invited)->count(),
         ], 'Lấy danh sách người tham gia thành công');
     }
 
@@ -58,7 +61,7 @@ class ClubActivityParticipantController extends Controller
         $participant = ClubActivityParticipant::create([
             'club_activity_id' => $activity->id,
             'user_id' => $validated['user_id'],
-            'status' => $validated['status'] ?? 'invited',
+            'status' => $validated['status'] ?? ClubActivityParticipantStatus::Invited,
         ]);
 
         $participant->load('user');
@@ -72,8 +75,8 @@ class ClubActivityParticipantController extends Controller
         $userId = auth()->id();
 
         $club = $activity->club;
-        $member = $club->members()->where('user_id', $userId)->first();
-        if (!$member || !in_array($member->role, ['admin', 'manager', 'secretary'])) {
+        $member = $club->activeMembers()->where('user_id', $userId)->first();
+        if (!$member || !in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary])) {
             return ResponseHelper::error('Chỉ admin/manager/secretary mới có quyền mời', 403);
         }
 
@@ -88,7 +91,7 @@ class ClubActivityParticipantController extends Controller
                 $participant = ClubActivityParticipant::create([
                     'club_activity_id' => $activity->id,
                     'user_id' => $userId,
-                    'status' => 'invited',
+                    'status' => ClubActivityParticipantStatus::Invited,
                 ]);
                 $participant->load('user');
                 $invited[] = $participant;
@@ -109,7 +112,7 @@ class ClubActivityParticipantController extends Controller
             ->findOrFail($participantId);
 
         $validated = $request->validate([
-            'status' => 'required|in:invited,accepted,declined,attended,absent',
+            'status' => ['required', Rule::enum(ClubActivityParticipantStatus::class)],
         ]);
 
         $participant->update(['status' => $validated['status']]);
@@ -128,9 +131,9 @@ class ClubActivityParticipantController extends Controller
         $userId = auth()->id();
         $activity = $participant->activity;
         $club = $activity->club;
-        $member = $club->members()->where('user_id', $userId)->first();
+        $member = $club->activeMembers()->where('user_id', $userId)->first();
 
-        if (!$member || !in_array($member->role, ['admin', 'manager', 'secretary'])) {
+        if (!$member || !in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary])) {
             return ResponseHelper::error('Chỉ admin/manager/secretary mới có quyền xóa', 403);
         }
 

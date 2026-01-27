@@ -2,6 +2,7 @@
 
 namespace App\Models\Club;
 
+use App\Enums\ClubFundContributionStatus;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -19,6 +20,7 @@ class ClubFundContribution extends Model
     ];
 
     protected $casts = [
+        'status' => ClubFundContributionStatus::class,
         'amount' => 'decimal:2',
     ];
 
@@ -39,27 +41,27 @@ class ClubFundContribution extends Model
 
     public function scopePending($query)
     {
-        return $query->where('status', 'pending');
+        return $query->where('status', ClubFundContributionStatus::Pending);
     }
 
     public function scopeConfirmed($query)
     {
-        return $query->where('status', 'confirmed');
+        return $query->where('status', ClubFundContributionStatus::Confirmed);
     }
 
     public function scopeRejected($query)
     {
-        return $query->where('status', 'rejected');
+        return $query->where('status', ClubFundContributionStatus::Rejected);
     }
 
     public function confirm()
     {
-        $this->update(['status' => 'confirmed']);
+        $this->update(['status' => ClubFundContributionStatus::Confirmed]);
         $this->fundCollection->updateCollectedAmount();
     }
 
     public function reject()
     {
-        $this->update(['status' => 'rejected']);
+        $this->update(['status' => ClubFundContributionStatus::Rejected]);
     }
 }

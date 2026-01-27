@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers\Club;
 
+use App\Enums\ClubWalletTransactionDirection;
+use App\Enums\ClubWalletTransactionSourceType;
+use App\Enums\ClubWalletTransactionStatus;
+use App\Enums\PaymentMethod;
 use App\Helpers\ResponseHelper;
 use App\Models\Club\Club;
 use App\Models\Club\ClubWallet;
@@ -9,6 +13,7 @@ use App\Models\Club\ClubWalletTransaction;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class ClubWalletTransactionController extends Controller
 {
@@ -20,9 +25,9 @@ class ClubWalletTransactionController extends Controller
             'page' => 'sometimes|integer|min:1',
             'per_page' => 'sometimes|integer|min:1|max:100',
             'wallet_id' => 'sometimes|exists:club_wallets,id',
-            'direction' => 'sometimes|in:in,out',
-            'source_type' => 'sometimes|in:monthly_fee,fund_collection,expense,donation,adjustment',
-            'status' => 'sometimes|in:pending,confirmed,rejected',
+            'direction' => ['sometimes', Rule::enum(ClubWalletTransactionDirection::class)],
+            'source_type' => ['sometimes', Rule::enum(ClubWalletTransactionSourceType::class)],
+            'status' => ['sometimes', Rule::enum(ClubWalletTransactionStatus::class)],
             'date_from' => 'sometimes|date',
             'date_to' => 'sometimes|date|after_or_equal:date_from',
         ]);
@@ -78,11 +83,11 @@ class ClubWalletTransactionController extends Controller
 
         $validated = $request->validate([
             'club_wallet_id' => 'required|exists:club_wallets,id',
-            'direction' => 'required|in:in,out',
+            'direction' => ['required', Rule::enum(ClubWalletTransactionDirection::class)],
             'amount' => 'required|numeric|min:0.01',
-            'source_type' => 'nullable|in:monthly_fee,fund_collection,expense,donation,adjustment',
+            'source_type' => ['nullable', Rule::enum(ClubWalletTransactionSourceType::class)],
             'source_id' => 'nullable|integer',
-            'payment_method' => 'required|in:cash,bank_transfer,qr_code,other',
+            'payment_method' => ['required', Rule::enum(PaymentMethod::class)],
             'reference_code' => 'nullable|string|max:255',
             'description' => 'nullable|string',
         ]);
@@ -99,7 +104,7 @@ class ClubWalletTransactionController extends Controller
             'source_type' => $validated['source_type'] ?? null,
             'source_id' => $validated['source_id'] ?? null,
             'payment_method' => $validated['payment_method'],
-            'status' => 'pending',
+            'status' => ClubWalletTransactionStatus::Pending,
             'reference_code' => $validated['reference_code'] ?? null,
             'description' => $validated['description'] ?? null,
             'created_by' => $userId,
@@ -125,7 +130,7 @@ class ClubWalletTransactionController extends Controller
             $q->where('club_id', $clubId);
         })->findOrFail($transactionId);
 
-        if ($transaction->status !== 'pending') {
+        if ($transaction->status !== ClubWalletTransactionStatus::Pending) {
             return ResponseHelper::error('Chỉ có thể cập nhật giao dịch đang pending', 422);
         }
 
@@ -137,7 +142,7 @@ class ClubWalletTransactionController extends Controller
 
         $validated = $request->validate([
             'amount' => 'sometimes|numeric|min:0.01',
-            'payment_method' => 'sometimes|in:cash,bank_transfer,qr_code,other',
+            'payment_method' => ['sometimes', Rule::enum(PaymentMethod::class)],
             'reference_code' => 'nullable|string|max:255',
             'description' => 'nullable|string',
         ]);
@@ -154,7 +159,7 @@ class ClubWalletTransactionController extends Controller
             $q->where('club_id', $clubId);
         })->findOrFail($transactionId);
 
-        if ($transaction->status !== 'pending') {
+        if ($transaction->status !== ClubWalletTransactionStatus::Pending) {
             return ResponseHelper::error('Chỉ có thể xác nhận giao dịch đang pending', 422);
         }
 
@@ -176,7 +181,7 @@ class ClubWalletTransactionController extends Controller
             $q->where('club_id', $clubId);
         })->findOrFail($transactionId);
 
-        if ($transaction->status !== 'pending') {
+        if ($transaction->status !== ClubWalletTransactionStatus::Pending) {
             return ResponseHelper::error('Chỉ có thể từ chối giao dịch đang pending', 422);
         }
 

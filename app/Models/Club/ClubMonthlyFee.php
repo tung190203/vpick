@@ -34,7 +34,7 @@ class ClubMonthlyFee extends Model
 
     public function paidPayments()
     {
-        return $this->hasMany(ClubMonthlyFeePayment::class)->where('status', 'paid');
+        return $this->hasMany(ClubMonthlyFeePayment::class)->where('status', \App\Enums\ClubMonthlyFeePaymentStatus::Paid);
     }
 
     public function scopeActive($query)

@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Club;
 
+use App\Enums\ClubWalletType;
 use App\Helpers\ResponseHelper;
 use App\Models\Club\Club;
 use App\Models\Club\ClubWallet;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ClubWalletController extends Controller
 {
@@ -15,7 +17,7 @@ class ClubWalletController extends Controller
         $club = Club::findOrFail($clubId);
 
         $validated = $request->validate([
-            'type' => 'sometimes|in:main,fund,donation',
+            'type' => ['sometimes', Rule::enum(ClubWalletType::class)],
         ]);
 
         $query = $club->wallets();
@@ -42,8 +44,8 @@ class ClubWalletController extends Controller
         }
 
         $validated = $request->validate([
-            'type' => 'required|in:main,fund,donation',
-            'currency' => 'sometimes|string|max:3|default:VND',
+            'type' => ['required', Rule::enum(ClubWalletType::class)],
+            'currency' => 'sometimes|string|max:3',
             'qr_code_url' => 'nullable|string',
         ]);
 
@@ -135,8 +137,8 @@ class ClubWalletController extends Controller
         $validated = $request->validate([
             'page' => 'sometimes|integer|min:1',
             'per_page' => 'sometimes|integer|min:1|max:100',
-            'direction' => 'sometimes|in:in,out',
-            'status' => 'sometimes|in:pending,confirmed,rejected',
+            'direction' => ['sometimes', Rule::enum(\App\Enums\ClubWalletTransactionDirection::class)],
+            'status' => ['sometimes', Rule::enum(\App\Enums\ClubWalletTransactionStatus::class)],
             'date_from' => 'sometimes|date',
             'date_to' => 'sometimes|date|after_or_equal:date_from',
         ]);
@@ -191,7 +193,7 @@ class ClubWalletController extends Controller
             ], 'Lấy tổng quan quỹ thành công');
         }
 
-        $query = $mainWallet->transactions()->where('status', 'confirmed');
+        $query = $mainWallet->transactions()->where('status', \App\Enums\ClubWalletTransactionStatus::Confirmed);
 
         if (!empty($validated['date_from'])) {
             $query->whereDate('created_at', '>=', $validated['date_from']);
@@ -201,10 +203,10 @@ class ClubWalletController extends Controller
             $query->whereDate('created_at', '<=', $validated['date_to']);
         }
 
-        $totalIncome = (clone $query)->where('direction', 'in')->sum('amount');
-        $totalExpense = (clone $query)->where('direction', 'out')->sum('amount');
-        $pendingTransactions = $mainWallet->transactions()->where('status', 'pending')->count();
-        $activeCollections = $club->fundCollections()->where('status', 'active')->count();
+        $totalIncome = (clone $query)->where('direction', \App\Enums\ClubWalletTransactionDirection::In)->sum('amount');
+        $totalExpense = (clone $query)->where('direction', \App\Enums\ClubWalletTransactionDirection::Out)->sum('amount');
+        $pendingTransactions = $mainWallet->transactions()->where('status', \App\Enums\ClubWalletTransactionStatus::Pending)->count();
+        $activeCollections = $club->fundCollections()->where('status', \App\Enums\ClubFundCollectionStatus::Active)->count();
 
         return ResponseHelper::success([
             'balance' => $mainWallet->balance,
