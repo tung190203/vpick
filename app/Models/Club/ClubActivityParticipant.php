@@ -4,6 +4,7 @@ namespace App\Models\Club;
 
 use App\Enums\ClubActivityParticipantStatus;
 use App\Models\User;
+use App\Models\Club\ClubWalletTransaction;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -15,6 +16,7 @@ class ClubActivityParticipant extends Model
         'club_activity_id',
         'user_id',
         'status',
+        'wallet_transaction_id',
     ];
 
     protected $casts = [
@@ -29,6 +31,11 @@ class ClubActivityParticipant extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function walletTransaction()
+    {
+        return $this->belongsTo(ClubWalletTransaction::class, 'wallet_transaction_id');
     }
 
     public function scopeInvited($query)

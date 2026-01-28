@@ -240,6 +240,7 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
                 Route::put('/{activityId}', [ClubActivityController::class, 'update']);
                 Route::delete('/{activityId}', [ClubActivityController::class, 'destroy']);
                 Route::post('/{activityId}/complete', [ClubActivityController::class, 'complete']);
+                Route::post('/{activityId}/cancel', [ClubActivityController::class, 'cancel']);
 
                 Route::prefix('{activityId}/participants')->group(function () {
                     Route::get('/', [ClubActivityParticipantController::class, 'index']);
@@ -247,6 +248,7 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
                     Route::post('/invite', [ClubActivityParticipantController::class, 'invite']);
                     Route::put('/{participantId}', [ClubActivityParticipantController::class, 'update']);
                     Route::delete('/{participantId}', [ClubActivityParticipantController::class, 'destroy']);
+                    Route::post('/{participantId}/withdraw', [ClubActivityParticipantController::class, 'withdraw']);
                 });
             });
 
