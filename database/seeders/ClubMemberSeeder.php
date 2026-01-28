@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\Club;
-use App\Models\ClubMember;
+use App\Models\Club\Club;
+use App\Models\Club\ClubMember;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
