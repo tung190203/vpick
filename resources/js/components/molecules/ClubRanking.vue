@@ -94,7 +94,7 @@
                                 'px-1.5 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-0.5',
                                 item.change > 0 ? 'bg-[#00B377] text-white' : 'bg-[#D72D36] text-white'
                             ]">
-                                <img :src="item.change > 0 ? TriangleUp : TriangleDown" class="w-2 h-2" alt="" />
+                                <component :is="item.change > 0 ? TriangleUp : TriangleDown" class="w-2 h-2" alt="" />
                                 {{ Math.abs(item.change) }}
                             </div>
                         </div>

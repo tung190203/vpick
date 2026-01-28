@@ -19,11 +19,11 @@
             <img :src="user.avatar" :alt="user.name" class="w-14 h-14 rounded-full object-cover">
             <div v-if="user.role === 'Admin'"
               class="absolute -bottom-1 -right-1 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center border-2 border-white">
-              <img :src="ShieldCheckIcon" alt="" class="w-3 h-3">
+              <ShieldCheckIcon class="w-3 h-3" />
             </div>
             <div v-else-if="user.status === 'Thủ quỹ'"
               class="absolute -bottom-1 -right-1 w-6 h-6 bg-orange-400 rounded-full flex items-center justify-center border-2 border-white">
-              <img :src="MoneyIcon" alt="" class="w-3 h-3">
+              <MoneyIcon class="w-3 h-3 text-white" />
             </div>
           </div>
 
