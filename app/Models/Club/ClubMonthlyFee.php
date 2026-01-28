@@ -2,6 +2,7 @@
 
 namespace App\Models\Club;
 
+use App\Enums\ClubMonthlyFeePaymentStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -34,7 +35,7 @@ class ClubMonthlyFee extends Model
 
     public function paidPayments()
     {
-        return $this->hasMany(ClubMonthlyFeePayment::class)->where('status', \App\Enums\ClubMonthlyFeePaymentStatus::Paid);
+        return $this->hasMany(ClubMonthlyFeePayment::class)->where('status', ClubMonthlyFeePaymentStatus::Paid);
     }
 
     public function scopeActive($query)

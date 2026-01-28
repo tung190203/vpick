@@ -2,6 +2,7 @@
 
 namespace App\Models\Club;
 
+use App\Enums\ClubActivityParticipantStatus;
 use App\Enums\ClubActivityStatus;
 use App\Models\User;
 use App\Models\MiniTournament;
@@ -57,12 +58,12 @@ class ClubActivity extends Model
 
     public function acceptedParticipants()
     {
-        return $this->hasMany(ClubActivityParticipant::class)->where('status', \App\Enums\ClubActivityParticipantStatus::Accepted);
+        return $this->hasMany(ClubActivityParticipant::class)->where('status', ClubActivityParticipantStatus::Accepted);
     }
 
     public function attendedParticipants()
     {
-        return $this->hasMany(ClubActivityParticipant::class)->where('status', \App\Enums\ClubActivityParticipantStatus::Attended);
+        return $this->hasMany(ClubActivityParticipant::class)->where('status', ClubActivityParticipantStatus::Attended);
     }
 
     public function scopeScheduled($query)

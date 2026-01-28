@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Club;
 
+use App\Enums\ClubFundCollectionStatus;
+use App\Enums\ClubWalletTransactionDirection;
+use App\Enums\ClubWalletTransactionStatus;
 use App\Enums\ClubWalletType;
 use App\Helpers\ResponseHelper;
 use App\Models\Club\Club;
@@ -70,19 +73,25 @@ class ClubWalletController extends Controller
 
     public function show($clubId, $walletId)
     {
-        $wallet = ClubWallet::where('club_id', $clubId)
+        $wallet = ClubWallet::where('id', $walletId)
+            ->where('club_id', $clubId)
             ->with(['club', 'transactions'])
-            ->findOrFail($walletId);
+            ->withCount('transactions')
+            ->firstOrFail();
 
-        $wallet->balance = $wallet->balance;
-        $wallet->transaction_count = $wallet->transactions()->count();
+        $userId = auth()->id();
+        if (!$wallet->club->canManageFinance($userId)) {
+            return ResponseHelper::error('Chỉ admin/manager/treasurer mới có quyền xem thông tin ví', 403);
+        }
 
         return ResponseHelper::success($wallet, 'Lấy thông tin ví thành công');
     }
 
     public function update(Request $request, $clubId, $walletId)
     {
-        $wallet = ClubWallet::where('club_id', $clubId)->findOrFail($walletId);
+        $wallet = ClubWallet::where('id', $walletId)
+            ->where('club_id', $clubId)
+            ->firstOrFail();
         $userId = auth()->id();
 
         $club = $wallet->club;
@@ -101,11 +110,12 @@ class ClubWalletController extends Controller
 
     public function destroy($clubId, $walletId)
     {
-        $wallet = ClubWallet::where('club_id', $clubId)->findOrFail($walletId);
-        $userId = auth()->id();
+        $wallet = ClubWallet::where('id', $walletId)
+            ->where('club_id', $clubId)
+            ->with('club')
+            ->firstOrFail();
 
-        $club = $wallet->club;
-        if (!$club->canManage($userId)) {
+        if (!$wallet->club->canManage(auth()->id())) {
             return ResponseHelper::error('Chỉ admin/manager mới có quyền xóa ví', 403);
         }
 
@@ -137,8 +147,8 @@ class ClubWalletController extends Controller
         $validated = $request->validate([
             'page' => 'sometimes|integer|min:1',
             'per_page' => 'sometimes|integer|min:1|max:100',
-            'direction' => ['sometimes', Rule::enum(\App\Enums\ClubWalletTransactionDirection::class)],
-            'status' => ['sometimes', Rule::enum(\App\Enums\ClubWalletTransactionStatus::class)],
+            'direction' => ['sometimes', Rule::enum(ClubWalletTransactionDirection::class)],
+            'status' => ['sometimes', Rule::enum(ClubWalletTransactionStatus::class)],
             'date_from' => 'sometimes|date',
             'date_to' => 'sometimes|date|after_or_equal:date_from',
         ]);
@@ -193,7 +203,7 @@ class ClubWalletController extends Controller
             ], 'Lấy tổng quan quỹ thành công');
         }
 
-        $query = $mainWallet->transactions()->where('status', \App\Enums\ClubWalletTransactionStatus::Confirmed);
+        $query = $mainWallet->transactions()->where('status', ClubWalletTransactionStatus::Confirmed);
 
         if (!empty($validated['date_from'])) {
             $query->whereDate('created_at', '>=', $validated['date_from']);
@@ -203,10 +213,10 @@ class ClubWalletController extends Controller
             $query->whereDate('created_at', '<=', $validated['date_to']);
         }
 
-        $totalIncome = (clone $query)->where('direction', \App\Enums\ClubWalletTransactionDirection::In)->sum('amount');
-        $totalExpense = (clone $query)->where('direction', \App\Enums\ClubWalletTransactionDirection::Out)->sum('amount');
-        $pendingTransactions = $mainWallet->transactions()->where('status', \App\Enums\ClubWalletTransactionStatus::Pending)->count();
-        $activeCollections = $club->fundCollections()->where('status', \App\Enums\ClubFundCollectionStatus::Active)->count();
+        $totalIncome = (clone $query)->where('direction', ClubWalletTransactionDirection::In)->sum('amount');
+        $totalExpense = (clone $query)->where('direction', ClubWalletTransactionDirection::Out)->sum('amount');
+        $pendingTransactions = $mainWallet->transactions()->where('status', ClubWalletTransactionStatus::Pending)->count();
+        $activeCollections = $club->fundCollections()->where('status', ClubFundCollectionStatus::Active)->count();
 
         return ResponseHelper::success([
             'balance' => $mainWallet->balance,
