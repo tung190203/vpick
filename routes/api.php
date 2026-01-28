@@ -17,6 +17,20 @@ use App\Http\Controllers\TournamentTypeController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VerificationController;
 use App\Http\Controllers\ClubController;
+use App\Http\Controllers\Club\ClubMemberController;
+use App\Http\Controllers\Club\ClubWalletController;
+use App\Http\Controllers\Club\ClubWalletTransactionController;
+use App\Http\Controllers\Club\ClubActivityController;
+use App\Http\Controllers\Club\ClubActivityParticipantController;
+use App\Http\Controllers\Club\ClubNotificationController;
+use App\Http\Controllers\Club\ClubNotificationRecipientController;
+use App\Http\Controllers\Club\ClubFundCollectionController;
+use App\Http\Controllers\Club\ClubFundContributionController;
+use App\Http\Controllers\Club\ClubExpenseController;
+use App\Http\Controllers\Club\ClubMonthlyFeeController;
+use App\Http\Controllers\Club\ClubMonthlyFeePaymentController;
+use App\Http\Controllers\Club\ClubDashboardController;
+use App\Http\Controllers\Club\ClubJoinRequestController;
 use App\Http\Controllers\CompetitionLocationYardController;
 use App\Http\Controllers\DeviceTokenController;
 use App\Http\Controllers\FacilityController;
@@ -162,14 +176,140 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
         Route::delete('/delete/{teamId}', [TeamController::class, 'deleteTeam']);
     });
 
-    Route::prefix('club')->group(function () {
-        Route::match(['get', 'post'], '/index', [ClubController::class, 'index']);
-        Route::post('/store', [ClubController::class, 'store']);
+    Route::prefix('clubs')->group(function () {
+        Route::get('/', [ClubController::class, 'index']);
+        Route::post('/', [ClubController::class, 'store']);
         Route::get('/my-clubs', [ClubController::class, 'myClubs']);
-        Route::get('/{id}', [ClubController::class, 'show']);
-        Route::post('/update/{id}', [ClubController::class, 'update']);
-        Route::post('/delete', [ClubController::class, 'destroy']);
-        Route::post('/join/{id}', [ClubController::class, 'join']);
+        Route::get('/{clubId}', [ClubController::class, 'show']);
+        Route::put('/{clubId}', [ClubController::class, 'update']);
+        Route::delete('/{clubId}', [ClubController::class, 'destroy']);
+
+        Route::prefix('{clubId}')->group(function () {
+            Route::get('/profile', [ClubController::class, 'getProfile']);
+            Route::put('/profile', [ClubController::class, 'updateProfile']);
+            Route::get('/fund', [ClubController::class, 'getFund']);
+            Route::put('/fund', [ClubController::class, 'updateFund']);
+            Route::get('/fund/overview', [ClubWalletController::class, 'getFundOverview']);
+            Route::get('/fund/qr-code', [ClubWalletController::class, 'getFundQrCode']);
+            Route::get('/dashboard', [ClubDashboardController::class, 'index']);
+
+            Route::prefix('members')->group(function () {
+                Route::get('/', [ClubMemberController::class, 'index']);
+                Route::post('/', [ClubMemberController::class, 'store']);
+                Route::get('/statistics', [ClubMemberController::class, 'statistics']);
+                Route::get('/{memberId}', [ClubMemberController::class, 'show']);
+                Route::put('/{memberId}', [ClubMemberController::class, 'update']);
+                Route::delete('/{memberId}', [ClubMemberController::class, 'destroy']);
+                Route::post('/{memberId}/approve', [ClubMemberController::class, 'approve']);
+                Route::post('/{memberId}/reject', [ClubMemberController::class, 'reject']);
+            });
+
+            Route::prefix('join-requests')->group(function () {
+                Route::get('/', [ClubJoinRequestController::class, 'index']);
+                Route::post('/', [ClubJoinRequestController::class, 'store']);
+                Route::get('/{requestId}', [ClubJoinRequestController::class, 'show']);
+                Route::delete('/{requestId}', [ClubJoinRequestController::class, 'destroy']);
+                Route::post('/{requestId}/approve', [ClubJoinRequestController::class, 'approve']);
+                Route::post('/{requestId}/reject', [ClubJoinRequestController::class, 'reject']);
+            });
+
+            Route::prefix('wallets')->group(function () {
+                Route::get('/', [ClubWalletController::class, 'index']);
+                Route::post('/', [ClubWalletController::class, 'store']);
+                Route::get('/{walletId}', [ClubWalletController::class, 'show']);
+                Route::put('/{walletId}', [ClubWalletController::class, 'update']);
+                Route::delete('/{walletId}', [ClubWalletController::class, 'destroy']);
+                Route::get('/{walletId}/balance', [ClubWalletController::class, 'getBalance']);
+                Route::get('/{walletId}/transactions', [ClubWalletController::class, 'getTransactions']);
+            });
+
+            Route::prefix('wallet-transactions')->group(function () {
+                Route::get('/', [ClubWalletTransactionController::class, 'index']);
+                Route::post('/', [ClubWalletTransactionController::class, 'store']);
+                Route::get('/{transactionId}', [ClubWalletTransactionController::class, 'show']);
+                Route::put('/{transactionId}', [ClubWalletTransactionController::class, 'update']);
+                Route::post('/{transactionId}/confirm', [ClubWalletTransactionController::class, 'confirm']);
+                Route::post('/{transactionId}/reject', [ClubWalletTransactionController::class, 'reject']);
+            });
+
+            Route::prefix('activities')->group(function () {
+                Route::get('/', [ClubActivityController::class, 'index']);
+                Route::post('/', [ClubActivityController::class, 'store']);
+                Route::get('/{activityId}', [ClubActivityController::class, 'show']);
+                Route::put('/{activityId}', [ClubActivityController::class, 'update']);
+                Route::delete('/{activityId}', [ClubActivityController::class, 'destroy']);
+                Route::post('/{activityId}/complete', [ClubActivityController::class, 'complete']);
+
+                Route::prefix('{activityId}/participants')->group(function () {
+                    Route::get('/', [ClubActivityParticipantController::class, 'index']);
+                    Route::post('/', [ClubActivityParticipantController::class, 'store']);
+                    Route::post('/invite', [ClubActivityParticipantController::class, 'invite']);
+                    Route::put('/{participantId}', [ClubActivityParticipantController::class, 'update']);
+                    Route::delete('/{participantId}', [ClubActivityParticipantController::class, 'destroy']);
+                });
+            });
+
+            Route::prefix('notifications')->group(function () {
+                Route::get('/types', [ClubNotificationController::class, 'getNotificationTypes']);
+                Route::get('/', [ClubNotificationController::class, 'index']);
+                Route::post('/', [ClubNotificationController::class, 'store']);
+                Route::get('/{notificationId}', [ClubNotificationController::class, 'show']);
+                Route::put('/{notificationId}', [ClubNotificationController::class, 'update']);
+                Route::delete('/{notificationId}', [ClubNotificationController::class, 'destroy']);
+                Route::post('/{notificationId}/send', [ClubNotificationController::class, 'send']);
+                Route::post('/{notificationId}/pin', [ClubNotificationController::class, 'togglePin']);
+                Route::post('/{notificationId}/mark-read', [ClubNotificationController::class, 'markAsRead']);
+
+                Route::prefix('{notificationId}/recipients')->group(function () {
+                    Route::get('/', [ClubNotificationRecipientController::class, 'index']);
+                    Route::post('/', [ClubNotificationRecipientController::class, 'store']);
+                    Route::get('/read', [ClubNotificationRecipientController::class, 'getRead']);
+                    Route::get('/unread', [ClubNotificationRecipientController::class, 'getUnread']);
+                });
+            });
+
+            Route::prefix('fund-collections')->group(function () {
+                Route::get('/', [ClubFundCollectionController::class, 'index']);
+                Route::post('/', [ClubFundCollectionController::class, 'store']);
+                Route::get('/{collectionId}', [ClubFundCollectionController::class, 'show']);
+                Route::put('/{collectionId}', [ClubFundCollectionController::class, 'update']);
+                Route::delete('/{collectionId}', [ClubFundCollectionController::class, 'destroy']);
+                Route::get('/{collectionId}/qr-code', [ClubFundCollectionController::class, 'getQrCode']);
+
+                Route::prefix('{collectionId}/contributions')->group(function () {
+                    Route::get('/', [ClubFundContributionController::class, 'index']);
+                    Route::post('/', [ClubFundContributionController::class, 'store']);
+                    Route::get('/{contributionId}', [ClubFundContributionController::class, 'show']);
+                    Route::post('/{contributionId}/confirm', [ClubFundContributionController::class, 'confirm']);
+                    Route::post('/{contributionId}/reject', [ClubFundContributionController::class, 'reject']);
+                });
+            });
+
+            Route::prefix('expenses')->group(function () {
+                Route::get('/', [ClubExpenseController::class, 'index']);
+                Route::post('/', [ClubExpenseController::class, 'store']);
+                Route::get('/statistics', [ClubExpenseController::class, 'getStatistics']);
+                Route::get('/{expenseId}', [ClubExpenseController::class, 'show']);
+                Route::put('/{expenseId}', [ClubExpenseController::class, 'update']);
+                Route::delete('/{expenseId}', [ClubExpenseController::class, 'destroy']);
+            });
+
+            Route::prefix('monthly-fees')->group(function () {
+                Route::get('/', [ClubMonthlyFeeController::class, 'index']);
+                Route::post('/', [ClubMonthlyFeeController::class, 'store']);
+                Route::get('/{feeId}', [ClubMonthlyFeeController::class, 'show']);
+                Route::put('/{feeId}', [ClubMonthlyFeeController::class, 'update']);
+                Route::delete('/{feeId}', [ClubMonthlyFeeController::class, 'destroy']);
+            });
+
+            Route::prefix('monthly-fee-payments')->group(function () {
+                Route::get('/', [ClubMonthlyFeePaymentController::class, 'index']);
+                Route::post('/', [ClubMonthlyFeePaymentController::class, 'store']);
+                Route::get('/statistics', [ClubMonthlyFeePaymentController::class, 'getStatistics']);
+                Route::get('/{paymentId}', [ClubMonthlyFeePaymentController::class, 'show']);
+                Route::get('/member/{memberId}', [ClubMonthlyFeePaymentController::class, 'getMemberPayments']);
+            });
+        });
     });
 
     Route::match(['get', 'post'], '/home', [HomeController::class, 'index']);

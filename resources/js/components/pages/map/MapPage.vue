@@ -828,6 +828,8 @@ import { getVisibilityText } from "@/composables/formatVisibilityText";
 import defaultImage from '@/assets/images/default-image.jpeg';
 import maleIcon from '@/assets/images/male.svg';
 import femaleIcon from '@/assets/images/female.svg';
+import maleIconRaw from '@/assets/images/male.svg?raw';
+import femaleIconRaw from '@/assets/images/female.svg?raw';
 import { useMap } from '@/composables/useMap.js';
 import { CheckIcon } from '@heroicons/vue/16/solid';
 import { Swiper, SwiperSlide } from 'swiper/vue';
@@ -1367,7 +1369,7 @@ const loadTabContent = async (tab, bounds = null) => {
             addMatchMarkers(matches.value, router, focusItemAuto, shouldUpdate, defaultImage);
         } else if (tab === 'players') {
             await getListUser(bounds);
-            addUserMarkers(users.value, defaultImage, maleIcon, femaleIcon, getVisibilityText, getUserRating, router, focusItemAuto, shouldUpdate);
+            addUserMarkers(users.value, defaultImage, maleIconRaw, femaleIconRaw, getVisibilityText, getUserRating, router, focusItemAuto, shouldUpdate);
         }
     } finally {
         isLoadingMap.value = false;

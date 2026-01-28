@@ -2,11 +2,13 @@
 import { reactive, computed } from 'vue'
 import useVuelidate from '@vuelidate/core'
 import { required, helpers } from '@vuelidate/validators'
-
 import { useRouter } from 'vue-router'
 import Button from '@/components/atoms/Button.vue'
 import { useUserStore } from '@/store/auth'
 import { toast } from 'vue3-toastify'
+import GoogleIcon from '@/assets/images/google-icon.svg'
+import FacebookIcon from '@/assets/images/facebook-icon.svg'
+import AppleIcon from '@/assets/images/apple-icon.svg'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -66,6 +68,10 @@ const registerWithGoogle = () => {
 const registerWithFacebook = () => {
   window.location.href = import.meta.env.VITE_BASE_URL + '/auth/facebook/redirect'
 }
+
+const registerWithApple = () => {
+  window.location.href = import.meta.env.VITE_BASE_URL + '/auth/apple/redirect'
+}
 </script>
 
 <template>
@@ -113,13 +119,22 @@ const registerWithFacebook = () => {
         class="w-full flex items-center justify-center gap-2 bg-white !text-gray-800 border border-gray-300 hover:bg-gray-50"
         @click="registerWithGoogle"
       >
-        <img src="@/assets/images/google-icon.svg" class="w-5 h-5" alt="Google" />
+        <GoogleIcon class="w-5 h-5" />
+        <p class="text-sm">Google</p>
       </Button>
       <Button
         class="w-full flex items-center justify-center gap-2 bg-white !text-gray-800 border border-gray-300 hover:bg-gray-50"
         @click="registerWithFacebook"
       >
-        <img src="@/assets/images/facebook-icon.svg" class="w-5 h-5" alt="Google" />
+        <FacebookIcon class="w-5 h-5" />
+        <p class="text-sm">Facebook</p>
+      </Button>
+      <Button
+        class="w-full flex items-center justify-center gap-2 bg-white !text-gray-800 border border-gray-300 hover:bg-gray-50"
+        @click="registerWithApple"
+      >
+        <AppleIcon class="w-5 h-5" />
+        <p class="text-sm">Apple</p>
       </Button>
       </div>
 
