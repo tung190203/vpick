@@ -1,12 +1,12 @@
 <template>
   <div 
-    class="flex items-start p-4 bg-[#f6e4c8] rounded-2xl border-l-[2px] border-[#D99A43] mb-4 transition shadow-sm"
+    class="flex items-start p-4 bg-[#f6e4c8] rounded-2xl border-l-[2px] border-[#D99A43] mb-4 transition shadow-sm cursor-pointer"
   >
     <!-- Icon Section -->
     <div 
-      class="flex items-center justify-center min-w-[56px] h-[56px] rounded-lg bg-[#E0A243] text-white mr-4 mt-1"
+      class="flex items-center justify-center min-w-[56px] h-[56px] rounded-md bg-[#E0A243] text-white mr-4 mt-1"
     >
-      <BellAlertIcon class="w-6 h-6" />
+      <component :is="NotificationsIcon" class="w-6 h-6" />
     </div>
 
     <!-- Info Section -->
@@ -25,7 +25,7 @@
 </template>
 
 <script setup>
-import { BellAlertIcon } from "@heroicons/vue/24/outline";
+import NotificationsIcon from "@/assets/images/notifications.svg";
 
 defineProps({
   title: {

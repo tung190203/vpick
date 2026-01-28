@@ -10,7 +10,7 @@
             <div class="flex flex-col md:flex-row md:justify-between md:items-start">
               <div class="mb-6 md:mb-0">
                 <div class="flex items-center gap-2">
-                  <img v-if="homeData.user_info?.is_verify" :src="VerifyIcon" alt="Verify Icon" class="w-6 h-6 text-white" />
+                  <VerifyIcon v-if="homeData.user_info?.is_verify" class="w-6 h-6 text-white" />
                   <div class="opacity-90 text-[32px] font-semibold">PICKI</div>
                 </div>
                 <div class="text-6xl font-bold leading-none mb-4 text-[100px]">{{
@@ -401,7 +401,7 @@ import 'swiper/css/free-mode'
 import { Html5Qrcode } from "html5-qrcode";
 import * as HomeService from "@/service/home";
 import * as FollowService from "@/service/follow";
-import Background from "@/assets/images/dashboard-bg.svg";
+import Background from "@/assets/images/dashboard-bg.svg?url";
 import { useUserStore } from "@/store/auth";
 import { storeToRefs } from "pinia";
 import VerifyIcon from "@/assets/images/verify-icon.svg";

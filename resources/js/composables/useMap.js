@@ -436,8 +436,9 @@ export function useMap() {
     const batchMarkers = [];
 
     const getGenderIconHtml = (gender) => {
-      if (gender == 1) return `<img src="${maleIcon}" width="16" />`;
-      if (gender == 2) return `<img src="${femaleIcon}" width="16" />`;
+      const style = 'width: 16px; height: 16px; display: inline-block; vertical-align: middle;';
+      if (gender == 1 && maleIcon) return maleIcon.replace('<svg', `<svg style="${style}"`);
+      if (gender == 2 && femaleIcon) return femaleIcon.replace('<svg', `<svg style="${style}"`);
       return '';
     };
 

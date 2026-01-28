@@ -6,7 +6,7 @@ namespace Database\Seeders;
 
 use App\Models\Badge;
 use App\Models\Banner;
-use App\Models\Club;
+use App\Models\Club\Club;
 use App\Models\CompetitionLocation;
 use App\Models\CompetitionLocationYard;
 use App\Models\User;
