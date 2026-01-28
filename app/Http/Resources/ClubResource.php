@@ -18,7 +18,9 @@ class ClubResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'location' => $this->location,
+            'address' => $this->address,
+            'latitude' => $this->latitude,
+            'longitude' => $this->longitude,
             'logo_url' => $this->logo_url,
             'status' => $this->status,
             'is_verified' => (bool) $this->is_verified,

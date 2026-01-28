@@ -180,6 +180,8 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
         Route::get('/', [ClubController::class, 'index']);
         Route::post('/', [ClubController::class, 'store']);
         Route::get('/my-clubs', [ClubController::class, 'myClubs']);
+        Route::get('/search-location', [ClubController::class, 'searchLocation']);
+        Route::get('/location-detail', [ClubController::class, 'detailGooglePlace']);
         Route::get('/{clubId}', [ClubController::class, 'show']);
         Route::put('/{clubId}', [ClubController::class, 'update']);
         Route::delete('/{clubId}', [ClubController::class, 'destroy']);

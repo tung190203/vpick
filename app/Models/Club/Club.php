@@ -20,7 +20,9 @@ class Club extends Model
 
     protected $fillable = [
         'name',
-        'location',
+        'address',
+        'latitude',
+        'longitude',
         'logo_url',
         'status',
         'is_verified',
@@ -150,5 +152,44 @@ class Club extends Model
         if (!$member) return false;
         
         return in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Treasurer]);
+    }
+
+    public function scopeInBounds($query, $minLat, $maxLat, $minLng, $maxLng)
+    {
+        return $query->whereBetween('latitude', [$minLat, $maxLat])
+            ->whereBetween('longitude', [$minLng, $maxLng]);
+    }
+
+    public function scopeNearBy($query, float $lat, float $lng, float $radiusKm = 5)
+    {
+        $haversine = "(6371 * acos(cos(radians($lat))
+                * cos(radians(latitude))
+                * cos(radians(longitude) - radians($lng))
+                + sin(radians($lat))
+                * sin(radians(latitude))))";
+
+        return $query->select('*')
+            ->selectRaw("$haversine AS distance")
+            ->having('distance', '<=', $radiusKm)
+            ->orderBy('distance');
+    }
+
+    public function scopeOrderByDistance($query, $lat, $lng)
+    {
+        return $query
+            ->select('*')
+            ->selectRaw("
+                (
+                    6371 * acos(
+                        cos(radians(?))
+                        * cos(radians(latitude))
+                        * cos(radians(longitude) - radians(?))
+                        + sin(radians(?))
+                        * sin(radians(latitude))
+                    )
+                ) AS distance
+            ", [$lat, $lng, $lat])
+            ->orderByRaw('latitude IS NULL OR longitude IS NULL')
+            ->orderBy('distance', 'asc');
     }
 }
