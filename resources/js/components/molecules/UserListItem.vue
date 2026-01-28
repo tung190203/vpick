@@ -37,8 +37,7 @@
         </div>
   
         <div class="flex items-center gap-1.5 text-xs text-gray-600 truncate">
-          <img v-if="user.gender == 1" :src="maleIcon" class="w-4 h-4" />
-          <img v-else-if="user.gender == 2" :src="femaleIcon" class="w-4 h-4" />
+          <component :is="user.gender == 1 ? maleIcon : femaleIcon" class="w-4 h-4" />
           <span class="truncate">
             {{ user.gender_text || 'Khác' }}
             {{ user.age_group ? ' • ' + user.age_group : '' }}

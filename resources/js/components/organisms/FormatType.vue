@@ -13,7 +13,7 @@
                         ? 'bg-[#D72D36] border-[#D72D36] text-white icon-active'
                         : 'bg-white border-gray-200 text-gray-700 icon-inactive'
                 ]">
-                    <component :is="tab.icon" />
+                    <component :is="tab.icon" class="w-12 h-12 mb-2" />
                     <span class="text-sm font-medium">{{ tab.label }}</span>
                 </button>
             </div>
@@ -484,9 +484,9 @@ import Section from '@/components/atoms/Section.vue';
 import SettingItem from '@/components/atoms/SettingItem.vue';
 import Counter from '@/components/atoms/Counter.vue';
 import Toggle from '@/components/atoms/Toggle.vue';
-import mixedIcon from '@/assets/images/mixed.svg';
-import directIcon from '@/assets/images/direct.svg';
-import roundRobinIcon from '@/assets/images/round-robin.svg';
+import MixedIcon from '@/assets/images/mixed.svg';
+import DirectIcon from '@/assets/images/direct.svg';
+import RoundRobinIcon from '@/assets/images/round-robin.svg';
 
 const props = defineProps({
     data: {
@@ -602,9 +602,9 @@ const selectRankingRule = (id, index, value) => {
 };
 
 const tabs = [
-    { id: 'mixed', label: 'Hỗn hợp', icon: { template: `<img src="${mixedIcon}" class="w-12 h-12 mb-2 icon-color" alt="Icon hỗn hợp">` } },
-    { id: 'direct', label: 'Loại trực tiếp', icon: { template: `<img src="${directIcon}" class="w-12 h-12 mb-2 icon-color" alt="Icon loại trực tiếp">` } },
-    { id: 'roundRobin', label: 'Vòng tròn', icon: { template: `<img src="${roundRobinIcon}" class="w-12 h-12 mb-2 icon-color" alt="Icon vòng tròn">` } }
+    { id: 'mixed', label: 'Hỗn hợp', icon: MixedIcon },
+    { id: 'direct', label: 'Loại trực tiếp', icon: DirectIcon },
+    { id: 'roundRobin', label: 'Vòng tròn', icon: RoundRobinIcon }
 ];
 
 const displayRankingRules = computed(() => {

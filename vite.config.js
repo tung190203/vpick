@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import laravel from 'laravel-vite-plugin';
+import svgLoader from 'vite-svg-loader'
 
 export default defineConfig({
     base: '/build/',
@@ -10,6 +11,9 @@ export default defineConfig({
             refresh: true,
         }),
         vue(),
+        svgLoader({
+            defaultImport: 'component',
+        }),
     ],
     resolve: {
         alias: {
