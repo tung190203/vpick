@@ -78,8 +78,8 @@ class ClubController extends Controller
             ClubMember::create([
                 'club_id' => $club->id,
                 'user_id' => $userId,
-                'role' => \App\Enums\ClubMemberRole::Admin,
-                'status' => \App\Enums\ClubMemberStatus::Active,
+                'role' => ClubMemberRole::Admin,
+                'status' => ClubMemberStatus::Active,
                 'joined_at' => now(),
             ]);
             
@@ -187,8 +187,8 @@ class ClubController extends Controller
         $member = ClubMember::create([
             'club_id' => $club->id,
             'user_id' => $userId,
-            'role' => \App\Enums\ClubMemberRole::Member,
-            'status' => \App\Enums\ClubMemberStatus::Pending,
+            'role' => ClubMemberRole::Member,
+            'status' => ClubMemberStatus::Pending,
         ]);
 
             $club->load('members.user');
@@ -201,7 +201,7 @@ class ClubController extends Controller
     {
         $userId = auth()->id();
         $validated = $request->validate([
-            'role' => ['sometimes', \Illuminate\Validation\Rule::enum(\App\Enums\ClubMemberRole::class)],
+            'role' => ['sometimes', Rule::enum(ClubMemberRole::class)],
         ]);
 
         $query = Club::whereHas('members', function ($q) use ($userId, $validated) {
