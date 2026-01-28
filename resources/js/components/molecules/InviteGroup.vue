@@ -133,8 +133,7 @@
                                         <span class="font-semibold text-gray-800">{{ user.name }}</span>
                                     </div>
                                     <div class="flex items-center gap-2 text-sm text-gray-500">
-                                        <img v-if="user.gender == 1" :src="maleIcon" class="w-4 h-4" />
-                                        <img v-else-if="user.gender == 2" :src="femaleIcon" class="w-4 h-4" />
+                                        <component :is="user.gender == 1 ? maleIcon : femaleIcon" class="w-4 h-4" />
                                         <span>{{ user.gender_text }}</span>
                                     </div>
                                 </div>

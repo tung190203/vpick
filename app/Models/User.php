@@ -248,7 +248,7 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
 
     public function clubs()
     {
-        return $this->belongsToMany(Club::class, 'club_members')
+        return $this->belongsToMany(\App\Models\Club\Club::class, 'club_members')
             ->withPivot(['is_manager', 'joined_at'])
             ->withTimestamps();
     }

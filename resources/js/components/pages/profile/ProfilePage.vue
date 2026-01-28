@@ -83,8 +83,8 @@
 
                     <div class="text-sm text-[#6B6F80] mt-1 flex items-center gap-2">
                         <div class="flex items-center gap-1">
-                            <img v-if="user.gender === 1" :src="maleIcon" class="w-5 h-5" alt="" />
-                            <img v-else-if="user.gender === 2" :src="femaleIcon" class="w-5 h-5" alt="" />
+                            <component :is="maleIcon" class="w-5 h-5" v-if="user.gender === 1"/>
+                            <component :is="femaleIcon" class="w-5 h-5" v-else-if="user.gender === 2"/>
                             <ExclamationCircleIcon v-else-if="user.gender === 3" class="w-5 h-5" />
                             <QuestionMarkCircleIcon v-else-if="user.gender === 0" class="w-5 h-5" />
                             <p>{{ user.gender_text }}</p>

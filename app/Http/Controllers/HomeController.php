@@ -9,7 +9,7 @@ use App\Http\Resources\ListMiniTournamentResource;
 use App\Http\Resources\ListTournamentResource;
 use App\Http\Resources\UserSportResource;
 use App\Models\Banner;
-use App\Models\Club;
+use App\Models\Club\Club;
 use App\Models\Matches;
 use App\Models\MiniMatch;
 use App\Models\MiniTournament;
@@ -247,17 +247,17 @@ class HomeController extends Controller
             ->get();
     
         // My club
-        $myClub = Club::with('members')
+        $myClub = Club::with(['members.user.vnduprScores'])
             ->whereHas('members', fn($q) => $q->where('user_id', $userId))
             ->take($validated['club_per_page'] ?? Club::PER_PAGE)
             ->get();
     
         // Leaderboard club
-        $leaderboardClub = Club::with(['members.vnduprScores' => fn($q) => $q->where('score_type', 'vndupr_score')])
+        $leaderboardClub = Club::with(['members.user.vnduprScores'])
             ->get()
             ->map(function ($club) {
                 $club->members_max_vndupr_score = $club->members
-                    ->map(fn($member) => $member->vnduprScores->max('score_value') ?? 0)
+                    ->map(fn($member) => $member->user?->vnduprScores?->max('score_value') ?? 0)
                     ->max();
                 return $club;
             })

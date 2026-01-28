@@ -12,7 +12,7 @@
 
                     <!-- Dropdown Menu -->
                     <div v-if="isMenuOpen" class="absolute right-0 top-10 w-56 bg-white rounded-xl shadow-2xl py-2 z-[10000] text-gray-800 border border-gray-100 animate-in fade-in zoom-in duration-200">
-                        <button class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-100 transition-colors">
+                        <button class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-100 transition-colors" @click="openNotification">
                             <BellIcon class="w-5 h-5 text-gray-500" />
                             <span class="font-medium">Thông báo</span>
                         </button>
@@ -40,7 +40,7 @@
                     <div class="flex items-center space-x-2">
                         <div class="text-[44px] font-bold">Pickleball sài gòn phố</div>
                         <div class="bg-[#4392E0] rounded-full p-1">
-                            <img :src="VerifyIcon" alt="Verify Icon" class="w-6 h-6 text-white" />
+                             <VerifyIcon class="w-6 h-6 text-white" />
                         </div>
                     </div>
                     <div class="flex items-center space-x-2">
@@ -50,7 +50,7 @@
                             Tham gia CLB
                         </Button>
                         <Button size="md" color="white" class="bg-[#FBEAEB] rounded-full p-2">
-                            <img :src="MessageIcon" alt="Message Icon" class="w-6.5 h-6.5" />
+                            <MessageIcon class="w-6.5 h-6.5 text-[#D72D36]" />
                         </Button>
                     </div>
                 </div>
@@ -63,11 +63,21 @@
                         <h2 class="text-2xl text-[#838799] font-semibold uppercase mb-4">Thông báo</h2>
                         <p class="text-[#D72D36] font-semibold cursor-pointer">Xem tất cả</p>
                     </div>
-                    <NotificationCard v-for="(notification, index) in notifications" :key="index" v-bind="notification" />
+                    <template v-if="notifications.length > 0">
+                        <NotificationCard v-for="(notification, index) in notifications" :key="index" v-bind="notification" />
+                    </template>
+                    <div v-else class="p-4 text-center">
+                        <p class="text-[#838799]">Hiện chưa có thông báo</p>
+                    </div>
                 </div>
                 <div>
                     <h2 class="text-2xl text-[#838799] font-semibold uppercase mb-4">Lịch hoạt động</h2>
-                    <ActivityScheduleCard v-for="(activity, index) in activities" :key="index" v-bind="activity" />
+                    <template v-if="activities.length > 0">
+                        <ActivityScheduleCard v-for="(activity, index) in activities" :key="index" v-bind="activity" />
+                    </template>
+                    <div v-else class="p-4 text-center">
+                        <p class="text-[#838799]">Hiện chưa có lịch thi đấu</p>
+                    </div>
                 </div>
                 <ClubInfoTabs />
             </div>
@@ -76,8 +86,8 @@
                     <div class="bg-white rounded-2xl shadow-md px-6 py-5">
                         <div class="grid grid-cols-3 divide-x divide-gray-200 text-center">
                             <div v-for="(stat, index) in clubStats" :key="index" class="flex flex-col items-center gap-2">
-                                <div class="text-red-500">
-                                    <img :src="stat.icon" :alt="stat.alt" class="w-12 h-12">
+                                <div class="text-[#D72D36] h-12 flex items-center justify-center">
+                                    <component :is="stat.icon" class="w-12 h-12" />
                                 </div>
                                 <div class="font-semibold text-gray-800">{{ stat.value }}</div>
                                 <div class="text-sm text-[#838799]">{{ stat.label }}</div>
@@ -89,10 +99,82 @@
                     <div class="bg-white rounded-2xl shadow-md px-2 py-5">
                         <div class="grid grid-cols-4 text-center">
                             <div v-for="(module, index) in clubModules" :key="index" class="flex flex-col items-center gap-2">
-                                <div class="text-red-500 rounded-md bg-[#FBEAEB] p-4 cursor-pointer">
-                                    <img :src="module.icon" :alt="module.alt" class="w-6 h-6">
+                                <div class="text-[#D72D36] rounded-md bg-[#FBEAEB] p-4 cursor-pointer">
+                                    <component :is="module.icon" class="w-6 h-6" />
                                 </div>
                                 <div class="text-sm text-[#3E414C]">{{ module.label }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notification Modal -->
+        <div v-if="isNotificationModalOpen" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+            <!-- Backdrop with blur -->
+            <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="closeNotification"></div>
+            
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg relative z-[10000] overflow-hidden animate-in fade-in zoom-in duration-300 h-[calc(100vh-7rem)] flex flex-col">
+                <!-- Fixed Header -->
+                <div class="p-6 pb-2">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-[28px] font-bold text-[#3E414C]">Thông báo</h3>
+                        <button @click="closeNotification" class="text-gray-400 hover:text-gray-600 transition-colors">
+                            <XMarkIcon class="w-8 h-8" stroke-width="2.5" />
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Scrollable Content -->
+                <div class="p-6 pt-2 flex-1 overflow-y-auto custom-scrollbar">
+                    <!-- Category: TODAY -->
+                    <div class="mb-8">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-sm font-bold text-[#838799] uppercase tracking-wider">Hôm nay</span>
+                            <button class="text-[#D72D36] text-sm font-semibold hover:opacity-80">Đánh dấu đã đọc</button>
+                        </div>
+                        <div class="space-y-4">
+                            <div v-for="(notification, index) in notifications.filter(n => n.category === 'today')" :key="index" 
+                                :class="['flex gap-4 p-4 rounded-2xl transition-colors', !notification.isRead ? 'bg-[#F8F9FB]' : 'bg-transparent']">
+                                <div class="relative flex-shrink-0">
+                                    <div :class="['w-14 h-14 rounded-xl flex items-center justify-center', notification.colorClass]">
+                                        <component :is="notification.icon" class="w-7 h-7" />
+                                    </div>
+                                    <div v-if="!notification.isRead" class="absolute -right-1 bottom-0 w-4 h-4 bg-[#D72D36] border-2 border-white rounded-full"></div>
+                                    <div v-if="notification.type === 'payment' && !notification.isRead" class="absolute -right-1 bottom-0 w-4 h-4 bg-[#10B981] border-2 border-white rounded-full"></div>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-start justify-between gap-2 mb-1">
+                                        <h4 class="font-semibold text-base text-[#3E414C] truncate">{{ notification.title }}</h4>
+                                        <span class="text-[#838799] text-xs whitespace-nowrap pt-1">{{ notification.timeAgo }}</span>
+                                    </div>
+                                    <p class="text-xs text-[#838799] leading-4 line-clamp-2">{{ notification.content }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Category: PREVIOUS -->
+                    <div>
+                        <div class="mb-4">
+                            <span class="text-sm font-bold text-[#838799] uppercase tracking-wider">Trước đó</span>
+                        </div>
+                        <div class="space-y-6">
+                            <div v-for="(notification, index) in notifications.filter(n => n.category === 'previous')" :key="index" 
+                                class="flex gap-4 px-4 transition-colors">
+                                <div class="relative flex-shrink-0">
+                                    <div :class="['w-14 h-14 rounded-xl flex items-center justify-center', notification.colorClass]">
+                                        <component :is="notification.icon" class="w-7 h-7" />
+                                    </div>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-start justify-between gap-2 mb-1">
+                                        <h4 class="font-bold text-base text-[#3E414C] truncate">{{ notification.title }}</h4>
+                                        <span class="text-[#838799] text-xs whitespace-nowrap pt-1">{{ notification.timeAgo }}</span>
+                                    </div>
+                                    <p class="text-sm text-[#838799] leading-6 line-clamp-2">{{ notification.content }}</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -103,8 +185,24 @@
 </template>
 
 <script setup>
-import Background from '@/assets/images/club-default-thumbnail.svg'
-import { ArrowLeftIcon, ShareIcon, EllipsisVerticalIcon, MapPinIcon, PlusIcon, BellIcon, FlagIcon, ArrowLeftOnRectangleIcon, InformationCircleIcon } from '@heroicons/vue/24/outline'
+import Background from '@/assets/images/club-default-thumbnail.svg?url'
+import { 
+    ArrowLeftIcon, 
+    ShareIcon, 
+    EllipsisVerticalIcon, 
+    MapPinIcon, 
+    PlusIcon, 
+    BellIcon, 
+    ArrowLeftOnRectangleIcon, 
+    InformationCircleIcon, 
+    XMarkIcon,
+    CalendarIcon,
+    WalletIcon,
+    ArrowPathIcon,
+    UserPlusIcon,
+    CalendarDaysIcon,
+    AcademicCapIcon
+} from '@heroicons/vue/24/outline'
 import { useRouter } from 'vue-router'
 import { ref } from 'vue'
 import VerifyIcon from "@/assets/images/verify-icon.svg";
@@ -120,6 +218,7 @@ const clubStats = CLUB_STATS;
 const clubModules = CLUB_MODULES;
 
 const isMenuOpen = ref(false)
+const isNotificationModalOpen = ref(false)
 
 const toggleMenu = () => {
     isMenuOpen.value = !isMenuOpen.value
@@ -131,6 +230,15 @@ const closeMenu = () => {
 
 const shareClub = () => {
     console.log('share club')
+}
+
+const openNotification = () => {
+    isNotificationModalOpen.value = true
+    isMenuOpen.value = false
+}
+
+const closeNotification = () => {
+    isNotificationModalOpen.value = false
 }
 
 const activities = [
@@ -172,10 +280,64 @@ const activities = [
 
 const notifications = [
     {
-        title: 'Thông báo nghỉ sân ngày 26/10',
-        content: 'Do điều kiện thời tiết mưa lớn, sân bị ngập. BQL quyết định hủy bỏ kèo đấu tối ngày hôm nay, tiền sân sẽ được lưu ký tự động vào quỹ để thanh toán bù cho buổi sau hoặc hoàn trả theo yêu cầu của thành viên.',
-        author: 'Đăng bởi Admin',
-        timeAgo: '2h trước'
+        title: 'Lịch đấu mới: Kèo cố định 3-5-7',
+        content: 'Sân Pickleball Quận 7 đã mở đăng ký cho buổi tối nay. Đăng ký ngay để giữ chỗ!',
+        timeAgo: 'Vừa xong',
+        type: 'match',
+        category: 'today',
+        isRead: false,
+        icon: CalendarIcon,
+        colorClass: 'bg-[#FEE2E2] text-[#EF4444]'
+    },
+    {
+        title: 'Xác nhận thanh toán',
+        content: 'Khoản đóng quỹ 50.000 của bạn cho buổi tập ngày 24/10 đã được ghi nhận.',
+        timeAgo: '2 giờ trước',
+        type: 'payment',
+        category: 'today',
+        isRead: false,
+        icon: WalletIcon,
+        colorClass: 'bg-[#DCFCE7] text-[#10B981]'
+    },
+    {
+        title: 'Cập nhật ứng dụng',
+        content: 'Chúng tôi vừa cập nhật tính năng "Check-in QR" để bạn vào sân nhanh chóng hơn.',
+        timeAgo: '6 giờ trước',
+        type: 'app',
+        category: 'today',
+        isRead: true,
+        icon: ArrowPathIcon,
+        colorClass: 'bg-gray-100 text-gray-500'
+    },
+    {
+        title: 'Thành viên mới',
+        content: 'Chào mừng Hoàng Anh đã gia nhập CLB Pickleball Sài Gòn Phố',
+        timeAgo: 'hôm qua',
+        type: 'member',
+        category: 'previous',
+        isRead: true,
+        icon: UserPlusIcon,
+        colorClass: 'bg-gray-100 text-gray-400'
+    },
+    {
+        title: 'Buổi tập bị hủy',
+        content: 'Rất tiếc, buổi tập T5 26/10 bị hủy do thời tiết không thuận lợi.',
+        timeAgo: '2 ngày trước',
+        type: 'cancel',
+        category: 'previous',
+        isRead: true,
+        icon: CalendarDaysIcon,
+        colorClass: 'bg-gray-100 text-gray-400'
+    },
+    {
+        title: 'Thăng hạng trình độ',
+        content: 'Chúc mừng! Bạn đã được Admin nâng mức trình độ lên 3.0 dựa trên kết quả thi đấu.',
+        timeAgo: '3 ngày trước',
+        type: 'rank',
+        category: 'previous',
+        isRead: true,
+        icon: AcademicCapIcon,
+        colorClass: 'bg-[#FEF3C7] text-[#D97706]'
     }
 ]
 

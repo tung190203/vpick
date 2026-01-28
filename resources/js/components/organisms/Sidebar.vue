@@ -21,7 +21,7 @@
                         class="w-10 h-10 flex items-center justify-center flex-shrink-0"
                         @click="goToDashboard"
                     >
-                        <img src="@/assets/images/logo.svg" alt="Logo" />
+                        <Logo class="w-10 h-10" />
                     </div>
 
                     <div
@@ -32,11 +32,7 @@
                                 : 'opacity-0 max-w-0'
                         "
                     >
-                        <img
-                            src="@/assets/images/logo-explain.svg"
-                            alt="Logo Explain"
-                            class="h-6"
-                        />
+                    <LogoExplain class="h-8" />
                     </div>
                 </div>
             </div>
@@ -342,6 +338,8 @@ import { storeToRefs } from "pinia";
 import { toast } from "vue3-toastify";
 import { ROLE } from "@/constants/index";
 import * as NotificationService from '@/service/notifications'
+import Logo from '@/assets/images/logo.svg'
+import LogoExplain from '@/assets/images/logo-explain.svg'
 
 import {
     BellIcon,

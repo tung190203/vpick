@@ -7,6 +7,9 @@ import { useUserStore } from '@/store/auth'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue3-toastify'
 import { storeToRefs } from 'pinia'
+import GoogleIcon from '@/assets/images/google-icon.svg'
+import FacebookIcon from '@/assets/images/facebook-icon.svg'
+import AppleIcon from '@/assets/images/apple-icon.svg'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -164,21 +167,21 @@ const loginWithApple = () => {
         class="w-full flex items-center justify-center gap-2 bg-white !text-gray-800 border border-gray-300 hover:bg-gray-50"
         @click="loginWithGoogle"
       >
-        <img src="@/assets/images/google-icon.svg" class="w-5 h-5" alt="Google" />
+        <GoogleIcon class="w-5 h-5" />
         <p class="text-sm">Google</p>
       </Button>
       <Button
         class="w-full flex items-center justify-center gap-2 bg-white !text-gray-800 border border-gray-300 hover:bg-gray-50"
         @click="loginWithFacebook"
       >
-        <img src="@/assets/images/facebook-icon.svg" class="w-5 h-5" alt="Google" />
+        <FacebookIcon class="w-5 h-5" />
         <p class="text-sm">Facebook</p>
       </Button>
       <Button
         class="w-full flex items-center justify-center gap-2 bg-white !text-gray-800 border border-gray-300 hover:bg-gray-50"
         @click="loginWithApple"
       >
-        <img src="@/assets/images/apple-icon.svg" class="w-5 h-5" alt="Google" />
+        <AppleIcon class="w-5 h-5" />
         <p class="text-sm">Apple</p>
       </Button>
       </div>

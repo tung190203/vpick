@@ -103,8 +103,7 @@
 
                 <div class="border rounded p-3 flex items-center gap-3 hover:shadow-md transition cursor-pointer">
                   <template v-if="tournament.tournament_types && tournament.tournament_types.length">
-                    <img :src="displayFormat.icon" alt="" class="w-6 h-6"
-                      style="filter: invert(17%) sepia(75%) saturate(3884%) hue-rotate(346deg) brightness(99%) contrast(81%);" />
+                    <component :is="displayFormat.icon" class="w-6 h-6 text-[#D72D36]" />
                     <div v-for="type in tournament.tournament_types">
                       <p class="font-medium text-gray-800">{{ type.format_label }}</p>
                       <p class="text-sm text-gray-500">Tổng {{ type.total_matches ?? 0 }} trận</p>
@@ -423,9 +422,7 @@
                 </div>
                 <div v-if="displayFormat"
                   class="border border-[#BBBFCC] flex justify-start items-start p-4 rounded gap-2">
-                  <img :src="displayFormat.icon" alt="" class="w-6 h-6"
-                    :class="tournament?.tournament_types[0]?.format == 1 ? '' : 'mt-1'"
-                    style="filter: invert(17%) sepia(75%) saturate(3884%) hue-rotate(346deg) brightness(99%) contrast(81%);" />
+                  <component :is="displayFormat.icon" class="w-6 h-6 text-[#D72D36]" />
                   <div>
                     <h3 class="font-semibold text-gray-900 mb-1">
                       {{ displayFormat.title }}
@@ -441,7 +438,7 @@
                   class="border border-[#BBBFCC] rounded my-4 px-4 py-3 flex justify-between items-center cursor-pointer hover:shadow-md transition"
                   @click="openGroupsSortPage">
                   <div class="flex items-center gap-3">
-                    <img src="@/assets/images/table_chart.svg" class="w-5 h-5" alt="">
+                    <TableChartIcon class="w-5 h-5" />
                     <p>Sắp xếp bảng thi đấu</p>
                   </div>
                   <ChevronRightIcon class="w-5 h-5 text-gray-400" />
@@ -450,7 +447,7 @@
                   class="border border-[#BBBFCC] rounded my-4 px-4 py-3 flex justify-between items-center cursor-pointer hover:shadow-md transition"
                   @click="openBracketPage">
                   <div class="flex items-center gap-3">
-                    <img src="@/assets/images/branch.svg" class="w-5 h-5" alt="">
+                    <ScheduleIcon class="w-5 h-5" />
                     <p>Sơ đồ thi đấu</p>
                   </div>
                   <ChevronRightIcon class="w-5 h-5 text-gray-400" />
@@ -634,6 +631,8 @@ import AddMemberModal from '@/components/molecules/AddMemberModal.vue'
 import ScheduleTab from '@/components/molecules/ScheduleTab.vue'
 import ChatForm from '@/components/organisms/ChatForm.vue'
 import PlayerActionModal from '@/components/molecules/PlayerActionModal.vue'
+import TableChartIcon from '@/assets/images/table_chart.svg';
+import ScheduleIcon from '@/assets/images/branch.svg';
 
 const inviteType = ref('participant')
 const userStore = useUserStore()

@@ -38,6 +38,7 @@
         "pusher-js": "^8.4.0",
         "qrcode.vue": "^3.6.0",
         "swiper": "^11.2.10",
+        "vite-svg-loader": "^5.1.0",
         "vue": "^3.5.17",
         "vue-chartjs": "^5.3.2",
         "vue-router": "^4.5.1",

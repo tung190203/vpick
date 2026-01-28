@@ -17,7 +17,11 @@ return new class extends Migration
             $table->string('location')->nullable();
             $table->string('logo_url')->nullable();
             $table->unsignedBigInteger('created_by');
+            $table->softDeletes();
             $table->timestamps();
+            
+            $table->foreign('created_by')->references('id')->on('users')->onDelete('restrict');
+            $table->index('created_by');
         });
     }
 
