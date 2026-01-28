@@ -19,6 +19,7 @@ class ListClubResource extends JsonResource
             'name' => $this->name,
             'location' => $this->location,
             'logo_url' => $this->logo_url,
+            'is_verified' => (bool) $this->is_verified,
             'created_by' => $this->created_by,
             'quantity_members' => $this->whenLoaded('members', fn() => $this->members->count(), 0),
             'skill_level' => $this->whenLoaded('members', function () {

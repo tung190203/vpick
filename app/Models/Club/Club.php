@@ -23,6 +23,7 @@ class Club extends Model
         'location',
         'logo_url',
         'status',
+        'is_verified',
         'created_by',
     ];
 

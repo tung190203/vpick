@@ -4,7 +4,7 @@ namespace App\Http\Resources\Club;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use App\Http\Resources\UserListResource;
+use App\Http\Resources\UserResource;
 
 class ClubExpenseResource extends JsonResource
 {
@@ -19,7 +19,7 @@ class ClubExpenseResource extends JsonResource
             'spent_by' => $this->spent_by,
             'spent_at' => $this->spent_at?->toISOString(),
             'note' => $this->note,
-            'spender' => new UserListResource($this->whenLoaded('spender')),
+            'spender' => new UserResource($this->whenLoaded('spender')),
             'wallet_transaction' => new ClubWalletTransactionResource($this->whenLoaded('walletTransaction')),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),

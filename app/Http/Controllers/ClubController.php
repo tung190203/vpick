@@ -8,6 +8,7 @@ use App\Helpers\ResponseHelper;
 use Illuminate\Http\Request;
 use App\Models\Club\Club;
 use App\Models\Club\ClubMember;
+use App\Models\User;
 use App\Http\Resources\ClubResource;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -314,5 +315,34 @@ class ClubController extends Controller
             'main_wallet_id' => $mainWallet->id,
             'qr_code_url' => $mainWallet->qr_code_url,
         ], 'Cập nhật thông tin quỹ CLB thành công');
+    }
+
+    /**
+     * Verify/Unverify a club (chỉ admin hệ thống)
+     */
+    public function verify(Request $request, $clubId)
+    {
+        $club = Club::findOrFail($clubId);
+        $user = auth()->user();
+
+        // Chỉ admin hệ thống mới có quyền verify
+        if (!$user || $user->role !== User::ADMIN) {
+            return ResponseHelper::error('Chỉ admin hệ thống mới có quyền verify CLB', 403);
+        }
+
+        $validated = $request->validate([
+            'is_verified' => 'required|boolean',
+        ]);
+
+        $club->update(['is_verified' => $validated['is_verified']]);
+
+        $message = $validated['is_verified'] 
+            ? 'Xác minh CLB thành công' 
+            : 'Hủy xác minh CLB thành công';
+
+        return ResponseHelper::success(
+            new ClubResource($club->refresh()),
+            $message
+        );
     }
 }

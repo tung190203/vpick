@@ -207,6 +207,7 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
             Route::prefix('join-requests')->group(function () {
                 Route::get('/', [ClubJoinRequestController::class, 'index']);
                 Route::post('/', [ClubJoinRequestController::class, 'store']);
+                Route::post('/reject', [ClubJoinRequestController::class, 'reject']);
                 Route::get('/{requestId}', [ClubJoinRequestController::class, 'show']);
                 Route::delete('/{requestId}', [ClubJoinRequestController::class, 'destroy']);
                 Route::post('/{requestId}/approve', [ClubJoinRequestController::class, 'approve']);

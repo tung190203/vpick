@@ -4,7 +4,6 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use App\Http\Resources\UserListResource;
 use App\Http\Resources\Club\ClubMemberResource;
 
 class ClubResource extends JsonResource
@@ -22,6 +21,7 @@ class ClubResource extends JsonResource
             'location' => $this->location,
             'logo_url' => $this->logo_url,
             'status' => $this->status,
+            'is_verified' => (bool) $this->is_verified,
             'created_by' => $this->created_by,
             'members' => ClubMemberResource::collection($this->whenLoaded('members')),
             'quantity_members' => $this->whenLoaded('members', fn() => $this->members->count(), 0),
