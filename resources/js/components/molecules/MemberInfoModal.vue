@@ -47,7 +47,7 @@
             <div v-if="member?.status === 'Thủ quỹ'" class="mb-8">
               <h3 class="text-[14px] font-bold text-[#9EA2B3] uppercase tracking-wider mb-3">PHỤ TRÁCH CHUYÊN MÔN</h3>
               <div class="flex items-center gap-2 px-6 py-2.5 bg-[#DC2626] text-white rounded-full w-fit">
-                <img :src="MoneyIcon" alt="" class="w-5 h-5 invert brightness-0" />
+                <MoneyIcon class="w-5 h-5" />
                 <span class="text-[16px] font-bold">Thủ quỹ</span>
               </div>
             </div>

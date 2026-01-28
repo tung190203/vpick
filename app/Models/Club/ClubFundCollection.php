@@ -3,6 +3,7 @@
 namespace App\Models\Club;
 
 use App\Enums\ClubFundCollectionStatus;
+use App\Enums\ClubFundContributionStatus;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -50,7 +51,7 @@ class ClubFundCollection extends Model
 
     public function confirmedContributions()
     {
-        return $this->hasMany(ClubFundContribution::class)->where('status', \App\Enums\ClubFundContributionStatus::Confirmed);
+        return $this->hasMany(ClubFundContribution::class)->where('status', ClubFundContributionStatus::Confirmed);
     }
 
     public function scopeActive($query)
