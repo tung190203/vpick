@@ -8,6 +8,7 @@ use App\Http\Controllers\TournamentTypeController;
 use App\Models\Matches;
 use App\Models\Tournament;
 use App\Models\TournamentStaff;
+use App\Models\TournamentType;
 use App\Services\ImageOptimizationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -243,7 +244,7 @@ class TournamentController extends Controller
             }
 
             // Sử dụng getBracketNew cho format Mixed, getBracket cho các format khác
-            if ($tournamentType->format === \App\Models\TournamentType::FORMAT_MIXED) {
+            if ($tournamentType->format === TournamentType::FORMAT_MIXED) {
                 return $this->tournamentTypeController->getBracketNew($tournamentType);
             } else {
                 return $this->tournamentTypeController->getBracket($tournamentType);

@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Club\Club;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -248,7 +248,7 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
 
     public function clubs()
     {
-        return $this->belongsToMany(\App\Models\Club\Club::class, 'club_members')
+        return $this->belongsToMany(Club::class, 'club_members')
             ->withPivot(['is_manager', 'joined_at'])
             ->withTimestamps();
     }

@@ -2,6 +2,9 @@
 
 namespace App\Models\Club;
 
+use App\Enums\ClubMemberRole;
+use App\Enums\ClubMemberStatus;
+use App\Enums\ClubWalletType;
 use App\Models\User;
 use App\Models\Tournament;
 use App\Models\MiniTournament;
@@ -35,12 +38,12 @@ class Club extends Model
 
     public function activeMembers()
     {
-        return $this->hasMany(ClubMember::class)->where('status', \App\Enums\ClubMemberStatus::Active);
+        return $this->hasMany(ClubMember::class)->where('status', ClubMemberStatus::Active);
     }
 
     public function pendingJoinRequests()
     {
-        return $this->hasMany(ClubMember::class)->where('status', \App\Enums\ClubMemberStatus::Pending);
+        return $this->hasMany(ClubMember::class)->where('status', ClubMemberStatus::Pending);
     }
 
     public function profile()
@@ -55,7 +58,7 @@ class Club extends Model
 
     public function mainWallet()
     {
-        return $this->hasOne(ClubWallet::class)->where('type', \App\Enums\ClubWalletType::Main);
+        return $this->hasOne(ClubWallet::class)->where('type', ClubWalletType::Main);
     }
 
     public function monthlyFees()
@@ -137,7 +140,7 @@ class Club extends Model
         $member = $this->activeMembers()->where('user_id', $userId)->first();
         if (!$member) return false;
         
-        return in_array($member->role, [\App\Enums\ClubMemberRole::Admin, \App\Enums\ClubMemberRole::Manager]);
+        return in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager]);
     }
 
     public function canManageFinance($userId)
@@ -145,6 +148,6 @@ class Club extends Model
         $member = $this->activeMembers()->where('user_id', $userId)->first();
         if (!$member) return false;
         
-        return in_array($member->role, [\App\Enums\ClubMemberRole::Admin, \App\Enums\ClubMemberRole::Manager, \App\Enums\ClubMemberRole::Treasurer]);
+        return in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Treasurer]);
     }
 }
