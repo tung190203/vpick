@@ -9,6 +9,8 @@ enum ClubWalletTransactionSourceType: string
     case Expense = 'expense';
     case Donation = 'donation';
     case Adjustment = 'adjustment';
+    case Activity = 'activity';
+    case ActivityPenalty = 'activity_penalty';
 
     public function label(): string
     {
@@ -18,6 +20,8 @@ enum ClubWalletTransactionSourceType: string
             self::Expense => 'Chi phí',
             self::Donation => 'Quyên góp',
             self::Adjustment => 'Điều chỉnh',
+            self::Activity => 'Phí sự kiện',
+            self::ActivityPenalty => 'Phạt rút khỏi sự kiện',
         };
     }
 

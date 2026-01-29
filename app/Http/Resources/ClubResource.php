@@ -4,7 +4,6 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use App\Http\Resources\UserListResource;
 use App\Http\Resources\Club\ClubMemberResource;
 
 class ClubResource extends JsonResource
@@ -19,13 +18,29 @@ class ClubResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'location' => $this->location,
+            'address' => $this->address,
+            'latitude' => $this->latitude,
+            'longitude' => $this->longitude,
             'logo_url' => $this->logo_url,
             'status' => $this->status,
+            'is_verified' => (bool) $this->is_verified,
             'created_by' => $this->created_by,
             'members' => ClubMemberResource::collection($this->whenLoaded('members')),
             'quantity_members' => $this->whenLoaded('members', fn() => $this->members->count(), 0),
-            'highest_score' => $this->whenLoaded('members', fn() => $this->members->max(fn($m) => $m->user?->vnduprScores?->first()?->score_value ?? 0), 0),
+            'skill_level' => $this->whenLoaded('members', function () {
+                $scores = $this->members
+                    ->map(fn($member) => $member->user?->vnduprScores?->max('score_value'))
+                    ->filter(fn($score) => $score !== null);
+
+                if ($scores->isEmpty()) {
+                    return null;
+                }
+
+                return [
+                    'min' => round($scores->min(), 1),
+                    'max' => round($scores->max(), 1),
+                ];
+            }, null),
             'is_member' => $this->whenLoaded('members', fn() => $this->members->contains(fn($m) => $m->user_id === auth()->id()), false),
             'profile' => $this->whenLoaded('profile'),
             'wallets' => $this->whenLoaded('wallets'),
