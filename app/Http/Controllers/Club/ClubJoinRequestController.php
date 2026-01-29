@@ -136,18 +136,24 @@ class ClubJoinRequestController extends Controller
     }
 
     /**
-     * Hủy yêu cầu tham gia (chỉ người gửi mới được hủy yêu cầu của chính mình)
+     * User hủy yêu cầu tham gia của chính mình (chỉ truyền club_id)
+     * DELETE /api/clubs/{clubId}/join-requests
      */
-    public function destroy($clubId, $requestId)
+    public function destroyMyRequest($clubId)
     {
-        $member = ClubMember::where('club_id', $clubId)
-            ->where('status', ClubMemberStatus::Pending)
-            ->findOrFail($requestId);
-
         $userId = auth()->id();
 
-        if ($member->user_id !== $userId) {
-            return ResponseHelper::error('Chỉ người gửi mới có quyền hủy yêu cầu của chính mình', 403);
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
+        }
+
+        $member = ClubMember::where('club_id', $clubId)
+            ->where('user_id', $userId)
+            ->where('status', ClubMemberStatus::Pending)
+            ->first();
+
+        if (!$member) {
+            return ResponseHelper::error('Không tìm thấy yêu cầu tham gia nào của bạn', 404);
         }
 
         $member->delete();
@@ -228,7 +234,6 @@ class ClubJoinRequestController extends Controller
             'rejection_reason' => 'required|string|max:500',
         ]);
 
-        // Ưu tiên: Nếu có user_id trong body, reject pending request của user đó
         if (!empty($validated['user_id'])) {
             $member = ClubMember::where('club_id', $clubId)
                 ->where('user_id', $validated['user_id'])
@@ -239,7 +244,6 @@ class ClubJoinRequestController extends Controller
                 return ResponseHelper::error('Không tìm thấy yêu cầu tham gia nào của user này', 404);
             }
         } else {
-            // Fallback: Dùng requestId từ URL (backward compatible)
             if (!$requestId) {
                 return ResponseHelper::error('Cần cung cấp user_id trong body hoặc requestId trong URL', 400);
             }
