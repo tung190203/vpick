@@ -8,7 +8,9 @@ use App\Helpers\ResponseHelper;
 use Illuminate\Http\Request;
 use App\Models\Club\Club;
 use App\Models\Club\ClubMember;
+use App\Models\User;
 use App\Http\Resources\ClubResource;
+use App\Services\GeocodingService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
@@ -18,7 +20,14 @@ class ClubController extends Controller
     {
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
-            'location' => 'sometimes|string|max:255',
+            'address' => 'sometimes|string|max:255',
+            'lat' => 'nullable',
+            'lng' => 'nullable',
+            'radius' => 'nullable|numeric|min:1',
+            'minLat' => 'nullable',
+            'maxLat' => 'nullable',
+            'minLng' => 'nullable',
+            'maxLng' => 'nullable',
             'perPage' => 'sometimes|integer|min:1|max:200',
         ]);
         $query = Club::withFullRelations()->orderBy('created_at', 'desc');
@@ -27,8 +36,36 @@ class ClubController extends Controller
             $query->search(['name'], $validated['name']);
         }
     
-        if (!empty($validated['location'])) {
-            $query->search(['location'], $validated['location']);
+        if (!empty($validated['address'])) {
+            $query->search(['address'], $validated['address']);
+        }
+
+        $hasFilter = collect([
+            'name',
+            'address',
+        ])->some(fn($key) => $request->filled($key));
+
+        if (
+            !$hasFilter &&
+            (!empty($validated['minLat']) ||
+                !empty($validated['maxLat']) ||
+                !empty($validated['minLng']) ||
+                !empty($validated['maxLng']))
+        ) {
+            $query->inBounds(
+                $validated['minLat'],
+                $validated['maxLat'],
+                $validated['minLng'],
+                $validated['maxLng']
+            );
+        }
+
+        if (!empty($validated['lat']) && !empty($validated['lng'])) {
+            $query->orderByDistance($validated['lat'], $validated['lng']);
+        }
+
+        if (!empty($validated['lat']) && !empty($validated['lng']) && !empty($validated['radius'])) {
+            $query->nearBy($validated['lat'], $validated['lng'], $validated['radius']);
         }
     
         $perPage = $validated['perPage'] ?? Club::PER_PAGE;
@@ -51,7 +88,9 @@ class ClubController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255|unique:clubs',
-            'location' => 'nullable|string',
+            'address' => 'nullable|string|max:255',
+            'latitude' => 'nullable|string',
+            'longitude' => 'nullable|string',
             'logo_url' => 'nullable|image|max:2048',
         ]);
 
@@ -68,7 +107,9 @@ class ClubController extends Controller
             
             $club = Club::create([
                 'name' => $request->name,
-                'location' => $request->location,
+                'address' => $request->address,
+                'latitude' => $request->latitude,
+                'longitude' => $request->longitude,
                 'logo_url' => $logoPath,
                 'status' => 'active',
                 'created_by' => $userId,
@@ -126,7 +167,9 @@ class ClubController extends Controller
 
         $request->validate([
             'name' => "sometimes|string|max:255|unique:clubs,name,{$clubId}",
-            'location' => 'nullable|string',
+            'address' => 'nullable|string|max:255',
+            'latitude' => 'nullable|string',
+            'longitude' => 'nullable|string',
             'logo_url' => 'nullable|image|max:2048',
         ]);
 
@@ -137,7 +180,9 @@ class ClubController extends Controller
 
         $club->update([
             'name' => $request->name ?? $club->name,
-            'location' => $request->location ?? $club->location,
+            'address' => $request->address ?? $club->address,
+            'latitude' => $request->latitude ?? $club->latitude,
+            'longitude' => $request->longitude ?? $club->longitude,
             'logo_url' => $logoPath ?? $club->logo_url,
         ]);
 
@@ -224,7 +269,9 @@ class ClubController extends Controller
         return ResponseHelper::success([
             'club_id' => $club->id,
             'name' => $club->name,
-            'location' => $club->location,
+            'address' => $club->address,
+            'latitude' => $club->latitude,
+            'longitude' => $club->longitude,
             'logo_url' => $club->logo_url,
             'status' => $club->status,
             'profile' => $club->profile,
@@ -314,5 +361,56 @@ class ClubController extends Controller
             'main_wallet_id' => $mainWallet->id,
             'qr_code_url' => $mainWallet->qr_code_url,
         ], 'Cập nhật thông tin quỹ CLB thành công');
+    }
+
+    /**
+     * Verify/Unverify a club (chỉ admin hệ thống)
+     */
+    public function verify(Request $request, $clubId)
+    {
+        $club = Club::findOrFail($clubId);
+        $user = auth()->user();
+
+        // Chỉ admin hệ thống mới có quyền verify
+        if (!$user || $user->role !== User::ADMIN) {
+            return ResponseHelper::error('Chỉ admin hệ thống mới có quyền verify CLB', 403);
+        }
+
+        $validated = $request->validate([
+            'is_verified' => 'required|boolean',
+        ]);
+
+        $club->update(['is_verified' => $validated['is_verified']]);
+
+        $message = $validated['is_verified']
+            ? 'Xác minh CLB thành công'
+            : 'Hủy xác minh CLB thành công';
+
+        return ResponseHelper::success(
+            new ClubResource($club->refresh()),
+            $message
+        );
+    }
+
+    public function searchLocation(Request $request, GeocodingService $geocoder)
+    {
+        $validated = $request->validate([
+            'query' => 'required|string|max:255',
+        ]);
+
+        $results = $geocoder->search($validated['query']);
+
+        return ResponseHelper::success($results, 'Tìm kiếm địa điểm thành công');
+    }
+
+    public function detailGooglePlace(Request $request, GeocodingService $geocoder)
+    {
+        $validated = $request->validate([
+            'place_id' => 'required|string|max:255',
+        ]);
+
+        $result = $geocoder->getGooglePlaceDetail($validated['place_id']);
+
+        return ResponseHelper::success($result, 'Lấy chi tiết địa điểm thành công');
     }
 }

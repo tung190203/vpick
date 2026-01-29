@@ -180,6 +180,8 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
         Route::get('/', [ClubController::class, 'index']);
         Route::post('/', [ClubController::class, 'store']);
         Route::get('/my-clubs', [ClubController::class, 'myClubs']);
+        Route::get('/search-location', [ClubController::class, 'searchLocation']);
+        Route::get('/location-detail', [ClubController::class, 'detailGooglePlace']);
         Route::get('/{clubId}', [ClubController::class, 'show']);
         Route::put('/{clubId}', [ClubController::class, 'update']);
         Route::delete('/{clubId}', [ClubController::class, 'destroy']);
@@ -207,6 +209,7 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
             Route::prefix('join-requests')->group(function () {
                 Route::get('/', [ClubJoinRequestController::class, 'index']);
                 Route::post('/', [ClubJoinRequestController::class, 'store']);
+                Route::post('/reject', [ClubJoinRequestController::class, 'reject']);
                 Route::get('/{requestId}', [ClubJoinRequestController::class, 'show']);
                 Route::delete('/{requestId}', [ClubJoinRequestController::class, 'destroy']);
                 Route::post('/{requestId}/approve', [ClubJoinRequestController::class, 'approve']);
@@ -239,6 +242,7 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
                 Route::put('/{activityId}', [ClubActivityController::class, 'update']);
                 Route::delete('/{activityId}', [ClubActivityController::class, 'destroy']);
                 Route::post('/{activityId}/complete', [ClubActivityController::class, 'complete']);
+                Route::post('/{activityId}/cancel', [ClubActivityController::class, 'cancel']);
 
                 Route::prefix('{activityId}/participants')->group(function () {
                     Route::get('/', [ClubActivityParticipantController::class, 'index']);
@@ -246,6 +250,7 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
                     Route::post('/invite', [ClubActivityParticipantController::class, 'invite']);
                     Route::put('/{participantId}', [ClubActivityParticipantController::class, 'update']);
                     Route::delete('/{participantId}', [ClubActivityParticipantController::class, 'destroy']);
+                    Route::post('/{participantId}/withdraw', [ClubActivityParticipantController::class, 'withdraw']);
                 });
             });
 

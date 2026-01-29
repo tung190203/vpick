@@ -4,11 +4,18 @@ namespace App\Http\Controllers\Club;
 
 use App\Enums\ClubActivityStatus;
 use App\Enums\ClubMemberRole;
+use App\Enums\ClubWalletTransactionDirection;
+use App\Enums\ClubWalletTransactionSourceType;
+use App\Enums\ClubWalletTransactionStatus;
+use App\Enums\PaymentMethod;
 use App\Helpers\ResponseHelper;
 use App\Models\Club\Club;
 use App\Models\Club\ClubActivity;
+use App\Models\Club\ClubActivityParticipant;
+use App\Models\Club\ClubWalletTransaction;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class ClubActivityController extends Controller
@@ -77,6 +84,8 @@ class ClubActivityController extends Controller
             'is_recurring' => 'sometimes|boolean',
             'recurring_schedule' => 'nullable|string',
             'reminder_minutes' => 'sometimes|integer|min:0',
+            'fee_amount' => 'nullable|numeric|min:0',
+            'penalty_percentage' => 'nullable|numeric|min:0|max:100',
         ]);
 
         $activity = ClubActivity::create([
@@ -91,6 +100,8 @@ class ClubActivityController extends Controller
             'end_time' => $validated['end_time'] ?? null,
             'location' => $validated['location'] ?? null,
             'reminder_minutes' => $validated['reminder_minutes'] ?? 15,
+            'fee_amount' => $validated['fee_amount'] ?? 0,
+            'penalty_percentage' => $validated['penalty_percentage'] ?? 50,
             'status' => ClubActivityStatus::Scheduled,
             'created_by' => $userId,
         ]);
@@ -172,5 +183,84 @@ class ClubActivityController extends Controller
         $activity->markAsCompleted();
 
         return ResponseHelper::success($activity, 'Hoạt động đã được đánh dấu hoàn thành');
+    }
+
+    /**
+     * Admin hủy sự kiện
+     * - Cần nhập lý do hủy
+     * - Có option: có hủy khoản thu đã tạo hay không?
+     * - Nếu hủy khoản thu và thành viên đã nộp tiền => tạo khoản chi cho admin (admin nợ tiền thành viên)
+     */
+    public function cancel(Request $request, $clubId, $activityId)
+    {
+        $activity = ClubActivity::where('club_id', $clubId)->findOrFail($activityId);
+        $userId = auth()->id();
+
+        $club = $activity->club;
+        $member = $club->activeMembers()->where('user_id', $userId)->first();
+        if (!$member || !in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary])) {
+            return ResponseHelper::error('Chỉ admin/manager/secretary mới có quyền hủy sự kiện', 403);
+        }
+
+        if (!$activity->canBeCancelled()) {
+            return ResponseHelper::error('Chỉ có thể hủy sự kiện đang scheduled', 422);
+        }
+
+        $validated = $request->validate([
+            'cancellation_reason' => 'required|string|max:500',
+            'cancel_transactions' => 'required|boolean', // Có hủy khoản thu đã tạo hay không?
+        ]);
+
+        return DB::transaction(function () use ($activity, $club, $userId, $validated) {
+            // Cập nhật status sự kiện thành Cancelled
+            $activity->update([
+                'status' => ClubActivityStatus::Cancelled,
+                'cancellation_reason' => $validated['cancellation_reason'],
+                'cancelled_by' => $userId,
+            ]);
+
+            // Nếu chọn hủy khoản thu
+            if ($validated['cancel_transactions']) {
+                $mainWallet = $club->mainWallet;
+                if (!$mainWallet) {
+                    return ResponseHelper::error('CLB chưa có ví chính', 404);
+                }
+
+                // Lấy tất cả participants đã accepted với walletTransaction
+                $participants = $activity->acceptedParticipants()
+                    ->with(['user', 'walletTransaction'])
+                    ->get();
+
+                foreach ($participants as $participant) {
+                    // Tìm transaction qua wallet_transaction_id (chính xác hơn)
+                    $transaction = $participant->walletTransaction;
+
+                    if ($transaction) {
+                        // Nếu transaction đã được confirm (thành viên đã nộp tiền)
+                        if ($transaction->isConfirmed()) {
+                            // Tạo khoản chi cho admin (admin nợ tiền thành viên)
+                            ClubWalletTransaction::create([
+                                'club_wallet_id' => $mainWallet->id,
+                                'direction' => ClubWalletTransactionDirection::Out,
+                                'amount' => $transaction->amount,
+                                'source_type' => ClubWalletTransactionSourceType::Activity,
+                                'source_id' => $activity->id,
+                                'payment_method' => PaymentMethod::BankTransfer,
+                                'status' => ClubWalletTransactionStatus::Pending,
+                                'description' => "Hoàn tiền cho {$participant->user->full_name} do hủy sự kiện: {$activity->title}",
+                                'created_by' => $userId,
+                            ]);
+                        }
+
+                        // Hủy transaction (reject)
+                        $transaction->reject($userId);
+                    }
+                }
+            }
+
+            $activity->load(['creator', 'club', 'participants.user', 'participants.walletTransaction']);
+
+            return ResponseHelper::success($activity, 'Sự kiện đã được hủy');
+        });
     }
 }
