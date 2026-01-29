@@ -17,7 +17,7 @@ class ClubMemberController extends Controller
     public function index(Request $request, $clubId)
     {
         $club = Club::findOrFail($clubId);
-        
+
         $validated = $request->validate([
             'page' => 'sometimes|integer|min:1',
             'per_page' => 'sometimes|integer|min:1|max:100',
@@ -108,9 +108,9 @@ class ClubMemberController extends Controller
 
             $member->load(['user', 'club']);
 
-            return ResponseHelper::success($member, 
-                $member->status === 'pending' 
-                    ? 'Yêu cầu tham gia đã được gửi' 
+            return ResponseHelper::success($member,
+                $member->status === 'pending'
+                    ? 'Yêu cầu tham gia đã được gửi'
                     : 'Thành viên đã được thêm vào CLB',
                 201
             );

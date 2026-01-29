@@ -185,6 +185,7 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
         Route::get('/{clubId}', [ClubController::class, 'show']);
         Route::put('/{clubId}', [ClubController::class, 'update']);
         Route::delete('/{clubId}', [ClubController::class, 'destroy']);
+        Route::post('/{clubId}/leave', [ClubController::class, 'leave']);
 
         Route::prefix('{clubId}')->group(function () {
             Route::get('/profile', [ClubController::class, 'getProfile']);
@@ -202,8 +203,6 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
                 Route::get('/{memberId}', [ClubMemberController::class, 'show']);
                 Route::put('/{memberId}', [ClubMemberController::class, 'update']);
                 Route::delete('/{memberId}', [ClubMemberController::class, 'destroy']);
-                Route::post('/{memberId}/approve', [ClubMemberController::class, 'approve']);
-                Route::post('/{memberId}/reject', [ClubMemberController::class, 'reject']);
             });
 
             Route::prefix('join-requests')->group(function () {

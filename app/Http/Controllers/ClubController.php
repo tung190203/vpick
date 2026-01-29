@@ -31,11 +31,11 @@ class ClubController extends Controller
             'perPage' => 'sometimes|integer|min:1|max:200',
         ]);
         $query = Club::withFullRelations()->orderBy('created_at', 'desc');
-    
+
         if (!empty($validated['name'])) {
             $query->search(['name'], $validated['name']);
         }
-    
+
         if (!empty($validated['address'])) {
             $query->search(['address'], $validated['address']);
         }
@@ -67,21 +67,21 @@ class ClubController extends Controller
         if (!empty($validated['lat']) && !empty($validated['lng']) && !empty($validated['radius'])) {
             $query->nearBy($validated['lat'], $validated['lng'], $validated['radius']);
         }
-    
+
         $perPage = $validated['perPage'] ?? Club::PER_PAGE;
         $clubs = $query->paginate($perPage);
-    
+
         $data = [
             'clubs' => ClubResource::collection($clubs),
         ];
-    
+
         $meta = [
             'current_page' => $clubs->currentPage(),
             'last_page'    => $clubs->lastPage(),
             'per_page'     => $clubs->perPage(),
             'total'        => $clubs->total(),
         ];
-    
+
         return ResponseHelper::success($data, 'Lấy danh sách câu lạc bộ thành công', 200, $meta);
     }
     public function store(Request $request)
@@ -104,7 +104,7 @@ class ClubController extends Controller
             if ($request->hasFile('logo_url')) {
                 $logoPath = $request->file('logo_url')->store('logos', 'public');
             }
-            
+
             $club = Club::create([
                 'name' => $request->name,
                 'address' => $request->address,
@@ -114,7 +114,7 @@ class ClubController extends Controller
                 'status' => 'active',
                 'created_by' => $userId,
             ]);
-            
+
             // Tự động tạo member với role admin cho người tạo CLB
             ClubMember::create([
                 'club_id' => $club->id,
@@ -123,7 +123,7 @@ class ClubController extends Controller
                 'status' => ClubMemberStatus::Active,
                 'joined_at' => now(),
             ]);
-            
+
             $club->load('members.user');
 
             return ResponseHelper::success(new ClubResource($club), 'Tạo câu lạc bộ thành công');
@@ -136,7 +136,7 @@ class ClubController extends Controller
 
         // Load members với user và vnduprScores
         $members = $club->members()->with(['user.vnduprScores'])->get();
-        
+
         $members = $members->map(function ($member) {
             $user = $member->user;
             if ($user) {
@@ -203,43 +203,31 @@ class ClubController extends Controller
         return ResponseHelper::success([], 'Xóa câu lạc bộ thành công');
     }
 
-    public function join(Request $request, $clubId)
+    /**
+     * User rời CLB (chỉ thành viên active mới được gọi)
+     * POST /api/clubs/{clubId}/leave
+     */
+    public function leave($clubId)
     {
         $club = Club::findOrFail($clubId);
         $userId = auth()->id();
 
         if (!$userId) {
-            return ResponseHelper::error('Bạn cần đăng nhập để tham gia CLB', 401);
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
         }
 
-        // Check nếu đã là member (bất kỳ status nào)
-        if ($club->hasMember($userId)) {
-            return ResponseHelper::error('Người dùng đã là thành viên của câu lạc bộ này', 409);
+        $member = $club->activeMembers()->where('user_id', $userId)->first();
+
+        if (!$member) {
+            return ResponseHelper::error('Bạn không phải thành viên active của CLB này', 404);
         }
 
-        // Check nếu đã có pending request
-        $existingRequest = $club->members()
-            ->where('user_id', $userId)
-            ->where('status', 'pending')
-            ->first();
-
-        if ($existingRequest) {
-            return ResponseHelper::error('Bạn đã gửi yêu cầu tham gia. Vui lòng chờ duyệt', 409);
-        }
-
-        return DB::transaction(function () use ($club, $userId) {
-        // Tạo join request
-        $member = ClubMember::create([
-            'club_id' => $club->id,
-            'user_id' => $userId,
-            'role' => ClubMemberRole::Member,
-            'status' => ClubMemberStatus::Pending,
+        $member->update([
+            'status' => ClubMemberStatus::Inactive,
+            'left_at' => now(),
         ]);
 
-            $club->load('members.user');
-
-            return ResponseHelper::success(new ClubResource($club), 'Yêu cầu tham gia đã được gửi', 201);
-        });
+        return ResponseHelper::success([], 'Bạn đã rời CLB');
     }
 
     public function myClubs(Request $request)
