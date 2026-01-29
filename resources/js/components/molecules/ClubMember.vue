@@ -4,91 +4,54 @@
       <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
         <MagnifyingGlassIcon class="h-5 w-5 text-gray-400" />
       </div>
-      <input type="text" placeholder="Tìm tên, trình độ"
+      <input 
+        v-model="searchQuery"
+        type="text" 
+        placeholder="Tìm tên, trình độ"
         class="block w-full pl-10 pr-3 py-2.5 border border-[#EDEEF2] rounded-md bg-[#EDEEF2] text-sm placeholder-[#9EA2B3] focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all">
     </div>
-    <div>
-      <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-tight mb-4 flex items-center gap-1.5">
-        BAN QUẢN TRỊ <span class="text-gray-400 text-lg">•</span> {{ adminAndMods.length }}
-      </h3>
-      <div v-for="user in adminAndMods" :key="user.id"
-        class="flex items-center justify-between py-4 border-b border-gray-200">
-        <div class="flex items-center gap-3">
-          <div class="relative p-0.5 rounded-full border-2"
-            :class="user.role === 'Admin' ? 'border-blue-400' : 'border-orange-400'">
-            <img :src="user.avatar" :alt="user.name" class="w-14 h-14 rounded-full object-cover">
-            <div v-if="user.role === 'Admin'"
-              class="absolute -bottom-1 -right-1 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center border-2 border-white">
-              <ShieldCheckIcon class="w-3 h-3" />
-            </div>
-            <div v-else-if="user.status === 'Thủ quỹ'"
-              class="absolute -bottom-1 -right-1 w-6 h-6 bg-orange-400 rounded-full flex items-center justify-center border-2 border-white">
-              <MoneyIcon class="w-3 h-3 text-white" />
-            </div>
-          </div>
 
-          <div>
-            <div class="flex items-center gap-2">
-              <p class="font-semibold text-[#374151]">{{ user.name }}</p>
-              <span :class="[
-                'px-2 py-0.5 text-[10px] font-bold rounded text-white uppercase',
-                user.role === 'Admin' ? 'bg-blue-500' : 'bg-orange-400'
-              ]">
-                {{ user.role }}
-              </span>
-            </div>
-            <p class="text-xs text-gray-400 font-medium">
-              {{ user.pickl }} PICKI • {{ user.status }}
-            </p>
-          </div>
-        </div>
-
-        <div class="relative">
-          <button
-            @click="toggleMenu(user.id)"
-            class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 hover:bg-gray-200 transition-colors">
-            <EllipsisHorizontalIcon class="w-4 h-4" />
-          </button>
-
-          <!-- Dropdown Menu -->
-          <div v-if="openMenuId === user.id" 
-            class="absolute right-0 top-10 w-44 bg-white rounded-xl shadow-xl py-2 z-[10000] border border-gray-100 animate-in fade-in zoom-in duration-200">
-            <button 
-              @click="viewInfo(user)"
-              class="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-              <InformationCircleIcon class="w-4 h-4 text-gray-400" />
-              Xem thông tin
-            </button>
-          </div>
-        </div>
-      </div>
+    <!-- Loading State -->
+    <div v-if="loading" class="flex justify-center items-center py-12">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
     </div>
 
-    <!-- Members Section -->
-    <div class="mt-8">
-      <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-tight mb-4 flex items-center gap-1.5">
-        THÀNH VIÊN <span class="text-gray-400 text-lg">•</span> {{ members.length }}
-      </h3>
-
-      <div class="divide-y divide-gray-100">
-        <div v-for="member in members" :key="member.id" class="flex items-center justify-between py-4">
+    <!-- Content -->
+    <div v-else>
+      <!-- Management Section (All non-member roles including admin) -->
+      <div v-if="managementMembers.length > 0" class="mb-8">
+        <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-tight mb-4 flex items-center gap-1.5">
+          BAN QUẢN TRỊ <span class="text-gray-400 text-lg">•</span> {{ managementMembers.length }}
+        </h3>
+        <div v-for="member in managementMembers" :key="member.id"
+          class="flex items-center justify-between py-4 border-b border-gray-200">
           <div class="flex items-center gap-3">
-            <div class="relative">
-              <img :src="member.avatar" :alt="member.name" class="w-14 h-14 rounded-full object-cover bg-orange-50">
-              <!-- Member Level Badge -->
-              <div
-                class="absolute -bottom-1 -left-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center border-2 border-white text-white text-[9px] font-bold">
-                {{ member.level }}
-              </div>
-              <!-- Online Status Indicator -->
-              <div v-if="member.online"
-                class="absolute bottom-[-1px] right-[-1px] w-4 h-4 bg-emerald-500 rounded-full border-2 border-white">
+            <div class="relative p-0.5 rounded-full border-2"
+              :class="getRoleBorderColor(member.role)">
+              <img :src="member.user?.avatar_url || 'https://picki.vn/images/default-avatar.png'" 
+                :alt="member.user?.full_name" 
+                class="w-14 h-14 rounded-full object-cover">
+              <div 
+                class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center border-2 border-white"
+                :class="getRoleBadgeColor(member.role)">
+                <ShieldCheckIcon v-if="member.role === 'admin'" class="w-3 h-3" />
+                <MoneyIcon v-else-if="member.role === 'treasurer'" class="w-3 h-3 text-white" />
               </div>
             </div>
 
             <div>
-              <p class="font-semibold text-[#374151]">{{ member.name }}</p>
-              <p class="text-xs text-gray-400">{{ member.lastSeen }}</p>
+              <div class="flex items-center gap-2">
+                <p class="font-semibold text-[#374151]">{{ member.user?.full_name || 'N/A' }}</p>
+                <span :class="[
+                  'px-2 py-0.5 text-[10px] font-bold rounded text-white uppercase',
+                  getRoleTagColor(member.role)
+                ]">
+                  {{ getRoleLabel(member.role) }}
+                </span>
+              </div>
+              <p class="text-xs text-gray-400 font-medium">
+                {{ member.user?.self_score || 'N/A' }} PICKI • {{ getRolePosition(member.role) }}
+              </p>
             </div>
           </div>
 
@@ -101,7 +64,7 @@
 
             <!-- Dropdown Menu -->
             <div v-if="openMenuId === member.id" 
-              class="absolute right-0 top-10 w-44 bg-white rounded-xl shadow-xl py-2 z-50 border border-gray-100 animate-in fade-in zoom-in duration-200">
+              class="absolute right-0 top-10 w-44 bg-white rounded-xl shadow-xl py-2 z-[10000] border border-gray-100 animate-in fade-in zoom-in duration-200">
               <button 
                 @click="viewInfo(member)"
                 class="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2">
@@ -111,6 +74,95 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Members Section -->
+      <div class="mt-8" v-if="regularMembers.length > 0">
+        <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-tight mb-4 flex items-center gap-1.5">
+          THÀNH VIÊN <span class="text-gray-400 text-lg">•</span> {{ totalRegularMembers }}
+        </h3>
+
+        <div class="divide-y divide-gray-100">
+          <div v-for="member in regularMembers" :key="member.id" class="flex items-center justify-between py-4">
+            <div class="flex items-center gap-3">
+              <div class="relative">
+                <img :src="member.user?.avatar_url || 'https://picki.vn/images/default-avatar.png'" 
+                  :alt="member.user?.full_name" 
+                  class="w-14 h-14 rounded-full object-cover bg-orange-50">
+                <!-- Member Level Badge -->
+                <div
+                  class="absolute -bottom-1 -left-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center border-2 border-white text-white text-[9px] font-bold">
+                  {{ member.user?.self_score || '0' }}
+                </div>
+                <!-- Online Status Indicator -->
+                <div v-if="isOnline(member.user?.last_login)"
+                  class="absolute bottom-[-1px] right-[-1px] w-4 h-4 bg-emerald-500 rounded-full border-2 border-white">
+                </div>
+              </div>
+
+              <div>
+                <p class="font-semibold text-[#374151]">{{ member.user?.full_name || 'N/A' }}</p>
+                <p class="text-xs text-gray-400">{{ getJoinedDate(member.joined_at || member.created_at) }}</p>
+              </div>
+            </div>
+
+            <div class="relative">
+              <button
+                @click="toggleMenu(member.id)"
+                class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 hover:bg-gray-200 transition-colors">
+                <EllipsisHorizontalIcon class="w-4 h-4" />
+              </button>
+
+              <!-- Dropdown Menu -->
+              <div v-if="openMenuId === member.id" 
+                class="absolute right-0 top-10 w-44 bg-white rounded-xl shadow-xl py-2 z-50 border border-gray-100 animate-in fade-in zoom-in duration-200">
+                <button 
+                  @click="viewInfo(member)"
+                  class="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                  <InformationCircleIcon class="w-4 h-4 text-gray-400" />
+                  Xem thông tin
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div v-if="!loading && managementMembers.length === 0 && regularMembers.length === 0" class="text-center py-12">
+        <p class="text-gray-400">Không tìm thấy thành viên nào</p>
+      </div>
+
+      <!-- Pagination -->
+      <div v-if="totalPages > 1" class="flex items-center justify-center gap-2 mt-8 pt-6 border-t border-gray-200">
+        <button
+          @click="goToPage(currentPage - 1)"
+          :disabled="currentPage === 1"
+          class="px-3 py-2 rounded-lg border border-gray-300 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50">
+          Trước
+        </button>
+        
+        <div class="flex items-center gap-1">
+          <button
+            v-for="page in visiblePages"
+            :key="page"
+            @click="goToPage(page)"
+            :class="[
+              'px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+              page === currentPage 
+                ? 'bg-blue-500 text-white' 
+                : 'border border-gray-300 hover:bg-gray-50'
+            ]">
+            {{ page }}
+          </button>
+        </div>
+
+        <button
+          @click="goToPage(currentPage + 1)"
+          :disabled="currentPage === totalPages"
+          class="px-3 py-2 rounded-lg border border-gray-300 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50">
+          Sau
+        </button>
       </div>
     </div>
 
@@ -123,54 +175,231 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import ShieldCheckIcon from "@/assets/images/shield_check.svg";
 import MoneyIcon from "@/assets/images/money.svg";
 import { EllipsisHorizontalIcon, MagnifyingGlassIcon, InformationCircleIcon } from '@heroicons/vue/24/outline';
 import MemberInfoModal from '@/components/molecules/MemberInfoModal.vue';
+import * as ClubService from '@/service/club.js'
 
-const adminAndMods = ref([
-  {
-    id: 1,
-    name: 'Nguyễn Tuấn Anh',
-    avatar: 'https://images.pexels.com/photos/30643252/pexels-photo-30643252.jpeg',
-    role: 'Admin',
-    pickl: '3.5',
-    status: 'Chủ câu lạc bộ',
-    verified: true
-  },
-  {
-    id: 2,
-    name: 'Trần Minh',
-    avatar: 'https://images.pexels.com/photos/30643252/pexels-photo-30643252.jpeg',
-    role: 'Mod',
-    pickl: '3.0',
-    status: 'Thủ quỹ',
-    verified: false
+const props = defineProps({
+  clubId: {
+    type: [String, Number],
+    required: true
   }
-])
+})
 
-const members = ref([
-  {
-    id: 3,
-    name: 'Lê Văn Cường',
-    avatar: 'https://images.pexels.com/photos/30643252/pexels-photo-30643252.jpeg',
-    level: '4.5',
-    lastSeen: 'Tham gia 3 ngày trước',
-    online: true
-  }
-])
-
+// State
+const searchQuery = ref('')
 const openMenuId = ref(null)
 const showModal = ref(false)
 const selectedMember = ref(null)
+const loading = ref(false)
+const currentPage = ref(1)
+const perPage = ref(15)
+const totalPages = ref(1)
+const totalMembers = ref(0)
+const totalRegularMembers = ref(0)
+const members = ref([])
+const statistics = ref({})
+const allManagementMembers = ref([]) // Store all management members separately
+
+// Debounce timer
+let searchTimeout = null
+
+// Helper function to get role priority (lower number = higher priority)
+const getRolePriority = (role) => {
+  const priorities = {
+    'admin': 1,
+    'manager': 2,
+    'treasurer': 3,
+    'secretary': 4,
+    'member': 5
+  }
+  return priorities[role] || 999
+}
+
+const managementMembers = computed(() => {
+  let filtered = allManagementMembers.value
+    .filter(member => member.user)
+  
+  // Apply search filter
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    filtered = filtered.filter(member => {
+      const fullName = member.user?.full_name?.toLowerCase() || ''
+      const role = getRoleLabel(member.role).toLowerCase()
+      const score = member.user?.self_score?.toString() || ''
+      
+      return fullName.includes(query) || 
+             role.includes(query) || 
+             score.includes(query)
+    })
+  }
+  
+  // Sort by role priority
+  return filtered.sort((a, b) => getRolePriority(a.role) - getRolePriority(b.role))
+})
+
+const regularMembers = computed(() => {
+  return members.value.filter(member => 
+    member.role === 'member' && member.user
+  )
+})
+
+const visiblePages = computed(() => {
+  const pages = []
+  const maxVisible = 5
+  let start = Math.max(1, currentPage.value - Math.floor(maxVisible / 2))
+  let end = Math.min(totalPages.value, start + maxVisible - 1)
+  
+  if (end - start + 1 < maxVisible) {
+    start = Math.max(1, end - maxVisible + 1)
+  }
+  
+  for (let i = start; i <= end; i++) {
+    pages.push(i)
+  }
+  
+  return pages
+})
+
+// Methods
+const fetchManagementMembers = async () => {
+  try {
+    const response = await ClubService.getMembers(props.clubId, {
+      status: 'active',
+      per_page: 100
+    })
+    allManagementMembers.value = (response.data || [])
+      .filter(member => member.user && member.role !== 'member')
+  } catch (error) {
+    console.error('Error fetching management members:', error)
+    allManagementMembers.value = []
+  }
+}
+
+const fetchMembers = async () => {
+  loading.value = true
+  try {
+    const params = {
+      page: currentPage.value,
+      per_page: perPage.value,
+      status: 'active',
+    }
+
+    if (!searchQuery.value) {
+      params.role = 'member' // Only fetch regular members for pagination when not searching
+    }
+    
+    if (searchQuery.value) {
+      params.search = searchQuery.value
+    }
+    
+    const response = await ClubService.getMembers(props.clubId, params)
+    
+    members.value = response.data || []
+    statistics.value = response.statistics || {}
+    currentPage.value = response.current_page || 1
+    totalPages.value = response.last_page || 1
+    totalMembers.value = response.total || 0
+    totalRegularMembers.value = response.statistics?.by_role?.member || 0
+    perPage.value = response.per_page || 15
+  } catch (error) {
+    console.error('Error fetching members:', error)
+    members.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+const goToPage = (page) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+    fetchMembers()
+  }
+}
+
+// Helper functions
+const getRoleBorderColor = (role) => {
+  const colors = {
+    'admin': 'border-blue-400',
+    'manager': 'border-purple-400',
+    'treasurer': 'border-orange-400',
+    'secretary': 'border-green-400'
+  }
+  return colors[role] || 'border-gray-300'
+}
+
+const getRoleBadgeColor = (role) => {
+  const colors = {
+    'admin': 'bg-blue-500',
+    'manager': 'bg-purple-500',
+    'treasurer': 'bg-orange-400',
+    'secretary': 'bg-green-500'
+  }
+  return colors[role] || 'bg-gray-500'
+}
+
+const getRoleTagColor = (role) => {
+  const colors = {
+    'admin': 'bg-blue-500',
+    'manager': 'bg-purple-500',
+    'treasurer': 'bg-orange-400',
+    'secretary': 'bg-green-500'
+  }
+  return colors[role] || 'bg-gray-500'
+}
+
+const getRoleLabel = (role) => {
+  const labels = {
+    'admin': 'Admin',
+    'manager': 'Quản lý',
+    'treasurer': 'Thủ quỹ',
+    'secretary': 'Thư ký',
+    'member': 'Thành viên'
+  }
+  return labels[role] || role
+}
+
+const getRolePosition = (role) => {
+  const positions = {
+    'admin': 'Chủ câu lạc bộ',
+    'manager': 'Quản lý',
+    'treasurer': 'Thủ quỹ',
+    'secretary': 'Thư ký'
+  }
+  return positions[role] || 'Thành viên'
+}
+
+const isOnline = (lastLogin) => {
+  if (!lastLogin) return false
+  const lastLoginDate = new Date(lastLogin)
+  const now = new Date()
+  const diffMinutes = (now - lastLoginDate) / (1000 * 60)
+  return diffMinutes < 15 // Online if logged in within last 15 minutes
+}
+
+const getJoinedDate = (date) => {
+  if (!date) return 'N/A'
+  const joinedDate = new Date(date)
+  const now = new Date()
+  const diffDays = Math.floor((now - joinedDate) / (1000 * 60 * 60 * 24))
+  
+  if (diffDays === 0) return 'Tham gia hôm nay'
+  if (diffDays === 1) return 'Tham gia 1 ngày trước'
+  if (diffDays < 30) return `Tham gia ${diffDays} ngày trước`
+  
+  const diffMonths = Math.floor(diffDays / 30)
+  if (diffMonths === 1) return 'Tham gia 1 tháng trước'
+  if (diffMonths < 12) return `Tham gia ${diffMonths} tháng trước`
+  
+  const diffYears = Math.floor(diffMonths / 12)
+  return `Tham gia ${diffYears} năm trước`
+}
 
 const toggleMenu = (id) => {
-  if (openMenuId.value === id) {
-    openMenuId.value = null
-  } else {
-    openMenuId.value = id
-  }
+  openMenuId.value = openMenuId.value === id ? null : id
 }
 
 const closeMenu = () => {
@@ -182,10 +411,27 @@ const viewInfo = (member) => {
   showModal.value = true
   closeMenu()
 }
+
+// Watchers
+watch(searchQuery, () => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+  
+  searchTimeout = setTimeout(() => {
+    currentPage.value = 1
+    fetchMembers()
+  }, 300)
+})
+
+// Lifecycle
+onMounted(() => {
+  fetchManagementMembers() // Fetch all management members first (shown on every page)
+  fetchMembers() // Then fetch regular members with pagination
+})
 </script>
 
 <style scoped>
-/* Typography and colors based on image */
 .tracking-tight {
   letter-spacing: -0.015em;
 }

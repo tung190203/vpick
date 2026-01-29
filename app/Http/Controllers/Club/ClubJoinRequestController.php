@@ -8,12 +8,17 @@ use App\Helpers\ResponseHelper;
 use App\Models\Club\Club;
 use App\Models\Club\ClubMember;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Club\ClubMemberResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class ClubJoinRequestController extends Controller
 {
+    /**
+     * Lấy danh sách yêu cầu tham gia CLB
+     * Mặc định chỉ lấy pending, có thể filter theo status
+     */
     public function index(Request $request, $clubId)
     {
         $club = Club::findOrFail($clubId);
@@ -26,34 +31,45 @@ class ClubJoinRequestController extends Controller
         $validated = $request->validate([
             'page' => 'sometimes|integer|min:1',
             'per_page' => 'sometimes|integer|min:1|max:100',
-            'status' => 'sometimes|in:pending,approved,rejected,cancelled',
+            'status' => 'sometimes|in:pending,approved,rejected',
         ]);
 
-        $query = $club->members()->where('status', ClubMemberStatus::Pending)
-            ->with(['user', 'reviewer']);
+        // Mặc định chỉ lấy pending requests
+        $status = $validated['status'] ?? 'pending';
 
-        if (!empty($validated['status'])) {
-            if ($validated['status'] === 'approved') {
-                $query->where('status', ClubMemberStatus::Active)->whereNotNull('reviewed_at');
-            } elseif ($validated['status'] === 'rejected') {
-                $query->where('status', ClubMemberStatus::Inactive)->whereNotNull('rejection_reason');
-            } elseif ($validated['status'] === 'cancelled') {
-                $query->whereNotNull('left_at');
-            } else {
-                $query->where('status', ClubMemberStatus::Pending);
-            }
+        $query = $club->members()
+            ->with([
+                'user.vnduprScores', // Load scores để hiển thị skill level
+                'reviewer'
+            ]);
+
+        // Filter theo status
+        if ($status === 'pending') {
+            $query->where('status', ClubMemberStatus::Pending);
+        } elseif ($status === 'approved') {
+            $query->where('status', ClubMemberStatus::Active)
+                  ->whereNotNull('reviewed_at');
+        } elseif ($status === 'rejected') {
+            $query->where('status', ClubMemberStatus::Inactive)
+                  ->whereNotNull('rejection_reason');
         }
 
         $perPage = $validated['per_page'] ?? 15;
         $requests = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
-        return ResponseHelper::success([
-            'data' => $requests->items(),
+        $meta = [
             'current_page' => $requests->currentPage(),
             'per_page' => $requests->perPage(),
             'total' => $requests->total(),
             'last_page' => $requests->lastPage(),
-        ], 'Lấy danh sách yêu cầu tham gia thành công');
+        ];
+
+        return ResponseHelper::success(
+            ClubMemberResource::collection($requests),
+            'Lấy danh sách yêu cầu tham gia thành công',
+            200,
+            $meta
+        );
     }
 
     public function store(Request $request, $clubId)
@@ -94,22 +110,34 @@ class ClubJoinRequestController extends Controller
                 'message' => $validated['message'] ?? null,
             ]);
 
-            $member->load(['user', 'club']);
+            $member->load(['user.vnduprScores', 'club']);
 
-            return ResponseHelper::success($member, 'Yêu cầu tham gia đã được gửi', 201);
+            return ResponseHelper::success(
+                new ClubMemberResource($member),
+                'Yêu cầu tham gia đã được gửi',
+                201
+            );
         });
     }
 
+    /**
+     * Lấy chi tiết một yêu cầu tham gia
+     */
     public function show($clubId, $requestId)
     {
         $member = ClubMember::where('club_id', $clubId)
-            ->where('status', ClubMemberStatus::Pending)
-            ->with(['user', 'club', 'reviewer'])
+            ->with(['user.vnduprScores', 'club', 'reviewer'])
             ->findOrFail($requestId);
 
-        return ResponseHelper::success($member, 'Lấy chi tiết yêu cầu thành công');
+        return ResponseHelper::success(
+            new ClubMemberResource($member),
+            'Lấy chi tiết yêu cầu thành công'
+        );
     }
 
+    /**
+     * Hủy yêu cầu tham gia (chỉ người gửi mới được hủy yêu cầu của chính mình)
+     */
     public function destroy($clubId, $requestId)
     {
         $member = ClubMember::where('club_id', $clubId)
@@ -118,8 +146,8 @@ class ClubJoinRequestController extends Controller
 
         $userId = auth()->id();
 
-        if ($member->user_id !== $userId && !$member->club->canManage($userId)) {
-            return ResponseHelper::error('Chỉ người gửi hoặc admin mới có quyền hủy yêu cầu', 403);
+        if ($member->user_id !== $userId) {
+            return ResponseHelper::error('Chỉ người gửi mới có quyền hủy yêu cầu của chính mình', 403);
         }
 
         $member->delete();
@@ -127,62 +155,112 @@ class ClubJoinRequestController extends Controller
         return ResponseHelper::success([], 'Yêu cầu đã được hủy');
     }
 
-    public function approve(Request $request, $clubId, $requestId)
+    /**
+     * Duyệt yêu cầu tham gia
+     * Có thể dùng user_id (ưu tiên) hoặc requestId (backward compatible)
+     */
+    public function approve(Request $request, $clubId, $requestId = null)
     {
-        $member = ClubMember::where('club_id', $clubId)
-            ->where('status', ClubMemberStatus::Pending)
-            ->findOrFail($requestId);
+        $club = Club::findOrFail($clubId);
+        $reviewerId = auth()->id();
 
-        $club = $member->club;
-        $userId = auth()->id();
-
-        if (!$club->canManage($userId)) {
+        if (!$club->canManage($reviewerId)) {
             return ResponseHelper::error('Chỉ admin/manager mới có quyền duyệt', 403);
         }
 
         $validated = $request->validate([
+            'user_id' => 'sometimes|integer|exists:users,id',
             'role' => ['sometimes', Rule::enum(ClubMemberRole::class)],
         ]);
+
+        // Ưu tiên: Nếu có user_id trong body, approve pending request của user đó
+        if (!empty($validated['user_id'])) {
+            $member = ClubMember::where('club_id', $clubId)
+                ->where('user_id', $validated['user_id'])
+                ->where('status', ClubMemberStatus::Pending)
+                ->first();
+
+            if (!$member) {
+                return ResponseHelper::error('Không tìm thấy yêu cầu tham gia nào của user này', 404);
+            }
+        } else {
+            // Fallback: Dùng requestId từ URL (backward compatible)
+            if (!$requestId) {
+                return ResponseHelper::error('Cần cung cấp user_id trong body hoặc requestId trong URL', 400);
+            }
+
+            $member = ClubMember::where('club_id', $clubId)
+                ->where('status', ClubMemberStatus::Pending)
+                ->findOrFail($requestId);
+        }
 
         $member->update([
             'status' => ClubMemberStatus::Active,
             'role' => $validated['role'] ?? ClubMemberRole::Member,
-            'reviewed_by' => $userId,
+            'reviewed_by' => $reviewerId,
             'reviewed_at' => now(),
             'joined_at' => now(),
         ]);
 
-        $member->load(['user', 'reviewer']);
+        $member->load(['user.vnduprScores', 'reviewer']);
 
-        return ResponseHelper::success($member, 'Yêu cầu đã được duyệt');
+        return ResponseHelper::success(
+            new ClubMemberResource($member),
+            'Yêu cầu đã được duyệt'
+        );
     }
 
-    public function reject(Request $request, $clubId, $requestId)
+    /**
+     * Từ chối yêu cầu tham gia
+     * Có thể dùng user_id (ưu tiên) hoặc requestId (backward compatible)
+     */
+    public function reject(Request $request, $clubId, $requestId = null)
     {
-        $member = ClubMember::where('club_id', $clubId)
-            ->where('status', ClubMemberStatus::Pending)
-            ->findOrFail($requestId);
+        $club = Club::findOrFail($clubId);
+        $reviewerId = auth()->id();
 
-        $club = $member->club;
-        $userId = auth()->id();
-
-        if (!$club->canManage($userId)) {
+        if (!$club->canManage($reviewerId)) {
             return ResponseHelper::error('Chỉ admin/manager mới có quyền từ chối', 403);
         }
 
         $validated = $request->validate([
+            'user_id' => 'sometimes|integer|exists:users,id',
             'rejection_reason' => 'required|string|max:500',
         ]);
 
+        // Ưu tiên: Nếu có user_id trong body, reject pending request của user đó
+        if (!empty($validated['user_id'])) {
+            $member = ClubMember::where('club_id', $clubId)
+                ->where('user_id', $validated['user_id'])
+                ->where('status', ClubMemberStatus::Pending)
+                ->first();
+
+            if (!$member) {
+                return ResponseHelper::error('Không tìm thấy yêu cầu tham gia nào của user này', 404);
+            }
+        } else {
+            // Fallback: Dùng requestId từ URL (backward compatible)
+            if (!$requestId) {
+                return ResponseHelper::error('Cần cung cấp user_id trong body hoặc requestId trong URL', 400);
+            }
+
+            $member = ClubMember::where('club_id', $clubId)
+                ->where('status', ClubMemberStatus::Pending)
+                ->findOrFail($requestId);
+        }
+
         $member->update([
             'status' => ClubMemberStatus::Inactive,
-            'reviewed_by' => $userId,
+            'reviewed_by' => $reviewerId,
             'reviewed_at' => now(),
             'rejection_reason' => $validated['rejection_reason'],
         ]);
 
-        $member->load(['user', 'reviewer']);
+        $member->load(['user.vnduprScores', 'reviewer']);
 
-        return ResponseHelper::success($member, 'Yêu cầu đã bị từ chối');
+        return ResponseHelper::success(
+            new ClubMemberResource($member),
+            'Yêu cầu đã bị từ chối'
+        );
     }
 }
