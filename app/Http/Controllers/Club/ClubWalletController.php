@@ -7,6 +7,8 @@ use App\Enums\ClubWalletTransactionDirection;
 use App\Enums\ClubWalletTransactionStatus;
 use App\Enums\ClubWalletType;
 use App\Helpers\ResponseHelper;
+use App\Http\Resources\Club\ClubWalletResource;
+use App\Http\Resources\Club\ClubWalletTransactionResource;
 use App\Models\Club\Club;
 use App\Models\Club\ClubWallet;
 use App\Http\Controllers\Controller;
@@ -29,12 +31,9 @@ class ClubWalletController extends Controller
             $query->where('type', $validated['type']);
         }
 
-        $wallets = $query->with('transactions')->get();
-        $wallets->each(function ($wallet) {
-            $wallet->balance = $wallet->balance;
-        });
+        $wallets = $query->get();
 
-        return ResponseHelper::success($wallets, 'Lấy danh sách ví thành công');
+        return ResponseHelper::success(ClubWalletResource::collection($wallets), 'Lấy danh sách ví thành công');
     }
 
     public function store(Request $request, $clubId)
@@ -68,7 +67,7 @@ class ClubWalletController extends Controller
             'qr_code_url' => $validated['qr_code_url'] ?? null,
         ]);
 
-        return ResponseHelper::success($wallet, 'Tạo ví thành công', 201);
+        return ResponseHelper::success(new ClubWalletResource($wallet), 'Tạo ví thành công', 201);
     }
 
     public function show($clubId, $walletId)
@@ -84,7 +83,7 @@ class ClubWalletController extends Controller
             return ResponseHelper::error('Chỉ admin/manager/treasurer mới có quyền xem thông tin ví', 403);
         }
 
-        return ResponseHelper::success($wallet, 'Lấy thông tin ví thành công');
+        return ResponseHelper::success(new ClubWalletResource($wallet), 'Lấy thông tin ví thành công');
     }
 
     public function update(Request $request, $clubId, $walletId)
@@ -105,7 +104,7 @@ class ClubWalletController extends Controller
 
         $wallet->update($validated);
 
-        return ResponseHelper::success($wallet, 'Cập nhật ví thành công');
+        return ResponseHelper::success(new ClubWalletResource($wallet->fresh()), 'Cập nhật ví thành công');
     }
 
     public function destroy($clubId, $walletId)
@@ -174,13 +173,14 @@ class ClubWalletController extends Controller
         $perPage = $validated['per_page'] ?? 15;
         $transactions = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
-        return ResponseHelper::success([
-            'data' => $transactions->items(),
+        $data = ['transactions' => ClubWalletTransactionResource::collection($transactions)];
+        $meta = [
             'current_page' => $transactions->currentPage(),
             'per_page' => $transactions->perPage(),
             'total' => $transactions->total(),
             'last_page' => $transactions->lastPage(),
-        ], 'Lấy danh sách giao dịch thành công');
+        ];
+        return ResponseHelper::success($data, 'Lấy danh sách giao dịch thành công', 200, $meta);
     }
 
     public function getFundOverview(Request $request, $clubId)

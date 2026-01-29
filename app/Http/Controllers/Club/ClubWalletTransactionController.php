@@ -112,9 +112,8 @@ class ClubWalletTransactionController extends Controller
             'created_by' => $userId,
         ]);
 
-        $transaction->load(['wallet', 'creator']);
-
-        return ResponseHelper::success($transaction, 'Tạo giao dịch thành công', 201);
+        $transaction->load(['wallet', 'creator', 'confirmer']);
+        return ResponseHelper::success(new ClubWalletTransactionResource($transaction), 'Tạo giao dịch thành công', 201);
     }
 
     public function show($clubId, $transactionId)
@@ -123,7 +122,7 @@ class ClubWalletTransactionController extends Controller
             $q->where('club_id', $clubId);
         })->with(['wallet', 'creator', 'confirmer'])->findOrFail($transactionId);
 
-        return ResponseHelper::success($transaction, 'Lấy thông tin giao dịch thành công');
+        return ResponseHelper::success(new ClubWalletTransactionResource($transaction), 'Lấy thông tin giao dịch thành công');
     }
 
     public function update(Request $request, $clubId, $transactionId)
@@ -150,9 +149,8 @@ class ClubWalletTransactionController extends Controller
         ]);
 
         $transaction->update($validated);
-        $transaction->load(['wallet', 'creator']);
-
-        return ResponseHelper::success($transaction, 'Cập nhật giao dịch thành công');
+        $transaction->load(['wallet', 'creator', 'confirmer']);
+        return ResponseHelper::success(new ClubWalletTransactionResource($transaction), 'Cập nhật giao dịch thành công');
     }
 
     public function confirm($clubId, $transactionId)
@@ -173,8 +171,7 @@ class ClubWalletTransactionController extends Controller
 
         $transaction->confirm($userId);
         $transaction->load(['wallet', 'creator', 'confirmer']);
-
-        return ResponseHelper::success($transaction, 'Giao dịch đã được xác nhận');
+        return ResponseHelper::success(new ClubWalletTransactionResource($transaction), 'Giao dịch đã được xác nhận');
     }
 
     public function reject(Request $request, $clubId, $transactionId)
@@ -195,7 +192,6 @@ class ClubWalletTransactionController extends Controller
 
         $transaction->reject($userId);
         $transaction->load(['wallet', 'creator', 'confirmer']);
-
-        return ResponseHelper::success($transaction, 'Giao dịch đã bị từ chối');
+        return ResponseHelper::success(new ClubWalletTransactionResource($transaction), 'Giao dịch đã bị từ chối');
     }
 }

@@ -78,9 +78,9 @@ class ClubFundCollectionController extends Controller
             'created_by' => $userId,
         ]);
 
-        $collection->load(['creator', 'club']);
+        $collection->load(['creator', 'club', 'contributions.user']);
 
-        return ResponseHelper::success($collection, 'Tạo đợt thu thành công', 201);
+        return ResponseHelper::success(new ClubFundCollectionResource($collection), 'Tạo đợt thu thành công', 201);
     }
 
     public function show($clubId, $collectionId)
@@ -118,9 +118,9 @@ class ClubFundCollectionController extends Controller
         ]);
 
         $collection->update($validated);
-        $collection->load(['creator', 'club']);
+        $collection->load(['creator', 'club', 'contributions.user']);
 
-        return ResponseHelper::success($collection, 'Cập nhật đợt thu thành công');
+        return ResponseHelper::success(new ClubFundCollectionResource($collection), 'Cập nhật đợt thu thành công');
     }
 
     public function destroy($clubId, $collectionId)

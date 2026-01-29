@@ -105,8 +105,7 @@ class ClubNotificationController extends Controller
             }
 
             $notification->load(['type', 'creator', 'recipients.user']);
-
-            return ResponseHelper::success($notification, 'Tạo thông báo thành công', 201);
+            return ResponseHelper::success(new ClubNotificationResource($notification), 'Tạo thông báo thành công', 201);
         });
     }
 
@@ -116,7 +115,7 @@ class ClubNotificationController extends Controller
             ->with(['type', 'creator', 'recipients.user'])
             ->findOrFail($notificationId);
 
-        return ResponseHelper::success($notification, 'Lấy thông tin thông báo thành công');
+        return ResponseHelper::success(new ClubNotificationResource($notification), 'Lấy thông tin thông báo thành công');
     }
 
     public function update(Request $request, $clubId, $notificationId)
@@ -143,9 +142,8 @@ class ClubNotificationController extends Controller
         ]);
 
         $notification->update($validated);
-        $notification->load(['type', 'creator']);
-
-        return ResponseHelper::success($notification, 'Cập nhật thông báo thành công');
+        $notification->load(['type', 'creator', 'recipients.user']);
+        return ResponseHelper::success(new ClubNotificationResource($notification), 'Cập nhật thông báo thành công');
     }
 
     public function destroy($clubId, $notificationId)
@@ -179,7 +177,8 @@ class ClubNotificationController extends Controller
 
         $notification->togglePin();
 
-        return ResponseHelper::success($notification, 'Đã cập nhật trạng thái ghim');
+        $notification->load(['type', 'creator', 'recipients.user']);
+        return ResponseHelper::success(new ClubNotificationResource($notification), 'Đã cập nhật trạng thái ghim');
     }
 
     public function markAsRead($clubId, $notificationId)
@@ -236,7 +235,6 @@ class ClubNotificationController extends Controller
         }
 
         $notification->load(['type', 'creator', 'recipients.user']);
-
-        return ResponseHelper::success($notification, 'Gửi thông báo thành công');
+        return ResponseHelper::success(new ClubNotificationResource($notification), 'Gửi thông báo thành công');
     }
 }

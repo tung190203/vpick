@@ -103,8 +103,7 @@ class ClubExpenseController extends Controller
             }
 
             $expense->load(['spender', 'walletTransaction']);
-
-            return ResponseHelper::success($expense, 'Tạo chi phí thành công', 201);
+            return ResponseHelper::success(new ClubExpenseResource($expense), 'Tạo chi phí thành công', 201);
         });
     }
 
@@ -114,7 +113,7 @@ class ClubExpenseController extends Controller
             ->with(['spender', 'walletTransaction', 'club'])
             ->findOrFail($expenseId);
 
-        return ResponseHelper::success($expense, 'Lấy thông tin chi phí thành công');
+        return ResponseHelper::success(new ClubExpenseResource($expense), 'Lấy thông tin chi phí thành công');
     }
 
     public function update(Request $request, $clubId, $expenseId)
@@ -136,8 +135,7 @@ class ClubExpenseController extends Controller
 
         $expense->update($validated);
         $expense->load(['spender', 'walletTransaction']);
-
-        return ResponseHelper::success($expense, 'Cập nhật chi phí thành công');
+        return ResponseHelper::success(new ClubExpenseResource($expense), 'Cập nhật chi phí thành công');
     }
 
     public function destroy($clubId, $expenseId)

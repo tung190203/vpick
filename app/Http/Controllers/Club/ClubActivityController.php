@@ -108,9 +108,8 @@ class ClubActivityController extends Controller
             'created_by' => $userId,
         ]);
 
-        $activity->load(['creator', 'club']);
-
-        return ResponseHelper::success($activity, 'Tạo hoạt động thành công', 201);
+        $activity->load(['creator', 'participants.user']);
+        return ResponseHelper::success(new ClubActivityResource($activity), 'Tạo hoạt động thành công', 201);
     }
 
     public function show($clubId, $activityId)
@@ -119,7 +118,7 @@ class ClubActivityController extends Controller
             ->with(['creator', 'club', 'participants.user', 'miniTournament'])
             ->findOrFail($activityId);
 
-        return ResponseHelper::success($activity, 'Lấy thông tin hoạt động thành công');
+        return ResponseHelper::success(new ClubActivityResource($activity), 'Lấy thông tin hoạt động thành công');
     }
 
     public function update(Request $request, $clubId, $activityId)
@@ -146,9 +145,8 @@ class ClubActivityController extends Controller
         ]);
 
         $activity->update($validated);
-        $activity->load(['creator', 'club']);
-
-        return ResponseHelper::success($activity, 'Cập nhật hoạt động thành công');
+        $activity->load(['creator', 'participants.user']);
+        return ResponseHelper::success(new ClubActivityResource($activity), 'Cập nhật hoạt động thành công');
     }
 
     public function destroy($clubId, $activityId)
@@ -183,8 +181,9 @@ class ClubActivityController extends Controller
         }
 
         $activity->markAsCompleted();
+        $activity->load(['creator', 'participants.user']);
 
-        return ResponseHelper::success($activity, 'Hoạt động đã được đánh dấu hoàn thành');
+        return ResponseHelper::success(new ClubActivityResource($activity), 'Hoạt động đã được đánh dấu hoàn thành');
     }
 
     /**
@@ -260,9 +259,8 @@ class ClubActivityController extends Controller
                 }
             }
 
-            $activity->load(['creator', 'club', 'participants.user', 'participants.walletTransaction']);
-
-            return ResponseHelper::success($activity, 'Sự kiện đã được hủy');
+            $activity->load(['creator', 'participants.user']);
+            return ResponseHelper::success(new ClubActivityResource($activity), 'Sự kiện đã được hủy');
         });
     }
 }

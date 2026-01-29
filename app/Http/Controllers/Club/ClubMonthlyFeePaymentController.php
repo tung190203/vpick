@@ -111,8 +111,7 @@ class ClubMonthlyFeePaymentController extends Controller
             }
 
             $payment->load(['user', 'monthlyFee', 'walletTransaction']);
-
-            return ResponseHelper::success($payment, 'Thanh toán phí thành công', 201);
+            return ResponseHelper::success(new ClubMonthlyFeePaymentResource($payment), 'Thanh toán phí thành công', 201);
         });
     }
 
@@ -122,7 +121,7 @@ class ClubMonthlyFeePaymentController extends Controller
             ->with(['user', 'monthlyFee', 'walletTransaction', 'club'])
             ->findOrFail($paymentId);
 
-        return ResponseHelper::success($payment, 'Lấy thông tin thanh toán thành công');
+        return ResponseHelper::success(new ClubMonthlyFeePaymentResource($payment), 'Lấy thông tin thanh toán thành công');
     }
 
     public function getMemberPayments(Request $request, $clubId, $memberId)
@@ -131,6 +130,7 @@ class ClubMonthlyFeePaymentController extends Controller
         
         $validated = $request->validate([
             'page' => 'sometimes|integer|min:1',
+            'per_page' => 'sometimes|integer|min:1|max:100',
             'status' => ['sometimes', Rule::enum(ClubMonthlyFeePaymentStatus::class)],
         ]);
 
@@ -142,7 +142,7 @@ class ClubMonthlyFeePaymentController extends Controller
             $query->where('status', $validated['status']);
         }
 
-        $perPage = $validated['page'] ?? 15;
+        $perPage = $validated['per_page'] ?? 15;
         $payments = $query->orderBy('period', 'desc')->paginate($perPage);
 
         $data = ['payments' => ClubMonthlyFeePaymentResource::collection($payments)];

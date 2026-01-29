@@ -97,8 +97,7 @@ class ClubFundContributionController extends Controller
             }
 
             $contribution->load(['user', 'walletTransaction']);
-
-            return ResponseHelper::success($contribution, 'Đóng góp thành công', 201);
+            return ResponseHelper::success(new ClubFundContributionResource($contribution), 'Đóng góp thành công', 201);
         });
     }
 
@@ -110,7 +109,7 @@ class ClubFundContributionController extends Controller
             ->with(['user', 'walletTransaction', 'fundCollection'])
             ->findOrFail($contributionId);
 
-        return ResponseHelper::success($contribution, 'Lấy thông tin đóng góp thành công');
+        return ResponseHelper::success(new ClubFundContributionResource($contribution), 'Lấy thông tin đóng góp thành công');
     }
 
     public function confirm($clubId, $collectionId, $contributionId)
@@ -139,8 +138,7 @@ class ClubFundContributionController extends Controller
             }
 
             $contribution->load(['user', 'walletTransaction']);
-
-            return ResponseHelper::success($contribution, 'Đóng góp đã được xác nhận');
+            return ResponseHelper::success(new ClubFundContributionResource($contribution), 'Đóng góp đã được xác nhận');
         });
     }
 
@@ -158,13 +156,12 @@ class ClubFundContributionController extends Controller
             return ResponseHelper::error('Chỉ admin/manager/treasurer mới có quyền từ chối', 403);
         }
 
-        $validated = $request->validate([
+        $request->validate([
             'reason' => 'required|string',
         ]);
 
         $contribution->reject();
         $contribution->load(['user', 'walletTransaction']);
-
-        return ResponseHelper::success($contribution, 'Đóng góp đã bị từ chối');
+        return ResponseHelper::success(new ClubFundContributionResource($contribution), 'Đóng góp đã bị từ chối');
     }
 }
