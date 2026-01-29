@@ -20,7 +20,7 @@ export const API_ENDPOINT = {
   TOURNAMENT: '/tournaments',
   LOCATION: '/locations',
   SPORT: '/sports',
-  CLUB: '/club',
+  CLUB: '/clubs',
   FOLLOW: '/follows',
   MINI_TOURNAMENT: '/mini-tournaments',
   COMPETITION_LOCATION: '/competition-locations',

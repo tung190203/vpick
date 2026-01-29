@@ -11,17 +11,24 @@
 
         <div class="relative">
             <div class="p-8 transition-all duration-500 ease-in-out overflow-hidden"
-                :style="{ maxHeight: shouldLimitHeight ? (isExpanded ? contentHeight + 'px' : '300px') : 'none' }" 
+                :style="{ maxHeight: shouldLimitHeight ? (isExpanded ? contentHeight + 'px' : '300px') : 'none' }"
                 ref="contentWrapper">
                 <!-- Tab Content -->
-                <div v-show="activeTab === 'intro'" ref="introContent" class="space-y-6">
-                    Lorem ipsum, dolor sit amet consectetur adipisicing elit. Provident quae maxime quaerat animi
-                    dignissimos aliquid natus distinctio totam facere tenetur assumenda ullam tempore, architecto magnam
-                    facilis placeat dicta iure blanditiis.
+                <div v-show="activeTab === 'intro'" ref="introContent" class="min-h-[200px] h-[200px]">
+                    <div v-if="club?.profile?.description" class="space-y-6 h-full overflow-y-auto">
+                        {{ club.profile.description }}
+                    </div>
+
+                    <div v-else class="flex items-center justify-center h-full text-gray-400 text-sm italic">
+                        Chưa có mô tả
+                    </div>
                 </div>
 
                 <div v-show="activeTab === 'members'" class="text-gray-400">
-                    <ClubMember />
+                    <ClubMember v-if="club?.id" :club-id="club.id" />
+                    <div v-else class="text-center py-12">
+                        <p class="text-gray-400">Đang tải...</p>
+                    </div>
                 </div>
 
                 <div v-show="activeTab === 'ranking'">
@@ -57,11 +64,19 @@ const isExpanded = ref(false)
 const contentHeight = ref(1000)
 const contentWrapper = ref(null)
 const introContent = ref(null)
-const tabs = [
+
+const props = defineProps({
+    club: {
+        type: Object,
+        default: () => ({})
+    }
+})
+
+const tabs = computed(() => [
     { id: 'intro', name: 'Giới thiệu' },
-    { id: 'members', name: 'Thành viên (42)' },
+    { id: 'members', name: `Thành viên (${props.club?.quantity_members || 0})` },
     { id: 'ranking', name: 'BXH' }
-]
+])
 
 // Only apply height limit to intro tab
 const shouldLimitHeight = computed(() => {

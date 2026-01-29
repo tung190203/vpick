@@ -238,9 +238,9 @@ const toggleClubSelection = async (club) => {
     } else {
         // Nếu chưa chọn thì join club
         try {
-            await ClubService.joinClub(club.id);
+            await ClubService.joinRequest(club.id);
             selectedClubs.push(club);
-            toast.success(`Đã tham gia ${club.name}`);
+            toast.success(`Đã gửi yêu cầu tham gia ${club.name}`);
         } catch (error) {
             toast.error(
                 error.response?.data?.message || "Không thể tham gia câu lạc bộ!"
@@ -767,7 +767,7 @@ onBeforeUnmount(() => {
                             ]">
                             {{
                             selectedClubs.some((c) => c.id === club.id)
-                            ? "Đã tham gia"
+                            ? "Đã gửi yêu cầu"
                             : "Tham gia"
                             }}
                         </button>
