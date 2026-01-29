@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Club;
 
 use App\Enums\ClubFundCollectionStatus;
 use App\Helpers\ResponseHelper;
+use App\Http\Resources\Club\ClubFundCollectionResource;
 use App\Models\Club\Club;
 use App\Models\Club\ClubFundCollection;
 use App\Http\Controllers\Controller;
@@ -31,13 +32,17 @@ class ClubFundCollectionController extends Controller
         $perPage = $validated['per_page'] ?? 15;
         $collections = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
-        return ResponseHelper::success([
-            'data' => $collections->items(),
+        $data = [
+            'collections' => ClubFundCollectionResource::collection($collections),
+        ];
+        $meta = [
             'current_page' => $collections->currentPage(),
             'per_page' => $collections->perPage(),
             'total' => $collections->total(),
             'last_page' => $collections->lastPage(),
-        ], 'Lấy danh sách đợt thu thành công');
+        ];
+
+        return ResponseHelper::success($data, 'Lấy danh sách đợt thu thành công', 200, $meta);
     }
 
     public function store(Request $request, $clubId)
@@ -73,9 +78,9 @@ class ClubFundCollectionController extends Controller
             'created_by' => $userId,
         ]);
 
-        $collection->load(['creator', 'club']);
+        $collection->load(['creator', 'club', 'contributions.user']);
 
-        return ResponseHelper::success($collection, 'Tạo đợt thu thành công', 201);
+        return ResponseHelper::success(new ClubFundCollectionResource($collection), 'Tạo đợt thu thành công', 201);
     }
 
     public function show($clubId, $collectionId)
@@ -84,9 +89,10 @@ class ClubFundCollectionController extends Controller
             ->with(['creator', 'club', 'contributions.user'])
             ->findOrFail($collectionId);
 
-        $collection->progress_percentage = $collection->progress_percentage;
-
-        return ResponseHelper::success($collection, 'Lấy thông tin đợt thu thành công');
+        return ResponseHelper::success(
+            new ClubFundCollectionResource($collection),
+            'Lấy thông tin đợt thu thành công'
+        );
     }
 
     public function update(Request $request, $clubId, $collectionId)
@@ -112,9 +118,9 @@ class ClubFundCollectionController extends Controller
         ]);
 
         $collection->update($validated);
-        $collection->load(['creator', 'club']);
+        $collection->load(['creator', 'club', 'contributions.user']);
 
-        return ResponseHelper::success($collection, 'Cập nhật đợt thu thành công');
+        return ResponseHelper::success(new ClubFundCollectionResource($collection), 'Cập nhật đợt thu thành công');
     }
 
     public function destroy($clubId, $collectionId)
@@ -133,7 +139,7 @@ class ClubFundCollectionController extends Controller
 
         $collection->update(['status' => ClubFundCollectionStatus::Cancelled]);
 
-        return ResponseHelper::success([], 'Đợt thu đã được hủy');
+        return ResponseHelper::success('Đợt thu đã được hủy');
     }
 
     public function getQrCode($clubId, $collectionId)

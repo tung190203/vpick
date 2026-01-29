@@ -9,6 +9,7 @@ use App\Enums\ClubWalletTransactionSourceType;
 use App\Enums\ClubWalletTransactionStatus;
 use App\Enums\PaymentMethod;
 use App\Helpers\ResponseHelper;
+use App\Http\Resources\Club\ClubActivityParticipantResource;
 use App\Models\Club\Club;
 use App\Models\Club\ClubActivity;
 use App\Models\Club\ClubActivityParticipant;
@@ -37,12 +38,13 @@ class ClubActivityParticipantController extends Controller
 
         $participants = $query->get();
 
-        return ResponseHelper::success([
-            'data' => $participants,
+        $data = [
+            'participants' => ClubActivityParticipantResource::collection($participants),
             'total' => $participants->count(),
-            'read_count' => $participants->where('status', ClubActivityParticipantStatus::Accepted)->count(),
-            'unread_count' => $participants->where('status', ClubActivityParticipantStatus::Invited)->count(),
-        ], 'Lấy danh sách người tham gia thành công');
+            'accepted_count' => $participants->where('status', ClubActivityParticipantStatus::Accepted)->count(),
+            'invited_count' => $participants->where('status', ClubActivityParticipantStatus::Invited)->count(),
+        ];
+        return ResponseHelper::success($data, 'Lấy danh sách người tham gia thành công');
     }
 
     public function store(Request $request, $clubId, $activityId)
@@ -71,9 +73,9 @@ class ClubActivityParticipantController extends Controller
             'status' => $validated['status'] ?? ClubActivityParticipantStatus::Invited,
         ]);
 
-        $participant->load('user');
+        $participant->load(['user', 'walletTransaction']);
 
-        return ResponseHelper::success($participant, 'Thêm người tham gia thành công', 201);
+        return ResponseHelper::success(new ClubActivityParticipantResource($participant), 'Thêm người tham gia thành công', 201);
     }
 
     public function invite(Request $request, $clubId, $activityId)
@@ -105,10 +107,11 @@ class ClubActivityParticipantController extends Controller
             }
         }
 
-        return ResponseHelper::success([
+        $data = [
             'invited_count' => count($invited),
-            'data' => $invited,
-        ], 'Đã mời thành công');
+            'participants' => ClubActivityParticipantResource::collection(collect($invited)),
+        ];
+        return ResponseHelper::success($data, 'Đã mời thành công');
     }
 
     public function update(Request $request, $clubId, $activityId, $participantId)
@@ -158,7 +161,7 @@ class ClubActivityParticipantController extends Controller
 
             $participant->load(['user', 'walletTransaction']);
 
-            return ResponseHelper::success($participant, 'Cập nhật trạng thái thành công');
+            return ResponseHelper::success(new ClubActivityParticipantResource($participant), 'Cập nhật trạng thái thành công');
         });
     }
 
@@ -180,7 +183,7 @@ class ClubActivityParticipantController extends Controller
 
         $participant->delete();
 
-        return ResponseHelper::success([], 'Xóa người tham gia thành công');
+        return ResponseHelper::success('Xóa người tham gia thành công');
     }
 
     /**
@@ -257,7 +260,7 @@ class ClubActivityParticipantController extends Controller
                 ? 'Đã rút khỏi sự kiện. Khoản thu đã được hủy.' 
                 : "Đã rút khỏi sự kiện. Khoản thu đã được hủy và tạo khoản thu phạt ({$activity->penalty_percentage}% phí gốc) do rút sau 4 tiếng.";
 
-            return ResponseHelper::success($participant, $message);
+            return ResponseHelper::success(new ClubActivityParticipantResource($participant), $message);
         });
     }
 }

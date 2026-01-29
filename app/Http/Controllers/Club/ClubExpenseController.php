@@ -7,6 +7,7 @@ use App\Enums\ClubWalletTransactionSourceType;
 use App\Enums\ClubWalletTransactionStatus;
 use App\Enums\PaymentMethod;
 use App\Helpers\ResponseHelper;
+use App\Http\Resources\Club\ClubExpenseResource;
 use App\Models\Club\Club;
 use App\Models\Club\ClubExpense;
 use App\Http\Controllers\Controller;
@@ -45,13 +46,14 @@ class ClubExpenseController extends Controller
         $perPage = $validated['per_page'] ?? 15;
         $expenses = $query->orderBy('spent_at', 'desc')->paginate($perPage);
 
-        return ResponseHelper::success([
-            'data' => $expenses->items(),
+        $data = ['expenses' => ClubExpenseResource::collection($expenses)];
+        $meta = [
             'current_page' => $expenses->currentPage(),
             'per_page' => $expenses->perPage(),
             'total' => $expenses->total(),
             'last_page' => $expenses->lastPage(),
-        ], 'Lấy danh sách chi phí thành công');
+        ];
+        return ResponseHelper::success($data, 'Lấy danh sách chi phí thành công', 200, $meta);
     }
 
     public function store(Request $request, $clubId)
@@ -101,8 +103,7 @@ class ClubExpenseController extends Controller
             }
 
             $expense->load(['spender', 'walletTransaction']);
-
-            return ResponseHelper::success($expense, 'Tạo chi phí thành công', 201);
+            return ResponseHelper::success(new ClubExpenseResource($expense), 'Tạo chi phí thành công', 201);
         });
     }
 
@@ -112,7 +113,7 @@ class ClubExpenseController extends Controller
             ->with(['spender', 'walletTransaction', 'club'])
             ->findOrFail($expenseId);
 
-        return ResponseHelper::success($expense, 'Lấy thông tin chi phí thành công');
+        return ResponseHelper::success(new ClubExpenseResource($expense), 'Lấy thông tin chi phí thành công');
     }
 
     public function update(Request $request, $clubId, $expenseId)
@@ -134,8 +135,7 @@ class ClubExpenseController extends Controller
 
         $expense->update($validated);
         $expense->load(['spender', 'walletTransaction']);
-
-        return ResponseHelper::success($expense, 'Cập nhật chi phí thành công');
+        return ResponseHelper::success(new ClubExpenseResource($expense), 'Cập nhật chi phí thành công');
     }
 
     public function destroy($clubId, $expenseId)
@@ -150,7 +150,7 @@ class ClubExpenseController extends Controller
 
         $expense->delete();
 
-        return ResponseHelper::success([], 'Xóa chi phí thành công');
+        return ResponseHelper::success('Xóa chi phí thành công');
     }
 
     public function getStatistics(Request $request, $clubId)

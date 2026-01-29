@@ -8,6 +8,9 @@ use App\Enums\ClubMemberRole;
 use App\Enums\ClubMemberStatus;
 use App\Enums\ClubWalletTransactionStatus;
 use App\Helpers\ResponseHelper;
+use App\Http\Resources\Club\ClubActivityResource;
+use App\Http\Resources\Club\ClubNotificationResource;
+use App\Http\Resources\ListClubResource;
 use App\Models\Club\Club;
 use App\Http\Controllers\Controller;
 
@@ -67,25 +70,27 @@ class ClubDashboardController extends Controller
         ];
 
         $recentActivities = $club->activities()
+            ->with(['creator', 'participants.user'])
             ->orderBy('start_time', 'desc')
             ->limit(5)
             ->get();
 
         $recentNotifications = $club->notifications()
+            ->with(['type', 'creator', 'recipients.user'])
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
 
         return ResponseHelper::success([
-            'club' => $club,
+            'club' => new ListClubResource($club),
             'statistics' => [
                 'members' => $memberStats,
                 'financial' => $financialStats,
                 'activities' => $activityStats,
                 'notifications' => $notificationStats,
             ],
-            'recent_activities' => $recentActivities,
-            'recent_notifications' => $recentNotifications,
+            'recent_activities' => ClubActivityResource::collection($recentActivities),
+            'recent_notifications' => ClubNotificationResource::collection($recentNotifications),
         ], 'Lấy dashboard thành công');
     }
 }
