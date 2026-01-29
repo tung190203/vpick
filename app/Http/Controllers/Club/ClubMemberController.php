@@ -8,6 +8,7 @@ use App\Helpers\ResponseHelper;
 use App\Http\Resources\Club\ClubMemberResource;
 use App\Models\Club\Club;
 use App\Models\Club\ClubMember;
+use App\Models\User;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -28,8 +29,7 @@ class ClubMemberController extends Controller
         ]);
 
         $query = $club->members()->with([
-            'user.sports.scores',
-            'user.sports.sport',
+            'user' => User::FULL_RELATIONS,
             'reviewer',
         ]);
 
@@ -116,7 +116,7 @@ class ClubMemberController extends Controller
                 'joined_at' => null,
             ]);
 
-            $member->load(['user.sports.scores', 'user.sports.sport', 'club', 'inviter', 'reviewer']);
+            $member->load(['user' => User::FULL_RELATIONS, 'club', 'inviter', 'reviewer']);
 
             return ResponseHelper::success(
                 new ClubMemberResource($member),
@@ -129,7 +129,7 @@ class ClubMemberController extends Controller
     public function show($clubId, $memberId)
     {
         $member = ClubMember::where('club_id', $clubId)
-            ->with(['user.sports.scores', 'user.sports.sport', 'club', 'reviewer'])
+            ->with(['user' => User::FULL_RELATIONS, 'club', 'reviewer'])
             ->findOrFail($memberId);
 
         return ResponseHelper::success(new ClubMemberResource($member), 'Lấy thông tin thành viên thành công');
@@ -173,7 +173,7 @@ class ClubMemberController extends Controller
                 $member->update($validated);
             }
 
-            $member->load(['user.sports.scores', 'user.sports.sport', 'reviewer']);
+            $member->load(['user' => User::FULL_RELATIONS, 'reviewer']);
 
             return ResponseHelper::success(new ClubMemberResource($member), 'Cập nhật thành viên thành công');
         });
@@ -219,7 +219,7 @@ class ClubMemberController extends Controller
             'joined_at' => now(),
         ]);
 
-        $member->load(['user.sports.scores', 'user.sports.sport', 'reviewer']);
+        $member->load(['user' => User::FULL_RELATIONS, 'reviewer']);
 
         return ResponseHelper::success(new ClubMemberResource($member), 'Yêu cầu tham gia đã được duyệt');
     }
@@ -248,7 +248,7 @@ class ClubMemberController extends Controller
             'rejection_reason' => $validated['rejection_reason'],
         ]);
 
-        $member->load(['user.sports.scores', 'user.sports.sport', 'reviewer']);
+        $member->load(['user' => User::FULL_RELATIONS, 'reviewer']);
 
         return ResponseHelper::success(new ClubMemberResource($member), 'Yêu cầu tham gia đã bị từ chối');
     }

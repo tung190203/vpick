@@ -124,7 +124,7 @@ class ClubController extends Controller
                 'joined_at' => now(),
             ]);
 
-            $club->load('members.user');
+            $club->load(['members' => ['user' => User::FULL_RELATIONS]]);
 
             return ResponseHelper::success(new ClubResource($club), 'Tạo câu lạc bộ thành công');
         });
@@ -134,22 +134,28 @@ class ClubController extends Controller
     {
         $club = Club::withFullRelations()->findOrFail($clubId);
 
-        // Load members với user và vnduprScores
-        $members = $club->members()->with(['user.vnduprScores'])->get();
+        // Load members với user đủ relations cho UserResource (trùng UserController)
+        $members = $club->members()->with(['user' => User::FULL_RELATIONS])->get();
 
         $members = $members->map(function ($member) {
             $user = $member->user;
-            if ($user) {
-                $member->user->club_score = $user->vnduprScores?->first()?->score_value ?? 0;
+            $score = 0;
+            if ($user && $user->relationLoaded('sports')) {
+                foreach ($user->sports ?? [] as $us) {
+                    $vndupr = $us->relationLoaded('scores')
+                        ? $us->scores->where('score_type', 'vndupr_score')->sortByDesc('created_at')->first()
+                        : null;
+                    if ($vndupr) {
+                        $score = (float) $vndupr->score_value;
+                        break;
+                    }
+                }
             }
+            $member->user?->setAttribute('club_score', $score);
             return $member;
-        })->sortByDesc(function ($member) {
-            return $member->user?->club_score ?? 0;
-        })->values();
+        })->sortByDesc(fn ($m) => $m->user?->club_score ?? 0)->values();
 
-        $members->each(function ($member, $index) {
-            $member->rank_in_club = $index + 1;
-        });
+        $members->each(fn ($member, $index) => $member->setAttribute('rank_in_club', $index + 1));
 
         $club->setRelation('members', $members);
 

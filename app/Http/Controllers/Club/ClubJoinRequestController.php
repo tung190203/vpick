@@ -7,6 +7,7 @@ use App\Enums\ClubMemberStatus;
 use App\Helpers\ResponseHelper;
 use App\Models\Club\Club;
 use App\Models\Club\ClubMember;
+use App\Models\User;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Club\ClubMemberResource;
 use Illuminate\Http\Request;
@@ -39,9 +40,7 @@ class ClubJoinRequestController extends Controller
 
         $query = $club->members()
             ->with([
-                'user.sports.scores',
-                'user.sports.sport',
-                'user.vnduprScores',
+                'user' => User::FULL_RELATIONS,
                 'reviewer',
                 'inviter',
             ]);
@@ -115,7 +114,7 @@ class ClubJoinRequestController extends Controller
                 'message' => $validated['message'] ?? null,
             ]);
 
-            $member->load(['user.vnduprScores', 'club']);
+            $member->load(['user' => User::FULL_RELATIONS, 'club']);
 
             return ResponseHelper::success(
                 new ClubMemberResource($member),
@@ -131,7 +130,7 @@ class ClubJoinRequestController extends Controller
     public function show($clubId, $requestId)
     {
         $member = ClubMember::where('club_id', $clubId)
-            ->with(['user.vnduprScores', 'club', 'reviewer', 'inviter'])
+            ->with(['user' => User::FULL_RELATIONS, 'club', 'reviewer', 'inviter'])
             ->findOrFail($requestId);
 
         return ResponseHelper::success(
@@ -215,7 +214,7 @@ class ClubJoinRequestController extends Controller
             'joined_at' => now(),
         ]);
 
-        $member->load(['user.vnduprScores', 'reviewer']);
+        $member->load(['user' => User::FULL_RELATIONS, 'reviewer']);
 
         return ResponseHelper::success(
             new ClubMemberResource($member),
@@ -267,7 +266,7 @@ class ClubJoinRequestController extends Controller
             'rejection_reason' => $validated['rejection_reason'],
         ]);
 
-        $member->load(['user.vnduprScores', 'reviewer']);
+        $member->load(['user' => User::FULL_RELATIONS, 'reviewer']);
 
         return ResponseHelper::success(
             new ClubMemberResource($member),
@@ -289,7 +288,7 @@ class ClubJoinRequestController extends Controller
         $invitations = ClubMember::where('user_id', $userId)
             ->where('status', ClubMemberStatus::Pending)
             ->whereNotNull('invited_by')
-            ->with(['club', 'inviter'])
+            ->with(['user' => User::FULL_RELATIONS, 'club', 'inviter'])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -326,7 +325,7 @@ class ClubJoinRequestController extends Controller
             'reviewed_at' => now(),
         ]);
 
-        $member->load(['user.sports.scores', 'user.sports.sport', 'club', 'inviter']);
+        $member->load(['user' => User::FULL_RELATIONS, 'club', 'inviter']);
 
         return ResponseHelper::success(
             new ClubMemberResource($member),
