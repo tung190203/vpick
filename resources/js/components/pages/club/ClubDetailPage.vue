@@ -11,19 +11,29 @@
                     <EllipsisVerticalIcon class="w-9 h-9 cursor-pointer text-white" @click="toggleMenu" />
 
                     <!-- Dropdown Menu -->
-                    <div v-if="isMenuOpen" class="absolute right-0 top-10 w-56 bg-white rounded-xl shadow-2xl py-2 z-[10000] text-gray-800 border border-gray-100 animate-in fade-in zoom-in duration-200">
-                        <button class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-100 transition-colors" @click="openNotification">
+                    <div v-if="isMenuOpen"
+                        class="absolute right-0 top-10 w-56 bg-white rounded-xl shadow-2xl py-2 z-[10000] text-gray-800 border border-gray-100 animate-in fade-in zoom-in duration-200">
+                        <button class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-100 transition-colors"
+                            @click="openNotification" v-if="is_joined">
                             <BellIcon class="w-5 h-5 text-gray-500" />
                             <span class="font-medium">Thông báo</span>
                         </button>
-                        <button class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-100 transition-colors">
+                        <button
+                            class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-100 transition-colors">
                             <InformationCircleIcon class="w-5 h-5 text-gray-500" />
                             <span class="font-medium">Báo cáo CLB</span>
                         </button>
                         <div class="h-px bg-gray-100 my-1 mx-2"></div>
-                        <button class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-red-50 text-red-600 transition-colors">
-                            <ArrowLeftOnRectangleIcon class="w-5 h-5" />
-                            <span class="font-medium">Rời câu lạc bộ</span>
+                        <button class="w-full flex items-center space-x-3 px-4 py-3 transition-colors rounded-lg"
+                            :class="is_joined
+                                ? 'hover:bg-red-50 text-red-600 cursor-pointer'
+                                : 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                                " :disabled="!is_joined">
+                            <ArrowLeftOnRectangleIcon class="w-5 h-5"
+                                :class="is_joined ? 'text-red-600' : 'text-gray-400'" />
+                            <span class="font-medium">
+                                Rời câu lạc bộ
+                            </span>
                         </button>
                     </div>
                 </div>
@@ -32,23 +42,32 @@
             <div v-if="isMenuOpen" class="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm" @click="closeMenu"></div>
             <div class="flex items-center">
                 <div>
-                    <div
+                    <div v-if="club.profile?.address"
                         class="flex items-center space-x-2 relative rounded-full overflow-hidden bg-white w-fit text-black py-1 px-2">
                         <MapPinIcon class="w-5 h-5" />
-                        <div class="text-sm font-semibold">Pickleball sài gòn phố</div>
+                        <div class="text-sm font-semibold">{{ club.profile.address }}</div>
                     </div>
                     <div class="flex items-center space-x-2">
-                        <div class="text-[44px] font-bold">Pickleball sài gòn phố</div>
-                        <div class="bg-[#4392E0] rounded-full p-1">
-                             <VerifyIcon class="w-6 h-6 text-white" />
+                        <div class="text-[44px] font-bold">{{ club.name }}</div>
+                        <div v-if="club.is_verified" class="bg-[#4392E0] rounded-full p-1">
+                            <VerifyIcon class="w-6 h-6 text-white" />
                         </div>
                     </div>
-                    <div class="flex items-center space-x-2">
-                        <Button size="md" color="danger"
-                            class="px-[75px] bg-[#D72D36] border border-[#D72D36] text-white hover:bg-white hover:text-[#D72D36] flex gap-2">
-                            <PlusIcon class="w-5 h-5" />
-                            Tham gia CLB
-                        </Button>
+                    <div class="flex items-center space-x-2" v-if="!is_joined">
+                        <template v-if="!club.is_member">
+                            <Button size="md" color="danger"
+                                class="px-[75px] bg-[#D72D36] border border-[#D72D36] text-white hover:bg-white hover:text-[#D72D36] flex gap-2"
+                                @click.stop="joinClubRequest">
+                                <PlusIcon class="w-5 h-5" />
+                                Tham gia CLB
+                            </Button>
+                        </template>
+                        <template v-else>
+                            <Button size="md" color="danger"
+                                class="px-[75px] bg-[#D72D36] border border-[#D72D36] text-white hover:bg-white hover:text-[#D72D36] flex gap-2">
+                                Hủy tham gia
+                            </Button>
+                        </template>
                         <Button size="md" color="white" class="bg-[#FBEAEB] rounded-full p-2">
                             <MessageIcon class="w-6.5 h-6.5 text-[#D72D36]" />
                         </Button>
@@ -58,13 +77,14 @@
         </div>
         <div class="grid grid-cols-12 gap-4 py-4">
             <div class="col-span-8">
-                <div>
+                <div v-if="is_joined">
                     <div class="flex items-baseline justify-between">
                         <h2 class="text-2xl text-[#838799] font-semibold uppercase mb-4">Thông báo</h2>
                         <p class="text-[#D72D36] font-semibold cursor-pointer">Xem tất cả</p>
                     </div>
                     <template v-if="notifications.length > 0">
-                        <NotificationCard v-for="(notification, index) in notifications" :key="index" v-bind="notification" />
+                        <NotificationCard v-for="(notification, index) in notifications.slice(0, 1)" :key="index"
+                            v-bind="notification" />
                     </template>
                     <div v-else class="p-4 text-center">
                         <p class="text-[#838799]">Hiện chưa có thông báo</p>
@@ -79,26 +99,28 @@
                         <p class="text-[#838799]">Hiện chưa có lịch thi đấu</p>
                     </div>
                 </div>
-                <ClubInfoTabs />
+                <ClubInfoTabs :club="club" />
             </div>
             <div class="col-span-4 space-y-4">
                 <div class="max-w-3xl mx-auto">
                     <div class="bg-white rounded-2xl shadow-md px-6 py-5">
                         <div class="grid grid-cols-3 divide-x divide-gray-200 text-center">
-                            <div v-for="(stat, index) in clubStats" :key="index" class="flex flex-col items-center gap-2">
+                            <div v-for="(stat, index) in clubStats" :key="index"
+                                class="flex flex-col items-center gap-2">
                                 <div class="text-[#D72D36] h-12 flex items-center justify-center">
                                     <component :is="stat.icon" class="w-12 h-12" />
                                 </div>
-                                <div class="font-semibold text-gray-800">{{ stat.value }}</div>
+                                <div class="font-semibold text-gray-800">{{ statsValue[stat.key] }}</div>
                                 <div class="text-sm text-[#838799]">{{ stat.label }}</div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="max-w-3xl mx-auto">
+                <div class="max-w-3xl mx-auto" v-if="is_joined">
                     <div class="bg-white rounded-2xl shadow-md px-2 py-5">
                         <div class="grid grid-cols-4 text-center">
-                            <div v-for="(module, index) in clubModules" :key="index" class="flex flex-col items-center gap-2">
+                            <div v-for="(module, index) in clubModules" :key="index"
+                                class="flex flex-col items-center gap-2">
                                 <div class="text-[#D72D36] rounded-md bg-[#FBEAEB] p-4 cursor-pointer">
                                     <component :is="module.icon" class="w-6 h-6" />
                                 </div>
@@ -114,8 +136,9 @@
         <div v-if="isNotificationModalOpen" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
             <!-- Backdrop with blur -->
             <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="closeNotification"></div>
-            
-            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg relative z-[10000] overflow-hidden animate-in fade-in zoom-in duration-300 h-[calc(100vh-7rem)] flex flex-col">
+
+            <div
+                class="bg-white rounded-2xl shadow-2xl w-full max-w-lg relative z-[10000] overflow-hidden animate-in fade-in zoom-in duration-300 h-[calc(100vh-7rem)] flex flex-col">
                 <!-- Fixed Header -->
                 <div class="p-6 pb-2">
                     <div class="flex items-center justify-between mb-2">
@@ -132,24 +155,36 @@
                     <div class="mb-8">
                         <div class="flex items-center justify-between mb-4">
                             <span class="text-sm font-bold text-[#838799] uppercase tracking-wider">Hôm nay</span>
-                            <button class="text-[#D72D36] text-sm font-semibold hover:opacity-80">Đánh dấu đã đọc</button>
+                            <button class="text-[#D72D36] text-sm font-semibold hover:opacity-80">Đánh dấu đã
+                                đọc</button>
                         </div>
                         <div class="space-y-4">
-                            <div v-for="(notification, index) in notifications.filter(n => n.category === 'today')" :key="index" 
+                            <div v-for="(notification, index) in notifications.filter(n => n.category === 'today')"
+                                :key="index"
                                 :class="['flex gap-4 p-4 rounded-2xl transition-colors', !notification.isRead ? 'bg-[#F8F9FB]' : 'bg-transparent']">
                                 <div class="relative flex-shrink-0">
-                                    <div :class="['w-14 h-14 rounded-xl flex items-center justify-center', notification.colorClass]">
+                                    <div
+                                        :class="['w-14 h-14 rounded-xl flex items-center justify-center', notification.colorClass]">
                                         <component :is="notification.icon" class="w-7 h-7" />
                                     </div>
-                                    <div v-if="!notification.isRead" class="absolute -right-1 bottom-0 w-4 h-4 bg-[#D72D36] border-2 border-white rounded-full"></div>
-                                    <div v-if="notification.type === 'payment' && !notification.isRead" class="absolute -right-1 bottom-0 w-4 h-4 bg-[#10B981] border-2 border-white rounded-full"></div>
+                                    <div v-if="!notification.isRead"
+                                        class="absolute -right-1 bottom-0 w-4 h-4 bg-[#D72D36] border-2 border-white rounded-full">
+                                    </div>
+                                    <div v-if="notification.type === 'payment' && !notification.isRead"
+                                        class="absolute -right-1 bottom-0 w-4 h-4 bg-[#10B981] border-2 border-white rounded-full">
+                                    </div>
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-start justify-between gap-2 mb-1">
-                                        <h4 class="font-semibold text-base text-[#3E414C] truncate">{{ notification.title }}</h4>
-                                        <span class="text-[#838799] text-xs whitespace-nowrap pt-1">{{ notification.timeAgo }}</span>
+                                        <h4 class="font-semibold text-base text-[#3E414C] truncate">{{
+                                            notification.title }}
+                                        </h4>
+                                        <span class="text-[#838799] text-xs whitespace-nowrap pt-1">{{
+                                            notification.timeAgo
+                                            }}</span>
                                     </div>
-                                    <p class="text-xs text-[#838799] leading-4 line-clamp-2">{{ notification.content }}</p>
+                                    <p class="text-xs text-[#838799] leading-4 line-clamp-2">{{ notification.content }}
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -161,19 +196,24 @@
                             <span class="text-sm font-bold text-[#838799] uppercase tracking-wider">Trước đó</span>
                         </div>
                         <div class="space-y-6">
-                            <div v-for="(notification, index) in notifications.filter(n => n.category === 'previous')" :key="index" 
-                                class="flex gap-4 px-4 transition-colors">
+                            <div v-for="(notification, index) in notifications.filter(n => n.category === 'previous')"
+                                :key="index" class="flex gap-4 px-4 transition-colors">
                                 <div class="relative flex-shrink-0">
-                                    <div :class="['w-14 h-14 rounded-xl flex items-center justify-center', notification.colorClass]">
+                                    <div
+                                        :class="['w-14 h-14 rounded-xl flex items-center justify-center', notification.colorClass]">
                                         <component :is="notification.icon" class="w-7 h-7" />
                                     </div>
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-start justify-between gap-2 mb-1">
-                                        <h4 class="font-bold text-base text-[#3E414C] truncate">{{ notification.title }}</h4>
-                                        <span class="text-[#838799] text-xs whitespace-nowrap pt-1">{{ notification.timeAgo }}</span>
+                                        <h4 class="font-bold text-base text-[#3E414C] truncate">{{ notification.title }}
+                                        </h4>
+                                        <span class="text-[#838799] text-xs whitespace-nowrap pt-1">{{
+                                            notification.timeAgo
+                                            }}</span>
                                     </div>
-                                    <p class="text-sm text-[#838799] leading-6 line-clamp-2">{{ notification.content }}</p>
+                                    <p class="text-sm text-[#838799] leading-6 line-clamp-2">{{ notification.content }}
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -186,15 +226,15 @@
 
 <script setup>
 import Background from '@/assets/images/club-default-thumbnail.svg?url'
-import { 
-    ArrowLeftIcon, 
-    ShareIcon, 
-    EllipsisVerticalIcon, 
-    MapPinIcon, 
-    PlusIcon, 
-    BellIcon, 
-    ArrowLeftOnRectangleIcon, 
-    InformationCircleIcon, 
+import {
+    ArrowLeftIcon,
+    ShareIcon,
+    EllipsisVerticalIcon,
+    MapPinIcon,
+    PlusIcon,
+    BellIcon,
+    ArrowLeftOnRectangleIcon,
+    InformationCircleIcon,
     XMarkIcon,
     CalendarIcon,
     WalletIcon,
@@ -203,8 +243,8 @@ import {
     CalendarDaysIcon,
     AcademicCapIcon
 } from '@heroicons/vue/24/outline'
-import { useRouter } from 'vue-router'
-import { ref } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { computed, onMounted, ref } from 'vue'
 import VerifyIcon from "@/assets/images/verify-icon.svg";
 import Button from '@/components/atoms/Button.vue';
 import MessageIcon from "@/assets/images/message.svg";
@@ -212,13 +252,27 @@ import ActivityScheduleCard from '@/components/molecules/ActivityScheduleCard.vu
 import NotificationCard from '@/components/molecules/NotificationCard.vue';
 import ClubInfoTabs from '@/components/organisms/ClubInfoTabs.vue';
 import { CLUB_STATS, CLUB_MODULES } from '@/data/club/index.js';
+import * as ClubService from '@/service/club.js'
+import { toast } from 'vue3-toastify';
+import { useUserStore } from '@/store/auth'
+import { storeToRefs } from 'pinia'
 
 const router = useRouter()
+const route = useRoute()
 const clubStats = CLUB_STATS;
 const clubModules = CLUB_MODULES;
-
 const isMenuOpen = ref(false)
 const isNotificationModalOpen = ref(false)
+const club = ref([]);
+const clubId = route.params.id
+const userStore = useUserStore()
+const { getUser } = storeToRefs(userStore)
+
+const statsValue = computed(() => ({
+    members: club.value?.quantity_members ?? 0,
+    level: club.value?.level_range ?? '1-5',
+    price: club.value?.guest_fee ?? '50K'
+}));
 
 const toggleMenu = () => {
     isMenuOpen.value = !isMenuOpen.value
@@ -341,9 +395,43 @@ const notifications = [
     }
 ]
 
+const getClubDetail = async () => {
+    try {
+        const response = await ClubService.clubDetail(clubId)
+        club.value = response
+    } catch (error) {
+        toast.error(error.response.data.message || 'Có lỗi xảy ra khi thực hiện thao tác')
+    }
+}
+
+
+
+const joinClubRequest = async () => {
+    try {
+        await ClubService.joinRequest(clubId)
+        await getClubDetail(clubId)
+        toast.success('Yêu cầu tham gia đã được gửi thành công')
+    } catch (error) {
+        toast.error(error.response.data.message || 'Có lỗi xảy ra khi thực hiện thao tác')
+    }
+}
+
+const is_joined = computed(() => {
+    return club.value?.members?.some(
+        member =>
+            member.user_id === getUser.value.id &&
+            member.status !== 'pending'
+    ) ?? false
+})
+
 const goBack = () => {
     router.back()
 }
+
+onMounted(async () => {
+    if (!clubId) return;
+    await getClubDetail()
+})
 </script>
 <style scoped>
 .bg-club-default {

@@ -18,15 +18,17 @@
             <!-- Member Header -->
             <div class="flex items-center gap-4 mb-8">
               <div class="relative">
-                <img :src="member?.avatar" :alt="member?.name" class="w-16 h-16 rounded-full object-cover bg-blue-50">
-                <div v-if="member?.level"
+                <img :src="member?.user.avatar_url" :alt="member?.user.full_name"
+                  class="w-16 h-16 rounded-full object-cover bg-blue-50">
+                <div v-if="member?.user.self_score"
                   class="absolute -bottom-1 -left-1 w-6 h-6 bg-[#4B88FF] rounded-full flex items-center justify-center border-2 border-white text-white text-[10px] font-bold">
-                  {{ member?.level }}
+                  {{ member?.user.self_score }}
                 </div>
               </div>
               <div class="flex flex-col">
-                <span class="text-[18px] font-bold text-[#374151]">{{ member?.name }}</span>
-                <span class="text-[14px] text-gray-400 font-medium">{{ member?.lastSeen }}</span>
+                <span class="text-[18px] font-bold text-[#374151]">{{ member?.user.full_name }}</span>
+                <span class="text-[14px] text-gray-400 font-medium">Tham gia {{ dayjs(member?.joined_at).fromNow()
+                  }}</span>
               </div>
             </div>
 
@@ -38,20 +40,22 @@
                   <UserIcon class="w-6 h-6 text-[#374151]" />
                 </div>
                 <span class="text-[16px] font-bold text-[#374151]">
-                  {{ member?.role === 'Admin' ? 'Chủ câu lạc bộ' : (member?.role === 'Mod' ? 'Phó câu lạc bộ' : 'Thành viên') }}
+                  {{ ROLE_LABELS[member?.role] || 'Thành viên' }}
                 </span>
               </div>
             </div>
-
-            <!-- Specialization Section (Optional based on data) -->
-            <div v-if="member?.status === 'Thủ quỹ'" class="mb-8">
-              <h3 class="text-[14px] font-bold text-[#9EA2B3] uppercase tracking-wider mb-3">PHỤ TRÁCH CHUYÊN MÔN</h3>
-              <div class="flex items-center gap-2 px-6 py-2.5 bg-[#DC2626] text-white rounded-full w-fit">
-                <MoneyIcon class="w-5 h-5" />
-                <span class="text-[16px] font-bold">Thủ quỹ</span>
+            <div v-if="specialization" class="mb-8">
+              <h3 class="text-[14px] font-bold text-[#9EA2B3] uppercase tracking-wider mb-3">
+                PHỤ TRÁCH CHUYÊN MÔN
+              </h3>
+              <div class="flex items-center gap-2 px-6 py-2.5 rounded-full w-fit"
+                :class="[specialization.bg, specialization.text]">
+                <component :is="specialization.icon" class="w-5 h-5" />
+                <span class="text-[16px] font-bold">
+                  {{ specialization.label }}
+                </span>
               </div>
             </div>
-
             <!-- Action Buttons -->
             <div class="space-y-3">
               <button
@@ -75,6 +79,14 @@
 import { computed } from 'vue'
 import { XMarkIcon, UserIcon, UserPlusIcon } from '@heroicons/vue/24/outline'
 import MoneyIcon from "@/assets/images/money.svg";
+import ShieldCheckIcon from "@/assets/images/shield_check.svg";
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime'
+import 'dayjs/locale/vi';
+import { ROLE_LABELS, ROLE_SPECIALIZATION } from '@/data/club/index.js';
+
+dayjs.extend(relativeTime)
+dayjs.locale('vi')
 
 const props = defineProps({
   modelValue: Boolean,
@@ -89,6 +101,10 @@ const isOpen = computed({
 })
 
 const closeModal = () => (isOpen.value = false)
+
+const specialization = computed(() => {
+  return ROLE_SPECIALIZATION[props.member?.role] || null
+})
 </script>
 
 <style scoped>
@@ -107,6 +123,7 @@ const closeModal = () => (isOpen.value = false)
     transform: scale(0.95);
     opacity: 0;
   }
+
   to {
     transform: scale(1);
     opacity: 1;

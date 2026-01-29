@@ -4,7 +4,7 @@ namespace App\Http\Resources\Club;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use App\Http\Resources\UserListResource;
+use App\Http\Resources\UserResource;
 
 class ClubNotificationResource extends JsonResource
 {
@@ -27,7 +27,7 @@ class ClubNotificationResource extends JsonResource
             'read_count' => $this->when(isset($this->read_count), $this->read_count),
             'unread_count' => $this->when(isset($this->unread_count), $this->unread_count),
             'type' => $this->whenLoaded('type'),
-            'creator' => new UserListResource($this->whenLoaded('creator')),
+            'creator' => new UserResource($this->whenLoaded('creator')),
             'recipients' => ClubNotificationRecipientResource::collection($this->whenLoaded('recipients')),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),

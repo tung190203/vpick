@@ -4,7 +4,7 @@ namespace App\Http\Resources\Club;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use App\Http\Resources\UserListResource;
+use App\Http\Resources\UserResource;
 
 class ClubFundCollectionResource extends JsonResource
 {
@@ -25,7 +25,7 @@ class ClubFundCollectionResource extends JsonResource
             'created_by' => $this->created_by,
             'progress_percentage' => $this->when(isset($this->progress_percentage), $this->progress_percentage),
             'contributions_count' => $this->whenLoaded('contributions', fn() => $this->contributions->count()),
-            'creator' => new UserListResource($this->whenLoaded('creator')),
+            'creator' => new UserResource($this->whenLoaded('creator')),
             'contributions' => ClubFundContributionResource::collection($this->whenLoaded('contributions')),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),

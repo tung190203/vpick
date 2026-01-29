@@ -27,6 +27,10 @@ class ClubActivity extends Model
         'reminder_minutes',
         'status',
         'created_by',
+        'cancellation_reason',
+        'cancelled_by',
+        'fee_amount',
+        'penalty_percentage',
     ];
 
     protected $casts = [
@@ -34,7 +38,17 @@ class ClubActivity extends Model
         'is_recurring' => 'boolean',
         'start_time' => 'datetime',
         'end_time' => 'datetime',
+        'fee_amount' => 'decimal:2',
+        'penalty_percentage' => 'decimal:2',
     ];
+        'status' => ClubActivityStatus::class,
+        'is_recurring' => 'boolean',
+        'start_time' => 'datetime',
+        'end_time' => 'datetime',
+        'fee_amount' => 'decimal:2',
+        'penalty_percentage' => 'decimal:2',
+    ];
+
 
     public function club()
     {

@@ -4,7 +4,7 @@ namespace App\Http\Resources\Club;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use App\Http\Resources\UserListResource;
+use App\Http\Resources\UserResource;
 
 class ClubWalletTransactionResource extends JsonResource
 {
@@ -25,8 +25,8 @@ class ClubWalletTransactionResource extends JsonResource
             'confirmed_by' => $this->confirmed_by,
             'confirmed_at' => $this->confirmed_at?->toISOString(),
             'wallet' => new ClubWalletResource($this->whenLoaded('wallet')),
-            'creator' => new UserListResource($this->whenLoaded('creator')),
-            'confirmer' => new UserListResource($this->whenLoaded('confirmer')),
+            'creator' => new UserResource($this->whenLoaded('creator')),
+            'confirmer' => new UserResource($this->whenLoaded('confirmer')),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];
