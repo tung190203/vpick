@@ -160,7 +160,7 @@ class ClubJoinRequestController extends Controller
 
         $member->delete();
 
-        return ResponseHelper::success([], 'Yêu cầu đã được hủy');
+        return ResponseHelper::success('Yêu cầu đã được hủy');
     }
 
     /**

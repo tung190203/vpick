@@ -183,7 +183,7 @@ class ClubActivityParticipantController extends Controller
 
         $participant->delete();
 
-        return ResponseHelper::success([], 'Xóa người tham gia thành công');
+        return ResponseHelper::success('Xóa người tham gia thành công');
     }
 
     /**

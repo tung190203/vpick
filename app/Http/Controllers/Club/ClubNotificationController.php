@@ -161,7 +161,7 @@ class ClubNotificationController extends Controller
 
         $notification->delete();
 
-        return ResponseHelper::success([], 'Xóa thông báo thành công');
+        return ResponseHelper::success('Xóa thông báo thành công');
     }
 
     public function togglePin($clubId, $notificationId)

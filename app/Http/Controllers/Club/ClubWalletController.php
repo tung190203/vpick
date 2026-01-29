@@ -124,7 +124,7 @@ class ClubWalletController extends Controller
 
         $wallet->delete();
 
-        return ResponseHelper::success([], 'Xóa ví thành công');
+        return ResponseHelper::success('Xóa ví thành công');
     }
 
     public function getBalance($clubId, $walletId)

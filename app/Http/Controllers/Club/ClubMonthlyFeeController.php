@@ -99,6 +99,6 @@ class ClubMonthlyFeeController extends Controller
         }
 
         $fee->delete();
-        return ResponseHelper::success([], 'Xóa cấu hình phí thành công');
+        return ResponseHelper::success('Xóa cấu hình phí thành công');
     }
 }

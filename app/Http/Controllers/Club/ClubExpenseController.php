@@ -150,7 +150,7 @@ class ClubExpenseController extends Controller
 
         $expense->delete();
 
-        return ResponseHelper::success([], 'Xóa chi phí thành công');
+        return ResponseHelper::success('Xóa chi phí thành công');
     }
 
     public function getStatistics(Request $request, $clubId)

@@ -166,7 +166,7 @@ class ClubActivityController extends Controller
 
         $activity->delete();
 
-        return ResponseHelper::success([], 'Xóa hoạt động thành công');
+        return ResponseHelper::success('Xóa hoạt động thành công');
     }
 
     public function complete($clubId, $activityId)

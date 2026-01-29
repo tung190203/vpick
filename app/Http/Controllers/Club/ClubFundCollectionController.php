@@ -139,7 +139,7 @@ class ClubFundCollectionController extends Controller
 
         $collection->update(['status' => ClubFundCollectionStatus::Cancelled]);
 
-        return ResponseHelper::success([], 'Đợt thu đã được hủy');
+        return ResponseHelper::success('Đợt thu đã được hủy');
     }
 
     public function getQrCode($clubId, $collectionId)

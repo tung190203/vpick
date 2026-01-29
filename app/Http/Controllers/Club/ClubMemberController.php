@@ -192,7 +192,7 @@ class ClubMemberController extends Controller
 
         $member->delete();
 
-        return ResponseHelper::success([], 'Xóa thành viên thành công');
+        return ResponseHelper::success('Xóa thành viên thành công');
     }
 
     public function approve(Request $request, $clubId, $memberId)
