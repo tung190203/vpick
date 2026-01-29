@@ -1,6 +1,6 @@
 <template>
     <div class="flex flex-col items-center justify-center min-h-screen px-4">
-      <img src="@/assets/images/logo-splash.svg" class="w-[60%]" alt="">
+      <LogoSplash class="w-[60%]" />
       <div class="text-center mb-8 mt-8">
         <h1 class="text-white text-2xl mb-2">Quên mật khẩu</h1>
         <p class="text-sm text-white font-light">
@@ -10,7 +10,7 @@
       </div>
   
       <div class="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center space-y-6">
-        <img src="@/assets/images/email-sent.svg" alt="Email Sent" class="w-20 h-20 mx-auto" />
+        <EmailSent class="w-20 h-20 mx-auto" />
         <h2 class="text-xl font-semibold text-gray-800">Nhập mã xác minh</h2>
         <p class="text-gray-600">
           Chúng tôi đã gửi mã OTP đến:
@@ -77,6 +77,8 @@
   import { useRoute, useRouter } from 'vue-router'
   import { toast } from 'vue3-toastify'
   import { useUserStore } from '@/store/auth'
+  import LogoSplash from '@/assets/images/logo-splash.svg'
+  import EmailSent from '@/assets/images/email-sent.svg'
   
   const route = useRoute()
   const router = useRouter()

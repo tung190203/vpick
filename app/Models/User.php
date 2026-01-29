@@ -298,6 +298,9 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         return $this->hasMany(Message::class, 'receiver_id');
     }
 
+    /** Relations đủ cho UserResource (dùng chung loadFullRelations + Club member/join-request). */
+    public const FULL_RELATIONS = ['referee', 'follows', 'playTimes', 'sports', 'sports.sport', 'sports.scores', 'clubs'];
+
     public function scopeWithFullRelations($query)
     {
         return $query->with(['referee', 'follows', 'playTimes', 'sports', 'sports.sport', 'sports.scores', 'clubs.members']);
@@ -305,7 +308,7 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
 
     public function scopeLoadFullRelations()
     {
-        return $this->load(['referee', 'follows', 'playTimes', 'sports', 'sports.sport', 'sports.scores', 'clubs']);
+        return $this->load(self::FULL_RELATIONS);
     }
 
     public function isMutualWith(User $other): bool

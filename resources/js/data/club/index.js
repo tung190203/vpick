@@ -86,3 +86,10 @@ export const ROLE_SPECIALIZATION = {
     text: 'text-white',
   }
 }
+
+export const ROLE_COLORS = {
+  'admin': 'bg-blue-500',
+  'manager': 'bg-purple-500',
+  'treasurer': 'bg-orange-400',
+  'secretary': 'bg-green-500'
+}

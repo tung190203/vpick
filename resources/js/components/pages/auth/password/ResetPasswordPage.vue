@@ -7,6 +7,7 @@ import { toast } from 'vue3-toastify'
 import Button from '@/components/atoms/Button.vue'
 import { useUserStore } from '@/store/auth'
 import { CheckCircleIcon } from '@heroicons/vue/24/solid'
+import LogoSplash from '@/assets/images/logo-splash.svg'
 
 const userStore = useUserStore()
 const route = useRoute()
@@ -54,7 +55,7 @@ const submit = async () => {
 
 <template>
     <div class="min-h-screen flex flex-col items-center justify-center px-4">
-        <img src="@/assets/images/logo-splash.svg" class="w-[60%]" alt="">
+        <LogoSplash class="w-[60%]" />
         <div class="text-center mb-8 mt-8">
             <h1 class="text-white text-2xl mb-2">Đặt lại mật khẩu</h1>
             <p class="text-sm text-white font-light">

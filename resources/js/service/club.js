@@ -30,5 +30,13 @@ export const getMembers = async (clubId, params = {}) => {
   const url = `${API_ENDPOINT.CLUB}/${clubId}/members${queryString ? `?${queryString}` : ''}`
 
   const { data } = await axiosInstance.get(url)
-  return data.data
+  return data
+}
+
+export const removeMember = async (clubId, memberId) => {
+    return axiosInstance.delete(`${API_ENDPOINT.CLUB}/${clubId}/members/${memberId}`).then((response) => response.data);
+}
+
+export const leaveRequest = async (clubId) => {
+    console.log('wait');
 }

@@ -60,7 +60,8 @@ class UserResource extends JsonResource
             'play_times' => UserPlayTimeResource::collection($this->whenLoaded('playTimes')),
             'sports' => UserSportResource::collection($this->whenLoaded('sports')),
             'clubs' => ClubResource::collection($this->whenLoaded('clubs')),
-            'is_followed' => $request->user() ? $request->user()->isFollowing($this->resource) : false,
+            'is_follow' => $request->user() ? $request->user()->isFollowing($this->resource) : false,
+            'is_friend' => $request->user() ? $request->user()->isFriendWith($this->resource) : false,
             'vn_rank' => $vnRank
         ];
     }

@@ -9,6 +9,7 @@ use App\Enums\ClubWalletTransactionSourceType;
 use App\Enums\ClubWalletTransactionStatus;
 use App\Enums\PaymentMethod;
 use App\Helpers\ResponseHelper;
+use App\Http\Resources\Club\ClubActivityResource;
 use App\Models\Club\Club;
 use App\Models\Club\ClubActivity;
 use App\Models\Club\ClubActivityParticipant;
@@ -54,13 +55,14 @@ class ClubActivityController extends Controller
         $perPage = $validated['per_page'] ?? 15;
         $activities = $query->orderBy('start_time', 'desc')->paginate($perPage);
 
-        return ResponseHelper::success([
-            'data' => $activities->items(),
+        $data = ['activities' => ClubActivityResource::collection($activities)];
+        $meta = [
             'current_page' => $activities->currentPage(),
             'per_page' => $activities->perPage(),
             'total' => $activities->total(),
             'last_page' => $activities->lastPage(),
-        ], 'Lấy danh sách hoạt động thành công');
+        ];
+        return ResponseHelper::success($data, 'Lấy danh sách hoạt động thành công', 200, $meta);
     }
 
     public function store(Request $request, $clubId)
@@ -106,9 +108,8 @@ class ClubActivityController extends Controller
             'created_by' => $userId,
         ]);
 
-        $activity->load(['creator', 'club']);
-
-        return ResponseHelper::success($activity, 'Tạo hoạt động thành công', 201);
+        $activity->load(['creator', 'participants.user']);
+        return ResponseHelper::success(new ClubActivityResource($activity), 'Tạo hoạt động thành công', 201);
     }
 
     public function show($clubId, $activityId)
@@ -117,7 +118,7 @@ class ClubActivityController extends Controller
             ->with(['creator', 'club', 'participants.user', 'miniTournament'])
             ->findOrFail($activityId);
 
-        return ResponseHelper::success($activity, 'Lấy thông tin hoạt động thành công');
+        return ResponseHelper::success(new ClubActivityResource($activity), 'Lấy thông tin hoạt động thành công');
     }
 
     public function update(Request $request, $clubId, $activityId)
@@ -144,9 +145,8 @@ class ClubActivityController extends Controller
         ]);
 
         $activity->update($validated);
-        $activity->load(['creator', 'club']);
-
-        return ResponseHelper::success($activity, 'Cập nhật hoạt động thành công');
+        $activity->load(['creator', 'participants.user']);
+        return ResponseHelper::success(new ClubActivityResource($activity), 'Cập nhật hoạt động thành công');
     }
 
     public function destroy($clubId, $activityId)
@@ -166,7 +166,7 @@ class ClubActivityController extends Controller
 
         $activity->delete();
 
-        return ResponseHelper::success([], 'Xóa hoạt động thành công');
+        return ResponseHelper::success('Xóa hoạt động thành công');
     }
 
     public function complete($clubId, $activityId)
@@ -181,8 +181,9 @@ class ClubActivityController extends Controller
         }
 
         $activity->markAsCompleted();
+        $activity->load(['creator', 'participants.user']);
 
-        return ResponseHelper::success($activity, 'Hoạt động đã được đánh dấu hoàn thành');
+        return ResponseHelper::success(new ClubActivityResource($activity), 'Hoạt động đã được đánh dấu hoàn thành');
     }
 
     /**
@@ -258,9 +259,8 @@ class ClubActivityController extends Controller
                 }
             }
 
-            $activity->load(['creator', 'club', 'participants.user', 'participants.walletTransaction']);
-
-            return ResponseHelper::success($activity, 'Sự kiện đã được hủy');
+            $activity->load(['creator', 'participants.user']);
+            return ResponseHelper::success(new ClubActivityResource($activity), 'Sự kiện đã được hủy');
         });
     }
 }
