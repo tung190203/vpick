@@ -96,7 +96,6 @@ class ClubMemberController extends Controller
             'role' => ['sometimes', Rule::enum(ClubMemberRole::class)],
             'position' => 'nullable|string|max:255',
             'message' => 'nullable|string',
-            'status' => ['sometimes', Rule::enum(ClubMemberStatus::class)],
         ]);
 
         // Check duplicate member (bất kỳ status nào)
@@ -105,23 +104,23 @@ class ClubMemberController extends Controller
         }
 
         return DB::transaction(function () use ($club, $validated) {
+            // Admin thêm user = gửi lời mời; user phải đồng ý mới thành member (status Pending, invited_by = admin)
             $member = ClubMember::create([
                 'club_id' => $club->id,
                 'user_id' => $validated['user_id'],
+                'invited_by' => auth()->id(),
                 'role' => $validated['role'] ?? ClubMemberRole::Member,
                 'position' => $validated['position'] ?? null,
-                'status' => $validated['status'] ?? ClubMemberStatus::Active,
+                'status' => ClubMemberStatus::Pending,
                 'message' => $validated['message'] ?? null,
-                'joined_at' => ($validated['status'] ?? ClubMemberStatus::Active) === ClubMemberStatus::Active ? now() : null,
+                'joined_at' => null,
             ]);
 
-            $member->load(['user.sports.scores', 'user.sports.sport', 'club', 'reviewer']);
+            $member->load(['user.sports.scores', 'user.sports.sport', 'club', 'inviter', 'reviewer']);
 
             return ResponseHelper::success(
                 new ClubMemberResource($member),
-                $member->status === 'pending'
-                    ? 'Yêu cầu tham gia đã được gửi'
-                    : 'Thành viên đã được thêm vào CLB',
+                'Đã gửi lời mời tham gia CLB, chờ user đồng ý',
                 201
             );
         });

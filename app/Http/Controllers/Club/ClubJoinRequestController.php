@@ -34,7 +34,7 @@ class ClubJoinRequestController extends Controller
             'status' => 'sometimes|in:pending,approved,rejected',
         ]);
 
-        // Mặc định chỉ lấy pending requests
+        // Mặc định chỉ lấy pending = yêu cầu tham gia từ user (invited_by null), không bao gồm lời mời từ admin
         $status = $validated['status'] ?? 'pending';
 
         $query = $club->members()
@@ -43,9 +43,12 @@ class ClubJoinRequestController extends Controller
                 'user.sports.sport',
                 'user.vnduprScores',
                 'reviewer',
+                'inviter',
             ]);
 
-        // Filter theo status
+        // Chỉ hiển thị yêu cầu từ user (invited_by null). Lời mời từ admin (invited_by not null) nằm ở members list với status Pending
+        $query->whereNull('invited_by');
+
         if ($status === 'pending') {
             $query->where('status', ClubMemberStatus::Pending);
         } elseif ($status === 'approved') {
@@ -128,7 +131,7 @@ class ClubJoinRequestController extends Controller
     public function show($clubId, $requestId)
     {
         $member = ClubMember::where('club_id', $clubId)
-            ->with(['user.vnduprScores', 'club', 'reviewer'])
+            ->with(['user.vnduprScores', 'club', 'reviewer', 'inviter'])
             ->findOrFail($requestId);
 
         return ResponseHelper::success(
@@ -149,9 +152,11 @@ class ClubJoinRequestController extends Controller
             return ResponseHelper::error('Bạn cần đăng nhập', 401);
         }
 
+        // Chỉ hủy được khi là yêu cầu do user tự gửi (invited_by null). Lời mời từ admin dùng reject.
         $member = ClubMember::where('club_id', $clubId)
             ->where('user_id', $userId)
             ->where('status', ClubMemberStatus::Pending)
+            ->whereNull('invited_by')
             ->first();
 
         if (!$member) {
@@ -268,5 +273,98 @@ class ClubJoinRequestController extends Controller
             new ClubMemberResource($member),
             'Yêu cầu đã bị từ chối'
         );
+    }
+
+    /**
+     * User: Danh sách lời mời tham gia CLB (admin mời tôi, chờ tôi đồng ý)
+     * GET /api/clubs/my-invitations
+     */
+    public function myInvitations(Request $request)
+    {
+        $userId = auth()->id();
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
+        }
+
+        $invitations = ClubMember::where('user_id', $userId)
+            ->where('status', ClubMemberStatus::Pending)
+            ->whereNotNull('invited_by')
+            ->with(['club', 'inviter'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return ResponseHelper::success(
+            ClubMemberResource::collection($invitations),
+            'Lấy danh sách lời mời tham gia CLB thành công'
+        );
+    }
+
+    /**
+     * User: Đồng ý lời mời tham gia CLB (admin đã mời)
+     * POST /api/clubs/{clubId}/invitations/accept
+     */
+    public function acceptInvitation($clubId)
+    {
+        $userId = auth()->id();
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
+        }
+
+        $member = ClubMember::where('club_id', $clubId)
+            ->where('user_id', $userId)
+            ->where('status', ClubMemberStatus::Pending)
+            ->whereNotNull('invited_by')
+            ->first();
+
+        if (!$member) {
+            return ResponseHelper::error('Không tìm thấy lời mời tham gia CLB này', 404);
+        }
+
+        $member->update([
+            'status' => ClubMemberStatus::Active,
+            'joined_at' => now(),
+            'reviewed_at' => now(),
+        ]);
+
+        $member->load(['user.sports.scores', 'user.sports.sport', 'club', 'inviter']);
+
+        return ResponseHelper::success(
+            new ClubMemberResource($member),
+            'Bạn đã tham gia CLB thành công'
+        );
+    }
+
+    /**
+     * User: Từ chối lời mời tham gia CLB
+     * POST /api/clubs/{clubId}/invitations/reject
+     */
+    public function rejectInvitation(Request $request, $clubId)
+    {
+        $userId = auth()->id();
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
+        }
+
+        $validated = $request->validate([
+            'reason' => 'nullable|string|max:500',
+        ]);
+
+        $member = ClubMember::where('club_id', $clubId)
+            ->where('user_id', $userId)
+            ->where('status', ClubMemberStatus::Pending)
+            ->whereNotNull('invited_by')
+            ->first();
+
+        if (!$member) {
+            return ResponseHelper::error('Không tìm thấy lời mời tham gia CLB này', 404);
+        }
+
+        $member->update([
+            'status' => ClubMemberStatus::Inactive,
+            'reviewed_at' => now(),
+            'rejection_reason' => $validated['reason'] ?? 'User từ chối lời mời',
+        ]);
+
+        return ResponseHelper::success('Đã từ chối lời mời tham gia CLB');
     }
 }

@@ -180,6 +180,7 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
         Route::get('/', [ClubController::class, 'index']);
         Route::post('/', [ClubController::class, 'store']);
         Route::get('/my-clubs', [ClubController::class, 'myClubs']);
+        Route::get('/my-invitations', [ClubJoinRequestController::class, 'myInvitations']);
         Route::get('/search-location', [ClubController::class, 'searchLocation']);
         Route::get('/location-detail', [ClubController::class, 'detailGooglePlace']);
         Route::get('/{clubId}', [ClubController::class, 'show']);
@@ -205,11 +206,15 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
                 Route::delete('/{memberId}', [ClubMemberController::class, 'destroy']);
             });
 
+            Route::prefix('invitations')->group(function () {
+                Route::post('/accept', [ClubJoinRequestController::class, 'acceptInvitation']);
+                Route::post('/reject', [ClubJoinRequestController::class, 'rejectInvitation']);
+            });
             Route::prefix('join-requests')->group(function () {
                 Route::get('/', [ClubJoinRequestController::class, 'index']);
                 Route::post('/', [ClubJoinRequestController::class, 'store']);
                 Route::post('/reject', [ClubJoinRequestController::class, 'reject']);
-                Route::delete('/', [ClubJoinRequestController::class, 'destroyMyRequest']); 
+                Route::delete('/', [ClubJoinRequestController::class, 'destroyMyRequest']);
                 Route::get('/{requestId}', [ClubJoinRequestController::class, 'show']);
                 Route::post('/{requestId}/approve', [ClubJoinRequestController::class, 'approve']);
                 Route::post('/{requestId}/reject', [ClubJoinRequestController::class, 'reject']);
