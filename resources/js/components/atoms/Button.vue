@@ -11,6 +11,7 @@
   <script setup>
   import { computed } from 'vue'
   
+  defineEmits(['click'])
   const props = defineProps({
     variant: {
       type: String,
