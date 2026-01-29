@@ -39,8 +39,10 @@ class ClubJoinRequestController extends Controller
 
         $query = $club->members()
             ->with([
-                'user.vnduprScores', // Load scores để hiển thị skill level
-                'reviewer'
+                'user.sports.scores',
+                'user.sports.sport',
+                'user.vnduprScores',
+                'reviewer',
             ]);
 
         // Filter theo status

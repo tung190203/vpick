@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Club;
 use App\Enums\ClubMemberRole;
 use App\Enums\ClubMemberStatus;
 use App\Helpers\ResponseHelper;
+use App\Http\Resources\Club\ClubMemberResource;
 use App\Models\Club\Club;
 use App\Models\Club\ClubMember;
 use App\Http\Controllers\Controller;
@@ -26,7 +27,11 @@ class ClubMemberController extends Controller
             'status' => ['sometimes', Rule::enum(ClubMemberStatus::class)],
         ]);
 
-        $query = $club->members()->with(['user', 'reviewer']);
+        $query = $club->members()->with([
+            'user.sports.scores',
+            'user.sports.sport',
+            'reviewer',
+        ]);
 
         if (!empty($validated['search'])) {
             $query->whereHas('user', function ($q) use ($validated) {
@@ -62,14 +67,18 @@ class ClubMemberController extends Controller
             ],
         ];
 
-        return ResponseHelper::success([
-            'data' => $members->items(),
+        $data = [
+            'members' => ClubMemberResource::collection($members),
             'statistics' => $statistics,
+        ];
+        $meta = [
             'current_page' => $members->currentPage(),
             'per_page' => $members->perPage(),
             'total' => $members->total(),
             'last_page' => $members->lastPage(),
-        ], 'Lấy danh sách thành viên thành công');
+        ];
+
+        return ResponseHelper::success($data, 'Lấy danh sách thành viên thành công', 200, $meta);
     }
 
     public function store(Request $request, $clubId)

@@ -24,10 +24,38 @@ class ClubMemberResource extends JsonResource
             'joined_at' => $this->joined_at?->toISOString(),
             'left_at' => $this->left_at?->toISOString(),
             'notes' => $this->notes,
+            'vndupr_score' => $this->whenLoaded('user', fn () => $this->getUserVnduprScore()),
             'user' => new UserResource($this->whenLoaded('user')),
             'reviewer' => new UserResource($this->whenLoaded('reviewer')),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];
+    }
+
+    /**
+     * Lấy điểm vndupr của user (từ sports.scores hoặc vnduprScores)
+     */
+    protected function getUserVnduprScore(): ?float
+    {
+        $user = $this->user;
+        if (!$user) {
+            return null;
+        }
+        $score = null;
+        if ($user->relationLoaded('sports')) {
+            foreach ($user->sports ?? [] as $userSport) {
+                $scores = $userSport->relationLoaded('scores') ? $userSport->scores : collect();
+                $vndupr = $scores->where('score_type', 'vndupr_score')->sortByDesc('created_at')->first();
+                if ($vndupr) {
+                    $score = (float) $vndupr->score_value;
+                    break;
+                }
+            }
+        }
+        if ($score === null && $user->relationLoaded('vnduprScores')) {
+            $max = $user->vnduprScores->max('score_value');
+            $score = $max !== null ? (float) $max : null;
+        }
+        return $score;
     }
 }
