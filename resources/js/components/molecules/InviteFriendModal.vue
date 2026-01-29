@@ -60,9 +60,7 @@
                                     </span>
                                 </div>
                                 <div class="flex items-center gap-1 text-sm text-gray-500 mt-0.5">
-                                    <img :src="maleIcon" alt="male icon" class="w-4 h-4" v-if="user.gender == 1"/>
-                                    <img :src="femaleIcon" alt="female icon" class="w-4 h-4" v-else-if="user.gender == 2"/>
-                                    <img src="" alt="" v-else>
+                                    <component :is="user.gender == 1 ? MaleIcon : FemaleIcon" class="w-4 h-4" />
                                     <span>{{ user.gender_text }}</span>
                                 </div>
                             </div>
@@ -111,8 +109,8 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { XMarkIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
-import maleIcon from '@/assets/images/male.svg'
-import femaleIcon from '@/assets/images/female.svg'
+import MaleIcon from '@/assets/images/male.svg'
+import FemaleIcon from '@/assets/images/female.svg'
 
 const defaultAvatar = "/images/default-avatar.png";
 

@@ -50,7 +50,7 @@
                                 'cursor-move': isCreator,
                                 'cursor-default': !isCreator
                             }">
-                            <img :src="dotMenu" alt="" v-if="isCreator">
+                            <DotMenu v-if="isCreator" />
 
                             <img :src="team.team_avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${team.team_id}`"
                                 :alt="team.team_name" class="w-10 h-10 rounded-full flex-shrink-0">
@@ -110,7 +110,7 @@
                                     'cursor-move': isCreator,
                                     'cursor-default': !isCreator
                                 }">
-                                <img :src="dotMenu" alt="" v-if="isCreator">
+                                <DotMenu v-if="isCreator" />
 
                                 <img :src="team.team_avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${team.team_id}`"
                                     :alt="team.team_name" class="w-10 h-10 rounded-full flex-shrink-0">
@@ -187,7 +187,7 @@ import { onBeforeRouteLeave } from 'vue-router';
 import { ArrowLeftIcon, XMarkIcon } from "@heroicons/vue/24/solid";
 import { toast } from 'vue3-toastify';
 import { useRouter, useRoute } from 'vue-router';
-import dotMenu from '@/assets/images/dot-menu.svg';
+import DotMenu from '@/assets/images/dot-menu.svg';
 import * as TournamentTypeService from '@/service/tournamentType.js'
 import * as TournamentService from '@/service/tournament.js'
 import { useUserStore } from '@/store/auth'

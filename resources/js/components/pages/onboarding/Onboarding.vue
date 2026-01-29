@@ -2,6 +2,7 @@
 import Button from '@/components/atoms/Button.vue'
 import { useRouter } from 'vue-router'
 import { LOCAL_STORAGE_KEY } from "@/constants/index.js"
+import LogoSplash from '@/assets/images/logo-splash.svg'
 
 const router = useRouter()
 const query = router.currentRoute.value.query
@@ -19,7 +20,7 @@ function goLogin() {
 
 <template>
   <div class="min-h-screen flex flex-col items-center justify-center px-4">
-    <img src="@/assets/images/logo-splash.svg" class="w-[60%]" alt="Logo">
+    <LogoSplash class="w-[60%]" />
     <div class="text-center mb-8 mt-4">
       <h1 class="text-white text-2xl mb-2">THAM GIA CỘNG ĐỒNG PICKERBALL NGAY TRÊN PICKI</h1>
       <p class="text-sm text-white font-light">
