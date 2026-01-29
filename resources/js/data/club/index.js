@@ -5,24 +5,27 @@ import MessageIcon from "@/assets/images/message.svg";
 import CalendarIcon from "@/assets/images/calendar.svg";
 import FundIcon from "@/assets/images/fund.svg";
 import NotificationsIcon from "@/assets/images/notifications.svg";
+import ShieldCheckIcon from "@/assets/images/shield_check.svg";
+import MoneyIcon from "@/assets/images/money.svg";
+import { UserIcon } from '@heroicons/vue/24/outline'
 
 export const CLUB_STATS = [
-    {
-        icon: GroupUserIcon,
-        value: '42',
-        label: 'Thành viên'
-    },
-    {
-        icon: BarChart,
-        value: '2.5 - 3.5',
-        label: 'Trình độ'
-    },
-    {
-        icon: MoneyTization,
-        value: '50K',
-        label: 'Vãng lai/Buổi'
-    }
-]
+  {
+    key: 'members',
+    icon: GroupUserIcon,
+    label: 'Thành viên'
+  },
+  {
+    key: 'level',
+    icon: BarChart,
+    label: 'Trình độ'
+  },
+  {
+    key: 'price',
+    icon: MoneyTization,
+    label: 'Vãng lai/Buổi'
+  }
+];
 
 export const CLUB_MODULES = [
     {
@@ -42,3 +45,44 @@ export const CLUB_MODULES = [
         label: 'Nhóm chat'
     }
 ]
+
+export const ROLE_LABELS = {
+  admin: 'Chủ câu lạc bộ',
+  treasurer: 'Thủ quỹ',
+  secretary: 'Thư ký',
+  manager: 'Quản lý',
+  member: 'Thành viên'
+}
+
+export const ROLE_SPECIALIZATION = {
+  admin: {
+    label: ROLE_LABELS.admin,
+    icon: ShieldCheckIcon,
+    bg: 'bg-blue-500',
+    text: 'text-white',
+  },
+  treasurer: {
+    label: ROLE_LABELS.treasurer,
+    icon: MoneyIcon,
+    bg: 'bg-orange-400',
+    text: 'text-white',
+  },
+  secretary: {
+    label: ROLE_LABELS.secretary,
+    icon: UserIcon,
+    bg: 'bg-green-400',
+    text: 'text-white',
+  },
+  manager: {
+    label: ROLE_LABELS.manager,
+    icon: UserIcon,
+    bg: 'bg-purple-500',
+    text: 'text-white',
+  },
+  member: {
+    label: ROLE_LABELS.member,
+    icon: UserIcon,
+    bg: 'bg-gray-500',
+    text: 'text-white',
+  }
+}
