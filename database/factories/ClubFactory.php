@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Club\Club;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -10,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class ClubFactory extends Factory
 {
+    protected $model = Club::class;
     /**
      * Define the model's default state.
      *
@@ -19,11 +21,13 @@ class ClubFactory extends Factory
     {
         return [
             'name' => $this->faker->company(),
-            'location' => $this->faker->address(),
+            'address' => $this->faker->address(),
+            'latitude' => $this->faker->latitude(),
+            'longitude' => $this->faker->longitude(),
             'logo_url' => $this->faker->imageUrl(200, 200, 'sports', true, 'Club Logo'),
+            'status' => 'active',
+            'is_verified' => false,
             'created_by' => User::inRandomOrder()->first()?->id,
-            'created_at' => now(),
-            'updated_at' => now(),
         ];
     }
 }
