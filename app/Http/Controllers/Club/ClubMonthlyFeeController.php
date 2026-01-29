@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Club;
 
 use App\Helpers\ResponseHelper;
+use App\Http\Resources\Club\ClubMonthlyFeeResource;
 use App\Models\Club\Club;
 use App\Models\Club\ClubMonthlyFee;
 use App\Http\Controllers\Controller;
@@ -26,7 +27,7 @@ class ClubMonthlyFeeController extends Controller
 
         $fees = $query->get();
 
-        return ResponseHelper::success($fees, 'Lấy danh sách cấu hình phí thành công');
+        return ResponseHelper::success(ClubMonthlyFeeResource::collection($fees), 'Lấy danh sách cấu hình phí thành công');
     }
 
     public function store(Request $request, $clubId)
@@ -53,13 +54,13 @@ class ClubMonthlyFeeController extends Controller
             'is_active' => $validated['is_active'] ?? true,
         ]);
 
-        return ResponseHelper::success($fee, 'Tạo cấu hình phí thành công', 201);
+        return ResponseHelper::success(new ClubMonthlyFeeResource($fee), 'Tạo cấu hình phí thành công', 201);
     }
 
     public function show($clubId, $feeId)
     {
         $fee = ClubMonthlyFee::where('club_id', $clubId)->findOrFail($feeId);
-        return ResponseHelper::success($fee, 'Lấy thông tin cấu hình phí thành công');
+        return ResponseHelper::success(new ClubMonthlyFeeResource($fee), 'Lấy thông tin cấu hình phí thành công');
     }
 
     public function update(Request $request, $clubId, $feeId)
@@ -80,7 +81,7 @@ class ClubMonthlyFeeController extends Controller
         ]);
 
         $fee->update($validated);
-        return ResponseHelper::success($fee, 'Cập nhật cấu hình phí thành công');
+        return ResponseHelper::success(new ClubMonthlyFeeResource($fee->fresh()), 'Cập nhật cấu hình phí thành công');
     }
 
     public function destroy($clubId, $feeId)
@@ -98,6 +99,6 @@ class ClubMonthlyFeeController extends Controller
         }
 
         $fee->delete();
-        return ResponseHelper::success([], 'Xóa cấu hình phí thành công');
+        return ResponseHelper::success('Xóa cấu hình phí thành công');
     }
 }

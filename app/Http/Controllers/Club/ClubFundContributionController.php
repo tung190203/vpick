@@ -9,6 +9,7 @@ use App\Enums\ClubWalletTransactionSourceType;
 use App\Enums\ClubWalletTransactionStatus;
 use App\Enums\PaymentMethod;
 use App\Helpers\ResponseHelper;
+use App\Http\Resources\Club\ClubFundContributionResource;
 use App\Models\Club\Club;
 use App\Models\Club\ClubFundCollection;
 use App\Models\Club\ClubFundContribution;
@@ -43,13 +44,14 @@ class ClubFundContributionController extends Controller
         $perPage = $validated['per_page'] ?? 15;
         $contributions = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
-        return ResponseHelper::success([
-            'data' => $contributions->items(),
+        $data = ['contributions' => ClubFundContributionResource::collection($contributions)];
+        $meta = [
             'current_page' => $contributions->currentPage(),
             'per_page' => $contributions->perPage(),
             'total' => $contributions->total(),
             'last_page' => $contributions->lastPage(),
-        ], 'Lấy danh sách đóng góp thành công');
+        ];
+        return ResponseHelper::success($data, 'Lấy danh sách đóng góp thành công', 200, $meta);
     }
 
     public function store(Request $request, $clubId, $collectionId)
@@ -95,8 +97,7 @@ class ClubFundContributionController extends Controller
             }
 
             $contribution->load(['user', 'walletTransaction']);
-
-            return ResponseHelper::success($contribution, 'Đóng góp thành công', 201);
+            return ResponseHelper::success(new ClubFundContributionResource($contribution), 'Đóng góp thành công', 201);
         });
     }
 
@@ -108,7 +109,7 @@ class ClubFundContributionController extends Controller
             ->with(['user', 'walletTransaction', 'fundCollection'])
             ->findOrFail($contributionId);
 
-        return ResponseHelper::success($contribution, 'Lấy thông tin đóng góp thành công');
+        return ResponseHelper::success(new ClubFundContributionResource($contribution), 'Lấy thông tin đóng góp thành công');
     }
 
     public function confirm($clubId, $collectionId, $contributionId)
@@ -137,8 +138,7 @@ class ClubFundContributionController extends Controller
             }
 
             $contribution->load(['user', 'walletTransaction']);
-
-            return ResponseHelper::success($contribution, 'Đóng góp đã được xác nhận');
+            return ResponseHelper::success(new ClubFundContributionResource($contribution), 'Đóng góp đã được xác nhận');
         });
     }
 
@@ -156,13 +156,12 @@ class ClubFundContributionController extends Controller
             return ResponseHelper::error('Chỉ admin/manager/treasurer mới có quyền từ chối', 403);
         }
 
-        $validated = $request->validate([
+        $request->validate([
             'reason' => 'required|string',
         ]);
 
         $contribution->reject();
         $contribution->load(['user', 'walletTransaction']);
-
-        return ResponseHelper::success($contribution, 'Đóng góp đã bị từ chối');
+        return ResponseHelper::success(new ClubFundContributionResource($contribution), 'Đóng góp đã bị từ chối');
     }
 }

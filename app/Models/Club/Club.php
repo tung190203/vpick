@@ -8,6 +8,7 @@ use App\Enums\ClubWalletType;
 use App\Models\User;
 use App\Models\Tournament;
 use App\Models\MiniTournament;
+use Database\Factories\ClubFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -15,6 +16,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Club extends Model
 {
     use HasFactory, SoftDeletes;
+
+    protected static function newFactory()
+    {
+        return ClubFactory::new();
+    }
 
     const PER_PAGE = 10;
 

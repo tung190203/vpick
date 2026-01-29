@@ -6,6 +6,7 @@ use App\Enums\ClubMemberRole;
 use App\Enums\ClubNotificationPriority;
 use App\Enums\ClubNotificationStatus;
 use App\Helpers\ResponseHelper;
+use App\Http\Resources\Club\ClubNotificationResource;
 use App\Models\Club\Club;
 use App\Models\Club\ClubNotification;
 use App\Models\Club\ClubNotificationType;
@@ -45,13 +46,14 @@ class ClubNotificationController extends Controller
         $perPage = $validated['per_page'] ?? 15;
         $notifications = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
-        return ResponseHelper::success([
-            'data' => $notifications->items(),
+        $data = ['notifications' => ClubNotificationResource::collection($notifications)];
+        $meta = [
             'current_page' => $notifications->currentPage(),
             'per_page' => $notifications->perPage(),
             'total' => $notifications->total(),
             'last_page' => $notifications->lastPage(),
-        ], 'Lấy danh sách thông báo thành công');
+        ];
+        return ResponseHelper::success($data, 'Lấy danh sách thông báo thành công', 200, $meta);
     }
 
     public function store(Request $request, $clubId)
@@ -103,8 +105,7 @@ class ClubNotificationController extends Controller
             }
 
             $notification->load(['type', 'creator', 'recipients.user']);
-
-            return ResponseHelper::success($notification, 'Tạo thông báo thành công', 201);
+            return ResponseHelper::success(new ClubNotificationResource($notification), 'Tạo thông báo thành công', 201);
         });
     }
 
@@ -114,7 +115,7 @@ class ClubNotificationController extends Controller
             ->with(['type', 'creator', 'recipients.user'])
             ->findOrFail($notificationId);
 
-        return ResponseHelper::success($notification, 'Lấy thông tin thông báo thành công');
+        return ResponseHelper::success(new ClubNotificationResource($notification), 'Lấy thông tin thông báo thành công');
     }
 
     public function update(Request $request, $clubId, $notificationId)
@@ -141,9 +142,8 @@ class ClubNotificationController extends Controller
         ]);
 
         $notification->update($validated);
-        $notification->load(['type', 'creator']);
-
-        return ResponseHelper::success($notification, 'Cập nhật thông báo thành công');
+        $notification->load(['type', 'creator', 'recipients.user']);
+        return ResponseHelper::success(new ClubNotificationResource($notification), 'Cập nhật thông báo thành công');
     }
 
     public function destroy($clubId, $notificationId)
@@ -161,7 +161,7 @@ class ClubNotificationController extends Controller
 
         $notification->delete();
 
-        return ResponseHelper::success([], 'Xóa thông báo thành công');
+        return ResponseHelper::success('Xóa thông báo thành công');
     }
 
     public function togglePin($clubId, $notificationId)
@@ -177,7 +177,8 @@ class ClubNotificationController extends Controller
 
         $notification->togglePin();
 
-        return ResponseHelper::success($notification, 'Đã cập nhật trạng thái ghim');
+        $notification->load(['type', 'creator', 'recipients.user']);
+        return ResponseHelper::success(new ClubNotificationResource($notification), 'Đã cập nhật trạng thái ghim');
     }
 
     public function markAsRead($clubId, $notificationId)
@@ -234,7 +235,6 @@ class ClubNotificationController extends Controller
         }
 
         $notification->load(['type', 'creator', 'recipients.user']);
-
-        return ResponseHelper::success($notification, 'Gửi thông báo thành công');
+        return ResponseHelper::success(new ClubNotificationResource($notification), 'Gửi thông báo thành công');
     }
 }

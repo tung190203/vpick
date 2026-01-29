@@ -7,6 +7,7 @@ use App\Enums\ClubWalletTransactionSourceType;
 use App\Enums\ClubWalletTransactionStatus;
 use App\Enums\PaymentMethod;
 use App\Helpers\ResponseHelper;
+use App\Http\Resources\Club\ClubWalletTransactionResource;
 use App\Models\Club\Club;
 use App\Models\Club\ClubWallet;
 use App\Models\Club\ClubWalletTransaction;
@@ -63,13 +64,14 @@ class ClubWalletTransactionController extends Controller
         $perPage = $validated['per_page'] ?? 15;
         $transactions = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
-        return ResponseHelper::success([
-            'data' => $transactions->items(),
+        $data = ['transactions' => ClubWalletTransactionResource::collection($transactions)];
+        $meta = [
             'current_page' => $transactions->currentPage(),
             'per_page' => $transactions->perPage(),
             'total' => $transactions->total(),
             'last_page' => $transactions->lastPage(),
-        ], 'Lấy danh sách giao dịch thành công');
+        ];
+        return ResponseHelper::success($data, 'Lấy danh sách giao dịch thành công', 200, $meta);
     }
 
     public function store(Request $request, $clubId)
@@ -110,9 +112,8 @@ class ClubWalletTransactionController extends Controller
             'created_by' => $userId,
         ]);
 
-        $transaction->load(['wallet', 'creator']);
-
-        return ResponseHelper::success($transaction, 'Tạo giao dịch thành công', 201);
+        $transaction->load(['wallet', 'creator', 'confirmer']);
+        return ResponseHelper::success(new ClubWalletTransactionResource($transaction), 'Tạo giao dịch thành công', 201);
     }
 
     public function show($clubId, $transactionId)
@@ -121,7 +122,7 @@ class ClubWalletTransactionController extends Controller
             $q->where('club_id', $clubId);
         })->with(['wallet', 'creator', 'confirmer'])->findOrFail($transactionId);
 
-        return ResponseHelper::success($transaction, 'Lấy thông tin giao dịch thành công');
+        return ResponseHelper::success(new ClubWalletTransactionResource($transaction), 'Lấy thông tin giao dịch thành công');
     }
 
     public function update(Request $request, $clubId, $transactionId)
@@ -148,9 +149,8 @@ class ClubWalletTransactionController extends Controller
         ]);
 
         $transaction->update($validated);
-        $transaction->load(['wallet', 'creator']);
-
-        return ResponseHelper::success($transaction, 'Cập nhật giao dịch thành công');
+        $transaction->load(['wallet', 'creator', 'confirmer']);
+        return ResponseHelper::success(new ClubWalletTransactionResource($transaction), 'Cập nhật giao dịch thành công');
     }
 
     public function confirm($clubId, $transactionId)
@@ -171,8 +171,7 @@ class ClubWalletTransactionController extends Controller
 
         $transaction->confirm($userId);
         $transaction->load(['wallet', 'creator', 'confirmer']);
-
-        return ResponseHelper::success($transaction, 'Giao dịch đã được xác nhận');
+        return ResponseHelper::success(new ClubWalletTransactionResource($transaction), 'Giao dịch đã được xác nhận');
     }
 
     public function reject(Request $request, $clubId, $transactionId)
@@ -193,7 +192,6 @@ class ClubWalletTransactionController extends Controller
 
         $transaction->reject($userId);
         $transaction->load(['wallet', 'creator', 'confirmer']);
-
-        return ResponseHelper::success($transaction, 'Giao dịch đã bị từ chối');
+        return ResponseHelper::success(new ClubWalletTransactionResource($transaction), 'Giao dịch đã bị từ chối');
     }
 }
