@@ -386,7 +386,7 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
     Route::prefix('follows')->group(function () {
         Route::match(['get', 'post'], '/index', [FollowController::class, 'index']);
         Route::post('/store', [FollowController::class, 'store']);
-        Route::delete('/delete', [FollowController::class, 'destroy']);
+        Route::match(['delete', 'post'], '/delete', [FollowController::class, 'destroy']);
         Route::match(['get', 'post'], '/list-friends', [FollowController::class, 'getFriends']);
     });
 

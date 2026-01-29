@@ -6,6 +6,7 @@ import Button from '@/components/atoms/Button.vue'
 import { toast } from 'vue3-toastify'
 import { useUserStore } from '@/store/auth'
 import { useRouter } from 'vue-router'
+import LogoSplash from '@/assets/images/logo-splash.svg'
 
 const userStore = useUserStore()
 const router = useRouter()
@@ -40,7 +41,7 @@ const submit = async () => {
 </script>
 <template>
   <div class="min-h-screen flex flex-col items-center justify-center px-4">
-    <img src="@/assets/images/logo-splash.svg" class="w-[60%]" alt="">
+    <LogoSplash class="w-[60%]" />
     <div class="text-center mb-8 mt-8">
       <h1 class="text-white text-2xl mb-2">Quên mật khẩu</h1>
       <p class="text-sm text-white font-light">

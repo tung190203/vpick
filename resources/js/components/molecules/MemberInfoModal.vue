@@ -20,9 +20,9 @@
               <div class="relative">
                 <img :src="member?.user.avatar_url" :alt="member?.user.full_name"
                   class="w-16 h-16 rounded-full object-cover bg-blue-50">
-                <div v-if="member?.user.self_score"
+                <div v-if="getVpScore(member?.user)"
                   class="absolute -bottom-1 -left-1 w-6 h-6 bg-[#4B88FF] rounded-full flex items-center justify-center border-2 border-white text-white text-[10px] font-bold">
-                  {{ member?.user.self_score }}
+                  {{ getVpScore(member?.user) }}
                 </div>
               </div>
               <div class="flex flex-col">
@@ -58,10 +58,16 @@
             </div>
             <!-- Action Buttons -->
             <div class="space-y-3">
-              <button
+              <button v-if="member.user?.id !== getUser.id" @click="handleFollowAction"
                 class="w-full py-3 border-2 border-[#4392E0] text-[#4392E0] bg-[#f2f7fc] font-bold rounded-full flex items-center justify-center gap-2 hover:bg-[#4392E0] hover:text-white transition-all active:scale-[0.98]">
-                <UserPlusIcon class="w-6 h-6" />
-                Kết bạn
+                <component :is="member.user?.is_follow ? UserMinusIcon : UserPlusIcon" class="w-6 h-6" />
+                <span>
+                  {{
+                    member.user?.is_follow
+                      ? (member.user?.is_friend ? 'Bạn bè' : 'Đang theo dõi')
+                      : 'Theo dõi'
+                  }}
+                </span>
               </button>
               <button @click="closeModal"
                 class="w-full py-3 bg-[#F3F4F6] text-[#374151] font-bold rounded-full transition-all hover:bg-gray-200 active:scale-[0.98]">
@@ -77,13 +83,18 @@
 
 <script setup>
 import { computed } from 'vue'
-import { XMarkIcon, UserIcon, UserPlusIcon } from '@heroicons/vue/24/outline'
-import MoneyIcon from "@/assets/images/money.svg";
-import ShieldCheckIcon from "@/assets/images/shield_check.svg";
+import { XMarkIcon, UserIcon, UserPlusIcon, UserMinusIcon } from '@heroicons/vue/24/outline'
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/vi';
 import { ROLE_LABELS, ROLE_SPECIALIZATION } from '@/data/club/index.js';
+import { storeToRefs } from 'pinia'
+import { useUserStore } from '@/store/auth'
+import { followUser, unFollowUser } from '@/service/follow.js'
+import { toast } from "vue3-toastify";
+
+const userStore = useUserStore()
+const { getUser } = storeToRefs(userStore)
 
 dayjs.extend(relativeTime)
 dayjs.locale('vi')
@@ -102,9 +113,66 @@ const isOpen = computed({
 
 const closeModal = () => (isOpen.value = false)
 
+const handleFollowAction = () => {
+  if (props.member.user?.is_follow) {
+    handleUnFollow()
+  } else {
+    handleFollow()
+  }
+}
+
+const handleFollow = async () => {
+  if (!props.member?.user?.id) return
+  try {
+    const res = await followUser({
+      followable_type: 'user',
+      followable_id: props.member.user.id
+    })
+    if (res && typeof res === 'object') {
+      if (res.is_friend !== undefined) props.member.user.is_friend = res.is_friend
+      if (res.is_follow !== undefined) props.member.user.is_follow = res.is_follow
+    } else {
+      props.member.user.is_follow = true
+    }
+    toast.success('Theo dõi thành công')
+    emit('updated')
+  } catch (error) {
+    console.error('Follow failed:', error)
+    toast.error(error.response?.data?.message || 'Theo dõi thất bại')
+  }
+}
+
+const handleUnFollow = async () => {
+  if (!props.member?.user?.id) return
+  try {
+    const res = await unFollowUser({
+      followable_type: 'user',
+      followable_id: props.member.user.id
+    })
+    if (res && typeof res === 'object') {
+      if (res.is_friend !== undefined) props.member.user.is_friend = res.is_friend
+      if (res.is_follow !== undefined) props.member.user.is_follow = res.is_follow
+    } else {
+      props.member.user.is_follow = false
+      props.member.user.is_friend = false
+    }
+    toast.success('Hủy theo dõi thành công')
+    emit('updated')
+  } catch (error) {
+    console.error('Unfollow failed:', error)
+    toast.error(error.response?.data?.message || 'Hủy theo dõi thất bại')
+  }
+}
+
 const specialization = computed(() => {
   return ROLE_SPECIALIZATION[props.member?.role] || null
 })
+
+const getVpScore = (user) => {
+  const pickleball = user?.sports?.find(s => s.sport_id === 1 || s.sport_name === 'Pickleball');
+  const score = pickleball?.scores?.vndupr_score;
+  return score ? Number(score).toFixed(1) : '0';
+}
 </script>
 
 <style scoped>

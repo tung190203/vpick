@@ -2,7 +2,7 @@
 import { reactive, computed, ref } from 'vue'
 import useVuelidate from '@vuelidate/core'
 import { required, helpers } from '@vuelidate/validators'
-
+import LogoSplash from '@/assets/images/logo-splash.svg'
 import { useRoute, useRouter } from 'vue-router'
 import Button from '@/components/atoms/Button.vue'
 import { useUserStore } from '@/store/auth'
@@ -52,7 +52,7 @@ const fillData = async () => {
 
 <template>
   <div class="min-h-screen flex flex-col items-center justify-center px-4">
-    <img src="@/assets/images/logo-splash.svg" class="w-[60%]" alt="">
+    <LogoSplash class="w-[60%]" />
     <div class="text-center mb-8 mt-8">
       <h1 class="text-white text-2xl mb-2">Hoàn tất đăng ký</h1>
       <p class="text-sm text-white font-light">Tận hưởng toàn bộ tính năng của Pickleball, bao gồm cập nhật giải đấu, 

@@ -364,8 +364,7 @@
                         <div>
                           <p>{{ item.name }}</p>
                           <p class="flex items-center gap-1 text-sm text-gray-500">
-                            <img :src="maleIcon" alt="male icon" class="w-4 h-4" v-if="item.gender == 1" />
-                            <img :src="femaleIcon" alt="male icon" class="w-4 h-4" v-else-if="item.gender == 2" />
+                            <component :is="item.gender == 1 ? MaleIcon : FemaleIcon" class="w-4 h-4" />
                             {{ item.gender_text }}
                             <span :class="[
                               'px-2 py-0.5 rounded text-xs font-medium',
@@ -623,8 +622,8 @@ import DeleteConfirmationModal from '@/components/molecules/DeleteConfirmationMo
 import EditTeamModal from '@/components/molecules/EditTeamModal.vue'
 import CreateTeamModal from '@/components/molecules/CreateTeamModal.vue'
 import debounce from 'lodash.debounce'
-import maleIcon from '@/assets/images/male.svg';
-import femaleIcon from '@/assets/images/female.svg';
+import MaleIcon from '@/assets/images/male.svg';
+import FemaleIcon from '@/assets/images/female.svg';
 import { useUserStore } from '@/store/auth'
 import { storeToRefs } from 'pinia'
 import AddMemberModal from '@/components/molecules/AddMemberModal.vue'

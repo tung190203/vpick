@@ -64,7 +64,8 @@
                         </template>
                         <template v-else>
                             <Button size="md" color="danger"
-                                class="px-[75px] bg-[#D72D36] border border-[#D72D36] text-white hover:bg-white hover:text-[#D72D36] flex gap-2">
+                                class="px-[75px] bg-[#D72D36] border border-[#D72D36] text-white hover:bg-white hover:text-[#D72D36] flex gap-2"
+                                @click.stop="leaveClubRequest">
                                 Hủy tham gia
                             </Button>
                         </template>
@@ -91,7 +92,10 @@
                     </div>
                 </div>
                 <div>
-                    <h2 class="text-2xl text-[#838799] font-semibold uppercase mb-4">Lịch hoạt động</h2>
+                    <div class="flex items-baseline justify-between">
+                        <h2 class="text-2xl text-[#838799] font-semibold uppercase mb-4">Lịch hoạt động</h2>
+                        <p class="text-[#D72D36] font-semibold cursor-pointer" @click="openActivityModal">Xem tất cả</p>
+                    </div>
                     <template v-if="activities.length > 0">
                         <ActivityScheduleCard v-for="(activity, index) in activities" :key="index" v-bind="activity" />
                     </template>
@@ -99,7 +103,7 @@
                         <p class="text-[#838799]">Hiện chưa có lịch thi đấu</p>
                     </div>
                 </div>
-                <ClubInfoTabs :club="club" />
+                <ClubInfoTabs :club="club" :isJoined="is_joined" />
             </div>
             <div class="col-span-4 space-y-4">
                 <div class="max-w-3xl mx-auto">
@@ -181,7 +185,7 @@
                                         </h4>
                                         <span class="text-[#838799] text-xs whitespace-nowrap pt-1">{{
                                             notification.timeAgo
-                                            }}</span>
+                                        }}</span>
                                     </div>
                                     <p class="text-xs text-[#838799] leading-4 line-clamp-2">{{ notification.content }}
                                     </p>
@@ -210,7 +214,7 @@
                                         </h4>
                                         <span class="text-[#838799] text-xs whitespace-nowrap pt-1">{{
                                             notification.timeAgo
-                                            }}</span>
+                                        }}</span>
                                     </div>
                                     <p class="text-sm text-[#838799] leading-6 line-clamp-2">{{ notification.content }}
                                     </p>
@@ -221,11 +225,17 @@
                 </div>
             </div>
         </div>
+
+        <!-- Activity Schedule Modal -->
+        <ClubActivityModal :is-open="isActivityModalOpen" :thumbnail="Thumbnail"
+            :upcoming-activities="upcomingActivities" :history-activities="historyActivities"
+            @close="closeActivityModal" />
     </div>
 </template>
 
 <script setup>
 import Background from '@/assets/images/club-default-thumbnail.svg?url'
+import Thumbnail from "@/assets/images/dashboard-bg.svg?url";
 import {
     ArrowLeftIcon,
     ShareIcon,
@@ -241,7 +251,8 @@ import {
     ArrowPathIcon,
     UserPlusIcon,
     CalendarDaysIcon,
-    AcademicCapIcon
+    AcademicCapIcon,
+
 } from '@heroicons/vue/24/outline'
 import { useRouter, useRoute } from 'vue-router'
 import { computed, onMounted, ref } from 'vue'
@@ -257,12 +268,15 @@ import { toast } from 'vue3-toastify';
 import { useUserStore } from '@/store/auth'
 import { storeToRefs } from 'pinia'
 
+import ClubActivityModal from './ClubActivityModal.vue';
+
 const router = useRouter()
 const route = useRoute()
 const clubStats = CLUB_STATS;
 const clubModules = CLUB_MODULES;
 const isMenuOpen = ref(false)
 const isNotificationModalOpen = ref(false)
+const isActivityModalOpen = ref(false)
 const club = ref([]);
 const clubId = route.params.id
 const userStore = useUserStore()
@@ -270,7 +284,7 @@ const { getUser } = storeToRefs(userStore)
 
 const statsValue = computed(() => ({
     members: club.value?.quantity_members ?? 0,
-    level: club.value?.level_range ?? '1-5',
+    level: club.value?.skill_level?.min + ' - ' + club.value?.skill_level?.max ?? '1-5',
     price: club.value?.guest_fee ?? '50K'
 }));
 
@@ -293,6 +307,14 @@ const openNotification = () => {
 
 const closeNotification = () => {
     isNotificationModalOpen.value = false
+}
+
+const openActivityModal = () => {
+    isActivityModalOpen.value = true
+}
+
+const closeActivityModal = () => {
+    isActivityModalOpen.value = false
 }
 
 const activities = [
@@ -329,6 +351,44 @@ const activities = [
         buttonText: 'Check-in',
         type: 'secondary',
         disabled: true
+    }
+]
+
+const upcomingActivities = [
+    {
+        day: 'T3',
+        date: '24',
+        title: 'Kèo cố định 3-5-7',
+        time: '18:00 - 20:00',
+        participants: '10/12 thành viên',
+        status: 'open',
+        statusText: 'Mở đăng kí',
+        buttonText: 'Đăng ký',
+        type: 'danger',
+        disabled: false
+    },
+    {
+        day: 'T3',
+        date: '24',
+        title: 'Kèo cố định 3-5-7',
+        time: '18:00 - 20:00',
+        participants: '10/12 thành viên',
+        status: 'private',
+        statusText: 'Mở check-in',
+        buttonText: 'Check-in',
+        type: 'primary',
+        disabled: false
+    }
+]
+
+const historyActivities = [
+    {
+        day: 'CN',
+        date: '21',
+        title: 'Kèo cuối tuần',
+        time: '18:00 - 20:00',
+        result: 'Kết quả: Thắng (21-08, 21-15)',
+        status: 'Hoàn tất'
     }
 ]
 
@@ -400,7 +460,7 @@ const getClubDetail = async () => {
         const response = await ClubService.clubDetail(clubId)
         club.value = response
     } catch (error) {
-        toast.error(error.response.data.message || 'Có lỗi xảy ra khi thực hiện thao tác')
+        toast.error(error.response.data.message || 'Có lỗi xảy ra khi lấy thông tin câu lạc bộ')
     }
 }
 
@@ -412,7 +472,17 @@ const joinClubRequest = async () => {
         await getClubDetail(clubId)
         toast.success('Yêu cầu tham gia đã được gửi thành công')
     } catch (error) {
-        toast.error(error.response.data.message || 'Có lỗi xảy ra khi thực hiện thao tác')
+        toast.error(error.response.data.message || 'Có lỗi xảy ra khi gửi yêu cầu tham gia')
+    }
+}
+
+const leaveClubRequest = async () => {
+    try {
+        await ClubService.leaveRequest(clubId)
+        await getClubDetail(clubId)
+        toast.success('Đã huỷ yêu cầu tham gia')
+    } catch (error) {
+        toast.error(error.response.data.message || 'Có lỗi xảy ra khi huỷ yêu cầu tham gia')
     }
 }
 
