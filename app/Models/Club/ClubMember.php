@@ -19,6 +19,7 @@ class ClubMember extends Model
     protected $fillable = [
         'club_id',
         'user_id',
+        'invited_by',
         'role',
         'position',
         'status',
@@ -54,6 +55,18 @@ class ClubMember extends Model
     public function reviewer()
     {
         return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    /** Admin mời vào CLB (user phải đồng ý). null = user tự gửi request. */
+    public function inviter()
+    {
+        return $this->belongsTo(User::class, 'invited_by');
+    }
+
+    /** Là lời mời từ admin (chờ user đồng ý). */
+    public function isInvitation(): bool
+    {
+        return $this->invited_by !== null;
     }
 
     public function scopeActive($query)
