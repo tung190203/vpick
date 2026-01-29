@@ -10,6 +10,7 @@ import { storeToRefs } from 'pinia'
 import GoogleIcon from '@/assets/images/google-icon.svg'
 import FacebookIcon from '@/assets/images/facebook-icon.svg'
 import AppleIcon from '@/assets/images/apple-icon.svg'
+import LogoSplash from '@/assets/images/logo-splash.svg'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -99,7 +100,7 @@ const loginWithApple = () => {
 
 <template>
   <div class="min-h-screen flex flex-col items-center justify-center px-4">
-    <img src="@/assets/images/logo-splash.svg" class="w-[60%]" alt="">
+    <LogoSplash class="w-[60%]" />
     <div class="text-center mb-8 mt-4">
       <h1 class="text-white text-2xl mb-2">Đăng nhập/Đăng ký</h1>
       <p class="text-sm text-white font-light">Tận hưởng toàn bộ tính năng của Pickleball, bao gồm cập nhật giải đấu, 

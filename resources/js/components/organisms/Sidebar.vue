@@ -21,7 +21,6 @@
                         class="w-10 h-10 flex items-center justify-center flex-shrink-0"
                         @click="goToDashboard"
                     >
-                        <!-- <img :src="logoUrl" alt="Logo" class="w-10 h-10" /> -->
                          <LogoUrl class="w-10 h-10" />
                     </div>
 
@@ -33,7 +32,6 @@
                                 : 'opacity-0 max-w-0'
                         "
                     >
-                    <!-- <img :src="logoExplainUrl" alt="Logo Explain" class="h-8" /> -->
                     <LogoExplainUrl class="h-8" />
                     </div>
                 </div>

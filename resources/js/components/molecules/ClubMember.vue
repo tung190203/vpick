@@ -11,13 +11,16 @@
         class="block w-full pl-10 pr-3 py-2.5 border border-[#EDEEF2] rounded-md bg-[#EDEEF2] text-sm placeholder-[#9EA2B3] focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all">
     </div>
 
-    <!-- Loading State -->
-    <div v-if="loading" class="flex justify-center items-center py-12">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-    </div>
+    <!-- Content with Loading Overlay -->
+    <div class="relative min-h-[300px]">
+      <!-- Loading Overlay -->
+      <div v-if="loading" 
+        class="absolute inset-0 z-10 flex justify-center items-start pt-12 bg-white/60 backdrop-blur-[1px] transition-all duration-300">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      </div>
 
-    <!-- Content -->
-    <div v-else>
+      <!-- Main Content -->
+      <div :class="{ 'opacity-40 pointer-events-none': loading }" class="transition-opacity duration-300">
       <!-- Management Section (All non-member roles including admin) -->
       <div v-if="managementMembers.length > 0" class="mb-8">
         <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-tight mb-4 flex items-center gap-1.5">
@@ -50,7 +53,7 @@
                 </span>
               </div>
               <p class="text-xs text-gray-400 font-medium">
-                {{ member.user?.self_score || 'N/A' }} PICKI • {{ getRolePosition(member.role) }}
+                {{ getVpScore(member.user) }} PICKI • {{ getRolePosition(member.role) }}
               </p>
             </div>
           </div>
@@ -70,6 +73,12 @@
                 class="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2">
                 <InformationCircleIcon class="w-4 h-4 text-gray-400" />
                 Xem thông tin
+              </button>
+              <button v-if="member.role !== 'admin' && member.user?.id !== getUser.id"
+                @click="confirmDeleteMember(member)"
+                class="w-full text-left px-4 py-3 text-sm font-medium text-red-700 hover:bg-red-50 flex items-center gap-2">
+                <TrashIcon class="w-4 h-4 text-red-400" />
+                Xoá khỏi CLB
               </button>
             </div>
           </div>
@@ -92,7 +101,7 @@
                 <!-- Member Level Badge -->
                 <div
                   class="absolute -bottom-1 -left-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center border-2 border-white text-white text-[9px] font-bold">
-                  {{ member.user?.self_score || '0' }}
+                  {{ getVpScore(member.user) }}
                 </div>
                 <!-- Online Status Indicator -->
                 <div v-if="isOnline(member.user?.last_login)"
@@ -121,6 +130,12 @@
                   class="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2">
                   <InformationCircleIcon class="w-4 h-4 text-gray-400" />
                   Xem thông tin
+                </button>
+                <button v-if="member.user?.id !== getUser.id && isJoined"
+                  @click="confirmDeleteMember(member)"
+                  class="w-full text-left px-4 py-3 text-sm font-medium text-red-700 hover:bg-red-50 flex items-center gap-2">
+                  <TrashIcon class="w-4 h-4 text-red-400" />
+                  Xoá khỏi CLB
                 </button>
               </div>
             </div>
@@ -164,12 +179,24 @@
           Sau
         </button>
       </div>
+      </div>
     </div>
 
     <!-- Member Info Modal -->
     <MemberInfoModal 
       v-model="showModal" 
       :member="selectedMember" 
+      @updated="fetchData"
+    />
+
+    <!-- Delete Confirmation Modal -->
+    <DeleteConfirmationModal
+      v-model="showDeleteModal"
+      title="Xoá thành viên"
+      :message="deleteMessage"
+      confirmButtonText="Xoá"
+      confirmButtonClass="bg-red-600 hover:bg-red-700"
+      @confirm="handleDeleteMember"
     />
   </div>
 </template>
@@ -178,14 +205,25 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import ShieldCheckIcon from "@/assets/images/shield_check.svg";
 import MoneyIcon from "@/assets/images/money.svg";
-import { EllipsisHorizontalIcon, MagnifyingGlassIcon, InformationCircleIcon } from '@heroicons/vue/24/outline';
+import { EllipsisHorizontalIcon, MagnifyingGlassIcon, InformationCircleIcon, TrashIcon } from '@heroicons/vue/24/outline';
 import MemberInfoModal from '@/components/molecules/MemberInfoModal.vue';
+import DeleteConfirmationModal from '@/components/molecules/DeleteConfirmationModal.vue';
 import * as ClubService from '@/service/club.js'
+import { useUserStore } from '@/store/auth'
+import { storeToRefs } from 'pinia'
+import { toast } from "vue3-toastify";
+import { ROLE_COLORS } from '@/data/club'
 
+const userStore = useUserStore()
+const { getUser } = storeToRefs(userStore)
 const props = defineProps({
   clubId: {
     type: [String, Number],
     required: true
+  },
+  isJoined: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -193,6 +231,8 @@ const props = defineProps({
 const searchQuery = ref('')
 const openMenuId = ref(null)
 const showModal = ref(false)
+const showDeleteModal = ref(false)
+const memberToDelete = ref(null)
 const selectedMember = ref(null)
 const loading = ref(false)
 const currentPage = ref(1)
@@ -229,7 +269,7 @@ const managementMembers = computed(() => {
     filtered = filtered.filter(member => {
       const fullName = member.user?.full_name?.toLowerCase() || ''
       const role = getRoleLabel(member.role).toLowerCase()
-      const score = member.user?.self_score?.toString() || ''
+      const score = getVpScore(member.user).toString()
       
       return fullName.includes(query) || 
              role.includes(query) || 
@@ -264,6 +304,11 @@ const visiblePages = computed(() => {
   return pages
 })
 
+const deleteMessage = computed(() => {
+  if (!memberToDelete.value) return ''
+  return `Bạn có chắc chắn muốn xoá thành viên ${memberToDelete.value.user?.full_name} khỏi câu lạc bộ không?`
+})
+
 // Methods
 const fetchManagementMembers = async () => {
   try {
@@ -271,7 +316,7 @@ const fetchManagementMembers = async () => {
       status: 'active',
       per_page: 100
     })
-    allManagementMembers.value = (response.data || [])
+    allManagementMembers.value = (response.data.members || [])
       .filter(member => member.user && member.role !== 'member')
   } catch (error) {
     console.error('Error fetching management members:', error)
@@ -298,18 +343,31 @@ const fetchMembers = async () => {
     
     const response = await ClubService.getMembers(props.clubId, params)
     
-    members.value = response.data || []
-    statistics.value = response.statistics || {}
-    currentPage.value = response.current_page || 1
-    totalPages.value = response.last_page || 1
-    totalMembers.value = response.total || 0
-    totalRegularMembers.value = response.statistics?.by_role?.member || 0
-    perPage.value = response.per_page || 15
+    members.value = response.data.members || []
+    statistics.value = response.data.statistics || {}
+    currentPage.value = response.meta.current_page || 1
+    totalPages.value = response.meta.last_page || 1
+    totalMembers.value = response.meta.total || 0
+    totalRegularMembers.value = response.data.statistics?.by_role?.member || 0
+    perPage.value = response.meta.per_page || 15
   } catch (error) {
     console.error('Error fetching members:', error)
     members.value = []
   } finally {
     loading.value = false
+  }
+}
+
+const fetchData = async () => {
+  await fetchManagementMembers()
+  await fetchMembers()
+  
+  if (selectedMember.value) {
+    const updated = allManagementMembers.value.find(m => m.id === selectedMember.value.id) ||
+                    members.value.find(m => m.id === selectedMember.value.id)
+    if (updated) {
+      selectedMember.value = updated
+    }
   }
 }
 
@@ -332,23 +390,11 @@ const getRoleBorderColor = (role) => {
 }
 
 const getRoleBadgeColor = (role) => {
-  const colors = {
-    'admin': 'bg-blue-500',
-    'manager': 'bg-purple-500',
-    'treasurer': 'bg-orange-400',
-    'secretary': 'bg-green-500'
-  }
-  return colors[role] || 'bg-gray-500'
+  return ROLE_COLORS[role] || 'bg-gray-500'
 }
 
 const getRoleTagColor = (role) => {
-  const colors = {
-    'admin': 'bg-blue-500',
-    'manager': 'bg-purple-500',
-    'treasurer': 'bg-orange-400',
-    'secretary': 'bg-green-500'
-  }
-  return colors[role] || 'bg-gray-500'
+  return ROLE_COLORS[role] || 'bg-gray-500'
 }
 
 const getRoleLabel = (role) => {
@@ -370,6 +416,12 @@ const getRolePosition = (role) => {
     'secretary': 'Thư ký'
   }
   return positions[role] || 'Thành viên'
+}
+
+const getVpScore = (user) => {
+  const pickleball = user?.sports?.find(s => s.sport_id === 1 || s.sport_name === 'Pickleball');
+  const score = pickleball?.scores?.vndupr_score;
+  return score ? Number(score).toFixed(1) : '0';
 }
 
 const isOnline = (lastLogin) => {
@@ -410,6 +462,31 @@ const viewInfo = (member) => {
   selectedMember.value = member
   showModal.value = true
   closeMenu()
+}
+
+const confirmDeleteMember = (member) => {
+  memberToDelete.value = member
+  showDeleteModal.value = true
+  closeMenu()
+}
+
+const handleDeleteMember = async () => {
+  if (!memberToDelete.value) return
+
+  try {
+    await ClubService.removeMember(props.clubId, memberToDelete.value.id)
+    toast.success('Xoá thành viên thành công')
+    
+    // Refresh lists
+    fetchMembers()
+    fetchManagementMembers()
+  } catch (error) {
+    console.error('Error removing member:', error)
+    toast.error('Có lỗi xảy ra khi xoá thành viên')
+  } finally {
+    showDeleteModal.value = false
+    memberToDelete.value = null
+  }
 }
 
 // Watchers

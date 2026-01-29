@@ -26,10 +26,12 @@ class DatabaseSeeder extends Seeder
         Banner::factory()->count(10)->create();
         Badge::factory()->count(10)->create();
 
-        // Tournament
+        // Tournament & Club fake data
         $this->call([
             UserBadgeSeeder::class,
+            ClubNotificationTypeSeeder::class,
             ClubMemberSeeder::class,
+            ClubFakeDataSeeder::class,
             SportSeeder::class,
             RefereeSeeder::class,
             TournamentFullSeeder::class,
