@@ -6,6 +6,7 @@ use App\Enums\ClubMemberRole;
 use App\Enums\ClubNotificationPriority;
 use App\Enums\ClubNotificationStatus;
 use App\Helpers\ResponseHelper;
+use App\Http\Resources\Club\ClubNotificationResource;
 use App\Models\Club\Club;
 use App\Models\Club\ClubNotification;
 use App\Models\Club\ClubNotificationType;
@@ -45,13 +46,14 @@ class ClubNotificationController extends Controller
         $perPage = $validated['per_page'] ?? 15;
         $notifications = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
-        return ResponseHelper::success([
-            'data' => $notifications->items(),
+        $data = ['notifications' => ClubNotificationResource::collection($notifications)];
+        $meta = [
             'current_page' => $notifications->currentPage(),
             'per_page' => $notifications->perPage(),
             'total' => $notifications->total(),
             'last_page' => $notifications->lastPage(),
-        ], 'Lấy danh sách thông báo thành công');
+        ];
+        return ResponseHelper::success($data, 'Lấy danh sách thông báo thành công', 200, $meta);
     }
 
     public function store(Request $request, $clubId)

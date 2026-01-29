@@ -8,6 +8,7 @@ use App\Enums\ClubWalletTransactionSourceType;
 use App\Enums\ClubWalletTransactionStatus;
 use App\Enums\PaymentMethod;
 use App\Helpers\ResponseHelper;
+use App\Http\Resources\Club\ClubMonthlyFeePaymentResource;
 use App\Models\Club\Club;
 use App\Models\Club\ClubMonthlyFeePayment;
 use App\Http\Controllers\Controller;
@@ -47,13 +48,14 @@ class ClubMonthlyFeePaymentController extends Controller
         $perPage = $validated['per_page'] ?? 15;
         $payments = $query->orderBy('period', 'desc')->paginate($perPage);
 
-        return ResponseHelper::success([
-            'data' => $payments->items(),
+        $data = ['payments' => ClubMonthlyFeePaymentResource::collection($payments)];
+        $meta = [
             'current_page' => $payments->currentPage(),
             'per_page' => $payments->perPage(),
             'total' => $payments->total(),
             'last_page' => $payments->lastPage(),
-        ], 'Lấy danh sách thanh toán thành công');
+        ];
+        return ResponseHelper::success($data, 'Lấy danh sách thanh toán thành công', 200, $meta);
     }
 
     public function store(Request $request, $clubId)
@@ -143,13 +145,14 @@ class ClubMonthlyFeePaymentController extends Controller
         $perPage = $validated['page'] ?? 15;
         $payments = $query->orderBy('period', 'desc')->paginate($perPage);
 
-        return ResponseHelper::success([
-            'data' => $payments->items(),
+        $data = ['payments' => ClubMonthlyFeePaymentResource::collection($payments)];
+        $meta = [
             'current_page' => $payments->currentPage(),
             'per_page' => $payments->perPage(),
             'total' => $payments->total(),
             'last_page' => $payments->lastPage(),
-        ], 'Lấy lịch sử thanh toán thành công');
+        ];
+        return ResponseHelper::success($data, 'Lấy lịch sử thanh toán thành công', 200, $meta);
     }
 
     public function getStatistics(Request $request, $clubId)

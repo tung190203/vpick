@@ -9,6 +9,7 @@ use App\Enums\ClubWalletTransactionSourceType;
 use App\Enums\ClubWalletTransactionStatus;
 use App\Enums\PaymentMethod;
 use App\Helpers\ResponseHelper;
+use App\Http\Resources\Club\ClubFundContributionResource;
 use App\Models\Club\Club;
 use App\Models\Club\ClubFundCollection;
 use App\Models\Club\ClubFundContribution;
@@ -43,13 +44,14 @@ class ClubFundContributionController extends Controller
         $perPage = $validated['per_page'] ?? 15;
         $contributions = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
-        return ResponseHelper::success([
-            'data' => $contributions->items(),
+        $data = ['contributions' => ClubFundContributionResource::collection($contributions)];
+        $meta = [
             'current_page' => $contributions->currentPage(),
             'per_page' => $contributions->perPage(),
             'total' => $contributions->total(),
             'last_page' => $contributions->lastPage(),
-        ], 'Lấy danh sách đóng góp thành công');
+        ];
+        return ResponseHelper::success($data, 'Lấy danh sách đóng góp thành công', 200, $meta);
     }
 
     public function store(Request $request, $clubId, $collectionId)

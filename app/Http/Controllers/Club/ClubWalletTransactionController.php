@@ -7,6 +7,7 @@ use App\Enums\ClubWalletTransactionSourceType;
 use App\Enums\ClubWalletTransactionStatus;
 use App\Enums\PaymentMethod;
 use App\Helpers\ResponseHelper;
+use App\Http\Resources\Club\ClubWalletTransactionResource;
 use App\Models\Club\Club;
 use App\Models\Club\ClubWallet;
 use App\Models\Club\ClubWalletTransaction;
@@ -63,13 +64,14 @@ class ClubWalletTransactionController extends Controller
         $perPage = $validated['per_page'] ?? 15;
         $transactions = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
-        return ResponseHelper::success([
-            'data' => $transactions->items(),
+        $data = ['transactions' => ClubWalletTransactionResource::collection($transactions)];
+        $meta = [
             'current_page' => $transactions->currentPage(),
             'per_page' => $transactions->perPage(),
             'total' => $transactions->total(),
             'last_page' => $transactions->lastPage(),
-        ], 'Lấy danh sách giao dịch thành công');
+        ];
+        return ResponseHelper::success($data, 'Lấy danh sách giao dịch thành công', 200, $meta);
     }
 
     public function store(Request $request, $clubId)

@@ -115,9 +115,10 @@ class ClubMemberController extends Controller
                 'joined_at' => ($validated['status'] ?? ClubMemberStatus::Active) === ClubMemberStatus::Active ? now() : null,
             ]);
 
-            $member->load(['user', 'club']);
+            $member->load(['user.sports.scores', 'user.sports.sport', 'club', 'reviewer']);
 
-            return ResponseHelper::success($member,
+            return ResponseHelper::success(
+                new ClubMemberResource($member),
                 $member->status === 'pending'
                     ? 'Yêu cầu tham gia đã được gửi'
                     : 'Thành viên đã được thêm vào CLB',
@@ -129,10 +130,10 @@ class ClubMemberController extends Controller
     public function show($clubId, $memberId)
     {
         $member = ClubMember::where('club_id', $clubId)
-            ->with(['user', 'club', 'reviewer'])
+            ->with(['user.sports.scores', 'user.sports.sport', 'club', 'reviewer'])
             ->findOrFail($memberId);
 
-        return ResponseHelper::success($member, 'Lấy thông tin thành viên thành công');
+        return ResponseHelper::success(new ClubMemberResource($member), 'Lấy thông tin thành viên thành công');
     }
 
     public function update(Request $request, $clubId, $memberId)
@@ -173,9 +174,9 @@ class ClubMemberController extends Controller
                 $member->update($validated);
             }
 
-            $member->load(['user', 'reviewer']);
+            $member->load(['user.sports.scores', 'user.sports.sport', 'reviewer']);
 
-            return ResponseHelper::success($member, 'Cập nhật thành viên thành công');
+            return ResponseHelper::success(new ClubMemberResource($member), 'Cập nhật thành viên thành công');
         });
     }
 
@@ -219,9 +220,9 @@ class ClubMemberController extends Controller
             'joined_at' => now(),
         ]);
 
-        $member->load(['user', 'reviewer']);
+        $member->load(['user.sports.scores', 'user.sports.sport', 'reviewer']);
 
-        return ResponseHelper::success($member, 'Yêu cầu tham gia đã được duyệt');
+        return ResponseHelper::success(new ClubMemberResource($member), 'Yêu cầu tham gia đã được duyệt');
     }
 
     public function reject(Request $request, $clubId, $memberId)
@@ -248,9 +249,9 @@ class ClubMemberController extends Controller
             'rejection_reason' => $validated['rejection_reason'],
         ]);
 
-        $member->load(['user', 'reviewer']);
+        $member->load(['user.sports.scores', 'user.sports.sport', 'reviewer']);
 
-        return ResponseHelper::success($member, 'Yêu cầu tham gia đã bị từ chối');
+        return ResponseHelper::success(new ClubMemberResource($member), 'Yêu cầu tham gia đã bị từ chối');
     }
 
     public function statistics($clubId)
