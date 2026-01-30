@@ -6,6 +6,7 @@ use App\Enums\ClubActivityStatus;
 use App\Enums\ClubFundCollectionStatus;
 use App\Enums\ClubMemberRole;
 use App\Enums\ClubMemberStatus;
+use App\Enums\ClubMembershipStatus;
 use App\Enums\ClubWalletTransactionStatus;
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\Club\ClubActivityResource;
@@ -26,20 +27,28 @@ class ClubDashboardController extends Controller
             'notifications',
         ])->findOrFail($clubId);
 
+        $joined = fn () => $club->members()->where('membership_status', ClubMembershipStatus::Joined);
         $memberStats = [
-            'total' => $club->members()->count(),
+            'total' => $joined()->where('status', ClubMemberStatus::Active)->count(),
             'by_role' => [
-                'admin' => $club->members()->where('role', ClubMemberRole::Admin)->count(),
-                'manager' => $club->members()->where('role', ClubMemberRole::Manager)->count(),
-                'treasurer' => $club->members()->where('role', ClubMemberRole::Treasurer)->count(),
-                'secretary' => $club->members()->where('role', ClubMemberRole::Secretary)->count(),
-                'member' => $club->members()->where('role', ClubMemberRole::Member)->count(),
+                'admin' => $joined()->where('status', ClubMemberStatus::Active)->where('role', ClubMemberRole::Admin)->count(),
+                'manager' => $joined()->where('status', ClubMemberStatus::Active)->where('role', ClubMemberRole::Manager)->count(),
+                'treasurer' => $joined()->where('status', ClubMemberStatus::Active)->where('role', ClubMemberRole::Treasurer)->count(),
+                'secretary' => $joined()->where('status', ClubMemberStatus::Active)->where('role', ClubMemberRole::Secretary)->count(),
+                'member' => $joined()->where('status', ClubMemberStatus::Active)->where('role', ClubMemberRole::Member)->count(),
             ],
             'by_status' => [
                 'pending' => $club->members()->where('status', ClubMemberStatus::Pending)->count(),
                 'active' => $club->members()->where('status', ClubMemberStatus::Active)->count(),
                 'inactive' => $club->members()->where('status', ClubMemberStatus::Inactive)->count(),
                 'suspended' => $club->members()->where('status', ClubMemberStatus::Suspended)->count(),
+            ],
+            'by_membership_status' => [
+                'pending' => $club->members()->where('membership_status', ClubMembershipStatus::Pending)->count(),
+                'joined' => $club->members()->where('membership_status', ClubMembershipStatus::Joined)->count(),
+                'rejected' => $club->members()->where('membership_status', ClubMembershipStatus::Rejected)->count(),
+                'left' => $club->members()->where('membership_status', ClubMembershipStatus::Left)->count(),
+                'cancelled' => $club->members()->where('membership_status', ClubMembershipStatus::Cancelled)->count(),
             ],
         ];
 

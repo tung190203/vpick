@@ -4,6 +4,7 @@ namespace App\Models\Club;
 
 use App\Enums\ClubMemberRole;
 use App\Enums\ClubMemberStatus;
+use App\Enums\ClubMembershipStatus;
 use App\Enums\ClubWalletType;
 use App\Models\User;
 use App\Models\Tournament;
@@ -45,14 +46,26 @@ class Club extends Model
         return $this->hasMany(ClubMember::class);
     }
 
+    /** Thành viên đang tham gia (membership_status = joined, status = active). */
     public function activeMembers()
     {
-        return $this->hasMany(ClubMember::class)->where('status', ClubMemberStatus::Active);
+        return $this->hasMany(ClubMember::class)
+            ->where('membership_status', ClubMembershipStatus::Joined)
+            ->where('status', ClubMemberStatus::Active);
     }
 
+    /** Yêu cầu/lời mời chờ duyệt (membership_status = pending, status = pending). */
     public function pendingJoinRequests()
     {
-        return $this->hasMany(ClubMember::class)->where('status', ClubMemberStatus::Pending);
+        return $this->hasMany(ClubMember::class)
+            ->where('membership_status', ClubMembershipStatus::Pending);
+    }
+
+    /** Thành viên đã join (membership_status = joined). */
+    public function joinedMembers()
+    {
+        return $this->hasMany(ClubMember::class)
+            ->where('membership_status', ClubMembershipStatus::Joined);
     }
 
     public function profile()
@@ -134,14 +147,43 @@ class Club extends Model
         return $query;
     }
 
+    /** Đang là thành viên (membership_status = joined, status = active). */
     public function hasMember($userId)
     {
-        return $this->members()->where('user_id', $userId)->exists();
+        return $this->members()
+            ->where('user_id', $userId)
+            ->where('membership_status', ClubMembershipStatus::Joined)
+            ->where('status', ClubMemberStatus::Active)
+            ->exists();
     }
 
+    /** Đang là thành viên active (có quyền leave, vào CLB...). */
     public function isMember($userId)
     {
         return $this->activeMembers()->where('user_id', $userId)->exists();
+    }
+
+    /** User có thể gửi join request: chưa joined hoặc đã rejected/left. */
+    public function canSendJoinRequest($userId): bool
+    {
+        $existing = $this->members()->where('user_id', $userId)->first();
+        if (!$existing) {
+            return true;
+        }
+        return in_array($existing->membership_status, [
+            ClubMembershipStatus::Rejected,
+            ClubMembershipStatus::Left,
+            ClubMembershipStatus::Cancelled,
+        ], true);
+    }
+
+    /** Đang có request pending của user (chờ duyệt). */
+    public function hasPendingRequest($userId): bool
+    {
+        return $this->members()
+            ->where('user_id', $userId)
+            ->where('membership_status', ClubMembershipStatus::Pending)
+            ->exists();
     }
 
     public function canManage($userId)

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\ClubMemberRole;
 use App\Enums\ClubMemberStatus;
+use App\Enums\ClubMembershipStatus;
 use App\Helpers\ResponseHelper;
 use Illuminate\Http\Request;
 use App\Models\Club\Club;
@@ -120,6 +121,7 @@ class ClubController extends Controller
                 'club_id' => $club->id,
                 'user_id' => $userId,
                 'role' => ClubMemberRole::Admin,
+                'membership_status' => ClubMembershipStatus::Joined,
                 'status' => ClubMemberStatus::Active,
                 'joined_at' => now(),
             ]);
@@ -134,8 +136,8 @@ class ClubController extends Controller
     {
         $club = Club::withFullRelations()->findOrFail($clubId);
 
-        // Load members với user đủ relations cho UserResource (trùng UserController)
-        $members = $club->members()->with(['user' => User::FULL_RELATIONS])->get();
+        // Chỉ hiển thị thành viên đã join (membership_status = joined)
+        $members = $club->joinedMembers()->with(['user' => User::FULL_RELATIONS])->get();
 
         $members = $members->map(function ($member) {
             $user = $member->user;
@@ -229,6 +231,7 @@ class ClubController extends Controller
         }
 
         $member->update([
+            'membership_status' => ClubMembershipStatus::Left,
             'status' => ClubMemberStatus::Inactive,
             'left_at' => now(),
         ]);
@@ -245,7 +248,8 @@ class ClubController extends Controller
 
         $query = Club::whereHas('members', function ($q) use ($userId, $validated) {
             $q->where('user_id', $userId)
-              ->where('status', 'active');
+              ->where('membership_status', ClubMembershipStatus::Joined)
+              ->where('status', ClubMemberStatus::Active);
             if (!empty($validated['role'])) {
                 $q->where('role', $validated['role']);
             }

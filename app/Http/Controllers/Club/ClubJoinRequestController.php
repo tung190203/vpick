@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Club;
 
 use App\Enums\ClubMemberRole;
 use App\Enums\ClubMemberStatus;
+use App\Enums\ClubMembershipStatus;
 use App\Helpers\ResponseHelper;
 use App\Models\Club\Club;
 use App\Models\Club\ClubMember;
@@ -45,17 +46,15 @@ class ClubJoinRequestController extends Controller
                 'inviter',
             ]);
 
-        // Chỉ hiển thị yêu cầu từ user (invited_by null). Lời mời từ admin (invited_by not null) nằm ở members list với status Pending
+        // Chỉ hiển thị yêu cầu từ user (invited_by null). Lời mời từ admin nằm ở members list với status Pending
         $query->whereNull('invited_by');
 
         if ($status === 'pending') {
-            $query->where('status', ClubMemberStatus::Pending);
+            $query->where('membership_status', ClubMembershipStatus::Pending);
         } elseif ($status === 'approved') {
-            $query->where('status', ClubMemberStatus::Active)
-                  ->whereNotNull('reviewed_at');
+            $query->where('membership_status', ClubMembershipStatus::Joined)->whereNotNull('reviewed_at');
         } elseif ($status === 'rejected') {
-            $query->where('status', ClubMemberStatus::Inactive)
-                  ->whereNotNull('rejection_reason');
+            $query->where('membership_status', ClubMembershipStatus::Rejected)->whereNotNull('rejection_reason');
         }
 
         $perPage = $validated['per_page'] ?? 15;
@@ -85,9 +84,15 @@ class ClubJoinRequestController extends Controller
             return ResponseHelper::error('Bạn cần đăng nhập để gửi yêu cầu tham gia', 401);
         }
 
-        // Check nếu đã là member (bất kỳ status nào)
-        if ($club->hasMember($userId)) {
-            return ResponseHelper::error('Bạn đã là thành viên của CLB này', 409);
+        // Chỉ cho gửi khi chưa joined và chưa có request pending (rejected/left được gửi lại)
+        if (!$club->canSendJoinRequest($userId)) {
+            if ($club->hasMember($userId)) {
+                return ResponseHelper::error('Bạn đã là thành viên của CLB này', 409);
+            }
+            if ($club->hasPendingRequest($userId)) {
+                return ResponseHelper::error('Bạn đã gửi yêu cầu tham gia. Vui lòng chờ duyệt', 409);
+            }
+            return ResponseHelper::error('Bạn không thể gửi yêu cầu tham gia', 409);
         }
 
         $validated = $request->validate([
@@ -95,26 +100,32 @@ class ClubJoinRequestController extends Controller
         ]);
 
         return DB::transaction(function () use ($club, $userId, $validated) {
-            // Check duplicate pending request trong transaction để tránh race condition
-            $existingRequest = $club->members()
-                ->where('user_id', $userId)
-                ->where('status', ClubMemberStatus::Pending)
-                ->lockForUpdate()
-                ->first();
+            $existing = $club->members()->where('user_id', $userId)->lockForUpdate()->first();
 
-            if ($existingRequest) {
-                return ResponseHelper::error('Bạn đã gửi yêu cầu tham gia. Vui lòng chờ duyệt', 409);
+            if ($existing && in_array($existing->membership_status, [ClubMembershipStatus::Rejected, ClubMembershipStatus::Left, ClubMembershipStatus::Cancelled], true)) {
+                // Join lại: cập nhật record cũ thành pending
+                $existing->update([
+                    'membership_status' => ClubMembershipStatus::Pending,
+                    'status' => ClubMemberStatus::Pending,
+                    'message' => $validated['message'] ?? null,
+                    'invited_by' => null,
+                    'left_at' => null,
+                    'rejection_reason' => null,
+                    'reviewed_by' => null,
+                    'reviewed_at' => null,
+                ]);
+                $member = $existing->fresh(['user' => User::FULL_RELATIONS, 'club']);
+            } else {
+                $member = ClubMember::create([
+                    'club_id' => $club->id,
+                    'user_id' => $userId,
+                    'role' => ClubMemberRole::Member,
+                    'membership_status' => ClubMembershipStatus::Pending,
+                    'status' => ClubMemberStatus::Pending,
+                    'message' => $validated['message'] ?? null,
+                ]);
+                $member->load(['user' => User::FULL_RELATIONS, 'club']);
             }
-
-            $member = ClubMember::create([
-                'club_id' => $club->id,
-                'user_id' => $userId,
-                'role' => ClubMemberRole::Member,
-                'status' => ClubMemberStatus::Pending,
-                'message' => $validated['message'] ?? null,
-            ]);
-
-            $member->load(['user' => User::FULL_RELATIONS, 'club']);
 
             return ResponseHelper::success(
                 new ClubMemberResource($member),
@@ -154,7 +165,7 @@ class ClubJoinRequestController extends Controller
         // Chỉ hủy được khi là yêu cầu do user tự gửi (invited_by null). Lời mời từ admin dùng reject.
         $member = ClubMember::where('club_id', $clubId)
             ->where('user_id', $userId)
-            ->where('status', ClubMemberStatus::Pending)
+            ->where('membership_status', ClubMembershipStatus::Pending)
             ->whereNull('invited_by')
             ->first();
 
@@ -162,7 +173,14 @@ class ClubJoinRequestController extends Controller
             return ResponseHelper::error('Không tìm thấy yêu cầu tham gia nào của bạn', 404);
         }
 
-        $member->delete();
+        // Cập nhật thành cancelled thay vì delete: giữ record (unique user_id+club_id), thống kê đúng, user gửi lại được
+        $member->update([
+            'membership_status' => ClubMembershipStatus::Cancelled,
+            'status' => ClubMemberStatus::Inactive,
+            'message' => null,
+            'reviewed_by' => null,
+            'reviewed_at' => null,
+        ]);
 
         return ResponseHelper::success('Yêu cầu đã được hủy');
     }
@@ -189,7 +207,7 @@ class ClubJoinRequestController extends Controller
         if (!empty($validated['user_id'])) {
             $member = ClubMember::where('club_id', $clubId)
                 ->where('user_id', $validated['user_id'])
-                ->where('status', ClubMemberStatus::Pending)
+                ->where('membership_status', ClubMembershipStatus::Pending)
                 ->first();
 
             if (!$member) {
@@ -202,11 +220,12 @@ class ClubJoinRequestController extends Controller
             }
 
             $member = ClubMember::where('club_id', $clubId)
-                ->where('status', ClubMemberStatus::Pending)
+                ->where('membership_status', ClubMembershipStatus::Pending)
                 ->findOrFail($requestId);
         }
 
         $member->update([
+            'membership_status' => ClubMembershipStatus::Joined,
             'status' => ClubMemberStatus::Active,
             'role' => $validated['role'] ?? ClubMemberRole::Member,
             'reviewed_by' => $reviewerId,
@@ -243,7 +262,7 @@ class ClubJoinRequestController extends Controller
         if (!empty($validated['user_id'])) {
             $member = ClubMember::where('club_id', $clubId)
                 ->where('user_id', $validated['user_id'])
-                ->where('status', ClubMemberStatus::Pending)
+                ->where('membership_status', ClubMembershipStatus::Pending)
                 ->first();
 
             if (!$member) {
@@ -255,23 +274,20 @@ class ClubJoinRequestController extends Controller
             }
 
             $member = ClubMember::where('club_id', $clubId)
-                ->where('status', ClubMemberStatus::Pending)
+                ->where('membership_status', ClubMembershipStatus::Pending)
                 ->findOrFail($requestId);
         }
 
+        // Từ chối: membership_status = rejected, status = inactive để thống kê by_status.pending không đếm request đã từ chối
         $member->update([
+            'membership_status' => ClubMembershipStatus::Rejected,
             'status' => ClubMemberStatus::Inactive,
+            'rejection_reason' => $validated['rejection_reason'],
             'reviewed_by' => $reviewerId,
             'reviewed_at' => now(),
-            'rejection_reason' => $validated['rejection_reason'],
         ]);
 
-        $member->load(['user' => User::FULL_RELATIONS, 'reviewer']);
-
-        return ResponseHelper::success(
-            new ClubMemberResource($member),
-            'Yêu cầu đã bị từ chối'
-        );
+        return ResponseHelper::success([], 'Yêu cầu đã bị từ chối');
     }
 
     /**
@@ -286,7 +302,7 @@ class ClubJoinRequestController extends Controller
         }
 
         $invitations = ClubMember::where('user_id', $userId)
-            ->where('status', ClubMemberStatus::Pending)
+            ->where('membership_status', ClubMembershipStatus::Pending)
             ->whereNotNull('invited_by')
             ->with(['user' => User::FULL_RELATIONS, 'club', 'inviter'])
             ->orderBy('created_at', 'desc')
@@ -311,7 +327,7 @@ class ClubJoinRequestController extends Controller
 
         $member = ClubMember::where('club_id', $clubId)
             ->where('user_id', $userId)
-            ->where('status', ClubMemberStatus::Pending)
+            ->where('membership_status', ClubMembershipStatus::Pending)
             ->whereNotNull('invited_by')
             ->first();
 
@@ -320,6 +336,7 @@ class ClubJoinRequestController extends Controller
         }
 
         $member->update([
+            'membership_status' => ClubMembershipStatus::Joined,
             'status' => ClubMemberStatus::Active,
             'joined_at' => now(),
             'reviewed_at' => now(),
@@ -350,7 +367,7 @@ class ClubJoinRequestController extends Controller
 
         $member = ClubMember::where('club_id', $clubId)
             ->where('user_id', $userId)
-            ->where('status', ClubMemberStatus::Pending)
+            ->where('membership_status', ClubMembershipStatus::Pending)
             ->whereNotNull('invited_by')
             ->first();
 
@@ -358,11 +375,8 @@ class ClubJoinRequestController extends Controller
             return ResponseHelper::error('Không tìm thấy lời mời tham gia CLB này', 404);
         }
 
-        $member->update([
-            'status' => ClubMemberStatus::Inactive,
-            'reviewed_at' => now(),
-            'rejection_reason' => $validated['reason'] ?? 'User từ chối lời mời',
-        ]);
+        // Từ chối lời mời = xóa record để có thể được mời lại
+        $member->delete();
 
         return ResponseHelper::success('Đã từ chối lời mời tham gia CLB');
     }

@@ -4,6 +4,7 @@ namespace App\Models\Club;
 
 use App\Enums\ClubMemberRole;
 use App\Enums\ClubMemberStatus;
+use App\Enums\ClubMembershipStatus;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -22,6 +23,7 @@ class ClubMember extends Model
         'invited_by',
         'role',
         'position',
+        'membership_status',
         'status',
         'message',
         'reviewed_by',
@@ -35,6 +37,7 @@ class ClubMember extends Model
 
     protected $casts = [
         'role' => ClubMemberRole::class,
+        'membership_status' => ClubMembershipStatus::class,
         'status' => ClubMemberStatus::class,
         'reviewed_at' => 'datetime',
         'joined_at' => 'datetime',
@@ -69,14 +72,30 @@ class ClubMember extends Model
         return $this->invited_by !== null;
     }
 
+    /** Đang tham gia CLB (membership_status = joined, status = active). */
     public function scopeActive($query)
     {
-        return $query->where('status', ClubMemberStatus::Active);
+        return $query->where('membership_status', ClubMembershipStatus::Joined)
+            ->where('status', ClubMemberStatus::Active);
     }
 
+    /** Chờ duyệt (yêu cầu vào hoặc lời mời) — status = pending. */
     public function scopePending($query)
     {
-        return $query->where('status', ClubMemberStatus::Pending);
+        return $query->where('membership_status', ClubMembershipStatus::Pending)
+            ->where('status', ClubMemberStatus::Pending);
+    }
+
+    /** Đã join (membership_status = joined), bất kể status active/inactive/suspended. */
+    public function scopeJoined($query)
+    {
+        return $query->where('membership_status', ClubMembershipStatus::Joined);
+    }
+
+    /** Đã rời hoặc bị đuổi — có thể gửi request lại. */
+    public function scopeLeftOrSuspended($query)
+    {
+        return $query->where('membership_status', ClubMembershipStatus::Left);
     }
 
     public function scopeByRole($query, $role)
@@ -104,8 +123,27 @@ class ClubMember extends Model
         return in_array($this->role, [ClubMemberRole::Admin, ClubMemberRole::Manager]);
     }
 
-    public function isJoinRequest()
+    /** Đang chờ duyệt (yêu cầu vào hoặc lời mời) — status = pending. */
+    public function isJoinRequest(): bool
     {
-        return $this->status === ClubMemberStatus::Pending;
+        return $this->membership_status === ClubMembershipStatus::Pending
+            && $this->status === ClubMemberStatus::Pending;
+    }
+
+    /** Đang tham gia CLB (joined + active). */
+    public function isJoined(): bool
+    {
+        return $this->membership_status === ClubMembershipStatus::Joined
+            && $this->status === ClubMemberStatus::Active;
+    }
+
+    /** Đã rejected, left hoặc cancelled — có thể gửi request lại. */
+    public function canSendJoinRequest(): bool
+    {
+        return in_array($this->membership_status, [
+            ClubMembershipStatus::Rejected,
+            ClubMembershipStatus::Left,
+            ClubMembershipStatus::Cancelled,
+        ], true);
     }
 }
