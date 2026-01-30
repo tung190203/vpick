@@ -258,6 +258,7 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
                 });
             });
 
+            // club_alert: list toàn bộ thông báo của CLB (khác user_notification)
             Route::prefix('notifications')->group(function () {
                 Route::get('/types', [ClubNotificationController::class, 'getNotificationTypes']);
                 Route::get('/', [ClubNotificationController::class, 'index']);
@@ -401,7 +402,8 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
     Route::prefix('competition-location-yards')->group(function () {
         Route::get('/index', [CompetitionLocationYardController::class, 'index']);
     });
-    Route::prefix('notifications')->group(function () {
+    // user_notification: thông báo riêng từng thành viên (Laravel notifications)
+    Route::prefix('user-notifications')->group(function () {
         Route::match(['get', 'post'], '/index', [NotificationController::class, 'index']);
         Route::post('/mark-as-read', [NotificationController::class, 'markAsRead']);
         Route::post('/delete', [NotificationController::class, 'delete']);

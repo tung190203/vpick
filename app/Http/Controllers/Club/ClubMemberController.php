@@ -94,6 +94,11 @@ class ClubMemberController extends Controller
         return ResponseHelper::success($data, 'Lấy danh sách thành viên thành công', 200, $meta);
     }
 
+    /**
+     * Admin/manager CLB gửi lời mời user tham gia CLB.
+     * Bắt buộc truyền user_id (id người được mời) trong body.
+     * User được mời sẽ thấy lời mời tại GET /api/clubs/my-invitations và đồng ý/từ chối qua invitations/accept hoặc reject.
+     */
     public function store(Request $request, $clubId)
     {
         $club = Club::findOrFail($clubId);
@@ -109,6 +114,9 @@ class ClubMemberController extends Controller
             'role' => ['sometimes', Rule::enum(ClubMemberRole::class)],
             'position' => 'nullable|string|max:255',
             'message' => 'nullable|string',
+        ], [
+            'user_id.required' => 'Vui lòng truyền user_id (id người được mời tham gia CLB).',
+            'user_id.exists' => 'Người dùng không tồn tại.',
         ]);
 
         // Check duplicate member (bất kỳ status nào)
@@ -192,7 +200,8 @@ class ClubMemberController extends Controller
     }
 
     /**
-     * Admin đuổi thành viên: membership_status = left, status = suspended.
+     * Admin: (1) Hủy lời mời đã gửi (pending, invited_by = mình) → xóa record.
+     *       (2) Đuổi thành viên đang tham gia (joined + active) → membership_status = left, status = suspended.
      */
     public function destroy($clubId, $memberId)
     {
@@ -201,11 +210,21 @@ class ClubMemberController extends Controller
 
         $club = $member->club;
         if (!$club->canManage($userId)) {
-            return ResponseHelper::error('Chỉ admin/manager mới có quyền đuổi thành viên', 403);
+            return ResponseHelper::error('Chỉ admin/manager mới có quyền thực hiện', 403);
         }
 
+        // Lời mời do admin gửi (pending, invited_by = mình) → hủy lời mời = xóa record
+        if (
+            $member->membership_status === ClubMembershipStatus::Pending
+            && $member->invited_by === $userId
+        ) {
+            $member->delete();
+            return ResponseHelper::success([], 'Đã hủy lời mời tham gia CLB');
+        }
+
+        // Thành viên đang tham gia → đuổi (left + suspended)
         if ($member->membership_status !== ClubMembershipStatus::Joined || $member->status !== ClubMemberStatus::Active) {
-            return ResponseHelper::error('Chỉ có thể đuổi thành viên đang active', 400);
+            return ResponseHelper::error('Chỉ có thể đuổi thành viên đang tham gia hoặc hủy lời mời do chính bạn gửi', 400);
         }
 
         $member->update([
