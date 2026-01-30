@@ -44,6 +44,7 @@ class ClubResource extends JsonResource
                 ];
             }, null),
             'is_member' => $this->whenLoaded('members', fn () => $this->members->contains(fn ($m) => $m->user_id === auth()->id() && $m->membership_status === ClubMembershipStatus::Joined && $m->status === ClubMemberStatus::Active), false),
+            'has_pending_request' => $this->when(auth()->check(), fn () => $this->resource->members()->where('user_id', auth()->id())->where('membership_status', ClubMembershipStatus::Pending)->exists(), false),
             'profile' => $this->whenLoaded('profile'),
             'wallets' => $this->whenLoaded('wallets'),
             'created_at' => $this->created_at?->toISOString(),
