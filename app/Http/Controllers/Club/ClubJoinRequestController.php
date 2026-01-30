@@ -224,6 +224,15 @@ class ClubJoinRequestController extends Controller
                 ->findOrFail($requestId);
         }
 
+        // Chỉ duyệt được yêu cầu tham gia do USER tự gửi (invited_by = null).
+        // Lời mời từ admin (invited_by != null) chỉ người được mời mới đồng ý/từ chối qua invitations/accept hoặc invitations/reject.
+        if ($member->invited_by !== null) {
+            return ResponseHelper::error(
+                'Đây là lời mời từ admin, chỉ người được mời mới có thể đồng ý hoặc từ chối qua mục Lời mời của tôi.',
+                403
+            );
+        }
+
         $member->update([
             'membership_status' => ClubMembershipStatus::Joined,
             'status' => ClubMemberStatus::Active,
@@ -278,6 +287,15 @@ class ClubJoinRequestController extends Controller
                 ->findOrFail($requestId);
         }
 
+        // Chỉ từ chối được yêu cầu tham gia do USER tự gửi (invited_by = null).
+        // Lời mời từ admin (invited_by != null) chỉ người được mời mới từ chối qua invitations/reject.
+        if ($member->invited_by !== null) {
+            return ResponseHelper::error(
+                'Đây là lời mời từ admin, chỉ người được mời mới có thể đồng ý hoặc từ chối qua mục Lời mời của tôi.',
+                403
+            );
+        }
+
         // Từ chối: membership_status = rejected, status = inactive để thống kê by_status.pending không đếm request đã từ chối
         $member->update([
             'membership_status' => ClubMembershipStatus::Rejected,
@@ -314,16 +332,17 @@ class ClubJoinRequestController extends Controller
         );
     }
 
-    /**
-     * User: Đồng ý lời mời tham gia CLB (admin đã mời)
-     * POST /api/clubs/{clubId}/invitations/accept
-     */
     public function acceptInvitation($clubId)
     {
         $userId = auth()->id();
         if (!$userId) {
             return ResponseHelper::error('Bạn cần đăng nhập', 401);
         }
+
+        if ($clubId === '' || $clubId === null || !is_numeric($clubId) || (int) $clubId < 1) {
+            return ResponseHelper::error('Thiếu hoặc sai clubId. Vui lòng truyền ID CLB trong URL: POST /api/clubs/{clubId}/invitations/accept', 400);
+        }
+        $clubId = (int) $clubId;
 
         $member = ClubMember::where('club_id', $clubId)
             ->where('user_id', $userId)
@@ -349,17 +368,17 @@ class ClubJoinRequestController extends Controller
             'Bạn đã tham gia CLB thành công'
         );
     }
-
-    /**
-     * User: Từ chối lời mời tham gia CLB
-     * POST /api/clubs/{clubId}/invitations/reject
-     */
     public function rejectInvitation(Request $request, $clubId)
     {
         $userId = auth()->id();
         if (!$userId) {
             return ResponseHelper::error('Bạn cần đăng nhập', 401);
         }
+
+        if ($clubId === '' || $clubId === null || !is_numeric($clubId) || (int) $clubId < 1) {
+            return ResponseHelper::error('Thiếu hoặc sai clubId. Vui lòng truyền ID CLB trong URL: POST /api/clubs/{clubId}/invitations/reject', 400);
+        }
+        $clubId = (int) $clubId;
 
         $validated = $request->validate([
             'reason' => 'nullable|string|max:500',

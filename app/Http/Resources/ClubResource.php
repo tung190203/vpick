@@ -25,6 +25,7 @@ class ClubResource extends JsonResource
             'longitude' => $this->longitude,
             'logo_url' => $this->logo_url,
             'status' => $this->status,
+            'is_public' => (bool) ($this->is_public ?? true),
             'is_verified' => (bool) $this->is_verified,
             'created_by' => $this->created_by,
             'members' => ClubMemberResource::collection($this->whenLoaded('members')),

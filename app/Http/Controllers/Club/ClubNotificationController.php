@@ -15,11 +15,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
+/**
+ * club_alert: list toàn bộ thông báo của CLB (khác user_notification).
+ * Route: api/club/{clubId}/notifications/* — dành cho màn Thông báo trong CLB.
+ */
 class ClubNotificationController extends Controller
 {
     public function index(Request $request, $clubId)
     {
         $club = Club::findOrFail($clubId);
+        $userId = auth()->id();
 
         $validated = $request->validate([
             'page' => 'sometimes|integer|min:1',
@@ -30,6 +35,13 @@ class ClubNotificationController extends Controller
         ]);
 
         $query = $club->notifications()->with(['type', 'creator', 'recipients.user']);
+
+        // Thành viên thường (club_alert): chỉ thấy thông báo đã gửi; admin/manager/secretary thấy tất cả
+        $member = $userId ? $club->activeMembers()->where('user_id', $userId)->first() : null;
+        $canManage = $member && in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary]);
+        if (!$canManage) {
+            $query->where('status', ClubNotificationStatus::Sent);
+        }
 
         if (isset($validated['is_pinned'])) {
             $query->where('is_pinned', $validated['is_pinned']);
@@ -96,9 +108,9 @@ class ClubNotificationController extends Controller
             ]);
 
             if (!empty($validated['user_ids'])) {
-                foreach ($validated['user_ids'] as $userId) {
+                foreach ($validated['user_ids'] as $recipientUserId) {
                     $notification->recipients()->create([
-                        'user_id' => $userId,
+                        'user_id' => $recipientUserId,
                         'is_read' => false,
                     ]);
                 }
@@ -210,7 +222,7 @@ class ClubNotificationController extends Controller
 
         $club = $notification->club;
         $member = $club->activeMembers()->where('user_id', $userId)->first();
-        if (!$member || !in_array($member->role, ['admin', 'manager', 'secretary'])) {
+        if (!$member || !in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary])) {
             return ResponseHelper::error('Chỉ admin/manager/secretary mới có quyền gửi thông báo', 403);
         }
 
