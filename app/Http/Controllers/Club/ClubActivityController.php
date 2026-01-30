@@ -21,6 +21,8 @@ use Illuminate\Validation\Rule;
 
 class ClubActivityController extends Controller
 {
+    private const ACTIVITY_COLLECTED_SUM = 'activityFeeTransactions as collected_amount';
+
     public function index(Request $request, $clubId)
     {
         $club = Club::findOrFail($clubId);
@@ -34,7 +36,9 @@ class ClubActivityController extends Controller
             'date_to' => 'sometimes|date|after_or_equal:date_from',
         ]);
 
-        $query = $club->activities()->with(['creator', 'participants.user']);
+        $query = $club->activities()
+            ->with(['creator', 'participants.user'])
+            ->withSum(self::ACTIVITY_COLLECTED_SUM, 'amount');
 
         if (!empty($validated['type'])) {
             $query->where('type', $validated['type']);
@@ -88,6 +92,9 @@ class ClubActivityController extends Controller
             'reminder_minutes' => 'sometimes|integer|min:0',
             'fee_amount' => 'nullable|numeric|min:0',
             'penalty_percentage' => 'nullable|numeric|min:0|max:100',
+            'fee_split_type' => 'sometimes|in:equal,fixed',
+            'allow_member_invite' => 'sometimes|boolean',
+            'max_participants' => 'nullable|integer|min:1',
         ]);
 
         $activity = ClubActivity::create([
@@ -104,11 +111,14 @@ class ClubActivityController extends Controller
             'reminder_minutes' => $validated['reminder_minutes'] ?? 15,
             'fee_amount' => $validated['fee_amount'] ?? 0,
             'penalty_percentage' => $validated['penalty_percentage'] ?? 50,
+            'fee_split_type' => $validated['fee_split_type'] ?? 'fixed',
+            'allow_member_invite' => $validated['allow_member_invite'] ?? false,
             'status' => ClubActivityStatus::Scheduled,
             'created_by' => $userId,
         ]);
 
         $activity->load(['creator', 'participants.user']);
+        $activity->loadSum(self::ACTIVITY_COLLECTED_SUM, 'amount');
         return ResponseHelper::success(new ClubActivityResource($activity), 'Tạo hoạt động thành công', 201);
     }
 
@@ -116,6 +126,7 @@ class ClubActivityController extends Controller
     {
         $activity = ClubActivity::where('club_id', $clubId)
             ->with(['creator', 'club', 'participants.user', 'miniTournament'])
+            ->withSum(self::ACTIVITY_COLLECTED_SUM, 'amount')
             ->findOrFail($activityId);
 
         return ResponseHelper::success(new ClubActivityResource($activity), 'Lấy thông tin hoạt động thành công');
@@ -142,10 +153,16 @@ class ClubActivityController extends Controller
             'is_recurring' => 'sometimes|boolean',
             'recurring_schedule' => 'nullable|string',
             'reminder_minutes' => 'sometimes|integer|min:0',
+            'fee_amount' => 'nullable|numeric|min:0',
+            'penalty_percentage' => 'nullable|numeric|min:0|max:100',
+            'fee_split_type' => 'sometimes|in:equal,fixed',
+            'allow_member_invite' => 'sometimes|boolean',
+            'max_participants' => 'nullable|integer|min:1',
         ]);
 
         $activity->update($validated);
         $activity->load(['creator', 'participants.user']);
+        $activity->loadSum(self::ACTIVITY_COLLECTED_SUM, 'amount');
         return ResponseHelper::success(new ClubActivityResource($activity), 'Cập nhật hoạt động thành công');
     }
 
@@ -182,6 +199,7 @@ class ClubActivityController extends Controller
 
         $activity->markAsCompleted();
         $activity->load(['creator', 'participants.user']);
+        $activity->loadSum(self::ACTIVITY_COLLECTED_SUM, 'amount');
 
         return ResponseHelper::success(new ClubActivityResource($activity), 'Hoạt động đã được đánh dấu hoàn thành');
     }
@@ -260,6 +278,7 @@ class ClubActivityController extends Controller
             }
 
             $activity->load(['creator', 'participants.user']);
+            $activity->loadSum(self::ACTIVITY_COLLECTED_SUM, 'amount');
             return ResponseHelper::success(new ClubActivityResource($activity), 'Sự kiện đã được hủy');
         });
     }

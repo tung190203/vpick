@@ -27,6 +27,7 @@ class ClubMemberResource extends JsonResource
             'joined_at' => $this->joined_at?->toISOString(),
             'left_at' => $this->left_at?->toISOString(),
             'notes' => $this->notes,
+            'rank_in_club' => $this->when(isset($this->rank_in_club), $this->rank_in_club),
             'user' => new UserResource($this->whenLoaded('user')),
             'club' => $this->whenLoaded('club', fn () => new ListClubResource($this->club)),
             'inviter' => new UserResource($this->whenLoaded('inviter')),
