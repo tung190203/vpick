@@ -11,11 +11,11 @@ enum ClubMemberStatus: string
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Pending => 'Chờ duyệt',
-            self::Active => 'Hoạt động',
-            self::Inactive => 'Không hoạt động',
-            self::Suspended => 'Tạm ngưng',
+            self::Active => 'Đang tham gia',
+            self::Inactive => 'Đã rời',
+            self::Suspended => 'Bị đuổi',
         };
     }
 

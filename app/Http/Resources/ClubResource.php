@@ -2,9 +2,11 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\ClubMemberStatus;
+use App\Enums\ClubMembershipStatus;
+use App\Http\Resources\Club\ClubMemberResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use App\Http\Resources\Club\ClubMemberResource;
 
 class ClubResource extends JsonResource
 {
@@ -41,7 +43,7 @@ class ClubResource extends JsonResource
                     'max' => round($scores->max(), 1),
                 ];
             }, null),
-            'is_member' => $this->whenLoaded('members', fn() => $this->members->contains(fn($m) => $m->user_id === auth()->id()), false),
+            'is_member' => $this->whenLoaded('members', fn () => $this->members->contains(fn ($m) => $m->user_id === auth()->id() && $m->membership_status === ClubMembershipStatus::Joined && $m->status === ClubMemberStatus::Active), false),
             'profile' => $this->whenLoaded('profile'),
             'wallets' => $this->whenLoaded('wallets'),
             'created_at' => $this->created_at?->toISOString(),
