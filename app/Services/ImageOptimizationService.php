@@ -62,6 +62,10 @@ class ImageOptimizationService
      */
     public function optimize($file, $path, $maxWidth = 1920, $quality = 80)
     {
+        if ($file === null || ! $file->isValid()) {
+            throw new \InvalidArgumentException('File ảnh không hợp lệ hoặc không tồn tại.');
+        }
+
         $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
         $image = $this->manager->read($file);
 

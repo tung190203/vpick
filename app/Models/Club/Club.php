@@ -32,9 +32,22 @@ class Club extends Model
         'longitude',
         'logo_url',
         'status',
+        'is_public',
         'is_verified',
         'created_by',
     ];
+
+    /**
+     * Trả về URL đầy đủ của logo (lưu trong DB là path hoặc URL cũ).
+     */
+    public function getLogoUrlAttribute(): ?string
+    {
+        $value = $this->attributes['logo_url'] ?? null;
+        if (empty($value)) {
+            return null;
+        }
+        return str_starts_with($value, 'http') ? $value : asset('storage/' . $value);
+    }
 
     public function creator()
     {

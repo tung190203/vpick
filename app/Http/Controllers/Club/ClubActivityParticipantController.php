@@ -53,9 +53,14 @@ class ClubActivityParticipantController extends Controller
         $userId = auth()->id();
 
         $club = $activity->club;
-        $member = $club->members()->where('user_id', $userId)->first();
-        if (!$member || !in_array($member->role, ['admin', 'manager', 'secretary'])) {
-            return ResponseHelper::error('Chỉ admin/manager/secretary mới có quyền thêm người tham gia', 403);
+        $member = $club->activeMembers()->where('user_id', $userId)->first();
+        if (!$member) {
+            return ResponseHelper::error('Bạn không phải thành viên CLB', 403);
+        }
+        $canInvite = in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary])
+            || $activity->allow_member_invite;
+        if (!$canInvite) {
+            return ResponseHelper::error('Chỉ admin/manager/secretary hoặc khi sự kiện cho phép thành viên mời mới có quyền thêm người tham gia', 403);
         }
 
         $validated = $request->validate([
@@ -65,6 +70,9 @@ class ClubActivityParticipantController extends Controller
 
         if ($activity->participants()->where('user_id', $validated['user_id'])->exists()) {
             return ResponseHelper::error('Người này đã tham gia hoạt động', 409);
+        }
+        if ($activity->max_participants !== null && $activity->participants()->count() >= $activity->max_participants) {
+            return ResponseHelper::error('Sự kiện đã đủ số lượng người tham gia', 422);
         }
 
         $participant = ClubActivityParticipant::create([
@@ -85,8 +93,13 @@ class ClubActivityParticipantController extends Controller
 
         $club = $activity->club;
         $member = $club->activeMembers()->where('user_id', $userId)->first();
-        if (!$member || !in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary])) {
-            return ResponseHelper::error('Chỉ admin/manager/secretary mới có quyền mời', 403);
+        if (!$member) {
+            return ResponseHelper::error('Bạn không phải thành viên CLB', 403);
+        }
+        $canInvite = in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary])
+            || $activity->allow_member_invite;
+        if (!$canInvite) {
+            return ResponseHelper::error('Chỉ admin/manager/secretary hoặc khi sự kiện cho phép thành viên mời mới có quyền mời', 403);
         }
 
         $validated = $request->validate([
@@ -94,8 +107,14 @@ class ClubActivityParticipantController extends Controller
             'user_ids.*' => 'exists:users,id',
         ]);
 
+        $currentCount = $activity->participants()->count();
+        $maxParticipants = $activity->max_participants;
+
         $invited = [];
         foreach ($validated['user_ids'] as $userId) {
+            if ($maxParticipants !== null && $currentCount >= $maxParticipants) {
+                break;
+            }
             if (!$activity->participants()->where('user_id', $userId)->exists()) {
                 $participant = ClubActivityParticipant::create([
                     'club_activity_id' => $activity->id,
@@ -104,6 +123,7 @@ class ClubActivityParticipantController extends Controller
                 ]);
                 $participant->load('user');
                 $invited[] = $participant;
+                $currentCount++;
             }
         }
 
@@ -136,12 +156,17 @@ class ClubActivityParticipantController extends Controller
                 && $activity->fee_amount > 0 
                 && !$participant->wallet_transaction_id
                 && $mainWallet) {
-                
-                // Tạo khoản thu cho participant
+
+                // fixed = phí/người; equal = tổng chia đều (fee_amount / max_participants hoặc 1)
+                $feeSplitType = $activity->fee_split_type ?? 'fixed';
+                $amount = $feeSplitType === 'fixed'
+                    ? (float) $activity->fee_amount
+                    : (float) $activity->fee_amount / max(1, (int) ($activity->max_participants ?? 1));
+
                 $transaction = ClubWalletTransaction::create([
                     'club_wallet_id' => $mainWallet->id,
                     'direction' => ClubWalletTransactionDirection::In,
-                    'amount' => $activity->fee_amount,
+                    'amount' => $amount,
                     'source_type' => ClubWalletTransactionSourceType::Activity,
                     'source_id' => $activity->id,
                     'payment_method' => PaymentMethod::BankTransfer,

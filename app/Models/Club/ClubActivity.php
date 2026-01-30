@@ -4,8 +4,12 @@ namespace App\Models\Club;
 
 use App\Enums\ClubActivityParticipantStatus;
 use App\Enums\ClubActivityStatus;
+use App\Enums\ClubWalletTransactionDirection;
+use App\Enums\ClubWalletTransactionSourceType;
+use App\Enums\ClubWalletTransactionStatus;
 use App\Models\User;
 use App\Models\MiniTournament;
+use App\Models\Club\ClubWalletTransaction;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -31,6 +35,9 @@ class ClubActivity extends Model
         'cancelled_by',
         'fee_amount',
         'penalty_percentage',
+        'fee_split_type',
+        'allow_member_invite',
+        'max_participants',
     ];
 
     protected $casts = [
@@ -40,6 +47,7 @@ class ClubActivity extends Model
         'end_time' => 'datetime',
         'fee_amount' => 'decimal:2',
         'penalty_percentage' => 'decimal:2',
+        'allow_member_invite' => 'boolean',
     ];
 
     public function club()
@@ -60,6 +68,17 @@ class ClubActivity extends Model
     public function participants()
     {
         return $this->hasMany(ClubActivityParticipant::class);
+    }
+
+    /**
+     * Wallet transactions for this activity's fee (In, Confirmed) — used for collected_amount.
+     */
+    public function activityFeeTransactions()
+    {
+        return $this->hasMany(ClubWalletTransaction::class, 'source_id')
+            ->where('source_type', ClubWalletTransactionSourceType::Activity)
+            ->where('direction', ClubWalletTransactionDirection::In)
+            ->where('status', ClubWalletTransactionStatus::Confirmed);
     }
 
     public function acceptedParticipants()
@@ -120,5 +139,21 @@ class ClubActivity extends Model
     public function markAsCompleted()
     {
         $this->update(['status' => ClubActivityStatus::Completed]);
+    }
+
+    /**
+     * Số tiền mỗi người phải nộp khi tham gia (theo fee_split_type).
+     * fixed: fee_amount là phí/người. equal: fee_amount là tổng, chia đều cho max_participants (hoặc 1 nếu chưa set).
+     */
+    public function getFeeAmountPerParticipant(): float
+    {
+        if ((float) $this->fee_amount <= 0) {
+            return 0;
+        }
+        if (($this->fee_split_type ?? 'fixed') === 'equal') {
+            $n = max(1, (int) ($this->max_participants ?? 1));
+            return round((float) $this->fee_amount / $n, 2);
+        }
+        return (float) $this->fee_amount;
     }
 }
