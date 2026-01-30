@@ -9,14 +9,20 @@ use App\Helpers\ResponseHelper;
 use Illuminate\Http\Request;
 use App\Models\Club\Club;
 use App\Models\Club\ClubMember;
+use App\Models\Club\ClubProfile;
 use App\Models\User;
 use App\Http\Resources\ClubResource;
 use App\Services\GeocodingService;
+use App\Services\ImageOptimizationService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class ClubController extends Controller
 {
+    public function __construct(protected ImageOptimizationService $imageService)
+    {
+    }
+
     public function index(Request $request)
     {
         $validated = $request->validate([
@@ -92,7 +98,8 @@ class ClubController extends Controller
             'address' => 'nullable|string|max:255',
             'latitude' => 'nullable|string',
             'longitude' => 'nullable|string',
-            'logo_url' => 'nullable|image|max:2048',
+            'logo_url' => 'required|image|max:2048',
+            'cover_image_url' => 'required|image|max:2048',
         ]);
 
         $userId = auth()->id();
@@ -100,11 +107,15 @@ class ClubController extends Controller
             return ResponseHelper::error('Bạn cần đăng nhập để tạo CLB', 401);
         }
 
-        return DB::transaction(function () use ($request, $userId) {
-            $logoPath = null;
-            if ($request->hasFile('logo_url')) {
-                $logoPath = $request->file('logo_url')->store('logos', 'public');
-            }
+        $logoFile = $request->file('logo_url');
+        $coverFile = $request->file('cover_image_url');
+        if (!$logoFile || !$coverFile) {
+            return ResponseHelper::error('Vui lòng gửi đầy đủ ảnh logo và ảnh bìa (form-data, type File)', 422);
+        }
+
+        return DB::transaction(function () use ($request, $userId, $logoFile, $coverFile) {
+            $logoPath = $this->imageService->optimize($logoFile, 'logos');
+            $coverPath = $this->imageService->optimize($coverFile, 'covers');
 
             $club = Club::create([
                 'name' => $request->name,
@@ -114,6 +125,11 @@ class ClubController extends Controller
                 'logo_url' => $logoPath,
                 'status' => 'active',
                 'created_by' => $userId,
+            ]);
+
+            ClubProfile::create([
+                'club_id' => $club->id,
+                'cover_image_url' => asset('storage/' . $coverPath),
             ]);
 
             // Tự động tạo member với role admin cho người tạo CLB
@@ -126,7 +142,7 @@ class ClubController extends Controller
                 'joined_at' => now(),
             ]);
 
-            $club->load(['members' => ['user' => User::FULL_RELATIONS]]);
+            $club->load(['members' => ['user' => User::FULL_RELATIONS], 'profile']);
 
             return ResponseHelper::success(new ClubResource($club), 'Tạo câu lạc bộ thành công');
         });
@@ -181,9 +197,10 @@ class ClubController extends Controller
             'logo_url' => 'nullable|image|max:2048',
         ]);
 
-        $logoPath = $club->logo_url;
+        $logoPath = $club->getRawOriginal('logo_url');
         if ($request->hasFile('logo_url')) {
-            $logoPath = $request->file('logo_url')->store('logos', 'public');
+            $this->imageService->deleteOldImage($club->logo_url);
+            $logoPath = $this->imageService->optimize($request->file('logo_url'), 'logos');
         }
 
         $club->update([
@@ -191,7 +208,7 @@ class ClubController extends Controller
             'address' => $request->address ?? $club->address,
             'latitude' => $request->latitude ?? $club->latitude,
             'longitude' => $request->longitude ?? $club->longitude,
-            'logo_url' => $logoPath ?? $club->logo_url,
+            'logo_url' => $logoPath ?? $club->getRawOriginal('logo_url'),
         ]);
 
         return ResponseHelper::success(new ClubResource($club->refresh()), 'Cập nhật câu lạc bộ thành công');
