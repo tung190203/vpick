@@ -94,6 +94,7 @@ class ClubController extends Controller
     public function store(Request $request)
     {
         $request->validate([
+            // Figma: Tên câu lạc bộ
             'name' => 'required|string|max:255|unique:clubs',
             'address' => 'nullable|string|max:255',
             'latitude' => 'nullable|string',
@@ -117,13 +118,17 @@ class ClubController extends Controller
             $logoPath = $this->imageService->optimize($logoFile, 'logos');
             $coverPath = $this->imageService->optimize($coverFile, 'covers');
 
+            $status = $request->input('status', 'active');
+            $isPublic = $request->boolean('is_public', true);
+
             $club = Club::create([
                 'name' => $request->name,
                 'address' => $request->address,
                 'latitude' => $request->latitude,
                 'longitude' => $request->longitude,
                 'logo_url' => $logoPath,
-                'status' => 'active',
+                'status' => $status,
+                'is_public' => $isPublic,
                 'created_by' => $userId,
             ]);
 
@@ -144,7 +149,8 @@ class ClubController extends Controller
 
             $club->load(['members' => ['user' => User::FULL_RELATIONS], 'profile']);
 
-            return ResponseHelper::success(new ClubResource($club), 'Tạo câu lạc bộ thành công');
+            $message = $status === 'draft' ? 'Lưu bản nháp CLB thành công' : 'Tạo câu lạc bộ thành công';
+            return ResponseHelper::success(new ClubResource($club), $message);
         });
     }
 
