@@ -246,10 +246,13 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         )->where('score_type', 'vndupr_score');
     }
 
+    /** CLB mà user đang tham gia (membership_status = joined, status = active). */
     public function clubs()
     {
         return $this->belongsToMany(Club::class, 'club_members')
-            ->withPivot(['is_manager', 'joined_at'])
+            ->wherePivot('membership_status', 'joined')
+            ->wherePivot('status', 'active')
+            ->withPivot(['is_manager', 'joined_at', 'membership_status', 'status'])
             ->withTimestamps();
     }
 
@@ -469,10 +472,10 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
 
     public function scopeNearBy($query, float $lat, float $lng, float $radiusKm = 5)
     {
-        $haversine = "(6371 * acos(cos(radians($lat)) 
-                * cos(radians(latitude)) 
-                * cos(radians(longitude) - radians($lng)) 
-                + sin(radians($lat)) 
+        $haversine = "(6371 * acos(cos(radians($lat))
+                * cos(radians(latitude))
+                * cos(radians(longitude) - radians($lng))
+                + sin(radians($lat))
                 * sin(radians(latitude))))";
 
         return $query->select('*')
