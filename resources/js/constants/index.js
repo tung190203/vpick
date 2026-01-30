@@ -37,7 +37,8 @@ export const API_ENDPOINT = {
     TOURNAMENT: () => `${API_ENDPOINT.MESSAGE.BASE}/tournament`,
   },
   MATCHES: '/matches',
-  NOTIFICATION: '/notifications',
+  // user_notification: thông báo riêng từng thành viên (không phải thông báo CLB)
+  NOTIFICATION: '/user-notifications',
   MAP: '/map',
 };
 

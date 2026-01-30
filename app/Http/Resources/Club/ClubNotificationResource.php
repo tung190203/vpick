@@ -10,6 +10,13 @@ class ClubNotificationResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $userId = auth()->id();
+        $isReadByMe = null;
+        if ($userId && $this->relationLoaded('recipients')) {
+            $myRecipient = $this->recipients->firstWhere('user_id', $userId);
+            $isReadByMe = $myRecipient ? $myRecipient->is_read : null;
+        }
+
         return [
             'id' => $this->id,
             'club_id' => $this->club_id,
@@ -26,6 +33,7 @@ class ClubNotificationResource extends JsonResource
             'created_by' => $this->created_by,
             'read_count' => $this->when(isset($this->read_count), $this->read_count),
             'unread_count' => $this->when(isset($this->unread_count), $this->unread_count),
+            'is_read_by_me' => $isReadByMe,
             'type' => $this->whenLoaded('type'),
             'creator' => new UserResource($this->whenLoaded('creator')),
             'recipients' => ClubNotificationRecipientResource::collection($this->whenLoaded('recipients')),
