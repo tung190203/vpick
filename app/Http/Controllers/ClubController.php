@@ -40,7 +40,24 @@ class ClubController extends Controller
             'maxLng' => 'nullable',
             'perPage' => 'sometimes|integer|min:1|max:200',
         ]);
+
+        $userId = auth()->id();
         $query = Club::withFullRelations()->orderBy('created_at', 'desc');
+
+            // Filter private clubs: Chỉ hiển thị public clubs HOẶC clubs mà user là member/creator
+        if ($userId) {
+            $query->where(function ($q) use ($userId) {
+                $q->where('is_public', true)
+                  ->orWhere('created_by', $userId)
+                  ->orWhereHas('members', function ($memberQuery) use ($userId) {
+                      $memberQuery->where('user_id', $userId)
+                                  ->where('membership_status', ClubMembershipStatus::Joined)
+                                  ->where('status', ClubMemberStatus::Active);
+                  });
+            });
+        } else {
+            $query->where('is_public', true);
+        }
 
         if (!empty($validated['name'])) {
             $query->search(['name'], $validated['name']);
@@ -97,13 +114,14 @@ class ClubController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            // Figma: Tên câu lạc bộ
             'name' => 'required|string|max:255|unique:clubs',
             'address' => 'nullable|string|max:255',
             'latitude' => 'nullable|string',
             'longitude' => 'nullable|string',
-            'logo_url' => 'required|image|max:2048',
-            'cover_image_url' => 'required|image|max:2048',
+            'logo_url' => 'nullable|image|max:2048',
+            'cover_image_url' => 'nullable|image|max:2048',
+            'status' => 'nullable|in:active,inactive,draft',
+            'is_public' => 'nullable|in:0,1,true,false',
         ]);
 
         $userId = auth()->id();
@@ -111,21 +129,20 @@ class ClubController extends Controller
             return ResponseHelper::error('Bạn cần đăng nhập để tạo CLB', 401);
         }
 
-        $logoFile = $request->file('logo_url');
-        $coverFile = $request->file('cover_image_url');
-        if (!$logoFile || !$coverFile) {
-            return ResponseHelper::error('Vui lòng gửi đầy đủ ảnh logo và ảnh bìa (form-data, type File)', 422);
-        }
+        return DB::transaction(function () use ($request, $userId) {
+            $logoPath = null;
+            if ($request->hasFile('logo_url')) {
+                $logoPath = $this->imageService->optimize($request->file('logo_url'), 'logos');
+            }
 
-        return DB::transaction(function () use ($request, $userId, $logoFile, $coverFile) {
-            // Optimize và upload ảnh
-            $logoPath = $this->imageService->optimize($logoFile, 'logos');
-            $coverPath = $this->imageService->optimize($coverFile, 'covers');
+            $coverPath = null;
+            if ($request->hasFile('cover_image_url')) {
+                $coverPath = $this->imageService->optimize($request->file('cover_image_url'), 'covers');
+            }
 
             $status = $request->input('status', 'active');
             $isPublic = $request->boolean('is_public', true);
 
-            // Tạo club
             $club = Club::create([
                 'name' => $request->name,
                 'address' => $request->address,
@@ -137,13 +154,13 @@ class ClubController extends Controller
                 'created_by' => $userId,
             ]);
 
-            // Tạo club profile với cover image
-            ClubProfile::create([
-                'club_id' => $club->id,
-                'cover_image_url' => $coverPath,
-            ]);
+            if ($coverPath) {
+                ClubProfile::create([
+                    'club_id' => $club->id,
+                    'cover_image_url' => $coverPath,
+                ]);
+            }
 
-            // Tự động tạo member với role admin cho người tạo CLB
             ClubMember::create([
                 'club_id' => $club->id,
                 'user_id' => $userId,
@@ -153,7 +170,6 @@ class ClubController extends Controller
                 'joined_at' => now(),
             ]);
 
-            // Load relations để trả về đầy đủ data
             $club->load([
                 'members.user' => function ($query) {
                     $query->with(User::FULL_RELATIONS);
@@ -171,7 +187,25 @@ class ClubController extends Controller
     {
         $club = Club::withFullRelations()->findOrFail($clubId);
 
-        // Chỉ hiển thị thành viên đã join (membership_status = joined)
+        if (!$club->is_public) {
+            $userId = auth()->id();
+
+            if (!$userId) {
+                return ResponseHelper::error('CLB này là riêng tư. Bạn cần đăng nhập để xem', 401);
+            }
+
+            $isCreator = $club->created_by === $userId;
+            $isMember = $club->members()
+                ->where('user_id', $userId)
+                ->where('membership_status', ClubMembershipStatus::Joined)
+                ->where('status', ClubMemberStatus::Active)
+                ->exists();
+
+            if (!$isCreator && !$isMember) {
+                return ResponseHelper::error('Bạn không có quyền xem CLB riêng tư này', 403);
+            }
+        }
+
         $members = $club->joinedMembers()->with(['user' => User::FULL_RELATIONS])->get();
 
         $members = $members->map(function ($member) {
@@ -188,7 +222,6 @@ class ClubController extends Controller
                     }
                 }
 
-                // Thêm win_rate và performance cho mỗi sport
                 foreach ($user->sports ?? [] as $userSport) {
                     $stats = $this->calculateWinRateAndPerformance($user->id, $userSport->sport_id);
                     $userSport->setAttribute('win_rate', $stats['win_rate']);
@@ -208,7 +241,6 @@ class ClubController extends Controller
 
     public function update(Request $request, $clubId)
     {
-        // 1. Validation - CHỈ require name
         $request->validate([
             'name' => "nullable|string|max:255|unique:clubs,name,{$clubId}",
             'address' => 'nullable|string|max:255',
@@ -218,7 +250,6 @@ class ClubController extends Controller
             'cover_image_url' => 'nullable|image|max:2048',
             'status' => 'nullable|in:active,inactive,draft',
             'is_public' => 'nullable|boolean',
-            // Profile fields
             'description' => 'nullable|string',
             'phone' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255',
@@ -228,7 +259,6 @@ class ClubController extends Controller
             'country' => 'nullable|string|max:100',
         ]);
 
-        // 2. Kiểm tra quyền
         $club = Club::findOrFail($clubId);
         $userId = auth()->id();
 
@@ -240,7 +270,6 @@ class ClubController extends Controller
             return ResponseHelper::error('Chỉ admin/manager mới có quyền cập nhật CLB', 403);
         }
 
-        // 3. Kiểm tra có field nào được gửi lên không
         $updatableFields = [
             'name', 'address', 'latitude', 'longitude', 'logo_url', 'status', 'is_public',
             'cover_image_url', 'description', 'phone', 'email', 'website', 'city', 'province', 'country'
@@ -254,20 +283,15 @@ class ClubController extends Controller
             return ResponseHelper::error('Không có trường nào được gửi lên để cập nhật', 400);
         }
 
-        // 4. Transaction - Xử lý giống store()
         return DB::transaction(function () use ($request, $club) {
-            // 4.1. Xử lý logo_url (nếu có file mới)
             $logoPath = $club->getRawOriginal('logo_url');
             if ($request->hasFile('logo_url')) {
-                // Xóa ảnh cũ
                 if ($logoPath) {
                     $this->imageService->deleteOldImage($logoPath);
                 }
-                // Upload ảnh mới
                 $logoPath = $this->imageService->optimize($request->file('logo_url'), 'logos');
             }
 
-            // 4.2. Update bảng clubs
             $club->update([
                 'name' => $request->name ?? $club->name,
                 'address' => $request->address ?? $club->address,
@@ -278,17 +302,13 @@ class ClubController extends Controller
                 'is_public' => $request->has('is_public') ? $request->boolean('is_public') : $club->is_public,
             ]);
 
-            // 4.3. Xử lý cover_image_url (nếu có file mới)
             $profile = $club->profile;
             if ($request->hasFile('cover_image_url')) {
-                // Xóa ảnh cũ
                 if ($profile && $profile->getRawCoverImagePath()) {
                     $this->imageService->deleteOldImage($profile->getRawCoverImagePath());
                 }
-                // Upload ảnh mới
                 $coverPath = $this->imageService->optimize($request->file('cover_image_url'), 'covers');
 
-                // Update hoặc create profile
                 if ($profile) {
                     $profile->update(['cover_image_url' => $coverPath]);
                 } else {
@@ -299,9 +319,7 @@ class ClubController extends Controller
                 }
             }
 
-            // 4.4. Update các field profile khác
             if ($request->hasAny(['description', 'phone', 'email', 'website', 'city', 'province', 'country'])) {
-                // Load lại profile nếu chưa có
                 if (!$profile) {
                     $profile = $club->profile;
                 }
@@ -317,7 +335,6 @@ class ClubController extends Controller
                         'country' => $request->country ?? $profile->country,
                     ]);
                 } else {
-                    // Tạo profile mới nếu chưa có
                     ClubProfile::create([
                         'club_id' => $club->id,
                         'description' => $request->description,
@@ -331,7 +348,6 @@ class ClubController extends Controller
                 }
             }
 
-            // 4.5. Load relations và return
             $club->refresh()->load([
                 'members.user' => function ($query) {
                     $query->with(User::FULL_RELATIONS);
@@ -346,7 +362,6 @@ class ClubController extends Controller
 
     public function destroy($clubId)
     {
-        // 1. Kiểm tra quyền
         $club = Club::with('profile')->findOrFail($clubId);
         $userId = auth()->id();
 
@@ -358,15 +373,12 @@ class ClubController extends Controller
             return ResponseHelper::error('Chỉ admin/manager mới có quyền xóa CLB', 403);
         }
 
-        // 2. Transaction - Xóa ảnh trước khi xóa record
         return DB::transaction(function () use ($club) {
-            // 2.1. Xóa logo_url
             $logoPath = $club->getRawOriginal('logo_url');
             if ($logoPath) {
                 $this->imageService->deleteOldImage($logoPath);
             }
 
-            // 2.2. Xóa cover_image_url từ profile
             if ($club->profile) {
                 $coverPath = $club->profile->getRawCoverImagePath();
                 if ($coverPath) {
@@ -374,17 +386,12 @@ class ClubController extends Controller
                 }
             }
 
-            // 2.3. Xóa club (cascade sẽ xóa profile và members nếu đã config trong migration)
             $club->delete();
 
             return ResponseHelper::success([], 'Xóa câu lạc bộ thành công');
         });
     }
 
-    /**
-     * User rời CLB (chỉ thành viên active mới được gọi)
-     * POST /api/clubs/{clubId}/leave
-     */
     public function leave($clubId)
     {
         $club = Club::findOrFail($clubId);
