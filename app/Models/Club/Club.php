@@ -168,9 +168,9 @@ class Club extends Model
     /** Đang là thành viên (membership_status = joined, status = active). */
     public function hasMember($userId)
     {
+        // members() đã filter membership_status = Joined, chỉ cần check status = Active
         return $this->members()
             ->where('user_id', $userId)
-            ->where('membership_status', ClubMembershipStatus::Joined)
             ->where('status', ClubMemberStatus::Active)
             ->exists();
     }
@@ -184,7 +184,10 @@ class Club extends Model
     /** User có thể gửi join request: chưa joined hoặc đã rejected/left. */
     public function canSendJoinRequest($userId): bool
     {
-        $existing = $this->members()->where('user_id', $userId)->first();
+        // Query trực tiếp từ ClubMember để check tất cả status, không chỉ Joined
+        $existing = ClubMember::where('club_id', $this->id)
+            ->where('user_id', $userId)
+            ->first();
         if (!$existing) {
             return true;
         }
@@ -198,7 +201,8 @@ class Club extends Model
     /** Đang có request pending của user (chờ duyệt). */
     public function hasPendingRequest($userId): bool
     {
-        return $this->members()
+        // Query trực tiếp từ ClubMember để check Pending status, không dùng members() (chỉ trả về Joined)
+        return ClubMember::where('club_id', $this->id)
             ->where('user_id', $userId)
             ->where('membership_status', ClubMembershipStatus::Pending)
             ->exists();
@@ -218,6 +222,29 @@ class Club extends Model
         if (!$member) return false;
 
         return in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Treasurer]);
+    }
+
+    /**
+     * Đếm số lượng admin active trong CLB
+     */
+    public function countActiveAdmins(): int
+    {
+        return $this->activeMembers()
+            ->where('role', ClubMemberRole::Admin)
+            ->count();
+    }
+
+    /**
+     * Kiểm tra xem có ít nhất 1 admin active còn lại sau khi remove/suspend member này không
+     */
+    public function hasAtLeastOneAdminAfterRemoving($memberIdToRemove): bool
+    {
+        $remainingAdmins = $this->activeMembers()
+            ->where('role', ClubMemberRole::Admin)
+            ->where('id', '!=', $memberIdToRemove)
+            ->count();
+
+        return $remainingAdmins > 0;
     }
 
     public function scopeInBounds($query, $minLat, $maxLat, $minLng, $maxLng)
