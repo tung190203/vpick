@@ -105,20 +105,35 @@ class ClubJoinRequestController extends Controller
                 ->lockForUpdate()
                 ->first();
 
-            if ($existing && in_array($existing->membership_status, [ClubMembershipStatus::Rejected, ClubMembershipStatus::Left, ClubMembershipStatus::Cancelled], true)) {
-                // Join lại: cập nhật record cũ thành pending
-                $existing->update([
-                    'membership_status' => ClubMembershipStatus::Pending,
-                    'status' => ClubMemberStatus::Pending,
-                    'message' => $validated['message'] ?? null,
-                    'invited_by' => null,
-                    'left_at' => null,
-                    'rejection_reason' => null,
-                    'reviewed_by' => null,
-                    'reviewed_at' => null,
-                ]);
-                $member = $existing->fresh(['user' => User::FULL_RELATIONS, 'club']);
+            if ($existing) {
+                // Nếu đã có record, check status
+                if ($existing->membership_status === ClubMembershipStatus::Joined) {
+                    return ResponseHelper::error('Bạn đã là thành viên của CLB này', 409);
+                }
+
+                if ($existing->membership_status === ClubMembershipStatus::Pending) {
+                    return ResponseHelper::error('Bạn đã gửi yêu cầu tham gia. Vui lòng chờ duyệt', 409);
+                }
+
+                // Chỉ rejected, left, cancelled mới được join lại
+                if (in_array($existing->membership_status, [ClubMembershipStatus::Rejected, ClubMembershipStatus::Left, ClubMembershipStatus::Cancelled], true)) {
+                    $existing->update([
+                        'membership_status' => ClubMembershipStatus::Pending,
+                        'status' => ClubMemberStatus::Pending,
+                        'message' => $validated['message'] ?? null,
+                        'invited_by' => null,
+                        'left_at' => null,
+                        'rejection_reason' => null,
+                        'reviewed_by' => null,
+                        'reviewed_at' => null,
+                    ]);
+                    $member = $existing->fresh(['user' => User::FULL_RELATIONS, 'club']);
+                } else {
+                    // Các trường hợp khác không xử lý được
+                    return ResponseHelper::error('Không thể gửi yêu cầu tham gia', 400);
+                }
             } else {
+                // Chưa có record, tạo mới
                 $member = ClubMember::create([
                     'club_id' => $club->id,
                     'user_id' => $userId,
