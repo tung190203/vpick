@@ -394,7 +394,7 @@ class ClubController extends Controller
         });
     }
 
-    public function leave($clubId)
+    public function leave(Request $request, $clubId)
     {
         $club = Club::findOrFail($clubId);
         $userId = auth()->id();
@@ -409,6 +409,54 @@ class ClubController extends Controller
             return ResponseHelper::error('Bạn không phải thành viên active của CLB này', 404);
         }
 
+        // Validation: Nếu là admin và là admin duy nhất, phải nhượng lại cho thành viên khác
+        if ($member->role === ClubMemberRole::Admin) {
+            $adminCount = $club->countActiveAdmins();
+
+            if ($adminCount === 1) {
+                // Admin duy nhất, bắt buộc phải transfer ownership
+                $validated = $request->validate([
+                    'transfer_to_user_id' => 'required|integer|exists:users,id',
+                ], [
+                    'transfer_to_user_id.required' => 'Bạn là admin duy nhất của CLB. Vui lòng nhượng lại quyền quản lý cho thành viên khác trước khi rời.',
+                    'transfer_to_user_id.exists' => 'Người dùng không tồn tại.',
+                ]);
+
+                $newAdmin = $club->activeMembers()
+                    ->where('user_id', $validated['transfer_to_user_id'])
+                    ->where('id', '!=', $member->id)
+                    ->with('user')
+                    ->first();
+
+                if (!$newAdmin) {
+                    return ResponseHelper::error('Người được nhượng quyền phải là thành viên active của CLB và không phải chính bạn', 400);
+                }
+
+                return DB::transaction(function () use ($member, $newAdmin) {
+                    // Promote member thành admin
+                    $newAdmin->update([
+                        'role' => ClubMemberRole::Admin,
+                    ]);
+
+                    // Admin hiện tại rời CLB
+                    $member->update([
+                        'membership_status' => ClubMembershipStatus::Left,
+                        'status' => ClubMemberStatus::Inactive,
+                        'left_at' => now(),
+                    ]);
+
+                    return ResponseHelper::success([
+                        'transferred_to' => [
+                            'user_id' => $newAdmin->user_id,
+                            'user_name' => $newAdmin->user->full_name ?? 'N/A',
+                        ],
+                    ], 'Bạn đã nhượng quyền quản lý và rời CLB thành công');
+                });
+            }
+            // Có nhiều admin khác, có thể rời bình thường
+        }
+
+        // Member thường hoặc admin có nhiều admin khác → rời bình thường
         $member->update([
             'membership_status' => ClubMembershipStatus::Left,
             'status' => ClubMemberStatus::Inactive,
