@@ -57,7 +57,8 @@ class Club extends Model
     public function members()
     {
         return $this->hasMany(ClubMember::class)
-            ->whereHas('user'); // Chỉ lấy members có user tồn tại
+            ->whereHas('user') // Chỉ lấy members có user tồn tại
+            ->where('membership_status', ClubMembershipStatus::Joined); // Chỉ lấy members đã joined (loại bỏ pending, left, rejected, cancelled)
     }
 
     /** Thành viên đang tham gia (membership_status = joined, status = active). */
