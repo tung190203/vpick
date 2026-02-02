@@ -33,6 +33,26 @@ class ClubProfile extends Model
         'settings' => 'array',
     ];
 
+    /**
+     * Trả về URL đầy đủ của cover image (lưu trong DB là path).
+     */
+    public function getCoverImageUrlAttribute(): ?string
+    {
+        $value = $this->attributes['cover_image_url'] ?? null;
+        if (empty($value)) {
+            return null;
+        }
+        return str_starts_with($value, 'http') ? $value : asset('storage/' . $value);
+    }
+
+    /**
+     * Lấy raw path từ DB (không qua accessor) - dùng cho việc xóa ảnh
+     */
+    public function getRawCoverImagePath(): ?string
+    {
+        return $this->attributes['cover_image_url'] ?? null;
+    }
+
     public function club()
     {
         return $this->belongsTo(Club::class);

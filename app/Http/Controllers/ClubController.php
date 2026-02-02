@@ -115,12 +115,14 @@ class ClubController extends Controller
         }
 
         return DB::transaction(function () use ($request, $userId, $logoFile, $coverFile) {
+            // Optimize và upload ảnh
             $logoPath = $this->imageService->optimize($logoFile, 'logos');
             $coverPath = $this->imageService->optimize($coverFile, 'covers');
 
             $status = $request->input('status', 'active');
             $isPublic = $request->boolean('is_public', true);
 
+            // Tạo club
             $club = Club::create([
                 'name' => $request->name,
                 'address' => $request->address,
@@ -132,9 +134,10 @@ class ClubController extends Controller
                 'created_by' => $userId,
             ]);
 
+            // Tạo club profile với cover image
             ClubProfile::create([
                 'club_id' => $club->id,
-                'cover_image_url' => asset('storage/' . $coverPath),
+                'cover_image_url' => $coverPath,
             ]);
 
             // Tự động tạo member với role admin cho người tạo CLB
@@ -147,7 +150,14 @@ class ClubController extends Controller
                 'joined_at' => now(),
             ]);
 
-            $club->load(['members' => ['user' => User::FULL_RELATIONS], 'profile']);
+            // Load relations để trả về đầy đủ data
+            $club->load([
+                'members.user' => function ($query) {
+                    $query->with(User::FULL_RELATIONS);
+                },
+                'profile',
+                'creator'
+            ]);
 
             $message = $status === 'draft' ? 'Lưu bản nháp CLB thành công' : 'Tạo câu lạc bộ thành công';
             return ResponseHelper::success(new ClubResource($club), $message);
@@ -188,50 +198,177 @@ class ClubController extends Controller
 
     public function update(Request $request, $clubId)
     {
+        // 1. Validation - CHỈ require name
+        $request->validate([
+            'name' => "nullable|string|max:255|unique:clubs,name,{$clubId}",
+            'address' => 'nullable|string|max:255',
+            'latitude' => 'nullable|string',
+            'longitude' => 'nullable|string',
+            'logo_url' => 'nullable|image|max:2048',
+            'cover_image_url' => 'nullable|image|max:2048',
+            'status' => 'nullable|in:active,inactive,draft',
+            'is_public' => 'nullable|boolean',
+            // Profile fields
+            'description' => 'nullable|string',
+            'phone' => 'nullable|string|max:20',
+            'email' => 'nullable|email|max:255',
+            'website' => 'nullable|string|url|max:255',
+            'city' => 'nullable|string|max:100',
+            'province' => 'nullable|string|max:100',
+            'country' => 'nullable|string|max:100',
+        ]);
+
+        // 2. Kiểm tra quyền
         $club = Club::findOrFail($clubId);
         $userId = auth()->id();
+
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
+        }
 
         if (!$club->canManage($userId)) {
             return ResponseHelper::error('Chỉ admin/manager mới có quyền cập nhật CLB', 403);
         }
 
-        $request->validate([
-            'name' => "sometimes|string|max:255|unique:clubs,name,{$clubId}",
-            'address' => 'nullable|string|max:255',
-            'latitude' => 'nullable|string',
-            'longitude' => 'nullable|string',
-            'logo_url' => 'nullable|image|max:2048',
-        ]);
+        // 3. Kiểm tra có field nào được gửi lên không
+        $updatableFields = [
+            'name', 'address', 'latitude', 'longitude', 'logo_url', 'status', 'is_public',
+            'cover_image_url', 'description', 'phone', 'email', 'website', 'city', 'province', 'country'
+        ];
 
-        $logoPath = $club->getRawOriginal('logo_url');
-        if ($request->hasFile('logo_url')) {
-            $this->imageService->deleteOldImage($club->logo_url);
-            $logoPath = $this->imageService->optimize($request->file('logo_url'), 'logos');
+        $hasAnyField = $request->hasAny($updatableFields) ||
+                       $request->hasFile('logo_url') ||
+                       $request->hasFile('cover_image_url');
+
+        if (!$hasAnyField) {
+            return ResponseHelper::error('Không có trường nào được gửi lên để cập nhật', 400);
         }
 
-        $club->update([
-            'name' => $request->name ?? $club->name,
-            'address' => $request->address ?? $club->address,
-            'latitude' => $request->latitude ?? $club->latitude,
-            'longitude' => $request->longitude ?? $club->longitude,
-            'logo_url' => $logoPath ?? $club->getRawOriginal('logo_url'),
-        ]);
+        // 4. Transaction - Xử lý giống store()
+        return DB::transaction(function () use ($request, $club) {
+            // 4.1. Xử lý logo_url (nếu có file mới)
+            $logoPath = $club->getRawOriginal('logo_url');
+            if ($request->hasFile('logo_url')) {
+                // Xóa ảnh cũ
+                if ($logoPath) {
+                    $this->imageService->deleteOldImage($logoPath);
+                }
+                // Upload ảnh mới
+                $logoPath = $this->imageService->optimize($request->file('logo_url'), 'logos');
+            }
 
-        return ResponseHelper::success(new ClubResource($club->refresh()), 'Cập nhật câu lạc bộ thành công');
+            // 4.2. Update bảng clubs
+            $club->update([
+                'name' => $request->name ?? $club->name,
+                'address' => $request->address ?? $club->address,
+                'latitude' => $request->latitude ?? $club->latitude,
+                'longitude' => $request->longitude ?? $club->longitude,
+                'logo_url' => $logoPath,
+                'status' => $request->status ?? $club->status,
+                'is_public' => $request->has('is_public') ? $request->boolean('is_public') : $club->is_public,
+            ]);
+
+            // 4.3. Xử lý cover_image_url (nếu có file mới)
+            $profile = $club->profile;
+            if ($request->hasFile('cover_image_url')) {
+                // Xóa ảnh cũ
+                if ($profile && $profile->getRawCoverImagePath()) {
+                    $this->imageService->deleteOldImage($profile->getRawCoverImagePath());
+                }
+                // Upload ảnh mới
+                $coverPath = $this->imageService->optimize($request->file('cover_image_url'), 'covers');
+
+                // Update hoặc create profile
+                if ($profile) {
+                    $profile->update(['cover_image_url' => $coverPath]);
+                } else {
+                    $profile = ClubProfile::create([
+                        'club_id' => $club->id,
+                        'cover_image_url' => $coverPath,
+                    ]);
+                }
+            }
+
+            // 4.4. Update các field profile khác
+            if ($request->hasAny(['description', 'phone', 'email', 'website', 'city', 'province', 'country'])) {
+                // Load lại profile nếu chưa có
+                if (!$profile) {
+                    $profile = $club->profile;
+                }
+
+                if ($profile) {
+                    $profile->update([
+                        'description' => $request->description ?? $profile->description,
+                        'phone' => $request->phone ?? $profile->phone,
+                        'email' => $request->email ?? $profile->email,
+                        'website' => $request->website ?? $profile->website,
+                        'city' => $request->city ?? $profile->city,
+                        'province' => $request->province ?? $profile->province,
+                        'country' => $request->country ?? $profile->country,
+                    ]);
+                } else {
+                    // Tạo profile mới nếu chưa có
+                    ClubProfile::create([
+                        'club_id' => $club->id,
+                        'description' => $request->description,
+                        'phone' => $request->phone,
+                        'email' => $request->email,
+                        'website' => $request->website,
+                        'city' => $request->city,
+                        'province' => $request->province,
+                        'country' => $request->country,
+                    ]);
+                }
+            }
+
+            // 4.5. Load relations và return
+            $club->refresh()->load([
+                'members.user' => function ($query) {
+                    $query->with(User::FULL_RELATIONS);
+                },
+                'profile',
+                'creator'
+            ]);
+
+            return ResponseHelper::success(new ClubResource($club), 'Cập nhật câu lạc bộ thành công');
+        });
     }
 
     public function destroy($clubId)
     {
-        $club = Club::findOrFail($clubId);
+        // 1. Kiểm tra quyền
+        $club = Club::with('profile')->findOrFail($clubId);
         $userId = auth()->id();
+
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
+        }
 
         if (!$club->canManage($userId)) {
             return ResponseHelper::error('Chỉ admin/manager mới có quyền xóa CLB', 403);
         }
 
-        $club->delete();
+        // 2. Transaction - Xóa ảnh trước khi xóa record
+        return DB::transaction(function () use ($club) {
+            // 2.1. Xóa logo_url
+            $logoPath = $club->getRawOriginal('logo_url');
+            if ($logoPath) {
+                $this->imageService->deleteOldImage($logoPath);
+            }
 
-        return ResponseHelper::success([], 'Xóa câu lạc bộ thành công');
+            // 2.2. Xóa cover_image_url từ profile
+            if ($club->profile) {
+                $coverPath = $club->profile->getRawCoverImagePath();
+                if ($coverPath) {
+                    $this->imageService->deleteOldImage($coverPath);
+                }
+            }
+
+            // 2.3. Xóa club (cascade sẽ xóa profile và members nếu đã config trong migration)
+            $club->delete();
+
+            return ResponseHelper::success([], 'Xóa câu lạc bộ thành công');
+        });
     }
 
     /**
@@ -299,47 +436,6 @@ class ClubController extends Controller
         ], 'Lấy thông tin profile CLB thành công');
     }
 
-    public function updateProfile(Request $request, $clubId)
-    {
-        $club = Club::findOrFail($clubId);
-        $userId = auth()->id();
-
-        if (!$club->canManage($userId)) {
-            return ResponseHelper::error('Chỉ admin/manager mới có quyền cập nhật profile', 403);
-        }
-
-        $validated = $request->validate([
-            'description' => 'nullable|string',
-            'cover_image_url' => 'nullable|string|url',
-            'phone' => 'nullable|string|max:20',
-            'email' => 'nullable|email|max:255',
-            'website' => 'nullable|string|url|max:255',
-            'address' => 'nullable|string|max:500',
-            'city' => 'nullable|string|max:100',
-            'province' => 'nullable|string|max:100',
-            'country' => 'nullable|string|max:100',
-            'latitude' => 'nullable|numeric|between:-90,90',
-            'longitude' => 'nullable|numeric|between:-180,180',
-            'social_links' => 'nullable|array',
-            'settings' => 'nullable|array',
-        ]);
-
-        $profile = $club->profile;
-        if (!$profile) {
-            $profile = $club->profile()->create($validated);
-        } else {
-            $profile->update($validated);
-        }
-
-        $club->load('profile');
-
-        return ResponseHelper::success([
-            'club_id' => $club->id,
-            'name' => $club->name,
-            'profile' => $club->profile,
-        ], 'Cập nhật profile CLB thành công');
-    }
-
     public function getFund($clubId)
     {
         $club = Club::with(['wallets', 'mainWallet'])->findOrFail($clubId);
@@ -384,15 +480,11 @@ class ClubController extends Controller
         ], 'Cập nhật thông tin quỹ CLB thành công');
     }
 
-    /**
-     * Verify/Unverify a club (chỉ admin hệ thống)
-     */
     public function verify(Request $request, $clubId)
     {
         $club = Club::findOrFail($clubId);
         $user = auth()->user();
 
-        // Chỉ admin hệ thống mới có quyền verify
         if (!$user || $user->role !== User::ADMIN) {
             return ResponseHelper::error('Chỉ admin hệ thống mới có quyền verify CLB', 403);
         }

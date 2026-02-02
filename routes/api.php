@@ -190,7 +190,6 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
 
         Route::prefix('{clubId}')->group(function () {
             Route::get('/profile', [ClubController::class, 'getProfile']);
-            Route::put('/profile', [ClubController::class, 'updateProfile']);
             Route::get('/fund', [ClubController::class, 'getFund']);
             Route::put('/fund', [ClubController::class, 'updateFund']);
             Route::get('/fund/overview', [ClubWalletController::class, 'getFundOverview']);
