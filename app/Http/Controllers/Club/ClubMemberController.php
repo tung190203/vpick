@@ -47,15 +47,16 @@ class ClubMemberController extends Controller
         if (!empty($validated['status'])) {
             $query->where('status', $validated['status']);
         }
-        if (empty($validated['status'])) {
-            // Mặc định chỉ hiển thị thành viên đã join (membership_status = joined)
-            $query->where('membership_status', ClubMembershipStatus::Joined);
-        }
+        // Note: $club->members() đã filter membership_status = Joined, không cần thêm điều kiện này
 
         $perPage = $validated['per_page'] ?? 15;
         $members = $query->paginate($perPage);
 
-        $joined = fn () => $club->members()->where('membership_status', ClubMembershipStatus::Joined);
+        // Query tất cả members để tính statistics (không chỉ Joined)
+        $allMembers = fn () => ClubMember::where('club_id', $club->id)->whereHas('user');
+        // Query chỉ members đã joined và active cho total và by_role
+        $joined = fn () => $allMembers()->where('membership_status', ClubMembershipStatus::Joined);
+
         $statistics = [
             'total' => $joined()->where('status', ClubMemberStatus::Active)->count(),
             'by_role' => [
@@ -66,17 +67,17 @@ class ClubMemberController extends Controller
                 'member' => $joined()->where('status', ClubMemberStatus::Active)->where('role', ClubMemberRole::Member)->count(),
             ],
             'by_status' => [
-                'pending' => $club->members()->where('status', ClubMemberStatus::Pending)->count(),
-                'active' => $club->members()->where('status', ClubMemberStatus::Active)->count(),
-                'inactive' => $club->members()->where('status', ClubMemberStatus::Inactive)->count(),
-                'suspended' => $club->members()->where('status', ClubMemberStatus::Suspended)->count(),
+                'pending' => $allMembers()->where('status', ClubMemberStatus::Pending)->count(),
+                'active' => $allMembers()->where('status', ClubMemberStatus::Active)->count(),
+                'inactive' => $allMembers()->where('status', ClubMemberStatus::Inactive)->count(),
+                'suspended' => $allMembers()->where('status', ClubMemberStatus::Suspended)->count(),
             ],
             'by_membership_status' => [
-                'pending' => $club->members()->where('membership_status', ClubMembershipStatus::Pending)->count(),
-                'joined' => $club->members()->where('membership_status', ClubMembershipStatus::Joined)->count(),
-                'rejected' => $club->members()->where('membership_status', ClubMembershipStatus::Rejected)->count(),
-                'left' => $club->members()->where('membership_status', ClubMembershipStatus::Left)->count(),
-                'cancelled' => $club->members()->where('membership_status', ClubMembershipStatus::Cancelled)->count(),
+                'pending' => $allMembers()->where('membership_status', ClubMembershipStatus::Pending)->count(),
+                'joined' => $allMembers()->where('membership_status', ClubMembershipStatus::Joined)->count(),
+                'rejected' => $allMembers()->where('membership_status', ClubMembershipStatus::Rejected)->count(),
+                'left' => $allMembers()->where('membership_status', ClubMembershipStatus::Left)->count(),
+                'cancelled' => $allMembers()->where('membership_status', ClubMembershipStatus::Cancelled)->count(),
             ],
         ];
 
@@ -163,7 +164,15 @@ class ClubMemberController extends Controller
         $userId = auth()->id();
 
         $club = $member->club;
-        if (!$club->canManage($userId) && $member->user_id !== $userId) {
+        $isSelfUpdate = $member->user_id === $userId;
+        $canManage = $club->canManage($userId);
+
+        // Lấy role của user hiện tại trong club
+        $currentUserMember = $club->activeMembers()->where('user_id', $userId)->first();
+        $currentUserRole = $currentUserMember ? $currentUserMember->role : null;
+        $canUpdateRole = in_array($currentUserRole, [ClubMemberRole::Admin, ClubMemberRole::Secretary], true);
+
+        if (!$canManage && !$isSelfUpdate) {
             return ResponseHelper::error('Không có quyền thực hiện thao tác này', 403);
         }
 
@@ -175,7 +184,54 @@ class ClubMemberController extends Controller
             'rejection_reason' => 'nullable|string',
         ]);
 
-        return DB::transaction(function () use ($member, $validated, $userId) {
+        return DB::transaction(function () use ($member, $validated, $userId, $club, $isSelfUpdate, $canManage, $canUpdateRole, $currentUserRole) {
+            // Validation: Chỉ admin hoặc secretary mới được update role
+            if (isset($validated['role'])) {
+                if (!$canUpdateRole) {
+                    return ResponseHelper::error('Chỉ admin hoặc thư ký mới có quyền thay đổi role của thành viên', 403);
+                }
+
+                // Validation: Secretary không được set role = Admin
+                if ($currentUserRole === ClubMemberRole::Secretary && $validated['role'] === ClubMemberRole::Admin) {
+                    return ResponseHelper::error('Thư ký không có quyền chỉ định role Quản trị viên', 403);
+                }
+            }
+
+            // Validation: Không cho phép tự thay đổi role của chính mình
+            if (isset($validated['role']) && $isSelfUpdate) {
+                return ResponseHelper::error('Bạn không thể thay đổi role của chính mình', 403);
+            }
+
+            // Validation: Không cho phép tự suspend chính mình nếu là admin duy nhất
+            if (isset($validated['status']) && $isSelfUpdate) {
+                $newStatus = $validated['status'];
+                $isSuspendingSelf = in_array($newStatus, [ClubMemberStatus::Inactive, ClubMemberStatus::Suspended], true);
+
+                if ($isSuspendingSelf && $member->role === ClubMemberRole::Admin && !$club->hasAtLeastOneAdminAfterRemoving($member->id)) {
+                    return ResponseHelper::error('Bạn không thể tự suspend chính mình vì sẽ không còn admin nào trong CLB', 400);
+                }
+            }
+
+            // Validation: Admin/Manager không thể downgrade role của admin khác thành non-admin nếu đó là admin duy nhất
+            if (isset($validated['role']) && $canManage && $member->role === ClubMemberRole::Admin) {
+                $newRole = $validated['role'];
+                $isDowngradingAdmin = !in_array($newRole, [ClubMemberRole::Admin, ClubMemberRole::Manager], true);
+
+                if ($isDowngradingAdmin && !$club->hasAtLeastOneAdminAfterRemoving($member->id)) {
+                    return ResponseHelper::error('Không thể thay đổi role của admin này vì sẽ không còn admin nào trong CLB', 400);
+                }
+            }
+
+            // Validation: Không cho phép suspend admin nếu đó là admin duy nhất
+            if (isset($validated['status']) && $canManage) {
+                $newStatus = $validated['status'];
+                $isSuspending = in_array($newStatus, [ClubMemberStatus::Inactive, ClubMemberStatus::Suspended], true);
+
+                if ($isSuspending && $member->role === ClubMemberRole::Admin && !$club->hasAtLeastOneAdminAfterRemoving($member->id)) {
+                    return ResponseHelper::error('Không thể suspend admin này vì sẽ không còn admin nào trong CLB', 400);
+                }
+            }
+
             if (isset($validated['status']) && $validated['status'] === ClubMemberStatus::Active && $member->membership_status === ClubMembershipStatus::Pending) {
                 $member->update([
                     'membership_status' => ClubMembershipStatus::Joined,
@@ -225,6 +281,16 @@ class ClubMemberController extends Controller
         // Thành viên đang tham gia → đuổi (left + suspended)
         if ($member->membership_status !== ClubMembershipStatus::Joined || $member->status !== ClubMemberStatus::Active) {
             return ResponseHelper::error('Chỉ có thể đuổi thành viên đang tham gia hoặc hủy lời mời do chính bạn gửi', 400);
+        }
+
+        // Validation: Không cho phép kick chính mình
+        if ($member->user_id === $userId) {
+            return ResponseHelper::error('Bạn không thể đuổi chính mình khỏi CLB. Vui lòng sử dụng chức năng Rời CLB', 400);
+        }
+
+        // Validation: Đảm bảo có ít nhất 1 admin còn lại sau khi kick member này
+        if ($member->role === ClubMemberRole::Admin && !$club->hasAtLeastOneAdminAfterRemoving($member->id)) {
+            return ResponseHelper::error('Không thể đuổi admin này vì sẽ không còn admin nào trong CLB. Vui lòng chỉ định admin khác trước', 400);
         }
 
         $member->update([
@@ -297,7 +363,10 @@ class ClubMemberController extends Controller
     public function statistics($clubId)
     {
         $club = Club::findOrFail($clubId);
-        $joined = fn () => $club->members()->where('membership_status', ClubMembershipStatus::Joined);
+        // Query tất cả members để tính statistics (không chỉ Joined)
+        $allMembers = fn () => ClubMember::where('club_id', $club->id)->whereHas('user');
+        // Query chỉ members đã joined và active cho total và by_role
+        $joined = fn () => $allMembers()->where('membership_status', ClubMembershipStatus::Joined);
 
         $statistics = [
             'total' => $joined()->where('status', ClubMemberStatus::Active)->count(),
@@ -309,17 +378,17 @@ class ClubMemberController extends Controller
                 'member' => $joined()->where('status', ClubMemberStatus::Active)->where('role', ClubMemberRole::Member)->count(),
             ],
             'by_status' => [
-                'pending' => $club->members()->where('status', ClubMemberStatus::Pending)->count(),
-                'active' => $club->members()->where('status', ClubMemberStatus::Active)->count(),
-                'inactive' => $club->members()->where('status', ClubMemberStatus::Inactive)->count(),
-                'suspended' => $club->members()->where('status', ClubMemberStatus::Suspended)->count(),
+                'pending' => $allMembers()->where('status', ClubMemberStatus::Pending)->count(),
+                'active' => $allMembers()->where('status', ClubMemberStatus::Active)->count(),
+                'inactive' => $allMembers()->where('status', ClubMemberStatus::Inactive)->count(),
+                'suspended' => $allMembers()->where('status', ClubMemberStatus::Suspended)->count(),
             ],
             'by_membership_status' => [
-                'pending' => $club->members()->where('membership_status', ClubMembershipStatus::Pending)->count(),
-                'joined' => $club->members()->where('membership_status', ClubMembershipStatus::Joined)->count(),
-                'rejected' => $club->members()->where('membership_status', ClubMembershipStatus::Rejected)->count(),
-                'left' => $club->members()->where('membership_status', ClubMembershipStatus::Left)->count(),
-                'cancelled' => $club->members()->where('membership_status', ClubMembershipStatus::Cancelled)->count(),
+                'pending' => $allMembers()->where('membership_status', ClubMembershipStatus::Pending)->count(),
+                'joined' => $allMembers()->where('membership_status', ClubMembershipStatus::Joined)->count(),
+                'rejected' => $allMembers()->where('membership_status', ClubMembershipStatus::Rejected)->count(),
+                'left' => $allMembers()->where('membership_status', ClubMembershipStatus::Left)->count(),
+                'cancelled' => $allMembers()->where('membership_status', ClubMembershipStatus::Cancelled)->count(),
             ],
         ];
 
