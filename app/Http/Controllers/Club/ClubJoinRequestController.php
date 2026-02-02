@@ -39,7 +39,8 @@ class ClubJoinRequestController extends Controller
         // Mặc định chỉ lấy pending = yêu cầu tham gia từ user (invited_by null), không bao gồm lời mời từ admin
         $status = $validated['status'] ?? 'pending';
 
-        $query = $club->members()
+        // Query trực tiếp từ ClubMember để tránh filter sai từ members() relationship
+        $query = ClubMember::where('club_id', $club->id)
             ->with([
                 'user' => User::FULL_RELATIONS,
                 'reviewer',
