@@ -5,6 +5,7 @@ namespace App\Exceptions;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -47,5 +48,35 @@ class Handler extends ExceptionHandler
         return $request->expectsJson()
             ? response()->json(['message' => 'Unauthenticated.'], 401)
             : response()->json(['message' => 'Unauthenticated.'], 401);
+    }
+
+    /**
+     * Render an exception into an HTTP response.
+     */
+    public function render($request, Throwable $e)
+    {
+        // Handle validation exceptions for API routes
+        if ($e instanceof ValidationException && $request->is('api/*')) {
+            // Get translated error messages - Laravel automatically translates them
+            $errors = [];
+            foreach ($e->errors() as $key => $messages) {
+                $errors[$key] = array_map(function ($message) use ($key) {
+                    // If message is still a translation key, translate it with attribute
+                    if (str_starts_with($message, 'validation.')) {
+                        $attribute = trans('validation.attributes.' . $key, [], 'vi', false) ?: $key;
+                        return trans($message, ['attribute' => $attribute], 'vi');
+                    }
+                    return $message;
+                }, $messages);
+            }
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed',
+                'errors' => $errors,
+            ], 422);
+        }
+
+        return parent::render($request, $e);
     }
 }
