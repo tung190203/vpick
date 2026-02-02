@@ -11,6 +11,7 @@ import ForgotPasswordPage from '@/components/pages/auth/password/ForgotPasswordP
 import ResetPasswordPage from '@/components/pages/auth/password/ResetPasswordPage.vue'
 import Leaderboard from '@/components/pages/leader-board/Leaderboard.vue'
 import ClubPage from '@/components/pages/club/ClubPage.vue'
+import ClubFundPage from '@/components/pages/club/ClubFundPage.vue'
 import ClubDetailPage from '@/components/pages/club/ClubDetailPage.vue'
 import TournamentPage from '@/components/pages/tournament/TournamentPage.vue'
 import TournamentDetail from '@/components/pages/tournament/TournamentDetail.vue'
@@ -228,6 +229,11 @@ export const route = [
             path: ':id',
             name: 'club-detail',
             component: ClubDetailPage,
+          },
+          {
+            path: ':id/fund',
+            name: 'club-fund',
+            component: ClubFundPage,
           }
         ]
       },

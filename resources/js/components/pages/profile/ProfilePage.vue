@@ -2,36 +2,77 @@
     <div class="p-4 max-w-6xl mx-auto">
         <div class="max-w-7xl mx-auto h-screen">
             <!-- Background Banner -->
-            <div class="relative w-full h-[270px] rounded-[8px] shadow-lg text-white cursor-pointer"
-                :style="backgroundStyle">
-                <!-- Button Update Thumbnail -->
-                <button 
-                    v-if="isOwner"
-                    class="absolute bottom-4 right-4 text-black bg-white rounded-md px-4 py-2 cursor-pointer shadow-md"
-                    @click="triggerThumbnailPicker">
-                     {{ user.thumbnail == null ? 'Thêm ảnh bìa' : 'Thay ảnh bìa' }}
-                </button>
+            <div class="relative w-full h-[270px] rounded-[8px] shadow-lg text-white">
+                <!-- Clickable Background Area -->
+                <div class="absolute inset-0 rounded-[8px] cursor-pointer"
+                    :style="backgroundStyle"
+                    @click="openImageViewer(user.thumbnail || Background)">
+                </div>
+                
+
+
+                <!-- Minimalist Dropdown Button -->
+                <div class="absolute bottom-4 right-4 z-20" v-click-outside="closeThumbnailMenu">
+                    <button 
+                        class="text-black bg-white/95 hover:bg-white rounded-full p-2 cursor-pointer shadow-md flex items-center justify-center transition-all"
+                        @click.stop="toggleThumbnailMenu">
+                        <ChevronDownIcon class="w-5 h-5 text-gray-700" />
+                    </button>
+
+                    <!-- Dropdown Menu -->
+                    <div v-if="showThumbnailMenu"
+                        class="absolute bottom-full mb-2 right-0 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-30 min-w-[180px]"
+                        @click.stop>
+                        <div class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm text-gray-700 flex items-center gap-2"
+                            @click.stop="openImageViewer(user.thumbnail || Background)">
+                            <EyeIcon class="w-4 h-4" />
+                            Xem ảnh bìa
+                        </div>
+                        <div v-if="isOwner"
+                            class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm text-gray-700 flex items-center gap-2 border-t"
+                            @click.stop="triggerThumbnailPicker(); closeThumbnailMenu()">
+                            <PencilIcon class="w-4 h-4" />
+                            Thay ảnh bìa
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- INPUT FILE ẨN Thumbnail -->
                 <input type="file" accept="image/*" ref="thumbnailInput" class="hidden"
                     @change="handleThumbnailChange" />
 
                 <!-- Avatar + Name -->
-                <div class="absolute -bottom-32 left-10 flex flex-col items-start z-20">
-                    <div class="relative">
-                        <div class="w-[120px] h-[120px] rounded-full overflow-hidden border-2 border-white shadow-md"
-                            :class="{ 'cursor-pointer': isOwner }"
-                            @click="isOwner && triggerAvatarPicker()">
+                <div class="absolute -bottom-32 left-10 flex flex-col items-start z-20" @click.stop>
+                    <div class="relative" v-click-outside="closeAvatarMenu">
+                        <div class="w-[120px] h-[120px] rounded-full overflow-hidden border-2 border-white shadow-md cursor-pointer"
+                            @click="toggleAvatarMenu">
                             <img :src="user.avatar_url || defaultAvatar" alt="User Avatar"
                                 class="w-full h-full object-cover" />
                         </div>
 
-                        <!-- Button Update Avatar -->
+                        <!-- Button Update Avatar (pencil icon) -->
                         <button 
                             v-if="isOwner"
                             class="absolute bottom-1 right-1 bg-[#4392E0] rounded-full p-2 cursor-pointer shadow"
-                            @click="triggerAvatarPicker">
+                            @click="toggleAvatarMenu">
                             <PencilIcon class="w-4 h-4 text-white" />
                         </button>
+
+                        <!-- Avatar Options Menu -->
+                        <div v-if="showAvatarMenu"
+                            class="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-30 min-w-[180px]">
+                            <div class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm text-gray-700 flex items-center gap-2"
+                                @click="openImageViewer(user.avatar_url || defaultAvatar)">
+                                <EyeIcon class="w-4 h-4" />
+                                Xem ảnh
+                            </div>
+                            <div v-if="isOwner"
+                                class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm text-gray-700 flex items-center gap-2"
+                                @click="triggerAvatarPicker">
+                                <PencilIcon class="w-4 h-4" />
+                                Đổi ảnh đại diện
+                            </div>
+                        </div>
 
                         <!-- INPUT FILE ẨN Avatar -->
                         <input type="file" accept="image/*" ref="avatarInput" class="hidden"
@@ -175,12 +216,43 @@
             @close="closeSportModal"
             @save="handleSaveSports"
         />
+
+        <!-- Image Viewer Lightbox -->
+        <Teleport to="body">
+            <Transition name="fade">
+                <div v-if="showImageViewer" 
+                    class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
+                    @click="closeImageViewer">
+                    <button 
+                        class="absolute top-6 right-6 text-white p-2 hover:bg-white/10 rounded-full transition-colors"
+                        @click="closeImageViewer">
+                        <XMarkIcon class="w-8 h-8" />
+                    </button>
+                    
+                    <div class="relative max-w-4xl max-h-[90vh] flex items-center justify-center" @click.stop>
+                        <img 
+                            :src="viewerImageUrl" 
+                            alt="User Large Image"
+                            class="max-w-full max-h-full object-contain rounded-lg shadow-2xl animate-scale-up border-4 border-white/20" />
+                    </div>
+                </div>
+            </Transition>
+        </Teleport>
+
+        <!-- Image Cropper Modal -->
+        <ImageCropperModal
+            :is-open="showCropper"
+            :image="imageToCrop"
+            :stencil-props="cropperStencilProps"
+            @close="showCropper = false"
+            @save="onCropSave"
+        />
     </div>
 </template>
 
 <script setup>
 import { onMounted, ref, computed } from 'vue';
-import Background from "@/assets/images/dashboard-bg.svg";
+import Background from "@/assets/images/dashboard-bg.svg?url";
 import maleIcon from '@/assets/images/male.svg';
 import femaleIcon from '@/assets/images/female.svg';
 import { vClickOutside } from "@/directives/clickOutside";
@@ -189,6 +261,7 @@ import * as SportService from '@/service/sport';
 import {
     CalendarIcon,
     ChevronRightIcon,
+    ChevronDownIcon,
     StarIcon as StarIconSolid
 } from "@heroicons/vue/24/solid";
 
@@ -196,13 +269,17 @@ import {
     StarIcon,
     ChatBubbleBottomCenterTextIcon,
     PencilIcon,
+    CameraIcon,
     ExclamationCircleIcon,
     QuestionMarkCircleIcon,
-    HomeIcon
+    HomeIcon,
+    EyeIcon,
+    XMarkIcon
 } from "@heroicons/vue/24/outline";
 
 import SportLevelCard from "@/components/molecules/SportLevelCard.vue";
 import SportSelectCard from "@/components/molecules/SportSelectCard.vue";
+import ImageCropperModal from "@/components/molecules/ImageCropperModal.vue";
 import { useRoute } from "vue-router";
 import { toast } from "vue3-toastify";
 import { useUserStore } from "@/store/auth";
@@ -221,8 +298,23 @@ const sports = ref([]);
 const clubs = ref([]);
 const openIndex = ref(null);
 const showVisibilityMenu = ref(false);
+const showAvatarMenu = ref(false);
+const showThumbnailMenu = ref(false);
+const showImageViewer = ref(false);
+const viewerImageUrl = ref('');
 const showSportModal = ref(false);
 const allSports = ref([]);
+
+// Cropper
+const showCropper = ref(false);
+const imageToCrop = ref(null);
+const cropperType = ref('avatar'); // 'avatar' or 'thumbnail'
+const cropperStencilProps = computed(() => {
+    if (cropperType.value === 'avatar') {
+        return { aspectRatio: 1 };
+    }
+    return { aspectRatio: 1152 / 270 };
+});
 
 // Avatar
 const avatarInput = ref(null);
@@ -259,6 +351,32 @@ const toggleVisibilityMenu = () => {
 
 const closeVisibilityMenu = () => {
     showVisibilityMenu.value = false;
+};
+
+const toggleAvatarMenu = () => {
+    showAvatarMenu.value = !showAvatarMenu.value;
+};
+
+const closeAvatarMenu = () => {
+    showAvatarMenu.value = false;
+};
+
+const openImageViewer = (url) => {
+    viewerImageUrl.value = url;
+    showImageViewer.value = true;
+    showAvatarMenu.value = false;
+};
+
+const closeImageViewer = () => {
+    showImageViewer.value = false;
+};
+
+const toggleThumbnailMenu = () => {
+    showThumbnailMenu.value = !showThumbnailMenu.value;
+};
+
+const closeThumbnailMenu = () => {
+    showThumbnailMenu.value = false;
 };
 
 const changeVisibility = async (newVisibility) => {
@@ -334,36 +452,55 @@ const updateInfoUser = async (data) => {
 };
 
 // Upload Avatar
-const handleAvatarChange = async (event) => {
+const handleAvatarChange = (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
-    const formData = new FormData();
-    formData.append("full_name", user.value.full_name);
-    formData.append("avatar_url", file);
-
-    try {
-        await updateInfoUser(formData);
-        toast.success("Cập nhật ảnh đại diện thành công!");
-    } catch (error) {
-        toast.error(error.response?.data?.message || "Lỗi khi cập nhật ảnh đại diện");
-    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        imageToCrop.value = e.target.result;
+        cropperType.value = 'avatar';
+        showCropper.value = true;
+        showAvatarMenu.value = false;
+    };
+    reader.readAsDataURL(file);
 };
 
 // Upload Thumbnail (Background)
-const handleThumbnailChange = async (event) => {
+const handleThumbnailChange = (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        imageToCrop.value = e.target.result;
+        cropperType.value = 'thumbnail';
+        showCropper.value = true;
+    };
+    reader.readAsDataURL(file);
+};
+
+const onCropSave = async (blob) => {
+    showCropper.value = false;
     const formData = new FormData();
     formData.append("full_name", user.value.full_name);
-    formData.append("thumbnail", file);
-
-    try {
-        await updateInfoUser(formData);
-        toast.success("Cập nhật ảnh bìa thành công!");
-    } catch (error) {
-        toast.error(error.response?.data?.message || "Lỗi khi cập nhật ảnh bìa");
+    
+    if (cropperType.value === 'avatar') {
+        formData.append("avatar_url", blob, "avatar.jpg");
+        try {
+            await updateInfoUser(formData);
+            toast.success("Cập nhật ảnh đại diện thành công!");
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Lỗi khi cập nhật ảnh đại diện");
+        }
+    } else {
+        formData.append("thumbnail", blob, "thumbnail.jpg");
+        try {
+            await updateInfoUser(formData);
+            toast.success("Cập nhật ảnh bìa thành công!");
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Lỗi khi cập nhật ảnh bìa");
+        }
     }
 };
 
@@ -377,4 +514,30 @@ onMounted(async () => {
     background-size: cover;
     background-position: center;
 }
+
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
+
+.animate-scale-up {
+    animation: scale-up 0.3s ease-out;
+}
+
+@keyframes scale-up {
+    from {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
 </style>
+```
