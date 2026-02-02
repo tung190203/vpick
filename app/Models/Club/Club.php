@@ -56,13 +56,16 @@ class Club extends Model
 
     public function members()
     {
-        return $this->hasMany(ClubMember::class);
+        return $this->hasMany(ClubMember::class)
+            ->whereHas('user') // Chỉ lấy members có user tồn tại
+            ->where('membership_status', ClubMembershipStatus::Joined); // Chỉ lấy members đã joined (loại bỏ pending, left, rejected, cancelled)
     }
 
     /** Thành viên đang tham gia (membership_status = joined, status = active). */
     public function activeMembers()
     {
         return $this->hasMany(ClubMember::class)
+            ->whereHas('user') // Chỉ lấy members có user tồn tại
             ->where('membership_status', ClubMembershipStatus::Joined)
             ->where('status', ClubMemberStatus::Active);
     }
@@ -71,6 +74,7 @@ class Club extends Model
     public function pendingJoinRequests()
     {
         return $this->hasMany(ClubMember::class)
+            ->whereHas('user') // Chỉ lấy members có user tồn tại
             ->where('membership_status', ClubMembershipStatus::Pending);
     }
 
@@ -78,6 +82,7 @@ class Club extends Model
     public function joinedMembers()
     {
         return $this->hasMany(ClubMember::class)
+            ->whereHas('user') // Chỉ lấy members có user tồn tại
             ->where('membership_status', ClubMembershipStatus::Joined);
     }
 
@@ -203,7 +208,7 @@ class Club extends Model
     {
         $member = $this->activeMembers()->where('user_id', $userId)->first();
         if (!$member) return false;
-        
+
         return in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager]);
     }
 
@@ -211,7 +216,7 @@ class Club extends Model
     {
         $member = $this->activeMembers()->where('user_id', $userId)->first();
         if (!$member) return false;
-        
+
         return in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Treasurer]);
     }
 
