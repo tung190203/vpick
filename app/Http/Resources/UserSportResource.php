@@ -12,7 +12,7 @@ class UserSportResource extends JsonResource
     {
         $types = ['personal_score', 'dupr_score', 'vndupr_score'];
         $scores = $this->relationLoaded('scores') ? $this->scores : collect();
-        
+
         $formattedScores = [];
         foreach ($types as $type) {
             $latestScore = $scores->where('score_type', $type)->sortByDesc('created_at')->first();
@@ -68,7 +68,9 @@ class UserSportResource extends JsonResource
             'scores'     => $formattedScores,
             'total_matches' => $totalMatches,
             'total_tournaments' => $tournamentsCount,
-            'total_prizes' => 0 // fix cứng vì chưa có đề bài
+            'total_prizes' => 0,
+            'win_rate' => $this->getAttribute('win_rate') ?? 0,
+            'performance' => $this->getAttribute('performance') ?? 0,
         ];
     }
 }

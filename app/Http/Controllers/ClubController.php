@@ -11,6 +11,9 @@ use App\Models\Club\Club;
 use App\Models\Club\ClubMember;
 use App\Models\Club\ClubProfile;
 use App\Models\User;
+use App\Models\VnduprHistory;
+use App\Models\Matches;
+use App\Models\MiniMatch;
 use App\Http\Resources\ClubResource;
 use App\Services\GeocodingService;
 use App\Services\ImageOptimizationService;
@@ -37,7 +40,24 @@ class ClubController extends Controller
             'maxLng' => 'nullable',
             'perPage' => 'sometimes|integer|min:1|max:200',
         ]);
+
+        $userId = auth()->id();
         $query = Club::withFullRelations()->orderBy('created_at', 'desc');
+
+            // Filter private clubs: Chỉ hiển thị public clubs HOẶC clubs mà user là member/creator
+        if ($userId) {
+            $query->where(function ($q) use ($userId) {
+                $q->where('is_public', true)
+                  ->orWhere('created_by', $userId)
+                  ->orWhereHas('members', function ($memberQuery) use ($userId) {
+                      $memberQuery->where('user_id', $userId)
+                                  ->where('membership_status', ClubMembershipStatus::Joined)
+                                  ->where('status', ClubMemberStatus::Active);
+                  });
+            });
+        } else {
+            $query->where('is_public', true);
+        }
 
         if (!empty($validated['name'])) {
             $query->search(['name'], $validated['name']);
@@ -94,13 +114,14 @@ class ClubController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            // Figma: Tên câu lạc bộ
             'name' => 'required|string|max:255|unique:clubs',
             'address' => 'nullable|string|max:255',
             'latitude' => 'nullable|string',
             'longitude' => 'nullable|string',
-            'logo_url' => 'required|image|max:2048',
-            'cover_image_url' => 'required|image|max:2048',
+            'logo_url' => 'nullable|image|max:2048',
+            'cover_image_url' => 'nullable|image|max:2048',
+            'status' => 'nullable|in:active,inactive,draft',
+            'is_public' => 'nullable|in:0,1,true,false',
         ]);
 
         $userId = auth()->id();
@@ -108,15 +129,16 @@ class ClubController extends Controller
             return ResponseHelper::error('Bạn cần đăng nhập để tạo CLB', 401);
         }
 
-        $logoFile = $request->file('logo_url');
-        $coverFile = $request->file('cover_image_url');
-        if (!$logoFile || !$coverFile) {
-            return ResponseHelper::error('Vui lòng gửi đầy đủ ảnh logo và ảnh bìa (form-data, type File)', 422);
-        }
+        return DB::transaction(function () use ($request, $userId) {
+            $logoPath = null;
+            if ($request->hasFile('logo_url')) {
+                $logoPath = $this->imageService->optimize($request->file('logo_url'), 'logos');
+            }
 
-        return DB::transaction(function () use ($request, $userId, $logoFile, $coverFile) {
-            $logoPath = $this->imageService->optimize($logoFile, 'logos');
-            $coverPath = $this->imageService->optimize($coverFile, 'covers');
+            $coverPath = null;
+            if ($request->hasFile('cover_image_url')) {
+                $coverPath = $this->imageService->optimize($request->file('cover_image_url'), 'covers');
+            }
 
             $status = $request->input('status', 'active');
             $isPublic = $request->boolean('is_public', true);
@@ -132,12 +154,13 @@ class ClubController extends Controller
                 'created_by' => $userId,
             ]);
 
-            ClubProfile::create([
-                'club_id' => $club->id,
-                'cover_image_url' => asset('storage/' . $coverPath),
-            ]);
+            if ($coverPath) {
+                ClubProfile::create([
+                    'club_id' => $club->id,
+                    'cover_image_url' => $coverPath,
+                ]);
+            }
 
-            // Tự động tạo member với role admin cho người tạo CLB
             ClubMember::create([
                 'club_id' => $club->id,
                 'user_id' => $userId,
@@ -147,7 +170,13 @@ class ClubController extends Controller
                 'joined_at' => now(),
             ]);
 
-            $club->load(['members' => ['user' => User::FULL_RELATIONS], 'profile']);
+            $club->load([
+                'members.user' => function ($query) {
+                    $query->with(User::FULL_RELATIONS);
+                },
+                'profile',
+                'creator'
+            ]);
 
             $message = $status === 'draft' ? 'Lưu bản nháp CLB thành công' : 'Tạo câu lạc bộ thành công';
             return ResponseHelper::success(new ClubResource($club), $message);
@@ -158,7 +187,25 @@ class ClubController extends Controller
     {
         $club = Club::withFullRelations()->findOrFail($clubId);
 
-        // Chỉ hiển thị thành viên đã join (membership_status = joined)
+        if (!$club->is_public) {
+            $userId = auth()->id();
+
+            if (!$userId) {
+                return ResponseHelper::error('CLB này là riêng tư. Bạn cần đăng nhập để xem', 401);
+            }
+
+            $isCreator = $club->created_by === $userId;
+            $isMember = $club->members()
+                ->where('user_id', $userId)
+                ->where('membership_status', ClubMembershipStatus::Joined)
+                ->where('status', ClubMemberStatus::Active)
+                ->exists();
+
+            if (!$isCreator && !$isMember) {
+                return ResponseHelper::error('Bạn không có quyền xem CLB riêng tư này', 403);
+            }
+        }
+
         $members = $club->joinedMembers()->with(['user' => User::FULL_RELATIONS])->get();
 
         $members = $members->map(function ($member) {
@@ -174,6 +221,12 @@ class ClubController extends Controller
                         break;
                     }
                 }
+
+                foreach ($user->sports ?? [] as $userSport) {
+                    $stats = $this->calculateWinRateAndPerformance($user->id, $userSport->sport_id);
+                    $userSport->setAttribute('win_rate', $stats['win_rate']);
+                    $userSport->setAttribute('performance', $stats['performance']);
+                }
             }
             $member->user?->setAttribute('club_score', $score);
             return $member;
@@ -188,56 +241,157 @@ class ClubController extends Controller
 
     public function update(Request $request, $clubId)
     {
+        $request->validate([
+            'name' => "nullable|string|max:255|unique:clubs,name,{$clubId}",
+            'address' => 'nullable|string|max:255',
+            'latitude' => 'nullable|string',
+            'longitude' => 'nullable|string',
+            'logo_url' => 'nullable|image|max:2048',
+            'cover_image_url' => 'nullable|image|max:2048',
+            'status' => 'nullable|in:active,inactive,draft',
+            'is_public' => 'nullable|boolean',
+            'description' => 'nullable|string',
+            'phone' => 'nullable|string|max:20',
+            'email' => 'nullable|email|max:255',
+            'website' => 'nullable|string|url|max:255',
+            'city' => 'nullable|string|max:100',
+            'province' => 'nullable|string|max:100',
+            'country' => 'nullable|string|max:100',
+        ]);
+
         $club = Club::findOrFail($clubId);
         $userId = auth()->id();
+
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
+        }
 
         if (!$club->canManage($userId)) {
             return ResponseHelper::error('Chỉ admin/manager mới có quyền cập nhật CLB', 403);
         }
 
-        $request->validate([
-            'name' => "sometimes|string|max:255|unique:clubs,name,{$clubId}",
-            'address' => 'nullable|string|max:255',
-            'latitude' => 'nullable|string',
-            'longitude' => 'nullable|string',
-            'logo_url' => 'nullable|image|max:2048',
-        ]);
+        $updatableFields = [
+            'name', 'address', 'latitude', 'longitude', 'logo_url', 'status', 'is_public',
+            'cover_image_url', 'description', 'phone', 'email', 'website', 'city', 'province', 'country'
+        ];
 
-        $logoPath = $club->getRawOriginal('logo_url');
-        if ($request->hasFile('logo_url')) {
-            $this->imageService->deleteOldImage($club->logo_url);
-            $logoPath = $this->imageService->optimize($request->file('logo_url'), 'logos');
+        $hasAnyField = $request->hasAny($updatableFields) ||
+                       $request->hasFile('logo_url') ||
+                       $request->hasFile('cover_image_url');
+
+        if (!$hasAnyField) {
+            return ResponseHelper::error('Không có trường nào được gửi lên để cập nhật', 400);
         }
 
-        $club->update([
-            'name' => $request->name ?? $club->name,
-            'address' => $request->address ?? $club->address,
-            'latitude' => $request->latitude ?? $club->latitude,
-            'longitude' => $request->longitude ?? $club->longitude,
-            'logo_url' => $logoPath ?? $club->getRawOriginal('logo_url'),
-        ]);
+        return DB::transaction(function () use ($request, $club) {
+            $logoPath = $club->getRawOriginal('logo_url');
+            if ($request->hasFile('logo_url')) {
+                if ($logoPath) {
+                    $this->imageService->deleteOldImage($logoPath);
+                }
+                $logoPath = $this->imageService->optimize($request->file('logo_url'), 'logos');
+            }
 
-        return ResponseHelper::success(new ClubResource($club->refresh()), 'Cập nhật câu lạc bộ thành công');
+            $club->update([
+                'name' => $request->name ?? $club->name,
+                'address' => $request->address ?? $club->address,
+                'latitude' => $request->latitude ?? $club->latitude,
+                'longitude' => $request->longitude ?? $club->longitude,
+                'logo_url' => $logoPath,
+                'status' => $request->status ?? $club->status,
+                'is_public' => $request->has('is_public') ? $request->boolean('is_public') : $club->is_public,
+            ]);
+
+            $profile = $club->profile;
+            if ($request->hasFile('cover_image_url')) {
+                if ($profile && $profile->getRawCoverImagePath()) {
+                    $this->imageService->deleteOldImage($profile->getRawCoverImagePath());
+                }
+                $coverPath = $this->imageService->optimize($request->file('cover_image_url'), 'covers');
+
+                if ($profile) {
+                    $profile->update(['cover_image_url' => $coverPath]);
+                } else {
+                    $profile = ClubProfile::create([
+                        'club_id' => $club->id,
+                        'cover_image_url' => $coverPath,
+                    ]);
+                }
+            }
+
+            if ($request->hasAny(['description', 'phone', 'email', 'website', 'city', 'province', 'country'])) {
+                if (!$profile) {
+                    $profile = $club->profile;
+                }
+
+                if ($profile) {
+                    $profile->update([
+                        'description' => $request->description ?? $profile->description,
+                        'phone' => $request->phone ?? $profile->phone,
+                        'email' => $request->email ?? $profile->email,
+                        'website' => $request->website ?? $profile->website,
+                        'city' => $request->city ?? $profile->city,
+                        'province' => $request->province ?? $profile->province,
+                        'country' => $request->country ?? $profile->country,
+                    ]);
+                } else {
+                    ClubProfile::create([
+                        'club_id' => $club->id,
+                        'description' => $request->description,
+                        'phone' => $request->phone,
+                        'email' => $request->email,
+                        'website' => $request->website,
+                        'city' => $request->city,
+                        'province' => $request->province,
+                        'country' => $request->country,
+                    ]);
+                }
+            }
+
+            $club->refresh()->load([
+                'members.user' => function ($query) {
+                    $query->with(User::FULL_RELATIONS);
+                },
+                'profile',
+                'creator'
+            ]);
+
+            return ResponseHelper::success(new ClubResource($club), 'Cập nhật câu lạc bộ thành công');
+        });
     }
 
     public function destroy($clubId)
     {
-        $club = Club::findOrFail($clubId);
+        $club = Club::with('profile')->findOrFail($clubId);
         $userId = auth()->id();
+
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
+        }
 
         if (!$club->canManage($userId)) {
             return ResponseHelper::error('Chỉ admin/manager mới có quyền xóa CLB', 403);
         }
 
-        $club->delete();
+        return DB::transaction(function () use ($club) {
+            $logoPath = $club->getRawOriginal('logo_url');
+            if ($logoPath) {
+                $this->imageService->deleteOldImage($logoPath);
+            }
 
-        return ResponseHelper::success([], 'Xóa câu lạc bộ thành công');
+            if ($club->profile) {
+                $coverPath = $club->profile->getRawCoverImagePath();
+                if ($coverPath) {
+                    $this->imageService->deleteOldImage($coverPath);
+                }
+            }
+
+            $club->delete();
+
+            return ResponseHelper::success([], 'Xóa câu lạc bộ thành công');
+        });
     }
 
-    /**
-     * User rời CLB (chỉ thành viên active mới được gọi)
-     * POST /api/clubs/{clubId}/leave
-     */
     public function leave($clubId)
     {
         $club = Club::findOrFail($clubId);
@@ -299,47 +453,6 @@ class ClubController extends Controller
         ], 'Lấy thông tin profile CLB thành công');
     }
 
-    public function updateProfile(Request $request, $clubId)
-    {
-        $club = Club::findOrFail($clubId);
-        $userId = auth()->id();
-
-        if (!$club->canManage($userId)) {
-            return ResponseHelper::error('Chỉ admin/manager mới có quyền cập nhật profile', 403);
-        }
-
-        $validated = $request->validate([
-            'description' => 'nullable|string',
-            'cover_image_url' => 'nullable|string|url',
-            'phone' => 'nullable|string|max:20',
-            'email' => 'nullable|email|max:255',
-            'website' => 'nullable|string|url|max:255',
-            'address' => 'nullable|string|max:500',
-            'city' => 'nullable|string|max:100',
-            'province' => 'nullable|string|max:100',
-            'country' => 'nullable|string|max:100',
-            'latitude' => 'nullable|numeric|between:-90,90',
-            'longitude' => 'nullable|numeric|between:-180,180',
-            'social_links' => 'nullable|array',
-            'settings' => 'nullable|array',
-        ]);
-
-        $profile = $club->profile;
-        if (!$profile) {
-            $profile = $club->profile()->create($validated);
-        } else {
-            $profile->update($validated);
-        }
-
-        $club->load('profile');
-
-        return ResponseHelper::success([
-            'club_id' => $club->id,
-            'name' => $club->name,
-            'profile' => $club->profile,
-        ], 'Cập nhật profile CLB thành công');
-    }
-
     public function getFund($clubId)
     {
         $club = Club::with(['wallets', 'mainWallet'])->findOrFail($clubId);
@@ -384,15 +497,11 @@ class ClubController extends Controller
         ], 'Cập nhật thông tin quỹ CLB thành công');
     }
 
-    /**
-     * Verify/Unverify a club (chỉ admin hệ thống)
-     */
     public function verify(Request $request, $clubId)
     {
         $club = Club::findOrFail($clubId);
         $user = auth()->user();
 
-        // Chỉ admin hệ thống mới có quyền verify
         if (!$user || $user->role !== User::ADMIN) {
             return ResponseHelper::error('Chỉ admin hệ thống mới có quyền verify CLB', 403);
         }
@@ -433,5 +542,97 @@ class ClubController extends Controller
         $result = $geocoder->getGooglePlaceDetail($validated['place_id']);
 
         return ResponseHelper::success($result, 'Lấy chi tiết địa điểm thành công');
+    }
+
+    private function calculateWinRateAndPerformance($userId, $sportId): array
+    {
+        $histories = VnduprHistory::where('user_id', $userId)
+            ->latest()
+            ->take(10)
+            ->get();
+
+        $uniqueHistories = collect();
+        $seen = [];
+        foreach ($histories as $h) {
+            $key = $h->match_id ? 'match_' . $h->match_id : 'mini_' . $h->mini_match_id;
+            if (!isset($seen[$key])) {
+                $seen[$key] = true;
+                $uniqueHistories->push($h);
+            }
+        }
+
+        $totalMatches = $uniqueHistories->count();
+        $wins = 0;
+        $totalPoint = 0;
+
+        if ($totalMatches > 0) {
+            $matchIds = $uniqueHistories->pluck('match_id')->filter()->unique()->values()->all();
+            $miniIds  = $uniqueHistories->pluck('mini_match_id')->filter()->unique()->values()->all();
+
+            $matches = Matches::whereIn('id', $matchIds)->get()->keyBy('id');
+            $minis = MiniMatch::withFullRelations()->whereIn('id', $miniIds)->get()->keyBy('id');
+
+            $teamIds = $matches->pluck('winner_id')->filter()->unique()->values()->all();
+            $teamMembersByTeam = collect();
+            if (!empty($teamIds)) {
+                $members = DB::table('team_members')
+                    ->whereIn('team_id', $teamIds)
+                    ->get();
+                $teamMembersByTeam = $members->groupBy('team_id')
+                    ->map(fn($rows) => $rows->pluck('user_id')->flip());
+            }
+
+            $miniTeamMembersByTeam = DB::table('mini_team_members')
+                ->whereIn(
+                    'mini_team_id',
+                    $minis->pluck('team1_id')
+                        ->merge($minis->pluck('team2_id'))
+                        ->filter()
+                        ->unique()
+                )
+                ->get()
+                ->groupBy('mini_team_id')
+                ->map(fn($rows) => $rows->pluck('user_id')->flip());
+
+            foreach ($uniqueHistories->values() as $index => $history) {
+                $isWin = false;
+
+                if ($history->match_id) {
+                    $match = $matches->get($history->match_id);
+                    if ($match && $match->winner_id) {
+                        $teamMembers = $teamMembersByTeam->get($match->winner_id);
+                        $isWin = $teamMembers ? $teamMembers->has($userId) : false;
+                    }
+                }
+                elseif ($history->mini_match_id) {
+                    $mini = $minis->get($history->mini_match_id);
+                    if ($mini && $mini->team_win_id) {
+                        $winningTeamMembers = $miniTeamMembersByTeam->get($mini->team_win_id);
+                        $isWin = $winningTeamMembers ? $winningTeamMembers->has($userId) : false;
+                    }
+                }
+
+                if ($isWin) {
+                    $wins++;
+                    $coef = $index < 3 ? 1.5 : 1.0;
+                    $totalPoint += 10 * $coef;
+                }
+            }
+        }
+
+        // Tính win_rate
+        $winRate = $totalMatches > 0 ? round(($wins / $totalMatches) * 100, 2) : 0;
+
+        // Tính performance
+        $maxPoint = 0;
+        for ($i = 0; $i < $totalMatches; $i++) {
+            $maxPoint += $i < 3 ? 15 : 10;
+        }
+        $performance = $maxPoint > 0 ? round(($totalPoint / $maxPoint) * 100, 2) : 0;
+
+        return [
+            'win_rate' => $winRate,
+            'performance' => $performance,
+        ];
     }
 }
