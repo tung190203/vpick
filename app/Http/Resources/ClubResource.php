@@ -29,9 +29,17 @@ class ClubResource extends JsonResource
             'is_verified' => (bool) $this->is_verified,
             'created_by' => $this->created_by,
             'members' => ClubMemberResource::collection($this->whenLoaded('members')),
-            'quantity_members' => $this->whenLoaded('members', fn() => $this->members->where('membership_status', ClubMembershipStatus::Joined)->where('status', ClubMemberStatus::Active)->count(), 0),
+            'quantity_members' => $this->whenLoaded('members', fn() =>
+                $this->members
+                    ->filter(fn($m) => $m->user !== null) // Chỉ đếm members có user tồn tại
+                    ->where('membership_status', ClubMembershipStatus::Joined)
+                    ->where('status', ClubMemberStatus::Active)
+                    ->count(),
+                0
+            ),
             'skill_level' => $this->whenLoaded('members', function () {
                 $scores = $this->members
+                    ->filter(fn($m) => $m->user !== null) // Chỉ lấy members có user tồn tại
                     ->where('membership_status', ClubMembershipStatus::Joined)
                     ->where('status', ClubMemberStatus::Active)
                     ->map(fn($member) => $this->getMemberVnduprScore($member))
