@@ -24,7 +24,8 @@
                             <span class="font-medium">Báo cáo CLB</span>
                         </button>
                         <div class="h-px bg-gray-100 my-1 mx-2"></div>
-                        <button class="w-full flex items-center space-x-3 px-4 py-3 transition-colors rounded-lg"
+                        <button class="w-full flex items-center space-x-3 px-4 py-3 transition-colors rounded-lg" 
+                            @click="leaveClub"
                             :class="is_joined
                                 ? 'hover:bg-red-50 text-red-600 cursor-pointer'
                                 : 'text-gray-400 bg-gray-100 cursor-not-allowed'
@@ -54,7 +55,7 @@
                         </div>
                     </div>
                     <div class="flex items-center space-x-2" v-if="!is_joined">
-                        <template v-if="!club.is_member">
+                        <template v-if="!club.has_pending_request">
                             <Button size="md" color="danger"
                                 class="px-[75px] bg-[#D72D36] border border-[#D72D36] text-white hover:bg-white hover:text-[#D72D36] flex gap-2"
                                 @click.stop="joinClubRequest">
@@ -65,7 +66,7 @@
                         <template v-else>
                             <Button size="md" color="danger"
                                 class="px-[75px] bg-[#D72D36] border border-[#D72D36] text-white hover:bg-white hover:text-[#D72D36] flex gap-2"
-                                @click.stop="leaveClubRequest">
+                                @click.stop="cancelJoinRequest">
                                 Hủy tham gia
                             </Button>
                         </template>
@@ -84,8 +85,7 @@
                         <p class="text-[#D72D36] font-semibold cursor-pointer">Xem tất cả</p>
                     </div>
                     <template v-if="notifications.length > 0">
-                        <NotificationCard v-for="(notification, index) in notifications.slice(0, 1)" :key="index"
-                            v-bind="notification" />
+                        <NotificationCard v-for="(notification, index) in notifications.slice(0, 3)" :key="index" :data="notification" />
                     </template>
                     <div v-else class="p-4 text-center">
                         <p class="text-[#838799]">Hiện chưa có thông báo</p>
@@ -152,9 +152,12 @@
                         </button>
                     </div>
                 </div>
+                <div v-if="notifications.length === 0" class="flex items-start justify-center mt-4">
+                    <p class="text-[#838799]">Hiện chưa có thông báo</p>
+                </div>
 
                 <!-- Scrollable Content -->
-                <div class="p-6 pt-2 flex-1 overflow-y-auto custom-scrollbar">
+                <div class="p-6 pt-2 flex-1 overflow-y-auto custom-scrollbar" v-else>
                     <!-- Category: TODAY -->
                     <div class="mb-8">
                         <div class="flex items-center justify-between mb-4">
@@ -245,14 +248,7 @@ import {
     BellIcon,
     ArrowLeftOnRectangleIcon,
     InformationCircleIcon,
-    XMarkIcon,
-    CalendarIcon,
-    WalletIcon,
-    ArrowPathIcon,
-    UserPlusIcon,
-    CalendarDaysIcon,
-    AcademicCapIcon,
-
+    XMarkIcon
 } from '@heroicons/vue/24/outline'
 import { useRouter, useRoute } from 'vue-router'
 import { computed, onMounted, ref } from 'vue'
@@ -281,6 +277,9 @@ const club = ref([]);
 const clubId = route.params.id
 const userStore = useUserStore()
 const { getUser } = storeToRefs(userStore)
+const notifications = ref([])
+const currentNotificationPage = ref(1)
+const notificationPerPage = ref(15)
 
 const statsValue = computed(() => ({
     members: club.value?.quantity_members ?? 0,
@@ -392,68 +391,68 @@ const historyActivities = [
     }
 ]
 
-const notifications = [
-    {
-        title: 'Lịch đấu mới: Kèo cố định 3-5-7',
-        content: 'Sân Pickleball Quận 7 đã mở đăng ký cho buổi tối nay. Đăng ký ngay để giữ chỗ!',
-        timeAgo: 'Vừa xong',
-        type: 'match',
-        category: 'today',
-        isRead: false,
-        icon: CalendarIcon,
-        colorClass: 'bg-[#FEE2E2] text-[#EF4444]'
-    },
-    {
-        title: 'Xác nhận thanh toán',
-        content: 'Khoản đóng quỹ 50.000 của bạn cho buổi tập ngày 24/10 đã được ghi nhận.',
-        timeAgo: '2 giờ trước',
-        type: 'payment',
-        category: 'today',
-        isRead: false,
-        icon: WalletIcon,
-        colorClass: 'bg-[#DCFCE7] text-[#10B981]'
-    },
-    {
-        title: 'Cập nhật ứng dụng',
-        content: 'Chúng tôi vừa cập nhật tính năng "Check-in QR" để bạn vào sân nhanh chóng hơn.',
-        timeAgo: '6 giờ trước',
-        type: 'app',
-        category: 'today',
-        isRead: true,
-        icon: ArrowPathIcon,
-        colorClass: 'bg-gray-100 text-gray-500'
-    },
-    {
-        title: 'Thành viên mới',
-        content: 'Chào mừng Hoàng Anh đã gia nhập CLB Pickleball Sài Gòn Phố',
-        timeAgo: 'hôm qua',
-        type: 'member',
-        category: 'previous',
-        isRead: true,
-        icon: UserPlusIcon,
-        colorClass: 'bg-gray-100 text-gray-400'
-    },
-    {
-        title: 'Buổi tập bị hủy',
-        content: 'Rất tiếc, buổi tập T5 26/10 bị hủy do thời tiết không thuận lợi.',
-        timeAgo: '2 ngày trước',
-        type: 'cancel',
-        category: 'previous',
-        isRead: true,
-        icon: CalendarDaysIcon,
-        colorClass: 'bg-gray-100 text-gray-400'
-    },
-    {
-        title: 'Thăng hạng trình độ',
-        content: 'Chúc mừng! Bạn đã được Admin nâng mức trình độ lên 3.0 dựa trên kết quả thi đấu.',
-        timeAgo: '3 ngày trước',
-        type: 'rank',
-        category: 'previous',
-        isRead: true,
-        icon: AcademicCapIcon,
-        colorClass: 'bg-[#FEF3C7] text-[#D97706]'
-    }
-]
+// const notifications = [
+//     {
+//         title: 'Lịch đấu mới: Kèo cố định 3-5-7',
+//         content: 'Sân Pickleball Quận 7 đã mở đăng ký cho buổi tối nay. Đăng ký ngay để giữ chỗ!',
+//         timeAgo: 'Vừa xong',
+//         type: 'match',
+//         category: 'today',
+//         isRead: false,
+//         icon: CalendarIcon,
+//         colorClass: 'bg-[#FEE2E2] text-[#EF4444]'
+//     },
+//     {
+//         title: 'Xác nhận thanh toán',
+//         content: 'Khoản đóng quỹ 50.000 của bạn cho buổi tập ngày 24/10 đã được ghi nhận.',
+//         timeAgo: '2 giờ trước',
+//         type: 'payment',
+//         category: 'today',
+//         isRead: false,
+//         icon: WalletIcon,
+//         colorClass: 'bg-[#DCFCE7] text-[#10B981]'
+//     },
+//     {
+//         title: 'Cập nhật ứng dụng',
+//         content: 'Chúng tôi vừa cập nhật tính năng "Check-in QR" để bạn vào sân nhanh chóng hơn.',
+//         timeAgo: '6 giờ trước',
+//         type: 'app',
+//         category: 'today',
+//         isRead: true,
+//         icon: ArrowPathIcon,
+//         colorClass: 'bg-gray-100 text-gray-500'
+//     },
+//     {
+//         title: 'Thành viên mới',
+//         content: 'Chào mừng Hoàng Anh đã gia nhập CLB Pickleball Sài Gòn Phố',
+//         timeAgo: 'hôm qua',
+//         type: 'member',
+//         category: 'previous',
+//         isRead: true,
+//         icon: UserPlusIcon,
+//         colorClass: 'bg-gray-100 text-gray-400'
+//     },
+//     {
+//         title: 'Buổi tập bị hủy',
+//         content: 'Rất tiếc, buổi tập T5 26/10 bị hủy do thời tiết không thuận lợi.',
+//         timeAgo: '2 ngày trước',
+//         type: 'cancel',
+//         category: 'previous',
+//         isRead: true,
+//         icon: CalendarDaysIcon,
+//         colorClass: 'bg-gray-100 text-gray-400'
+//     },
+//     {
+//         title: 'Thăng hạng trình độ',
+//         content: 'Chúc mừng! Bạn đã được Admin nâng mức trình độ lên 3.0 dựa trên kết quả thi đấu.',
+//         timeAgo: '3 ngày trước',
+//         type: 'rank',
+//         category: 'previous',
+//         isRead: true,
+//         icon: AcademicCapIcon,
+//         colorClass: 'bg-[#FEF3C7] text-[#D97706]'
+//     }
+// ]
 
 const getClubDetail = async () => {
     try {
@@ -463,8 +462,6 @@ const getClubDetail = async () => {
         toast.error(error.response.data.message || 'Có lỗi xảy ra khi lấy thông tin câu lạc bộ')
     }
 }
-
-
 
 const joinClubRequest = async () => {
     try {
@@ -476,9 +473,9 @@ const joinClubRequest = async () => {
     }
 }
 
-const leaveClubRequest = async () => {
+const cancelJoinRequest = async () => {
     try {
-        await ClubService.leaveRequest(clubId)
+        await ClubService.cancelJoinRequest(clubId)
         await getClubDetail(clubId)
         toast.success('Đã huỷ yêu cầu tham gia')
     } catch (error) {
@@ -486,12 +483,33 @@ const leaveClubRequest = async () => {
     }
 }
 
+const leaveClub = async () => {
+    try {
+        await ClubService.leaveClub(clubId)
+        await getClubDetail(clubId)
+        isMenuOpen.value = false
+        toast.success('Đã rời câu lạc bộ')
+    } catch (error) {
+        toast.error(error.response.data.message || 'Có lỗi xảy ra khi rời câu lạc bộ')
+    }
+}
+
+const getClubNotification = async () => {
+    try {
+        const response = await ClubService.clubNotification(clubId, {
+            page: currentNotificationPage.value,
+            per_page:notificationPerPage.value,
+            status:'sent',
+            is_pinned:1
+        })
+        notifications.value = response.data.notifications
+    } catch (error) {
+        toast.error(error.response.data.message || 'Có lỗi xảy ra khi lấy thông tin thông báo')
+    }
+}
+
 const is_joined = computed(() => {
-    return club.value?.members?.some(
-        member =>
-            member.user_id === getUser.value.id &&
-            member.status !== 'pending'
-    ) ?? false
+    return club.value?.members?.some(member => member.user_id === getUser.value.id && member.status == 'active') ?? false
 })
 
 const goBack = () => {
@@ -500,7 +518,10 @@ const goBack = () => {
 
 onMounted(async () => {
     if (!clubId) return;
-    await getClubDetail()
+    Promise.all([
+        getClubDetail(),
+        getClubNotification()
+    ])
 })
 </script>
 <style scoped>

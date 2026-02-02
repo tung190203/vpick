@@ -52,8 +52,10 @@
                   {{ getRoleLabel(member.role) }}
                 </span>
               </div>
-              <p class="text-xs text-gray-400 font-medium">
-                {{ getVpScore(member.user) }} PICKI • {{ getRolePosition(member.role) }}
+              <p class="text-xs text-gray-400 font-medium flex items-center gap-1">
+                {{ getVpScore(member.user) }} PICKI
+                <span class="inline-block w-1 h-1 rounded-full bg-gray-400"></span>
+                {{ getRolePosition(member.role) }}
               </p>
             </div>
           </div>
@@ -111,7 +113,7 @@
 
               <div>
                 <p class="font-semibold text-[#374151]">{{ member.user?.full_name || 'N/A' }}</p>
-                <p class="text-xs text-gray-400">{{ getJoinedDate(member.joined_at || member.created_at) }}</p>
+                <p class="text-xs text-gray-400">{{ getJoinedDate(member.joined_at || member.created_at, 'Tham gia ') }}</p>
               </div>
             </div>
 
@@ -213,6 +215,7 @@ import { useUserStore } from '@/store/auth'
 import { storeToRefs } from 'pinia'
 import { toast } from "vue3-toastify";
 import { ROLE_COLORS } from '@/data/club'
+import { getJoinedDate } from '@/composables/formatDatetime.js'
 
 const userStore = useUserStore()
 const { getUser } = storeToRefs(userStore)
@@ -430,24 +433,6 @@ const isOnline = (lastLogin) => {
   const now = new Date()
   const diffMinutes = (now - lastLoginDate) / (1000 * 60)
   return diffMinutes < 15 // Online if logged in within last 15 minutes
-}
-
-const getJoinedDate = (date) => {
-  if (!date) return 'N/A'
-  const joinedDate = new Date(date)
-  const now = new Date()
-  const diffDays = Math.floor((now - joinedDate) / (1000 * 60 * 60 * 24))
-  
-  if (diffDays === 0) return 'Tham gia hôm nay'
-  if (diffDays === 1) return 'Tham gia 1 ngày trước'
-  if (diffDays < 30) return `Tham gia ${diffDays} ngày trước`
-  
-  const diffMonths = Math.floor(diffDays / 30)
-  if (diffMonths === 1) return 'Tham gia 1 tháng trước'
-  if (diffMonths < 12) return `Tham gia ${diffMonths} tháng trước`
-  
-  const diffYears = Math.floor(diffMonths / 12)
-  return `Tham gia ${diffYears} năm trước`
 }
 
 const toggleMenu = (id) => {
