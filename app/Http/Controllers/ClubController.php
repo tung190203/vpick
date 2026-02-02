@@ -15,6 +15,8 @@ use App\Models\VnduprHistory;
 use App\Models\Matches;
 use App\Models\MiniMatch;
 use App\Http\Resources\ClubResource;
+use App\Http\Resources\Club\ClubLeaderboardResource;
+use Carbon\Carbon;
 use App\Services\GeocodingService;
 use App\Services\ImageOptimizationService;
 use Illuminate\Support\Facades\DB;
@@ -634,5 +636,188 @@ class ClubController extends Controller
             'win_rate' => $winRate,
             'performance' => $performance,
         ];
+    }
+
+    public function getMonthlyLeaderboard(Request $request, $clubId)
+    {
+        $validated = $request->validate([
+            'month' => 'sometimes|integer|min:1|max:12',
+            'year' => 'sometimes|integer|min:2020|max:' . (date('Y') + 1),
+            'per_page' => 'sometimes|integer|min:1|max:100',
+        ]);
+
+        $month = $validated['month'] ?? now()->month;
+        $year = $validated['year'] ?? now()->year;
+        $perPage = $validated['per_page'] ?? 50;
+
+        $requestedDate = Carbon::create($year, $month, 1);
+        if ($requestedDate->isFuture() && !$requestedDate->isCurrentMonth()) {
+            return ResponseHelper::error('Không thể xem bảng xếp hạng của tháng trong tương lai', 400);
+        }
+
+        $club = Club::findOrFail($clubId);
+        $members = $club->joinedMembers()->with(['user.sports.scores'])->get();
+
+        if ($members->isEmpty()) {
+            return ResponseHelper::success([
+                'club_info' => [
+                    'id' => $club->id,
+                    'name' => $club->name,
+                    'member_count' => 0,
+                ],
+                'period' => [
+                    'month' => $month,
+                    'year' => $year,
+                    'label' => "Tháng {$month}/{$year}",
+                ],
+                'updated_at' => now()->toISOString(),
+                'leaderboard' => [],
+            ], 'Bảng xếp hạng câu lạc bộ');
+        }
+
+        $startDate = Carbon::create($year, $month, 1)->startOfMonth();
+        $endDate = Carbon::create($year, $month, 1)->endOfMonth();
+
+        $memberIds = $members->pluck('user_id')->filter()->unique();
+
+        $histories = VnduprHistory::whereIn('user_id', $memberIds)
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->orderBy('created_at', 'asc')
+            ->get()
+            ->groupBy('user_id');
+
+        $matchIds = $histories->flatten()->pluck('match_id')->filter()->unique();
+        $miniMatchIds = $histories->flatten()->pluck('mini_match_id')->filter()->unique();
+
+        $matches = Matches::with(['homeTeam.members', 'awayTeam.members'])
+            ->whereIn('id', $matchIds)
+            ->get()
+            ->keyBy('id');
+
+        $miniMatches = MiniMatch::whereIn('id', $miniMatchIds)
+            ->get()
+            ->keyBy('id');
+
+        $miniTeamMembersByTeam = collect();
+        if ($miniMatches->isNotEmpty()) {
+            $miniTeamIds = $miniMatches->pluck('team1_id')
+                ->merge($miniMatches->pluck('team2_id'))
+                ->filter()
+                ->unique();
+
+            $miniTeamMembersByTeam = DB::table('mini_team_members')
+                ->whereIn('mini_team_id', $miniTeamIds)
+                ->get()
+                ->groupBy('mini_team_id')
+                ->map(fn($rows) => $rows->pluck('user_id')->all());
+        }
+
+        $leaderboardData = $members->map(function ($member) use ($histories, $matches, $miniMatches, $miniTeamMembersByTeam) {
+            $userId = $member->user_id;
+            $userHistories = $histories->get($userId, collect());
+
+            $finalScore = 0;
+            if ($userHistories->isNotEmpty()) {
+                $finalScore = $userHistories->last()->score_after;
+            } else {
+                $vnduprScore = $member->user?->sports->flatMap(fn($sport) => $sport->scores)
+                    ->where('score_type', 'vndupr_score')
+                    ->sortByDesc('created_at')
+                    ->first();
+                $finalScore = $vnduprScore ? $vnduprScore->score_value : 0;
+            }
+
+            $matchesPlayed = $userHistories->count();
+            $wins = 0;
+            $losses = 0;
+            $scoreChange = 0;
+
+            if ($matchesPlayed > 0) {
+                $scoreChange = $userHistories->last()->score_after - $userHistories->first()->score_before;
+
+                foreach ($userHistories as $history) {
+                    $isWin = false;
+
+                    if ($history->match_id && $matches->has($history->match_id)) {
+                        $match = $matches->get($history->match_id);
+                        $homeUserIds = $match->homeTeam->members->pluck('id')->all();
+                        $awayUserIds = $match->awayTeam->members->pluck('id')->all();
+
+                        $isWin = (
+                            ($match->winner_id == $match->home_team_id && in_array($userId, $homeUserIds)) ||
+                            ($match->winner_id == $match->away_team_id && in_array($userId, $awayUserIds))
+                        );
+                    } elseif ($history->mini_match_id && $miniMatches->has($history->mini_match_id)) {
+                        $mini = $miniMatches->get($history->mini_match_id);
+                        $team1Members = $miniTeamMembersByTeam[$mini->team1_id] ?? [];
+                        $team2Members = $miniTeamMembersByTeam[$mini->team2_id] ?? [];
+
+                        $isWin = (
+                            (in_array($userId, $team1Members) && $mini->team_win_id == $mini->team1_id) ||
+                            (in_array($userId, $team2Members) && $mini->team_win_id == $mini->team2_id)
+                        );
+                    }
+
+                    if ($isWin) {
+                        $wins++;
+                    } else {
+                        $losses++;
+                    }
+                }
+            }
+
+            $winRate = $matchesPlayed > 0 ? round(($wins / $matchesPlayed) * 100, 2) : 0;
+
+            return [
+                'member_id' => $member->id,
+                'user_id' => $userId,
+                'user' => $member->user,
+                'vndupr_score' => round($finalScore, 2),
+                'monthly_stats' => [
+                    'matches_played' => $matchesPlayed,
+                    'wins' => $wins,
+                    'losses' => $losses,
+                    'win_rate' => $winRate,
+                    'score_change' => round($scoreChange, 2),
+                ],
+            ];
+        });
+
+        $sortedLeaderboard = $leaderboardData->sortByDesc('vndupr_score')->values();
+
+        $rankedLeaderboard = $sortedLeaderboard->map(function ($item, $index) {
+            $item['rank'] = $index + 1;
+            return $item;
+        });
+
+        $total = $rankedLeaderboard->count();
+        $currentPage = max(1, (int) $request->query('page', 1));
+        $lastPage = ceil($total / $perPage);
+        $offset = ($currentPage - 1) * $perPage;
+        $paginatedData = $rankedLeaderboard->slice($offset, $perPage)->values();
+
+        $response = [
+            'club_info' => [
+                'id' => $club->id,
+                'name' => $club->name,
+                'member_count' => $members->count(),
+            ],
+            'period' => [
+                'month' => $month,
+                'year' => $year,
+                'label' => "Tháng {$month}/{$year}",
+            ],
+            'updated_at' => now()->toISOString(),
+            'leaderboard' => ClubLeaderboardResource::collection($paginatedData),
+        ];
+
+        $meta = [
+            'current_page' => $currentPage,
+            'last_page' => $lastPage,
+            'per_page' => $perPage,
+            'total' => $total,
+        ];
+
+        return ResponseHelper::success($response, 'Lấy bảng xếp hạng thành công', 200, $meta);
     }
 }

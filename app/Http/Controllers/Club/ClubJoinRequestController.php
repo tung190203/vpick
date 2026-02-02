@@ -100,7 +100,10 @@ class ClubJoinRequestController extends Controller
         ]);
 
         return DB::transaction(function () use ($club, $userId, $validated) {
-            $existing = $club->members()->where('user_id', $userId)->lockForUpdate()->first();
+            $existing = ClubMember::where('club_id', $club->id)
+                ->where('user_id', $userId)
+                ->lockForUpdate()
+                ->first();
 
             if ($existing && in_array($existing->membership_status, [ClubMembershipStatus::Rejected, ClubMembershipStatus::Left, ClubMembershipStatus::Cancelled], true)) {
                 // Join lại: cập nhật record cũ thành pending
