@@ -37,6 +37,24 @@ export const removeMember = async (clubId, memberId) => {
     return axiosInstance.delete(`${API_ENDPOINT.CLUB}/${clubId}/members/${memberId}`).then((response) => response.data);
 }
 
-export const leaveRequest = async (clubId) => {
-    console.log('wait');
+export const cancelJoinRequest = async (clubId) => {
+    return axiosInstance.delete(`${API_ENDPOINT.CLUB}/${clubId}/join-requests`).then((response) => response.data);
+}
+
+export const leaveClub = async (clubId) => {
+    return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/leave`).then((response) => response.data);
+}
+
+export const clubNotification = async (clubId, params = {}) => {
+    const queryParams = new URLSearchParams()
+    Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      queryParams.append(key, value)
+    }
+  })
+
+  const queryString = queryParams.toString()
+  const url = `${API_ENDPOINT.CLUB}/${clubId}/notifications${queryString ? `?${queryString}` : ''}`
+  const { data } = await axiosInstance.get(url)
+  return data
 }

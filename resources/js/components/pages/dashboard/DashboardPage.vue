@@ -228,27 +228,86 @@
         </div>
         <div class="bg-white rounded-[8px] shadow p-5">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="font-semibold text-gray-900 text-base">Bạn bè</h3>
+            <h3 class="font-semibold text-gray-900 text-base">Top 50 người chơi</h3>
             <div
               class="flex items-center text-sm text-gray-600 ml-4 cursor-pointer hover:text-gray-800 bg-[#FFFFFF] p-1.5 rounded-full shadow-md">
               <ArrowUpRightIcon class="w-4 h-4 text-gray-[#838799]" />
             </div>
           </div>
-          <ul v-if="friendList.length > 0" class="space-y-3">
-            <li v-for="(f, i) in friendList" :key="i"
-              class="flex items-center justify-between py-1 cursor-pointer hover:bg-gray-100 rounded-md px-2">
-              <div class="flex items-center space-x-3">
-                <div class="relative">
-                  <img :src="f.avatar_url" class="w-10 h-10 rounded-full object-cover" />
-                  <span v-if="f.visibility === 'open'"
-                    class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></span>
-                </div>
-                <span class="text-sm font-medium text-gray-800">{{ f.full_name }}</span>
+          <div class="min-h-[668px] flex flex-col transition-all duration-300">
+            <Transition name="list-fade" mode="out-in">
+              <ul v-if="paginatedLeaderboard.length" :key="currentPage" class="space-y-3 flex-1">
+                <li v-for="f in paginatedLeaderboard" :key="f.id"
+                  class="flex items-center justify-between py-2 cursor-pointer hover:bg-gray-100 rounded-md px-3 transition-colors" @click="goToProfile(f.id)">
+                  <div class="flex items-center space-x-3">
+                    <div class="relative">
+                      <img :src="f.avatar_url || defaultAvatar" @error="e => e.target.src = defaultAvatar"
+                        class="w-10 h-10 rounded-full object-cover" />
+                        <template v-if="f.is_anchor === true">
+                          <AnchorIcon class="absolute -bottom-1 -right-1 w-4 h-4 bg-white rounded-full border-2 border-white text-[#4392E0]" />
+                        </template>
+                        <template v-else-if="f.is_verify === true">
+                          <VerifyIcon class="absolute -bottom-1 -right-1 w-4 h-4 bg-white rounded-full border-2 border-white text-[#4392E0]" />
+                        </template>
+                    </div>
+                    <div class="flex flex-col">
+                      <span class="text-sm font-semibold text-gray-800">{{ f.full_name }}</span>
+                    </div>
+                  </div>
+                  
+                  <div class="flex items-center space-x-6 text-right">
+                    <div class="flex flex-col items-center min-w-[64px]">
+                      <p class="text-[10px] font-semibold text-[#4392E0] tracking-tight">Xếp hạng</p>
+                      <span class="text-xs text-gray-500 leading-tight">{{ f.rank }}</span>
+                    </div>
+                    <div class="flex flex-col items-center min-w-[64px]">
+                      <p class="text-[10px] font-semibold text-[#4392E0] tracking-tight">Điểm trình</p>
+                      <span class="text-xs text-gray-500 leading-tight">
+                        {{ Number(f.sports[0]?.scores?.vndupr_score || 0).toFixed(2) }}
+                      </span>
+                    </div>
+                  </div>
+                </li>
+              </ul>
+              <div v-else :key="'empty'" class="text-center text-sm text-gray-500 py-3 flex-1 flex items-center justify-center min-h-[668px]">
+                Chưa có người chơi nào trong top 50
               </div>
-            </li>
-          </ul>
-          <div v-else class="text-center text-sm text-gray-500 py-3">
-            Chưa có bạn bè nào
+            </Transition>
+          </div>
+
+          <!-- Pagination Controls -->
+          <div v-if="homeData.leaderboard?.length > itemsPerPage" class="mt-6 flex items-center justify-center space-x-2">
+            <button 
+              @click="currentPage--" 
+              :disabled="currentPage === 1"
+              class="p-2 rounded-full hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeftIcon class="w-5 h-5 text-gray-600" />
+            </button>
+            
+            <div class="flex items-center space-x-1">
+              <button 
+                v-for="page in totalPages" 
+                :key="page"
+                @click="currentPage = page"
+                :class="[
+                  'w-8 h-8 rounded-full text-sm font-medium transition-all',
+                  currentPage === page 
+                    ? 'bg-red-600 text-white shadow-md' 
+                    : 'text-gray-600 hover:bg-gray-100'
+                ]"
+              >
+                {{ page }}
+              </button>
+            </div>
+
+            <button 
+              @click="currentPage++" 
+              :disabled="currentPage === totalPages"
+              class="p-2 rounded-full hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRightIcon class="w-5 h-5 text-gray-600" />
+            </button>
           </div>
         </div>
       </div>
@@ -390,6 +449,8 @@ import {
   ArrowUpRightIcon,
   PencilIcon,
   XMarkIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon
 } from "@heroicons/vue/24/outline";
 import QRcodeModal from '@/components/molecules/QRcodeModal.vue'
 import { MapPinIcon, CalendarDaysIcon } from "@heroicons/vue/24/solid";
@@ -400,11 +461,11 @@ import 'swiper/css/pagination';
 import 'swiper/css/free-mode'
 import { Html5Qrcode } from "html5-qrcode";
 import * as HomeService from "@/service/home";
-import * as FollowService from "@/service/follow";
 import Background from "@/assets/images/dashboard-bg.svg?url";
 import { useUserStore } from "@/store/auth";
 import { storeToRefs } from "pinia";
 import VerifyIcon from "@/assets/images/verify-icon.svg";
+import AnchorIcon from "@/assets/images/anchor.svg";
 
 const userStore = useUserStore();
 const { getUser } = storeToRefs(userStore);
@@ -413,10 +474,10 @@ const modules = [Autoplay, Pagination, FreeMode, Mousewheel];
 const BASE_STORAGE_URL = 'http://localhost:8000/storage/';
 const BASE_FRONTEND_URL = import.meta.env.VITE_FRONTEND_URL;
 const homeData = ref({});
-const friendList = ref([]);
 const isChoosingQrAction = ref(false);
 const isShowingScanner = ref(false);
 const isShowingMyQr = ref(false);
+const defaultAvatar = "/images/default-avatar.png";
 // KHAI BÁO BIẾN TRẠNG THÁI MỚI CHO LOGIC QR
 const isShowingConfirmation = ref(false);
 const decodedQrCode = ref('');
@@ -432,6 +493,20 @@ const features = [
   { label: "Tìm sân", icon: MapPinIconOutline },
   { label: "Xếp hạng", icon: ChartBarIcon },
 ];
+const itemsPerPage = 10;
+const currentPage = ref(1);
+
+const totalPages = computed(() => {
+  return Math.ceil((homeData.value.leaderboard?.length || 0) / itemsPerPage);
+});
+
+const paginatedLeaderboard = computed(() => {
+  if (!homeData.value.leaderboard) return [];
+  const start = (currentPage.value - 1) * itemsPerPage;
+  const end = start + itemsPerPage;
+  return homeData.value.leaderboard.slice(start, end);
+});
+
 const getPerformanceLevel = computed(() => {
   const performance = homeData.value?.user_info?.performance || 0;
   if (performance >= 76) return 'Xuất <br/> sắc';
@@ -444,20 +519,12 @@ const getHomeData = async () => {
   try {
     const response = await HomeService.getHomeData({
       mini_tournament_per_page: 50,
-      tournament_per_page: 50
+      tournament_per_page: 50,
+      leaderboard_per_page: 50
     });
     homeData.value = response;
   } catch (error) {
     console.error("Error fetching home data:", error);
-  }
-};
-
-const getFriendLists = async () => {
-  try {
-    const response = await FollowService.getFriendList();
-    friendList.value = response.friends;
-  } catch (error) {
-    console.error("Error fetching friend list:", error);
   }
 };
 
@@ -641,9 +708,12 @@ function goToMiniTournamentDetail(id) {
 function goToTournamentDetail(id) {
   router.push({ name: 'tournament-detail', params: { id } })
 }
+
+function goToProfile(id) {
+  router.push({ name: 'profile', params: { id } })
+}
 onMounted(async () => {
   await getHomeData();
-  await getFriendLists();
 });
 
 </script>
@@ -707,5 +777,19 @@ onMounted(async () => {
 .modal-leave-to .modal-body {
   opacity: 0;
   transform: scale(0.95);
+}
+
+/* ------------------------------------- */
+/* CSS TRANSITIONS CHO LEADERBOARD */
+/* ------------------------------------- */
+
+.list-fade-enter-active,
+.list-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.list-fade-enter-from,
+.list-fade-leave-to {
+  opacity: 0;
 }
 </style>
