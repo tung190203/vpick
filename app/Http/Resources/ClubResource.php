@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use App\Enums\ClubMemberStatus;
 use App\Enums\ClubMembershipStatus;
 use App\Http\Resources\Club\ClubMemberResource;
+use App\Models\Club\ClubMember;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -54,8 +55,21 @@ class ClubResource extends JsonResource
                     'max' => round($scores->max(), 1),
                 ];
             }, null),
-            'is_member' => $this->whenLoaded('members', fn () => $this->members->contains(fn ($m) => $m->user_id === auth()->id() && $m->membership_status === ClubMembershipStatus::Joined && $m->status === ClubMemberStatus::Active), false),
-            'has_pending_request' => $this->when(auth()->check(), fn () => $this->resource->members()->where('user_id', auth()->id())->where('membership_status', ClubMembershipStatus::Pending)->exists(), false),
+            'is_member' => $this->when(auth()->check(), fn () =>
+                ClubMember::where('club_id', $this->id)
+                    ->where('user_id', auth()->id())
+                    ->where('membership_status', ClubMembershipStatus::Joined)
+                    ->where('status', ClubMemberStatus::Active)
+                    ->exists(),
+                false
+            ),
+            'has_pending_request' => $this->when(auth()->check(), fn () =>
+                ClubMember::where('club_id', $this->id)
+                    ->where('user_id', auth()->id())
+                    ->where('membership_status', ClubMembershipStatus::Pending)
+                    ->exists(),
+                false
+            ),
             'profile' => $this->whenLoaded('profile', function () {
                 return $this->profile ? [
                     'id' => $this->profile->id,
