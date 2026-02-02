@@ -307,7 +307,7 @@ class ParticipantController extends Controller
     {
         $participant = Participant::with('tournament')->findOrFail($participantId);
         $isOrganizer = $participant->tournament->hasOrganizer(Auth::id());
-        if (!$isOrganizer) {
+        if (!$isOrganizer || $participant->user_id !== Auth::id()) {
             return ResponseHelper::error('Bạn không có quyền từ chối lời mời tham gia này', 403);
         }
         if ($participant->is_confirmed) {

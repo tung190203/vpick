@@ -76,3 +76,35 @@ export const convertToDateObject = (dateStr) => {
   
   return dateStr;
 };
+
+export const getJoinedDate = (date, prefix = '') => {
+  if (!date) return 'N/A'
+
+  const joinedDate = new Date(date)
+  const now = new Date()
+
+  const diffMs = now - joinedDate
+  const diffMinutes = Math.floor(diffMs / (1000 * 60))
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+  //  Trong hôm nay
+  if (diffDays === 0) {
+    if (diffMinutes < 1) return `${prefix} Vừa xong`
+    if (diffMinutes < 60) return `${prefix} ${diffMinutes}p trước`
+    return `${prefix} ${diffHours}h trước`
+  }
+
+  // Ngày
+  if (diffDays === 1) return `${prefix} 1 ngày trước`
+  if (diffDays < 30) return `${prefix} ${diffDays} ngày trước`
+
+  // Tháng
+  const diffMonths = Math.floor(diffDays / 30)
+  if (diffMonths === 1) return `${prefix} 1 tháng trước`
+  if (diffMonths < 12) return `${prefix} ${diffMonths} tháng trước`
+
+  // Năm
+  const diffYears = Math.floor(diffMonths / 12)
+  return `${prefix} ${diffYears} năm trước`
+}
