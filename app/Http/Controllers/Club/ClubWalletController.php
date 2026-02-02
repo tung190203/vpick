@@ -186,7 +186,7 @@ class ClubWalletController extends Controller
     public function getFundOverview(Request $request, $clubId)
     {
         $club = Club::findOrFail($clubId);
-        
+
         $validated = $request->validate([
             'date_from' => 'sometimes|date',
             'date_to' => 'sometimes|date|after_or_equal:date_from',
@@ -195,11 +195,11 @@ class ClubWalletController extends Controller
         $mainWallet = $club->mainWallet;
         if (!$mainWallet) {
             return ResponseHelper::success([
-                'balance' => 0,
-                'total_income' => 0,
-                'total_expense' => 0,
-                'pending_transactions' => 0,
-                'active_collections' => 0,
+                'balance' => (int) 0,
+                'total_income' => (int) 0,
+                'total_expense' => (int) 0,
+                'pending_transactions' => (int) 0,
+                'active_collections' => (int) 0,
             ], 'Lấy tổng quan quỹ thành công');
         }
 
@@ -219,11 +219,11 @@ class ClubWalletController extends Controller
         $activeCollections = $club->fundCollections()->where('status', ClubFundCollectionStatus::Active)->count();
 
         return ResponseHelper::success([
-            'balance' => $mainWallet->balance,
-            'total_income' => $totalIncome,
-            'total_expense' => $totalExpense,
-            'pending_transactions' => $pendingTransactions,
-            'active_collections' => $activeCollections,
+            'balance' => (int) $mainWallet->balance,
+            'total_income' => (int) $totalIncome,
+            'total_expense' => (int) $totalExpense,
+            'pending_transactions' => (int) $pendingTransactions,
+            'active_collections' => (int) $activeCollections,
         ], 'Lấy tổng quan quỹ thành công');
     }
 

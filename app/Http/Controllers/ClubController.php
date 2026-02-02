@@ -123,7 +123,7 @@ class ClubController extends Controller
             'logo_url' => 'nullable|image|max:2048',
             'cover_image_url' => 'nullable|image|max:2048',
             'status' => 'nullable|in:active,inactive,draft',
-            'is_public' => 'nullable|in:0,1,true,false',
+            'is_public' => 'nullable|boolean',
         ]);
 
         $userId = auth()->id();
