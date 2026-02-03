@@ -90,13 +90,13 @@ class ClubFundCollectionController extends Controller
             'title' => 'required_without:description|nullable|string|max:255',
             'description' => 'required_without:title|nullable|string',
             'target_amount' => 'required|numeric|min:0.01',
-            'amount_per_member' => 'required|numeric|min:0.01',
+            'amount_per_member' => 'nullable|numeric|min:0.01',
             'member_ids' => 'required|array|min:1',
             'member_ids.*' => 'exists:users,id',
             'currency' => 'sometimes|string|max:3',
             'start_date' => 'required|date',
-            'deadline' => 'nullable|date|after:start_date',
-            'end_date' => 'nullable|date|after:start_date',
+            'deadline' => 'nullable|date|after_or_equal:start_date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
             'qr_code_url' => 'nullable|string',
         ]);
 
@@ -118,13 +118,22 @@ class ClubFundCollectionController extends Controller
             'created_by' => $userId,
         ]);
 
-        // Sync assignedMembers với amount_due
-        $amountPerMember = (float) $validated['amount_per_member'];
-        $syncData = [];
-        foreach ($validated['member_ids'] as $memberId) {
-            $syncData[$memberId] = ['amount_due' => $amountPerMember];
+        if (!empty($validated['member_ids'])) {
+            if (isset($validated['amount_per_member'])) {
+                $amountPerMember = (float) $validated['amount_per_member'];
+            } else {
+                $memberCount = count($validated['member_ids']);
+                $amountPerMember = $memberCount > 0
+                    ? (float) ($validated['target_amount'] / $memberCount)
+                    : (float) $validated['target_amount'];
+            }
+
+            $syncData = [];
+            foreach ($validated['member_ids'] as $memberId) {
+                $syncData[$memberId] = ['amount_due' => $amountPerMember];
+            }
+            $collection->assignedMembers()->sync($syncData);
         }
-        $collection->assignedMembers()->sync($syncData);
 
         $collection->load(['creator', 'club', 'contributions.user', 'assignedMembers']);
 
