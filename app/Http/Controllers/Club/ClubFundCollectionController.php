@@ -4,15 +4,18 @@ namespace App\Http\Controllers\Club;
 
 use App\Enums\ClubFundCollectionStatus;
 use App\Enums\ClubFundContributionStatus;
+use App\Enums\ClubMemberRole;
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\Club\ClubFundContributionResource;
 use App\Http\Resources\UserResource;
 use App\Http\Resources\Club\ClubFundCollectionResource;
 use App\Models\Club\Club;
 use App\Models\Club\ClubFundCollection;
+use App\Models\Club\ClubMember;
 use App\Http\Controllers\Controller;
 use App\Services\ImageOptimizationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -316,19 +319,61 @@ class ClubFundCollectionController extends Controller
         $title = Str::limit($validated['content'], 255);
         $today = now()->format('Y-m-d');
 
-        $collection = ClubFundCollection::create([
-            'club_id' => $club->id,
-            'title' => $title,
-            'description' => $validated['content'],
-            'target_amount' => $validated['amount'],
-            'collected_amount' => 0,
-            'currency' => 'VND',
-            'start_date' => $today,
-            'end_date' => null,
-            'status' => ClubFundCollectionStatus::Pending,
-            'qr_code_url' => $qrCodeUrl,
-            'created_by' => $userId,
-        ]);
+        $collection = DB::transaction(function () use (
+            $club,
+            $userId,
+            $validated,
+            $title,
+            $today,
+            $qrCodeUrl
+        ) {
+            $primary = ClubFundCollection::create([
+                'club_id' => $club->id,
+                'title' => $title,
+                'description' => $validated['content'],
+                'target_amount' => $validated['amount'],
+                'collected_amount' => 0,
+                'currency' => 'VND',
+                'start_date' => $today,
+                'end_date' => null,
+                'status' => ClubFundCollectionStatus::Pending,
+                'qr_code_url' => $qrCodeUrl,
+                'created_by' => $userId,
+            ]);
+
+            if (!empty($validated['apply_to_other_clubs'])) {
+                $clubIds = ClubMember::query()
+                    ->active()
+                    ->where('user_id', $userId)
+                    ->whereIn('role', [
+                        ClubMemberRole::Admin,
+                        ClubMemberRole::Manager,
+                        ClubMemberRole::Treasurer,
+                    ])
+                    ->where('club_id', '!=', $club->id)
+                    ->pluck('club_id')
+                    ->unique()
+                    ->values();
+
+                foreach ($clubIds as $otherClubId) {
+                    ClubFundCollection::create([
+                        'club_id' => $otherClubId,
+                        'title' => $title,
+                        'description' => $validated['content'],
+                        'target_amount' => $validated['amount'],
+                        'collected_amount' => 0,
+                        'currency' => 'VND',
+                        'start_date' => $today,
+                        'end_date' => null,
+                        'status' => ClubFundCollectionStatus::Pending,
+                        'qr_code_url' => $qrCodeUrl,
+                        'created_by' => $userId,
+                    ]);
+                }
+            }
+
+            return $primary;
+        });
 
         $collection->load(['creator', 'club', 'contributions.user']);
 
