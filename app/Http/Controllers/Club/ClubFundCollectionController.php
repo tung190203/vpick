@@ -22,17 +22,26 @@ class ClubFundCollectionController extends Controller
         $validated = $request->validate([
             'page' => 'sometimes|integer|min:1',
             'per_page' => 'sometimes|integer|min:1|max:100',
-            'status' => ['sometimes', Rule::enum(ClubFundCollectionStatus::class)],
         ]);
 
-        $query = $club->fundCollections()->with(['creator', 'contributions.user']);
-
-        if (!empty($validated['status'])) {
-            $query->where('status', $validated['status']);
-        }
+        // Mặc định chỉ lấy các đợt thu đang active và chưa quá hạn
+        $query = $club->fundCollections()
+            ->activeAndNotExpired()
+            ->with(['creator', 'contributions.user', 'assignedMembers']);
 
         $perPage = $validated['per_page'] ?? 15;
         $collections = $query->orderBy('created_at', 'desc')->paginate($perPage);
+
+        // Auto-update status cho các đợt thu đã quá hạn
+        $expiredCollections = $club->fundCollections()
+            ->where('status', ClubFundCollectionStatus::Active)
+            ->whereNotNull('end_date')
+            ->where('end_date', '<', now()->startOfDay())
+            ->get();
+
+        foreach ($expiredCollections as $expired) {
+            $expired->update(['status' => ClubFundCollectionStatus::Completed]);
+        }
 
         $data = [
             'collections' => ClubFundCollectionResource::collection($collections),
@@ -73,10 +82,10 @@ class ClubFundCollectionController extends Controller
             'target_amount' => $validated['target_amount'],
             'collected_amount' => 0,
             'currency' => $validated['currency'] ?? 'VND',
-            'start_date' => $validated['start_date'],
-            'end_date' => $validated['end_date'] ?? null,
-            'status' => ClubFundCollectionStatus::Pending,
-            'qr_code_url' => $validated['qr_code_url'] ?? null,
+                'start_date' => $validated['start_date'],
+                'end_date' => $validated['end_date'] ?? null,
+                'status' => ClubFundCollectionStatus::Active,
+                'qr_code_url' => $validated['qr_code_url'] ?? null,
             'created_by' => $userId,
         ]);
 
@@ -107,8 +116,8 @@ class ClubFundCollectionController extends Controller
             return ResponseHelper::error('Không có quyền cập nhật đợt thu này', 403);
         }
 
-        if (!in_array($collection->status, ['pending', 'active'])) {
-            return ResponseHelper::error('Chỉ có thể cập nhật đợt thu đang pending hoặc active', 422);
+        if ($collection->status !== ClubFundCollectionStatus::Active) {
+            return ResponseHelper::error('Chỉ có thể cập nhật đợt thu đang active', 422);
         }
 
         $validated = $request->validate([
@@ -135,8 +144,8 @@ class ClubFundCollectionController extends Controller
             return ResponseHelper::error('Chỉ admin/manager/treasurer mới có quyền hủy đợt thu', 403);
         }
 
-        if (!in_array($collection->status, [ClubFundCollectionStatus::Pending, ClubFundCollectionStatus::Active])) {
-            return ResponseHelper::error('Chỉ có thể hủy đợt thu đang pending hoặc active', 422);
+        if ($collection->status !== ClubFundCollectionStatus::Active) {
+            return ResponseHelper::error('Chỉ có thể hủy đợt thu đang active', 422);
         }
 
         $collection->update(['status' => ClubFundCollectionStatus::Cancelled]);
