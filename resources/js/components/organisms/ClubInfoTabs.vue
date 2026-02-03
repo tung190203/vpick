@@ -32,7 +32,15 @@
                 </div>
 
                 <div v-show="activeTab === 'ranking'">
-                    <ClubRanking />
+                    <ClubRanking 
+                        :top-three="topThree"
+                        :leaderboard="leaderboard"
+                        :meta="leaderboardMeta"
+                        :filters="leaderboardFilters"
+                        :loading="leaderboardLoading"
+                        @filter="$emit('leaderboard-filter', $event)"
+                        @page-change="$emit('leaderboard-page-change', $event)"
+                    />
                 </div>
             </div>
 
@@ -73,8 +81,30 @@ const props = defineProps({
     isJoined: {
         type: Boolean,
         default: false
+    },
+    topThree: {
+        type: Array,
+        default: () => []
+    },
+    leaderboard: {
+        type: Array,
+        default: () => []
+    },
+    leaderboardMeta: {
+        type: Object,
+        default: () => ({})
+    },
+    leaderboardFilters: {
+        type: Object,
+        default: () => ({})
+    },
+    leaderboardLoading: {
+        type: Boolean,
+        default: false
     }
 })
+
+defineEmits(['leaderboard-filter', 'leaderboard-page-change'])
 
 const tabs = computed(() => [
     { id: 'intro', name: 'Giới thiệu' },
