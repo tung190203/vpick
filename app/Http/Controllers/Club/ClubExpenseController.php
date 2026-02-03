@@ -13,6 +13,7 @@ use App\Models\Club\ClubExpense;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class ClubExpenseController extends Controller
@@ -66,23 +67,27 @@ class ClubExpenseController extends Controller
         }
 
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
+            'title' => 'nullable|string|max:255',
+            'description' => 'required_without:title|nullable|string',
             'amount' => 'required|numeric|min:0.01',
-            'payment_method' => 'required|in:cash,bank_transfer,qr_code,other',
+            'payment_method' => 'nullable|in:cash,bank_transfer,qr_code,other',
             'spent_at' => 'nullable|date',
             'note' => 'nullable|string',
             'reference_code' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
         ]);
 
         return DB::transaction(function () use ($club, $validated, $userId) {
+            // Tự tạo title từ description nếu không có
+            $title = $validated['title'] ?? $validated['description'] ?? 'Chi phí';
+            $note = $validated['note'] ?? $validated['description'] ?? null;
+
             $expense = ClubExpense::create([
                 'club_id' => $club->id,
-                'title' => $validated['title'],
+                'title' => Str::limit($title, 255),
                 'amount' => $validated['amount'],
                 'spent_by' => $userId,
                 'spent_at' => $validated['spent_at'] ?? now(),
-                'note' => $validated['note'] ?? null,
+                'note' => $note,
             ]);
 
             $mainWallet = $club->mainWallet;
@@ -92,10 +97,10 @@ class ClubExpenseController extends Controller
                     'amount' => $validated['amount'],
                     'source_type' => ClubWalletTransactionSourceType::Expense,
                     'source_id' => $expense->id,
-                    'payment_method' => $validated['payment_method'],
+                    'payment_method' => $validated['payment_method'] ?? PaymentMethod::Cash->value,
                     'status' => ClubWalletTransactionStatus::Pending,
                     'reference_code' => $validated['reference_code'] ?? null,
-                    'description' => $validated['description'] ?? null,
+                    'description' => $note,
                     'created_by' => $userId,
                 ]);
 
