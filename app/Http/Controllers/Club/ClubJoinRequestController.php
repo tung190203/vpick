@@ -284,7 +284,7 @@ class ClubJoinRequestController extends Controller
 
         $validated = $request->validate([
             'user_id' => 'sometimes|integer|exists:users,id',
-            'rejection_reason' => 'required|string|max:500',
+            'rejection_reason' => 'nullable|string|max:500',
         ]);
 
         if (!empty($validated['user_id'])) {
