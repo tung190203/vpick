@@ -351,6 +351,54 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         });
     }
 
+    public function scopeWithPickleballStats($query, $sportId)
+    {
+        if (!$sportId) return $query;
+
+        $scoreSubquery = DB::table('user_sport')
+            ->join('user_sport_scores', 'user_sport.id', '=', 'user_sport_scores.user_sport_id')
+            ->where('user_sport.sport_id', $sportId)
+            ->where('user_sport_scores.score_type', 'vndupr_score')
+            ->whereColumn('user_sport.user_id', 'users.id')
+            ->select(DB::raw('MAX(user_sport_scores.score_value)'));
+
+        $rankSubquery = DB::table('users as u2')
+            ->join('user_sport as us2', 'u2.id', '=', 'us2.user_id')
+            ->join('user_sport_scores as uss2', 'us2.id', '=', 'uss2.user_sport_id')
+            ->where('u2.total_matches', '>', 5)
+            ->where('us2.sport_id', $sportId)
+            ->where('uss2.score_type', 'vndupr_score')
+            ->where('uss2.score_value', '>', DB::raw('(' . $scoreSubquery->toSql() . ')'))
+            ->mergeBindings($scoreSubquery)
+            ->select(DB::raw('COUNT(DISTINCT u2.id) + 1'));
+
+        return $query->addSelect([
+            'vn_rank' => $rankSubquery
+        ]);
+    }
+
+    public function scopeWithInteractionStatus($query, $currentUserId)
+    {
+        if (!$currentUserId) return $query;
+
+        $isFollowingSubquery = DB::table('follows')
+            ->where('user_id', $currentUserId)
+            ->where('followable_type', User::class)
+            ->whereColumn('followable_id', 'users.id')
+            ->select(DB::raw(1));
+
+        $isFollowedBySubquery = DB::table('follows')
+            ->where('followable_id', $currentUserId)
+            ->where('followable_type', User::class)
+            ->whereColumn('user_id', 'users.id')
+            ->select(DB::raw(1));
+
+        return $query->addSelect([
+            'is_following_count' => $isFollowingSubquery,
+            'is_followed_by_count' => $isFollowedBySubquery,
+        ]);
+    }
+
     public function scopeInBounds($query, $minLat, $maxLat, $minLng, $maxLng)
     {
         return $query->whereBetween('latitude', [$minLat, $maxLat])
@@ -467,6 +515,18 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
                     ->whereMonth('mini_matches.created_at', now()->month)
                     ->whereYear('mini_matches.created_at', now()->year),
             ]);
+
+            $query->where(function ($q) use ($filters) {
+                foreach ($filters['recent_matches'] as $opt) {
+                    if ($opt === 'high') {
+                        $q->orWhereRaw('(COALESCE(matches_count, 0) + COALESCE(mini_matches_count, 0)) > 12');
+                    } elseif ($opt === 'medium') {
+                        $q->orWhereRaw('(COALESCE(matches_count, 0) + COALESCE(mini_matches_count, 0)) BETWEEN 5 AND 12');
+                    } elseif ($opt === 'low') {
+                        $q->orWhereRaw('(COALESCE(matches_count, 0) + COALESCE(mini_matches_count, 0)) <= 4');
+                    }
+                }
+            });
         }
     }
 
@@ -577,6 +637,25 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
             'id',            // local key của User
             'id'             // local key của UserSport
         );
+    }
+
+    public function getVNRank($sportId)
+    {
+        if (!$sportId) {
+            return null;
+        }
+
+        $userScore = $this->vnduprScoresBySport($sportId)->max('score_value') ?? 0;
+
+        return self::query()
+            ->where('total_matches', '>', 5)
+            ->select(DB::raw('COUNT(DISTINCT users.id) + 1 as `rank`'))
+            ->join('user_sport', 'users.id', '=', 'user_sport.user_id')
+            ->join('user_sport_scores', 'user_sport.id', '=', 'user_sport_scores.user_sport_id')
+            ->where('user_sport.sport_id', $sportId)
+            ->where('user_sport_scores.score_type', 'vndupr_score')
+            ->where('user_sport_scores.score_value', '>', $userScore)
+            ->value('rank');
     }
 
     public static function isAdmin($userId)

@@ -37,7 +37,7 @@
               <div 
                 class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center border-2 border-white"
                 :class="getRoleBadgeColor(member.role)">
-                <ShieldCheckIcon v-if="member.role === 'admin'" class="w-3 h-3" />
+                <ShieldCheckIcon v-if="member.role === 'admin'" class="w-3 h-3 text-white" />
                 <MoneyIcon v-else-if="member.role === 'treasurer'" class="w-3 h-3 text-white" />
               </div>
             </div>
@@ -151,36 +151,7 @@
       </div>
 
       <!-- Pagination -->
-      <div v-if="totalPages > 1" class="flex items-center justify-center gap-2 mt-8 pt-6 border-t border-gray-200">
-        <button
-          @click="goToPage(currentPage - 1)"
-          :disabled="currentPage === 1"
-          class="px-3 py-2 rounded-lg border border-gray-300 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50">
-          Trước
-        </button>
-        
-        <div class="flex items-center gap-1">
-          <button
-            v-for="page in visiblePages"
-            :key="page"
-            @click="goToPage(page)"
-            :class="[
-              'px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-              page === currentPage 
-                ? 'bg-blue-500 text-white' 
-                : 'border border-gray-300 hover:bg-gray-50'
-            ]">
-            {{ page }}
-          </button>
-        </div>
-
-        <button
-          @click="goToPage(currentPage + 1)"
-          :disabled="currentPage === totalPages"
-          class="px-3 py-2 rounded-lg border border-gray-300 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50">
-          Sau
-        </button>
-      </div>
+      <Pagination :meta="paginationMeta" @page-change="goToPage" />
       </div>
     </div>
 
@@ -210,6 +181,7 @@ import MoneyIcon from "@/assets/images/money.svg";
 import { EllipsisHorizontalIcon, MagnifyingGlassIcon, InformationCircleIcon, TrashIcon } from '@heroicons/vue/24/outline';
 import MemberInfoModal from '@/components/molecules/MemberInfoModal.vue';
 import DeleteConfirmationModal from '@/components/molecules/DeleteConfirmationModal.vue';
+import Pagination from '@/components/molecules/Pagination.vue';
 import * as ClubService from '@/service/club.js'
 import { useUserStore } from '@/store/auth'
 import { storeToRefs } from 'pinia'
@@ -239,7 +211,7 @@ const memberToDelete = ref(null)
 const selectedMember = ref(null)
 const loading = ref(false)
 const currentPage = ref(1)
-const perPage = ref(15)
+const perPage = ref(10)
 const totalPages = ref(1)
 const totalMembers = ref(0)
 const totalRegularMembers = ref(0)
@@ -290,22 +262,11 @@ const regularMembers = computed(() => {
   )
 })
 
-const visiblePages = computed(() => {
-  const pages = []
-  const maxVisible = 5
-  let start = Math.max(1, currentPage.value - Math.floor(maxVisible / 2))
-  let end = Math.min(totalPages.value, start + maxVisible - 1)
-  
-  if (end - start + 1 < maxVisible) {
-    start = Math.max(1, end - maxVisible + 1)
-  }
-  
-  for (let i = start; i <= end; i++) {
-    pages.push(i)
-  }
-  
-  return pages
-})
+const paginationMeta = computed(() => ({
+  current_page: currentPage.value,
+  last_page: totalPages.value,
+  total: totalMembers.value
+}))
 
 const deleteMessage = computed(() => {
   if (!memberToDelete.value) return ''
