@@ -42,6 +42,7 @@ class ClubActivity extends Model
         'allow_member_invite',
         'max_participants',
         'qr_code_url',
+        'check_in_token',
     ];
 
     protected $casts = [

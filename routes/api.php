@@ -248,6 +248,8 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
                 Route::delete('/{activityId}', [ClubActivityController::class, 'destroy']);
                 Route::post('/{activityId}/complete', [ClubActivityController::class, 'complete']);
                 Route::post('/{activityId}/cancel', [ClubActivityController::class, 'cancel']);
+                Route::post('/{activityId}/check-in', [ClubActivityParticipantController::class, 'checkIn']);
+                Route::get('/{activityId}/check-ins', [ClubActivityParticipantController::class, 'checkInList']);
 
                 Route::prefix('{activityId}/participants')->group(function () {
                     Route::get('/', [ClubActivityParticipantController::class, 'index']);
