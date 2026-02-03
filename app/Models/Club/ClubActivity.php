@@ -28,16 +28,20 @@ class ClubActivity extends Model
         'start_time',
         'end_time',
         'location',
+        'venue_address',
+        'cancellation_deadline',
         'reminder_minutes',
         'status',
         'created_by',
         'cancellation_reason',
         'cancelled_by',
         'fee_amount',
+        'guest_fee',
         'penalty_percentage',
         'fee_split_type',
         'allow_member_invite',
         'max_participants',
+        'qr_code_url',
     ];
 
     protected $casts = [
@@ -45,7 +49,9 @@ class ClubActivity extends Model
         'is_recurring' => 'boolean',
         'start_time' => 'datetime',
         'end_time' => 'datetime',
+        'cancellation_deadline' => 'datetime',
         'fee_amount' => 'decimal:2',
+        'guest_fee' => 'decimal:2',
         'penalty_percentage' => 'decimal:2',
         'allow_member_invite' => 'boolean',
     ];

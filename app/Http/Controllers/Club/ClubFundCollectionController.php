@@ -27,7 +27,7 @@ class ClubFundCollectionController extends Controller
         // Mặc định chỉ lấy các đợt thu đang active và chưa quá hạn
         $query = $club->fundCollections()
             ->activeAndNotExpired()
-            ->with(['creator', 'contributions.user', 'assignedMembers']);
+            ->with(['creator', 'contributions.user']);
 
         $perPage = $validated['per_page'] ?? 15;
         $collections = $query->orderBy('created_at', 'desc')->paginate($perPage);
@@ -257,15 +257,13 @@ class ClubFundCollectionController extends Controller
         $club = Club::findOrFail($clubId);
         $userId = auth()->id();
 
-        // Lấy tất cả các đợt thu active mà user được assign
+        // Lấy tất cả các đợt thu active (tạm thời lấy tất cả vì chưa có assignedMembers)
         $assignedCollections = $club->fundCollections()
             ->activeAndNotExpired()
-            ->whereHas('assignedMembers', function ($q) use ($userId) {
-                $q->where('user_id', $userId);
-            })
-            ->with(['creator', 'assignedMembers' => function ($q) use ($userId) {
-                $q->where('user_id', $userId);
-            }])
+            // ->whereHas('assignedMembers', function ($q) use ($userId) {
+            //     $q->where('user_id', $userId);
+            // })
+            ->with(['creator'])
             ->get();
 
         // Lấy các contribution của user
@@ -276,7 +274,7 @@ class ClubFundCollectionController extends Controller
 
         $result = $assignedCollections->map(function ($collection) use ($contributions) {
             $contribution = $contributions->get($collection->id);
-            $amountDue = $collection->assignedMembers->first()->pivot->amount_due ?? $collection->target_amount;
+            $amountDue = $collection->target_amount; // Tạm thời dùng target_amount vì chưa có assignedMembers
 
             return [
                 'id' => $collection->id,
