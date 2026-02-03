@@ -14,6 +14,7 @@ use App\Models\Club\Club;
 use App\Models\Club\ClubActivity;
 use App\Models\Club\ClubActivityParticipant;
 use App\Models\Club\ClubWalletTransaction;
+use App\Models\User;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -37,7 +38,10 @@ class ClubActivityController extends Controller
         ]);
 
         $query = $club->activities()
-            ->with(['creator', 'participants.user'])
+            ->with([
+                'creator' => User::FULL_RELATIONS,
+                'participants.user' => User::FULL_RELATIONS
+            ])
             ->withSum(self::ACTIVITY_COLLECTED_SUM, 'amount');
 
         if (!empty($validated['type'])) {
@@ -86,15 +90,19 @@ class ClubActivityController extends Controller
             'start_time' => 'required|date',
             'end_time' => 'nullable|date|after:start_time',
             'location' => 'nullable|string|max:255',
+            'venue_address' => 'nullable|string|max:500',
+            'cancellation_deadline' => 'nullable|date|before:start_time',
             'mini_tournament_id' => 'nullable|exists:mini_tournaments,id',
             'is_recurring' => 'sometimes|boolean',
             'recurring_schedule' => 'nullable|string',
             'reminder_minutes' => 'sometimes|integer|min:0',
             'fee_amount' => 'nullable|numeric|min:0',
+            'guest_fee' => 'nullable|numeric|min:0',
             'penalty_percentage' => 'nullable|numeric|min:0|max:100',
             'fee_split_type' => 'sometimes|in:equal,fixed',
             'allow_member_invite' => 'sometimes|boolean',
             'max_participants' => 'nullable|integer|min:1',
+            'qr_code_url' => 'nullable|url|max:500',
         ]);
 
         $activity = ClubActivity::create([
@@ -108,16 +116,23 @@ class ClubActivityController extends Controller
             'start_time' => $validated['start_time'],
             'end_time' => $validated['end_time'] ?? null,
             'location' => $validated['location'] ?? null,
+            'venue_address' => $validated['venue_address'] ?? null,
+            'cancellation_deadline' => $validated['cancellation_deadline'] ?? null,
             'reminder_minutes' => $validated['reminder_minutes'] ?? 15,
             'fee_amount' => $validated['fee_amount'] ?? 0,
+            'guest_fee' => $validated['guest_fee'] ?? 0,
             'penalty_percentage' => $validated['penalty_percentage'] ?? 50,
             'fee_split_type' => $validated['fee_split_type'] ?? 'fixed',
             'allow_member_invite' => $validated['allow_member_invite'] ?? false,
+            'qr_code_url' => $validated['qr_code_url'] ?? null,
             'status' => ClubActivityStatus::Scheduled,
             'created_by' => $userId,
         ]);
 
-        $activity->load(['creator', 'participants.user']);
+        $activity->load([
+            'creator' => User::FULL_RELATIONS,
+            'participants.user' => User::FULL_RELATIONS
+        ]);
         $activity->loadSum(self::ACTIVITY_COLLECTED_SUM, 'amount');
         return ResponseHelper::success(new ClubActivityResource($activity), 'Tạo hoạt động thành công', 201);
     }
@@ -125,7 +140,12 @@ class ClubActivityController extends Controller
     public function show($clubId, $activityId)
     {
         $activity = ClubActivity::where('club_id', $clubId)
-            ->with(['creator', 'club', 'participants.user', 'miniTournament'])
+            ->with([
+                'creator' => User::FULL_RELATIONS,
+                'club',
+                'participants.user' => User::FULL_RELATIONS,
+                'miniTournament'
+            ])
             ->withSum(self::ACTIVITY_COLLECTED_SUM, 'amount')
             ->findOrFail($activityId);
 
@@ -150,18 +170,25 @@ class ClubActivityController extends Controller
             'start_time' => 'sometimes|date',
             'end_time' => 'nullable|date|after:start_time',
             'location' => 'nullable|string|max:255',
+            'venue_address' => 'nullable|string|max:500',
+            'cancellation_deadline' => 'nullable|date|before:start_time',
             'is_recurring' => 'sometimes|boolean',
             'recurring_schedule' => 'nullable|string',
             'reminder_minutes' => 'sometimes|integer|min:0',
             'fee_amount' => 'nullable|numeric|min:0',
+            'guest_fee' => 'nullable|numeric|min:0',
             'penalty_percentage' => 'nullable|numeric|min:0|max:100',
             'fee_split_type' => 'sometimes|in:equal,fixed',
             'allow_member_invite' => 'sometimes|boolean',
             'max_participants' => 'nullable|integer|min:1',
+            'qr_code_url' => 'nullable|url|max:500',
         ]);
 
         $activity->update($validated);
-        $activity->load(['creator', 'participants.user']);
+        $activity->load([
+            'creator' => User::FULL_RELATIONS,
+            'participants.user' => User::FULL_RELATIONS
+        ]);
         $activity->loadSum(self::ACTIVITY_COLLECTED_SUM, 'amount');
         return ResponseHelper::success(new ClubActivityResource($activity), 'Cập nhật hoạt động thành công');
     }
@@ -198,18 +225,15 @@ class ClubActivityController extends Controller
         }
 
         $activity->markAsCompleted();
-        $activity->load(['creator', 'participants.user']);
+        $activity->load([
+            'creator' => User::FULL_RELATIONS,
+            'participants.user' => User::FULL_RELATIONS
+        ]);
         $activity->loadSum(self::ACTIVITY_COLLECTED_SUM, 'amount');
 
         return ResponseHelper::success(new ClubActivityResource($activity), 'Hoạt động đã được đánh dấu hoàn thành');
     }
 
-    /**
-     * Admin hủy sự kiện
-     * - Cần nhập lý do hủy
-     * - Có option: có hủy khoản thu đã tạo hay không?
-     * - Nếu hủy khoản thu và thành viên đã nộp tiền => tạo khoản chi cho admin (admin nợ tiền thành viên)
-     */
     public function cancel(Request $request, $clubId, $activityId)
     {
         $activity = ClubActivity::where('club_id', $clubId)->findOrFail($activityId);
@@ -227,37 +251,31 @@ class ClubActivityController extends Controller
 
         $validated = $request->validate([
             'cancellation_reason' => 'required|string|max:500',
-            'cancel_transactions' => 'required|boolean', // Có hủy khoản thu đã tạo hay không?
+            'cancel_transactions' => 'required|boolean',
         ]);
 
         return DB::transaction(function () use ($activity, $club, $userId, $validated) {
-            // Cập nhật status sự kiện thành Cancelled
             $activity->update([
                 'status' => ClubActivityStatus::Cancelled,
                 'cancellation_reason' => $validated['cancellation_reason'],
                 'cancelled_by' => $userId,
             ]);
 
-            // Nếu chọn hủy khoản thu
             if ($validated['cancel_transactions']) {
                 $mainWallet = $club->mainWallet;
                 if (!$mainWallet) {
                     return ResponseHelper::error('CLB chưa có ví chính', 404);
                 }
 
-                // Lấy tất cả participants đã accepted với walletTransaction
                 $participants = $activity->acceptedParticipants()
                     ->with(['user', 'walletTransaction'])
                     ->get();
 
                 foreach ($participants as $participant) {
-                    // Tìm transaction qua wallet_transaction_id (chính xác hơn)
                     $transaction = $participant->walletTransaction;
 
                     if ($transaction) {
-                        // Nếu transaction đã được confirm (thành viên đã nộp tiền)
                         if ($transaction->isConfirmed()) {
-                            // Tạo khoản chi cho admin (admin nợ tiền thành viên)
                             ClubWalletTransaction::create([
                                 'club_wallet_id' => $mainWallet->id,
                                 'direction' => ClubWalletTransactionDirection::Out,
@@ -271,13 +289,15 @@ class ClubActivityController extends Controller
                             ]);
                         }
 
-                        // Hủy transaction (reject)
                         $transaction->reject($userId);
                     }
                 }
             }
 
-            $activity->load(['creator', 'participants.user']);
+            $activity->load([
+                'creator' => User::FULL_RELATIONS,
+                'participants.user' => User::FULL_RELATIONS
+            ]);
             $activity->loadSum(self::ACTIVITY_COLLECTED_SUM, 'amount');
             return ResponseHelper::success(new ClubActivityResource($activity), 'Sự kiện đã được hủy');
         });

@@ -17,10 +17,14 @@ class ClubActivityParticipant extends Model
         'user_id',
         'status',
         'wallet_transaction_id',
+        'sport_score',
+        'vndupr_score',
     ];
 
     protected $casts = [
         'status' => ClubActivityParticipantStatus::class,
+        'sport_score' => 'decimal:2',
+        'vndupr_score' => 'decimal:2',
     ];
 
     public function activity()

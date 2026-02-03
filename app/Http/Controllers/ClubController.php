@@ -116,14 +116,14 @@ class ClubController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255|unique:clubs',
+            'name' => 'required|string|max:255|unique:clubs,name,NULL,id,deleted_at,NULL',
             'address' => 'nullable|string|max:255',
             'latitude' => 'nullable|string',
             'longitude' => 'nullable|string',
             'logo_url' => 'nullable|image|max:2048',
             'cover_image_url' => 'nullable|image|max:2048',
             'status' => 'nullable|in:active,inactive,draft',
-            'is_public' => 'nullable|boolean',
+            'is_public' => 'nullable|in:0,1,true,false',
         ]);
 
         $userId = auth()->id();
@@ -244,14 +244,14 @@ class ClubController extends Controller
     public function update(Request $request, $clubId)
     {
         $request->validate([
-            'name' => "nullable|string|max:255|unique:clubs,name,{$clubId}",
+            'name' => "nullable|string|max:255|unique:clubs,name,{$clubId},id,deleted_at,NULL",
             'address' => 'nullable|string|max:255',
             'latitude' => 'nullable|string',
             'longitude' => 'nullable|string',
             'logo_url' => 'nullable|image|max:2048',
             'cover_image_url' => 'nullable|image|max:2048',
             'status' => 'nullable|in:active,inactive,draft',
-            'is_public' => 'nullable|boolean',
+            'is_public' => 'nullable|in:0,1,true,false',
             'description' => 'nullable|string',
             'phone' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255',
@@ -392,6 +392,37 @@ class ClubController extends Controller
 
             return ResponseHelper::success([], 'Xóa câu lạc bộ thành công');
         });
+    }
+
+    public function restore($clubId)
+    {
+        $club = Club::onlyTrashed()->findOrFail($clubId);
+        $userId = auth()->id();
+
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
+        }
+
+        $isCreator = $club->created_by === $userId;
+        $isSystemAdmin = User::isAdmin($userId);
+
+        if (!$isCreator && !$isSystemAdmin) {
+            return ResponseHelper::error('Chỉ người tạo CLB hoặc admin hệ thống mới có quyền khôi phục CLB', 403);
+        }
+
+        $club->restore();
+        $club->refresh()->load([
+            'members.user' => function ($query) {
+                $query->with(User::FULL_RELATIONS);
+            },
+            'profile',
+            'creator'
+        ]);
+
+        return ResponseHelper::success(
+            new ClubResource($club),
+            'Khôi phục câu lạc bộ thành công. Lưu ý: Tên CLB đã được thay đổi để tránh trùng lặp. Bạn có thể cập nhật lại tên nếu cần.'
+        );
     }
 
     public function leave(Request $request, $clubId)
@@ -820,13 +851,13 @@ class ClubController extends Controller
                 'member_id' => $member->id,
                 'user_id' => $userId,
                 'user' => $member->user,
-                'vndupr_score' => round($finalScore, 2),
+                'vndupr_score' => round($finalScore, 3),
                 'monthly_stats' => [
                     'matches_played' => $matchesPlayed,
                     'wins' => $wins,
                     'losses' => $losses,
                     'win_rate' => $winRate,
-                    'score_change' => round($scoreChange, 2),
+                    'score_change' => round($scoreChange, 3),
                 ],
             ];
         });

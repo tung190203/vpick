@@ -26,13 +26,13 @@ class ClubLeaderboardResource extends JsonResource
                 'avatar_url' => $data['user']->avatar_url,
                 'visibility' => $data['user']->visibility,
             ],
-            'vndupr_score' => round($data['vndupr_score'], 2),
+            'vndupr_score' => round($data['vndupr_score'], 3),
             'monthly_stats' => [
                 'matches_played' => $data['monthly_stats']['matches_played'],
                 'wins' => $data['monthly_stats']['wins'],
                 'losses' => $data['monthly_stats']['losses'],
                 'win_rate' => round($data['monthly_stats']['win_rate'], 2),
-                'score_change' => round($data['monthly_stats']['score_change'], 2),
+                'score_change' => round($data['monthly_stats']['score_change'], 3),
             ],
         ];
     }
