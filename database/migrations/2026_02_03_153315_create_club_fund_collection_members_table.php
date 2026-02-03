@@ -19,7 +19,7 @@ return new class extends Migration
             $table->timestamps();
 
             // Unique constraint: một user chỉ được assign một lần trong một đợt thu
-            $table->unique(['club_fund_collection_id', 'user_id']);
+            $table->unique(['club_fund_collection_id', 'user_id'], 'cfcm_collection_user_unique');
         });
     }
 
