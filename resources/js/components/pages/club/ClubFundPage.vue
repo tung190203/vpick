@@ -122,7 +122,7 @@
                             <input 
                                 type="text" 
                                 placeholder="Tìm kiếm lịch sử giao dịch"
-                                class="w-full bg-[#EDEEF2] border-none rounded-2xl py-3.5 pl-12 pr-12 text-sm focus:ring-0 placeholder:text-[#9EA2B3] placeholder:font-regular"
+                                class="w-full bg-[#EDEEF2] border-none rounded-2xl py-3.5 pl-12 pr-12 text-sm focus:ring-0 placeholder:text-[#9EA2B3] placeholder:font-normal"
                             />
                             <div class="absolute inset-y-0 right-4 flex items-center">
                                 <FunnelIcon class="w-5 h-5 text-[#838799] cursor-pointer" />
@@ -199,10 +199,10 @@
 
                                         <div class="text-center mb-4 flex-shrink-0">
                                             <div class="flex items-center justify-center space-x-1.5 mb-1">
-                                                <span class="text-[14px] font-regular text-[#1F2937]">VNĐ</span>
+                                                <span class="text-[14px] font-normal text-[#1F2937]">VNĐ</span>
                                                 <span class="text-[20px] font-bold text-[#4392E0]">{{ qr.amount }}</span>
                                             </div>
-                                            <p class="text-[14px] text-[#838799] font-regular">{{ qr.description }}</p>
+                                            <p class="text-[14px] text-[#838799] font-normal">{{ qr.description }}</p>
                                         </div>
 
                                         <!-- Action Buttons -->

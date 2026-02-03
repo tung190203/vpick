@@ -24,8 +24,8 @@
 
         <!-- Info Section -->
         <div class="flex flex-col space-y-1 pt-1">
-          <h3 class="text-[17px] font-bold text-[#3E414C] leading-tight">{{ title }}</h3>
-          <div class="flex flex-col space-y-1 text-sm text-[#838799]">
+          <h3 class="font-semibold text-[#3E414C] leading-tight">{{ title }}</h3>
+          <div class="flex flex-col space-y-1 text-xs text-[#838799]">
             <div class="flex items-center space-x-1.5">
               <ClockIcon class="w-4 h-4" />
               <span>{{ time }}</span>
@@ -34,9 +34,9 @@
                <UsersIcon class="w-4 h-4" />
                <span>{{ participants }}</span>
             </div>
-            <div v-if="location" class="flex items-center space-x-1.5">
-              <div class="w-1 h-1 bg-[#838799] rounded-full"></div>
-              <span>{{ location }}</span>
+            <div v-if="countdown" class="flex items-center space-x-1.5 text-blue-600 font-semibold">
+              <ClockIcon class="w-4 h-4" />
+              <span>Bắt đầu sau: {{ countdown }}</span>
             </div>
           </div>
         </div>
@@ -61,7 +61,7 @@
     <Button v-if="status === 'private'"
         size="md" 
         color="secondary"
-        class="w-full font-bold py-2 rounded-md flex justify-center"
+        class="w-full font-semibold text-sm py-2 rounded-md flex justify-center"
         :disabled="disabled"
       >
         Huỷ tham gia
@@ -69,7 +69,7 @@
       <Button 
         size="md" 
         :color="buttonColor"
-        class="w-full font-bold py-2 rounded-md flex justify-center"
+        class="w-full font-semibold text-sm py-2 rounded-md flex justify-center"
         :disabled="disabled"
       >
         {{ buttonText }}
@@ -79,7 +79,7 @@
 </template>
 
 <script setup>
-import { ClockIcon, UsersIcon } from '@heroicons/vue/24/outline'
+import { ClockIcon, UsersIcon, MapPinIcon } from '@heroicons/vue/24/outline'
 import Button from '@/components/atoms/Button.vue'
 import { computed } from 'vue'
 
@@ -127,6 +127,10 @@ const props = defineProps({
   disabled: {
     type: Boolean,
     default: false
+  },
+  countdown: {
+    type: String,
+    default: ''
   }
 })
 
