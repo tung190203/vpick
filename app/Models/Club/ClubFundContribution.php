@@ -16,6 +16,8 @@ class ClubFundContribution extends Model
         'user_id',
         'amount',
         'wallet_transaction_id',
+        'receipt_url',
+        'note',
         'status',
     ];
 

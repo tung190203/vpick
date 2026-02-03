@@ -87,30 +87,46 @@ class ClubFundCollectionController extends Controller
         }
 
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
+            'title' => 'required_without:description|nullable|string|max:255',
+            'description' => 'required_without:title|nullable|string',
             'target_amount' => 'required|numeric|min:0.01',
+            'amount_per_member' => 'required|numeric|min:0.01',
+            'member_ids' => 'required|array|min:1',
+            'member_ids.*' => 'exists:users,id',
             'currency' => 'sometimes|string|max:3',
             'start_date' => 'required|date',
+            'deadline' => 'nullable|date|after:start_date',
             'end_date' => 'nullable|date|after:start_date',
             'qr_code_url' => 'nullable|string',
         ]);
 
+        // Map deadline -> end_date nếu có
+        $endDate = $validated['end_date'] ?? $validated['deadline'] ?? null;
+        $titleOrDescription = $validated['title'] ?? $validated['description'] ?? '';
+
         $collection = ClubFundCollection::create([
             'club_id' => $club->id,
-            'title' => $validated['title'],
-            'description' => $validated['description'] ?? null,
+            'title' => $titleOrDescription,
+            'description' => $titleOrDescription,
             'target_amount' => $validated['target_amount'],
             'collected_amount' => 0,
             'currency' => $validated['currency'] ?? 'VND',
-                'start_date' => $validated['start_date'],
-                'end_date' => $validated['end_date'] ?? null,
-                'status' => ClubFundCollectionStatus::Active,
-                'qr_code_url' => $validated['qr_code_url'] ?? null,
+            'start_date' => $validated['start_date'],
+            'end_date' => $endDate,
+            'status' => ClubFundCollectionStatus::Active,
+            'qr_code_url' => $validated['qr_code_url'] ?? null,
             'created_by' => $userId,
         ]);
 
-        $collection->load(['creator', 'club', 'contributions.user']);
+        // Sync assignedMembers với amount_due
+        $amountPerMember = (float) $validated['amount_per_member'];
+        $syncData = [];
+        foreach ($validated['member_ids'] as $memberId) {
+            $syncData[$memberId] = ['amount_due' => $amountPerMember];
+        }
+        $collection->assignedMembers()->sync($syncData);
+
+        $collection->load(['creator', 'club', 'contributions.user', 'assignedMembers']);
 
         return ResponseHelper::success(new ClubFundCollectionResource($collection), 'Tạo đợt thu thành công', 201);
     }

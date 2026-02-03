@@ -12,7 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('club_activity_participants', function (Blueprint $table) {
-            $table->timestamp('checked_in_at')->nullable()->after('vndupr_score');
+            if (!Schema::hasColumn('club_activity_participants', 'checked_in_at')) {
+                $table->timestamp('checked_in_at')->nullable()->after('vndupr_score');
+            }
         });
     }
 
@@ -22,7 +24,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('club_activity_participants', function (Blueprint $table) {
-            $table->dropColumn('checked_in_at');
+            if (Schema::hasColumn('club_activity_participants', 'checked_in_at')) {
+                $table->dropColumn('checked_in_at');
+            }
         });
     }
 };
