@@ -16,6 +16,7 @@ class ClubFundCollectionResource extends JsonResource
             'title' => $this->title,
             'description' => $this->description,
             'target_amount' => (float) $this->target_amount,
+            'amount_per_member' => (float) ($this->amount_per_member ?? $this->target_amount),
             'collected_amount' => (float) $this->collected_amount,
             'currency' => $this->currency,
             'start_date' => $this->start_date->format('Y-m-d'),
@@ -24,9 +25,21 @@ class ClubFundCollectionResource extends JsonResource
             'qr_code_url' => $this->qr_code_url,
             'created_by' => $this->created_by,
             'progress_percentage' => $this->when(isset($this->progress_percentage), $this->progress_percentage),
-            'contributions_count' => $this->whenLoaded('contributions', fn() => $this->contributions->count()),
-            'confirmed_count' => $this->whenLoaded('contributions', fn() => $this->contributions->where('status', 'confirmed')->count()),
-            'pending_count' => $this->whenLoaded('contributions', fn() => $this->contributions->where('status', 'pending')->count()),
+            'contributions_count' => $this->when(
+                isset($this->contributions_count),
+                (int) $this->contributions_count,
+                $this->whenLoaded('contributions', fn() => $this->contributions->count())
+            ),
+            'confirmed_count' => $this->when(
+                isset($this->confirmed_count),
+                (int) $this->confirmed_count,
+                $this->whenLoaded('contributions', fn() => $this->contributions->where('status', 'confirmed')->count())
+            ),
+            'pending_count' => $this->when(
+                isset($this->pending_count),
+                (int) $this->pending_count,
+                $this->whenLoaded('contributions', fn() => $this->contributions->where('status', 'pending')->count())
+            ),
             'assigned_members_count' => $this->whenLoaded('assignedMembers', fn() => $this->assignedMembers->count()),
             'creator' => new UserResource($this->whenLoaded('creator')),
             'contributions' => ClubFundContributionResource::collection($this->whenLoaded('contributions')),

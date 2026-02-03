@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Club;
 
 use App\Enums\ClubFundCollectionStatus;
+use App\Enums\ClubFundContributionStatus;
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\Club\ClubFundCollectionResource;
 use App\Models\Club\Club;
@@ -27,7 +28,22 @@ class ClubFundCollectionController extends Controller
         // Mặc định chỉ lấy các đợt thu đang active và chưa quá hạn
         $query = $club->fundCollections()
             ->activeAndNotExpired()
-            ->with(['creator', 'contributions.user']);
+            ->with([
+                'creator',
+                'contributions' => function ($q) {
+                    $q->where('status', ClubFundContributionStatus::Pending)
+                        ->with('user');
+                },
+            ])
+            ->withCount([
+                'contributions',
+                'contributions as confirmed_count' => function ($q) {
+                    $q->where('status', ClubFundContributionStatus::Confirmed);
+                },
+                'contributions as pending_count' => function ($q) {
+                    $q->where('status', ClubFundContributionStatus::Pending);
+                },
+            ]);
 
         $perPage = $validated['per_page'] ?? 15;
         $collections = $query->orderBy('created_at', 'desc')->paginate($perPage);
