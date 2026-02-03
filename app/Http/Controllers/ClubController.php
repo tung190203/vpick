@@ -820,13 +820,13 @@ class ClubController extends Controller
                 'member_id' => $member->id,
                 'user_id' => $userId,
                 'user' => $member->user,
-                'vndupr_score' => round($finalScore, 2),
+                'vndupr_score' => round($finalScore, 3),
                 'monthly_stats' => [
                     'matches_played' => $matchesPlayed,
                     'wins' => $wins,
                     'losses' => $losses,
                     'win_rate' => $winRate,
-                    'score_change' => round($scoreChange, 2),
+                    'score_change' => round($scoreChange, 3),
                 ],
             ];
         });
