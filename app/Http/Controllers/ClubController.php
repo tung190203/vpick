@@ -116,14 +116,14 @@ class ClubController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255|unique:clubs',
+            'name' => 'required|string|max:255|unique:clubs,name,NULL,id,deleted_at,NULL',
             'address' => 'nullable|string|max:255',
             'latitude' => 'nullable|string',
             'longitude' => 'nullable|string',
             'logo_url' => 'nullable|image|max:2048',
             'cover_image_url' => 'nullable|image|max:2048',
             'status' => 'nullable|in:active,inactive,draft',
-            'is_public' => 'nullable|boolean',
+            'is_public' => 'nullable|in:0,1,true,false',
         ]);
 
         $userId = auth()->id();
@@ -244,14 +244,14 @@ class ClubController extends Controller
     public function update(Request $request, $clubId)
     {
         $request->validate([
-            'name' => "nullable|string|max:255|unique:clubs,name,{$clubId}",
+            'name' => "nullable|string|max:255|unique:clubs,name,{$clubId},id,deleted_at,NULL",
             'address' => 'nullable|string|max:255',
             'latitude' => 'nullable|string',
             'longitude' => 'nullable|string',
             'logo_url' => 'nullable|image|max:2048',
             'cover_image_url' => 'nullable|image|max:2048',
             'status' => 'nullable|in:active,inactive,draft',
-            'is_public' => 'nullable|boolean',
+            'is_public' => 'nullable|in:0,1,true,false',
             'description' => 'nullable|string',
             'phone' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255',
