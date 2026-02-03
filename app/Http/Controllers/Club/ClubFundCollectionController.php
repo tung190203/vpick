@@ -247,4 +247,74 @@ class ClubFundCollectionController extends Controller
 
         return ResponseHelper::success(new ClubFundCollectionResource($collection), 'Tạo mã QR thành công', 201);
     }
+
+    /**
+     * Lấy các đợt thu liên quan đến member (my contributions)
+     * GET /clubs/{clubId}/fund-collections/my-collections
+     */
+    public function getMyCollections(Request $request, $clubId)
+    {
+        $club = Club::findOrFail($clubId);
+        $userId = auth()->id();
+
+        // Lấy tất cả các đợt thu active mà user được assign
+        $assignedCollections = $club->fundCollections()
+            ->activeAndNotExpired()
+            ->whereHas('assignedMembers', function ($q) use ($userId) {
+                $q->where('user_id', $userId);
+            })
+            ->with(['creator', 'assignedMembers' => function ($q) use ($userId) {
+                $q->where('user_id', $userId);
+            }])
+            ->get();
+
+        // Lấy các contribution của user
+        $contributions = \App\Models\Club\ClubFundContribution::whereIn('club_fund_collection_id', $assignedCollections->pluck('id'))
+            ->where('user_id', $userId)
+            ->get()
+            ->keyBy('club_fund_collection_id');
+
+        $result = $assignedCollections->map(function ($collection) use ($contributions) {
+            $contribution = $contributions->get($collection->id);
+            $amountDue = $collection->assignedMembers->first()->pivot->amount_due ?? $collection->target_amount;
+
+            return [
+                'id' => $collection->id,
+                'title' => $collection->title,
+                'description' => $collection->description,
+                'amount_due' => (float) $amountDue,
+                'currency' => $collection->currency,
+                'end_date' => $collection->end_date?->format('Y-m-d'),
+                'status' => $collection->status->value,
+                'qr_code_url' => $collection->qr_code_url,
+
+                // Trạng thái đóng góp của user
+                'my_contribution' => $contribution ? [
+                    'id' => $contribution->id,
+                    'amount' => (float) $contribution->amount,
+                    'status' => $contribution->status->value,
+                    'created_at' => $contribution->created_at->toISOString(),
+                ] : null,
+
+                'payment_status' => $contribution ? $contribution->status->value : 'unpaid',
+                'is_overdue' => $collection->end_date && now()->isAfter($collection->end_date),
+            ];
+        });
+
+        // Phân loại
+        $needPayment = $result->filter(fn($item) => $item['payment_status'] === 'unpaid')->values();
+        $pending = $result->filter(fn($item) => $item['payment_status'] === 'pending')->values();
+        $confirmed = $result->filter(fn($item) => $item['payment_status'] === 'confirmed')->values();
+
+        return ResponseHelper::success([
+            'need_payment' => $needPayment,
+            'pending' => $pending,
+            'confirmed' => $confirmed,
+            'summary' => [
+                'need_payment_count' => $needPayment->count(),
+                'pending_count' => $pending->count(),
+                'confirmed_count' => $confirmed->count(),
+            ],
+        ], 'Lấy danh sách đợt thu của tôi thành công');
+    }
 }
