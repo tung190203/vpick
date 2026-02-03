@@ -38,6 +38,11 @@ class ClubActivityParticipant extends Model
         return $this->belongsTo(ClubWalletTransaction::class, 'wallet_transaction_id');
     }
 
+    public function scopePending($query)
+    {
+        return $query->where('status', ClubActivityParticipantStatus::Pending);
+    }
+
     public function scopeInvited($query)
     {
         return $query->where('status', ClubActivityParticipantStatus::Invited);

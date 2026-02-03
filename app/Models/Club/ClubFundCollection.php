@@ -54,6 +54,13 @@ class ClubFundCollection extends Model
         return $this->hasMany(ClubFundContribution::class)->where('status', ClubFundContributionStatus::Confirmed);
     }
 
+    public function assignedMembers()
+    {
+        return $this->belongsToMany(User::class, 'club_fund_collection_members')
+            ->withPivot('amount_due')
+            ->withTimestamps();
+    }
+
     public function scopeActive($query)
     {
         return $query->where('status', ClubFundCollectionStatus::Active);
@@ -71,7 +78,9 @@ class ClubFundCollection extends Model
 
     public function getProgressPercentageAttribute()
     {
-        if ($this->target_amount == 0) return 0;
+        if ($this->target_amount == 0) {
+            return 0;
+        }
         return min(100, ($this->collected_amount / $this->target_amount) * 100);
     }
 
@@ -89,5 +98,31 @@ class ClubFundCollection extends Model
     {
         $this->collected_amount = $this->confirmedContributions()->sum('amount');
         $this->save();
+    }
+
+    /**
+     * Tự động chuyển status sang completed nếu quá end_date
+     */
+    public function checkAndUpdateStatus()
+    {
+        if ($this->status === ClubFundCollectionStatus::Active
+            && $this->end_date
+            && now()->isAfter($this->end_date->endOfDay())) {
+            $this->update(['status' => ClubFundCollectionStatus::Completed]);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Scope để lọc các đợt thu đang active (chưa quá end_date)
+     */
+    public function scopeActiveAndNotExpired($query)
+    {
+        return $query->where('status', ClubFundCollectionStatus::Active)
+            ->where(function ($q) {
+                $q->whereNull('end_date')
+                  ->orWhere('end_date', '>=', now()->startOfDay());
+            });
     }
 }
