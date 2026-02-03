@@ -8,7 +8,9 @@ use App\Http\Resources\Club\ClubFundCollectionResource;
 use App\Models\Club\Club;
 use App\Models\Club\ClubFundCollection;
 use App\Http\Controllers\Controller;
+use App\Services\ImageOptimizationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class ClubFundCollectionController extends Controller
@@ -154,5 +156,86 @@ class ClubFundCollectionController extends Controller
             'qr_code_url' => $collection->qr_code_url,
             'qr_code_data' => null,
         ], 'Lấy mã QR thành công');
+    }
+
+    /**
+     * Danh sách mã QR (các đợt thu có mã QR) – cho màn "Mã QR" / "MÃ QR HIỆN CÓ".
+     * GET /clubs/{clubId}/fund-collections/qr-codes
+     */
+    public function listQrCodes(Request $request, $clubId)
+    {
+        $club = Club::findOrFail($clubId);
+
+        $validated = $request->validate([
+            'page' => 'sometimes|integer|min:1',
+            'per_page' => 'sometimes|integer|min:1|max:100',
+        ]);
+
+        $perPage = $validated['per_page'] ?? 15;
+        $query = $club->fundCollections()
+            ->whereNotNull('qr_code_url')
+            ->where('qr_code_url', '!=', '')
+            ->with(['creator'])
+            ->orderBy('created_at', 'desc');
+
+        $collections = $query->paginate($perPage);
+
+        $data = [
+            'qr_codes' => ClubFundCollectionResource::collection($collections),
+        ];
+        $meta = [
+            'current_page' => $collections->currentPage(),
+            'per_page' => $collections->perPage(),
+            'total' => $collections->total(),
+            'last_page' => $collections->lastPage(),
+        ];
+
+        return ResponseHelper::success($data, 'Lấy danh sách mã QR thành công', 200, $meta);
+    }
+
+    /**
+     * Tạo mã QR mới – upload ảnh QR + số tiền + nội dung (theo Figma "THÊM MÃ QR MỚI").
+     * POST /clubs/{clubId}/fund-collections/qr-codes
+     */
+    public function createQrCode(Request $request, $clubId)
+    {
+        $club = Club::findOrFail($clubId);
+        $userId = auth()->id();
+
+        if (!$club->canManageFinance($userId)) {
+            return ResponseHelper::error('Chỉ admin/manager/treasurer mới có quyền tạo mã QR', 403);
+        }
+
+        $validated = $request->validate([
+            'image' => 'required|image|mimes:png,jpg,jpeg,gif|max:5120', // 5MB
+            'amount' => 'required|numeric|min:0.01',
+            'content' => 'required|string|max:300',
+            'apply_to_other_clubs' => 'sometimes|boolean',
+        ]);
+
+        $imageService = app(ImageOptimizationService::class);
+        $file = $request->file('image');
+        $qrCodeUrl = $imageService->optimizeThumbnail($file, 'qr_codes', 90);
+
+        $title = Str::limit($validated['content'], 255);
+        $today = now()->format('Y-m-d');
+
+        $collection = ClubFundCollection::create([
+            'club_id' => $club->id,
+            'title' => $title,
+            'description' => $validated['content'],
+            'target_amount' => $validated['amount'],
+            'collected_amount' => 0,
+            'currency' => 'VND',
+            'start_date' => $today,
+            'end_date' => null,
+            'status' => ClubFundCollectionStatus::Pending,
+            'qr_code_url' => $qrCodeUrl,
+            'created_by' => $userId,
+        ]);
+
+        $collection->load(['creator', 'club', 'contributions.user']);
+
+        return ResponseHelper::success(new ClubFundCollectionResource($collection), 'Tạo mã QR thành công', 201);
     }
 }
