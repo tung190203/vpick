@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Club;
 use App\Enums\ClubFundCollectionStatus;
 use App\Enums\ClubFundContributionStatus;
 use App\Helpers\ResponseHelper;
+use App\Http\Resources\Club\ClubFundContributionResource;
+use App\Http\Resources\UserResource;
 use App\Http\Resources\Club\ClubFundCollectionResource;
 use App\Models\Club\Club;
 use App\Models\Club\ClubFundCollection;
@@ -113,13 +115,82 @@ class ClubFundCollectionController extends Controller
     public function show($clubId, $collectionId)
     {
         $collection = ClubFundCollection::where('club_id', $clubId)
-            ->with(['creator', 'club', 'contributions.user'])
+            ->with(['creator', 'club'])
             ->findOrFail($collectionId);
 
-        return ResponseHelper::success(
-            new ClubFundCollectionResource($collection),
-            'Lấy thông tin đợt thu thành công'
-        );
+        $confirmedContributions = $collection->contributions()
+            ->where('status', ClubFundContributionStatus::Confirmed)
+            ->with('user')
+            ->get();
+        $pendingContributions = $collection->contributions()
+            ->where('status', ClubFundContributionStatus::Pending)
+            ->with('user')
+            ->get();
+
+        $confirmedByUser = $confirmedContributions->keyBy('user_id');
+        $pendingByUser = $pendingContributions->keyBy('user_id');
+        $amountPerMember = (float) ($collection->amount_per_member ?? $collection->target_amount);
+
+        $assignedMembers = $collection->assignedMembers()->withPivot('amount_due')->get();
+        if ($assignedMembers->isNotEmpty()) {
+            $memberSources = $assignedMembers->map(function ($user) use ($amountPerMember) {
+                return [
+                    'user' => $user,
+                    'amount_due' => (float) ($user->pivot?->amount_due ?? $amountPerMember),
+                ];
+            });
+        } else {
+            $clubMembers = $collection->club->activeMembers()->with('user')->get();
+            $memberSources = $clubMembers->map(function ($member) use ($amountPerMember) {
+                return [
+                    'user' => $member->user,
+                    'amount_due' => $amountPerMember,
+                ];
+            })->filter(fn ($item) => $item['user'] !== null)->values();
+        }
+
+        $paidMembers = $memberSources->filter(function ($item) use ($confirmedByUser) {
+            return $confirmedByUser->has($item['user']->id);
+        })->map(function ($item) use ($confirmedByUser) {
+            $contribution = $confirmedByUser->get($item['user']->id);
+            return [
+                'user' => new UserResource($item['user']),
+                'amount_due' => (float) $item['amount_due'],
+                'amount_paid' => (float) $contribution->amount,
+                'payment_status' => ClubFundContributionStatus::Confirmed->value,
+                'paid_at' => $contribution->created_at?->toISOString(),
+                'contribution' => new ClubFundContributionResource($contribution),
+            ];
+        })->values();
+
+        $unpaidMembers = $memberSources->filter(function ($item) use ($confirmedByUser) {
+            return !$confirmedByUser->has($item['user']->id);
+        })->map(function ($item) use ($pendingByUser) {
+            $pendingContribution = $pendingByUser->get($item['user']->id);
+            return [
+                'user' => new UserResource($item['user']),
+                'amount_due' => (float) $item['amount_due'],
+                'amount_paid' => (float) ($pendingContribution?->amount ?? 0),
+                'payment_status' => $pendingContribution
+                    ? ClubFundContributionStatus::Pending->value
+                    : 'unpaid',
+                'paid_at' => $pendingContribution?->created_at?->toISOString(),
+                'contribution' => $pendingContribution
+                    ? new ClubFundContributionResource($pendingContribution)
+                    : null,
+            ];
+        })->values();
+
+        return ResponseHelper::success([
+            'collection' => new ClubFundCollectionResource($collection),
+            'paid_members' => $paidMembers,
+            'unpaid_members' => $unpaidMembers,
+            'summary' => [
+                'paid_count' => $paidMembers->count(),
+                'pending_count' => $pendingContributions->count(),
+                'unpaid_count' => $unpaidMembers->where('payment_status', 'unpaid')->count(),
+            ],
+        ], 'Lấy thông tin đợt thu thành công');
     }
 
     public function update(Request $request, $clubId, $collectionId)
