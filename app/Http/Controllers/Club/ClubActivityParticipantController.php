@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Club;
 
 use App\Enums\ClubActivityParticipantStatus;
+use App\Enums\ClubActivityStatus;
 use App\Enums\ClubMemberRole;
 use App\Enums\ClubWalletTransactionDirection;
 use App\Enums\ClubWalletTransactionSourceType;
@@ -494,5 +495,94 @@ class ClubActivityParticipantController extends Controller
 
             return ResponseHelper::success(new ClubActivityParticipantResource($participant), $message);
         });
+    }
+
+    /**
+     * Member check-in bằng QR (accepted -> attended)
+     * POST /clubs/{clubId}/activities/{activityId}/check-in
+     */
+    public function checkIn(Request $request, $clubId, $activityId)
+    {
+        $validated = $request->validate([
+            'token' => 'required|string',
+        ]);
+
+        $activity = ClubActivity::where('club_id', $clubId)->findOrFail($activityId);
+        if ($activity->status === ClubActivityStatus::Cancelled) {
+            return ResponseHelper::error('Sự kiện đã bị hủy', 422);
+        }
+
+        if (!$activity->check_in_token || $activity->check_in_token !== $validated['token']) {
+            return ResponseHelper::error('Mã check-in không hợp lệ', 403);
+        }
+
+        $userId = auth()->id();
+        $member = $activity->club->activeMembers()->where('user_id', $userId)->first();
+        if (!$member) {
+            return ResponseHelper::error('Bạn không phải thành viên CLB', 403);
+        }
+
+        $participant = ClubActivityParticipant::where('club_activity_id', $activity->id)
+            ->where('user_id', $userId)
+            ->with('user')
+            ->first();
+
+        if (!$participant) {
+            return ResponseHelper::error('Bạn chưa tham gia hoạt động này', 422);
+        }
+
+        if ($participant->status === ClubActivityParticipantStatus::Attended) {
+            $participant->load('user');
+            return ResponseHelper::success(new ClubActivityParticipantResource($participant), 'Bạn đã check-in trước đó');
+        }
+
+        if ($participant->status !== ClubActivityParticipantStatus::Accepted) {
+            return ResponseHelper::error('Chỉ có thể check-in khi đã được duyệt tham gia', 422);
+        }
+
+        $participant->update([
+            'status' => ClubActivityParticipantStatus::Attended,
+            'checked_in_at' => now(),
+        ]);
+
+        $participant->load('user');
+
+        return ResponseHelper::success(new ClubActivityParticipantResource($participant), 'Check-in thành công');
+    }
+
+    /**
+     * Danh sách check-in của activity
+     * GET /clubs/{clubId}/activities/{activityId}/check-ins
+     */
+    public function checkInList($clubId, $activityId)
+    {
+        $activity = ClubActivity::where('club_id', $clubId)->findOrFail($activityId);
+        $userId = auth()->id();
+
+        $member = $activity->club->activeMembers()->where('user_id', $userId)->first();
+        if (!$member || !in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary])) {
+            return ResponseHelper::error('Chỉ admin/manager/secretary mới có quyền xem danh sách check-in', 403);
+        }
+
+        $checkedIn = $activity->participants()
+            ->where('status', ClubActivityParticipantStatus::Attended)
+            ->with('user')
+            ->get();
+
+        $waiting = $activity->participants()
+            ->where('status', ClubActivityParticipantStatus::Accepted)
+            ->with('user')
+            ->get();
+
+        $data = [
+            'checked_in' => ClubActivityParticipantResource::collection($checkedIn),
+            'waiting' => ClubActivityParticipantResource::collection($waiting),
+            'summary' => [
+                'checked_in_count' => $checkedIn->count(),
+                'waiting_count' => $waiting->count(),
+            ],
+        ];
+
+        return ResponseHelper::success($data, 'Lấy danh sách check-in thành công');
     }
 }

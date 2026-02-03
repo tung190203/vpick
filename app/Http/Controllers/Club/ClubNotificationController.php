@@ -36,11 +36,13 @@ class ClubNotificationController extends Controller
 
         $query = $club->notifications()->with(['type', 'creator', 'recipients.user']);
 
-        // Thành viên thường (club_alert): chỉ thấy thông báo đã gửi; admin/manager/secretary thấy tất cả
         $member = $userId ? $club->activeMembers()->where('user_id', $userId)->first() : null;
         $canManage = $member && in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary]);
         if (!$canManage) {
-            $query->where('status', ClubNotificationStatus::Sent);
+            $query->where('status', ClubNotificationStatus::Sent)
+                ->whereHas('recipients', function ($q) use ($userId) {
+                    $q->where('user_id', $userId);
+                });
         }
 
         if (isset($validated['is_pinned'])) {
