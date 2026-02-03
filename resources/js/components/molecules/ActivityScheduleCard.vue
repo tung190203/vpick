@@ -1,10 +1,11 @@
 <template>
   <div 
-    class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm border-l-[2px] mb-4 transition"
+    class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm border-l-[2px] mb-4 transition cursor-pointer hover:shadow-md hover:border-l-4"
+    @click="$emit('click-card')"
     :class="[
       disabled ? 'border-gray-200 opacity-70 grayscale-[0.5]' : (
         type === 'danger' ? 'border-red-500' : 
-        type === 'primary' ? 'border-blue-500' : 'border-[#BBBFCC]'
+        type === 'primary' ? 'border-[#4392E0]' : 'border-[#BBBFCC]'
       )
     ]"
   >
@@ -14,7 +15,7 @@
         class="flex flex-col items-center justify-center w-16 h-16 rounded-md border"
         :class="[
           type === 'danger' ? 'bg-red-50 border-[#EB969B] text-[#D72D36]' : 
-          type === 'primary' ? 'bg-blue-50 border-[#6AAAEB] text-[#4392E0]' : 'bg-gray-50 border-[#BBBFCC] text-[#838799]'
+          type === 'primary' ? 'bg-blue-50 border-[#4392E0] text-[#4392E0]' : 'bg-gray-50 border-[#BBBFCC] text-[#838799]'
         ]"
       >
         <span class="text-xs font-bold uppercase">{{ day }}</span>
@@ -28,10 +29,6 @@
           <div class="flex items-center space-x-1">
             <ClockIcon class="w-4 h-4" />
             <span>{{ time }}</span>
-          </div>
-          <div v-if="location" class="flex items-center space-x-1">
-            <div class="w-1 h-1 bg-[#838799] rounded-full"></div>
-            <span>{{ location }}</span>
           </div>
         </div>
         <div class="flex items-center space-x-1 text-sm text-[#838799]">
@@ -52,12 +49,12 @@
             'bg-[#EDEEF2] text-[#838799]': !['open', 'private'].includes(status),
         }"
       >
-        {{ status }}
+        {{ statusText || status }}
       </span>
       <Button 
         size="md" 
         :color="buttonColor"
-        class="font-bold px-6 py-2 rounded-md"
+        class="font-bold px-4 py-3 rounded-[4px]"
         :disabled="disabled"
       >
         {{ buttonText }}
@@ -88,15 +85,15 @@ const props = defineProps({
     type: String,
     required: true
   },
-  location: {
-    type: String,
-    default: ''
-  },
   participants: {
     type: String,
     required: true
   },
   status: {
+    type: String,
+    default: ''
+  },
+  statusText: {
     type: String,
     default: ''
   },

@@ -16,8 +16,8 @@
                 </div>
             </div>
 
-            <!-- Featured Card (Fixed) -->
-            <div class="px-6 pb-4">
+            <!-- Featured Card (Dynamic) -->
+            <div class="px-6 pb-4" v-if="nextMatch">
                 <div class="relative w-full rounded-2xl overflow-hidden shadow-md">
                     <div class="absolute inset-0 bg-[#D72D36]" :style="{ backgroundImage: `url(${thumbnail})` }">
                     </div>
@@ -27,46 +27,37 @@
                             <span
                                 class="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide border border-white/30">Trận
                                 tiếp theo</span>
-                            <div class="flex items-center gap-1 text-sm font-medium">
+                            <div v-if="countdown" class="flex items-center gap-1 text-sm font-medium">
                                 <ClockIcon class="w-4 h-4" />
-                                <span>Bắt đầu sau: 45:12</span>
+                                <span>Bắt đầu sau: {{ countdown }}</span>
                             </div>
                         </div>
 
                         <div class="mb-6">
-                            <h2 class="text-2xl font-bold mb-1">Kèo cố định Sân số 4</h2>
-                            <div class="flex items-center gap-2 opacity-90">
+                            <h2 class="text-xl font-semibold mb-1">{{ nextMatch.title }}</h2>
+                            <div class="flex items-center gap-2 opacity-90" v-if="nextMatch.location">
                                 <MapPinIcon class="w-4 h-4" />
-                                <span class="text-sm font-medium">Pickleball Sài Gòn Phố, Quận 7</span>
+                                <span class="text-sm font-normal">{{ nextMatch.location }}</span>
                             </div>
                         </div>
 
                         <div class="flex items-center justify-between">
                             <div class="flex -space-x-3">
-                                <!-- Avatar Placeholders -->
-                                <div
-                                    class="w-10 h-10 rounded-full border-2 border-[#D72D36] bg-gray-200 flex items-center justify-center text-gray-500 text-xs font-bold overflow-hidden">
-                                    <img src="https://i.pravatar.cc/150?img=1" alt="avatar"
-                                        class="w-full h-full object-cover">
-                                </div>
-                                <div
-                                    class="w-10 h-10 rounded-full border-2 border-[#D72D36] bg-gray-200 flex items-center justify-center text-gray-500 text-xs font-bold overflow-hidden">
-                                    <img src="https://i.pravatar.cc/150?img=5" alt="avatar"
-                                        class="w-full h-full object-cover">
-                                </div>
-                                <div
-                                    class="w-10 h-10 rounded-full border-2 border-[#D72D36] bg-gray-200 flex items-center justify-center text-gray-500 text-xs font-bold overflow-hidden">
-                                    <img src="https://i.pravatar.cc/150?img=9" alt="avatar"
-                                        class="w-full h-full object-cover">
-                                </div>
-                                <div
+                                <template v-for="(participant, pIdx) in nextMatch.participants_list?.slice(0, 3)" :key="pIdx">
+                                    <div
+                                        class="w-10 h-10 rounded-full border-2 border-[#D72D36] bg-gray-200 flex items-center justify-center text-gray-500 text-xs font-bold overflow-hidden">
+                                        <img :src="participant.avatar || 'https://i.pravatar.cc/150'" alt="avatar"
+                                            class="w-full h-full object-cover">
+                                    </div>
+                                </template>
+                                <div v-if="nextMatch.participants_count > 3"
                                     class="w-10 h-10 rounded-full border-2 border-[#D72D36] bg-white flex items-center justify-center text-[#D72D36] text-xs font-bold">
-                                    +9
+                                    +{{ nextMatch.participants_count - 3 }}
                                 </div>
                             </div>
                             <button
-                                class="bg-white text-[#D72D36] hover:bg-gray-50 px-6 py-2.5 rounded-lg font-bold shadow-sm transition-colors">
-                                Check-in ngay
+                                class="bg-white text-[#D72D36] text-sm hover:bg-gray-50 px-6 py-2.5 rounded-lg font-semibold shadow-sm transition-colors">
+                                {{ nextMatch.buttonText }}
                             </button>
                         </div>
                     </div>
@@ -174,6 +165,14 @@ defineProps({
     historyActivities: {
         type: Array,
         default: () => []
+    },
+    nextMatch: {
+        type: Object,
+        default: null
+    },
+    countdown: {
+        type: String,
+        default: ''
     }
 })
 

@@ -6,6 +6,7 @@ use App\Helpers\ResponseHelper;
 use App\Http\Resources\ClubResource;
 use App\Http\Resources\UserResource;
 use App\Mail\VerifyNewEmailMail;
+use App\Models\Sport;
 use App\Models\User;
 use App\Services\GeocodingService;
 use App\Services\ImageOptimizationService;
@@ -57,7 +58,15 @@ class UserController extends Controller
             'is_map' => 'nullable|boolean',
         ]);
 
-        $query = User::withFullRelations()->where('id' , '!=', auth()->id())->filter($validated)->visibleFor(auth()->user());
+        $sport = Sport::where('slug', 'pickleball')->first();
+
+        $query = User::query()
+            ->with(['referee', 'follows', 'playTimes', 'sports', 'sports.sport', 'sports.scores', 'clubs'])
+            ->where('id', '!=', auth()->id())
+            ->filter($validated)
+            ->visibleFor(auth()->user())
+            ->withPickleballStats($sport?->id)
+            ->withInteractionStatus(auth()->id());
 
         $hasFilter = collect([
             'sport_id',
@@ -96,19 +105,18 @@ class UserController extends Controller
 
         if (!empty($validated['lat']) && !empty($validated['lng'])) {
             $query->orderByDistance($validated['lat'], $validated['lng']);
-        }        
+        }
 
         if (!empty($validated['lat']) && !empty($validated['lng']) && !empty($validated['radius'])) {
             $query->nearBy($validated['lat'], $validated['lng'], $validated['radius']);
         }
 
         if (!empty($validated['is_map']) && $validated['is_map']) {
-            // $users = $query->whereNotNull('latitude')->whereNotNull('longitude')->get();
             $users = $query->get();
 
             $data = [
                 'users' => UserResource::collection($users),
-                'clubs' => ClubResource::collection(auth()->user()->clubs()->get()),
+                'clubs' => ClubResource::collection(auth()->user()->clubs),
             ];
 
             $meta = [
@@ -120,39 +128,9 @@ class UserController extends Controller
         } else {
             $paginated = $query->paginate($validated['per_page'] ?? User::PER_PAGE);
 
-            // Nếu có recent_matches thì xử lý lọc sau khi paginate
-            if (!empty($validated['recent_matches']) && is_array($validated['recent_matches'])) {
-                $collection = $paginated->getCollection();
-
-                $collection->transform(function ($user) {
-                    $user->total_matches_count = ($user->matches_count ?? 0) + ($user->mini_matches_count ?? 0);
-                    return $user;
-                });
-
-                $collection = $collection->filter(function ($user) use ($validated) {
-                    foreach ($validated['recent_matches'] as $opt) {
-                        if ($opt === 'high' && $user->total_matches_count > 12)
-                            return true;
-                        if ($opt === 'medium' && $user->total_matches_count >= 5 && $user->total_matches_count <= 12)
-                            return true;
-                        if ($opt === 'low' && $user->total_matches_count <= 4)
-                            return true;
-                    }
-                    return false;
-                })->values();
-
-                $paginated = new LengthAwarePaginator(
-                    $collection,
-                    $paginated->total(),
-                    $paginated->perPage(),
-                    $paginated->currentPage(),
-                    ['path' => $request->url(), 'query' => $request->query()]
-                );
-            }
-
             $data = [
                 'users' => UserResource::collection($paginated),
-                'clubs' => ClubResource::collection(auth()->user()->clubs()->get()),
+                'clubs' => ClubResource::collection(auth()->user()->clubs),
             ];
 
             $meta = [

@@ -44,8 +44,8 @@
     },
     danger: {
       solid: 'bg-red-600 text-white hover:bg-red-700',
-      outline: 'border border-red-600 text-red-600 hover:bg-red-50',
-      text: 'text-red-600 hover:underline'
+      outline: 'border border-[#D72D36] text-[#D72D36] hover:bg-[#D72D36]/20',
+      text: 'text-[#D72D36] hover:underline'
     }
   }
   

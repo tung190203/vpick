@@ -13,6 +13,7 @@ import Leaderboard from '@/components/pages/leader-board/Leaderboard.vue'
 import ClubPage from '@/components/pages/club/ClubPage.vue'
 import ClubFundPage from '@/components/pages/club/ClubFundPage.vue'
 import ClubDetailPage from '@/components/pages/club/ClubDetailPage.vue'
+import ClubDetailActivityPage from '@/components/pages/club/ClubDetailActivityPage.vue'
 import TournamentPage from '@/components/pages/tournament/TournamentPage.vue'
 import TournamentDetail from '@/components/pages/tournament/TournamentDetail.vue'
 import MiniTournamentDetail from '@/components/pages/mini-tournament/detail/MiniTournamentDetail.vue'
@@ -234,6 +235,11 @@ export const route = [
             path: ':id/fund',
             name: 'club-fund',
             component: ClubFundPage,
+          },
+          {
+            path: ':id/detail-activity',
+            name: 'club-detail-activity',
+            component: ClubDetailActivityPage,
           }
         ]
       },
