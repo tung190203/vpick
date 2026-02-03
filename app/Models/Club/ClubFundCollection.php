@@ -54,6 +54,13 @@ class ClubFundCollection extends Model
         return $this->hasMany(ClubFundContribution::class)->where('status', ClubFundContributionStatus::Confirmed);
     }
 
+    public function assignedMembers()
+    {
+        return $this->belongsToMany(User::class, 'club_fund_collection_members')
+            ->withPivot('amount_due')
+            ->withTimestamps();
+    }
+
     public function scopeActive($query)
     {
         return $query->where('status', ClubFundCollectionStatus::Active);

@@ -25,8 +25,12 @@ class ClubFundCollectionResource extends JsonResource
             'created_by' => $this->created_by,
             'progress_percentage' => $this->when(isset($this->progress_percentage), $this->progress_percentage),
             'contributions_count' => $this->whenLoaded('contributions', fn() => $this->contributions->count()),
+            'confirmed_count' => $this->whenLoaded('contributions', fn() => $this->contributions->where('status', 'confirmed')->count()),
+            'pending_count' => $this->whenLoaded('contributions', fn() => $this->contributions->where('status', 'pending')->count()),
+            'assigned_members_count' => $this->whenLoaded('assignedMembers', fn() => $this->assignedMembers->count()),
             'creator' => new UserResource($this->whenLoaded('creator')),
             'contributions' => ClubFundContributionResource::collection($this->whenLoaded('contributions')),
+            'assigned_members' => UserResource::collection($this->whenLoaded('assignedMembers')),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];
