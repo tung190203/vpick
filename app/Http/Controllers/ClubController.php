@@ -394,6 +394,37 @@ class ClubController extends Controller
         });
     }
 
+    public function restore($clubId)
+    {
+        $club = Club::onlyTrashed()->findOrFail($clubId);
+        $userId = auth()->id();
+
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
+        }
+
+        $isCreator = $club->created_by === $userId;
+        $isSystemAdmin = User::isAdmin($userId);
+
+        if (!$isCreator && !$isSystemAdmin) {
+            return ResponseHelper::error('Chỉ người tạo CLB hoặc admin hệ thống mới có quyền khôi phục CLB', 403);
+        }
+
+        $club->restore();
+        $club->refresh()->load([
+            'members.user' => function ($query) {
+                $query->with(User::FULL_RELATIONS);
+            },
+            'profile',
+            'creator'
+        ]);
+
+        return ResponseHelper::success(
+            new ClubResource($club),
+            'Khôi phục câu lạc bộ thành công. Lưu ý: Tên CLB đã được thay đổi để tránh trùng lặp. Bạn có thể cập nhật lại tên nếu cần.'
+        );
+    }
+
     public function leave(Request $request, $clubId)
     {
         $club = Club::findOrFail($clubId);
