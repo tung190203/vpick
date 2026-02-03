@@ -19,12 +19,14 @@ class ClubActivityParticipant extends Model
         'wallet_transaction_id',
         'sport_score',
         'vndupr_score',
+        'checked_in_at',
     ];
 
     protected $casts = [
         'status' => ClubActivityParticipantStatus::class,
         'sport_score' => 'decimal:2',
         'vndupr_score' => 'decimal:2',
+        'checked_in_at' => 'datetime',
     ];
 
     public function activity()

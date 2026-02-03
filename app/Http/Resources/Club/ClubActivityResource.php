@@ -33,6 +33,7 @@ class ClubActivityResource extends JsonResource
             'max_participants' => $this->max_participants !== null ? (int) $this->max_participants : null,
             'collected_amount' => (float) ($this->collected_amount ?? 0),
             'qr_code_url' => $this->qr_code_url,
+            'check_in_url' => $this->qr_code_url,
             'status' => $this->status,
             'created_by' => $this->created_by,
             'participants_count' => $this->whenLoaded('participants', fn() => $this->participants->count()),
