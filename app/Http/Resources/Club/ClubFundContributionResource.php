@@ -16,6 +16,8 @@ class ClubFundContributionResource extends JsonResource
             'user_id' => $this->user_id,
             'amount' => (float) $this->amount,
             'wallet_transaction_id' => $this->wallet_transaction_id,
+            'receipt_url' => $this->receipt_url,
+            'note' => $this->note,
             'status' => $this->status,
             'user' => new UserResource($this->whenLoaded('user')),
             'wallet_transaction' => new ClubWalletTransactionResource($this->whenLoaded('walletTransaction')),

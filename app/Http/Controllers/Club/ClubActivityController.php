@@ -18,6 +18,7 @@ use App\Models\User;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class ClubActivityController extends Controller
@@ -124,9 +125,14 @@ class ClubActivityController extends Controller
             'penalty_percentage' => $validated['penalty_percentage'] ?? 50,
             'fee_split_type' => $validated['fee_split_type'] ?? 'fixed',
             'allow_member_invite' => $validated['allow_member_invite'] ?? false,
-            'qr_code_url' => $validated['qr_code_url'] ?? null,
             'status' => ClubActivityStatus::Scheduled,
             'created_by' => $userId,
+        ]);
+
+        $checkInToken = Str::random(48);
+        $activity->update([
+            'check_in_token' => $checkInToken,
+            'qr_code_url' => $validated['qr_code_url'] ?? $this->buildCheckInUrl($club->id, $activity->id, $checkInToken),
         ]);
 
         $activity->load([
@@ -301,5 +307,10 @@ class ClubActivityController extends Controller
             $activity->loadSum(self::ACTIVITY_COLLECTED_SUM, 'amount');
             return ResponseHelper::success(new ClubActivityResource($activity), 'Sự kiện đã được hủy');
         });
+    }
+
+    private function buildCheckInUrl($clubId, $activityId, $token): string
+    {
+        return url("/api/clubs/{$clubId}/activities/{$activityId}/check-in?token={$token}");
     }
 }

@@ -4,16 +4,13 @@ namespace App\Http\Controllers\Club;
 
 use App\Enums\ClubFundCollectionStatus;
 use App\Enums\ClubFundContributionStatus;
-use App\Enums\ClubWalletTransactionDirection;
-use App\Enums\ClubWalletTransactionSourceType;
-use App\Enums\ClubWalletTransactionStatus;
-use App\Enums\PaymentMethod;
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\Club\ClubFundContributionResource;
 use App\Models\Club\Club;
 use App\Models\Club\ClubFundCollection;
 use App\Models\Club\ClubFundContribution;
 use App\Http\Controllers\Controller;
+use App\Services\ImageOptimizationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -54,51 +51,64 @@ class ClubFundContributionController extends Controller
         return ResponseHelper::success($data, 'Lấy danh sách đóng góp thành công', 200, $meta);
     }
 
+    /**
+     * Member nộp tiền bằng ảnh biên lai + ghi chú.
+     * POST /clubs/{clubId}/fund-collections/{collectionId}/contributions
+     */
     public function store(Request $request, $clubId, $collectionId)
     {
         $collection = ClubFundCollection::where('club_id', $clubId)->findOrFail($collectionId);
         $userId = auth()->id();
 
-        if ($collection->status !== ClubFundCollectionStatus::Active) {
-            return ResponseHelper::error('Đợt thu không còn hoạt động', 422);
-        }
-
         $validated = $request->validate([
-            'amount' => 'required|numeric|min:0.01',
-            'payment_method' => ['required', Rule::enum(PaymentMethod::class)],
-            'reference_code' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
+            'image' => 'required|image|mimes:png,jpg,jpeg,gif|max:5120', // 5MB
+            'note' => 'nullable|string|max:500',
         ]);
 
-        return DB::transaction(function () use ($collection, $validated, $userId) {
-            $contribution = ClubFundContribution::create([
-                'club_fund_collection_id' => $collection->id,
-                'user_id' => $userId,
-                'amount' => $validated['amount'],
-                'status' => 'pending',
-            ]);
+        $errorMessage = null;
+        $amountDue = $collection->target_amount;
 
-            $club = $collection->club;
-            $mainWallet = $club->mainWallet;
-            if ($mainWallet) {
-                $transaction = $mainWallet->transactions()->create([
-                    'direction' => 'in',
-                    'amount' => $validated['amount'],
-                    'source_type' => 'fund_collection',
-                    'source_id' => $contribution->id,
-                    'payment_method' => $validated['payment_method'],
-                    'status' => 'pending',
-                    'reference_code' => $validated['reference_code'] ?? null,
-                    'description' => $validated['description'] ?? null,
-                    'created_by' => $userId,
-                ]);
+        if ($collection->status !== ClubFundCollectionStatus::Active) {
+            $errorMessage = 'Đợt thu không còn hoạt động';
+        } else {
+            $existingPending = $collection->contributions()
+                ->where('user_id', $userId)
+                ->where('status', ClubFundContributionStatus::Pending)
+                ->first();
 
-                $contribution->update(['wallet_transaction_id' => $transaction->id]);
+            if ($existingPending) {
+                $errorMessage = 'Đóng góp của bạn đang chờ xác nhận';
+            } else {
+                $assigned = $collection->assignedMembers()->where('user_id', $userId)->first();
+                if ($assigned) {
+                    $amountDue = $assigned->pivot?->amount_due ?? $amountDue;
+                }
+
+                if ($amountDue <= 0) {
+                    $errorMessage = 'Số tiền cần đóng không hợp lệ';
+                }
             }
+        }
 
-            $contribution->load(['user', 'walletTransaction']);
-            return ResponseHelper::success(new ClubFundContributionResource($contribution), 'Đóng góp thành công', 201);
-        });
+        if ($errorMessage) {
+            return ResponseHelper::error($errorMessage, 422);
+        }
+
+        $imageService = app(ImageOptimizationService::class);
+        $file = $request->file('image');
+        $receiptUrl = $imageService->optimizeThumbnail($file, 'fund_contribution_receipts', 90);
+
+        $contribution = ClubFundContribution::create([
+            'club_fund_collection_id' => $collection->id,
+            'user_id' => $userId,
+            'amount' => $amountDue,
+            'receipt_url' => $receiptUrl,
+            'note' => $validated['note'] ?? null,
+            'status' => ClubFundContributionStatus::Pending,
+        ]);
+
+        $contribution->load(['user', 'walletTransaction']);
+        return ResponseHelper::success(new ClubFundContributionResource($contribution), 'Đã gửi biên lai', 201);
     }
 
     public function show($clubId, $collectionId, $contributionId)
@@ -132,7 +142,7 @@ class ClubFundContributionController extends Controller
 
         return DB::transaction(function () use ($contribution) {
             $contribution->confirm();
-            
+
             if ($contribution->walletTransaction) {
                 $contribution->walletTransaction->confirm(auth()->id());
             }

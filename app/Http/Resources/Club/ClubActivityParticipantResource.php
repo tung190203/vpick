@@ -16,6 +16,7 @@ class ClubActivityParticipantResource extends JsonResource
             'user_id' => $this->user_id,
             'status' => $this->status,
             'user' => new UserResource($this->whenLoaded('user')),
+            'checked_in_at' => $this->checked_in_at?->toISOString(),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];
