@@ -254,6 +254,11 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
                     Route::post('/invite', [ClubActivityParticipantController::class, 'invite']);
                     Route::put('/{participantId}', [ClubActivityParticipantController::class, 'update']);
                     Route::delete('/{participantId}', [ClubActivityParticipantController::class, 'destroy']);
+                    Route::post('/{participantId}/approve', [ClubActivityParticipantController::class, 'approve']);
+                    Route::post('/{participantId}/reject', [ClubActivityParticipantController::class, 'reject']);
+                    Route::post('/{participantId}/accept-invite', [ClubActivityParticipantController::class, 'acceptInvite']);
+                    Route::post('/{participantId}/decline-invite', [ClubActivityParticipantController::class, 'declineInvite']);
+                    Route::post('/{participantId}/cancel', [ClubActivityParticipantController::class, 'cancel']);
                     Route::post('/{participantId}/withdraw', [ClubActivityParticipantController::class, 'withdraw']);
                 });
             });
@@ -281,6 +286,7 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
             Route::prefix('fund-collections')->group(function () {
                 Route::get('/', [ClubFundCollectionController::class, 'index']);
                 Route::post('/', [ClubFundCollectionController::class, 'store']);
+                Route::get('/my-collections', [ClubFundCollectionController::class, 'getMyCollections']);
                 Route::get('/qr-codes', [ClubFundCollectionController::class, 'listQrCodes']);
                 Route::post('/qr-codes', [ClubFundCollectionController::class, 'createQrCode']);
                 Route::get('/{collectionId}', [ClubFundCollectionController::class, 'show']);

@@ -4,6 +4,7 @@ namespace App\Enums;
 
 enum ClubActivityParticipantStatus: string
 {
+    case Pending = 'pending';
     case Invited = 'invited';
     case Accepted = 'accepted';
     case Declined = 'declined';
@@ -13,6 +14,7 @@ enum ClubActivityParticipantStatus: string
     public function label(): string
     {
         return match($this) {
+            self::Pending => 'Chờ duyệt',
             self::Invited => 'Đã mời',
             self::Accepted => 'Đã chấp nhận',
             self::Declined => 'Đã từ chối',
