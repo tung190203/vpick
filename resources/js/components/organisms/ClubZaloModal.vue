@@ -28,7 +28,7 @@
                     </div>
                      <!-- Toggle Switch -->
                     <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" v-model="form.enable_zalo_link" class="sr-only peer">
+                        <input type="checkbox" v-model="form.zalo_enabled" class="sr-only peer">
                         <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#D72D36]"></div>
                     </label>
                 </div>
@@ -39,7 +39,7 @@
                         <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <LinkIcon class="h-5 w-5 text-[#3E414C]" />
                         </span>
-                        <input type="text" v-model="form.zalo_url" class="block w-full pl-10 pr-3 py-2.5 bg-[#EDEEF2] border border-gray-200 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#D72D36]/20 focus:border-[#D72D36]" placeholder="https://zalo.me/g/..." :disabled="!form.enable_zalo_link" />
+                        <input type="text" v-model="form.zalo_link" class="block w-full pl-10 pr-3 py-2.5 bg-[#EDEEF2] border border-gray-200 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#D72D36]/20 focus:border-[#D72D36]" placeholder="https://zalo.me/g/..." :disabled="!form.zalo_enabled" />
                     </div>
                 </div>
 
@@ -63,16 +63,16 @@
                     </div>
                      <!-- Toggle Switch -->
                     <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" v-model="form.enable_qr" class="sr-only peer">
+                        <input type="checkbox" v-model="form.qr_code_enabled" class="sr-only peer">
                         <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#D72D36]"></div>
                     </label>
                 </div>
 
                 <!-- Image Uploader -->
-                <div class="border-2 border-dashed border-gray-200 rounded-xl bg-white p-6 flex flex-col items-center justify-center cursor-pointer hover:border-[#D72D36]/50 hover:bg-gray-50 transition-all relative overflow-hidden" @click="triggerFileInput" :class="{'opacity-50 pointer-events-none': !form.enable_qr}">
+                <div class="border-2 border-dashed border-gray-200 rounded-xl bg-white p-6 flex flex-col items-center justify-center cursor-pointer hover:border-[#D72D36]/50 hover:bg-gray-50 transition-all relative overflow-hidden" @click="triggerFileInput" :class="{'opacity-50 pointer-events-none': !form.qr_code_enabled}">
                     
-                    <template v-if="form.qr_image_url">
-                         <img :src="form.qr_image_url" class="max-h-64 object-contain rounded-lg" alt="QR Code" />
+                    <template v-if="form.qr_preview_url">
+                         <img :src="form.qr_preview_url" class="max-h-64 object-contain rounded-lg" alt="QR Code" />
                          <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                              <p class="text-white font-medium">Thay đổi ảnh</p>
                          </div>
@@ -86,10 +86,18 @@
                          <p class="text-xs text-gray-400 mt-1">PNG, JPG, GIF (Tối đa 5MB)</p>
                     </template>
 
-                    <input type="file" ref="qrInput" class="hidden" accept="image/*" @change="handleFileChange" :disabled="!form.enable_qr" />
+                    <input type="file" ref="qrInput" class="hidden" accept="image/*" @change="handleFileChange" :disabled="!form.qr_code_enabled" />
                 </div>
             </div>
 
+          </div>
+
+          <!-- Footer -->
+          <div class="p-6 pt-2 bg-white sticky bottom-0 z-10 text-center border-t border-gray-100">
+            <Button size="md" color="danger" class="w-fit bg-[#D72D36] hover:bg-[#c9252e] text-white rounded-[4px] px-[69px] py-3 font-semibold" @click="handleSubmit" :disabled="isLoading">
+                <span v-if="isLoading">Đang lưu...</span>
+                <span v-else>Lưu</span>
+            </Button>
           </div>
         </div>
       </div>
@@ -102,6 +110,7 @@ import { ref, watch } from 'vue'
 import { XMarkIcon, LinkIcon, InformationCircleIcon, PhotoIcon } from '@heroicons/vue/24/outline'
 import ShieldCheckIcon from "@/assets/images/shield_check.svg";
 import QrCodeIcon from '@/assets/images/qr_code.svg';
+import Button from '@/components/atoms/Button.vue'
 
 const props = defineProps({
   modelValue: Boolean,
@@ -109,28 +118,30 @@ const props = defineProps({
     type: Object,
     default: () => ({})
   },
-    save: {
-        type: Function
-    }
+  isLoading: Boolean
 })
 
 const emit = defineEmits(['update:modelValue', 'save'])
 const qrInput = ref(null)
 
 const form = ref({
-    enable_zalo_link: false,
-    zalo_url: '',
-    enable_qr: false,
-    qr_image_url: null,
-    qr_file: null
+    zalo_enabled: false,
+    zalo_link: '',
+    qr_code_enabled: false,
+    qr_preview_url: null,
+    qr_code_image_url: null
 })
 
 watch(() => props.club, (newVal) => {
-    if (newVal) {
-        form.value.zalo_url = newVal.zalo_url || ''
-        form.value.enable_zalo_link = !!newVal.zalo_url
-        form.value.qr_image_url = newVal.qr_code_url || null
-        form.value.enable_qr = !!newVal.qr_code_url
+    if (newVal?.profile) {
+        const profile = newVal.profile
+        const socialLinks = profile.social_links || {}
+        const settings = profile.settings || {}
+
+        form.value.zalo_link = socialLinks.zalo || ''
+        form.value.zalo_enabled = !!settings.zalo_enabled
+        form.value.qr_preview_url = profile.qr_code_image_url || null
+        form.value.qr_code_enabled = !!settings.qr_code_enabled
     }
 }, { immediate: true })
 
@@ -139,7 +150,7 @@ const closeModal = () => {
 }
 
 const triggerFileInput = () => {
-    if (form.value.enable_qr && qrInput.value) {
+    if (form.value.qr_code_enabled && qrInput.value) {
         qrInput.value.click()
     }
 }
@@ -150,16 +161,15 @@ const handleFileChange = (event) => {
 
     const reader = new FileReader()
     reader.onload = (e) => {
-        form.value.qr_image_url = e.target.result
-        form.value.qr_file = file
-        emit('save', { ...form.value })
+        form.value.qr_preview_url = e.target.result
+        form.value.qr_code_image_url = file
     }
     reader.readAsDataURL(file)
 }
 
-watch(() => form.value, (newVal) => {
-    emit('save', { ...newVal })
-}, { deep: true })
+const handleSubmit = () => {
+    emit('save', { ...form.value })
+}
 
 </script>
 
