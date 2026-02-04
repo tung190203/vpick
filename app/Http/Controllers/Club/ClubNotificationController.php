@@ -257,17 +257,81 @@ class ClubNotificationController extends Controller
 
     public function markAsRead($clubId, $notificationId)
     {
+        $club = Club::findOrFail($clubId);
         $notification = ClubNotification::where('club_id', $clubId)->findOrFail($notificationId);
         $userId = auth()->id();
 
+        $member = $userId ? $club->activeMembers()->where('user_id', $userId)->first() : null;
+        $canManage = $member && in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary]);
+
         $recipient = $notification->recipients()->where('user_id', $userId)->first();
+
         if (!$recipient) {
-            return ResponseHelper::error('Bạn không phải người nhận thông báo này', 403);
+            if (!$canManage) {
+                return ResponseHelper::error('Bạn không có quyền đánh dấu đọc thông báo này', 403);
+            }
+
+            $recipient = $notification->recipients()->create([
+                'user_id' => $userId,
+                'is_read' => true,
+                'read_at' => now(),
+            ]);
+        } else {
+            $recipient->markAsRead();
         }
 
-        $recipient->markAsRead();
-
         return ResponseHelper::success([], 'Đã đánh dấu đọc');
+    }
+
+    public function markAllAsRead($clubId)
+    {
+        $club = Club::findOrFail($clubId);
+        $userId = auth()->id();
+
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
+        }
+
+        $member = $club->activeMembers()->where('user_id', $userId)->first();
+        $canManage = $member && in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary]);
+
+        return DB::transaction(function () use ($club, $userId, $canManage) {
+            if ($canManage) {
+                $notifications = $club->notifications()->get();
+
+                foreach ($notifications as $notification) {
+                    $recipient = $notification->recipients()->where('user_id', $userId)->first();
+
+                    if (!$recipient) {
+                        $notification->recipients()->create([
+                            'user_id' => $userId,
+                            'is_read' => true,
+                            'read_at' => now(),
+                        ]);
+                    } else {
+                        $recipient->markAsRead();
+                    }
+                }
+
+                $message = 'Đã đánh dấu đọc tất cả thông báo';
+            } else {
+                $recipients = DB::table('club_notification_recipients')
+                    ->join('club_notifications', 'club_notification_recipients.club_notification_id', '=', 'club_notifications.id')
+                    ->where('club_notifications.club_id', $club->id)
+                    ->where('club_notification_recipients.user_id', $userId)
+                    ->where('club_notification_recipients.is_read', false)
+                    ->update([
+                        'club_notification_recipients.is_read' => true,
+                        'club_notification_recipients.read_at' => now(),
+                    ]);
+
+                $message = $recipients > 0
+                    ? "Đã đánh dấu đọc {$recipients} thông báo"
+                    : 'Không có thông báo chưa đọc';
+            }
+
+            return ResponseHelper::success([], $message);
+        });
     }
 
     public function getNotificationTypes()
@@ -297,7 +361,6 @@ class ClubNotificationController extends Controller
             'sent_at' => now(),
         ]);
 
-        // Nếu chưa có recipients thì tự động gửi cho tất cả active members
         if ($notification->recipients()->count() === 0) {
             $allMembers = $club->activeMembers()->pluck('user_id');
             foreach ($allMembers as $memberUserId) {

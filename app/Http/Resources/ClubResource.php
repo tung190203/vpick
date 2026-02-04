@@ -71,10 +71,24 @@ class ClubResource extends JsonResource
                 false
             ),
             'profile' => $this->whenLoaded('profile', function () {
-                return $this->profile ? [
+                if (!$this->profile) {
+                    return null;
+                }
+
+                $socialLinks = $this->profile->social_links ?: [];
+                $settings = $this->profile->settings ?: [];
+
+                // Ensure settings always have default values
+                $settingsWithDefaults = array_merge([
+                    'zalo_enabled' => false,
+                    'qr_code_enabled' => false,
+                ], $settings);
+
+                return [
                     'id' => $this->profile->id,
                     'description' => $this->profile->description,
                     'cover_image_url' => $this->profile->cover_image_url,
+                    'qr_code_image_url' => $this->profile->qr_code_image_url,
                     'phone' => $this->profile->phone,
                     'email' => $this->profile->email,
                     'website' => $this->profile->website,
@@ -84,9 +98,9 @@ class ClubResource extends JsonResource
                     'country' => $this->profile->country,
                     'latitude' => $this->profile->latitude,
                     'longitude' => $this->profile->longitude,
-                    'social_links' => $this->profile->social_links,
-                    'settings' => $this->profile->settings,
-                ] : null;
+                    'social_links' => $socialLinks ?: (object) [],
+                    'settings' => (object) $settingsWithDefaults,
+                ];
             }),
             'wallets' => $this->whenLoaded('wallets'),
             'created_at' => $this->created_at?->toISOString(),
