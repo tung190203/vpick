@@ -45,6 +45,23 @@ footer () {
 }
 
 # ==============================
+# ERROR TRAP
+# ==============================
+CURRENT_STEP=""
+
+trap 'on_error $LINENO' ERR
+
+on_error () {
+  echo -e "\n${RED}==============================${RESET}"
+  echo -e "${RED}${CROSS}  DEPLOY FAILED${RESET}"
+  echo -e "${YELLOW}• Step:${RESET} ${CURRENT_STEP}"
+  echo -e "${GRAY}• Line:${RESET} $1"
+  echo -e "${GRAY}• Fix the issue and re-run the script${RESET}"
+  echo -e "${RED}==============================${RESET}\n"
+  exit 1
+}
+
+# ==============================
 # START
 # ==============================
 header
@@ -54,6 +71,7 @@ header
 # ==============================
 step "Safety checks"
 
+CURRENT_STEP="Check current branch"
 CURRENT_BRANCH=$(git branch --show-current)
 
 if [ "$CURRENT_BRANCH" != "main" ]; then
@@ -62,6 +80,7 @@ if [ "$CURRENT_BRANCH" != "main" ]; then
   exit 1
 fi
 
+CURRENT_STEP="Check public/build on main"
 if [ -d "public/build" ]; then
   error "public/build exists on MAIN – this should NOT happen"
   info "Please remove build files from main first"
@@ -75,105 +94,63 @@ success "Safety checks passed"
 # ==============================
 step "Update MAIN branch"
 
-info "Checkout main"
+CURRENT_STEP="Checkout main"
 git checkout main
 
-info "Pull latest main"
+CURRENT_STEP="Pull latest main"
 git pull origin main
 
 success "Main branch updated"
 
 # ==============================
-# 2. BUILD DEV
+# 2. BUILD MATRIX
 # ==============================
-step "Build DEV assets"
+BUILDS=(
+  "dev|build:dev|build(dev): update assets|DEV"
+  "deploy|build:prod|build(prod): update assets|PROD"
+  "dev1|build:dev1|build(dev1): update assets|DEV1"
+)
 
-info "Checkout dev"
-git checkout dev
+for BUILD in "${BUILDS[@]}"; do
+  IFS="|" read -r BRANCH BUILD_CMD COMMIT_MSG LABEL <<< "$BUILD"
 
-info "Merge main → dev"
-git merge main --no-edit
+  step "Build $LABEL assets"
 
-info "Clean old DEV build"
-rm -rf public/build
+  CURRENT_STEP="Checkout $BRANCH"
+  git checkout "$BRANCH"
 
-info "Build DEV"
-npm run build:dev
+  CURRENT_STEP="Merge main → $BRANCH"
+  git merge main --no-edit
 
-info "Commit DEV build"
-git add public/build
-git commit -m "build(dev): update assets" || info "No DEV changes"
+  CURRENT_STEP="Clean old $LABEL build"
+  rm -rf public/build
 
-info "Push DEV"
-git push origin dev
+  CURRENT_STEP="Build $LABEL"
+  npm run "$BUILD_CMD"
 
-success "DEV build completed"
+  CURRENT_STEP="Commit $LABEL build"
+  git add public/build
+  git commit -m "$COMMIT_MSG" || info "No $LABEL changes"
 
-# ==============================
-# 3. BUILD PROD
-# ==============================
-step "Build PROD assets"
+  CURRENT_STEP="Push $LABEL"
+  git push origin "$BRANCH"
 
-info "Checkout deploy"
-git checkout deploy
-
-info "Merge main → deploy"
-git merge main --no-edit
-
-info "Clean old PROD build"
-rm -rf public/build
-
-info "Build PROD"
-npm run build:prod
-
-info "Commit PROD build"
-git add public/build
-git commit -m "build(prod): update assets" || info "No PROD changes"
-
-info "Push PROD"
-git push origin deploy
-
-success "PROD build completed"
+  success "$LABEL build completed"
+done
 
 # ==============================
-# 3. BUILD DEV1
-# ==============================
-step "Build DEV1 assets"
-
-info "Checkout deploy"
-git checkout dev1
-
-info "Merge main → dev1"
-git merge main --no-edit
-
-info "Clean old Dev1 build"
-rm -rf public/build
-
-info "Build Dev1"
-npm run build:dev1
-
-info "Commit Dev1 build"
-git add public/build
-git commit -m "build(dev1): update assets" || info "No Dev changes"
-
-info "Push Dev1"
-git push origin dev1
-
-success "Dev1 build completed"
-
-# ==============================
-# 4. BACK TO MAIN
+# 3. BACK TO MAIN
 # ==============================
 step "Restore MAIN working state"
 
-info "Checkout main"
+CURRENT_STEP="Checkout main"
 git checkout main
 
-info "Restore clean working tree"
+CURRENT_STEP="Restore clean working tree"
 git restore .
 git clean -fd
 
-info "Install composer dependencies"
+CURRENT_STEP="Install composer dependencies"
 composer install
 
 footer

@@ -12,6 +12,7 @@ import ResetPasswordPage from '@/components/pages/auth/password/ResetPasswordPag
 import Leaderboard from '@/components/pages/leader-board/Leaderboard.vue'
 import ClubPage from '@/components/pages/club/ClubPage.vue'
 import ClubFundPage from '@/components/pages/club/ClubFundPage.vue'
+import CreateClubPage from '@/components/pages/club/CreateClubPage.vue'
 import ClubDetailPage from '@/components/pages/club/ClubDetailPage.vue'
 import ClubDetailActivityPage from '@/components/pages/club/ClubDetailActivityPage.vue'
 import TournamentPage from '@/components/pages/tournament/TournamentPage.vue'
@@ -216,11 +217,11 @@ export const route = [
             name: 'club',
             component: ClubPage,
           },
-          // {
-          //   path: 'create',
-          //   name: 'create-club',
-          //   component: CreateClubPage,
-          // },
+          {
+            path: 'create',
+            name: 'create-club',
+            component: CreateClubPage,
+          },
           // {
           //   path: ':id/edit',
           //   name: 'edit-club',
