@@ -283,6 +283,61 @@ class ClubNotificationController extends Controller
         return ResponseHelper::success([], 'Đã đánh dấu đọc');
     }
 
+    public function markAllAsRead($clubId)
+    {
+        $club = Club::findOrFail($clubId);
+        $userId = auth()->id();
+
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
+        }
+
+        // Check quyền
+        $member = $club->activeMembers()->where('user_id', $userId)->first();
+        $canManage = $member && in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary]);
+
+        return DB::transaction(function () use ($club, $userId, $canManage) {
+            if ($canManage) {
+                // Admin/manager/secretary: Đánh dấu đã đọc TẤT CẢ notification của club
+                $notifications = $club->notifications()->get();
+
+                foreach ($notifications as $notification) {
+                    $recipient = $notification->recipients()->where('user_id', $userId)->first();
+
+                    if (!$recipient) {
+                        // Tạo recipient record nếu chưa có
+                        $notification->recipients()->create([
+                            'user_id' => $userId,
+                            'is_read' => true,
+                            'read_at' => now(),
+                        ]);
+                    } else {
+                        $recipient->markAsRead();
+                    }
+                }
+
+                $message = 'Đã đánh dấu đọc tất cả thông báo';
+            } else {
+                // Member thường: Chỉ đánh dấu đã đọc các notification mà họ là recipient
+                $recipients = DB::table('club_notification_recipients')
+                    ->join('club_notifications', 'club_notification_recipients.club_notification_id', '=', 'club_notifications.id')
+                    ->where('club_notifications.club_id', $club->id)
+                    ->where('club_notification_recipients.user_id', $userId)
+                    ->where('club_notification_recipients.is_read', false)
+                    ->update([
+                        'club_notification_recipients.is_read' => true,
+                        'club_notification_recipients.read_at' => now(),
+                    ]);
+
+                $message = $recipients > 0
+                    ? "Đã đánh dấu đọc {$recipients} thông báo"
+                    : 'Không có thông báo chưa đọc';
+            }
+
+            return ResponseHelper::success([], $message);
+        });
+    }
+
     public function getNotificationTypes()
     {
         $types = ClubNotificationType::where('is_active', true)->get();

@@ -271,6 +271,7 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
                 Route::get('/types', [ClubNotificationController::class, 'getNotificationTypes']);
                 Route::get('/', [ClubNotificationController::class, 'index']);
                 Route::post('/', [ClubNotificationController::class, 'store']);
+                Route::post('/mark-read-all', [ClubNotificationController::class, 'markAllAsRead']);
                 Route::get('/{notificationId}', [ClubNotificationController::class, 'show']);
                 Route::put('/{notificationId}', [ClubNotificationController::class, 'update']);
                 Route::delete('/{notificationId}', [ClubNotificationController::class, 'destroy']);
