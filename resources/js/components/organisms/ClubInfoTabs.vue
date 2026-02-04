@@ -25,7 +25,7 @@
                 </div>
 
                 <div v-show="activeTab === 'members'" class="text-gray-400">
-                    <ClubMember v-if="club?.id" :club-id="club.id" :isJoined="isJoined" />
+                    <ClubMember v-if="club?.id" :club-id="club.id" :isJoined="isJoined" :currentUserRole="currentUserRole" />
                     <div v-else class="text-center py-12">
                         <p class="text-gray-400">Đang tải...</p>
                     </div>
@@ -81,6 +81,10 @@ const props = defineProps({
     isJoined: {
         type: Boolean,
         default: false
+    },
+    currentUserRole: {
+        type: String,
+        default: null
     },
     topThree: {
         type: Array,

@@ -1116,8 +1116,8 @@ const fetchCompetitionLocations = async (keyword) => {
     try {
         const res = await CompetitionLocationService.getAllCompetitionLocations(keyword)
 
-        if (Array.isArray(res)) {
-            competitionLocations.value = res
+        if (Array.isArray(res.data.competition_locations)) {
+            competitionLocations.value = res.data.competition_locations
             isLocationDropdownOpen.value = competitionLocations.value.length > 0
         } else {
             competitionLocations.value = []
