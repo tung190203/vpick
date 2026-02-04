@@ -13,6 +13,7 @@ use App\Models\Club\ClubNotificationType;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 /**
@@ -85,6 +86,7 @@ class ClubNotificationController extends Controller
             'title' => 'required|string|max:255',
             'content' => 'required|string',
             'attachment_url' => 'nullable|string',
+            'attachment' => 'nullable|file|max:10240',
             'priority' => ['sometimes', Rule::enum(ClubNotificationPriority::class)],
             'status' => ['sometimes', Rule::enum(ClubNotificationStatus::class)],
             'metadata' => 'nullable|array',
@@ -94,13 +96,19 @@ class ClubNotificationController extends Controller
             'user_ids.*' => 'exists:users,id',
         ]);
 
-        return DB::transaction(function () use ($club, $validated, $userId) {
+        $attachmentUrl = $validated['attachment_url'] ?? null;
+        if ($request->hasFile('attachment')) {
+            $path = $request->file('attachment')->store('club_notifications/attachments', 'public');
+            $attachmentUrl = Storage::url($path);
+        }
+
+        return DB::transaction(function () use ($club, $validated, $userId, $attachmentUrl) {
             $notification = ClubNotification::create([
                 'club_id' => $club->id,
                 'club_notification_type_id' => $validated['club_notification_type_id'],
                 'title' => $validated['title'],
                 'content' => $validated['content'],
-                'attachment_url' => $validated['attachment_url'] ?? null,
+                'attachment_url' => $attachmentUrl,
                 'priority' => $validated['priority'] ?? ClubNotificationPriority::Normal,
                 'status' => $validated['status'] ?? ClubNotificationStatus::Draft,
                 'metadata' => $validated['metadata'] ?? null,
@@ -149,11 +157,18 @@ class ClubNotificationController extends Controller
             'title' => 'sometimes|string|max:255',
             'content' => 'sometimes|string',
             'attachment_url' => 'nullable|string',
+            'attachment' => 'nullable|file|max:10240',
             'priority' => ['sometimes', Rule::enum(ClubNotificationPriority::class)],
             'status' => ['sometimes', Rule::enum(ClubNotificationStatus::class)],
             'metadata' => 'nullable|array',
             'scheduled_at' => 'nullable|date',
         ]);
+
+        if ($request->hasFile('attachment')) {
+            $path = $request->file('attachment')->store('club_notifications/attachments', 'public');
+            $validated['attachment_url'] = Storage::url($path);
+        }
+        unset($validated['attachment']);
 
         $notification->update($validated);
         $notification->load(['type', 'creator', 'recipients.user']);
