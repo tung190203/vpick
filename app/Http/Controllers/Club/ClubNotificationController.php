@@ -27,6 +27,13 @@ class ClubNotificationController extends Controller
         $club = Club::findOrFail($clubId);
         $userId = auth()->id();
 
+        // Convert string 'true'/'false' sang boolean cho query params
+        if ($request->has('is_pinned')) {
+            $request->merge([
+                'is_pinned' => filter_var($request->input('is_pinned'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)
+            ]);
+        }
+
         $validated = $request->validate([
             'page' => 'sometimes|integer|min:1',
             'per_page' => 'sometimes|integer|min:1|max:100',
@@ -79,6 +86,13 @@ class ClubNotificationController extends Controller
         $member = $club->activeMembers()->where('user_id', $userId)->first();
         if (!$member || !in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary])) {
             return ResponseHelper::error('Chỉ admin/manager/secretary mới có quyền tạo thông báo', 403);
+        }
+
+        // Convert string 'true'/'false' sang boolean cho form-data
+        if ($request->has('is_pinned')) {
+            $request->merge([
+                'is_pinned' => filter_var($request->input('is_pinned'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)
+            ]);
         }
 
         $validated = $request->validate([

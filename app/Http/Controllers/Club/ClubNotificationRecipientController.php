@@ -16,6 +16,13 @@ class ClubNotificationRecipientController extends Controller
     {
         $notification = ClubNotification::where('club_id', $clubId)->findOrFail($notificationId);
 
+        // Convert string 'true'/'false' sang boolean cho query params
+        if ($request->has('is_read')) {
+            $request->merge([
+                'is_read' => filter_var($request->input('is_read'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)
+            ]);
+        }
+
         $validated = $request->validate([
             'is_read' => 'sometimes|boolean',
         ]);
