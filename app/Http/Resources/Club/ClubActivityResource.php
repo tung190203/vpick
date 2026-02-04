@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Club;
 
+use App\Enums\ClubActivityParticipantStatus;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use App\Http\Resources\UserResource;
@@ -39,7 +40,7 @@ class ClubActivityResource extends JsonResource
             'status' => $this->status,
             'created_by' => $this->created_by,
             'participants_count' => $this->whenLoaded('participants', fn() => $this->participants->count()),
-            'accepted_count' => $this->whenLoaded('participants', fn() => $this->participants->where('status', 'accepted')->count()),
+            'accepted_count' => $this->whenLoaded('participants', fn() => $this->participants->where('status', ClubActivityParticipantStatus::Accepted)->count()),
             'participants' => ClubActivityParticipantResource::collection($this->whenLoaded('participants')),
             'creator' => new UserResource($this->whenLoaded('creator')),
             'mini_tournament' => $this->whenLoaded('miniTournament'),
