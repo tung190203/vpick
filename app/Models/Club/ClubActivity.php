@@ -20,15 +20,15 @@ class ClubActivity extends Model
     protected $fillable = [
         'club_id',
         'mini_tournament_id',
+        'competition_location_id',
         'title',
         'description',
         'type',
+        'is_public',
         'is_recurring',
         'recurring_schedule',
         'start_time',
         'end_time',
-        'location',
-        'venue_address',
         'cancellation_deadline',
         'reminder_minutes',
         'status',
@@ -47,6 +47,7 @@ class ClubActivity extends Model
 
     protected $casts = [
         'status' => ClubActivityStatus::class,
+        'is_public' => 'boolean',
         'is_recurring' => 'boolean',
         'start_time' => 'datetime',
         'end_time' => 'datetime',
@@ -70,6 +71,11 @@ class ClubActivity extends Model
     public function miniTournament()
     {
         return $this->belongsTo(MiniTournament::class);
+    }
+
+    public function competitionLocation()
+    {
+        return $this->belongsTo(\App\Models\CompetitionLocation::class);
     }
 
     public function participants()

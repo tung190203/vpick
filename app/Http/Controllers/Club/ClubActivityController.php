@@ -41,7 +41,8 @@ class ClubActivityController extends Controller
         $query = $club->activities()
             ->with([
                 'creator' => User::FULL_RELATIONS,
-                'participants.user' => User::FULL_RELATIONS
+                'participants.user' => User::FULL_RELATIONS,
+                'competitionLocation'
             ])
             ->withSum(self::ACTIVITY_COLLECTED_SUM, 'amount');
 
@@ -84,16 +85,21 @@ class ClubActivityController extends Controller
             return ResponseHelper::error('Chỉ admin/manager/secretary mới có quyền tạo hoạt động', 403);
         }
 
+        // Convert string "true"/"false" to boolean
+        if ($request->has('is_public')) {
+            $request->merge(['is_public' => filter_var($request->is_public, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)]);
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'type' => 'required|in:meeting,practice,match,tournament,event,other',
             'start_time' => 'required|date',
             'end_time' => 'nullable|date|after:start_time',
-            'location' => 'nullable|string|max:255',
-            'venue_address' => 'nullable|string|max:500',
+            'competition_location_id' => 'nullable|exists:competition_locations,id',
             'cancellation_deadline' => 'nullable|date|before:start_time',
             'mini_tournament_id' => 'nullable|exists:mini_tournaments,id',
+            'is_public' => 'nullable|boolean',
             'is_recurring' => 'sometimes|boolean',
             'recurring_schedule' => 'nullable|string',
             'reminder_minutes' => 'sometimes|integer|min:0',
@@ -109,15 +115,15 @@ class ClubActivityController extends Controller
         $activity = ClubActivity::create([
             'club_id' => $club->id,
             'mini_tournament_id' => $validated['mini_tournament_id'] ?? null,
+            'competition_location_id' => $validated['competition_location_id'] ?? null,
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
             'type' => $validated['type'],
+            'is_public' => $validated['is_public'] ?? true,
             'is_recurring' => $validated['is_recurring'] ?? false,
             'recurring_schedule' => $validated['recurring_schedule'] ?? null,
             'start_time' => $validated['start_time'],
             'end_time' => $validated['end_time'] ?? null,
-            'location' => $validated['location'] ?? null,
-            'venue_address' => $validated['venue_address'] ?? null,
             'cancellation_deadline' => $validated['cancellation_deadline'] ?? null,
             'reminder_minutes' => $validated['reminder_minutes'] ?? 15,
             'fee_amount' => $validated['fee_amount'] ?? 0,
@@ -137,7 +143,8 @@ class ClubActivityController extends Controller
 
         $activity->load([
             'creator' => User::FULL_RELATIONS,
-            'participants.user' => User::FULL_RELATIONS
+            'participants.user' => User::FULL_RELATIONS,
+            'competitionLocation'
         ]);
         $activity->loadSum(self::ACTIVITY_COLLECTED_SUM, 'amount');
         return ResponseHelper::success(new ClubActivityResource($activity), 'Tạo hoạt động thành công', 201);
@@ -150,7 +157,8 @@ class ClubActivityController extends Controller
                 'creator' => User::FULL_RELATIONS,
                 'club',
                 'participants.user' => User::FULL_RELATIONS,
-                'miniTournament'
+                'miniTournament',
+                'competitionLocation'
             ])
             ->withSum(self::ACTIVITY_COLLECTED_SUM, 'amount')
             ->findOrFail($activityId);
@@ -169,15 +177,20 @@ class ClubActivityController extends Controller
             return ResponseHelper::error('Không có quyền cập nhật hoạt động này', 403);
         }
 
+        // Convert string "true"/"false" to boolean
+        if ($request->has('is_public')) {
+            $request->merge(['is_public' => filter_var($request->is_public, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)]);
+        }
+
         $validated = $request->validate([
             'title' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
             'type' => 'sometimes|in:meeting,practice,match,tournament,event,other',
             'start_time' => 'sometimes|date',
             'end_time' => 'nullable|date|after:start_time',
-            'location' => 'nullable|string|max:255',
-            'venue_address' => 'nullable|string|max:500',
+            'competition_location_id' => 'nullable|exists:competition_locations,id',
             'cancellation_deadline' => 'nullable|date|before:start_time',
+            'is_public' => 'nullable|boolean',
             'is_recurring' => 'sometimes|boolean',
             'recurring_schedule' => 'nullable|string',
             'reminder_minutes' => 'sometimes|integer|min:0',
@@ -193,7 +206,8 @@ class ClubActivityController extends Controller
         $activity->update($validated);
         $activity->load([
             'creator' => User::FULL_RELATIONS,
-            'participants.user' => User::FULL_RELATIONS
+            'participants.user' => User::FULL_RELATIONS,
+            'competitionLocation'
         ]);
         $activity->loadSum(self::ACTIVITY_COLLECTED_SUM, 'amount');
         return ResponseHelper::success(new ClubActivityResource($activity), 'Cập nhật hoạt động thành công');
@@ -233,7 +247,8 @@ class ClubActivityController extends Controller
         $activity->markAsCompleted();
         $activity->load([
             'creator' => User::FULL_RELATIONS,
-            'participants.user' => User::FULL_RELATIONS
+            'participants.user' => User::FULL_RELATIONS,
+            'competitionLocation'
         ]);
         $activity->loadSum(self::ACTIVITY_COLLECTED_SUM, 'amount');
 
@@ -302,7 +317,8 @@ class ClubActivityController extends Controller
 
             $activity->load([
                 'creator' => User::FULL_RELATIONS,
-                'participants.user' => User::FULL_RELATIONS
+                'participants.user' => User::FULL_RELATIONS,
+                'competitionLocation'
             ]);
             $activity->loadSum(self::ACTIVITY_COLLECTED_SUM, 'amount');
             return ResponseHelper::success(new ClubActivityResource($activity), 'Sự kiện đã được hủy');
