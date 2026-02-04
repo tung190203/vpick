@@ -224,7 +224,7 @@
                             <p class="text-[#838799]">Hiện chưa có lịch thi đấu</p>
                         </div>
                     </div>
-                    <ClubInfoTabs :club="club" :isJoined="is_joined" :top-three="topThree" :leaderboard="leaderboard"
+                    <ClubInfoTabs :club="club" :isJoined="is_joined" :currentUserRole="currentUserRole" :top-three="topThree" :leaderboard="leaderboard"
                         :leaderboard-meta="leaderboardMeta" :leaderboard-filters="leaderboardFilters"
                         :leaderboard-loading="isLeaderboardLoading" @leaderboard-filter="handleLeaderboardFilter"
                         @leaderboard-page-change="handleLeaderboardPageChange" />
@@ -527,7 +527,11 @@ const currentUserMember = computed(() => {
 })
 
 const isAdminView = computed(() => {
-    return currentUserMember.value && currentUserMember.value.role !== 'member'
+    return currentUserMember.value && (currentUserMember.value.role == 'admin' || currentUserMember.value.role == 'secretary')
+})
+
+const currentUserRole = computed(() => {
+    return currentUserMember.value?.role || null
 })
 
 const statsAdmin = computed(() => [

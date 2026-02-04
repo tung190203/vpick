@@ -3,11 +3,11 @@ import {API_ENDPOINT} from "@/constants/index.js";
 
 const competitionLocationEndpoint = API_ENDPOINT.COMPETITION_LOCATION;
 
-export const getAllCompetitionLocations = async (keyword) => {
-  const payload = {};
+export const getAllCompetitionLocations = async (keyword, page = 1) => {
+  const payload = { page };
   if (keyword && keyword.trim() !== '') {
     payload.keyword = keyword.trim();
   }
   return axiosInstance.post(`${competitionLocationEndpoint}/index`, payload)
-    .then((response) => response.data.data.competition_locations);
+    .then((response) => response.data);
 }
