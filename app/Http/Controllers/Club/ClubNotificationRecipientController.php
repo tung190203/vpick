@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Club;
 
+use App\Enums\ClubMemberRole;
 use App\Helpers\ResponseHelper;
 use App\Models\Club\Club;
 use App\Models\Club\ClubNotification;
@@ -14,6 +15,13 @@ class ClubNotificationRecipientController extends Controller
     public function index(Request $request, $clubId, $notificationId)
     {
         $notification = ClubNotification::where('club_id', $clubId)->findOrFail($notificationId);
+
+        // Convert string 'true'/'false' sang boolean cho query params
+        if ($request->has('is_read')) {
+            $request->merge([
+                'is_read' => filter_var($request->input('is_read'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)
+            ]);
+        }
 
         $validated = $request->validate([
             'is_read' => 'sometimes|boolean',
@@ -41,8 +49,8 @@ class ClubNotificationRecipientController extends Controller
         $userId = auth()->id();
 
         $club = $notification->club;
-        $member = $club->members()->where('user_id', $userId)->first();
-        if (!$member || !in_array($member->role, ['admin', 'manager', 'secretary'])) {
+        $member = $club->activeMembers()->where('user_id', $userId)->first();
+        if (!$member || !in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary])) {
             return ResponseHelper::error('Chỉ admin/manager/secretary mới có quyền thêm người nhận', 403);
         }
 
@@ -76,9 +84,10 @@ class ClubNotificationRecipientController extends Controller
 
         $validated = $request->validate([
             'page' => 'sometimes|integer|min:1',
+            'per_page' => 'sometimes|integer|min:1|max:100',
         ]);
 
-        $perPage = $validated['page'] ?? 15;
+        $perPage = $validated['per_page'] ?? 15;
         $recipients = $notification->readRecipients()
             ->with('user')
             ->paginate($perPage);
@@ -98,9 +107,10 @@ class ClubNotificationRecipientController extends Controller
 
         $validated = $request->validate([
             'page' => 'sometimes|integer|min:1',
+            'per_page' => 'sometimes|integer|min:1|max:100',
         ]);
 
-        $perPage = $validated['page'] ?? 15;
+        $perPage = $validated['per_page'] ?? 15;
         $recipients = $notification->unreadRecipients()
             ->with('user')
             ->paginate($perPage);

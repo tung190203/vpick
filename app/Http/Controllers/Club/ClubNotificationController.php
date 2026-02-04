@@ -13,6 +13,7 @@ use App\Models\Club\ClubNotificationType;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 /**
@@ -25,6 +26,13 @@ class ClubNotificationController extends Controller
     {
         $club = Club::findOrFail($clubId);
         $userId = auth()->id();
+
+        // Convert string 'true'/'false' sang boolean cho query params
+        if ($request->has('is_pinned')) {
+            $request->merge([
+                'is_pinned' => filter_var($request->input('is_pinned'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)
+            ]);
+        }
 
         $validated = $request->validate([
             'page' => 'sometimes|integer|min:1',
@@ -80,11 +88,19 @@ class ClubNotificationController extends Controller
             return ResponseHelper::error('Chỉ admin/manager/secretary mới có quyền tạo thông báo', 403);
         }
 
+        // Convert string 'true'/'false' sang boolean cho form-data
+        if ($request->has('is_pinned')) {
+            $request->merge([
+                'is_pinned' => filter_var($request->input('is_pinned'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)
+            ]);
+        }
+
         $validated = $request->validate([
             'club_notification_type_id' => 'required|exists:club_notification_types,id',
             'title' => 'required|string|max:255',
             'content' => 'required|string',
             'attachment_url' => 'nullable|string',
+            'attachment' => 'nullable|file|max:10240',
             'priority' => ['sometimes', Rule::enum(ClubNotificationPriority::class)],
             'status' => ['sometimes', Rule::enum(ClubNotificationStatus::class)],
             'metadata' => 'nullable|array',
@@ -94,13 +110,19 @@ class ClubNotificationController extends Controller
             'user_ids.*' => 'exists:users,id',
         ]);
 
-        return DB::transaction(function () use ($club, $validated, $userId) {
+        $attachmentUrl = $validated['attachment_url'] ?? null;
+        if ($request->hasFile('attachment')) {
+            $path = $request->file('attachment')->store('club_notifications/attachments', 'public');
+            $attachmentUrl = Storage::url($path);
+        }
+
+        return DB::transaction(function () use ($club, $validated, $userId, $attachmentUrl) {
             $notification = ClubNotification::create([
                 'club_id' => $club->id,
                 'club_notification_type_id' => $validated['club_notification_type_id'],
                 'title' => $validated['title'],
                 'content' => $validated['content'],
-                'attachment_url' => $validated['attachment_url'] ?? null,
+                'attachment_url' => $attachmentUrl,
                 'priority' => $validated['priority'] ?? ClubNotificationPriority::Normal,
                 'status' => $validated['status'] ?? ClubNotificationStatus::Draft,
                 'metadata' => $validated['metadata'] ?? null,
@@ -125,9 +147,28 @@ class ClubNotificationController extends Controller
 
     public function show($clubId, $notificationId)
     {
+        $club = Club::findOrFail($clubId);
+        $userId = auth()->id();
+
         $notification = ClubNotification::where('club_id', $clubId)
             ->with(['type', 'creator', 'recipients.user'])
             ->findOrFail($notificationId);
+
+        // Check permission: admin/manager/secretary xem được tất cả, member thường chỉ xem được notification đã sent và có trong recipients
+        $member = $userId ? $club->activeMembers()->where('user_id', $userId)->first() : null;
+        $canManage = $member && in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary]);
+
+        if (!$canManage) {
+            // Member thường chỉ xem được notification đã sent và là recipient
+            if ($notification->status !== ClubNotificationStatus::Sent) {
+                return ResponseHelper::error('Bạn không có quyền xem thông báo này', 403);
+            }
+
+            $isRecipient = $notification->recipients()->where('user_id', $userId)->exists();
+            if (!$isRecipient) {
+                return ResponseHelper::error('Bạn không có quyền xem thông báo này', 403);
+            }
+        }
 
         return ResponseHelper::success(new ClubNotificationResource($notification), 'Lấy thông tin thông báo thành công');
     }
@@ -149,11 +190,24 @@ class ClubNotificationController extends Controller
             'title' => 'sometimes|string|max:255',
             'content' => 'sometimes|string',
             'attachment_url' => 'nullable|string',
+            'attachment' => 'nullable|file|max:10240',
             'priority' => ['sometimes', Rule::enum(ClubNotificationPriority::class)],
             'status' => ['sometimes', Rule::enum(ClubNotificationStatus::class)],
             'metadata' => 'nullable|array',
             'scheduled_at' => 'nullable|date',
         ]);
+
+        if ($request->hasFile('attachment')) {
+            // Xóa file cũ nếu có
+            if ($notification->attachment_url) {
+                $oldPath = str_replace('/storage/', '', $notification->attachment_url);
+                Storage::disk('public')->delete($oldPath);
+            }
+
+            $path = $request->file('attachment')->store('club_notifications/attachments', 'public');
+            $validated['attachment_url'] = Storage::url($path);
+        }
+        unset($validated['attachment']);
 
         $notification->update($validated);
         $notification->load(['type', 'creator', 'recipients.user']);
@@ -171,6 +225,12 @@ class ClubNotificationController extends Controller
             if (!$member || !in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary])) {
                 return ResponseHelper::error('Không có quyền xóa thông báo này', 403);
             }
+        }
+
+        // Xóa file attachment nếu có
+        if ($notification->attachment_url) {
+            $oldPath = str_replace('/storage/', '', $notification->attachment_url);
+            Storage::disk('public')->delete($oldPath);
         }
 
         $notification->delete();
@@ -228,16 +288,17 @@ class ClubNotificationController extends Controller
             return ResponseHelper::error('Chỉ admin/manager/secretary mới có quyền gửi thông báo', 403);
         }
 
-        if ($notification->status === 'sent') {
+        if ($notification->status === ClubNotificationStatus::Sent) {
             return ResponseHelper::error('Thông báo đã được gửi', 422);
         }
 
         $notification->update([
-            'status' => 'sent',
+            'status' => ClubNotificationStatus::Sent,
             'sent_at' => now(),
         ]);
 
-        if (empty($notification->recipients()->count())) {
+        // Nếu chưa có recipients thì tự động gửi cho tất cả active members
+        if ($notification->recipients()->count() === 0) {
             $allMembers = $club->activeMembers()->pluck('user_id');
             foreach ($allMembers as $memberUserId) {
                 $notification->recipients()->firstOrCreate([
