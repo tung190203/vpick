@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\ClubMemberRole;
 use App\Enums\ClubMemberStatus;
 use App\Enums\ClubMembershipStatus;
+use App\Enums\ClubStatus;
 use App\Helpers\ResponseHelper;
 use Illuminate\Http\Request;
 use App\Models\Club\Club;
@@ -122,8 +123,8 @@ class ClubController extends Controller
             'longitude' => 'nullable|string',
             'logo_url' => 'nullable|image|max:2048',
             'cover_image_url' => 'nullable|image|max:2048',
-            'status' => 'nullable|in:active,inactive,draft',
-            'is_public' => 'nullable|in:0,1,true,false',
+            'status' => ['nullable', Rule::enum(ClubStatus::class)],
+            'is_public' => 'nullable|boolean',
         ]);
 
         $userId = auth()->id();
@@ -142,7 +143,7 @@ class ClubController extends Controller
                 $coverPath = $this->imageService->optimize($request->file('cover_image_url'), 'covers');
             }
 
-            $status = $request->input('status', 'active');
+            $status = $request->input('status', ClubStatus::Active->value);
             $isPublic = $request->boolean('is_public', true);
 
             $club = Club::create([
@@ -180,7 +181,7 @@ class ClubController extends Controller
                 'creator'
             ]);
 
-            $message = $status === 'draft' ? 'Lưu bản nháp CLB thành công' : 'Tạo câu lạc bộ thành công';
+            $message = $status === ClubStatus::Draft->value ? 'Lưu bản nháp CLB thành công' : 'Tạo câu lạc bộ thành công';
             return ResponseHelper::success(new ClubResource($club), $message);
         });
     }
@@ -250,8 +251,8 @@ class ClubController extends Controller
             'longitude' => 'nullable|string',
             'logo_url' => 'nullable|image|max:2048',
             'cover_image_url' => 'nullable|image|max:2048',
-            'status' => 'nullable|in:active,inactive,draft',
-            'is_public' => 'nullable|in:0,1,true,false',
+            'status' => ['nullable', Rule::enum(ClubStatus::class)],
+            'is_public' => 'nullable|boolean',
             'description' => 'nullable|string',
             'phone' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255',
