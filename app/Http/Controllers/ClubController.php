@@ -275,7 +275,7 @@ class ClubController extends Controller
             'city' => 'nullable|string|max:100',
             'province' => 'nullable|string|max:100',
             'country' => 'nullable|string|max:100',
-            'zalo_link' => 'nullable|string|max:500',
+            'zalo_link' => 'required_if:zalo_enabled,true|nullable|string|max:500',
             'zalo_enabled' => 'nullable|boolean',
             'qr_code_image_url' => 'nullable|image|mimes:png,jpg,jpeg,gif|max:5120', // 5MB
             'qr_code_enabled' => 'nullable|boolean',
@@ -290,6 +290,15 @@ class ClubController extends Controller
 
         if (!$club->canManage($userId)) {
             return ResponseHelper::error('Chỉ admin/manager mới có quyền cập nhật CLB', 403);
+        }
+
+        if ($request->boolean('qr_code_enabled')) {
+            $hasNewImage = $request->hasFile('qr_code_image_url');
+            $hasExistingImage = $club->profile && $club->profile->qr_code_image_url;
+
+            if (!$hasNewImage && !$hasExistingImage) {
+                return ResponseHelper::error('Vui lòng tải lên ảnh QR code khi bật tính năng này', 422);
+            }
         }
 
         $updatableFields = [
