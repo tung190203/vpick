@@ -5,6 +5,7 @@ namespace App\Models\Club;
 use App\Enums\ClubMemberRole;
 use App\Enums\ClubMemberStatus;
 use App\Enums\ClubMembershipStatus;
+use App\Enums\ClubStatus;
 use App\Enums\ClubWalletType;
 use App\Models\User;
 use App\Models\Tournament;
@@ -35,6 +36,12 @@ class Club extends Model
         'is_public',
         'is_verified',
         'created_by',
+    ];
+
+    protected $casts = [
+        'status' => ClubStatus::class,
+        'is_public' => 'boolean',
+        'is_verified' => 'boolean',
     ];
 
     /**
