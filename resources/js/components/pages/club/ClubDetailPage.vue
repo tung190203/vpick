@@ -249,7 +249,7 @@
                             <div class="grid grid-cols-4 text-center">
                                 <div v-for="(module, index) in clubModules" :key="index"
                                     class="flex flex-col items-center gap-2">
-                                    <div class="text-[#D72D36] rounded-md bg-[#FBEAEB] p-4 cursor-pointer">
+                                    <div class="text-[#D72D36] rounded-md bg-[#FBEAEB] p-4 cursor-pointer" @click="handleModuleClick(module)">
                                         <component :is="module.icon" class="w-6 h-6" />
                                     </div>
                                     <div class="text-sm text-[#3E414C]">{{ module.label }}</div>
@@ -418,7 +418,15 @@
             <ClubZaloModal 
                 v-model="isZaloModalOpen" 
                 :club="club" 
+                :is-loading="isUpdatingZalo"
                 @save="handleUpdateZalo" 
+            />
+
+            <!-- Create Schedule Modal -->
+            <CreateScheduleModal
+                v-model="isCreateScheduleModalOpen"
+                :club-id="clubId"
+                @save="getClubActivities"
             />
         </template>
     </div>
@@ -453,6 +461,7 @@ import NotificationCard from '@/components/molecules/NotificationCard.vue';
 import ClubInfoTabs from '@/components/organisms/ClubInfoTabs.vue';
 import ClubEditModal from '@/components/organisms/ClubEditModal.vue';
 import ClubZaloModal from '@/components/organisms/ClubZaloModal.vue';
+import CreateScheduleModal from '@/components/organisms/CreateScheduleModal.vue';
 import { CLUB_STATS, CLUB_MODULES } from '@/data/club/index.js';
 import * as ClubService from '@/service/club.js'
 import { toast } from 'vue3-toastify';
@@ -474,7 +483,9 @@ const isNotificationModalOpen = ref(false)
 const isActivityModalOpen = ref(false)
 const isEditModalOpen = ref(false)
 const isZaloModalOpen = ref(false)
+const isCreateScheduleModalOpen = ref(false)
 const isUpdatingClub = ref(false)
+const isUpdatingZalo = ref(false)
 const club = ref([]);
 const clubId = route.params.id
 const userStore = useUserStore()
@@ -648,6 +659,22 @@ const closeActivityModal = () => {
     isActivityModalOpen.value = false
 }
 
+const handleModuleClick = (module) => {
+    if (module.key === 'schedule') {
+        if (!isAdminView.value) {
+            toast.warning('Bạn không có quyền thực hiện chức năng này')
+            return
+        }
+        isCreateScheduleModalOpen.value = true
+    } else if (module.key === 'notification') {
+        openNotification()
+    } else if (module.key === 'chat') {
+        toast.info(`Chức năng ${module.label} đang được phát triển`)
+    } else if (module.key === 'fund') {
+        toast.info(`Chức năng ${module.label} đang được phát triển`)
+    }
+}
+
 const goToActivityDetail = (activity) => {
     router.push({
         name: 'club-detail-activity',
@@ -743,20 +770,25 @@ const handleUpdateClub = async (data) => {
 }
 
 const handleUpdateZalo = async (data) => {
+    isUpdatingZalo.value = true
     try {
-         const formData = new FormData()
-         if (data.zalo_url) formData.append('zalo_url', data.zalo_url)
-         if (!data.enable_zalo_link) formData.append('zalo_url', '')
+        const formData = new FormData()
+        formData.append('zalo_enabled', data.zalo_enabled ? '1' : '0')
+        formData.append('zalo_link', data.zalo_link || '')
+        formData.append('qr_code_enabled', data.qr_code_enabled ? '1' : '0')
 
-         if (data.qr_file) {
-             formData.append('qr_code', data.qr_file)
-         }
+        if (data.qr_code_image_url instanceof File) {
+            formData.append('qr_code_image_url', data.qr_code_image_url)
+        }
 
-         await ClubService.updateClub(clubId, formData)
-         await getClubDetail()
-         toast.success('Cập nhật thông tin Zalo thành công')
+        await ClubService.updateClub(clubId, formData)
+        await getClubDetail()
+        isZaloModalOpen.value = false
+        toast.success('Cập nhật thông tin Zalo thành công')
     } catch (error) {
         toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật thông tin')
+    } finally {
+        isUpdatingZalo.value = false
     }
 }
 

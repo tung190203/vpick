@@ -33,19 +33,23 @@ export const CLUB_STATS = [
 export const CLUB_MODULES = [
     {
         icon: FundIcon,
-        label: 'Quỹ CLB'
+        label: 'Quỹ CLB',
+        key: 'fund'
     },
     {
         icon: CalendarIcon,
-        label: 'Tạo lịch'
+        label: 'Tạo lịch',
+        key: 'schedule'
     },
     {
         icon: NotificationsIcon,
-        label: 'Thông báo'
+        label: 'Thông báo',
+        key: 'notification'
     },
     {
         icon: MessageIcon,
-        label: 'Nhóm chat'
+        label: 'Nhóm chat',
+        key: 'chat'
     }
 ]
 
