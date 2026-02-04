@@ -133,9 +133,28 @@ class ClubNotificationController extends Controller
 
     public function show($clubId, $notificationId)
     {
+        $club = Club::findOrFail($clubId);
+        $userId = auth()->id();
+
         $notification = ClubNotification::where('club_id', $clubId)
             ->with(['type', 'creator', 'recipients.user'])
             ->findOrFail($notificationId);
+
+        // Check permission: admin/manager/secretary xem được tất cả, member thường chỉ xem được notification đã sent và có trong recipients
+        $member = $userId ? $club->activeMembers()->where('user_id', $userId)->first() : null;
+        $canManage = $member && in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary]);
+
+        if (!$canManage) {
+            // Member thường chỉ xem được notification đã sent và là recipient
+            if ($notification->status !== ClubNotificationStatus::Sent) {
+                return ResponseHelper::error('Bạn không có quyền xem thông báo này', 403);
+            }
+
+            $isRecipient = $notification->recipients()->where('user_id', $userId)->exists();
+            if (!$isRecipient) {
+                return ResponseHelper::error('Bạn không có quyền xem thông báo này', 403);
+            }
+        }
 
         return ResponseHelper::success(new ClubNotificationResource($notification), 'Lấy thông tin thông báo thành công');
     }
@@ -165,6 +184,12 @@ class ClubNotificationController extends Controller
         ]);
 
         if ($request->hasFile('attachment')) {
+            // Xóa file cũ nếu có
+            if ($notification->attachment_url) {
+                $oldPath = str_replace('/storage/', '', $notification->attachment_url);
+                Storage::disk('public')->delete($oldPath);
+            }
+
             $path = $request->file('attachment')->store('club_notifications/attachments', 'public');
             $validated['attachment_url'] = Storage::url($path);
         }
@@ -186,6 +211,12 @@ class ClubNotificationController extends Controller
             if (!$member || !in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary])) {
                 return ResponseHelper::error('Không có quyền xóa thông báo này', 403);
             }
+        }
+
+        // Xóa file attachment nếu có
+        if ($notification->attachment_url) {
+            $oldPath = str_replace('/storage/', '', $notification->attachment_url);
+            Storage::disk('public')->delete($oldPath);
         }
 
         $notification->delete();
@@ -243,16 +274,17 @@ class ClubNotificationController extends Controller
             return ResponseHelper::error('Chỉ admin/manager/secretary mới có quyền gửi thông báo', 403);
         }
 
-        if ($notification->status === 'sent') {
+        if ($notification->status === ClubNotificationStatus::Sent) {
             return ResponseHelper::error('Thông báo đã được gửi', 422);
         }
 
         $notification->update([
-            'status' => 'sent',
+            'status' => ClubNotificationStatus::Sent,
             'sent_at' => now(),
         ]);
 
-        if (empty($notification->recipients()->count())) {
+        // Nếu chưa có recipients thì tự động gửi cho tất cả active members
+        if ($notification->recipients()->count() === 0) {
             $allMembers = $club->activeMembers()->pluck('user_id');
             foreach ($allMembers as $memberUserId) {
                 $notification->recipients()->firstOrCreate([
