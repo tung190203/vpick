@@ -2,6 +2,7 @@
 
 namespace App\Models\Club;
 
+use App\Enums\ClubActivityFeeSplitType;
 use App\Enums\ClubActivityParticipantStatus;
 use App\Enums\ClubActivityStatus;
 use App\Enums\ClubWalletTransactionDirection;
@@ -47,6 +48,7 @@ class ClubActivity extends Model
 
     protected $casts = [
         'status' => ClubActivityStatus::class,
+        'fee_split_type' => ClubActivityFeeSplitType::class,
         'is_recurring' => 'boolean',
         'start_time' => 'datetime',
         'end_time' => 'datetime',
@@ -151,17 +153,25 @@ class ClubActivity extends Model
 
     /**
      * Số tiền mỗi người phải nộp khi tham gia (theo fee_split_type).
-     * fixed: fee_amount là phí/người. equal: fee_amount là tổng, chia đều cho max_participants (hoặc 1 nếu chưa set).
      */
     public function getFeeAmountPerParticipant(): float
     {
+        $splitType = $this->fee_split_type ?? ClubActivityFeeSplitType::Fixed;
+
+        // Quỹ bao: không thu phí từ người tham gia
+        if ($splitType === ClubActivityFeeSplitType::Fund) {
+            return 0;
+        }
+
         if ((float) $this->fee_amount <= 0) {
             return 0;
         }
-        if (($this->fee_split_type ?? 'fixed') === 'equal') {
+
+        if ($splitType === ClubActivityFeeSplitType::Equal) {
             $n = max(1, (int) ($this->max_participants ?? 1));
             return round((float) $this->fee_amount / $n, 2);
         }
+
         return (float) $this->fee_amount;
     }
 }

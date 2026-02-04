@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Club;
 
+use App\Enums\ClubActivityFeeSplitType;
 use App\Enums\ClubActivityParticipantStatus;
 use App\Enums\ClubActivityStatus;
 use App\Enums\ClubMemberRole;
@@ -112,7 +113,7 @@ class ClubActivityController extends Controller
             'fee_amount' => 'nullable|numeric|min:0',
             'guest_fee' => 'nullable|numeric|min:0',
             'penalty_percentage' => 'nullable|numeric|min:0|max:100',
-            'fee_split_type' => 'sometimes|in:equal,fixed',
+            'fee_split_type' => ['sometimes', Rule::enum(ClubActivityFeeSplitType::class)],
             'allow_member_invite' => 'sometimes|boolean',
             'is_public' => 'sometimes|boolean',
             'max_participants' => 'nullable|integer|min:1',
@@ -138,7 +139,7 @@ class ClubActivityController extends Controller
             'fee_amount' => $validated['fee_amount'] ?? 0,
             'guest_fee' => $validated['guest_fee'] ?? 0,
             'penalty_percentage' => $validated['penalty_percentage'] ?? 50,
-            'fee_split_type' => $validated['fee_split_type'] ?? 'fixed',
+            'fee_split_type' => $validated['fee_split_type'] ?? ClubActivityFeeSplitType::Fixed,
             'allow_member_invite' => isset($validated['allow_member_invite']) ? (bool) $validated['allow_member_invite'] : false,
             'is_public' => isset($validated['is_public']) ? (bool) $validated['is_public'] : true,
             'status' => ClubActivityStatus::Scheduled,
@@ -234,7 +235,7 @@ class ClubActivityController extends Controller
             'fee_amount' => 'nullable|numeric|min:0',
             'guest_fee' => 'nullable|numeric|min:0',
             'penalty_percentage' => 'nullable|numeric|min:0|max:100',
-            'fee_split_type' => 'sometimes|in:equal,fixed',
+            'fee_split_type' => ['sometimes', Rule::enum(ClubActivityFeeSplitType::class)],
             'allow_member_invite' => 'sometimes|boolean',
             'is_public' => 'sometimes|boolean',
             'max_participants' => 'nullable|integer|min:1',
