@@ -292,20 +292,17 @@ class ClubNotificationController extends Controller
             return ResponseHelper::error('Bạn cần đăng nhập', 401);
         }
 
-        // Check quyền
         $member = $club->activeMembers()->where('user_id', $userId)->first();
         $canManage = $member && in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary]);
 
         return DB::transaction(function () use ($club, $userId, $canManage) {
             if ($canManage) {
-                // Admin/manager/secretary: Đánh dấu đã đọc TẤT CẢ notification của club
                 $notifications = $club->notifications()->get();
 
                 foreach ($notifications as $notification) {
                     $recipient = $notification->recipients()->where('user_id', $userId)->first();
 
                     if (!$recipient) {
-                        // Tạo recipient record nếu chưa có
                         $notification->recipients()->create([
                             'user_id' => $userId,
                             'is_read' => true,
@@ -318,7 +315,6 @@ class ClubNotificationController extends Controller
 
                 $message = 'Đã đánh dấu đọc tất cả thông báo';
             } else {
-                // Member thường: Chỉ đánh dấu đã đọc các notification mà họ là recipient
                 $recipients = DB::table('club_notification_recipients')
                     ->join('club_notifications', 'club_notification_recipients.club_notification_id', '=', 'club_notifications.id')
                     ->where('club_notifications.club_id', $club->id)
@@ -365,7 +361,6 @@ class ClubNotificationController extends Controller
             'sent_at' => now(),
         ]);
 
-        // Nếu chưa có recipients thì tự động gửi cho tất cả active members
         if ($notification->recipients()->count() === 0) {
             $allMembers = $club->activeMembers()->pluck('user_id');
             foreach ($allMembers as $memberUserId) {
