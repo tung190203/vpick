@@ -146,3 +146,7 @@ export const locationDetail = async (params = {}) => {
   const { data } = await axiosInstance.get(url)
   return data
 }
+
+export const createActivity = async (clubId, data) => {
+    return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/activities`, data).then((response) => response.data);
+}
