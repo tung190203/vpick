@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Club;
 
+use App\Enums\ClubActivityParticipantStatus;
 use App\Enums\ClubActivityStatus;
 use App\Enums\ClubMemberRole;
 use App\Enums\ClubWalletTransactionDirection;
@@ -136,6 +137,17 @@ class ClubActivityController extends Controller
             'check_in_token' => $checkInToken,
             'qr_code_url' => $validated['qr_code_url'] ?? $this->buildCheckInUrl($club->id, $activity->id, $checkInToken),
         ]);
+
+        // Tự động thêm người tạo vào danh sách participants với status Accepted
+        ClubActivityParticipant::firstOrCreate(
+            [
+                'club_activity_id' => $activity->id,
+                'user_id' => $userId,
+            ],
+            [
+                'status' => ClubActivityParticipantStatus::Accepted,
+            ]
+        );
 
         $activity->load([
             'creator' => User::FULL_RELATIONS,
