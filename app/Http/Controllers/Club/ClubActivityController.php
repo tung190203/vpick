@@ -106,6 +106,9 @@ class ClubActivityController extends Controller
             'qr_code_url' => 'nullable|url|max:500',
         ]);
 
+        // Map location/venue_address từ FE sang address trong DB
+        $address = $validated['venue_address'] ?? $validated['location'] ?? null;
+
         $activity = ClubActivity::create([
             'club_id' => $club->id,
             'mini_tournament_id' => $validated['mini_tournament_id'] ?? null,
@@ -116,8 +119,7 @@ class ClubActivityController extends Controller
             'recurring_schedule' => $validated['recurring_schedule'] ?? null,
             'start_time' => $validated['start_time'],
             'end_time' => $validated['end_time'] ?? null,
-            'location' => $validated['location'] ?? null,
-            'venue_address' => $validated['venue_address'] ?? null,
+            'address' => $address,
             'cancellation_deadline' => $validated['cancellation_deadline'] ?? null,
             'reminder_minutes' => $validated['reminder_minutes'] ?? 15,
             'fee_amount' => $validated['fee_amount'] ?? 0,
@@ -190,7 +192,13 @@ class ClubActivityController extends Controller
             'qr_code_url' => 'nullable|url|max:500',
         ]);
 
-        $activity->update($validated);
+        // Map location/venue_address từ FE sang address trong DB
+        $updateData = $validated;
+        if (isset($validated['venue_address']) || isset($validated['location'])) {
+            $updateData['address'] = $validated['venue_address'] ?? $validated['location'] ?? null;
+            unset($updateData['location'], $updateData['venue_address']);
+        }
+        $activity->update($updateData);
         $activity->load([
             'creator' => User::FULL_RELATIONS,
             'participants.user' => User::FULL_RELATIONS
