@@ -114,6 +114,7 @@ class ClubActivityController extends Controller
             'penalty_percentage' => 'nullable|numeric|min:0|max:100',
             'fee_split_type' => 'sometimes|in:equal,fixed',
             'allow_member_invite' => 'sometimes|boolean',
+            'is_public' => 'sometimes|boolean',
             'max_participants' => 'nullable|integer|min:1',
             'qr_code_url' => 'nullable|url|max:500',
         ]);
@@ -138,8 +139,8 @@ class ClubActivityController extends Controller
             'guest_fee' => $validated['guest_fee'] ?? 0,
             'penalty_percentage' => $validated['penalty_percentage'] ?? 50,
             'fee_split_type' => $validated['fee_split_type'] ?? 'fixed',
-            'allow_member_invite' => $validated['allow_member_invite'] ?? false,
-            'is_public' => $validated['is_public'] ?? true,
+            'allow_member_invite' => isset($validated['allow_member_invite']) ? (bool) $validated['allow_member_invite'] : false,
+            'is_public' => isset($validated['is_public']) ? (bool) $validated['is_public'] : true,
             'status' => ClubActivityStatus::Scheduled,
             'created_by' => $userId,
         ]);
@@ -197,13 +198,25 @@ class ClubActivityController extends Controller
 
         // Convert string "true"/"false" to boolean
         if ($request->has('is_public')) {
-            $request->merge(['is_public' => filter_var($request->is_public, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true]);
+            $isPublic = $request->is_public;
+            if (is_string($isPublic)) {
+                $isPublic = filter_var($isPublic, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            }
+            $request->merge(['is_public' => $isPublic !== null ? (bool) $isPublic : true]);
         }
         if ($request->has('is_recurring')) {
-            $request->merge(['is_recurring' => filter_var($request->is_recurring, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false]);
+            $isRecurring = $request->is_recurring;
+            if (is_string($isRecurring)) {
+                $isRecurring = filter_var($isRecurring, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            }
+            $request->merge(['is_recurring' => $isRecurring !== null ? (bool) $isRecurring : false]);
         }
         if ($request->has('allow_member_invite')) {
-            $request->merge(['allow_member_invite' => filter_var($request->allow_member_invite, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false]);
+            $allowInvite = $request->allow_member_invite;
+            if (is_string($allowInvite)) {
+                $allowInvite = filter_var($allowInvite, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            }
+            $request->merge(['allow_member_invite' => $allowInvite !== null ? (bool) $allowInvite : false]);
         }
 
         $validated = $request->validate([
