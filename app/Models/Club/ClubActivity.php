@@ -39,6 +39,7 @@ class ClubActivity extends Model
         'penalty_percentage',
         'fee_split_type',
         'allow_member_invite',
+        'is_public',
         'max_participants',
         'qr_code_url',
         'check_in_token',
@@ -54,6 +55,7 @@ class ClubActivity extends Model
         'guest_fee' => 'decimal:2',
         'penalty_percentage' => 'decimal:2',
         'allow_member_invite' => 'boolean',
+        'is_public' => 'boolean',
     ];
 
     public function club()

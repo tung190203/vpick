@@ -85,6 +85,17 @@ class ClubActivityController extends Controller
             return ResponseHelper::error('Chỉ admin/manager/secretary mới có quyền tạo hoạt động', 403);
         }
 
+        // Convert string "true"/"false" to boolean
+        if ($request->has('is_public')) {
+            $request->merge(['is_public' => filter_var($request->is_public, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true]);
+        }
+        if ($request->has('is_recurring')) {
+            $request->merge(['is_recurring' => filter_var($request->is_recurring, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false]);
+        }
+        if ($request->has('allow_member_invite')) {
+            $request->merge(['allow_member_invite' => filter_var($request->allow_member_invite, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false]);
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -128,6 +139,7 @@ class ClubActivityController extends Controller
             'penalty_percentage' => $validated['penalty_percentage'] ?? 50,
             'fee_split_type' => $validated['fee_split_type'] ?? 'fixed',
             'allow_member_invite' => $validated['allow_member_invite'] ?? false,
+            'is_public' => $validated['is_public'] ?? true,
             'status' => ClubActivityStatus::Scheduled,
             'created_by' => $userId,
         ]);
@@ -183,6 +195,17 @@ class ClubActivityController extends Controller
             return ResponseHelper::error('Không có quyền cập nhật hoạt động này', 403);
         }
 
+        // Convert string "true"/"false" to boolean
+        if ($request->has('is_public')) {
+            $request->merge(['is_public' => filter_var($request->is_public, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true]);
+        }
+        if ($request->has('is_recurring')) {
+            $request->merge(['is_recurring' => filter_var($request->is_recurring, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false]);
+        }
+        if ($request->has('allow_member_invite')) {
+            $request->merge(['allow_member_invite' => filter_var($request->allow_member_invite, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false]);
+        }
+
         $validated = $request->validate([
             'title' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
@@ -200,6 +223,7 @@ class ClubActivityController extends Controller
             'penalty_percentage' => 'nullable|numeric|min:0|max:100',
             'fee_split_type' => 'sometimes|in:equal,fixed',
             'allow_member_invite' => 'sometimes|boolean',
+            'is_public' => 'sometimes|boolean',
             'max_participants' => 'nullable|integer|min:1',
             'qr_code_url' => 'nullable|url|max:500',
         ]);

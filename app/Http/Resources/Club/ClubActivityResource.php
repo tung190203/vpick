@@ -33,6 +33,7 @@ class ClubActivityResource extends JsonResource
             'penalty_percentage' => $this->penalty_percentage !== null ? (float) $this->penalty_percentage : null,
             'fee_split_type' => $this->fee_split_type ?? 'fixed',
             'allow_member_invite' => (bool) ($this->allow_member_invite ?? false),
+            'is_public' => (bool) ($this->is_public ?? true),
             'max_participants' => $this->max_participants !== null ? (int) $this->max_participants : null,
             'collected_amount' => (float) ($this->collected_amount ?? 0),
             'qr_code_url' => $this->qr_code_url,
