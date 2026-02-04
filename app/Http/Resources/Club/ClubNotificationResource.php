@@ -12,7 +12,10 @@ class ClubNotificationResource extends JsonResource
     {
         $userId = auth()->id();
         $isReadByMe = null;
-        if ($userId && $this->relationLoaded('recipients')) {
+
+        if ($userId && $this->created_by === $userId) {
+            $isReadByMe = true;
+        } elseif ($userId && $this->relationLoaded('recipients')) {
             $myRecipient = $this->recipients->firstWhere('user_id', $userId);
             $isReadByMe = $myRecipient ? $myRecipient->is_read : null;
         }
