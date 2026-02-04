@@ -33,6 +33,10 @@ export const updateClub = async (clubId, data) => {
     return axiosInstance.put(`${API_ENDPOINT.CLUB}/${clubId}`, data).then((response) => response.data);
 }
 
+export const createClub = async (data) => {
+    return axiosInstance.post(`${API_ENDPOINT.CLUB}`, data).then((response) => response.data);
+}
+
 export const getMembers = async (clubId, params = {}) => {
   const queryParams = new URLSearchParams()
 
@@ -51,6 +55,10 @@ export const getMembers = async (clubId, params = {}) => {
 
 export const removeMember = async (clubId, memberId) => {
     return axiosInstance.delete(`${API_ENDPOINT.CLUB}/${clubId}/members/${memberId}`).then((response) => response.data);
+}
+
+export const updateMemberRole = async (clubId, memberId, data) => {
+    return axiosInstance.put(`${API_ENDPOINT.CLUB}/${clubId}/members/${memberId}`, data).then((response) => response.data);
 }
 
 export const cancelJoinRequest = async (clubId) => {
@@ -109,4 +117,32 @@ export const getClubLeaderBoard = async (clubId, params = {}) => {
 
 export const getFund = async (clubId) => {
     return axiosInstance.get(`${API_ENDPOINT.CLUB}/${clubId}/fund`).then((response) => response.data);
+}
+
+export const searchLocation = async (params = {}) => {
+    const queryParams = new URLSearchParams()
+    Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      queryParams.append(key, value)
+    }
+  })
+
+  const queryString = queryParams.toString()
+  const url = `${API_ENDPOINT.CLUB}/search-location${queryString ? `?${queryString}` : ''}`
+  const { data } = await axiosInstance.get(url)
+  return data
+}
+
+export const locationDetail = async (params = {}) => {
+    const queryParams = new URLSearchParams()
+    Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      queryParams.append(key, value)
+    }
+  })
+
+  const queryString = queryParams.toString()
+  const url = `${API_ENDPOINT.CLUB}/location-detail${queryString ? `?${queryString}` : ''}`
+  const { data } = await axiosInstance.get(url)
+  return data
 }

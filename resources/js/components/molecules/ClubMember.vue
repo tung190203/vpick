@@ -76,7 +76,13 @@
                 <InformationCircleIcon class="w-4 h-4 text-gray-400" />
                 Xem thông tin
               </button>
-              <button v-if="member.role !== 'admin' && member.user?.id !== getUser.id"
+              <button v-if="member.user?.id !== getUser.id && canManageMembers"
+                @click="assignRole(member)"
+                class="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                <ShieldCheckIcon class="w-4 h-4 text-gray-400" />
+                Bổ nhiệm
+              </button>
+              <button v-if="member.user?.id !== getUser.id && canManageMembers"
                 @click="confirmDeleteMember(member)"
                 class="w-full text-left px-4 py-3 text-sm font-medium text-red-700 hover:bg-red-50 flex items-center gap-2">
                 <TrashIcon class="w-4 h-4 text-red-400" />
@@ -133,7 +139,13 @@
                   <InformationCircleIcon class="w-4 h-4 text-gray-400" />
                   Xem thông tin
                 </button>
-                <button v-if="member.user?.id !== getUser.id && isJoined"
+                <button v-if="member.user?.id !== getUser.id && canManageMembers"
+                  @click="assignRole(member)"
+                  class="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                  <ShieldCheckIcon class="w-4 h-4 text-gray-400" />
+                  Bổ nhiệm
+                </button>
+                <button v-if="member.user?.id !== getUser.id && canManageMembers"
                   @click="confirmDeleteMember(member)"
                   class="w-full text-left px-4 py-3 text-sm font-medium text-red-700 hover:bg-red-50 flex items-center gap-2">
                   <TrashIcon class="w-4 h-4 text-red-400" />
@@ -162,6 +174,14 @@
       @updated="fetchData"
     />
 
+    <!-- Assign Role Modal -->
+    <AssignRoleModal
+      v-model="showAssignRoleModal"
+      :member="selectedMember"
+      :currentUserRole="currentUserRole"
+      @confirm="handleAssignRole"
+    />
+
     <!-- Delete Confirmation Modal -->
     <DeleteConfirmationModal
       v-model="showDeleteModal"
@@ -176,10 +196,12 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import ShieldCheckIcon from "@/assets/images/shield_check.svg";
 import MoneyIcon from "@/assets/images/money.svg";
 import { EllipsisHorizontalIcon, MagnifyingGlassIcon, InformationCircleIcon, TrashIcon } from '@heroicons/vue/24/outline';
 import MemberInfoModal from '@/components/molecules/MemberInfoModal.vue';
+import AssignRoleModal from '@/components/molecules/AssignRoleModal.vue';
 import DeleteConfirmationModal from '@/components/molecules/DeleteConfirmationModal.vue';
 import Pagination from '@/components/molecules/Pagination.vue';
 import * as ClubService from '@/service/club.js'
@@ -188,6 +210,8 @@ import { storeToRefs } from 'pinia'
 import { toast } from "vue3-toastify";
 import { ROLE_COLORS } from '@/data/club'
 import { getJoinedDate } from '@/composables/formatDatetime.js'
+
+const router = useRouter()
 
 const userStore = useUserStore()
 const { getUser } = storeToRefs(userStore)
@@ -199,6 +223,10 @@ const props = defineProps({
   isJoined: {
     type: Boolean,
     default: false
+  },
+  currentUserRole: {
+    type: String,
+    default: null
   }
 })
 
@@ -206,6 +234,7 @@ const props = defineProps({
 const searchQuery = ref('')
 const openMenuId = ref(null)
 const showModal = ref(false)
+const showAssignRoleModal = ref(false)
 const showDeleteModal = ref(false)
 const memberToDelete = ref(null)
 const selectedMember = ref(null)
@@ -218,6 +247,11 @@ const totalRegularMembers = ref(0)
 const members = ref([])
 const statistics = ref({})
 const allManagementMembers = ref([]) // Store all management members separately
+
+// Permission check: only admin and secretary can manage members
+const canManageMembers = computed(() => {
+  return props.currentUserRole === 'admin' || props.currentUserRole === 'secretary'
+})
 
 // Debounce timer
 let searchTimeout = null
@@ -405,9 +439,29 @@ const closeMenu = () => {
 }
 
 const viewInfo = (member) => {
-  selectedMember.value = member
-  showModal.value = true
+  if (member.user?.id) {
+    router.push({ name: 'profile', params: { id: member.user.id } })
+  }
   closeMenu()
+}
+
+const assignRole = (member) => {
+  selectedMember.value = member
+  showAssignRoleModal.value = true
+  closeMenu()
+}
+
+const handleAssignRole = async ({ memberId, role }) => {
+  try {
+    await ClubService.updateMemberRole(props.clubId, memberId, { role })
+    toast.success('Bổ nhiệm thành công')
+    
+    // Refresh lists
+    await fetchData()
+  } catch (error) {
+    console.error('Error assigning role:', error)
+    toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi bổ nhiệm')
+  }
 }
 
 const confirmDeleteMember = (member) => {
