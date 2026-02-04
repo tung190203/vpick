@@ -116,6 +116,11 @@ class ClubController extends Controller
     }
     public function store(Request $request)
     {
+        // Convert string "true"/"false" to boolean
+        if ($request->has('is_public')) {
+            $request->merge(['is_public' => filter_var($request->is_public, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)]);
+        }
+
         $request->validate([
             'name' => 'required|string|max:255|unique:clubs,name,NULL,id,deleted_at,NULL',
             'address' => 'nullable|string|max:255',
