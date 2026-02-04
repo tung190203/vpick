@@ -257,15 +257,28 @@ class ClubNotificationController extends Controller
 
     public function markAsRead($clubId, $notificationId)
     {
+        $club = Club::findOrFail($clubId);
         $notification = ClubNotification::where('club_id', $clubId)->findOrFail($notificationId);
         $userId = auth()->id();
 
-        $recipient = $notification->recipients()->where('user_id', $userId)->first();
-        if (!$recipient) {
-            return ResponseHelper::error('Bạn không phải người nhận thông báo này', 403);
-        }
+        $member = $userId ? $club->activeMembers()->where('user_id', $userId)->first() : null;
+        $canManage = $member && in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary]);
 
-        $recipient->markAsRead();
+        $recipient = $notification->recipients()->where('user_id', $userId)->first();
+
+        if (!$recipient) {
+            if (!$canManage) {
+                return ResponseHelper::error('Bạn không có quyền đánh dấu đọc thông báo này', 403);
+            }
+
+            $recipient = $notification->recipients()->create([
+                'user_id' => $userId,
+                'is_read' => true,
+                'read_at' => now(),
+            ]);
+        } else {
+            $recipient->markAsRead();
+        }
 
         return ResponseHelper::success([], 'Đã đánh dấu đọc');
     }
