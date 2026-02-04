@@ -116,6 +116,11 @@ class ClubController extends Controller
     }
     public function store(Request $request)
     {
+        // Convert string "true"/"false" to boolean
+        if ($request->has('is_public')) {
+            $request->merge(['is_public' => filter_var($request->is_public, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)]);
+        }
+
         $request->validate([
             'name' => 'required|string|max:255|unique:clubs,name,NULL,id,deleted_at,NULL',
             'address' => 'nullable|string|max:255',
@@ -244,6 +249,16 @@ class ClubController extends Controller
 
     public function update(Request $request, $clubId)
     {
+        if ($request->has('zalo_enabled')) {
+            $request->merge(['zalo_enabled' => filter_var($request->zalo_enabled, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)]);
+        }
+        if ($request->has('qr_code_enabled')) {
+            $request->merge(['qr_code_enabled' => filter_var($request->qr_code_enabled, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)]);
+        }
+        if ($request->has('is_public')) {
+            $request->merge(['is_public' => filter_var($request->is_public, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)]);
+        }
+
         $request->validate([
             'name' => "nullable|string|max:255|unique:clubs,name,{$clubId},id,deleted_at,NULL",
             'address' => 'nullable|string|max:255',
@@ -260,6 +275,10 @@ class ClubController extends Controller
             'city' => 'nullable|string|max:100',
             'province' => 'nullable|string|max:100',
             'country' => 'nullable|string|max:100',
+            'zalo_link' => 'required_if:zalo_enabled,true|nullable|string|max:500',
+            'zalo_enabled' => 'nullable|boolean',
+            'qr_code_image_url' => 'nullable|image|mimes:png,jpg,jpeg,gif|max:5120', // 5MB
+            'qr_code_enabled' => 'nullable|boolean',
         ]);
 
         $club = Club::findOrFail($clubId);
@@ -273,14 +292,25 @@ class ClubController extends Controller
             return ResponseHelper::error('Chỉ admin/manager mới có quyền cập nhật CLB', 403);
         }
 
+        if ($request->boolean('qr_code_enabled')) {
+            $hasNewImage = $request->hasFile('qr_code_image_url');
+            $hasExistingImage = $club->profile && $club->profile->qr_code_image_url;
+
+            if (!$hasNewImage && !$hasExistingImage) {
+                return ResponseHelper::error('Vui lòng tải lên ảnh QR code khi bật tính năng này', 422);
+            }
+        }
+
         $updatableFields = [
             'name', 'address', 'latitude', 'longitude', 'logo_url', 'status', 'is_public',
-            'cover_image_url', 'description', 'phone', 'email', 'website', 'city', 'province', 'country'
+            'cover_image_url', 'description', 'phone', 'email', 'website', 'city', 'province', 'country',
+            'zalo_link', 'zalo_enabled', 'qr_code_enabled'
         ];
 
         $hasAnyField = $request->hasAny($updatableFields) ||
                        $request->hasFile('logo_url') ||
-                       $request->hasFile('cover_image_url');
+                       $request->hasFile('cover_image_url') ||
+                       $request->hasFile('qr_code_image_url');
 
         if (!$hasAnyField) {
             return ResponseHelper::error('Không có trường nào được gửi lên để cập nhật', 400);
@@ -322,9 +352,63 @@ class ClubController extends Controller
                 }
             }
 
-            if ($request->hasAny(['description', 'phone', 'email', 'website', 'city', 'province', 'country'])) {
+            // Handle QR code image upload
+            if ($request->hasFile('qr_code_image_url')) {
                 if (!$profile) {
                     $profile = $club->profile;
+                }
+
+                if ($profile && $profile->getRawQrCodeImagePath()) {
+                    $this->imageService->deleteOldImage($profile->getRawQrCodeImagePath());
+                }
+
+                $qrCodePath = $this->imageService->optimizeThumbnail($request->file('qr_code_image_url'), 'qr_codes', 90);
+
+                if ($profile) {
+                    $profile->update(['qr_code_image_url' => $qrCodePath]);
+                } else {
+                    $profile = ClubProfile::create([
+                        'club_id' => $club->id,
+                        'qr_code_image_url' => $qrCodePath,
+                    ]);
+                }
+            }
+
+            if ($request->hasAny(['description', 'phone', 'email', 'website', 'city', 'province', 'country', 'zalo_link', 'zalo_enabled', 'qr_code_enabled'])) {
+                if (!$profile) {
+                    $profile = $club->profile;
+                }
+
+                // Prepare social_links and settings updates (ensure they are objects, not arrays)
+                $socialLinks = $profile && is_array($profile->social_links) ? $profile->social_links : [];
+                $settings = $profile && is_array($profile->settings) ? $profile->settings : [];
+
+                // Update Zalo link in social_links
+                if ($request->has('zalo_link')) {
+                    if ($request->zalo_link) {
+                        $socialLinks['zalo'] = $request->zalo_link;
+                    } else {
+                        // Remove zalo link if empty
+                        unset($socialLinks['zalo']);
+                    }
+                }
+
+                // Update Zalo enabled in settings
+                if ($request->has('zalo_enabled')) {
+                    $settings['zalo_enabled'] = $request->boolean('zalo_enabled');
+                }
+
+                // Update QR code enabled in settings
+                if ($request->has('qr_code_enabled')) {
+                    $settings['qr_code_enabled'] = $request->boolean('qr_code_enabled');
+                }
+
+                // Ensure empty arrays are cast to objects in JSON
+                if (empty($socialLinks)) {
+                    $socialLinks = (object) [];
+                }
+                if (empty($settings)) {
+                    $settings = (object) [];
                 }
 
                 if ($profile) {
@@ -336,6 +420,8 @@ class ClubController extends Controller
                         'city' => $request->city ?? $profile->city,
                         'province' => $request->province ?? $profile->province,
                         'country' => $request->country ?? $profile->country,
+                        'social_links' => $socialLinks,
+                        'settings' => $settings,
                     ]);
                 } else {
                     ClubProfile::create([
@@ -347,6 +433,8 @@ class ClubController extends Controller
                         'city' => $request->city,
                         'province' => $request->province,
                         'country' => $request->country,
+                        'social_links' => $socialLinks,
+                        'settings' => $settings,
                     ]);
                 }
             }
