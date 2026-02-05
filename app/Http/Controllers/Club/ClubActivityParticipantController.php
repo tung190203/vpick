@@ -451,7 +451,6 @@ class ClubActivityParticipantController extends Controller
             $club = $activity->club;
             $mainWallet = $club->mainWallet;
 
-            // Tính thời gian còn lại đến sự kiện
             $hoursUntilStart = Carbon::now()->diffInHours($activity->start_time, false);
             $isBefore4Hours = $hoursUntilStart >= 4;
 
@@ -464,21 +463,22 @@ class ClubActivityParticipantController extends Controller
 
                 // Nếu rút sau 4 tiếng => tạo khoản thu nộp phạt
                 if (!$isBefore4Hours) {
-                    // Tính phí phạt theo penalty_percentage của activity (mặc định 50%)
-                    $penaltyPercentage = $activity->penalty_percentage ?? 50;
-                    $penaltyAmount = $transaction->amount * ($penaltyPercentage / 100);
+                    // Sử dụng penalty_amount cố định hoặc mặc định 0
+                    $penaltyAmount = $activity->penalty_amount ?? 0;
 
-                    $penaltyTransaction = ClubWalletTransaction::create([
-                        'club_wallet_id' => $mainWallet->id,
-                        'direction' => ClubWalletTransactionDirection::In,
-                        'amount' => $penaltyAmount,
-                        'source_type' => ClubWalletTransactionSourceType::ActivityPenalty,
-                        'source_id' => $activity->id,
-                        'payment_method' => PaymentMethod::BankTransfer,
-                        'status' => ClubWalletTransactionStatus::Pending,
-                        'description' => "Phạt rút khỏi sự kiện: {$activity->title} (rút sau 4 tiếng - {$penaltyPercentage}% phí gốc)",
-                        'created_by' => $participant->user_id,
-                    ]);
+                    if ($penaltyAmount > 0) {
+                        $penaltyTransaction = ClubWalletTransaction::create([
+                            'club_wallet_id' => $mainWallet->id,
+                            'direction' => ClubWalletTransactionDirection::In,
+                            'amount' => $penaltyAmount,
+                            'source_type' => ClubWalletTransactionSourceType::ActivityPenalty,
+                            'source_id' => $activity->id,
+                            'payment_method' => PaymentMethod::BankTransfer,
+                            'status' => ClubWalletTransactionStatus::Pending,
+                            'description' => "Phạt rút khỏi sự kiện: {$activity->title} (rút sau 4 tiếng - phí phạt " . number_format($penaltyAmount, 0, ',', '.') . " VND)",
+                            'created_by' => $participant->user_id,
+                        ]);
+                    }
 
                     // Cập nhật participant để link với penalty transaction (hoặc giữ nguyên transaction gốc)
                     // Có thể tạo field penalty_transaction_id nếu cần track riêng
@@ -492,7 +492,7 @@ class ClubActivityParticipantController extends Controller
 
             $message = $isBefore4Hours
                 ? 'Đã rút khỏi sự kiện. Khoản thu đã được hủy.'
-                : "Đã rút khỏi sự kiện. Khoản thu đã được hủy và tạo khoản thu phạt ({$activity->penalty_percentage}% phí gốc) do rút sau 4 tiếng.";
+                : "Đã rút khỏi sự kiện. Khoản thu đã được hủy và tạo khoản thu phạt (" . number_format($activity->penalty_amount ?? 0, 0, ',', '.') . " VND) do rút sau 4 tiếng.";
 
             return ResponseHelper::success(new ClubActivityParticipantResource($participant), $message);
         });

@@ -12,6 +12,7 @@ use App\Enums\ClubWalletTransactionStatus;
 use App\Enums\PaymentMethod;
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\Club\ClubActivityResource;
+use Carbon\Carbon;
 use App\Models\Club\Club;
 use App\Models\Club\ClubActivity;
 use App\Models\Club\ClubActivityParticipant;
@@ -137,46 +138,70 @@ class ClubActivityController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'type' => 'required|in:meeting,practice,match,tournament,event,other',
+            'type' => 'nullable|in:meeting,practice,match,tournament,event,other',
             'start_time' => 'required|date',
             'end_time' => 'nullable|date|after:start_time',
+            'duration' => 'nullable|integer|min:1', // Duration in minutes
             'address' => 'nullable|string|max:500',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
-            'cancellation_deadline' => 'nullable|date|before:start_time',
+            'cancellation_deadline' => 'nullable|date|before:start_time', // Absolute datetime (optional)
+            'cancellation_deadline_hours' => 'nullable|integer|min:1|max:168', // Relative hours before event (max 1 week)
             'mini_tournament_id' => 'nullable|exists:mini_tournaments,id',
             'recurring_schedule' => ['nullable', 'array', new ValidRecurringSchedule()],
             'reminder_minutes' => 'sometimes|integer|min:0',
             'fee_amount' => 'nullable|numeric|min:0',
+            'fee_description' => 'nullable|string|max:1000',
             'guest_fee' => 'nullable|numeric|min:0',
-            'penalty_percentage' => 'nullable|numeric|min:0|max:100',
+            'penalty_amount' => 'nullable|numeric|min:0',
             'fee_split_type' => ['sometimes', Rule::enum(ClubActivityFeeSplitType::class)],
             'allow_member_invite' => 'sometimes|boolean',
             'is_public' => 'sometimes|boolean',
             'max_participants' => 'nullable|integer|min:1',
-            'qr_code_url' => 'nullable|url|max:500',
+            'qr_image' => 'nullable|image|mimes:png,jpg,jpeg|max:5120', // 5MB QR code image
         ]);
+
+        $endTime = $validated['end_time'] ?? null;
+        if (!$endTime && isset($validated['duration'])) {
+            $startTime = Carbon::parse($validated['start_time']);
+            $endTime = $startTime->copy()->addMinutes($validated['duration']);
+        }
+
+        $cancellationDeadline = $validated['cancellation_deadline'] ?? null;
+        if (!$cancellationDeadline && isset($validated['cancellation_deadline_hours'])) {
+            $startTime = Carbon::parse($validated['start_time']);
+            $cancellationDeadline = $startTime->copy()->subHours($validated['cancellation_deadline_hours']);
+        }
+
+        // Handle QR image upload
+        $qrCodeUrl = null;
+        if ($request->hasFile('qr_image')) {
+            $imageService = app(\App\Services\ImageOptimizationService::class);
+            $qrCodeUrl = $imageService->optimizeThumbnail($request->file('qr_image'), 'activity_qr_codes', 90);
+        }
 
         $activity = ClubActivity::create([
             'club_id' => $club->id,
             'mini_tournament_id' => $validated['mini_tournament_id'] ?? null,
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
-            'type' => $validated['type'],
+            'type' => $validated['type'] ?? 'other',
             'recurring_schedule' => $validated['recurring_schedule'] ?? null,
             'start_time' => $validated['start_time'],
-            'end_time' => $validated['end_time'] ?? null,
+            'end_time' => $endTime,
             'address' => $validated['address'] ?? null,
             'latitude' => $validated['latitude'] ?? null,
             'longitude' => $validated['longitude'] ?? null,
-            'cancellation_deadline' => $validated['cancellation_deadline'] ?? null,
+            'cancellation_deadline' => $cancellationDeadline,
             'reminder_minutes' => $validated['reminder_minutes'] ?? 15,
             'fee_amount' => $validated['fee_amount'] ?? 0,
+            'fee_description' => $validated['fee_description'] ?? null,
             'guest_fee' => $validated['guest_fee'] ?? 0,
-            'penalty_percentage' => $validated['penalty_percentage'] ?? 50,
+            'penalty_amount' => $validated['penalty_amount'] ?? 0,
             'fee_split_type' => $validated['fee_split_type'] ?? ClubActivityFeeSplitType::Fixed,
             'allow_member_invite' => isset($validated['allow_member_invite']) ? (bool) $validated['allow_member_invite'] : false,
             'is_public' => isset($validated['is_public']) ? (bool) $validated['is_public'] : true,
+            'max_participants' => $validated['max_participants'] ?? null,
             'status' => ClubActivityStatus::Scheduled,
             'created_by' => $userId,
         ]);
@@ -184,7 +209,8 @@ class ClubActivityController extends Controller
         $checkInToken = Str::random(48);
         $activity->update([
             'check_in_token' => $checkInToken,
-            'qr_code_url' => $validated['qr_code_url'] ?? $this->buildCheckInUrl($club->id, $activity->id, $checkInToken),
+            // qr_code_url is for payment QR image only, not check-in URL
+            'qr_code_url' => $qrCodeUrl,
         ]);
 
         // Tự động thêm người tạo vào danh sách participants với status Accepted
@@ -254,6 +280,7 @@ class ClubActivityController extends Controller
             'type' => 'sometimes|in:meeting,practice,match,tournament,event,other',
             'start_time' => 'sometimes|date',
             'end_time' => 'nullable|date|after:start_time',
+            'duration' => 'nullable|integer|min:1',
             'address' => 'nullable|string|max:500',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
@@ -261,14 +288,33 @@ class ClubActivityController extends Controller
             'recurring_schedule' => ['nullable', 'array', new ValidRecurringSchedule()],
             'reminder_minutes' => 'sometimes|integer|min:0',
             'fee_amount' => 'nullable|numeric|min:0',
+            'fee_description' => 'nullable|string|max:1000',
             'guest_fee' => 'nullable|numeric|min:0',
-            'penalty_percentage' => 'nullable|numeric|min:0|max:100',
+            'penalty_amount' => 'nullable|numeric|min:0',
             'fee_split_type' => ['sometimes', Rule::enum(ClubActivityFeeSplitType::class)],
             'allow_member_invite' => 'sometimes|boolean',
             'is_public' => 'sometimes|boolean',
             'max_participants' => 'nullable|integer|min:1',
-            'qr_code_url' => 'nullable|url|max:500',
+            'qr_image' => 'nullable|image|mimes:png,jpg,jpeg|max:5120',
         ]);
+
+        if (isset($validated['duration']) && isset($validated['start_time'])) {
+            $startTime = Carbon::parse($validated['start_time']);
+            $validated['end_time'] = $startTime->copy()->addMinutes($validated['duration']);
+        }
+
+        if (isset($validated['cancellation_deadline_hours'])) {
+            $startTime = Carbon::parse($validated['start_time'] ?? $activity->start_time);
+            $validated['cancellation_deadline'] = $startTime->copy()->subHours($validated['cancellation_deadline_hours']);
+        }
+
+        if ($request->hasFile('qr_image')) {
+            $imageService = app(\App\Services\ImageOptimizationService::class);
+            $validated['qr_code_url'] = $imageService->optimizeThumbnail($request->file('qr_image'), 'activity_qr_codes', 90);
+        }
+
+        unset($validated['duration']);
+        unset($validated['cancellation_deadline_hours']);
 
         $activity->update($validated);
         $activity->load([

@@ -38,7 +38,7 @@ class ClubActivityFactory extends Factory
             'created_by' => User::factory(),
             'fee_amount' => 0,
             'guest_fee' => 0,
-            'penalty_percentage' => 0,
+            'penalty_amount' => 0,
             'fee_split_type' => ClubActivityFeeSplitType::Fixed,
             'allow_member_invite' => false,
             'is_public' => true,

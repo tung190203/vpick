@@ -38,8 +38,9 @@ class ClubActivity extends Model
         'cancellation_reason',
         'cancelled_by',
         'fee_amount',
+        'fee_description',
         'guest_fee',
-        'penalty_percentage',
+        'penalty_amount',
         'fee_split_type',
         'allow_member_invite',
         'is_public',
@@ -51,13 +52,13 @@ class ClubActivity extends Model
     protected $casts = [
         'status' => ClubActivityStatus::class,
         'fee_split_type' => ClubActivityFeeSplitType::class,
-        'recurring_schedule' => 'array',
+        // NOTE: Do NOT cast recurring_schedule to 'array' - accessor will handle it
         'start_time' => 'datetime',
         'end_time' => 'datetime',
         'cancellation_deadline' => 'datetime',
         'fee_amount' => 'decimal:2',
         'guest_fee' => 'decimal:2',
-        'penalty_percentage' => 'decimal:2',
+        'penalty_amount' => 'decimal:2',
         'latitude' => 'float',
         'longitude' => 'float',
         'allow_member_invite' => 'boolean',
@@ -201,20 +202,27 @@ class ClubActivity extends Model
             return null;
         }
 
-        // Transform recurring_date based on period
+        // Build standardized response structure
+        $result = [
+            'period' => $data['period'],
+            'week_days' => null,
+            'recurring_date' => null,
+        ];
+
+        // Set week_days for weekly period
         if ($data['period'] === 'weekly') {
-            $data['recurring_date'] = null;
+            $result['week_days'] = $data['week_days'] ?? null;
         } else {
-            // Transform date to Vietnamese description
+            // Transform recurring_date to Vietnamese description for non-weekly periods
             if (isset($data['recurring_date']) && $data['recurring_date']) {
-                $data['recurring_date'] = $this->formatRecurringDateForOutput(
-                    $data['period'], 
+                $result['recurring_date'] = $this->formatRecurringDateForOutput(
+                    $data['period'],
                     $data['recurring_date']
                 );
             }
         }
 
-        return $data;
+        return $result;
     }
 
     /**
@@ -255,7 +263,7 @@ class ClubActivity extends Model
     private function parseDate(string $dateString): ?array
     {
         $formats = ['d/m/Y', 'd-m-Y', 'Y-m-d'];
-        
+
         foreach ($formats as $format) {
             try {
                 $date = Carbon::createFromFormat($format, $dateString);
