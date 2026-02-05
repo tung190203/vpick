@@ -18,6 +18,7 @@ use App\Models\Club\ClubActivityParticipant;
 use App\Models\Club\ClubWalletTransaction;
 use App\Models\User;
 use App\Http\Controllers\Controller;
+use App\Rules\ValidRecurringSchedule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -90,9 +91,6 @@ class ClubActivityController extends Controller
         if ($request->has('is_public')) {
             $request->merge(['is_public' => filter_var($request->is_public, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true]);
         }
-        if ($request->has('is_recurring')) {
-            $request->merge(['is_recurring' => filter_var($request->is_recurring, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false]);
-        }
         if ($request->has('allow_member_invite')) {
             $request->merge(['allow_member_invite' => filter_var($request->allow_member_invite, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false]);
         }
@@ -108,8 +106,7 @@ class ClubActivityController extends Controller
             'longitude' => 'nullable|numeric|between:-180,180',
             'cancellation_deadline' => 'nullable|date|before:start_time',
             'mini_tournament_id' => 'nullable|exists:mini_tournaments,id',
-            'is_recurring' => 'sometimes|boolean',
-            'recurring_schedule' => 'nullable|string',
+            'recurring_schedule' => ['nullable', 'array', new ValidRecurringSchedule()],
             'reminder_minutes' => 'sometimes|integer|min:0',
             'fee_amount' => 'nullable|numeric|min:0',
             'guest_fee' => 'nullable|numeric|min:0',
@@ -127,7 +124,6 @@ class ClubActivityController extends Controller
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
             'type' => $validated['type'],
-            'is_recurring' => $validated['is_recurring'] ?? false,
             'recurring_schedule' => $validated['recurring_schedule'] ?? null,
             'start_time' => $validated['start_time'],
             'end_time' => $validated['end_time'] ?? null,
@@ -205,13 +201,6 @@ class ClubActivityController extends Controller
             }
             $request->merge(['is_public' => $isPublic !== null ? (bool) $isPublic : true]);
         }
-        if ($request->has('is_recurring')) {
-            $isRecurring = $request->is_recurring;
-            if (is_string($isRecurring)) {
-                $isRecurring = filter_var($isRecurring, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-            }
-            $request->merge(['is_recurring' => $isRecurring !== null ? (bool) $isRecurring : false]);
-        }
         if ($request->has('allow_member_invite')) {
             $allowInvite = $request->allow_member_invite;
             if (is_string($allowInvite)) {
@@ -230,8 +219,7 @@ class ClubActivityController extends Controller
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
             'cancellation_deadline' => 'nullable|date|before:start_time',
-            'is_recurring' => 'sometimes|boolean',
-            'recurring_schedule' => 'nullable|string',
+            'recurring_schedule' => ['nullable', 'array', new ValidRecurringSchedule()],
             'reminder_minutes' => 'sometimes|integer|min:0',
             'fee_amount' => 'nullable|numeric|min:0',
             'guest_fee' => 'nullable|numeric|min:0',

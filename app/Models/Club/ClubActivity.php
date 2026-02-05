@@ -13,6 +13,7 @@ use App\Models\MiniTournament;
 use App\Models\Club\ClubWalletTransaction;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class ClubActivity extends Model
 {
@@ -24,7 +25,6 @@ class ClubActivity extends Model
         'title',
         'description',
         'type',
-        'is_recurring',
         'recurring_schedule',
         'start_time',
         'end_time',
@@ -51,7 +51,7 @@ class ClubActivity extends Model
     protected $casts = [
         'status' => ClubActivityStatus::class,
         'fee_split_type' => ClubActivityFeeSplitType::class,
-        'is_recurring' => 'boolean',
+        'recurring_schedule' => 'array',
         'start_time' => 'datetime',
         'end_time' => 'datetime',
         'cancellation_deadline' => 'datetime',
@@ -177,5 +177,100 @@ class ClubActivity extends Model
         }
 
         return (float) $this->fee_amount;
+    }
+
+    /**
+     * Check if activity is recurring
+     */
+    public function isRecurring(): bool
+    {
+        return $this->recurring_schedule !== null && !empty($this->recurring_schedule);
+    }
+
+    /**
+     * Get recurring_schedule attribute with transformed recurring_date
+     */
+    public function getRecurringScheduleAttribute($value)
+    {
+        if (!$value) {
+            return null;
+        }
+
+        $data = json_decode($value, true);
+        if (!$data || !isset($data['period'])) {
+            return null;
+        }
+
+        // Transform recurring_date based on period
+        if ($data['period'] === 'weekly') {
+            $data['recurring_date'] = null;
+        } else {
+            // Transform date to Vietnamese description
+            if (isset($data['recurring_date']) && $data['recurring_date']) {
+                $data['recurring_date'] = $this->formatRecurringDateForOutput(
+                    $data['period'], 
+                    $data['recurring_date']
+                );
+            }
+        }
+
+        return $data;
+    }
+
+    /**
+     * Set recurring_schedule attribute
+     */
+    public function setRecurringScheduleAttribute($value)
+    {
+        if (!$value) {
+            $this->attributes['recurring_schedule'] = null;
+            return;
+        }
+
+        // Store as JSON
+        $this->attributes['recurring_schedule'] = json_encode($value);
+    }
+
+    /**
+     * Format recurring_date for output (Vietnamese description)
+     */
+    private function formatRecurringDateForOutput(string $period, string $dateString): ?string
+    {
+        $date = $this->parseDate($dateString);
+        if (!$date) {
+            return null;
+        }
+
+        return match($period) {
+            'monthly' => "ngày {$date['day']} hàng tháng",
+            'quarterly' => "ngày {$date['day']} tháng đầu tiên hàng quý",
+            'yearly' => "ngày {$date['day']}/{$date['month']} hàng năm",
+            default => null
+        };
+    }
+
+    /**
+     * Parse date string from various formats
+     */
+    private function parseDate(string $dateString): ?array
+    {
+        $formats = ['d/m/Y', 'd-m-Y', 'Y-m-d'];
+        
+        foreach ($formats as $format) {
+            try {
+                $date = Carbon::createFromFormat($format, $dateString);
+                if ($date && $date->format($format) === $dateString) {
+                    return [
+                        'day' => $date->day,
+                        'month' => $date->month,
+                        'year' => $date->year,
+                    ];
+                }
+            } catch (\Exception $e) {
+                continue;
+            }
+        }
+
+        return null;
     }
 }
