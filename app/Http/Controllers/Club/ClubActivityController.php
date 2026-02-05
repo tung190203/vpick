@@ -31,12 +31,14 @@ class ClubActivityController extends Controller
     public function index(Request $request, $clubId)
     {
         $club = Club::findOrFail($clubId);
+        $userId = auth()->id();
 
         $validated = $request->validate([
             'page' => 'sometimes|integer|min:1',
             'per_page' => 'sometimes|integer|min:1|max:100',
             'type' => 'sometimes|in:meeting,practice,match,tournament,event,other',
-            'status' => ['sometimes', Rule::enum(ClubActivityStatus::class)],
+            'statuses' => 'sometimes|array',
+            'statuses.*' => 'sometimes|in:all,registered,available,scheduled,ongoing,completed,cancelled',
             'date_from' => 'sometimes|date',
             'date_to' => 'sometimes|date|after_or_equal:date_from',
         ]);
@@ -52,8 +54,35 @@ class ClubActivityController extends Controller
             $query->where('type', $validated['type']);
         }
 
-        if (!empty($validated['status'])) {
-            $query->where('status', $validated['status']);
+        // Handle statuses filter
+        $statuses = $validated['statuses'] ?? [];
+        $hasAll = in_array('all', $statuses);
+        $hasRegistered = in_array('registered', $statuses);
+        $hasAvailable = in_array('available', $statuses);
+        $activityStatuses = array_intersect($statuses, ['scheduled', 'ongoing', 'completed', 'cancelled']);
+
+        // If 'all' is present, ignore all filters
+        if (!$hasAll && !empty($statuses)) {
+            // Filter by activity status if any
+            if (!empty($activityStatuses)) {
+                $query->whereIn('status', $activityStatuses);
+            }
+
+            // Filter by participation status
+            if ($userId && ($hasRegistered || $hasAvailable)) {
+                if ($hasRegistered && !$hasAvailable) {
+                    // Only registered activities
+                    $query->whereHas('participants', function ($q) use ($userId) {
+                        $q->where('user_id', $userId);
+                    });
+                } elseif ($hasAvailable && !$hasRegistered) {
+                    // Only available (not registered) activities
+                    $query->whereDoesntHave('participants', function ($q) use ($userId) {
+                        $q->where('user_id', $userId);
+                    });
+                }
+                // If both registered and available, don't filter (show all), but will sort later
+            }
         }
 
         if (!empty($validated['date_from'])) {
@@ -65,7 +94,17 @@ class ClubActivityController extends Controller
         }
 
         $perPage = $validated['per_page'] ?? 15;
-        $activities = $query->orderBy('start_time', 'desc')->paginate($perPage);
+
+        // If both registered and available, sort registered first
+        if ($userId && $hasRegistered && $hasAvailable && !$hasAll) {
+            $query->selectRaw('club_activities.*, EXISTS(SELECT 1 FROM club_activity_participants WHERE club_activity_participants.club_activity_id = club_activities.id AND club_activity_participants.user_id = ?) as is_registered', [$userId])
+                ->orderBy('is_registered', 'desc')
+                ->orderBy('start_time', 'desc');
+        } else {
+            $query->orderBy('start_time', 'desc');
+        }
+
+        $activities = $query->paginate($perPage);
 
         $data = ['activities' => ClubActivityResource::collection($activities)];
         $meta = [
