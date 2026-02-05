@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Club;
 
+use App\Enums\ClubActivityFeeSplitType;
+use App\Enums\ClubActivityParticipantStatus;
 use App\Enums\ClubActivityStatus;
 use App\Enums\ClubMemberRole;
 use App\Enums\ClubWalletTransactionDirection;
@@ -84,14 +86,26 @@ class ClubActivityController extends Controller
             return ResponseHelper::error('Chỉ admin/manager/secretary mới có quyền tạo hoạt động', 403);
         }
 
+        // Convert string "true"/"false" to boolean
+        if ($request->has('is_public')) {
+            $request->merge(['is_public' => filter_var($request->is_public, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true]);
+        }
+        if ($request->has('is_recurring')) {
+            $request->merge(['is_recurring' => filter_var($request->is_recurring, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false]);
+        }
+        if ($request->has('allow_member_invite')) {
+            $request->merge(['allow_member_invite' => filter_var($request->allow_member_invite, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false]);
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'type' => 'required|in:meeting,practice,match,tournament,event,other',
             'start_time' => 'required|date',
             'end_time' => 'nullable|date|after:start_time',
-            'location' => 'nullable|string|max:255',
-            'venue_address' => 'nullable|string|max:500',
+            'address' => 'nullable|string|max:500',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
             'cancellation_deadline' => 'nullable|date|before:start_time',
             'mini_tournament_id' => 'nullable|exists:mini_tournaments,id',
             'is_recurring' => 'sometimes|boolean',
@@ -100,8 +114,9 @@ class ClubActivityController extends Controller
             'fee_amount' => 'nullable|numeric|min:0',
             'guest_fee' => 'nullable|numeric|min:0',
             'penalty_percentage' => 'nullable|numeric|min:0|max:100',
-            'fee_split_type' => 'sometimes|in:equal,fixed',
+            'fee_split_type' => ['sometimes', Rule::enum(ClubActivityFeeSplitType::class)],
             'allow_member_invite' => 'sometimes|boolean',
+            'is_public' => 'sometimes|boolean',
             'max_participants' => 'nullable|integer|min:1',
             'qr_code_url' => 'nullable|url|max:500',
         ]);
@@ -116,15 +131,17 @@ class ClubActivityController extends Controller
             'recurring_schedule' => $validated['recurring_schedule'] ?? null,
             'start_time' => $validated['start_time'],
             'end_time' => $validated['end_time'] ?? null,
-            'location' => $validated['location'] ?? null,
-            'venue_address' => $validated['venue_address'] ?? null,
+            'address' => $validated['address'] ?? null,
+            'latitude' => $validated['latitude'] ?? null,
+            'longitude' => $validated['longitude'] ?? null,
             'cancellation_deadline' => $validated['cancellation_deadline'] ?? null,
             'reminder_minutes' => $validated['reminder_minutes'] ?? 15,
             'fee_amount' => $validated['fee_amount'] ?? 0,
             'guest_fee' => $validated['guest_fee'] ?? 0,
             'penalty_percentage' => $validated['penalty_percentage'] ?? 50,
-            'fee_split_type' => $validated['fee_split_type'] ?? 'fixed',
-            'allow_member_invite' => $validated['allow_member_invite'] ?? false,
+            'fee_split_type' => $validated['fee_split_type'] ?? ClubActivityFeeSplitType::Fixed,
+            'allow_member_invite' => isset($validated['allow_member_invite']) ? (bool) $validated['allow_member_invite'] : false,
+            'is_public' => isset($validated['is_public']) ? (bool) $validated['is_public'] : true,
             'status' => ClubActivityStatus::Scheduled,
             'created_by' => $userId,
         ]);
@@ -134,6 +151,17 @@ class ClubActivityController extends Controller
             'check_in_token' => $checkInToken,
             'qr_code_url' => $validated['qr_code_url'] ?? $this->buildCheckInUrl($club->id, $activity->id, $checkInToken),
         ]);
+
+        // Tự động thêm người tạo vào danh sách participants với status Accepted
+        ClubActivityParticipant::firstOrCreate(
+            [
+                'club_activity_id' => $activity->id,
+                'user_id' => $userId,
+            ],
+            [
+                'status' => ClubActivityParticipantStatus::Accepted,
+            ]
+        );
 
         $activity->load([
             'creator' => User::FULL_RELATIONS,
@@ -169,14 +197,38 @@ class ClubActivityController extends Controller
             return ResponseHelper::error('Không có quyền cập nhật hoạt động này', 403);
         }
 
+        // Convert string "true"/"false" to boolean
+        if ($request->has('is_public')) {
+            $isPublic = $request->is_public;
+            if (is_string($isPublic)) {
+                $isPublic = filter_var($isPublic, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            }
+            $request->merge(['is_public' => $isPublic !== null ? (bool) $isPublic : true]);
+        }
+        if ($request->has('is_recurring')) {
+            $isRecurring = $request->is_recurring;
+            if (is_string($isRecurring)) {
+                $isRecurring = filter_var($isRecurring, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            }
+            $request->merge(['is_recurring' => $isRecurring !== null ? (bool) $isRecurring : false]);
+        }
+        if ($request->has('allow_member_invite')) {
+            $allowInvite = $request->allow_member_invite;
+            if (is_string($allowInvite)) {
+                $allowInvite = filter_var($allowInvite, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            }
+            $request->merge(['allow_member_invite' => $allowInvite !== null ? (bool) $allowInvite : false]);
+        }
+
         $validated = $request->validate([
             'title' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
             'type' => 'sometimes|in:meeting,practice,match,tournament,event,other',
             'start_time' => 'sometimes|date',
             'end_time' => 'nullable|date|after:start_time',
-            'location' => 'nullable|string|max:255',
-            'venue_address' => 'nullable|string|max:500',
+            'address' => 'nullable|string|max:500',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
             'cancellation_deadline' => 'nullable|date|before:start_time',
             'is_recurring' => 'sometimes|boolean',
             'recurring_schedule' => 'nullable|string',
@@ -184,8 +236,9 @@ class ClubActivityController extends Controller
             'fee_amount' => 'nullable|numeric|min:0',
             'guest_fee' => 'nullable|numeric|min:0',
             'penalty_percentage' => 'nullable|numeric|min:0|max:100',
-            'fee_split_type' => 'sometimes|in:equal,fixed',
+            'fee_split_type' => ['sometimes', Rule::enum(ClubActivityFeeSplitType::class)],
             'allow_member_invite' => 'sometimes|boolean',
+            'is_public' => 'sometimes|boolean',
             'max_participants' => 'nullable|integer|min:1',
             'qr_code_url' => 'nullable|url|max:500',
         ]);
