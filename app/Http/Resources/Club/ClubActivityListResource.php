@@ -19,10 +19,10 @@ class ClubActivityListResource extends JsonResource
             'status' => $this->status,
             'start_time' => $this->start_time?->toISOString(),
             'end_time' => $this->end_time?->toISOString(),
-            'location' => $this->address, // Using address field for location
+            'location' => $this->address, // For short location display
+            'address' => $this->address,  // For detailed address display
             'max_participants' => $this->max_participants !== null ? (int) $this->max_participants : null,
             'participants_count' => $this->whenLoaded('participants', fn() => $this->participants->count()),
-            // Only return participant user_ids for checking if current user is registered
             'participant_user_ids' => $this->whenLoaded('participants',
                 fn() => $this->participants->pluck('user_id')->toArray()
             ),

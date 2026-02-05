@@ -140,12 +140,12 @@ class ClubActivityController extends Controller
             'type' => 'nullable|in:meeting,practice,match,tournament,event,other',
             'start_time' => 'required|date',
             'end_time' => 'nullable|date|after:start_time',
-            'duration' => 'nullable|integer|min:1', // Duration in minutes
-            'address' => 'nullable|string|max:500',
+            'duration' => 'nullable|integer|min:1',
+            'address' => 'required|string|max:500',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
-            'cancellation_deadline' => 'nullable|date|before:start_time', // Absolute datetime (optional)
-            'cancellation_deadline_hours' => 'nullable|integer|min:1|max:168', // Relative hours before event (max 1 week)
+            'cancellation_deadline' => 'nullable|date|before:start_time',
+            'cancellation_deadline_hours' => 'nullable|integer|min:1|max:168',
             'mini_tournament_id' => 'nullable|exists:mini_tournaments,id',
             'recurring_schedule' => ['nullable', 'array', new ValidRecurringSchedule()],
             'reminder_minutes' => 'sometimes|integer|min:0',
@@ -157,7 +157,7 @@ class ClubActivityController extends Controller
             'allow_member_invite' => 'sometimes|boolean',
             'is_public' => 'sometimes|boolean',
             'max_participants' => 'nullable|integer|min:1',
-            'qr_image' => 'nullable|image|mimes:png,jpg,jpeg|max:5120', // 5MB QR code image
+            'qr_image' => 'nullable|image|mimes:png,jpg,jpeg|max:5120',
         ]);
 
         $endTime = $validated['end_time'] ?? null;
@@ -172,7 +172,6 @@ class ClubActivityController extends Controller
             $cancellationDeadline = $startTime->copy()->subHours($validated['cancellation_deadline_hours']);
         }
 
-        // Handle QR image upload
         $qrCodeUrl = null;
         if ($request->hasFile('qr_image')) {
             $imageService = app(\App\Services\ImageOptimizationService::class);
@@ -208,11 +207,9 @@ class ClubActivityController extends Controller
         $checkInToken = Str::random(48);
         $activity->update([
             'check_in_token' => $checkInToken,
-            // qr_code_url is for payment QR image only, not check-in URL
             'qr_code_url' => $qrCodeUrl,
         ]);
 
-        // Tự động thêm người tạo vào danh sách participants với status Accepted
         ClubActivityParticipant::firstOrCreate(
             [
                 'club_activity_id' => $activity->id,
@@ -253,11 +250,10 @@ class ClubActivityController extends Controller
 
         $club = $activity->club;
         $member = $club->members()->where('user_id', $userId)->first();
-        if (!$member || !in_array($member->role, ['admin', 'manager', 'secretary']) || $activity->created_by !== $userId) {
+        if (!$member || !in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary]) || $activity->created_by !== $userId) {
             return ResponseHelper::error('Không có quyền cập nhật hoạt động này', 403);
         }
 
-        // Convert string "true"/"false" to boolean
         if ($request->has('is_public')) {
             $isPublic = $request->is_public;
             if (is_string($isPublic)) {
