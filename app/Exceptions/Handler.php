@@ -70,9 +70,17 @@ class Handler extends ExceptionHandler
                 }, $messages);
             }
 
+            $firstError = !empty($errors) ? reset($errors)[0] : 'Validation failed';
+
+            $allErrors = [];
+            foreach ($errors as $field => $messages) {
+                $allErrors[] = implode(' ', $messages);
+            }
+            $message = implode(' ', $allErrors);
+
             return response()->json([
                 'status' => false,
-                'message' => 'Validation failed',
+                'message' => $firstError,
                 'errors' => $errors,
             ], 422);
         }
