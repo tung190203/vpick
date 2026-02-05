@@ -104,9 +104,8 @@ class ClubActivityController extends Controller
             'start_time' => 'required|date',
             'end_time' => 'nullable|date|after:start_time',
             'address' => 'nullable|string|max:500',
-            'address' => 'nullable|string|max:500',
-            'location' => 'nullable|string|max:255',
-            'venue_address' => 'nullable|string|max:500',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
             'cancellation_deadline' => 'nullable|date|before:start_time',
             'mini_tournament_id' => 'nullable|exists:mini_tournaments,id',
             'is_recurring' => 'sometimes|boolean',
@@ -122,9 +121,6 @@ class ClubActivityController extends Controller
             'qr_code_url' => 'nullable|url|max:500',
         ]);
 
-        // Map address (ưu tiên) hoặc fallback từ location/venue_address
-        $address = $validated['address'] ?? $validated['venue_address'] ?? $validated['location'] ?? null;
-
         $activity = ClubActivity::create([
             'club_id' => $club->id,
             'mini_tournament_id' => $validated['mini_tournament_id'] ?? null,
@@ -135,7 +131,9 @@ class ClubActivityController extends Controller
             'recurring_schedule' => $validated['recurring_schedule'] ?? null,
             'start_time' => $validated['start_time'],
             'end_time' => $validated['end_time'] ?? null,
-            'address' => $address,
+            'address' => $validated['address'] ?? null,
+            'latitude' => $validated['latitude'] ?? null,
+            'longitude' => $validated['longitude'] ?? null,
             'cancellation_deadline' => $validated['cancellation_deadline'] ?? null,
             'reminder_minutes' => $validated['reminder_minutes'] ?? 15,
             'fee_amount' => $validated['fee_amount'] ?? 0,
@@ -228,8 +226,9 @@ class ClubActivityController extends Controller
             'type' => 'sometimes|in:meeting,practice,match,tournament,event,other',
             'start_time' => 'sometimes|date',
             'end_time' => 'nullable|date|after:start_time',
-            'location' => 'nullable|string|max:255',
-            'venue_address' => 'nullable|string|max:500',
+            'address' => 'nullable|string|max:500',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
             'cancellation_deadline' => 'nullable|date|before:start_time',
             'is_recurring' => 'sometimes|boolean',
             'recurring_schedule' => 'nullable|string',
@@ -244,13 +243,7 @@ class ClubActivityController extends Controller
             'qr_code_url' => 'nullable|url|max:500',
         ]);
 
-        // Map address (ưu tiên) hoặc fallback từ location/venue_address
-        $updateData = $validated;
-        if (isset($validated['address']) || isset($validated['venue_address']) || isset($validated['location'])) {
-            $updateData['address'] = $validated['address'] ?? $validated['venue_address'] ?? $validated['location'] ?? null;
-            unset($updateData['location'], $updateData['venue_address']);
-        }
-        $activity->update($updateData);
+        $activity->update($validated);
         $activity->load([
             'creator' => User::FULL_RELATIONS,
             'participants.user' => User::FULL_RELATIONS

@@ -29,6 +29,8 @@ class ClubActivity extends Model
         'start_time',
         'end_time',
         'address',
+        'latitude',
+        'longitude',
         'cancellation_deadline',
         'reminder_minutes',
         'status',
@@ -56,6 +58,8 @@ class ClubActivity extends Model
         'fee_amount' => 'decimal:2',
         'guest_fee' => 'decimal:2',
         'penalty_percentage' => 'decimal:2',
+        'latitude' => 'float',
+        'longitude' => 'float',
         'allow_member_invite' => 'boolean',
         'is_public' => 'boolean',
     ];
