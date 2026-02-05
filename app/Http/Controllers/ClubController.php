@@ -586,6 +586,84 @@ class ClubController extends Controller
         return ResponseHelper::success([], 'Bạn đã rời CLB');
     }
 
+    public function transferOwnership(Request $request, $clubId)
+    {
+        $club = Club::findOrFail($clubId);
+        $userId = auth()->id();
+
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
+        }
+
+        $currentMember = $club->activeMembers()
+            ->where('user_id', $userId)
+            ->with('user')
+            ->first();
+
+        if (!$currentMember || $currentMember->role !== ClubMemberRole::Admin) {
+            return ResponseHelper::error('Chỉ admin mới có thể nhượng quyền quản lý CLB', 403);
+        }
+
+        $validated = $request->validate([
+            'transfer_to_user_id' => 'required|integer|exists:users,id',
+            'keep_as_member' => 'sometimes|boolean',
+            'new_role' => 'nullable|in:secretary,member',
+        ], [
+            'transfer_to_user_id.required' => 'Vui lòng chọn thành viên để nhượng quyền',
+            'transfer_to_user_id.exists' => 'Người dùng không tồn tại',
+            'new_role.in' => 'Vai trò mới phải là thư ký hoặc thành viên thường',
+        ]);
+
+        $newAdminMember = $club->activeMembers()
+            ->where('user_id', $validated['transfer_to_user_id'])
+            ->where('id', '!=', $currentMember->id)
+            ->with('user')
+            ->first();
+
+        if (!$newAdminMember) {
+            return ResponseHelper::error('Người được nhượng quyền phải là thành viên active của CLB và không phải chính bạn', 400);
+        }
+
+        return DB::transaction(function () use ($currentMember, $newAdminMember, $validated, $club) {
+            $newAdminMember->update([
+                'role' => ClubMemberRole::Admin,
+            ]);
+
+            $keepAsMember = $validated['keep_as_member'] ?? true;
+
+            if ($keepAsMember) {
+                $newRole = $validated['new_role'] ?? 'member';
+                $currentMember->update([
+                    'role' => ClubMemberRole::from($newRole),
+                ]);
+
+                $message = 'Đã nhượng quyền quản lý CLB thành công. Bạn vẫn là thành viên của CLB.';
+                $yourNewRole = $currentMember->role->value;
+            } else {
+                $currentMember->update([
+                    'membership_status' => ClubMembershipStatus::Left,
+                    'status' => ClubMemberStatus::Inactive,
+                    'left_at' => now(),
+                ]);
+
+                $message = 'Đã nhượng quyền quản lý và rời CLB thành công.';
+                $yourNewRole = 'left';
+            }
+
+            return ResponseHelper::success([
+                'new_admin' => [
+                    'user_id' => $newAdminMember->user_id,
+                    'user_name' => $newAdminMember->user->full_name ?? 'N/A',
+                    'role' => $newAdminMember->role->value,
+                ],
+                'your_new_status' => [
+                    'role' => $yourNewRole,
+                    'is_member' => $keepAsMember,
+                ],
+            ], $message);
+        });
+    }
+
     public function myClubs(Request $request)
     {
         $userId = auth()->id();

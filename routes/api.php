@@ -188,6 +188,7 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
         Route::delete('/{clubId}', [ClubController::class, 'destroy']);
         Route::post('/{clubId}/restore', [ClubController::class, 'restore']);
         Route::post('/{clubId}/leave', [ClubController::class, 'leave']);
+        Route::post('/{clubId}/transfer-ownership', [ClubController::class, 'transferOwnership']);
 
         Route::prefix('{clubId}')->group(function () {
             Route::get('/profile', [ClubController::class, 'getProfile']);
