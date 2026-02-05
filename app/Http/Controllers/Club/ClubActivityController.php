@@ -103,6 +103,8 @@ class ClubActivityController extends Controller
             'type' => 'required|in:meeting,practice,match,tournament,event,other',
             'start_time' => 'required|date',
             'end_time' => 'nullable|date|after:start_time',
+            'address' => 'nullable|string|max:500',
+            'address' => 'nullable|string|max:500',
             'location' => 'nullable|string|max:255',
             'venue_address' => 'nullable|string|max:500',
             'cancellation_deadline' => 'nullable|date|before:start_time',
@@ -120,8 +122,8 @@ class ClubActivityController extends Controller
             'qr_code_url' => 'nullable|url|max:500',
         ]);
 
-        // Map location/venue_address từ FE sang address trong DB
-        $address = $validated['venue_address'] ?? $validated['location'] ?? null;
+        // Map address (ưu tiên) hoặc fallback từ location/venue_address
+        $address = $validated['address'] ?? $validated['venue_address'] ?? $validated['location'] ?? null;
 
         $activity = ClubActivity::create([
             'club_id' => $club->id,
@@ -242,10 +244,10 @@ class ClubActivityController extends Controller
             'qr_code_url' => 'nullable|url|max:500',
         ]);
 
-        // Map location/venue_address từ FE sang address trong DB
+        // Map address (ưu tiên) hoặc fallback từ location/venue_address
         $updateData = $validated;
-        if (isset($validated['venue_address']) || isset($validated['location'])) {
-            $updateData['address'] = $validated['venue_address'] ?? $validated['location'] ?? null;
+        if (isset($validated['address']) || isset($validated['venue_address']) || isset($validated['location'])) {
+            $updateData['address'] = $validated['address'] ?? $validated['venue_address'] ?? $validated['location'] ?? null;
             unset($updateData['location'], $updateData['venue_address']);
         }
         $activity->update($updateData);
