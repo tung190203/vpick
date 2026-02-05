@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Club;
 
+use App\Enums\ClubActivityFeeSplitType;
 use App\Enums\ClubActivityParticipantStatus;
 use App\Enums\ClubActivityStatus;
 use App\Enums\ClubMemberRole;
@@ -150,8 +151,8 @@ class ClubActivityParticipantController extends Controller
                 && $mainWallet) {
 
                 // fixed = phí/người; equal = tổng chia đều (fee_amount / max_participants hoặc 1)
-                $feeSplitType = $activity->fee_split_type ?? 'fixed';
-                $amount = $feeSplitType === 'fixed'
+                $feeSplitType = $activity->fee_split_type ?? ClubActivityFeeSplitType::Fixed;
+                $amount = $feeSplitType === ClubActivityFeeSplitType::Fixed
                     ? (float) $activity->fee_amount
                     : (float) $activity->fee_amount / max(1, (int) ($activity->max_participants ?? 1));
 
@@ -237,8 +238,8 @@ class ClubActivityParticipantController extends Controller
 
             // Tạo transaction nếu có phí
             if ($activity->fee_amount > 0 && $mainWallet) {
-                $feeSplitType = $activity->fee_split_type ?? 'fixed';
-                $amount = $feeSplitType === 'fixed'
+                $feeSplitType = $activity->fee_split_type ?? ClubActivityFeeSplitType::Fixed;
+                $amount = $feeSplitType === ClubActivityFeeSplitType::Fixed
                     ? (float) $activity->fee_amount
                     : (float) $activity->fee_amount / max(1, (int) ($activity->max_participants ?? 1));
 
@@ -331,8 +332,8 @@ class ClubActivityParticipantController extends Controller
 
             // Tạo transaction nếu có phí
             if ($activity->fee_amount > 0 && $mainWallet) {
-                $feeSplitType = $activity->fee_split_type ?? 'fixed';
-                $amount = $feeSplitType === 'fixed'
+                $feeSplitType = $activity->fee_split_type ?? ClubActivityFeeSplitType::Fixed;
+                $amount = $feeSplitType === ClubActivityFeeSplitType::Fixed
                     ? (float) $activity->fee_amount
                     : (float) $activity->fee_amount / max(1, (int) ($activity->max_participants ?? 1));
 

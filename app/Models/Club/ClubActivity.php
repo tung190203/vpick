@@ -2,6 +2,7 @@
 
 namespace App\Models\Club;
 
+use App\Enums\ClubActivityFeeSplitType;
 use App\Enums\ClubActivityParticipantStatus;
 use App\Enums\ClubActivityStatus;
 use App\Enums\ClubWalletTransactionDirection;
@@ -27,8 +28,9 @@ class ClubActivity extends Model
         'recurring_schedule',
         'start_time',
         'end_time',
-        'location',
-        'venue_address',
+        'address',
+        'latitude',
+        'longitude',
         'cancellation_deadline',
         'reminder_minutes',
         'status',
@@ -40,6 +42,7 @@ class ClubActivity extends Model
         'penalty_percentage',
         'fee_split_type',
         'allow_member_invite',
+        'is_public',
         'max_participants',
         'qr_code_url',
         'check_in_token',
@@ -47,6 +50,7 @@ class ClubActivity extends Model
 
     protected $casts = [
         'status' => ClubActivityStatus::class,
+        'fee_split_type' => ClubActivityFeeSplitType::class,
         'is_recurring' => 'boolean',
         'start_time' => 'datetime',
         'end_time' => 'datetime',
@@ -54,7 +58,10 @@ class ClubActivity extends Model
         'fee_amount' => 'decimal:2',
         'guest_fee' => 'decimal:2',
         'penalty_percentage' => 'decimal:2',
+        'latitude' => 'float',
+        'longitude' => 'float',
         'allow_member_invite' => 'boolean',
+        'is_public' => 'boolean',
     ];
 
     public function club()
@@ -150,17 +157,25 @@ class ClubActivity extends Model
 
     /**
      * Số tiền mỗi người phải nộp khi tham gia (theo fee_split_type).
-     * fixed: fee_amount là phí/người. equal: fee_amount là tổng, chia đều cho max_participants (hoặc 1 nếu chưa set).
      */
     public function getFeeAmountPerParticipant(): float
     {
+        $splitType = $this->fee_split_type ?? ClubActivityFeeSplitType::Fixed;
+
+        // Quỹ bao: không thu phí từ người tham gia
+        if ($splitType === ClubActivityFeeSplitType::Fund) {
+            return 0;
+        }
+
         if ((float) $this->fee_amount <= 0) {
             return 0;
         }
-        if (($this->fee_split_type ?? 'fixed') === 'equal') {
+
+        if ($splitType === ClubActivityFeeSplitType::Equal) {
             $n = max(1, (int) ($this->max_participants ?? 1));
             return round((float) $this->fee_amount / $n, 2);
         }
+
         return (float) $this->fee_amount;
     }
 }
