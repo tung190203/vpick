@@ -12,6 +12,7 @@ use App\Enums\ClubWalletTransactionStatus;
 use App\Enums\PaymentMethod;
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\Club\ClubActivityResource;
+use App\Http\Resources\Club\ClubActivityListResource;
 use Carbon\Carbon;
 use App\Models\Club\Club;
 use App\Models\Club\ClubActivity;
@@ -46,10 +47,8 @@ class ClubActivityController extends Controller
 
         $query = $club->activities()
             ->with([
-                'creator' => User::FULL_RELATIONS,
-                'participants.user' => User::FULL_RELATIONS
-            ])
-            ->withSum(self::ACTIVITY_COLLECTED_SUM, 'amount');
+                'participants:id,club_activity_id,user_id' // Only load minimal participant data
+            ]);
 
         if (!empty($validated['type'])) {
             $query->where('type', $validated['type']);
@@ -107,7 +106,7 @@ class ClubActivityController extends Controller
 
         $activities = $query->paginate($perPage);
 
-        $data = ['activities' => ClubActivityResource::collection($activities)];
+        $data = ['activities' => ClubActivityListResource::collection($activities)];
         $meta = [
             'current_page' => $activities->currentPage(),
             'per_page' => $activities->perPage(),
