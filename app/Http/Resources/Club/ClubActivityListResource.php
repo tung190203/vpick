@@ -18,6 +18,7 @@ class ClubActivityListResource extends JsonResource
             'title' => $this->title,
             'status' => $this->status,
             'start_time' => $this->start_time?->toISOString(),
+            'duration' => $this->duration,
             'end_time' => $this->end_time?->toISOString(),
             'location' => $this->address,
             'address' => $this->address,

@@ -75,7 +75,18 @@ class ClubActivityService
         $perPage = $filters['per_page'] ?? 15;
 
         if ($userId) {
-            $query->selectRaw('club_activities.*, EXISTS(SELECT 1 FROM club_activity_participants WHERE club_activity_participants.club_activity_id = club_activities.id AND club_activity_participants.user_id = ?) as is_registered', [$userId])
+            $query->selectRaw('club_activities.*, EXISTS(
+                SELECT 1 FROM club_activity_participants
+                WHERE club_activity_participants.club_activity_id = club_activities.id
+                AND club_activity_participants.user_id = ?
+                AND club_activity_participants.status IN (?, ?, ?, ?)
+            ) as is_registered', [
+                $userId,
+                'pending',
+                'invited',
+                'accepted',
+                'attended'
+            ])
                 ->orderBy('is_registered', 'desc')
                 ->orderBy('start_time', 'asc');
         } else {
@@ -118,6 +129,7 @@ class ClubActivityService
             'recurring_schedule' => $data['recurring_schedule'] ?? null,
             'start_time' => $data['start_time'],
             'end_time' => $endTime,
+            'duration' => $data['duration'] ?? null,
             'address' => $data['address'] ?? null,
             'latitude' => $data['latitude'] ?? null,
             'longitude' => $data['longitude'] ?? null,
@@ -176,7 +188,6 @@ class ClubActivityService
             $data['qr_code_url'] = $this->imageService->optimizeThumbnail($data['qr_image'], 'activity_qr_codes', 90);
         }
 
-        unset($data['duration']);
         unset($data['cancellation_deadline_hours']);
         unset($data['qr_image']);
 
@@ -216,8 +227,8 @@ class ClubActivityService
     public function cancelActivity(
         ClubActivity $activity,
         int $userId,
-        string $cancellationReason,
-        bool $cancelTransactions
+        ?string $cancellationReason = null,
+        ?bool $cancelTransactions = false
     ): ClubActivity {
         $club = $activity->club;
         $member = $club->activeMembers()->where('user_id', $userId)->first();
@@ -232,7 +243,7 @@ class ClubActivityService
         return DB::transaction(function () use ($activity, $club, $userId, $cancellationReason, $cancelTransactions) {
             $activity->update([
                 'status' => ClubActivityStatus::Cancelled,
-                'cancellation_reason' => $cancellationReason,
+                'cancellation_reason' => $cancellationReason ?? 'Không có lý do cụ thể',
                 'cancelled_by' => $userId,
             ]);
 
