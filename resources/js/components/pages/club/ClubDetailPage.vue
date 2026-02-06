@@ -212,7 +212,7 @@
                         </div>
                         <template v-if="activities.length > 0">
                             <ActivityScheduleCard v-for="(activity, index) in activities" :key="index" v-bind="activity"
-                                @click-card="goToActivityDetail(activity)" />
+                                @click-card="goToActivityDetail(activity)" @edit="handleEditActivity(activity)" />
                         </template>
                         <div v-else class="p-4 text-center">
                             <p class="text-[#838799]">Hiện chưa có lịch thi đấu</p>
@@ -334,7 +334,7 @@
                         </div>
 
                         <!-- Scrollable Content -->
-                        <div class="p-6 pt-2 flex-1 overflow-y-auto custom-scrollbar" v-else>
+                        <div class="p-6 pt-3 flex-1 overflow-y-auto custom-scrollbar" v-else>
                             <div class="mb-8">
                                 <div class="space-y-2">
                                     <div v-for="(notification, index) in notifications" class="cursor-pointer"
@@ -670,7 +670,7 @@ const changeClub = (item) => {
 }
 
 const shareClub = () => {
-    console.log('share club')
+    toast.info('Chức năng đang được phát triển')
 }
 
 const openNotification = () => {
@@ -774,6 +774,13 @@ const getNotificationType = async () => {
     }
 }
 
+const handleEditActivity = (activity) => {
+    router.push({
+        name: 'club-activity-edit',
+        params: { id: clubId.value, activityId: activity.id }
+    })
+}
+
 const goToActivityDetail = (activity) => {
     router.push({
         name: 'club-detail-activity',
@@ -826,6 +833,7 @@ const formatActivity = (item) => {
         buttonText,
         type,
         disabled: isCompleted,
+        isCreator: item.created_by === getUser.value.id,
         location: item.location,
         participants_list: item.participants || [],
         result: isCompleted ? `Địa điểm: ${item.location}` : null
@@ -973,6 +981,7 @@ const markAllAsRead = async () => {
 }
 
 const handleUnpinNotification = async (notificationId) => {
+    if(!hasAnyRole(['admin', 'manager', 'secretary'])) return
     try {
         await ClubService.togglePin(clubId.value, notificationId)
         await getClubNotification()
@@ -1037,7 +1046,6 @@ const getClubLeaderBoard = async () => {
         leaderboardMeta.value = response.meta
         hasFetchedLeaderboard.value = true
     } catch (error) {
-        console.log(error)
         toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi lấy thông tin xếp hạng')
     } finally {
         isLeaderboardLoading.value = false
@@ -1053,7 +1061,6 @@ const getClubJoiningRequests = async () => {
         const response = await ClubService.joiningRequests(clubId.value)
         joiningRequests.value = response.data
     } catch (error) {
-        console.log(error)
         toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi lấy thông tin yêu cầu tham gia')
     }
 }
@@ -1064,7 +1071,6 @@ const approveJoinRequest = async (requestId) => {
         await getClubJoiningRequests()
         toast.success('Đã duyệt yêu cầu tham gia')
     } catch (error) {
-        console.log(error)
         toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi duyệt yêu cầu tham gia')
     }
 }
@@ -1075,7 +1081,6 @@ const rejectJoinRequest = async (requestId) => {
         await getClubJoiningRequests()
         toast.success('Đã từ chối yêu cầu tham gia')
     } catch (error) {
-        console.log(error)
         toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi từ chối yêu cầu tham gia')
     }
 }
@@ -1097,7 +1102,6 @@ const getFund = async () => {
         const response = await ClubService.getFund(clubId.value)
         fund.value = response.data
     } catch (error) {
-        console.log(error)
         toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi lấy thông tin quỹ')
     }
 }
@@ -1110,7 +1114,6 @@ const getMyClubs = async () => {
         const response = await ClubService.myClubs()
         myClubs.value = response
     } catch (error) {
-        console.log(error)
         toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi lấy thông tin câu lạc bộ của tôi')
     }
 }
