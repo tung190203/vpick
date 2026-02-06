@@ -216,8 +216,8 @@ class ClubActivityService
     public function cancelActivity(
         ClubActivity $activity,
         int $userId,
-        string $cancellationReason,
-        bool $cancelTransactions
+        ?string $cancellationReason = null,
+        ?bool $cancelTransactions = false
     ): ClubActivity {
         $club = $activity->club;
         $member = $club->activeMembers()->where('user_id', $userId)->first();
@@ -232,7 +232,7 @@ class ClubActivityService
         return DB::transaction(function () use ($activity, $club, $userId, $cancellationReason, $cancelTransactions) {
             $activity->update([
                 'status' => ClubActivityStatus::Cancelled,
-                'cancellation_reason' => $cancellationReason,
+                'cancellation_reason' => $cancellationReason ?? 'Không có lý do cụ thể',
                 'cancelled_by' => $userId,
             ]);
 
