@@ -72,7 +72,10 @@ class ClubActivityController extends Controller
             ->with([
                 'creator' => User::FULL_RELATIONS,
                 'club',
-                'participants.user' => User::FULL_RELATIONS,
+                'participants' => function ($query) {
+                    $query->where('status', 'accepted')
+                        ->with('user', User::FULL_RELATIONS);
+                },
                 'miniTournament'
             ])
             ->withSum(self::ACTIVITY_COLLECTED_SUM, 'amount')
