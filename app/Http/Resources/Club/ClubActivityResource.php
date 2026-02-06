@@ -22,6 +22,7 @@ class ClubActivityResource extends JsonResource
             'recurring_schedule' => $this->recurring_schedule,
             'start_time' => $this->start_time?->toISOString(),
             'end_time' => $this->end_time?->toISOString(),
+            'duration' => $this->duration,
             'cancellation_deadline' => $this->cancellation_deadline?->toISOString(),
             'cancellation_deadline_hours' => $this->cancellation_deadline_hours,
             'location' => $this->address,

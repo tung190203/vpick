@@ -16,6 +16,20 @@ class UpdateActivityRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        // Convert empty strings to null for numeric fields
+        $numericFields = ['latitude', 'longitude', 'fee_amount', 'guest_fee', 'penalty_amount', 'duration', 'max_participants', 'reminder_minutes'];
+        $data = [];
+
+        foreach ($numericFields as $field) {
+            if ($this->has($field) && $this->input($field) === '') {
+                $data[$field] = null;
+            }
+        }
+
+        if (!empty($data)) {
+            $this->merge($data);
+        }
+
         if ($this->has('is_public')) {
             $isPublic = $this->is_public;
             if (is_string($isPublic)) {

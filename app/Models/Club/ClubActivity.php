@@ -28,6 +28,7 @@ class ClubActivity extends Model
         'recurring_schedule',
         'start_time',
         'end_time',
+        'duration',
         'address',
         'latitude',
         'longitude',
