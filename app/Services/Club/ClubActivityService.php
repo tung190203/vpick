@@ -75,7 +75,18 @@ class ClubActivityService
         $perPage = $filters['per_page'] ?? 15;
 
         if ($userId) {
-            $query->selectRaw('club_activities.*, EXISTS(SELECT 1 FROM club_activity_participants WHERE club_activity_participants.club_activity_id = club_activities.id AND club_activity_participants.user_id = ?) as is_registered', [$userId])
+            $query->selectRaw('club_activities.*, EXISTS(
+                SELECT 1 FROM club_activity_participants
+                WHERE club_activity_participants.club_activity_id = club_activities.id
+                AND club_activity_participants.user_id = ?
+                AND club_activity_participants.status IN (?, ?, ?, ?)
+            ) as is_registered', [
+                $userId,
+                'pending',
+                'invited',
+                'accepted',
+                'attended'
+            ])
                 ->orderBy('is_registered', 'desc')
                 ->orderBy('start_time', 'asc');
         } else {
