@@ -21,8 +21,8 @@ export const rejectJoinRequest = async (clubId, requestId) => {
     return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/join-requests/${requestId}/reject`).then((response) => response.data);
 }
 
-export const myClubs = async () => {
-    return axiosInstance.get(`${API_ENDPOINT.CLUB}/my-clubs`).then((response) => response.data.data);
+export const myClubs = async (params = {}) => {
+  return axiosInstance.get(`${API_ENDPOINT.CLUB}/my-clubs`, { params }).then(res => res.data.data)
 }
 
 export const clubDetail = async (clubId) => {
@@ -35,6 +35,10 @@ export const updateClub = async (clubId, data) => {
 
 export const createClub = async (data) => {
     return axiosInstance.post(`${API_ENDPOINT.CLUB}`, data).then((response) => response.data);
+}
+
+export const deleteClub = async (clubId) => {
+    return axiosInstance.delete(`${API_ENDPOINT.CLUB}/${clubId}`).then((response) => response.data);
 }
 
 export const getMembers = async (clubId, params = {}) => {
@@ -149,4 +153,25 @@ export const locationDetail = async (params = {}) => {
 
 export const createActivity = async (clubId, data) => {
     return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/activities`, data).then((response) => response.data);
+}
+
+export const markAllAsRead = async (clubId) => {
+    return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/notifications/mark-read-all`).then((response) => response.data);
+}
+
+export const markAsRead = async (clubId, notificationId) => {
+    return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/notifications/${notificationId}/mark-read`).then((response) => response.data);
+}
+
+
+export const createNotification = async (clubId, data) => {
+    return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/notifications`, data).then((response) => response.data);
+}
+
+export const togglePin = async (clubId, notificationId) => {
+    return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/notifications/${notificationId}/pin`).then((response) => response.data);
+}
+
+export const getNotificationType = async (clubId) => {
+    return axiosInstance.get(`${API_ENDPOINT.CLUB}/${clubId}/notifications/types`).then((response) => response.data);
 }
