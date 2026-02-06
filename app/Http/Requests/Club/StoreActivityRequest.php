@@ -16,7 +16,6 @@ class StoreActivityRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        // Convert empty strings to null for numeric fields
         $numericFields = ['latitude', 'longitude', 'fee_amount', 'guest_fee', 'penalty_amount', 'duration', 'max_participants', 'reminder_minutes'];
         $data = [];
 

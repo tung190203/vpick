@@ -51,11 +51,29 @@ class ClubActivityParticipantService
             throw new \Exception('Bạn không phải thành viên CLB');
         }
 
-        if ($activity->participants()->where('user_id', $userId)->exists()) {
-            throw new \Exception('Bạn đã tham gia hoạt động này');
+        // Check if user already has a participant record
+        $existingParticipant = $activity->participants()->where('user_id', $userId)->first();
+
+        if ($existingParticipant) {
+            if (in_array($existingParticipant->status, [
+                ClubActivityParticipantStatus::Pending,
+                ClubActivityParticipantStatus::Invited,
+                ClubActivityParticipantStatus::Accepted,
+                ClubActivityParticipantStatus::Attended,
+            ])) {
+                throw new \Exception('Bạn đã tham gia hoạt động này');
+            }
+
+            // If status is Declined or Absent, allow rejoin by updating status to Pending
+            $existingParticipant->update([
+                'status' => ClubActivityParticipantStatus::Pending,
+                'wallet_transaction_id' => null, // Reset transaction
+            ]);
+
+            return $existingParticipant;
         }
 
-        if ($activity->max_participants !== null && $activity->participants()->count() >= $activity->max_participants) {
+        if ($activity->max_participants !== null && $activity->acceptedParticipants()->count() >= $activity->max_participants) {
             throw new \Exception('Sự kiện đã đủ số lượng người tham gia');
         }
 
