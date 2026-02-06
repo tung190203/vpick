@@ -590,7 +590,8 @@ class ClubController extends Controller
     {
         $userId = auth()->id();
         $validated = $request->validate([
-            'role' => ['sometimes', Rule::enum(ClubMemberRole::class)],
+            'role' => ['sometimes', 'array'],
+            'role.*' => [Rule::enum(ClubMemberRole::class)],
         ]);
 
         $query = Club::whereHas('members', function ($q) use ($userId, $validated) {
@@ -598,7 +599,7 @@ class ClubController extends Controller
               ->where('membership_status', ClubMembershipStatus::Joined)
               ->where('status', ClubMemberStatus::Active);
             if (!empty($validated['role'])) {
-                $q->where('role', $validated['role']);
+                $q->whereIn('role', $validated['role']);
             }
         });
 

@@ -12,12 +12,15 @@ use App\Enums\ClubWalletTransactionStatus;
 use App\Enums\PaymentMethod;
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\Club\ClubActivityResource;
+use App\Http\Resources\Club\ClubActivityListResource;
+use Carbon\Carbon;
 use App\Models\Club\Club;
 use App\Models\Club\ClubActivity;
 use App\Models\Club\ClubActivityParticipant;
 use App\Models\Club\ClubWalletTransaction;
 use App\Models\User;
 use App\Http\Controllers\Controller;
+use App\Rules\ValidRecurringSchedule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -30,29 +33,56 @@ class ClubActivityController extends Controller
     public function index(Request $request, $clubId)
     {
         $club = Club::findOrFail($clubId);
+        $userId = auth()->id();
 
         $validated = $request->validate([
             'page' => 'sometimes|integer|min:1',
             'per_page' => 'sometimes|integer|min:1|max:100',
             'type' => 'sometimes|in:meeting,practice,match,tournament,event,other',
-            'status' => ['sometimes', Rule::enum(ClubActivityStatus::class)],
+            'statuses' => 'sometimes|array',
+            'statuses.*' => 'sometimes|in:all,registered,available,scheduled,ongoing,completed,cancelled',
             'date_from' => 'sometimes|date',
             'date_to' => 'sometimes|date|after_or_equal:date_from',
         ]);
 
         $query = $club->activities()
             ->with([
-                'creator' => User::FULL_RELATIONS,
-                'participants.user' => User::FULL_RELATIONS
-            ])
-            ->withSum(self::ACTIVITY_COLLECTED_SUM, 'amount');
+                'participants:id,club_activity_id,user_id' // Only load minimal participant data
+            ]);
 
         if (!empty($validated['type'])) {
             $query->where('type', $validated['type']);
         }
 
-        if (!empty($validated['status'])) {
-            $query->where('status', $validated['status']);
+        // Handle statuses filter
+        $statuses = $validated['statuses'] ?? [];
+        $hasAll = in_array('all', $statuses);
+        $hasRegistered = in_array('registered', $statuses);
+        $hasAvailable = in_array('available', $statuses);
+        $activityStatuses = array_intersect($statuses, ['scheduled', 'ongoing', 'completed', 'cancelled']);
+
+        // If 'all' is present, ignore all filters
+        if (!$hasAll && !empty($statuses)) {
+            // Filter by activity status if any
+            if (!empty($activityStatuses)) {
+                $query->whereIn('status', $activityStatuses);
+            }
+
+            // Filter by participation status
+            if ($userId && ($hasRegistered || $hasAvailable)) {
+                if ($hasRegistered && !$hasAvailable) {
+                    // Only registered activities
+                    $query->whereHas('participants', function ($q) use ($userId) {
+                        $q->where('user_id', $userId);
+                    });
+                } elseif ($hasAvailable && !$hasRegistered) {
+                    // Only available (not registered) activities
+                    $query->whereDoesntHave('participants', function ($q) use ($userId) {
+                        $q->where('user_id', $userId);
+                    });
+                }
+                // If both registered and available, don't filter (show all), but will sort later
+            }
         }
 
         if (!empty($validated['date_from'])) {
@@ -64,9 +94,19 @@ class ClubActivityController extends Controller
         }
 
         $perPage = $validated['per_page'] ?? 15;
-        $activities = $query->orderBy('start_time', 'desc')->paginate($perPage);
 
-        $data = ['activities' => ClubActivityResource::collection($activities)];
+        // If both registered and available, sort registered first
+        if ($userId && $hasRegistered && $hasAvailable && !$hasAll) {
+            $query->selectRaw('club_activities.*, EXISTS(SELECT 1 FROM club_activity_participants WHERE club_activity_participants.club_activity_id = club_activities.id AND club_activity_participants.user_id = ?) as is_registered', [$userId])
+                ->orderBy('is_registered', 'desc')
+                ->orderBy('start_time', 'desc');
+        } else {
+            $query->orderBy('start_time', 'desc');
+        }
+
+        $activities = $query->paginate($perPage);
+
+        $data = ['activities' => ClubActivityListResource::collection($activities)];
         $meta = [
             'current_page' => $activities->currentPage(),
             'per_page' => $activities->perPage(),
@@ -90,9 +130,6 @@ class ClubActivityController extends Controller
         if ($request->has('is_public')) {
             $request->merge(['is_public' => filter_var($request->is_public, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true]);
         }
-        if ($request->has('is_recurring')) {
-            $request->merge(['is_recurring' => filter_var($request->is_recurring, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false]);
-        }
         if ($request->has('allow_member_invite')) {
             $request->merge(['allow_member_invite' => filter_var($request->allow_member_invite, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false]);
         }
@@ -100,48 +137,69 @@ class ClubActivityController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'type' => 'required|in:meeting,practice,match,tournament,event,other',
+            'type' => 'nullable|in:meeting,practice,match,tournament,event,other',
             'start_time' => 'required|date',
             'end_time' => 'nullable|date|after:start_time',
-            'address' => 'nullable|string|max:500',
+            'duration' => 'nullable|integer|min:1',
+            'address' => 'required|string|max:500',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
             'cancellation_deadline' => 'nullable|date|before:start_time',
+            'cancellation_deadline_hours' => 'nullable|integer|min:1|max:168',
             'mini_tournament_id' => 'nullable|exists:mini_tournaments,id',
-            'is_recurring' => 'sometimes|boolean',
-            'recurring_schedule' => 'nullable|string',
+            'recurring_schedule' => ['nullable', 'array', new ValidRecurringSchedule()],
             'reminder_minutes' => 'sometimes|integer|min:0',
             'fee_amount' => 'nullable|numeric|min:0',
+            'fee_description' => 'nullable|string|max:1000',
             'guest_fee' => 'nullable|numeric|min:0',
-            'penalty_percentage' => 'nullable|numeric|min:0|max:100',
+            'penalty_amount' => 'nullable|numeric|min:0',
             'fee_split_type' => ['sometimes', Rule::enum(ClubActivityFeeSplitType::class)],
             'allow_member_invite' => 'sometimes|boolean',
             'is_public' => 'sometimes|boolean',
             'max_participants' => 'nullable|integer|min:1',
-            'qr_code_url' => 'nullable|url|max:500',
+            'qr_image' => 'nullable|image|mimes:png,jpg,jpeg|max:5120',
         ]);
+
+        $endTime = $validated['end_time'] ?? null;
+        if (!$endTime && isset($validated['duration'])) {
+            $startTime = Carbon::parse($validated['start_time']);
+            $endTime = $startTime->copy()->addMinutes($validated['duration']);
+        }
+
+        $cancellationDeadline = $validated['cancellation_deadline'] ?? null;
+        if (!$cancellationDeadline && isset($validated['cancellation_deadline_hours'])) {
+            $startTime = Carbon::parse($validated['start_time']);
+            $cancellationDeadline = $startTime->copy()->subHours($validated['cancellation_deadline_hours']);
+        }
+
+        $qrCodeUrl = null;
+        if ($request->hasFile('qr_image')) {
+            $imageService = app(\App\Services\ImageOptimizationService::class);
+            $qrCodeUrl = $imageService->optimizeThumbnail($request->file('qr_image'), 'activity_qr_codes', 90);
+        }
 
         $activity = ClubActivity::create([
             'club_id' => $club->id,
             'mini_tournament_id' => $validated['mini_tournament_id'] ?? null,
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
-            'type' => $validated['type'],
-            'is_recurring' => $validated['is_recurring'] ?? false,
+            'type' => $validated['type'] ?? 'other',
             'recurring_schedule' => $validated['recurring_schedule'] ?? null,
             'start_time' => $validated['start_time'],
-            'end_time' => $validated['end_time'] ?? null,
+            'end_time' => $endTime,
             'address' => $validated['address'] ?? null,
             'latitude' => $validated['latitude'] ?? null,
             'longitude' => $validated['longitude'] ?? null,
-            'cancellation_deadline' => $validated['cancellation_deadline'] ?? null,
+            'cancellation_deadline' => $cancellationDeadline,
             'reminder_minutes' => $validated['reminder_minutes'] ?? 15,
             'fee_amount' => $validated['fee_amount'] ?? 0,
+            'fee_description' => $validated['fee_description'] ?? null,
             'guest_fee' => $validated['guest_fee'] ?? 0,
-            'penalty_percentage' => $validated['penalty_percentage'] ?? 50,
+            'penalty_amount' => $validated['penalty_amount'] ?? 0,
             'fee_split_type' => $validated['fee_split_type'] ?? ClubActivityFeeSplitType::Fixed,
             'allow_member_invite' => isset($validated['allow_member_invite']) ? (bool) $validated['allow_member_invite'] : false,
             'is_public' => isset($validated['is_public']) ? (bool) $validated['is_public'] : true,
+            'max_participants' => $validated['max_participants'] ?? null,
             'status' => ClubActivityStatus::Scheduled,
             'created_by' => $userId,
         ]);
@@ -149,10 +207,9 @@ class ClubActivityController extends Controller
         $checkInToken = Str::random(48);
         $activity->update([
             'check_in_token' => $checkInToken,
-            'qr_code_url' => $validated['qr_code_url'] ?? $this->buildCheckInUrl($club->id, $activity->id, $checkInToken),
+            'qr_code_url' => $qrCodeUrl,
         ]);
 
-        // Tự động thêm người tạo vào danh sách participants với status Accepted
         ClubActivityParticipant::firstOrCreate(
             [
                 'club_activity_id' => $activity->id,
@@ -193,24 +250,16 @@ class ClubActivityController extends Controller
 
         $club = $activity->club;
         $member = $club->members()->where('user_id', $userId)->first();
-        if (!$member || !in_array($member->role, ['admin', 'manager', 'secretary']) || $activity->created_by !== $userId) {
+        if (!$member || !in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary]) || $activity->created_by !== $userId) {
             return ResponseHelper::error('Không có quyền cập nhật hoạt động này', 403);
         }
 
-        // Convert string "true"/"false" to boolean
         if ($request->has('is_public')) {
             $isPublic = $request->is_public;
             if (is_string($isPublic)) {
                 $isPublic = filter_var($isPublic, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
             }
             $request->merge(['is_public' => $isPublic !== null ? (bool) $isPublic : true]);
-        }
-        if ($request->has('is_recurring')) {
-            $isRecurring = $request->is_recurring;
-            if (is_string($isRecurring)) {
-                $isRecurring = filter_var($isRecurring, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-            }
-            $request->merge(['is_recurring' => $isRecurring !== null ? (bool) $isRecurring : false]);
         }
         if ($request->has('allow_member_invite')) {
             $allowInvite = $request->allow_member_invite;
@@ -226,22 +275,41 @@ class ClubActivityController extends Controller
             'type' => 'sometimes|in:meeting,practice,match,tournament,event,other',
             'start_time' => 'sometimes|date',
             'end_time' => 'nullable|date|after:start_time',
+            'duration' => 'nullable|integer|min:1',
             'address' => 'nullable|string|max:500',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
             'cancellation_deadline' => 'nullable|date|before:start_time',
-            'is_recurring' => 'sometimes|boolean',
-            'recurring_schedule' => 'nullable|string',
+            'recurring_schedule' => ['nullable', 'array', new ValidRecurringSchedule()],
             'reminder_minutes' => 'sometimes|integer|min:0',
             'fee_amount' => 'nullable|numeric|min:0',
+            'fee_description' => 'nullable|string|max:1000',
             'guest_fee' => 'nullable|numeric|min:0',
-            'penalty_percentage' => 'nullable|numeric|min:0|max:100',
+            'penalty_amount' => 'nullable|numeric|min:0',
             'fee_split_type' => ['sometimes', Rule::enum(ClubActivityFeeSplitType::class)],
             'allow_member_invite' => 'sometimes|boolean',
             'is_public' => 'sometimes|boolean',
             'max_participants' => 'nullable|integer|min:1',
-            'qr_code_url' => 'nullable|url|max:500',
+            'qr_image' => 'nullable|image|mimes:png,jpg,jpeg|max:5120',
         ]);
+
+        if (isset($validated['duration']) && isset($validated['start_time'])) {
+            $startTime = Carbon::parse($validated['start_time']);
+            $validated['end_time'] = $startTime->copy()->addMinutes($validated['duration']);
+        }
+
+        if (isset($validated['cancellation_deadline_hours'])) {
+            $startTime = Carbon::parse($validated['start_time'] ?? $activity->start_time);
+            $validated['cancellation_deadline'] = $startTime->copy()->subHours($validated['cancellation_deadline_hours']);
+        }
+
+        if ($request->hasFile('qr_image')) {
+            $imageService = app(\App\Services\ImageOptimizationService::class);
+            $validated['qr_code_url'] = $imageService->optimizeThumbnail($request->file('qr_image'), 'activity_qr_codes', 90);
+        }
+
+        unset($validated['duration']);
+        unset($validated['cancellation_deadline_hours']);
 
         $activity->update($validated);
         $activity->load([
