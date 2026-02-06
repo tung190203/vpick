@@ -91,8 +91,8 @@ export const getJoinedDate = (date, prefix = '') => {
   //  Trong hôm nay
   if (diffDays === 0) {
     if (diffMinutes < 1) return `${prefix} Vừa xong`
-    if (diffMinutes < 60) return `${prefix} ${diffMinutes}p trước`
-    return `${prefix} ${diffHours}h trước`
+    if (diffMinutes < 60) return `${prefix} ${diffMinutes} phút trước`
+    return `${prefix} ${diffHours} giờ trước`
   }
 
   // Ngày

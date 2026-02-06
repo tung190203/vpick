@@ -1,35 +1,50 @@
 <template>
     <div class="flex items-center justify-between py-2">
-        <div class="flex-1 pr-4">
-            <div class="text-sm font-medium text-gray-900">{{ label }}</div>
-            <div class="text-xs text-gray-500 mt-1">{{ description }}</div>
+        <div class="flex-1 pr-4" v-if="label || description">
+            <div v-if="label" class="text-sm font-medium text-gray-900">{{ label }}</div>
+            <div v-if="description" class="text-xs text-gray-500 mt-1">{{ description }}</div>
         </div>
-        <button @click="$emit('update', !value)"
-            class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
-            :class="value ? 'bg-[#D72D36]' : 'bg-gray-300'">
+        <button @click="toggle"
+            class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0"
+            :class="isChecked ? 'bg-[#D72D36]' : 'bg-gray-300'">
             <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
-                :class="value ? 'translate-x-6' : 'translate-x-1'" />
+                :class="isChecked ? 'translate-x-6' : 'translate-x-1'" />
         </button>
     </div>
 </template>
 
 <script setup>
-import { defineProps, defineEmits } from 'vue';
+import { computed } from 'vue';
 
-defineProps({
-    label: {
-        type: String,
-        required: true
-    },
-    description: {
-        type: String,
-        required: true
+const props = defineProps({
+    modelValue: {
+        type: Boolean,
+        default: undefined
     },
     value: {
         type: Boolean,
-        required: true
+        default: undefined
+    },
+    label: {
+        type: String,
+        default: ''
+    },
+    description: {
+        type: String,
+        default: ''
     }
 });
 
-defineEmits(['update']);
+const emit = defineEmits(['update:modelValue', 'update']);
+
+const isChecked = computed(() => {
+    if (props.modelValue !== undefined) return props.modelValue;
+    return props.value;
+});
+
+const toggle = () => {
+    const newValue = !isChecked.value;
+    emit('update:modelValue', newValue);
+    emit('update', newValue);
+};
 </script>

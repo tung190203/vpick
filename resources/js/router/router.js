@@ -15,6 +15,7 @@ import ClubFundPage from '@/components/pages/club/ClubFundPage.vue'
 import CreateClubPage from '@/components/pages/club/CreateClubPage.vue'
 import ClubDetailPage from '@/components/pages/club/ClubDetailPage.vue'
 import ClubDetailActivityPage from '@/components/pages/club/ClubDetailActivityPage.vue'
+import ClubCreateSchedulePage from '@/components/pages/club/ClubCreateSchedulePage.vue'
 import TournamentPage from '@/components/pages/tournament/TournamentPage.vue'
 import TournamentDetail from '@/components/pages/tournament/TournamentDetail.vue'
 import MiniTournamentDetail from '@/components/pages/mini-tournament/detail/MiniTournamentDetail.vue'
@@ -241,6 +242,11 @@ export const route = [
             path: ':id/detail-activity',
             name: 'club-detail-activity',
             component: ClubDetailActivityPage,
+          },
+          {
+            path: ':id/create-activity',
+            name: 'club-create-activity',
+            component: ClubCreateSchedulePage,
           }
         ]
       },
