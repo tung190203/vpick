@@ -19,13 +19,15 @@ class ClubActivityListResource extends JsonResource
             'status' => $this->status,
             'start_time' => $this->start_time?->toISOString(),
             'end_time' => $this->end_time?->toISOString(),
-            'location' => $this->address, // For short location display
-            'address' => $this->address,  // For detailed address display
+            'location' => $this->address,
+            'address' => $this->address,
             'max_participants' => $this->max_participants !== null ? (int) $this->max_participants : null,
+            'fee_split_type' => $this->fee_split_type,
+            'fee_amount' => $this->fee_amount ? (float) $this->fee_amount : null,
+            'guest_fee' => $this->guest_fee ? (float) $this->guest_fee : null,
+            'currency' => $this->currency ?? 'VND',
             'participants_count' => $this->whenLoaded('participants', fn() => $this->participants->count()),
-            'participant_user_ids' => $this->whenLoaded('participants',
-                fn() => $this->participants->pluck('user_id')->toArray()
-            ),
+            'participants' => $this->whenLoaded('participants', fn() => $this->participants),
         ];
     }
 }
