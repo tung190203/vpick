@@ -3,29 +3,29 @@
 namespace App\Http\Controllers\Club;
 
 use App\Helpers\ResponseHelper;
+use App\Http\Controllers\Controller;
 use App\Http\Resources\Club\ClubMonthlyFeeResource;
 use App\Models\Club\Club;
 use App\Models\Club\ClubMonthlyFee;
-use App\Http\Controllers\Controller;
+use App\Services\Club\ClubMonthlyFeeService;
 use Illuminate\Http\Request;
 
 class ClubMonthlyFeeController extends Controller
 {
+    public function __construct(
+        protected ClubMonthlyFeeService $feeService
+    ) {
+    }
+
     public function index(Request $request, $clubId)
     {
         $club = Club::findOrFail($clubId);
-        
+
         $validated = $request->validate([
             'is_active' => 'sometimes|boolean',
         ]);
 
-        $query = $club->monthlyFees();
-
-        if (isset($validated['is_active'])) {
-            $query->where('is_active', $validated['is_active']);
-        }
-
-        $fees = $query->get();
+        $fees = $this->feeService->getFees($club, $validated);
 
         return ResponseHelper::success(ClubMonthlyFeeResource::collection($fees), 'Lấy danh sách cấu hình phí thành công');
     }
@@ -46,13 +46,7 @@ class ClubMonthlyFeeController extends Controller
             'is_active' => 'sometimes|boolean',
         ]);
 
-        $fee = ClubMonthlyFee::create([
-            'club_id' => $club->id,
-            'amount' => $validated['amount'],
-            'currency' => $validated['currency'] ?? 'VND',
-            'due_day' => $validated['due_day'],
-            'is_active' => $validated['is_active'] ?? true,
-        ]);
+        $fee = $this->feeService->createFee($club, $validated);
 
         return ResponseHelper::success(new ClubMonthlyFeeResource($fee), 'Tạo cấu hình phí thành công', 201);
     }
@@ -80,7 +74,7 @@ class ClubMonthlyFeeController extends Controller
             'is_active' => 'sometimes|boolean',
         ]);
 
-        $fee->update($validated);
+        $fee = $this->feeService->updateFee($fee, $validated);
         return ResponseHelper::success(new ClubMonthlyFeeResource($fee->fresh()), 'Cập nhật cấu hình phí thành công');
     }
 
@@ -94,11 +88,11 @@ class ClubMonthlyFeeController extends Controller
             return ResponseHelper::error('Chỉ admin/manager mới có quyền xóa', 403);
         }
 
-        if ($fee->payments()->exists()) {
-            return ResponseHelper::error('Không thể xóa vì có payments', 422);
+        try {
+            $this->feeService->deleteFee($fee);
+            return ResponseHelper::success('Xóa cấu hình phí thành công');
+        } catch (\Exception $e) {
+            return ResponseHelper::error($e->getMessage(), 422);
         }
-
-        $fee->delete();
-        return ResponseHelper::success('Xóa cấu hình phí thành công');
     }
 }
