@@ -23,6 +23,7 @@ class ClubActivityResource extends JsonResource
             'start_time' => $this->start_time?->toISOString(),
             'end_time' => $this->end_time?->toISOString(),
             'cancellation_deadline' => $this->cancellation_deadline?->toISOString(),
+            'cancellation_deadline_hours' => $this->cancellation_deadline_hours,
             'location' => $this->address,
             'address' => $this->address,
             'latitude' => $this->latitude,
@@ -37,7 +38,7 @@ class ClubActivityResource extends JsonResource
             'is_public' => (bool) ($this->is_public ?? true),
             'max_participants' => $this->max_participants !== null ? (int) $this->max_participants : null,
             'collected_amount' => (float) ($this->collected_amount ?? 0),
-            'qr_code_url' => $this->qr_code_url, // Payment QR image URL
+            'qr_code_url' => $this->qr_code_url,
             'check_in_url' => $this->check_in_token
                 ? url("/api/clubs/{$this->club_id}/activities/{$this->id}/check-in?token={$this->check_in_token}")
                 : null,
