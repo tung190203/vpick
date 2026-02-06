@@ -118,6 +118,7 @@ class ClubActivityService
             'recurring_schedule' => $data['recurring_schedule'] ?? null,
             'start_time' => $data['start_time'],
             'end_time' => $endTime,
+            'duration' => $data['duration'] ?? null,
             'address' => $data['address'] ?? null,
             'latitude' => $data['latitude'] ?? null,
             'longitude' => $data['longitude'] ?? null,
@@ -176,7 +177,6 @@ class ClubActivityService
             $data['qr_code_url'] = $this->imageService->optimizeThumbnail($data['qr_image'], 'activity_qr_codes', 90);
         }
 
-        unset($data['duration']);
         unset($data['cancellation_deadline_hours']);
         unset($data['qr_image']);
 
