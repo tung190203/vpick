@@ -16,6 +16,19 @@ class StoreActivityRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $numericFields = ['latitude', 'longitude', 'fee_amount', 'guest_fee', 'penalty_amount', 'duration', 'max_participants', 'reminder_minutes'];
+        $data = [];
+
+        foreach ($numericFields as $field) {
+            if ($this->has($field) && $this->input($field) === '') {
+                $data[$field] = null;
+            }
+        }
+
+        if (!empty($data)) {
+            $this->merge($data);
+        }
+
         if ($this->has('is_public')) {
             $this->merge([
                 'is_public' => filter_var($this->is_public, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true
