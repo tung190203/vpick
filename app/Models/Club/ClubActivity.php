@@ -104,7 +104,9 @@ class ClubActivity extends Model
 
     public function attendedParticipants()
     {
-        return $this->hasMany(ClubActivityParticipant::class)->where('status', ClubActivityParticipantStatus::Attended);
+        return $this->hasMany(ClubActivityParticipant::class)
+            ->where('status', ClubActivityParticipantStatus::Accepted)
+            ->whereNotNull('checked_in_at');
     }
 
     public function scopeScheduled($query)

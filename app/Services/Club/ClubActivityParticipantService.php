@@ -59,7 +59,6 @@ class ClubActivityParticipantService
                 ClubActivityParticipantStatus::Pending,
                 ClubActivityParticipantStatus::Invited,
                 ClubActivityParticipantStatus::Accepted,
-                ClubActivityParticipantStatus::Attended,
             ])) {
                 throw new \Exception('Bạn đã tham gia hoạt động này');
             }
@@ -350,7 +349,8 @@ class ClubActivityParticipantService
             throw new \Exception('Bạn chưa tham gia hoạt động này');
         }
 
-        if ($participant->status === ClubActivityParticipantStatus::Attended) {
+        // Kiểm tra đã check-in chưa
+        if ($participant->checked_in_at !== null) {
             return $participant; // Already checked in
         }
 
@@ -358,8 +358,8 @@ class ClubActivityParticipantService
             throw new \Exception('Chỉ có thể check-in khi đã được duyệt tham gia');
         }
 
+        // Chỉ cập nhật thời gian check-in, giữ nguyên status = Accepted
         $participant->update([
-            'status' => ClubActivityParticipantStatus::Attended,
             'checked_in_at' => now(),
         ]);
 
@@ -375,12 +375,14 @@ class ClubActivityParticipantService
         }
 
         $checkedIn = $activity->participants()
-            ->where('status', ClubActivityParticipantStatus::Attended)
+            ->where('status', ClubActivityParticipantStatus::Accepted)
+            ->whereNotNull('checked_in_at')
             ->with('user')
             ->get();
 
         $waiting = $activity->participants()
             ->where('status', ClubActivityParticipantStatus::Accepted)
+            ->whereNull('checked_in_at')
             ->with('user')
             ->get();
 

@@ -66,7 +66,8 @@ class ClubActivityParticipant extends Model
 
     public function scopeAttended($query)
     {
-        return $query->where('status', ClubActivityParticipantStatus::Attended);
+        return $query->where('status', ClubActivityParticipantStatus::Accepted)
+            ->whereNotNull('checked_in_at');
     }
 
     public function accept()
@@ -81,7 +82,7 @@ class ClubActivityParticipant extends Model
 
     public function markAsAttended()
     {
-        $this->update(['status' => ClubActivityParticipantStatus::Attended]);
+        $this->update(['checked_in_at' => now()]);
     }
 
     public function markAsAbsent()
