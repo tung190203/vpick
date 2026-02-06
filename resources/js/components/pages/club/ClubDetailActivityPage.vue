@@ -1,5 +1,5 @@
 <template>
-  <div class="p-4 md:p-6 min-h-screen bg-[#F8F9FA]">
+  <div class="p-4 md:p-6 min-h-[calc(100vh-5rem)] bg-[#F8F9FA]">
     <!-- Header -->
     <div class="flex items-center mb-6">
       <button @click="goBack" class="p-2 hover:bg-gray-100 rounded-full transition-colors mr-2">
@@ -59,7 +59,18 @@
           </div>
           <p class="text-[#838799]">{{ activity.summary }}</p>
         </div>
-        <div class="flex items-center gap-3" v-if="hasAnyRole(['admin', 'manager', 'secretary'])">
+        <div class="flex items-center gap-3" v-if="isOwner">
+          <Button 
+            size="lg" 
+            color="primary" 
+            class="px-4 py-1 rounded-[4px] font-semibold shadow-lg shadow-blue-100"
+            @click="updateEvent"
+          >
+            <div class="flex items-center gap-2">
+              <WrenchIcon class="w-5 h-5" />
+              Cập nhật
+            </div>
+          </Button>
           <Button 
             size="lg" 
             color="danger" 
@@ -86,13 +97,15 @@
         <div class="flex items-center gap-3" v-else>
           <Button 
             size="lg" 
-            color="danger" 
-            class="px-4 py-1 rounded-[4px] font-semibold shadow-lg shadow-red-100"
-            @click="registerEvent"
+            :color="registrationButtonState.color" 
+            class="px-4 py-1 rounded-[4px] font-semibold"
+            :class="registrationButtonState.shadowClass"
+            :disabled="registrationButtonState.disabled"
+            @click="registrationButtonState.action"
           >
             <div class="flex items-center gap-2">
-              <RegistrationIcon class="w-5 h-5" />
-              Đăng ký ngay
+              <component :is="registrationButtonState.icon" class="w-5 h-5" />
+              {{ registrationButtonState.text }}
             </div>
           </Button>
           <Button 
@@ -137,7 +150,7 @@
                 <MapPinIcon class="w-6 h-6" />
               </div>
               <div>
-                <div class="font-semibold text-[#3E414C] truncate max-w-[150px]" v-tooltip="activity.location">{{ activity.location }}</div>
+                <div class="font-semibold text-[#3E414C] truncate max-w-[200px]" v-tooltip="activity.location">{{ activity.location }}</div>
               </div>
             </div>
 
@@ -184,11 +197,11 @@
               <div class="space-y-2">
                 <div class="flex justify-between items-center text-sm">
                   <span class="text-[#3E414C]">Hạn chót hủy kèo</span>
-                  <span class="font-semibold text-[#D72D36]">Trước 4 Tiếng</span>
+                  <span class="font-semibold text-[#D72D36]">Trước {{ activity.cancellation_deadline_hours }} Tiếng</span>
                 </div>
                 <div class="flex justify-between items-center text-sm">
                   <span class="text-[#3E414C]">Phạt hủy muộn</span>
-                  <span v-if="activity.late_cancel_fee > 0" class="font-semibold text-[#D72D36]">{{ formatCurrency(activity.late_cancel_fee) }}/người</span>
+                  <span v-if="activity.penalty_amount > 0" class="font-semibold text-[#D72D36]">{{ formatCurrency(activity.penalty_amount) }}/người</span>
                   <span v-else class="font-semibold text-[#D72D36]">Không có</span>
                 </div>
               </div>
@@ -207,6 +220,50 @@
 
       <!-- Right Column (Sidebar) -->
       <div class="lg:col-span-4 space-y-6">
+        <!-- Join Request Card -->
+        <div class="bg-white rounded-[24px] shadow-sm border border-gray-50 overflow-hidden" v-if="isOwner">
+           <div class="p-5 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 bg-[#D72D36] rounded-full p-2 flex items-center justify-center text-white">
+                <PlusCircleIcon class="w-5 h-5" />
+              </div>
+              <h3 class="font-semibold text-[#3E414C]">Yêu cầu tham gia</h3>
+            </div>
+            <button @click="isJoinRequestExpanded = !isJoinRequestExpanded" class="p-1 hover:bg-gray-100 rounded-full transition-transform duration-300" :class="{ 'rotate-180': !isJoinRequestExpanded }">
+              <ChevronDownIcon class="w-5 h-5 text-gray-400" />
+            </button>
+          </div>
+          
+          <div class="grid transition-all duration-300 ease-in-out" :class="isJoinRequestExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'">
+            <div class="overflow-hidden">
+              <div class="px-8 py-4 flex flex-col items-center" v-if="joinActivityRequests.length === 0">
+                <p class="text-[#838799] text-sm">Không có yêu cầu tham gia</p>
+              </div>
+              <template v-else>
+                <div v-for="request in joinActivityRequests" :key="request.id" class="px-8 py-4 border-t border-gray-50">
+                  <div class="flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                      <img :src="request.user.avatar_url" class="w-14 h-14 rounded-full" />
+                      <div class="font-semibold text-[#3E414C]">{{ request.user.full_name }}</div>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button
+                          class="w-10 h-10 rounded-full bg-[#D72D36] flex items-center justify-center hover:bg-[#c4252e] transition-colors"
+                          @click="rejectJoinActivityRequest(request.id)">
+                          <XMarkIcon class="w-5 h-5 text-white" stroke-width="2.5" />
+                        </button>
+                        <button
+                          class="w-10 h-10 rounded-full bg-[#00B377] flex items-center justify-center hover:bg-[#00a16b] transition-colors"
+                          @click="approveJoinActivityRequest(request.id)">
+                          <CheckIcon class="w-5 h-5 text-white" stroke-width="2.5" />
+                        </button>
+                      </div>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
         <!-- Participants Card -->
         <div class="bg-white rounded-[24px] shadow-sm border border-gray-50 overflow-hidden">
             <div class="p-5 flex items-center justify-between">
@@ -217,7 +274,7 @@
                 <h3 class="font-semibold text-[#3E414C]">Thành viên tham gia</h3>
                 <span class="w-1 h-1 rounded-full bg-[#3E414C]"></span>
                 <span class="px-2 py-0.5 bg-gray-100 text-[#838799] text-xs font-bold rounded-full">
-                  {{ participants.length }}/{{ activity.max_participants || 12 }}
+                  {{ participants.length }}/{{ activity.max_participants || '∞' }}
                 </span>
               </div>
               <button @click="isParticipantsExpanded = !isParticipantsExpanded" class="p-1 hover:bg-gray-100 rounded-full transition-transform duration-300" :class="{ 'rotate-180': !isParticipantsExpanded }">
@@ -243,7 +300,7 @@
                         <span class="px-2 py-0.5 bg-[#4392E0] text-white text-[11px] font-bold rounded-md uppercase">Admin</span>
                     </div>
                     <div class="text-[14px] text-[#8E95A2] font-medium leading-tight">
-                        {{ Number(creator.level).toFixed(2) }} PICKI <span class="mx-1">•</span> Chủ sân
+                        {{ Number(creator.level).toFixed(2) }} PICKI <span class="mx-1">•</span> Chủ kèo
                     </div>
                   </div>
                 </div>
@@ -251,13 +308,13 @@
                 <h4 class="font-bold text-[#8E95A2] text-[13px] uppercase tracking-[0.2em] mb-4">THÀNH VIÊN</h4>
                 <div class="space-y-0" v-if="participants && participants.length">
                   <div v-for="(user, index) in participants" :key="user.id" 
-                    class="flex items-center gap-5 py-5 group cursor-pointer" @click="goToProfile(user.id)"
+                    class="flex items-center gap-5 py-5 group cursor-pointer" @click="goToProfile(user.userId)"
                     :class="{ 'border-t border-[#F0F2F5]': index !== 0 }">
                     <div class="relative">
                       <img :src="user.avatar || defaultAvatar" class="w-14 h-14 rounded-full bg-[#F2F4F7] object-cover" />
                       <div class="absolute bottom-0 right-0 w-4.5 h-4.5 p-1.5 bg-[#00B377] ring-4 ring-white rounded-full"></div>
                       <div class="absolute -left-1 -bottom-0.5 w-5 h-5 bg-[#4392E0] text-white text-[8px] font-semibold flex items-center justify-center rounded-full ring-2 ring-white">
-                        {{ user.level }}
+                        {{ Number(user.level).toFixed(2) }}
                       </div>
                     </div>
                     <div class="flex-1">
@@ -315,6 +372,13 @@
     <div v-else-if="!isLoading && !activity.title" class="flex flex-col items-center justify-center py-20">
       <p class="text-[#838799] text-lg">Không tìm thấy sự kiện</p>
     </div>
+
+    <!-- Cancellation Modal -->
+    <CancelActivityModal
+      v-model="showCancelModal"
+      :is-submitting="isCancelling"
+      @confirm="confirmCancelEvent"
+    />
   </div>
 </template>
 
@@ -328,7 +392,10 @@ import {
     ChevronDownIcon,
     ArrowDownTrayIcon,
     ArrowPathRoundedSquareIcon,
-    XMarkIcon
+    XMarkIcon,
+    PlusCircleIcon,
+    CheckIcon,
+    WrenchIcon
 } from '@heroicons/vue/24/outline'
 import RegistrationIcon from '@/assets/images/registration.svg'
 import PriceCheckIcon from '@/assets/images/price_check.svg'
@@ -336,6 +403,7 @@ import RuleIcon from '@/assets/images/rule.svg'
 import ShieldCheckIcon from "@/assets/images/shield_check.svg";
 import QrcodeIcon from '@/assets/images/qr_code.svg'
 import Button from '@/components/atoms/Button.vue'
+import CancelActivityModal from '@/components/molecules/CancelActivityModal.vue'
 import QrcodeVue from 'qrcode.vue'
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -364,20 +432,55 @@ const participants = ref([])
 const creator = ref({})
 const isParticipantsExpanded = ref(true)
 const isQRExpanded = ref(true)
+const isJoinRequestExpanded = ref(true)
 const qrcodeContainer = ref(null)
 const isLoading = ref(true)
+const joinActivityRequests = ref([])
+const showCancelModal = ref(false)
+const isCancelling = ref(false)
 
-const currentUserMember = computed(() => {
-    return club.value?.members?.find(member => member.user_id === getUser.value.id) || null
+const isOwner = computed(() => {
+    return activity.value.created_by === getUser.value.id
 })
 
-const hasAnyRole = (roles = []) => {
-    return roles.includes(currentUserMember.value?.role)
-}
-
 const recurringText = computed(() => {
-    const days = activity.value.recurring_schedule
-    if (!days || (Array.isArray(days) && days.length === 0)) return 'Không lặp lại'
+    const schedule = activity.value.recurring_schedule
+    if (!schedule) return 'Không lặp lại'
+
+    // Handle new object structure
+    if (typeof schedule === 'object' && schedule.period) {
+        if (schedule.period === 'daily') return 'Lặp lại hàng ngày'
+        if (schedule.period === 'weekly') {
+            const days = schedule.week_days
+            if (!days || (Array.isArray(days) && days.length === 0)) return 'Hàng tuần'
+            
+            const rawDays = Array.isArray(days) ? days : String(days).split(',').filter(d => d !== '').map(Number)
+            const dayValues = rawDays.map(d => Number(d) === 7 ? 0 : Number(d))
+            
+            const uniqueDays = [...new Set(dayValues)].sort((a, b) => {
+                if (a === 0) return 1
+                if (b === 0) return -1
+                return a - b
+            })
+
+            if (uniqueDays.length === 7) return 'Lặp lại hàng tuần'
+
+            const dayLabels = {
+                1: 'T2', 2: 'T3', 3: 'T4', 4: 'T5', 5: 'T6', 6: 'T7', 0: 'CN'
+            }
+
+            const selectedLabels = uniqueDays.map(d => dayLabels[d])
+            return `Lặp lại: ${selectedLabels.join(', ')}`
+        }
+        if (schedule.period === 'monthly') return 'Lặp lại hàng tháng'
+        if (schedule.period === 'quarterly') return 'Lặp lại hàng quý'
+        if (schedule.period === 'yearly') return 'Lặp lại hàng năm'
+        return 'Có lặp lại'
+    }
+
+    // Handle old format (array or string)
+    const days = schedule
+    if (Array.isArray(days) && days.length === 0) return 'Không lặp lại'
     
     const rawDays = Array.isArray(days) ? days : String(days).split(',').filter(d => d !== '').map(Number)
     const dayValues = rawDays.map(d => Number(d) === 7 ? 0 : Number(d))
@@ -424,8 +527,10 @@ const getActivityDetail = async () => {
                     id: p.id,
                     name: p.user?.full_name || 'Thành viên',
                     avatar: p.user?.avatar_url || p.user?.thumbnail,
-                    level: p.user?.vn_rank || 'N/A',
-                    joined_at: p.created_at ? dayjs(p.created_at).fromNow() : 'Vừa tham gia'
+                    level: p.user.sports[0]?.scores?.vndupr_score || 'N/A',
+                    joined_at: p.created_at ? dayjs(p.created_at).fromNow() : 'Vừa tham gia',
+                    status: p.status,
+                    userId: p.user_id
                 }))
             }
 
@@ -457,22 +562,109 @@ const goBack = () => {
 }
 
 const registerEvent = () => {
-    toast.info('Tính năng đăng ký đang được xử lý')
+    if (activity.value.is_public) {
+        joinActivityRequest()
+    } else {
+        toast.info('Tính năng đăng ký đang được xử lý')
+    }
+}
+
+const cancelJoinEvent = async () => {
+    const userId = getUser.value.id
+    const pendingRequest = joinActivityRequests.value.find(r => r.user_id === userId || r.user?.id === userId)
+    if (!pendingRequest) return
+    
+    try {
+        await ClubService.cancelActivityJoinRequest(clubId, activityId.value, pendingRequest.id)
+        toast.success('Đã hủy yêu cầu tham gia')
+        await Promise.all([
+            getActivityDetail(),
+            getListJoinActivityRequest()
+        ])
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Không thể hủy yêu cầu tham gia')
+    }
+}
+
+const currentUserParticipant = computed(() => {
+    return participants.value.find(p => p.userId === getUser.value.id)
+})
+
+const registrationButtonState = computed(() => {
+    const userId = getUser.value.id
+    
+    // 1. Check if user is in joinActivityRequests (Pending)
+    const pendingRequest = joinActivityRequests.value.find(r => r.user_id === userId || r.user?.id === userId)
+    if (pendingRequest) {
+        return {
+            text: 'Đang chờ duyệt',
+            color: 'white',
+            shadowClass: 'border border-[#DCDEE6] bg-[#EDEEF2] text-[#3E414C] shadow-sm',
+            disabled: false,
+            action: cancelJoinEvent,
+            icon: ClockIcon
+        }
+    }
+    
+    // 2. Check if user is in participants (Joined)
+    const isParticipant = participants.value.some(p => p.userId === userId)
+    if (isParticipant) {
+        return {
+            text: 'Đã tham gia',
+            color: 'white',
+            shadowClass: 'border border-[#DCDEE6] bg-gray-100 text-[#838799] shadow-sm cursor-not-allowed',
+            disabled: true,
+            action: () => {},
+            icon: CheckIcon
+        }
+    }
+    
+    // Default state: Register Now
+    return {
+        text: 'Đăng ký ngay',
+        color: 'danger',
+        shadowClass: 'shadow-lg shadow-red-100',
+        disabled: false,
+        action: registerEvent,
+        icon: RegistrationIcon
+    }
+})
+
+const joinActivityRequest = async () => {
+    try {
+        await ClubService.joinActivityRequest(clubId, activityId.value)
+        toast.success('Đã gửi yêu cầu tham gia thành công')
+        await getActivityDetail()
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Không thể gửi yêu cầu tham gia')
+    }
+}
+
+const updateEvent = () => {
+    router.push({name: 'club-activity-edit', params: {id: clubId, activityId: activityId.value}})
 }
 
 const shareEvent = () => {
     toast.info('Đã sao chép liên kết sự kiện')
 }
 
-const cancelEvent = debounce(async () => {
+const cancelEvent = () => {
+    showCancelModal.value = true
+}
+
+const confirmCancelEvent = async (data) => {
+    if (isCancelling.value) return
+    isCancelling.value = true
     try {
-        await ClubService.cancelActivity(clubId, activityId.value)
-        toast.success('Đã huỷ sự kiện')
-        route.push({name: 'club-detail', params: {id: clubId}})
+        await ClubService.cancelActivity(clubId, activityId.value, data)
+        showCancelModal.value = false
+        router.push({name: 'club-detail', params: {id: clubId}})
     } catch (error) {
         toast.error(error.response?.data?.message || 'Không thể huỷ sự kiện')
+    } finally {
+        isCancelling.value = false
     }
-}, 500)
+}
 
 const downloadQR = () => {
   if (!qrcodeContainer.value) return;
@@ -517,13 +709,50 @@ const goToProfile = (id) => {
     router.push({ name: 'profile', params: { id } });
 };
 
+const getListJoinActivityRequest = async () => {
+    try {
+        const response = await ClubService.getListJoinActivityRequest(clubId, activityId.value, {
+          status: 'pending'
+        })
+        joinActivityRequests.value = response.data?.participants || []
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Không thể lấy danh sách yêu cầu tham gia')
+    }
+}
+
+const approveJoinActivityRequest = async (userId) => {
+    try {
+        await ClubService.approveJoinActivityRequest(clubId, activityId.value, userId)
+        toast.success('Đã duyệt yêu cầu tham gia')
+        getListJoinActivityRequest()
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Không thể duyệt yêu cầu tham gia')
+    }
+}
+
+const rejectJoinActivityRequest = async (userId) => {
+    try {
+        await ClubService.rejectJoinActivityRequest(clubId, activityId.value, userId)
+        toast.success('Đã từ chối yêu cầu tham gia')
+        getListJoinActivityRequest()
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Không thể từ chối yêu cầu tham gia')
+    }
+}
+
 onMounted(async () => {
     if (clubId && activityId.value) {
-        await Promise.all([
-            getActivityDetail(),
-            getClubDetail()
-        ])
-        isLoading.value = false
+        isLoading.value = true
+        try {
+            // First fetch initial info
+            await Promise.all([
+                getActivityDetail(),
+                getClubDetail(),
+                getListJoinActivityRequest()
+            ])
+        } finally {
+            isLoading.value = false
+        }
     }
 })
 </script>

@@ -16,7 +16,7 @@ function goCompleteProfile() {
 
 <template>
   <div class="min-h-screen flex flex-col items-center justify-center px-4">
-    <img :src="LogoSplash" class="w-[60%]" alt="Logo">
+    <LogoSplash class="w-[60%]" alt="Logo" />
     <div class="text-center mb-8 mt-4">
       <h1 class="text-white text-2xl mb-2">CHÀO MỪNG BẠN ĐẾN VỚI PICKI</h1>
       <p class="text-sm text-white font-light">

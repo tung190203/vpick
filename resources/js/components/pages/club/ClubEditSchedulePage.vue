@@ -6,17 +6,17 @@
         <button @click="goBack" class="hover:bg-gray-100 rounded-full transition-colors p-1">
           <ArrowLeftIcon class="w-6 h-6 text-[#3E414C]" stroke-width="2.5" />
         </button>
-        <h1 class="text-xl font-bold text-[#3E414C]">Tạo lịch sinh hoạt</h1>
-        <div
-          class="px-3 py-1 bg-[#FBEAEB] text-[#D72D36] rounded-full text-sm font-semibold flex items-center gap-1.5 border border-[#FBEAEB] cursor-pointer hover:bg-[#F7D5D7] transition-colors">
-          <FolderSpecialIcon class="w-4 h-4" />
-          <span>Mẫu</span>
-        </div>
+        <h1 class="text-xl font-bold text-[#3E414C]">Cập nhật lịch sinh hoạt</h1>
       </div>
     </div>
 
+    <!-- Skeleton Loader -->
+    <div v-if="pageLoading" class="flex-1 p-6 space-y-6">
+      <div class="animate-pulse bg-white rounded-2xl p-8 h-96"></div>
+    </div>
+
     <!-- Scrollable Content -->
-    <div class="flex-1 overflow-y-auto custom-scrollbar p-6">
+    <div v-else class="flex-1 overflow-y-auto custom-scrollbar p-6">
       <div class="grid grid-cols-12 gap-6">
         <!-- Left Column -->
         <div class="col-span-12 lg:col-span-8 space-y-6">
@@ -44,7 +44,7 @@
               <div>
                 <div class="flex justify-between mb-2">
                   <label class="text-sm font-bold text-[#838799] uppercase tracking-wider">GHI CHÚ</label>
-                  <span class="text-xs text-[#838799] font-medium">{{ form.description.length }}/300</span>
+                  <span class="text-xs text-[#838799] font-medium">{{ form.description?.length || 0 }}/300</span>
                 </div>
                 <textarea v-model="form.description" rows="4" maxlength="300"
                   class="w-full px-5 py-4 bg-[#F0F2F5] border-none rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#D72D36]/20 transition-all resize-none placeholder:text-[#9EA2B3] font-medium text-gray-900"
@@ -134,14 +134,14 @@
                   <div>
                     <label class="block text-xs font-bold text-[#3E414C] my-3">Thời lượng</label>
                     <div class="flex gap-3">
-                      <button v-for="duration in [1, 2, 3]" :key="duration" @click="form.duration = duration"
+                      <button v-for="duration in [1, 2, 3]" :key="duration" @click="setDuration(duration)"
                         class="flex-1 py-2.5 rounded-[4px] border font-bold transition-all text-sm"
-                        :class="form.duration === duration ? 'bg-[#D72D36] border-[#D72D36] text-white shadow-md shadow-red-100' : 'bg-white border-gray-200 text-[#838799] hover:border-gray-300'">
+                        :class="form.duration === duration * 60 ? 'bg-[#D72D36] border-[#D72D36] text-white shadow-md shadow-red-100' : 'bg-white border-gray-200 text-[#838799] hover:border-gray-300'">
                         {{ duration }}H
                       </button>
-                      <button @click="form.duration = 'custom'"
+                      <button @click="setDuration('custom')"
                         class="flex-1 py-2.5 rounded-[4px] border font-bold transition-all uppercase text-sm"
-                        :class="form.duration === 'custom' ? 'bg-[#D72D36] border-[#D72D36] text-white shadow-md shadow-red-100' : 'bg-white border-gray-200 text-[#838799] hover:border-gray-300'">
+                        :class="form.duration !== 60 && form.duration !== 120 && form.duration !== 180 ? 'bg-[#D72D36] border-[#D72D36] text-white shadow-md shadow-red-100' : 'bg-white border-gray-200 text-[#838799] hover:border-gray-300'">
                         TÙY CHỈNH
                       </button>
                     </div>
@@ -191,12 +191,7 @@
             @click="handleSubmit" :disabled="isLoading">
             <div v-if="isLoading"
               class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto"></div>
-            <span v-else>Tạo lịch</span>
-          </Button>
-          <Button color="white"
-            class="flex-1 lg:flex-none lg:w-44 py-3 font-bold text-[#3E414C] bg-[#F0F2F5] rounded-[4px] border-none hover:bg-gray-200 transition-colors"
-            @click="saveAsTemplate">
-            Lưu mẫu
+            <span v-else>Cập nhật</span>
           </Button>
           </div>
         </div>
@@ -376,7 +371,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import {
   ArrowLeftIcon,
@@ -393,7 +388,6 @@ import {
   ClockIcon,
   CalendarIcon
 } from '@heroicons/vue/24/outline'
-import FolderSpecialIcon from '@/assets/images/folder_special.svg'
 import EditNoteIcon from "@/assets/images/edit_note.svg";
 import PriceCheckIcon from '@/assets/images/price_check.svg'
 import RuleIcon from '@/assets/images/rule.svg'
@@ -410,9 +404,11 @@ import debounce from 'lodash.debounce'
 const router = useRouter()
 const route = useRoute()
 const clubId = route.params.id
+const activityId = route.params.activityId
 const has_cancel_penalty = ref(false)
 const has_guest_fee = ref(false)
 const isLoading = ref(false)
+const pageLoading = ref(true)
 const errors = ref({})
 const locations = ref([])
 const isDeadlineDropdownOpen = ref(false)
@@ -445,7 +441,7 @@ const form = ref({
   type: 'other',
   start_time: '',
   end_time: '',
-  duration: 1,
+  duration: 60,
   address: '',
   latitude: null,
   longitude: null,
@@ -453,7 +449,7 @@ const form = ref({
   repeat_unit: 'Tuần',
   recurring_schedule: [],
   reminder_minutes: 0,
-  fee_amount: 50000,
+  fee_amount: 0,
   fee_description: '',
   guest_fee: 0,
   penalty_amount: 0,
@@ -581,9 +577,98 @@ const onLocationSelect = async (loc) => {
   }
 }
 
+const setDuration = (val) => {
+    if (val === 'custom') {
+        const custom = prompt('Nhập thời lượng (giờ):', (form.value.duration / 60).toFixed(1))
+        if (custom) {
+            form.value.duration = parseFloat(custom) * 60
+        }
+    } else {
+        form.value.duration = val * 60
+    }
+}
+
+const fetchActivityDetail = async () => {
+    try {
+        const response = await ClubService.getClubActivityDetail(clubId, activityId)
+        const data = response.data
+        if (data) {
+            isSelectingLocation.value = true
+            form.value = {
+                ...form.value,
+                title: data.title || '',
+                description: data.description || '',
+                address: data.address || '',
+                latitude: data.latitude,
+                longitude: data.longitude,
+                max_participants: data.max_participants || 1,
+                cancellation_deadline_hours: data.cancellation_deadline_hours || 1,
+                fee_amount: data.fee_amount || 0,
+                fee_description: data.fee_description || '',
+                guest_fee: data.guest_fee || 0,
+                penalty_amount: data.penalty_amount || 0,
+                fee_split_type: data.fee_split_type || 'equal',
+                is_public: data.type !== 'private',
+                qr_image: data.qr_image || null,
+            }
+
+            if (data.max_participants) {
+                isLimitParticipants.value = true
+            }
+
+            if (data.guest_fee > 0) {
+                has_guest_fee.value = true
+            }
+
+            if (data.penalty_amount > 0) {
+                has_cancel_penalty.value = true
+            }
+
+            if (data.start_time) {
+                const start = dayjs(data.start_time)
+                start_date.value = start.toDate()
+                start_time_picker.value = {
+                    hours: start.hour(),
+                    minutes: start.minute()
+                }
+
+                if (data.end_time) {
+                    const end = dayjs(data.end_time)
+                    form.value.duration = end.diff(start, 'minute')
+                }
+            }
+
+            if (data.recurring_schedule) {
+                is_repeated.value = true
+                const schedule = data.recurring_schedule
+                if (typeof schedule === 'object') {
+                    const unitMap = {
+                        weekly: 'Tuần',
+                        monthly: 'Tháng',
+                        quarterly: 'Quý',
+                        yearly: 'Năm'
+                    }
+                    form.value.repeat_unit = unitMap[schedule.period] || 'Tuần'
+                    if (schedule.week_days) {
+                        form.value.recurring_schedule = Array.isArray(schedule.week_days) 
+                            ? schedule.week_days.map(Number)
+                            : String(schedule.week_days).split(',').map(Number)
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        console.error(error)
+        toast.error('Không thể lấy thông tin chi tiết sự kiện')
+        router.back()
+    } finally {
+        pageLoading.value = false
+    }
+}
+
 const handleSubmit = async () => {
   errors.value = {}
-  if (!form.value.title.trim()) {
+  if (!form.value.title?.trim()) {
     errors.value.title = 'Tên sự kiện là bắt buộc'
     toast.error('Vui lòng nhập tên sự kiện')
     return
@@ -595,17 +680,17 @@ const handleSubmit = async () => {
       .hour(start_time_picker.value.hours)
       .minute(start_time_picker.value.minutes)
 
-    const durationInMinutes = typeof form.value.duration === 'number' ? form.value.duration * 60 : 120
-    const end = start.add(durationInMinutes, 'minute')
+    const end = start.add(form.value.duration, 'minute')
 
     const formData = new FormData()
+    formData.append('_method', 'PUT') // For Laravel to handle PUT with FormData
     formData.append('title', form.value.title)
-    formData.append('description', form.value.description)
-    formData.append('type', form.value.type)
+    formData.append('description', form.value.description || '')
+    formData.append('type', form.value.is_public ? 'other' : 'private')
     formData.append('start_time', start.format('YYYY-MM-DD HH:mm:ss'))
     formData.append('end_time', end.format('YYYY-MM-DD HH:mm:ss'))
-    formData.append('duration', durationInMinutes)
-    formData.append('address', form.value.address)
+    formData.append('duration', form.value.duration)
+    formData.append('address', form.value.address || '')
     if (form.value.latitude) formData.append('latitude', form.value.latitude)
     if (form.value.longitude) formData.append('longitude', form.value.longitude)
     formData.append('cancellation_deadline_hours', form.value.cancellation_deadline_hours)
@@ -631,25 +716,27 @@ const handleSubmit = async () => {
 
     formData.append('fee_amount', form.value.fee_amount)
     formData.append('fee_description', form.value.fee_description || '')
-    formData.append('guest_fee', form.value.guest_fee)
-    formData.append('penalty_amount', form.value.penalty_amount)
+    formData.append('guest_fee', has_guest_fee.value ? form.value.guest_fee : 0)
+    formData.append('penalty_amount', has_cancel_penalty.value ? form.value.penalty_amount : 0)
     formData.append('fee_split_type', form.value.fee_split_type)
     formData.append('is_public', form.value.is_public ? 1 : 0)
     
     if (isLimitParticipants.value) {
       formData.append('max_participants', form.value.max_participants)
+    } else {
+        formData.append('max_participants', '')
     }
 
     if (form.value.qr_file) {
       formData.append('qr_image', form.value.qr_file)
     }
 
-    const res = await ClubService.createActivity(clubId, formData)
-    toast.success('Tạo lịch sinh hoạt thành công')
+    await ClubService.updateActivity(clubId, activityId, formData)
+    toast.success('Cập nhật lịch sinh hoạt thành công')
     router.push({
       name: 'club-detail-activity',
       params: { id: clubId },
-      query: { activityId: res.data.id }
+      query: { activityId: activityId }
     })
   } catch (error) {
     toast.error(error.response?.data?.message || 'Có lỗi xảy ra')
@@ -658,9 +745,9 @@ const handleSubmit = async () => {
   }
 }
 
-const saveAsTemplate = () => {
-  toast.info('Tính năng lưu mẫu đang được phát triển')
-}
+onMounted(() => {
+    fetchActivityDetail()
+})
 </script>
 
 <style scoped>
@@ -680,6 +767,4 @@ const saveAsTemplate = () => {
 :deep(.custom-datepicker-icon .dp__input) {
   padding-left: 2.5rem !important;
 }
-
-
 </style>
