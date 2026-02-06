@@ -3,21 +3,23 @@
 namespace App\Http\Controllers\Club;
 
 use App\Enums\ClubMonthlyFeePaymentStatus;
-use App\Enums\ClubWalletTransactionDirection;
-use App\Enums\ClubWalletTransactionSourceType;
-use App\Enums\ClubWalletTransactionStatus;
 use App\Enums\PaymentMethod;
 use App\Helpers\ResponseHelper;
+use App\Http\Controllers\Controller;
 use App\Http\Resources\Club\ClubMonthlyFeePaymentResource;
 use App\Models\Club\Club;
 use App\Models\Club\ClubMonthlyFeePayment;
-use App\Http\Controllers\Controller;
+use App\Services\Club\ClubMonthlyFeePaymentService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class ClubMonthlyFeePaymentController extends Controller
 {
+    public function __construct(
+        protected ClubMonthlyFeePaymentService $paymentService
+    ) {
+    }
+
     public function index(Request $request, $clubId)
     {
         $club = Club::findOrFail($clubId);
@@ -30,23 +32,7 @@ class ClubMonthlyFeePaymentController extends Controller
             'period' => 'sometimes|date',
         ]);
 
-        $query = ClubMonthlyFeePayment::where('club_id', $clubId)
-            ->with(['user', 'monthlyFee', 'walletTransaction']);
-
-        if (!empty($validated['user_id'])) {
-            $query->where('user_id', $validated['user_id']);
-        }
-
-        if (!empty($validated['status'])) {
-            $query->where('status', $validated['status']);
-        }
-
-        if (!empty($validated['period'])) {
-            $query->where('period', $validated['period']);
-        }
-
-        $perPage = $validated['per_page'] ?? 15;
-        $payments = $query->orderBy('period', 'desc')->paginate($perPage);
+        $payments = $this->paymentService->getPayments($club, $validated);
 
         $data = ['payments' => ClubMonthlyFeePaymentResource::collection($payments)];
         $meta = [
@@ -72,47 +58,15 @@ class ClubMonthlyFeePaymentController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        $fee = $club->monthlyFees()->findOrFail($validated['club_monthly_fee_id']);
+        $club->monthlyFees()->findOrFail($validated['club_monthly_fee_id']);
 
-        $exists = ClubMonthlyFeePayment::where('club_id', $clubId)
-            ->where('user_id', $userId)
-            ->where('period', $validated['period'])
-            ->exists();
-
-        if ($exists) {
-            return ResponseHelper::error('Đã thanh toán phí cho tháng này', 409);
-        }
-
-        return DB::transaction(function () use ($club, $validated, $userId) {
-            $payment = ClubMonthlyFeePayment::create([
-                'club_id' => $club->id,
-                'club_monthly_fee_id' => $validated['club_monthly_fee_id'],
-                'user_id' => $userId,
-                'period' => $validated['period'],
-                'amount' => $validated['amount'],
-                'status' => 'pending',
-            ]);
-
-            $mainWallet = $club->mainWallet;
-            if ($mainWallet) {
-                $transaction = $mainWallet->transactions()->create([
-                    'direction' => 'in',
-                    'amount' => $validated['amount'],
-                    'source_type' => 'monthly_fee',
-                    'source_id' => $payment->id,
-                    'payment_method' => $validated['payment_method'],
-                    'status' => 'pending',
-                    'reference_code' => $validated['reference_code'] ?? null,
-                    'description' => $validated['description'] ?? null,
-                    'created_by' => $userId,
-                ]);
-
-                $payment->update(['wallet_transaction_id' => $transaction->id]);
-            }
-
+        try {
+            $payment = $this->paymentService->createPayment($club, $validated, $userId);
             $payment->load(['user', 'monthlyFee', 'walletTransaction']);
             return ResponseHelper::success(new ClubMonthlyFeePaymentResource($payment), 'Thanh toán phí thành công', 201);
-        });
+        } catch (\Exception $e) {
+            return ResponseHelper::error($e->getMessage(), 409);
+        }
     }
 
     public function show($clubId, $paymentId)
@@ -127,23 +81,14 @@ class ClubMonthlyFeePaymentController extends Controller
     public function getMemberPayments(Request $request, $clubId, $memberId)
     {
         $club = Club::findOrFail($clubId);
-        
+
         $validated = $request->validate([
             'page' => 'sometimes|integer|min:1',
             'per_page' => 'sometimes|integer|min:1|max:100',
             'status' => ['sometimes', Rule::enum(ClubMonthlyFeePaymentStatus::class)],
         ]);
 
-        $query = ClubMonthlyFeePayment::where('club_id', $clubId)
-            ->where('user_id', $memberId)
-            ->with(['monthlyFee', 'walletTransaction']);
-
-        if (!empty($validated['status'])) {
-            $query->where('status', $validated['status']);
-        }
-
-        $perPage = $validated['per_page'] ?? 15;
-        $payments = $query->orderBy('period', 'desc')->paginate($perPage);
+        $payments = $this->paymentService->getMemberPayments($club, $memberId, $validated);
 
         $data = ['payments' => ClubMonthlyFeePaymentResource::collection($payments)];
         $meta = [
@@ -163,20 +108,7 @@ class ClubMonthlyFeePaymentController extends Controller
             'period' => 'sometimes|date',
         ]);
 
-        $query = ClubMonthlyFeePayment::where('club_id', $clubId);
-
-        if (!empty($validated['period'])) {
-            $query->where('period', $validated['period']);
-        }
-
-        $stats = [
-            'total_payments' => $query->count(),
-            'paid_count' => (clone $query)->where('status', ClubMonthlyFeePaymentStatus::Paid)->count(),
-            'pending_count' => (clone $query)->where('status', ClubMonthlyFeePaymentStatus::Pending)->count(),
-            'failed_count' => (clone $query)->where('status', ClubMonthlyFeePaymentStatus::Failed)->count(),
-            'total_amount' => (clone $query)->sum('amount'),
-            'paid_amount' => (clone $query)->where('status', ClubMonthlyFeePaymentStatus::Paid)->sum('amount'),
-        ];
+        $stats = $this->paymentService->getStatistics($club, $validated['period'] ?? null);
 
         return ResponseHelper::success($stats, 'Lấy thống kê thanh toán thành công');
     }

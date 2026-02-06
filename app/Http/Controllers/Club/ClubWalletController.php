@@ -2,21 +2,26 @@
 
 namespace App\Http\Controllers\Club;
 
-use App\Enums\ClubFundCollectionStatus;
 use App\Enums\ClubWalletTransactionDirection;
 use App\Enums\ClubWalletTransactionStatus;
 use App\Enums\ClubWalletType;
 use App\Helpers\ResponseHelper;
+use App\Http\Controllers\Controller;
 use App\Http\Resources\Club\ClubWalletResource;
 use App\Http\Resources\Club\ClubWalletTransactionResource;
 use App\Models\Club\Club;
 use App\Models\Club\ClubWallet;
-use App\Http\Controllers\Controller;
+use App\Services\Club\ClubWalletService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class ClubWalletController extends Controller
 {
+    public function __construct(
+        protected ClubWalletService $walletService
+    ) {
+    }
+
     public function index(Request $request, $clubId)
     {
         $club = Club::findOrFail($clubId);
@@ -25,13 +30,7 @@ class ClubWalletController extends Controller
             'type' => ['sometimes', Rule::enum(ClubWalletType::class)],
         ]);
 
-        $query = $club->wallets();
-
-        if (!empty($validated['type'])) {
-            $query->where('type', $validated['type']);
-        }
-
-        $wallets = $query->get();
+        $wallets = $this->walletService->getWallets($club, $validated);
 
         return ResponseHelper::success(ClubWalletResource::collection($wallets), 'Lấy danh sách ví thành công');
     }
@@ -51,23 +50,12 @@ class ClubWalletController extends Controller
             'qr_code_url' => 'nullable|string',
         ]);
 
-        $exists = $club->wallets()
-            ->where('type', $validated['type'])
-            ->where('currency', $validated['currency'] ?? 'VND')
-            ->exists();
-
-        if ($exists) {
-            return ResponseHelper::error('Ví loại này đã tồn tại', 409);
+        try {
+            $wallet = $this->walletService->createWallet($club, $validated);
+            return ResponseHelper::success(new ClubWalletResource($wallet), 'Tạo ví thành công', 201);
+        } catch (\Exception $e) {
+            return ResponseHelper::error($e->getMessage(), 409);
         }
-
-        $wallet = ClubWallet::create([
-            'club_id' => $club->id,
-            'type' => $validated['type'],
-            'currency' => $validated['currency'] ?? 'VND',
-            'qr_code_url' => $validated['qr_code_url'] ?? null,
-        ]);
-
-        return ResponseHelper::success(new ClubWalletResource($wallet), 'Tạo ví thành công', 201);
     }
 
     public function show($clubId, $walletId)
@@ -102,7 +90,7 @@ class ClubWalletController extends Controller
             'qr_code_url' => 'nullable|string',
         ]);
 
-        $wallet->update($validated);
+        $wallet = $this->walletService->updateWallet($wallet, $validated);
 
         return ResponseHelper::success(new ClubWalletResource($wallet->fresh()), 'Cập nhật ví thành công');
     }
@@ -118,13 +106,12 @@ class ClubWalletController extends Controller
             return ResponseHelper::error('Chỉ admin/manager mới có quyền xóa ví', 403);
         }
 
-        if ($wallet->transactions()->exists()) {
-            return ResponseHelper::error('Không thể xóa ví vì có giao dịch', 422);
+        try {
+            $this->walletService->deleteWallet($wallet);
+            return ResponseHelper::success('Xóa ví thành công');
+        } catch (\Exception $e) {
+            return ResponseHelper::error($e->getMessage(), 422);
         }
-
-        $wallet->delete();
-
-        return ResponseHelper::success('Xóa ví thành công');
     }
 
     public function getBalance($clubId, $walletId)
@@ -152,26 +139,7 @@ class ClubWalletController extends Controller
             'date_to' => 'sometimes|date|after_or_equal:date_from',
         ]);
 
-        $query = $wallet->transactions()->with(['creator', 'confirmer']);
-
-        if (!empty($validated['direction'])) {
-            $query->where('direction', $validated['direction']);
-        }
-
-        if (!empty($validated['status'])) {
-            $query->where('status', $validated['status']);
-        }
-
-        if (!empty($validated['date_from'])) {
-            $query->whereDate('created_at', '>=', $validated['date_from']);
-        }
-
-        if (!empty($validated['date_to'])) {
-            $query->whereDate('created_at', '<=', $validated['date_to']);
-        }
-
-        $perPage = $validated['per_page'] ?? 15;
-        $transactions = $query->orderBy('created_at', 'desc')->paginate($perPage);
+        $transactions = $this->walletService->getTransactions($wallet, $validated);
 
         $data = ['transactions' => ClubWalletTransactionResource::collection($transactions)];
         $meta = [
@@ -192,39 +160,9 @@ class ClubWalletController extends Controller
             'date_to' => 'sometimes|date|after_or_equal:date_from',
         ]);
 
-        $mainWallet = $club->mainWallet;
-        if (!$mainWallet) {
-            return ResponseHelper::success([
-                'balance' => (int) 0,
-                'total_income' => (int) 0,
-                'total_expense' => (int) 0,
-                'pending_transactions' => (int) 0,
-                'active_collections' => (int) 0,
-            ], 'Lấy tổng quan quỹ thành công');
-        }
+        $overview = $this->walletService->getFundOverview($club, $validated['date_from'] ?? null, $validated['date_to'] ?? null);
 
-        $query = $mainWallet->transactions()->where('status', ClubWalletTransactionStatus::Confirmed);
-
-        if (!empty($validated['date_from'])) {
-            $query->whereDate('created_at', '>=', $validated['date_from']);
-        }
-
-        if (!empty($validated['date_to'])) {
-            $query->whereDate('created_at', '<=', $validated['date_to']);
-        }
-
-        $totalIncome = (clone $query)->where('direction', ClubWalletTransactionDirection::In)->sum('amount');
-        $totalExpense = (clone $query)->where('direction', ClubWalletTransactionDirection::Out)->sum('amount');
-        $pendingTransactions = $mainWallet->transactions()->where('status', ClubWalletTransactionStatus::Pending)->count();
-        $activeCollections = $club->fundCollections()->where('status', ClubFundCollectionStatus::Active)->count();
-
-        return ResponseHelper::success([
-            'balance' => (int) $mainWallet->balance,
-            'total_income' => (int) $totalIncome,
-            'total_expense' => (int) $totalExpense,
-            'pending_transactions' => (int) $pendingTransactions,
-            'active_collections' => (int) $activeCollections,
-        ], 'Lấy tổng quan quỹ thành công');
+        return ResponseHelper::success($overview, 'Lấy tổng quan quỹ thành công');
     }
 
     public function getFundQrCode($clubId)

@@ -2,131 +2,97 @@
 
 namespace App\Http\Controllers\Club;
 
-use App\Enums\ClubActivityFeeSplitType;
-use App\Enums\ClubActivityParticipantStatus;
-use App\Enums\ClubActivityStatus;
-use App\Enums\ClubMemberRole;
-use App\Enums\ClubWalletTransactionDirection;
-use App\Enums\ClubWalletTransactionSourceType;
-use App\Enums\ClubWalletTransactionStatus;
-use App\Enums\PaymentMethod;
 use App\Helpers\ResponseHelper;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Club\CheckInRequest;
+use App\Http\Requests\Club\GetParticipantsRequest;
+use App\Http\Requests\Club\InviteParticipantsRequest;
+use App\Http\Requests\Club\UpdateParticipantRequest;
 use App\Http\Resources\Club\ClubActivityParticipantResource;
 use App\Models\Club\ClubActivity;
 use App\Models\Club\ClubActivityParticipant;
-use App\Models\Club\ClubWalletTransaction;
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
-use Carbon\Carbon;
+use App\Services\Club\ClubActivityParticipantService;
 
 class ClubActivityParticipantController extends Controller
 {
-    public function index(Request $request, $clubId, $activityId)
+    public function __construct(
+        protected ClubActivityParticipantService $participantService
+    ) {
+    }
+
+    public function index(GetParticipantsRequest $request, $clubId, $activityId)
     {
         $activity = ClubActivity::where('club_id', $clubId)->findOrFail($activityId);
 
-        $validated = $request->validate([
-            'status' => ['sometimes', Rule::enum(ClubActivityParticipantStatus::class)],
-        ]);
-
-        $query = $activity->participants()->with('user');
-
-        if (!empty($validated['status'])) {
-            $query->where('status', $validated['status']);
-        }
-
-        $participants = $query->get();
+        $result = $this->participantService->getParticipants(
+            $activity,
+            $request->input('status')
+        );
 
         $data = [
-            'participants' => ClubActivityParticipantResource::collection($participants),
-            'total' => $participants->count(),
-            'pending_count' => $participants->where('status', ClubActivityParticipantStatus::Pending)->count(),
-            'invited_count' => $participants->where('status', ClubActivityParticipantStatus::Invited)->count(),
-            'accepted_count' => $participants->where('status', ClubActivityParticipantStatus::Accepted)->count(),
+            'participants' => ClubActivityParticipantResource::collection($result['participants']),
+            'total' => $result['total'],
+            'pending_count' => $result['pending_count'],
+            'invited_count' => $result['invited_count'],
+            'accepted_count' => $result['accepted_count'],
         ];
+
         return ResponseHelper::success($data, 'Lấy danh sách người tham gia thành công');
     }
 
-    public function store(Request $request, $clubId, $activityId)
+    public function store($clubId, $activityId)
     {
         $activity = ClubActivity::where('club_id', $clubId)->findOrFail($activityId);
         $userId = auth()->id();
 
-        $club = $activity->club;
-        $member = $club->activeMembers()->where('user_id', $userId)->first();
-        if (!$member) {
-            return ResponseHelper::error('Bạn không phải thành viên CLB', 403);
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
         }
 
-        if ($activity->participants()->where('user_id', $userId)->exists()) {
-            return ResponseHelper::error('Bạn đã tham gia hoạt động này', 409);
+        try {
+            $participant = $this->participantService->joinActivity($activity, $userId);
+            $participant->load(['user', 'walletTransaction']);
+
+            return ResponseHelper::success(
+                new ClubActivityParticipantResource($participant),
+                'Đã gửi yêu cầu tham gia, chờ admin duyệt',
+                201
+            );
+        } catch (\Exception $e) {
+            $statusCode = str_contains($e->getMessage(), 'đã tham gia') ? 409 :
+                         (str_contains($e->getMessage(), 'đủ số lượng') ? 422 : 403);
+            return ResponseHelper::error($e->getMessage(), $statusCode);
         }
-        if ($activity->max_participants !== null && $activity->participants()->count() >= $activity->max_participants) {
-            return ResponseHelper::error('Sự kiện đã đủ số lượng người tham gia', 422);
-        }
-
-        $participant = ClubActivityParticipant::create([
-            'club_activity_id' => $activity->id,
-            'user_id' => $userId,
-            'status' => ClubActivityParticipantStatus::Pending,
-        ]);
-
-        $participant->load(['user', 'walletTransaction']);
-
-        return ResponseHelper::success(new ClubActivityParticipantResource($participant), 'Đã gửi yêu cầu tham gia, chờ admin duyệt', 201);
     }
 
-    public function invite(Request $request, $clubId, $activityId)
+    public function invite(InviteParticipantsRequest $request, $clubId, $activityId)
     {
         $activity = ClubActivity::where('club_id', $clubId)->findOrFail($activityId);
         $userId = auth()->id();
 
-        $club = $activity->club;
-        $member = $club->activeMembers()->where('user_id', $userId)->first();
-        if (!$member) {
-            return ResponseHelper::error('Bạn không phải thành viên CLB', 403);
-        }
-        $canInvite = in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary])
-            || $activity->allow_member_invite;
-        if (!$canInvite) {
-            return ResponseHelper::error('Chỉ admin/manager/secretary hoặc khi sự kiện cho phép thành viên mời mới có quyền mời', 403);
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
         }
 
-        $validated = $request->validate([
-            'user_ids' => 'required|array|min:1',
-            'user_ids.*' => 'exists:users,id',
-        ]);
+        try {
+            $result = $this->participantService->inviteUsers(
+                $activity,
+                $request->input('user_ids'),
+                $userId
+            );
 
-        $currentCount = $activity->participants()->count();
-        $maxParticipants = $activity->max_participants;
+            $data = [
+                'invited_count' => $result['invited_count'],
+                'participants' => ClubActivityParticipantResource::collection(collect($result['participants'])),
+            ];
 
-        $invited = [];
-        foreach ($validated['user_ids'] as $userId) {
-            if ($maxParticipants !== null && $currentCount >= $maxParticipants) {
-                break;
-            }
-            if (!$activity->participants()->where('user_id', $userId)->exists()) {
-                $participant = ClubActivityParticipant::create([
-                    'club_activity_id' => $activity->id,
-                    'user_id' => $userId,
-                    'status' => ClubActivityParticipantStatus::Invited,
-                ]);
-                $participant->load('user');
-                $invited[] = $participant;
-                $currentCount++;
-            }
+            return ResponseHelper::success($data, 'Đã mời thành công');
+        } catch (\Exception $e) {
+            return ResponseHelper::error($e->getMessage(), 403);
         }
-
-        $data = [
-            'invited_count' => count($invited),
-            'participants' => ClubActivityParticipantResource::collection(collect($invited)),
-        ];
-        return ResponseHelper::success($data, 'Đã mời thành công');
     }
 
-    public function update(Request $request, $clubId, $activityId, $participantId)
+    public function update(UpdateParticipantRequest $request, $clubId, $activityId, $participantId)
     {
         $participant = ClubActivityParticipant::whereHas('activity', function ($q) use ($clubId) {
             $q->where('club_id', $clubId);
@@ -134,52 +100,21 @@ class ClubActivityParticipantController extends Controller
             ->with(['activity', 'user'])
             ->findOrFail($participantId);
 
-        $validated = $request->validate([
-            'status' => ['required', Rule::enum(ClubActivityParticipantStatus::class)],
-        ]);
-
-        return DB::transaction(function () use ($participant, $validated) {
-            $activity = $participant->activity;
-            $club = $activity->club;
-            $mainWallet = $club->mainWallet;
-
-            if (
-                $validated['status'] === ClubActivityParticipantStatus::Accepted->value
-                && $activity->fee_amount > 0
-                && !$participant->wallet_transaction_id
-                && $mainWallet
-            ) {
-
-                $feeSplitType = $activity->fee_split_type ?? ClubActivityFeeSplitType::Fixed;
-                $amount = $feeSplitType === ClubActivityFeeSplitType::Fixed
-                    ? (float) $activity->fee_amount
-                    : (float) $activity->fee_amount / max(1, (int) ($activity->max_participants ?? 1));
-
-                $transaction = ClubWalletTransaction::create([
-                    'club_wallet_id' => $mainWallet->id,
-                    'direction' => ClubWalletTransactionDirection::In,
-                    'amount' => $amount,
-                    'source_type' => ClubWalletTransactionSourceType::Activity,
-                    'source_id' => $activity->id,
-                    'payment_method' => PaymentMethod::BankTransfer,
-                    'status' => ClubWalletTransactionStatus::Pending,
-                    'description' => "Phí tham gia sự kiện: {$activity->title}",
-                    'created_by' => $participant->user_id,
-                ]);
-
-                // Lưu transaction_id vào participant
-                $participant->update([
-                    'status' => $validated['status'],
-                    'wallet_transaction_id' => $transaction->id,
-                ]);
-            } else {
-                $participant->update(['status' => $validated['status']]);
-            }
+        try {
+            $participant = $this->participantService->updateParticipantStatus(
+                $participant,
+                $request->input('status')
+            );
 
             $participant->load(['user', 'walletTransaction']);
 
-            return ResponseHelper::success(new ClubActivityParticipantResource($participant), 'Cập nhật trạng thái thành công');
-        });
+            return ResponseHelper::success(
+                new ClubActivityParticipantResource($participant),
+                'Cập nhật trạng thái thành công'
+            );
+        } catch (\Exception $e) {
+            return ResponseHelper::error($e->getMessage(), 400);
+        }
     }
 
     public function destroy($clubId, $activityId, $participantId)
@@ -190,17 +125,17 @@ class ClubActivityParticipantController extends Controller
             ->findOrFail($participantId);
 
         $userId = auth()->id();
-        $activity = $participant->activity;
-        $club = $activity->club;
-        $member = $club->activeMembers()->where('user_id', $userId)->first();
 
-        if (!$member || !in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary])) {
-            return ResponseHelper::error('Chỉ admin/manager/secretary mới có quyền xóa', 403);
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
         }
 
-        $participant->delete();
-
-        return ResponseHelper::success('Xóa người tham gia thành công');
+        try {
+            $this->participantService->deleteParticipant($participant, $userId);
+            return ResponseHelper::success('Xóa người tham gia thành công');
+        } catch (\Exception $e) {
+            return ResponseHelper::error($e->getMessage(), 403);
+        }
     }
 
     public function approve($clubId, $activityId, $participantId)
@@ -212,56 +147,23 @@ class ClubActivityParticipantController extends Controller
             ->findOrFail($participantId);
 
         $userId = auth()->id();
-        $activity = $participant->activity;
-        $club = $activity->club;
-        $member = $club->activeMembers()->where('user_id', $userId)->first();
 
-        if (!$member || !in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary])) {
-            return ResponseHelper::error('Chỉ admin/manager/secretary mới có quyền duyệt yêu cầu', 403);
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
         }
 
-        if ($participant->status !== ClubActivityParticipantStatus::Pending) {
-            return ResponseHelper::error('Chỉ có thể duyệt yêu cầu đang pending', 422);
-        }
-
-        if ($activity->max_participants !== null && $activity->acceptedParticipants()->count() >= $activity->max_participants) {
-            return ResponseHelper::error('Sự kiện đã đủ số lượng người tham gia', 422);
-        }
-
-        return DB::transaction(function () use ($participant, $activity) {
-            $club = $activity->club;
-            $mainWallet = $club->mainWallet;
-
-            if ($activity->fee_amount > 0 && $mainWallet) {
-                $feeSplitType = $activity->fee_split_type ?? ClubActivityFeeSplitType::Fixed;
-                $amount = $feeSplitType === ClubActivityFeeSplitType::Fixed
-                    ? (float) $activity->fee_amount
-                    : (float) $activity->fee_amount / max(1, (int) ($activity->max_participants ?? 1));
-
-                $transaction = ClubWalletTransaction::create([
-                    'club_wallet_id' => $mainWallet->id,
-                    'direction' => ClubWalletTransactionDirection::In,
-                    'amount' => $amount,
-                    'source_type' => ClubWalletTransactionSourceType::Activity,
-                    'source_id' => $activity->id,
-                    'payment_method' => PaymentMethod::BankTransfer,
-                    'status' => ClubWalletTransactionStatus::Pending,
-                    'description' => "Phí tham gia sự kiện: {$activity->title}",
-                    'created_by' => $participant->user_id,
-                ]);
-
-                $participant->update([
-                    'status' => ClubActivityParticipantStatus::Accepted,
-                    'wallet_transaction_id' => $transaction->id,
-                ]);
-            } else {
-                $participant->update(['status' => ClubActivityParticipantStatus::Accepted]);
-            }
-
+        try {
+            $participant = $this->participantService->approveRequest($participant, $userId);
             $participant->load(['user', 'walletTransaction']);
 
-            return ResponseHelper::success(new ClubActivityParticipantResource($participant), 'Đã duyệt yêu cầu tham gia');
-        });
+            return ResponseHelper::success(
+                new ClubActivityParticipantResource($participant),
+                'Đã duyệt yêu cầu tham gia'
+            );
+        } catch (\Exception $e) {
+            $statusCode = str_contains($e->getMessage(), 'pending') || str_contains($e->getMessage(), 'đủ số lượng') ? 422 : 403;
+            return ResponseHelper::error($e->getMessage(), $statusCode);
+        }
     }
 
     public function reject($clubId, $activityId, $participantId)
@@ -273,22 +175,23 @@ class ClubActivityParticipantController extends Controller
             ->findOrFail($participantId);
 
         $userId = auth()->id();
-        $activity = $participant->activity;
-        $club = $activity->club;
-        $member = $club->activeMembers()->where('user_id', $userId)->first();
 
-        if (!$member || !in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary])) {
-            return ResponseHelper::error('Chỉ admin/manager/secretary mới có quyền từ chối yêu cầu', 403);
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
         }
 
-        if ($participant->status !== ClubActivityParticipantStatus::Pending) {
-            return ResponseHelper::error('Chỉ có thể từ chối yêu cầu đang pending', 422);
+        try {
+            $participant = $this->participantService->rejectRequest($participant, $userId);
+            $participant->load(['user', 'walletTransaction']);
+
+            return ResponseHelper::success(
+                new ClubActivityParticipantResource($participant),
+                'Đã từ chối yêu cầu tham gia'
+            );
+        } catch (\Exception $e) {
+            $statusCode = str_contains($e->getMessage(), 'pending') ? 422 : 403;
+            return ResponseHelper::error($e->getMessage(), $statusCode);
         }
-
-        $participant->decline();
-        $participant->load(['user', 'walletTransaction']);
-
-        return ResponseHelper::success(new ClubActivityParticipantResource($participant), 'Đã từ chối yêu cầu tham gia');
     }
 
     public function acceptInvite($clubId, $activityId, $participantId)
@@ -301,54 +204,22 @@ class ClubActivityParticipantController extends Controller
 
         $userId = auth()->id();
 
-        if ($participant->user_id !== $userId) {
-            return ResponseHelper::error('Chỉ có thể chấp nhận lời mời của chính mình', 403);
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
         }
 
-        if ($participant->status !== ClubActivityParticipantStatus::Invited) {
-            return ResponseHelper::error('Chỉ có thể chấp nhận lời mời đang invited', 422);
-        }
-
-        $activity = $participant->activity;
-
-        if ($activity->max_participants !== null && $activity->acceptedParticipants()->count() >= $activity->max_participants) {
-            return ResponseHelper::error('Sự kiện đã đủ số lượng người tham gia', 422);
-        }
-
-        return DB::transaction(function () use ($participant, $activity) {
-            $club = $activity->club;
-            $mainWallet = $club->mainWallet;
-
-            if ($activity->fee_amount > 0 && $mainWallet) {
-                $feeSplitType = $activity->fee_split_type ?? ClubActivityFeeSplitType::Fixed;
-                $amount = $feeSplitType === ClubActivityFeeSplitType::Fixed
-                    ? (float) $activity->fee_amount
-                    : (float) $activity->fee_amount / max(1, (int) ($activity->max_participants ?? 1));
-
-                $transaction = ClubWalletTransaction::create([
-                    'club_wallet_id' => $mainWallet->id,
-                    'direction' => ClubWalletTransactionDirection::In,
-                    'amount' => $amount,
-                    'source_type' => ClubWalletTransactionSourceType::Activity,
-                    'source_id' => $activity->id,
-                    'payment_method' => PaymentMethod::BankTransfer,
-                    'status' => ClubWalletTransactionStatus::Pending,
-                    'description' => "Phí tham gia sự kiện: {$activity->title}",
-                    'created_by' => $participant->user_id,
-                ]);
-
-                $participant->update([
-                    'status' => ClubActivityParticipantStatus::Accepted,
-                    'wallet_transaction_id' => $transaction->id,
-                ]);
-            } else {
-                $participant->update(['status' => ClubActivityParticipantStatus::Accepted]);
-            }
-
+        try {
+            $participant = $this->participantService->acceptInvite($participant, $userId);
             $participant->load(['user', 'walletTransaction']);
 
-            return ResponseHelper::success(new ClubActivityParticipantResource($participant), 'Đã chấp nhận tham gia sự kiện');
-        });
+            return ResponseHelper::success(
+                new ClubActivityParticipantResource($participant),
+                'Đã chấp nhận tham gia sự kiện'
+            );
+        } catch (\Exception $e) {
+            $statusCode = str_contains($e->getMessage(), 'invited') || str_contains($e->getMessage(), 'đủ số lượng') ? 422 : 403;
+            return ResponseHelper::error($e->getMessage(), $statusCode);
+        }
     }
 
     public function declineInvite($clubId, $activityId, $participantId)
@@ -361,18 +232,22 @@ class ClubActivityParticipantController extends Controller
 
         $userId = auth()->id();
 
-        if ($participant->user_id !== $userId) {
-            return ResponseHelper::error('Chỉ có thể từ chối lời mời của chính mình', 403);
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
         }
 
-        if ($participant->status !== ClubActivityParticipantStatus::Invited) {
-            return ResponseHelper::error('Chỉ có thể từ chối lời mời đang invited', 422);
+        try {
+            $participant = $this->participantService->declineInvite($participant, $userId);
+            $participant->load(['user', 'walletTransaction']);
+
+            return ResponseHelper::success(
+                new ClubActivityParticipantResource($participant),
+                'Đã từ chối lời mời tham gia'
+            );
+        } catch (\Exception $e) {
+            $statusCode = str_contains($e->getMessage(), 'invited') ? 422 : 403;
+            return ResponseHelper::error($e->getMessage(), $statusCode);
         }
-
-        $participant->decline();
-        $participant->load(['user', 'walletTransaction']);
-
-        return ResponseHelper::success(new ClubActivityParticipantResource($participant), 'Đã từ chối lời mời tham gia');
     }
 
     public function cancel($clubId, $activityId, $participantId)
@@ -384,17 +259,17 @@ class ClubActivityParticipantController extends Controller
 
         $userId = auth()->id();
 
-        if ($participant->user_id !== $userId) {
-            return ResponseHelper::error('Chỉ có thể hủy yêu cầu của chính mình', 403);
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
         }
 
-        if ($participant->status !== ClubActivityParticipantStatus::Pending) {
-            return ResponseHelper::error('Chỉ có thể hủy yêu cầu đang pending', 422);
+        try {
+            $this->participantService->cancelRequest($participant, $userId);
+            return ResponseHelper::success('Đã hủy yêu cầu tham gia');
+        } catch (\Exception $e) {
+            $statusCode = str_contains($e->getMessage(), 'pending') ? 422 : 403;
+            return ResponseHelper::error($e->getMessage(), $statusCode);
         }
-
-        $participant->delete();
-
-        return ResponseHelper::success('Đã hủy yêu cầu tham gia');
     }
 
     public function withdraw($clubId, $activityId, $participantId)
@@ -407,157 +282,79 @@ class ClubActivityParticipantController extends Controller
 
         $userId = auth()->id();
 
-        if ($participant->user_id !== $userId) {
-            return ResponseHelper::error('Chỉ có thể rút khỏi sự kiện của chính mình', 403);
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
         }
 
-        $activity = $participant->activity;
+        try {
+            $result = $this->participantService->withdraw($participant, $userId);
+            $result['participant']->load(['user', 'walletTransaction']);
 
-        if (!$activity->isScheduled()) {
-            return ResponseHelper::error('Chỉ có thể rút khỏi sự kiện đang scheduled', 422);
+            return ResponseHelper::success(
+                new ClubActivityParticipantResource($result['participant']),
+                $result['message']
+            );
+        } catch (\Exception $e) {
+            $statusCode = str_contains($e->getMessage(), 'scheduled') || str_contains($e->getMessage(), 'chấp nhận') ? 422 : 403;
+            return ResponseHelper::error($e->getMessage(), $statusCode);
         }
-
-        if ($participant->status !== ClubActivityParticipantStatus::Accepted) {
-            return ResponseHelper::error('Chỉ có thể rút khỏi sự kiện khi đã chấp nhận tham gia', 422);
-        }
-
-        return DB::transaction(function () use ($participant, $activity) {
-            $club = $activity->club;
-            $mainWallet = $club->mainWallet;
-
-            $hoursUntilStart = Carbon::now()->diffInHours($activity->start_time, false);
-            $isBefore4Hours = $hoursUntilStart >= 4;
-
-            // Tìm transaction qua wallet_transaction_id (chính xác)
-            $transaction = $participant->walletTransaction;
-
-            if ($transaction && $mainWallet) {
-                // Hủy khoản thu đã tạo
-                $transaction->reject($participant->user_id);
-
-                // Nếu rút sau 4 tiếng => tạo khoản thu nộp phạt
-                if (!$isBefore4Hours) {
-                    // Sử dụng penalty_amount cố định hoặc mặc định 0
-                    $penaltyAmount = $activity->penalty_amount ?? 0;
-
-                    if ($penaltyAmount > 0) {
-                        ClubWalletTransaction::create([
-                            'club_wallet_id' => $mainWallet->id,
-                            'direction' => ClubWalletTransactionDirection::In,
-                            'amount' => $penaltyAmount,
-                            'source_type' => ClubWalletTransactionSourceType::ActivityPenalty,
-                            'source_id' => $activity->id,
-                            'payment_method' => PaymentMethod::BankTransfer,
-                            'status' => ClubWalletTransactionStatus::Pending,
-                            'description' => "Phạt rút khỏi sự kiện: {$activity->title} (rút sau 4 tiếng - phí phạt " . number_format($penaltyAmount, 0, ',', '.') . " VND)",
-                            'created_by' => $participant->user_id,
-                        ]);
-                    }
-
-                    // Cập nhật participant để link với penalty transaction (hoặc giữ nguyên transaction gốc)
-                    // Có thể tạo field penalty_transaction_id nếu cần track riêng
-                }
-            }
-
-            // Cập nhật status participant thành declined
-            $participant->decline();
-
-            $participant->load(['user', 'walletTransaction']);
-
-            $message = $isBefore4Hours
-                ? 'Đã rút khỏi sự kiện. Khoản thu đã được hủy.'
-                : "Đã rút khỏi sự kiện. Khoản thu đã được hủy và tạo khoản thu phạt (" . number_format($activity->penalty_amount ?? 0, 0, ',', '.') . " VND) do rút sau 4 tiếng.";
-
-            return ResponseHelper::success(new ClubActivityParticipantResource($participant), $message);
-        });
     }
 
-    /**
-     * Member check-in bằng QR (accepted -> attended)
-     * POST /clubs/{clubId}/activities/{activityId}/check-in
-     */
-    public function checkIn(Request $request, $clubId, $activityId)
+    public function checkIn(CheckInRequest $request, $clubId, $activityId)
     {
-        $validated = $request->validate([
-            'token' => 'required|string',
-        ]);
-
         $activity = ClubActivity::where('club_id', $clubId)->findOrFail($activityId);
-        if ($activity->status === ClubActivityStatus::Cancelled) {
-            return ResponseHelper::error('Sự kiện đã bị hủy', 422);
-        }
-
-        if (!$activity->check_in_token || $activity->check_in_token !== $validated['token']) {
-            return ResponseHelper::error('Mã check-in không hợp lệ', 403);
-        }
-
         $userId = auth()->id();
-        $member = $activity->club->activeMembers()->where('user_id', $userId)->first();
-        if (!$member) {
-            return ResponseHelper::error('Bạn không phải thành viên CLB', 403);
+
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
         }
 
-        $participant = ClubActivityParticipant::where('club_activity_id', $activity->id)
-            ->where('user_id', $userId)
-            ->with('user')
-            ->first();
+        try {
+            $participant = $this->participantService->checkIn(
+                $activity,
+                $request->input('token'),
+                $userId
+            );
 
-        if (!$participant) {
-            return ResponseHelper::error('Bạn chưa tham gia hoạt động này', 422);
-        }
-
-        if ($participant->status === ClubActivityParticipantStatus::Attended) {
             $participant->load('user');
-            return ResponseHelper::success(new ClubActivityParticipantResource($participant), 'Bạn đã check-in trước đó');
+
+            $message = $participant->checked_in_at && $participant->checked_in_at->lt(now()->subSeconds(5))
+                ? 'Bạn đã check-in trước đó'
+                : 'Check-in thành công';
+
+            return ResponseHelper::success(
+                new ClubActivityParticipantResource($participant),
+                $message
+            );
+        } catch (\Exception $e) {
+            $statusCode = str_contains($e->getMessage(), 'bị hủy') ||
+                         str_contains($e->getMessage(), 'chưa tham gia') ||
+                         str_contains($e->getMessage(), 'được duyệt') ? 422 : 403;
+            return ResponseHelper::error($e->getMessage(), $statusCode);
         }
-
-        if ($participant->status !== ClubActivityParticipantStatus::Accepted) {
-            return ResponseHelper::error('Chỉ có thể check-in khi đã được duyệt tham gia', 422);
-        }
-
-        $participant->update([
-            'status' => ClubActivityParticipantStatus::Attended,
-            'checked_in_at' => now(),
-        ]);
-
-        $participant->load('user');
-
-        return ResponseHelper::success(new ClubActivityParticipantResource($participant), 'Check-in thành công');
     }
 
-    /**
-     * Danh sách check-in của activity
-     * GET /clubs/{clubId}/activities/{activityId}/check-ins
-     */
     public function checkInList($clubId, $activityId)
     {
         $activity = ClubActivity::where('club_id', $clubId)->findOrFail($activityId);
         $userId = auth()->id();
 
-        $member = $activity->club->activeMembers()->where('user_id', $userId)->first();
-        if (!$member || !in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary])) {
-            return ResponseHelper::error('Chỉ admin/manager/secretary mới có quyền xem danh sách check-in', 403);
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
         }
 
-        $checkedIn = $activity->participants()
-            ->where('status', ClubActivityParticipantStatus::Attended)
-            ->with('user')
-            ->get();
+        try {
+            $result = $this->participantService->getCheckInList($activity, $userId);
 
-        $waiting = $activity->participants()
-            ->where('status', ClubActivityParticipantStatus::Accepted)
-            ->with('user')
-            ->get();
+            $data = [
+                'checked_in' => ClubActivityParticipantResource::collection($result['checked_in']),
+                'waiting' => ClubActivityParticipantResource::collection($result['waiting']),
+                'summary' => $result['summary'],
+            ];
 
-        $data = [
-            'checked_in' => ClubActivityParticipantResource::collection($checkedIn),
-            'waiting' => ClubActivityParticipantResource::collection($waiting),
-            'summary' => [
-                'checked_in_count' => $checkedIn->count(),
-                'waiting_count' => $waiting->count(),
-            ],
-        ];
-
-        return ResponseHelper::success($data, 'Lấy danh sách check-in thành công');
+            return ResponseHelper::success($data, 'Lấy danh sách check-in thành công');
+        } catch (\Exception $e) {
+            return ResponseHelper::error($e->getMessage(), 403);
+        }
     }
 }

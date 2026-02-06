@@ -1,7 +1,7 @@
 <template>
     <div class="mt-8 bg-white rounded-2xl shadow-sm overflow-hidden flex flex-col">
         <div class="flex border-b border-gray-200 mx-2">
-            <button v-for="tab in tabs" :key="tab.id" @click="activeTab = tab.id"
+            <button v-for="tab in tabs" :key="tab.id" @click="handleTabClick(tab.id)"
                 class="flex-1 py-4 text-center font-semibold transition-all relative"
                 :class="activeTab === tab.id ? 'text-[#D72D36]' : 'text-[#838799]'">
                 {{ tab.name }}
@@ -25,10 +25,12 @@
                 </div>
 
                 <div v-show="activeTab === 'members'" class="text-gray-400">
-                    <ClubMember v-if="club?.id" :club-id="club.id" :isJoined="isJoined" :currentUserRole="currentUserRole" />
-                    <div v-else class="text-center py-12">
-                        <p class="text-gray-400">Đang tải...</p>
-                    </div>
+                    <template v-if="hasMembersTabBeenActive">
+                        <ClubMember v-if="club?.id" :club-id="club.id" :isJoined="isJoined" :currentUserRole="currentUserRole" @refresh-club="$emit('refresh-club')" />
+                        <div v-else class="text-center py-12">
+                            <p class="text-gray-400">Đang tải...</p>
+                        </div>
+                    </template>
                 </div>
 
                 <div v-show="activeTab === 'ranking'">
@@ -72,6 +74,7 @@ const isExpanded = ref(false)
 const contentHeight = ref(1000)
 const contentWrapper = ref(null)
 const introContent = ref(null)
+const hasMembersTabBeenActive = ref(false)
 
 const props = defineProps({
     club: {
@@ -108,7 +111,7 @@ const props = defineProps({
     }
 })
 
-defineEmits(['leaderboard-filter', 'leaderboard-page-change'])
+const emit = defineEmits(['leaderboard-filter', 'leaderboard-page-change', 'tab-change', 'refresh-club'])
 
 const tabs = computed(() => [
     { id: 'intro', name: 'Giới thiệu' },
@@ -134,6 +137,14 @@ const updateContentHeight = async () => {
 
 const toggleExpand = () => {
     isExpanded.value = !isExpanded.value
+}
+
+const handleTabClick = (tabId) => {
+    activeTab.value = tabId
+    if (tabId === 'members') {
+        hasMembersTabBeenActive.value = true
+    }
+    emit('tab-change', tabId)
 }
 
 watch(activeTab, () => {

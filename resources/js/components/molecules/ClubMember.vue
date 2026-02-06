@@ -230,6 +230,8 @@ const props = defineProps({
   }
 })
 
+const emit = defineEmits(['refresh-club'])
+
 // State
 const searchQuery = ref('')
 const openMenuId = ref(null)
@@ -458,6 +460,7 @@ const handleAssignRole = async ({ memberId, role }) => {
     
     // Refresh lists
     await fetchData()
+    emit('refresh-club')
   } catch (error) {
     console.error('Error assigning role:', error)
     toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi bổ nhiệm')
@@ -480,6 +483,7 @@ const handleDeleteMember = async () => {
     // Refresh lists
     fetchMembers()
     fetchManagementMembers()
+    emit('refresh-club')
   } catch (error) {
     console.error('Error removing member:', error)
     toast.error('Có lỗi xảy ra khi xoá thành viên')

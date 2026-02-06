@@ -103,28 +103,31 @@ export const ROLE_COLORS = {
 
 export const NOTIFICATION_COLOR_MAP = {
   1: { // Chung
-    cardBg: 'bg-[#F6E4C8]',
+    cardBg: 'bg-[#f5e3c6]',
     border: 'border-[#E0A243]',
     iconBg: 'bg-[#E0A243]',
     title: 'text-[#804D00]',
     content: 'text-[#804D00]',
-    subText: 'text-[#995C00]'
+    subText: 'text-[#995C00]',
+    iconColor: 'text-[#E0A243]',
   },
   2: { // Sự kiện
-    cardBg: 'bg-[#FEF2F2]',
+    cardBg: 'bg-[#F5D5DA]',
     border: 'border-[#D72D36]',
     iconBg: 'bg-[#D72D36]',
     title: 'text-[#991B1B]',
     content: 'text-[#991B1B]',
-    subText: 'text-[#B91C1C]'
+    subText: 'text-[#B91C1C]',
+    iconColor: 'text-[#D72D36]',
   },
   3: { // Tài chính
-    cardBg: 'bg-[#F0FDF4]',
+    cardBg: 'bg-[#C8F6E7]',
     border: 'border-[#10B981]',
     iconBg: 'bg-[#10B981]',
     title: 'text-[#065F46]',
     content: 'text-[#065F46]',
-    subText: 'text-[#047857]'
+    subText: 'text-[#047857]',
+    iconColor: 'text-[#10B981]',
   },
   4: { // Thành viên
     cardBg: 'bg-[#EFF6FF]',
@@ -132,7 +135,8 @@ export const NOTIFICATION_COLOR_MAP = {
     iconBg: 'bg-[#3B82F6]',
     title: 'text-[#1E40AF]',
     content: 'text-[#1E40AF]',
-    subText: 'text-[#1D4ED8]'
+    subText: 'text-[#1D4ED8]',
+    iconColor: 'text-[#3B82F6]',
   },
   5: { // Khẩn cấp
     cardBg: 'bg-[#FFF7ED]',
@@ -140,7 +144,8 @@ export const NOTIFICATION_COLOR_MAP = {
     iconBg: 'bg-[#F97316]',
     title: 'text-[#9A3412]',
     content: 'text-[#9A3412]',
-    subText: 'text-[#C2410C]'
+    subText: 'text-[#C2410C]',
+    iconColor: 'text-[#F97316]',
   }
 }
 
