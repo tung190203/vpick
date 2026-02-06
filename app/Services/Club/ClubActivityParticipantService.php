@@ -21,10 +21,14 @@ class ClubActivityParticipantService
 {
     public function getParticipants(ClubActivity $activity, ?string $statusFilter = null): array
     {
+        $allParticipants = $activity->participants()->get();
+
         $query = $activity->participants()->with('user');
 
         if ($statusFilter) {
             $query->where('status', $statusFilter);
+        } else {
+            $query->where('status', ClubActivityParticipantStatus::Accepted);
         }
 
         $participants = $query->get();
@@ -32,9 +36,9 @@ class ClubActivityParticipantService
         return [
             'participants' => $participants,
             'total' => $participants->count(),
-            'pending_count' => $participants->where('status', ClubActivityParticipantStatus::Pending)->count(),
-            'invited_count' => $participants->where('status', ClubActivityParticipantStatus::Invited)->count(),
-            'accepted_count' => $participants->where('status', ClubActivityParticipantStatus::Accepted)->count(),
+            'pending_count' => $allParticipants->where('status', ClubActivityParticipantStatus::Pending)->count(),
+            'invited_count' => $allParticipants->where('status', ClubActivityParticipantStatus::Invited)->count(),
+            'accepted_count' => $allParticipants->where('status', ClubActivityParticipantStatus::Accepted)->count(),
         ];
     }
 
