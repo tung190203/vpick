@@ -7,31 +7,22 @@ use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
+
     public function up(): void
     {
         Schema::table('club_activities', function (Blueprint $table) {
-            // Drop is_recurring field
             $table->dropColumn('is_recurring');
-
-            // Change recurring_schedule to JSON type
-            $table->json('recurring_schedule')->nullable()->change();
         });
+
+        DB::statement('ALTER TABLE club_activities MODIFY COLUMN recurring_schedule JSON NULL');
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::table('club_activities', function (Blueprint $table) {
-            // Add back is_recurring
-            $table->boolean('is_recurring')->default(false)->after('type');
+        DB::statement('ALTER TABLE club_activities MODIFY COLUMN recurring_schedule VARCHAR(255) NULL');
 
-            // Change recurring_schedule back to string
-            $table->string('recurring_schedule')->nullable()->change();
+        Schema::table('club_activities', function (Blueprint $table) {
+            $table->boolean('is_recurring')->default(false)->after('type');
         });
     }
 };
