@@ -7,17 +7,22 @@ use App\Enums\ClubWalletTransactionSourceType;
 use App\Enums\ClubWalletTransactionStatus;
 use App\Enums\PaymentMethod;
 use App\Helpers\ResponseHelper;
+use App\Http\Controllers\Controller;
 use App\Http\Resources\Club\ClubWalletTransactionResource;
 use App\Models\Club\Club;
 use App\Models\Club\ClubWallet;
 use App\Models\Club\ClubWalletTransaction;
-use App\Http\Controllers\Controller;
+use App\Services\Club\ClubWalletTransactionService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class ClubWalletTransactionController extends Controller
 {
+    public function __construct(
+        protected ClubWalletTransactionService $transactionService
+    ) {
+    }
+
     public function index(Request $request, $clubId)
     {
         $club = Club::findOrFail($clubId);
@@ -33,36 +38,7 @@ class ClubWalletTransactionController extends Controller
             'date_to' => 'sometimes|date|after_or_equal:date_from',
         ]);
 
-        $query = ClubWalletTransaction::whereHas('wallet', function ($q) use ($clubId) {
-            $q->where('club_id', $clubId);
-        })->with(['wallet', 'creator', 'confirmer']);
-
-        if (!empty($validated['wallet_id'])) {
-            $query->where('club_wallet_id', $validated['wallet_id']);
-        }
-
-        if (!empty($validated['direction'])) {
-            $query->where('direction', $validated['direction']);
-        }
-
-        if (!empty($validated['source_type'])) {
-            $query->where('source_type', $validated['source_type']);
-        }
-
-        if (!empty($validated['status'])) {
-            $query->where('status', $validated['status']);
-        }
-
-        if (!empty($validated['date_from'])) {
-            $query->whereDate('created_at', '>=', $validated['date_from']);
-        }
-
-        if (!empty($validated['date_to'])) {
-            $query->whereDate('created_at', '<=', $validated['date_to']);
-        }
-
-        $perPage = $validated['per_page'] ?? 15;
-        $transactions = $query->orderBy('created_at', 'desc')->paginate($perPage);
+        $transactions = $this->transactionService->getTransactions($club, $validated);
 
         $data = ['transactions' => ClubWalletTransactionResource::collection($transactions)];
         $meta = [
@@ -99,19 +75,7 @@ class ClubWalletTransactionController extends Controller
             return ResponseHelper::error('Ví không thuộc CLB này', 403);
         }
 
-        $transaction = ClubWalletTransaction::create([
-            'club_wallet_id' => $validated['club_wallet_id'],
-            'direction' => $validated['direction'],
-            'amount' => $validated['amount'],
-            'source_type' => $validated['source_type'] ?? null,
-            'source_id' => $validated['source_id'] ?? null,
-            'payment_method' => $validated['payment_method'],
-            'status' => ClubWalletTransactionStatus::Pending,
-            'reference_code' => $validated['reference_code'] ?? null,
-            'description' => $validated['description'] ?? null,
-            'created_by' => $userId,
-        ]);
-
+        $transaction = $this->transactionService->createTransaction($wallet, $validated, $userId);
         $transaction->load(['wallet', 'creator', 'confirmer']);
         return ResponseHelper::success(new ClubWalletTransactionResource($transaction), 'Tạo giao dịch thành công', 201);
     }
@@ -131,10 +95,6 @@ class ClubWalletTransactionController extends Controller
             $q->where('club_id', $clubId);
         })->findOrFail($transactionId);
 
-        if ($transaction->status !== ClubWalletTransactionStatus::Pending) {
-            return ResponseHelper::error('Chỉ có thể cập nhật giao dịch đang pending', 422);
-        }
-
         $userId = auth()->id();
         $club = $transaction->wallet->club;
         if (!$club->canManageFinance($userId)) {
@@ -148,9 +108,13 @@ class ClubWalletTransactionController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        $transaction->update($validated);
-        $transaction->load(['wallet', 'creator', 'confirmer']);
-        return ResponseHelper::success(new ClubWalletTransactionResource($transaction), 'Cập nhật giao dịch thành công');
+        try {
+            $transaction = $this->transactionService->updateTransaction($transaction, $validated);
+            $transaction->load(['wallet', 'creator', 'confirmer']);
+            return ResponseHelper::success(new ClubWalletTransactionResource($transaction), 'Cập nhật giao dịch thành công');
+        } catch (\Exception $e) {
+            return ResponseHelper::error($e->getMessage(), 422);
+        }
     }
 
     public function confirm($clubId, $transactionId)
@@ -159,19 +123,19 @@ class ClubWalletTransactionController extends Controller
             $q->where('club_id', $clubId);
         })->findOrFail($transactionId);
 
-        if ($transaction->status !== ClubWalletTransactionStatus::Pending) {
-            return ResponseHelper::error('Chỉ có thể xác nhận giao dịch đang pending', 422);
-        }
-
         $userId = auth()->id();
         $club = $transaction->wallet->club;
         if (!$club->canManageFinance($userId)) {
             return ResponseHelper::error('Chỉ admin/manager/treasurer mới có quyền xác nhận', 403);
         }
 
-        $transaction->confirm($userId);
-        $transaction->load(['wallet', 'creator', 'confirmer']);
-        return ResponseHelper::success(new ClubWalletTransactionResource($transaction), 'Giao dịch đã được xác nhận');
+        try {
+            $transaction = $this->transactionService->confirmTransaction($transaction, $userId);
+            $transaction->load(['wallet', 'creator', 'confirmer']);
+            return ResponseHelper::success(new ClubWalletTransactionResource($transaction), 'Giao dịch đã được xác nhận');
+        } catch (\Exception $e) {
+            return ResponseHelper::error($e->getMessage(), 422);
+        }
     }
 
     public function reject(Request $request, $clubId, $transactionId)
@@ -180,18 +144,18 @@ class ClubWalletTransactionController extends Controller
             $q->where('club_id', $clubId);
         })->findOrFail($transactionId);
 
-        if ($transaction->status !== ClubWalletTransactionStatus::Pending) {
-            return ResponseHelper::error('Chỉ có thể từ chối giao dịch đang pending', 422);
-        }
-
         $userId = auth()->id();
         $club = $transaction->wallet->club;
         if (!$club->canManageFinance($userId)) {
             return ResponseHelper::error('Chỉ admin/manager/treasurer mới có quyền từ chối', 403);
         }
 
-        $transaction->reject($userId);
-        $transaction->load(['wallet', 'creator', 'confirmer']);
-        return ResponseHelper::success(new ClubWalletTransactionResource($transaction), 'Giao dịch đã bị từ chối');
+        try {
+            $transaction = $this->transactionService->rejectTransaction($transaction, $userId);
+            $transaction->load(['wallet', 'creator', 'confirmer']);
+            return ResponseHelper::success(new ClubWalletTransactionResource($transaction), 'Giao dịch đã bị từ chối');
+        } catch (\Exception $e) {
+            return ResponseHelper::error($e->getMessage(), 422);
+        }
     }
 }

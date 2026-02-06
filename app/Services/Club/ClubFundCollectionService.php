@@ -1,0 +1,349 @@
+<?php
+
+namespace App\Services\Club;
+
+use App\Enums\ClubFundCollectionStatus;
+use App\Enums\ClubFundContributionStatus;
+use App\Enums\ClubMemberRole;
+use App\Models\Club\Club;
+use App\Models\Club\ClubFundCollection;
+use App\Models\Club\ClubMember;
+use App\Services\ImageOptimizationService;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+
+class ClubFundCollectionService
+{
+    public function __construct(
+        protected ImageOptimizationService $imageService
+    ) {
+    }
+
+    public function getCollections(Club $club, array $filters): LengthAwarePaginator
+    {
+        $query = $club->fundCollections()
+            ->activeAndNotExpired()
+            ->with([
+                'creator',
+                'contributions' => function ($q) {
+                    $q->where('status', ClubFundContributionStatus::Pending)
+                        ->with('user');
+                },
+            ])
+            ->withCount([
+                'contributions',
+                'contributions as confirmed_count' => function ($q) {
+                    $q->where('status', ClubFundContributionStatus::Confirmed);
+                },
+                'contributions as pending_count' => function ($q) {
+                    $q->where('status', ClubFundContributionStatus::Pending);
+                },
+            ]);
+
+        $this->updateExpiredCollections($club);
+
+        $perPage = $filters['per_page'] ?? 15;
+        return $query->orderBy('created_at', 'desc')->paginate($perPage);
+    }
+
+    public function createCollection(Club $club, array $data, int $userId): ClubFundCollection
+    {
+        if (!$club->canManageFinance($userId)) {
+            throw new \Exception('Chỉ admin/manager/treasurer mới có quyền tạo đợt thu');
+        }
+
+        $endDate = $data['end_date'] ?? $data['deadline'] ?? null;
+        $titleOrDescription = $data['title'] ?? $data['description'] ?? '';
+
+        $collection = ClubFundCollection::create([
+            'club_id' => $club->id,
+            'title' => $titleOrDescription,
+            'description' => $titleOrDescription,
+            'target_amount' => $data['target_amount'],
+            'collected_amount' => 0,
+            'currency' => $data['currency'] ?? 'VND',
+            'start_date' => $data['start_date'],
+            'end_date' => $endDate,
+            'status' => ClubFundCollectionStatus::Active,
+            'qr_code_url' => $data['qr_code_url'] ?? null,
+            'created_by' => $userId,
+        ]);
+
+        if (!empty($data['member_ids'])) {
+            $amountPerMember = $this->calculateAmountPerMember(
+                $data,
+                count($data['member_ids'])
+            );
+
+            $syncData = [];
+            foreach ($data['member_ids'] as $memberId) {
+                $syncData[$memberId] = ['amount_due' => $amountPerMember];
+            }
+            $collection->assignedMembers()->sync($syncData);
+        }
+
+        return $collection;
+    }
+
+    public function getCollectionDetail(ClubFundCollection $collection): array
+    {
+        $confirmedContributions = $collection->contributions()
+            ->where('status', ClubFundContributionStatus::Confirmed)
+            ->with('user')
+            ->get();
+
+        $pendingContributions = $collection->contributions()
+            ->where('status', ClubFundContributionStatus::Pending)
+            ->with('user')
+            ->get();
+
+        $confirmedByUser = $confirmedContributions->keyBy('user_id');
+        $pendingByUser = $pendingContributions->keyBy('user_id');
+        $amountPerMember = (float) ($collection->amount_per_member ?? $collection->target_amount);
+
+        $memberSources = $this->getMemberSources($collection, $amountPerMember);
+
+        $paidMembers = $this->buildPaidMembers($memberSources, $confirmedByUser);
+        $unpaidMembers = $this->buildUnpaidMembers($memberSources, $confirmedByUser, $pendingByUser);
+
+        return [
+            'collection' => $collection,
+            'paid_members' => $paidMembers,
+            'unpaid_members' => $unpaidMembers,
+            'summary' => [
+                'paid_count' => $paidMembers->count(),
+                'pending_count' => $pendingContributions->count(),
+                'unpaid_count' => $unpaidMembers->where('payment_status', 'unpaid')->count(),
+            ],
+        ];
+    }
+
+    public function updateCollection(ClubFundCollection $collection, array $data, int $userId): ClubFundCollection
+    {
+        $club = $collection->club;
+        if (!$club->canManageFinance($userId) || $collection->created_by !== $userId) {
+            throw new \Exception('Không có quyền cập nhật đợt thu này');
+        }
+
+        if ($collection->status !== ClubFundCollectionStatus::Active) {
+            throw new \Exception('Chỉ có thể cập nhật đợt thu đang active');
+        }
+
+        $collection->update($data);
+        return $collection;
+    }
+
+    public function cancelCollection(ClubFundCollection $collection, int $userId): void
+    {
+        $club = $collection->club;
+        if (!$club->canManageFinance($userId)) {
+            throw new \Exception('Chỉ admin/manager/treasurer mới có quyền hủy đợt thu');
+        }
+
+        if ($collection->status !== ClubFundCollectionStatus::Active) {
+            throw new \Exception('Chỉ có thể hủy đợt thu đang active');
+        }
+
+        $collection->update(['status' => ClubFundCollectionStatus::Cancelled]);
+    }
+
+    public function getQrCodes(Club $club, array $filters): LengthAwarePaginator
+    {
+        $perPage = $filters['per_page'] ?? 15;
+
+        return $club->fundCollections()
+            ->whereNotNull('qr_code_url')
+            ->where('qr_code_url', '!=', '')
+            ->with(['creator'])
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage);
+    }
+
+    public function createQrCode(Club $club, array $data, int $userId): ClubFundCollection
+    {
+        if (!$club->canManageFinance($userId)) {
+            throw new \Exception('Chỉ admin/manager/treasurer mới có quyền tạo mã QR');
+        }
+
+        $qrCodeUrl = $this->imageService->optimizeThumbnail($data['image'], 'qr_codes', 90);
+        $title = Str::limit($data['content'], 255);
+        $today = now()->format('Y-m-d');
+
+        return DB::transaction(function () use ($club, $userId, $data, $title, $today, $qrCodeUrl) {
+            $primary = ClubFundCollection::create([
+                'club_id' => $club->id,
+                'title' => $title,
+                'description' => $data['content'],
+                'target_amount' => $data['amount'],
+                'collected_amount' => 0,
+                'currency' => 'VND',
+                'start_date' => $today,
+                'end_date' => null,
+                'status' => ClubFundCollectionStatus::Pending,
+                'qr_code_url' => $qrCodeUrl,
+                'created_by' => $userId,
+            ]);
+
+            if (!empty($data['apply_to_other_clubs'])) {
+                $this->applyQrCodeToOtherClubs($userId, $club->id, $title, $data, $today, $qrCodeUrl);
+            }
+
+            return $primary;
+        });
+    }
+
+    public function getMyCollections(Club $club, int $userId): array
+    {
+        $assignedCollections = $club->fundCollections()
+            ->activeAndNotExpired()
+            ->with(['creator'])
+            ->get();
+
+        $contributions = \App\Models\Club\ClubFundContribution::whereIn('club_fund_collection_id', $assignedCollections->pluck('id'))
+            ->where('user_id', $userId)
+            ->get()
+            ->keyBy('club_fund_collection_id');
+
+        $result = $assignedCollections->map(function ($collection) use ($contributions) {
+            $contribution = $contributions->get($collection->id);
+            $amountDue = $collection->target_amount;
+
+            return [
+                'id' => $collection->id,
+                'title' => $collection->title,
+                'description' => $collection->description,
+                'amount_due' => (float) $amountDue,
+                'currency' => $collection->currency,
+                'end_date' => $collection->end_date?->format('Y-m-d'),
+                'status' => $collection->status->value,
+                'qr_code_url' => $collection->qr_code_url,
+                'my_contribution' => $contribution ? [
+                    'id' => $contribution->id,
+                    'amount' => (float) $contribution->amount,
+                    'status' => $contribution->status->value,
+                    'created_at' => $contribution->created_at->toISOString(),
+                ] : null,
+                'payment_status' => $contribution ? $contribution->status->value : 'unpaid',
+                'is_overdue' => $collection->end_date && now()->isAfter($collection->end_date),
+            ];
+        });
+
+        return [
+            'need_payment' => $result->filter(fn($item) => $item['payment_status'] === 'unpaid')->values(),
+            'pending' => $result->filter(fn($item) => $item['payment_status'] === 'pending')->values(),
+            'confirmed' => $result->filter(fn($item) => $item['payment_status'] === 'confirmed')->values(),
+        ];
+    }
+
+    private function updateExpiredCollections(Club $club): void
+    {
+        $club->fundCollections()
+            ->where('status', ClubFundCollectionStatus::Active)
+            ->whereNotNull('end_date')
+            ->where('end_date', '<', now()->startOfDay())
+            ->update(['status' => ClubFundCollectionStatus::Completed]);
+    }
+
+    private function calculateAmountPerMember(array $data, int $memberCount): float
+    {
+        if (isset($data['amount_per_member'])) {
+            return (float) $data['amount_per_member'];
+        }
+
+        return $memberCount > 0
+            ? (float) ($data['target_amount'] / $memberCount)
+            : (float) $data['target_amount'];
+    }
+
+    private function getMemberSources(ClubFundCollection $collection, float $amountPerMember): Collection
+    {
+        $assignedMembers = $collection->assignedMembers()->withPivot('amount_due')->get();
+
+        if ($assignedMembers->isNotEmpty()) {
+            return $assignedMembers->map(function ($user) use ($amountPerMember) {
+                return [
+                    'user' => $user,
+                    'amount_due' => (float) ($user->pivot?->amount_due ?? $amountPerMember),
+                ];
+            });
+        }
+
+        $clubMembers = $collection->club->activeMembers()->with('user')->get();
+        return $clubMembers->map(function ($member) use ($amountPerMember) {
+            return [
+                'user' => $member->user,
+                'amount_due' => $amountPerMember,
+            ];
+        })->filter(fn ($item) => $item['user'] !== null)->values();
+    }
+
+    private function buildPaidMembers(Collection $memberSources, Collection $confirmedByUser): Collection
+    {
+        return $memberSources->filter(function ($item) use ($confirmedByUser) {
+            return $confirmedByUser->has($item['user']->id);
+        })->map(function ($item) use ($confirmedByUser) {
+            $contribution = $confirmedByUser->get($item['user']->id);
+            return [
+                'user' => $item['user'],
+                'amount_due' => (float) $item['amount_due'],
+                'amount_paid' => (float) $contribution->amount,
+                'payment_status' => ClubFundContributionStatus::Confirmed->value,
+                'paid_at' => $contribution->created_at?->toISOString(),
+                'contribution' => $contribution,
+            ];
+        })->values();
+    }
+
+    private function buildUnpaidMembers(Collection $memberSources, Collection $confirmedByUser, Collection $pendingByUser): Collection
+    {
+        return $memberSources->filter(function ($item) use ($confirmedByUser) {
+            return !$confirmedByUser->has($item['user']->id);
+        })->map(function ($item) use ($pendingByUser) {
+            $pendingContribution = $pendingByUser->get($item['user']->id);
+            return [
+                'user' => $item['user'],
+                'amount_due' => (float) $item['amount_due'],
+                'amount_paid' => (float) ($pendingContribution?->amount ?? 0),
+                'payment_status' => $pendingContribution
+                    ? ClubFundContributionStatus::Pending->value
+                    : 'unpaid',
+                'paid_at' => $pendingContribution?->created_at?->toISOString(),
+                'contribution' => $pendingContribution,
+            ];
+        })->values();
+    }
+
+    private function applyQrCodeToOtherClubs(int $userId, int $currentClubId, string $title, array $data, string $today, string $qrCodeUrl): void
+    {
+        $clubIds = ClubMember::query()
+            ->active()
+            ->where('user_id', $userId)
+            ->whereIn('role', [
+                ClubMemberRole::Admin,
+                ClubMemberRole::Manager,
+                ClubMemberRole::Treasurer,
+            ])
+            ->where('club_id', '!=', $currentClubId)
+            ->pluck('club_id')
+            ->unique()
+            ->values();
+
+        foreach ($clubIds as $otherClubId) {
+            ClubFundCollection::create([
+                'club_id' => $otherClubId,
+                'title' => $title,
+                'description' => $data['content'],
+                'target_amount' => $data['amount'],
+                'collected_amount' => 0,
+                'currency' => 'VND',
+                'start_date' => $today,
+                'end_date' => null,
+                'status' => ClubFundCollectionStatus::Pending,
+                'qr_code_url' => $qrCodeUrl,
+                'created_by' => $userId,
+            ]);
+        }
+    }
+}

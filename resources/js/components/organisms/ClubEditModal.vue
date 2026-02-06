@@ -110,7 +110,6 @@ const coverInput = ref(null)
 const avatarInput = ref(null)
 
 watch(() => props.club, (newVal) => {
-  console.log(newVal)
     if (newVal) {
         form.value = {
             name: newVal.name || '',

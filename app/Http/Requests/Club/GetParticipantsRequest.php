@@ -1,0 +1,23 @@
+<?php
+
+namespace App\Http\Requests\Club;
+
+use App\Enums\ClubActivityParticipantStatus;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+
+class GetParticipantsRequest extends FormRequest
+{
+
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    public function rules(): array
+    {
+        return [
+            'status' => ['sometimes', Rule::enum(ClubActivityParticipantStatus::class)],
+        ];
+    }
+}

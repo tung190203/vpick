@@ -1,45 +1,11 @@
 <template>
     <div class="m-4 max-w-8xl h-[calc(100vh-7rem)] rounded-md flex flex-col">
         <!-- Loading Skeleton -->
-        <div v-if="isInitialLoading" class="animate-pulse">
-            <!-- Header Skeleton -->
-            <div class="bg-gray-200 rounded-[8px] px-6 pt-4 pb-6 min-h-[290px] flex flex-col justify-between">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-4">
-                        <div class="bg-gray-300 p-5 rounded-full w-10 h-10"></div>
-                        <div class="flex flex-col space-y-2">
-                            <div class="h-8 w-48 bg-gray-300 rounded"></div>
-                            <div class="h-4 w-24 bg-gray-300 rounded"></div>
-                        </div>
-                    </div>
-                    <div class="flex space-x-2">
-                        <div class="w-10 h-10 bg-gray-300 rounded-full"></div>
-                        <div class="w-10 h-10 bg-gray-300 rounded-full"></div>
-                    </div>
-                </div>
-                <!-- Stats Skeleton -->
-                <div class="grid grid-cols-3 gap-4 mt-8">
-                    <div v-for="i in 3" :key="i" class="bg-gray-300/50 rounded-2xl p-6 h-28"></div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-12 gap-4 py-4">
-                <div class="col-span-8 space-y-6">
-                    <div class="h-8 w-40 bg-gray-200 rounded"></div>
-                    <div v-for="i in 2" :key="i" class="h-24 bg-gray-100 rounded-xl"></div>
-                    <div class="h-8 w-40 bg-gray-200 rounded mt-8"></div>
-                    <div v-for="i in 3" :key="i" class="h-20 bg-gray-100 rounded-xl"></div>
-                </div>
-                <div class="col-span-4 space-y-4">
-                    <div class="bg-gray-100 rounded-2xl h-32 w-full"></div>
-                    <div class="bg-gray-100 rounded-2xl h-32 w-full"></div>
-                </div>
-            </div>
-        </div>
+        <ClubDetailSkeleton v-if="isInitialLoading" />
 
         <template v-else>
             <!-- Admin/Staff View -->
-            <div v-if="isAdminView"
+            <div v-if="hasAnyRole(['admin', 'manager', 'secretary', 'treasurer'])"
                 class=" text-white rounded-[8px] shadow-lg px-6 pt-4 pb-6 relative overflow-hidden flex flex-col justify-between min-h-[290px]"
                 :style="{ backgroundImage: `url(${Background})` }">
                 <div class="flex items-center justify-between relative z-20">
@@ -55,12 +21,12 @@
                                     <VerifyIcon class="w-5 h-5 text-white" />
                                 </div>
                             </div>
-                            <p class="text-gray-400 text-sm font-medium">Quản trị viên</p>
+                            <p class="text-gray-400 text-sm font-medium">{{ getRoleName(currentUserRole) }}</p>
                         </div>
                     </div>
 
                     <div class="flex items-center">
-                        <div class="p-2 cursor-pointer hover:bg-white/10 rounded-full transition-colors">
+                        <div class="p-2 cursor-pointer hover:bg-white/10 rounded-full transition-colors" @click="toggleChangeClub">
                             <ChangeCircleIcon class="w-6 h-6 text-white" />
                         </div>
                         <div class="p-2 cursor-pointer hover:bg-white/10 rounded-full transition-colors"
@@ -72,7 +38,7 @@
                         <div v-if="isMenuOpen"
                             class="absolute right-0 top-14 w-56 bg-white rounded-xl shadow-2xl py-2 z-50 text-gray-800 border border-gray-100 animate-in fade-in zoom-in duration-200">
                             <!-- Add admin specific menu items if needed, for now reuse existing -->
-                            <button
+                            <button v-if="hasAnyRole(['admin'])"
                                 class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-100 transition-colors"
                                 @click="openEditModal">
                                 <EditNoteIcon class="w-5 h-5 text-gray-500" />
@@ -84,12 +50,40 @@
                                 <ZaloIcon class="w-5 h-5 text-gray-500" />
                                 <span class="font-medium">Thêm nhóm Zalo</span>
                             </button>
-                            <button
+                            <button v-if="currentUserRole === 'admin' && adminCount === 1"
                                 class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-100 transition-colors"
                                 @click="openNotification">
                                 <CompareArrowsIcon class="w-5 h-5 text-gray-500" />
                                 <span class="font-medium">Nhượng CLB</span>
                             </button>
+                            <button v-if="(currentUserRole === 'admin' && adminCount > 1) || hasAnyRole(['manager', 'secretary', 'treasurer'])"
+                                class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-[#FBEAEA] transition-colors"
+                                @click="leaveClub">
+                                <ArrowRightOnRectangleIcon class="w-5 h-5 text-[#D72D36]" />
+                                <span class="font-medium text-[#D72D36]">Rời CLB</span>
+                            </button>
+                            <button v-if="hasAnyRole(['admin'])"
+                                class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-[#FBEAEA] transition-colors"
+                                @click="deleteClub">
+                                <TrashIcon class="w-5 h-5 text-[#D72D36]" />
+                                <span class="font-medium text-[#D72D36]">Xoá CLB</span>
+                            </button>
+                        </div>
+                        <div v-if="isChangeClubOpen" class="absolute right-0 top-14 w-56 bg-white rounded-xl shadow-2xl z-50 text-gray-800 border border-gray-100 animate-in fade-in zoom-in duration-200">
+                            <div class="py-2 max-h-48 overflow-y-auto custom-scrollbar">
+                                <template v-for="item in myClubs" :key="item.id">
+                                   <div class="flex items-center space-x-3 px-4 py-3 hover:bg-gray-100 transition-colors cursor-pointer" @click="changeClub(item)">
+                                        <img v-if="item.logo_url" :src="item.logo_url" alt="" class="w-8 h-8 rounded-full object-cover">
+                                        <div v-else class="w-8 h-8 rounded-full bg-red-100 text-[#D72D36] flex items-center justify-center font-bold text-xs">
+                                            {{ item.name.charAt(0).toUpperCase() }}
+                                        </div>
+                                        <span class="font-medium truncate" v-tooltip="item.name">{{ item.name }}</span>
+                                        <span v-if="item.id == clubId" class="ml-auto text-[10px] bg-green-50 text-green-600 px-1.5 py-0.5 rounded-full font-bold uppercase whitespace-nowrap">
+                                            hiện tại
+                                        </span>
+                                    </div>
+                                </template>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -157,7 +151,7 @@
                     </div>
                 </div>
                 <!-- Backdrop -->
-                <div v-if="isMenuOpen" class="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm" @click="closeMenu">
+                <div v-if="isMenuOpen || isChangeClubOpen" class="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm" @click="closeMenu">
                 </div>
                 <div class="flex items-center">
                     <div>
@@ -200,14 +194,14 @@
                     <div v-if="is_joined">
                         <div class="flex items-baseline justify-between">
                             <h2 class="text-2xl text-[#838799] font-semibold uppercase mb-4">Thông báo</h2>
-                            <p class="text-[#D72D36] font-semibold cursor-pointer">Xem tất cả</p>
+                            <p class="text-[#D72D36] font-semibold cursor-pointer" @click="openNotification">Xem tất cả</p>
                         </div>
-                        <template v-if="notifications.length > 0">
-                            <NotificationCard v-for="(notification, index) in notifications.slice(0, 3)" :key="index"
-                                :data="notification" />
+                        <template v-if="notifications.length > 0 && pinnedNotifications.length > 0">
+                            <NotificationCard v-for="(notification, index) in pinnedNotifications" :key="index"
+                                :data="notification" @unpin="handleUnpinNotification" />
                         </template>
                         <div v-else class="p-4 text-center">
-                            <p class="text-[#838799]">Hiện chưa có thông báo</p>
+                            <p class="text-[#838799]">Hiện chưa có thông báo ghim nào</p>
                         </div>
                     </div>
                     <div>
@@ -227,10 +221,11 @@
                     <ClubInfoTabs :club="club" :isJoined="is_joined" :currentUserRole="currentUserRole" :top-three="topThree" :leaderboard="leaderboard"
                         :leaderboard-meta="leaderboardMeta" :leaderboard-filters="leaderboardFilters"
                         :leaderboard-loading="isLeaderboardLoading" @leaderboard-filter="handleLeaderboardFilter"
-                        @leaderboard-page-change="handleLeaderboardPageChange" />
+                        @leaderboard-page-change="handleLeaderboardPageChange" @tab-change="handleTabChange"
+                        @refresh-club="getClubDetail" />
                 </div>
                 <div class="col-span-4 space-y-4">
-                    <div class="max-w-3xl mx-auto" v-if="!isAdminView">
+                    <div class="max-w-3xl mx-auto" v-if="!hasAnyRole(['admin', 'manager', 'secretary', 'treasurer'])">
                         <div class="bg-white rounded-2xl shadow-md px-6 py-5">
                             <div class="grid grid-cols-3 divide-x divide-gray-200 text-center">
                                 <div v-for="(stat, index) in clubStats" :key="index"
@@ -244,7 +239,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="max-w-3xl mx-auto" v-if="is_joined">
+                    <div class="max-w-3xl mx-auto" v-if="hasAnyRole(['admin', 'manager', 'secretary', 'treasurer', 'member'])">
                         <div class="bg-white rounded-2xl shadow-md px-2 py-5">
                             <div class="grid grid-cols-4 text-center">
                                 <div v-for="(module, index) in clubModules" :key="index"
@@ -257,7 +252,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="max-w-3xl mx-auto" v-if="isAdminView">
+                    <div class="max-w-3xl mx-auto" v-if="hasAnyRole(['admin','secretary'])">
                         <div class="bg-white rounded-2xl shadow-md p-6">
                             <div class="flex items-center gap-2 mb-6">
                                 <p class="uppercase font-bold text-[#838799] text-sm">Yêu cầu tham gia</p>
@@ -305,101 +300,100 @@
             </div>
 
             <!-- Notification Modal -->
-            <div v-if="isNotificationModalOpen" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-                <!-- Backdrop with blur -->
-                <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="closeNotification"></div>
+            <Transition
+                enter-active-class="transition duration-300 ease-out"
+                enter-from-class="opacity-0"
+                enter-to-class="opacity-100"
+                leave-active-class="transition duration-200 ease-in"
+                leave-from-class="opacity-100"
+                leave-to-class="opacity-0"
+            >
+                <div 
+                    v-if="isNotificationModalOpen" 
+                    class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm transform-gpu" 
+                    @click.self="closeNotification"
+                >
+                    <div
+                        class="bg-white rounded-2xl shadow-2xl w-full max-w-lg relative z-[10000] overflow-hidden animate-in fade-in zoom-in duration-300 h-[calc(100vh-7rem)] flex flex-col">
+                        <!-- Fixed Header -->
+                        <div class="p-6 pb-2">
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="text-[28px] font-bold text-[#3E414C]">Thông báo</h3>
+                                <button @click="closeNotification"
+                                    class="text-gray-400 hover:text-gray-600 transition-colors">
+                                    <XMarkIcon class="w-8 h-8" stroke-width="2.5" />
+                                </button>
+                            </div>
+                            <div class="flex items-center justify-end">
+                                <button class="text-[#D72D36] text-sm font-semibold hover:opacity-80" @click="markAllAsRead">Đánh dấu đã
+                                    đọc</button>
+                            </div>
+                        </div>
+                        <div v-if="notifications.length === 0" class="flex items-start justify-center mt-4">
+                            <p class="text-[#838799]">Hiện chưa có thông báo</p>
+                        </div>
 
-                <div
-                    class="bg-white rounded-2xl shadow-2xl w-full max-w-lg relative z-[10000] overflow-hidden animate-in fade-in zoom-in duration-300 h-[calc(100vh-7rem)] flex flex-col">
-                    <!-- Fixed Header -->
-                    <div class="p-6 pb-2">
-                        <div class="flex items-center justify-between mb-2">
-                            <h3 class="text-[28px] font-bold text-[#3E414C]">Thông báo</h3>
-                            <button @click="closeNotification"
-                                class="text-gray-400 hover:text-gray-600 transition-colors">
-                                <XMarkIcon class="w-8 h-8" stroke-width="2.5" />
+                        <!-- Scrollable Content -->
+                        <div class="p-6 pt-2 flex-1 overflow-y-auto custom-scrollbar" v-else>
+                            <div class="mb-8">
+                                <div class="space-y-2">
+                                    <div v-for="(notification, index) in notifications" class="cursor-pointer"
+                                        :key="index"
+                                        :class="['flex gap-4 p-4 rounded-2xl transition-colors', !notification.is_read_by_me ? 'bg-[#F8F9FB]' : 'bg-transparent']"  @click="markAsRead(notification.id)">
+                                        <div class="relative flex-shrink-0">
+                                            <div
+                                                :class="['w-14 h-14 rounded-xl flex items-center justify-center', (NOTIFICATION_COLOR_MAP[notification.club_notification_type_id] || NOTIFICATION_COLOR_MAP[1]).cardBg]">
+                                                <component :is="NOTIFICATION_ICON_MAP[notification.club_notification_type_id] || NOTIFICATION_ICON_MAP[1]" class="w-7 h-7" :class="NOTIFICATION_COLOR_MAP[notification.club_notification_type_id].iconColor" />
+                                            </div>
+                                            <div v-if="!notification.is_read_by_me"
+                                                class="absolute -right-1 bottom-0 w-4 h-4 border-2 border-white rounded-full" :class="NOTIFICATION_COLOR_MAP[notification.club_notification_type_id].iconBg">
+                                            </div>
+                                        </div>
+                                        <div class="flex-1 min-w-0 relative">
+                                            <div class="flex items-start justify-between gap-2 mb-1">
+                                                <h4 class="font-semibold text-base text-[#3E414C] truncate">{{
+                                                    notification.title }}
+                                                </h4>
+                                                <div class="flex items-center gap-2">
+                                                    <span class="text-[#838799] text-xs whitespace-nowrap pt-1">{{ getJoinedDate(notification.created_at) }}</span>
+                                                    <button v-if="notification.is_pinned" @click.stop="handleUnpinNotification(notification.id)" class="pt-1 absolute top-[-2rem] right-[-1.5rem] transition-all transform hover:scale-110">
+                                                        <PinIcon class="w-5 h-5 transform rotate-45 transition-transform group-hover:rotate-12 text-[#D72D36]" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <p class="text-xs text-[#838799] leading-4 line-clamp-2">{{ notification.content
+                                                }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Load More Button -->
+                                <div v-if="notificationMeta && notificationMeta.current_page < notificationMeta.last_page" class="mt-4 flex justify-center">
+                                    <button 
+                                        @click="loadMoreNotifications" 
+                                        :disabled="isLoadingMoreNotifications"
+                                        class="text-[#D72D36] font-semibold hover:underline disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                    >
+                                        <span v-if="isLoadingMoreNotifications" class="w-4 h-4 border-2 border-[#D72D36] border-t-transparent rounded-full animate-spin"></span>
+                                        {{ isLoadingMoreNotifications ? 'Đang tải...' : 'Xem thêm' }}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Create Notification Button -->
+                        <div class="absolute bottom-6 right-6 z-20" v-if="hasAnyRole(['admin', 'manager', 'secretary'])">
+                            <button
+                                class="flex items-center gap-2 bg-[#D72D36] hover:bg-[#c4252e] text-white px-4 py-4 rounded-full shadow-lg transition-colors font-semibold shadow-red-200"
+                                @click="handleCreateNotification">
+                                <NotificationAddIcon class="w-6 h-6" />
+                                <span>Tạo thông báo</span>
                             </button>
                         </div>
                     </div>
-                    <div v-if="notifications.length === 0" class="flex items-start justify-center mt-4">
-                        <p class="text-[#838799]">Hiện chưa có thông báo</p>
-                    </div>
-
-                    <!-- Scrollable Content -->
-                    <div class="p-6 pt-2 flex-1 overflow-y-auto custom-scrollbar" v-else>
-                        <!-- Category: TODAY -->
-                        <div class="mb-8">
-                            <div class="flex items-center justify-between mb-4">
-                                <span class="text-sm font-bold text-[#838799] uppercase tracking-wider">Hôm nay</span>
-                                <button class="text-[#D72D36] text-sm font-semibold hover:opacity-80">Đánh dấu đã
-                                    đọc</button>
-                            </div>
-                            <div class="space-y-4">
-                                <div v-for="(notification, index) in notifications.filter(n => n.category === 'today')"
-                                    :key="index"
-                                    :class="['flex gap-4 p-4 rounded-2xl transition-colors', !notification.isRead ? 'bg-[#F8F9FB]' : 'bg-transparent']">
-                                    <div class="relative flex-shrink-0">
-                                        <div
-                                            :class="['w-14 h-14 rounded-xl flex items-center justify-center', notification.colorClass]">
-                                            <component :is="notification.icon" class="w-7 h-7" />
-                                        </div>
-                                        <div v-if="!notification.isRead"
-                                            class="absolute -right-1 bottom-0 w-4 h-4 bg-[#D72D36] border-2 border-white rounded-full">
-                                        </div>
-                                        <div v-if="notification.type === 'payment' && !notification.isRead"
-                                            class="absolute -right-1 bottom-0 w-4 h-4 bg-[#10B981] border-2 border-white rounded-full">
-                                        </div>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <div class="flex items-start justify-between gap-2 mb-1">
-                                            <h4 class="font-semibold text-base text-[#3E414C] truncate">{{
-                                                notification.title }}
-                                            </h4>
-                                            <span class="text-[#838799] text-xs whitespace-nowrap pt-1">{{
-                                                notification.timeAgo
-                                                }}</span>
-                                        </div>
-                                        <p class="text-xs text-[#838799] leading-4 line-clamp-2">{{ notification.content
-                                            }}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Category: PREVIOUS -->
-                        <div>
-                            <div class="mb-4">
-                                <span class="text-sm font-bold text-[#838799] uppercase tracking-wider">Trước đó</span>
-                            </div>
-                            <div class="space-y-6">
-                                <div v-for="(notification, index) in notifications.filter(n => n.category === 'previous')"
-                                    :key="index" class="flex gap-4 px-4 transition-colors">
-                                    <div class="relative flex-shrink-0">
-                                        <div
-                                            :class="['w-14 h-14 rounded-xl flex items-center justify-center', notification.colorClass]">
-                                            <component :is="notification.icon" class="w-7 h-7" />
-                                        </div>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <div class="flex items-start justify-between gap-2 mb-1">
-                                            <h4 class="font-bold text-base text-[#3E414C] truncate">{{
-                                                notification.title }}
-                                            </h4>
-                                            <span class="text-[#838799] text-xs whitespace-nowrap pt-1">{{
-                                                notification.timeAgo
-                                                }}</span>
-                                        </div>
-                                        <p class="text-sm text-[#838799] leading-6 line-clamp-2">{{ notification.content
-                                            }}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
-            </div>
+            </Transition>
 
             <!-- Activity Schedule Modal -->
             <ClubActivityModal :is-open="isActivityModalOpen" :thumbnail="Thumbnail"
@@ -422,11 +416,21 @@
                 @save="handleUpdateZalo" 
             />
 
-            <!-- Create Schedule Modal -->
-            <CreateScheduleModal
-                v-model="isCreateScheduleModalOpen"
-                :club-id="clubId"
-                @save="getClubActivities"
+            <!-- Create Notification Modal -->
+             <ClubCreateNotificationModal
+                v-model="isCreateNotificationModalOpen"
+                :club="club"
+                :is-loading="isCreatingNotification"
+                @create="handleCreateNotificationSubmit"
+                :notification-type="notificationType"
+            />
+
+            <DeleteConfirmationModal
+                v-model="isDeleteModalOpen"
+                title="Xoá câu lạc bộ"
+                message="Bạn có chắc chắn muốn xoá câu lạc bộ này? Thao tác này không thể hoàn tác."
+                confirmButtonText="Xoá ngay"
+                @confirm="confirmDeleteClub"
             />
         </template>
     </div>
@@ -446,10 +450,13 @@ import {
     InformationCircleIcon,
     XMarkIcon,
     CheckIcon,
+    TrashIcon,
+    ArrowRightOnRectangleIcon
 } from '@heroicons/vue/24/outline'
 import { useRouter, useRoute } from 'vue-router'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import VerifyIcon from "@/assets/images/verify-icon.svg";
+import NotificationAddIcon from "@/assets/images/notification_add.svg";
 import Button from '@/components/atoms/Button.vue';
 import MessageIcon from "@/assets/images/message.svg";
 import ChangeCircleIcon from "@/assets/images/change_circle.svg";
@@ -461,16 +468,19 @@ import NotificationCard from '@/components/molecules/NotificationCard.vue';
 import ClubInfoTabs from '@/components/organisms/ClubInfoTabs.vue';
 import ClubEditModal from '@/components/organisms/ClubEditModal.vue';
 import ClubZaloModal from '@/components/organisms/ClubZaloModal.vue';
-import CreateScheduleModal from '@/components/organisms/CreateScheduleModal.vue';
-import { CLUB_STATS, CLUB_MODULES } from '@/data/club/index.js';
+import { CLUB_STATS, CLUB_MODULES, NOTIFICATION_COLOR_MAP, NOTIFICATION_ICON_MAP } from '@/data/club/index.js';
 import * as ClubService from '@/service/club.js'
 import { toast } from 'vue3-toastify';
 import { useUserStore } from '@/store/auth'
 import { storeToRefs } from 'pinia'
 import ClubActivityModal from '@/components/organisms/ClubActivityModal.vue';
-
+import ClubCreateNotificationModal from '@/components/organisms/ClubCreateNotificationModal.vue';
+import DeleteConfirmationModal from '@/components/molecules/DeleteConfirmationModal.vue';
+import { getJoinedDate } from '@/composables/formatDatetime.js'
 import dayjs from 'dayjs'
 import 'dayjs/locale/vi'
+import ClubDetailSkeleton from '@/components/molecules/ClubDetailSkeleton.vue';
+import PinIcon from '@/assets/images/pin_icon.svg'
 
 dayjs.locale('vi')
 
@@ -479,27 +489,34 @@ const route = useRoute()
 const clubStats = CLUB_STATS;
 const clubModules = CLUB_MODULES;
 const isMenuOpen = ref(false)
+const isChangeClubOpen = ref(false)
 const isNotificationModalOpen = ref(false)
 const isActivityModalOpen = ref(false)
 const isEditModalOpen = ref(false)
 const isZaloModalOpen = ref(false)
-const isCreateScheduleModalOpen = ref(false)
+const isCreateNotificationModalOpen = ref(false)
+const isDeleteModalOpen = ref(false)
 const isUpdatingClub = ref(false)
 const isUpdatingZalo = ref(false)
+const isCreatingNotification = ref(false)
 const club = ref([]);
-const clubId = route.params.id
+const clubId = ref(route.params.id);
 const userStore = useUserStore()
 const { getUser } = storeToRefs(userStore)
 const notifications = ref([])
+const notificationMeta = ref({})
 const currentNotificationPage = ref(1)
 const notificationPerPage = ref(15)
-
+const isLoadingMoreNotifications = ref(false)
+const myClubs = ref([])
 const activities = ref([])
 const upcomingActivities = ref([])
 const historyActivities = ref([])
 const currentActivityPage = ref(1)
 const activityPerPage = ref(20)
 const fund = ref([])
+const notificationType = ref([])
+const hasFetchedLeaderboard = ref(false)
 
 const topThree = ref([])
 const leaderboard = ref([])
@@ -513,22 +530,7 @@ const leaderboardFilters = ref({
 const isInitialLoading = ref(true)
 const isLeaderboardLoading = ref(false)
 
-const joiningRequests = ref([
-    {
-        id: 1,
-        name: 'Trần Văn Hậu',
-        level: 'Trình 3.5',
-        source: 'Qua giới thiệu',
-        avatar: 'https://i.pravatar.cc/150?u=1'
-    },
-    {
-        id: 2,
-        name: 'Ngô Thanh Vân',
-        level: 'Newbie',
-        source: 'Tìm sân tập',
-        avatar: 'https://i.pravatar.cc/150?u=2'
-    }
-])
+const joiningRequests = ref([])
 
 const countdownText = ref('')
 let countdownInterval = null
@@ -537,13 +539,32 @@ const currentUserMember = computed(() => {
     return club.value?.members?.find(member => member.user_id === getUser.value.id) || null
 })
 
-const isAdminView = computed(() => {
-    return currentUserMember.value && (currentUserMember.value.role == 'admin' || currentUserMember.value.role == 'secretary')
-})
+const hasAnyRole = (roles = []) => {
+    return roles.includes(currentUserMember.value?.role)
+}
 
 const currentUserRole = computed(() => {
     return currentUserMember.value?.role || null
 })
+
+const adminCount = computed(() => {
+    return club.value?.members?.filter(member => member.role === 'admin').length || 0
+})
+
+const getRoleName = (role) => {
+    switch (role) {
+        case 'admin':
+            return 'Quản trị viên'
+        case 'manager':
+            return 'Quản lý'
+        case 'secretary':
+            return 'Thư ký'
+        case 'treasurer':
+            return 'Thủ quỹ'
+        default:
+            return 'Thành viên'
+    }
+}
 
 const statsAdmin = computed(() => [
     {
@@ -622,10 +643,30 @@ const statsValue = computed(() => ({
 
 const toggleMenu = () => {
     isMenuOpen.value = !isMenuOpen.value
+    if (isMenuOpen.value) {
+        isChangeClubOpen.value = false
+    }
+}
+
+const toggleChangeClub = () => {
+    isChangeClubOpen.value = !isChangeClubOpen.value
+    if (isChangeClubOpen.value) {
+        isMenuOpen.value = false
+    }
 }
 
 const closeMenu = () => {
     isMenuOpen.value = false
+    isChangeClubOpen.value = false
+}
+
+const closeChangeClub = () => {
+    isChangeClubOpen.value = false
+}
+
+const changeClub = (item) => {
+    isChangeClubOpen.value = false
+    router.push({ name: 'club-detail', params: { id: item.id } })
 }
 
 const shareClub = () => {
@@ -634,18 +675,29 @@ const shareClub = () => {
 
 const openNotification = () => {
     isNotificationModalOpen.value = true
-    isMenuOpen.value = false
 }
 
 const openEditModal = () => {
     isEditModalOpen.value = true
-    isMenuOpen.value = false
 }
 
 const openZaloModal = () => {
     isZaloModalOpen.value = true
-    isMenuOpen.value = false
 }
+
+watch(
+    () => [
+        isNotificationModalOpen.value,
+        isEditModalOpen.value,
+        isZaloModalOpen.value,
+    ],
+    (values) => {
+        if (values.some(v => v)) {
+            closeMenu()
+            closeChangeClub()
+        }
+    }
+)
 
 const closeNotification = () => {
     isNotificationModalOpen.value = false
@@ -661,11 +713,11 @@ const closeActivityModal = () => {
 
 const handleModuleClick = (module) => {
     if (module.key === 'schedule') {
-        if (!isAdminView.value) {
+        if (!hasAnyRole(['admin', 'manager', 'secretary'])) {
             toast.warning('Bạn không có quyền thực hiện chức năng này')
             return
         }
-        isCreateScheduleModalOpen.value = true
+        router.push({ name: 'club-create-activity', params: { id: clubId.value } })
     } else if (module.key === 'notification') {
         openNotification()
     } else if (module.key === 'chat') {
@@ -675,10 +727,57 @@ const handleModuleClick = (module) => {
     }
 }
 
+const handleCreateNotification = async() => {
+    await getNotificationType()
+    isCreateNotificationModalOpen.value = true
+    isNotificationModalOpen.value = false
+}
+
+const handleCreateNotificationSubmit = async (data) => {
+    isCreatingNotification.value = true
+    try {
+        const formData = new FormData()
+        formData.append('title', data.title)
+        formData.append('content', data.content)
+        formData.append('club_notification_type_id', data.club_notification_type_id)
+        formData.append('is_pinned', data.is_pinned)
+        formData.append('status', data.status)
+        if (Array.isArray(data.user_ids)) {
+            data.user_ids.forEach(id => {
+                formData.append('user_ids[]', id)
+            })
+        } else {
+             formData.append('user_ids[]', data.user_ids)
+        }
+        
+        if (data.attachment) {
+            formData.append('attachment', data.attachment)
+        }
+
+        await ClubService.createNotification(clubId.value, formData)
+        await getClubNotification()
+        isCreateNotificationModalOpen.value = false
+        toast.success('Tạo thông báo thành công')
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi tạo thông báo')
+    } finally {
+        isCreatingNotification.value = false
+    }
+}
+
+const getNotificationType = async () => {
+    try {
+        const response = await ClubService.getNotificationType(clubId.value)
+        notificationType.value = response.data
+    } catch (error) {
+        console.error('Error fetching notification types:', error)
+    }
+}
+
 const goToActivityDetail = (activity) => {
     router.push({
         name: 'club-detail-activity',
-        params: { id: clubId },
+        params: { id: clubId.value },
         query: { activityId: activity.id }
     })
 }
@@ -735,7 +834,7 @@ const formatActivity = (item) => {
 
 const getClubDetail = async () => {
     try {
-        const response = await ClubService.clubDetail(clubId)
+        const response = await ClubService.clubDetail(clubId.value)
         club.value = response
     } catch (error) {
         toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi lấy thông tin câu lạc bộ')
@@ -758,7 +857,7 @@ const handleUpdateClub = async (data) => {
             }
         })
         
-        await ClubService.updateClub(clubId, formData)
+        await ClubService.updateClub(clubId.value, formData)
         await getClubDetail()
         isEditModalOpen.value = false
         toast.success('Cập nhật thông tin CLB thành công')
@@ -781,7 +880,7 @@ const handleUpdateZalo = async (data) => {
             formData.append('qr_code_image_url', data.qr_code_image_url)
         }
 
-        await ClubService.updateClub(clubId, formData)
+        await ClubService.updateClub(clubId.value, formData)
         await getClubDetail()
         isZaloModalOpen.value = false
         toast.success('Cập nhật thông tin Zalo thành công')
@@ -794,8 +893,8 @@ const handleUpdateZalo = async (data) => {
 
 const joinClubRequest = async () => {
     try {
-        await ClubService.joinRequest(clubId)
-        await getClubDetail(clubId)
+        await ClubService.joinRequest(clubId.value)
+        await getClubDetail(clubId.value)
         toast.success('Yêu cầu tham gia đã được gửi thành công')
     } catch (error) {
         toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi gửi yêu cầu tham gia')
@@ -804,8 +903,8 @@ const joinClubRequest = async () => {
 
 const cancelJoinRequest = async () => {
     try {
-        await ClubService.cancelJoinRequest(clubId)
-        await getClubDetail(clubId)
+        await ClubService.cancelJoinRequest(clubId.value)
+        await getClubDetail(clubId.value)
         toast.success('Đã huỷ yêu cầu tham gia')
     } catch (error) {
         toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi huỷ yêu cầu tham gia')
@@ -814,8 +913,8 @@ const cancelJoinRequest = async () => {
 
 const leaveClub = async () => {
     try {
-        await ClubService.leaveClub(clubId)
-        await getClubDetail(clubId)
+        await ClubService.leaveClub(clubId.value)
+        await getClubDetail(clubId.value)
         isMenuOpen.value = false
         toast.success('Đã rời câu lạc bộ')
     } catch (error) {
@@ -823,19 +922,69 @@ const leaveClub = async () => {
     }
 }
 
-const getClubNotification = async () => {
+const getClubNotification = async (append = false) => {
+    if (append) {
+        isLoadingMoreNotifications.value = true
+    }
     try {
-        const response = await ClubService.clubNotification(clubId, {
+        const response = await ClubService.clubNotification(clubId.value, {
             page: currentNotificationPage.value,
             per_page: notificationPerPage.value,
-            status: 'sent',
-            is_pinned: 1
+            status: 'sent'
         })
-        notifications.value = response.data.notifications
+        if (append) {
+            notifications.value = [...notifications.value, ...response.data.notifications]
+        } else {
+            notifications.value = response.data.notifications
+        }
+        notificationMeta.value = response.meta
     } catch (error) {
         toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi lấy thông tin thông báo')
+    } finally {
+        isLoadingMoreNotifications.value = false
     }
 }
+
+const loadMoreNotifications = async () => {
+    if (currentNotificationPage.value < notificationMeta.value.last_page) {
+        currentNotificationPage.value++
+        await getClubNotification(true)
+    }
+}
+
+const markAsRead = async (notificationId) => {
+    try {
+        await ClubService.markAsRead(clubId.value, notificationId)
+        await getClubNotification()
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi đánh dấu thông báo đã đọc')
+    }
+}
+
+const markAllAsRead = async () => {
+    try {
+        await ClubService.markAllAsRead(clubId.value)
+        currentNotificationPage.value = 1
+        await getClubNotification()
+        toast.success('Đánh dấu tất cả thông báo đã đọc')
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi đánh dấu tất cả thông báo đã đọc')
+    }
+}
+
+const handleUnpinNotification = async (notificationId) => {
+    try {
+        await ClubService.togglePin(clubId.value, notificationId)
+        await getClubNotification()
+        toast.success('Đã gỡ ghim thông báo')
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi gỡ ghim thông báo')
+    }
+}
+
+const pinnedNotifications = computed(() => {
+    return notifications.value.filter(notification => notification.is_pinned === true)
+})
 
 const is_joined = computed(() => {
     return club.value?.members?.some(member => member.user_id === getUser.value.id && member.status == 'active') ?? false
@@ -847,7 +996,7 @@ const goBack = () => {
 
 const getClubActivities = async () => {
     try {
-        const response = await ClubService.getClubActivities(clubId, {
+        const response = await ClubService.getClubActivities(clubId.value, {
             page: currentActivityPage.value,
             per_page: activityPerPage.value,
         })
@@ -868,7 +1017,7 @@ const getClubActivities = async () => {
 const getClubLeaderBoard = async () => {
     isLeaderboardLoading.value = true
     try {
-        const response = await ClubService.getClubLeaderBoard(clubId, {
+        const response = await ClubService.getClubLeaderBoard(clubId.value, {
             month: leaderboardFilters.value.month,
             year: leaderboardFilters.value.year,
             per_page: leaderboardFilters.value.per_page,
@@ -886,6 +1035,7 @@ const getClubLeaderBoard = async () => {
         }
 
         leaderboardMeta.value = response.meta
+        hasFetchedLeaderboard.value = true
     } catch (error) {
         console.log(error)
         toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi lấy thông tin xếp hạng')
@@ -895,9 +1045,12 @@ const getClubLeaderBoard = async () => {
 }
 
 const getClubJoiningRequests = async () => {
-    if(!isAdminView.value) return
+    if(!hasAnyRole(['admin', 'secretary'])){
+        isInitialLoading.value = false
+        return
+    }
     try {
-        const response = await ClubService.joiningRequests(clubId)
+        const response = await ClubService.joiningRequests(clubId.value)
         joiningRequests.value = response.data
     } catch (error) {
         console.log(error)
@@ -907,7 +1060,7 @@ const getClubJoiningRequests = async () => {
 
 const approveJoinRequest = async (requestId) => {
     try {
-        await ClubService.approveJoinRequest(clubId, requestId)
+        await ClubService.approveJoinRequest(clubId.value, requestId)
         await getClubJoiningRequests()
         toast.success('Đã duyệt yêu cầu tham gia')
     } catch (error) {
@@ -918,7 +1071,7 @@ const approveJoinRequest = async (requestId) => {
 
 const rejectJoinRequest = async (requestId) => {
     try {
-        await ClubService.rejectJoinRequest(clubId, requestId)
+        await ClubService.rejectJoinRequest(clubId.value, requestId)
         await getClubJoiningRequests()
         toast.success('Đã từ chối yêu cầu tham gia')
     } catch (error) {
@@ -926,6 +1079,8 @@ const rejectJoinRequest = async (requestId) => {
         toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi từ chối yêu cầu tham gia')
     }
 }
+
+
 
 const handleLeaderboardFilter = (filters) => {
     leaderboardFilters.value = { ...leaderboardFilters.value, ...filters, page: 1 }
@@ -939,7 +1094,7 @@ const handleLeaderboardPageChange = (page) => {
 
 const getFund = async () => {
     try {
-        const response = await ClubService.getFund(clubId)
+        const response = await ClubService.getFund(clubId.value)
         fund.value = response.data
     } catch (error) {
         console.log(error)
@@ -947,23 +1102,69 @@ const getFund = async () => {
     }
 }
 
-onMounted(async () => {
-    if (!clubId) {
-        isInitialLoading.value = false;
-        return;
+const getMyClubs = async () => {
+    if(!hasAnyRole(['admin', 'secretary', 'manager', 'manager'])){
+        return
     }
+    try {
+        const response = await ClubService.myClubs()
+        myClubs.value = response
+    } catch (error) {
+        console.log(error)
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi lấy thông tin câu lạc bộ của tôi')
+    }
+}
+
+const handleTabChange = (tabId) => {
+    if (tabId === 'ranking' && !hasFetchedLeaderboard.value) {
+        getClubLeaderBoard()
+    }
+}
+
+const loadAllData = async () => {
+    isInitialLoading.value = true
     try {
         await getClubDetail()
         await Promise.all([
             getClubNotification(),
             getClubActivities(),
-            getClubLeaderBoard(),
             getClubJoiningRequests(),
-            getFund()
+            getFund(),
+            getMyClubs()
         ])
     } finally {
         isInitialLoading.value = false
     }
+}
+
+const deleteClub = () => {
+    isDeleteModalOpen.value = true
+}
+
+const confirmDeleteClub = async () => {
+    try {
+        await ClubService.deleteClub(clubId.value)
+        toast.success('Xoá câu lạc bộ thành công')
+        router.push({ name: 'club' })
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi xoá câu lạc bộ')
+    }
+}
+
+watch(() => route.params.id, (newId) => {
+    if (newId && newId !== clubId.value) {
+        clubId.value = newId
+        hasFetchedLeaderboard.value = false
+        loadAllData()
+    }
+})
+
+onMounted(async () => {
+    if (!clubId.value) {
+        isInitialLoading.value = false;
+        return;
+    }
+    await loadAllData()
 })
 </script>
 <style scoped>
@@ -973,5 +1174,16 @@ onMounted(async () => {
     background-repeat: no-repeat;
     background-color: #000;
     min-height: 286px;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #E5E7EB;
+  border-radius: 20px;
 }
 </style>
