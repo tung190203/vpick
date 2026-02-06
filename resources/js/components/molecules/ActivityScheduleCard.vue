@@ -31,15 +31,21 @@
             <span>{{ time }}</span>
           </div>
         </div>
+        <div class="flex items-center space-x-4 text-sm text-[#838799]">
+          <div class="flex items-center space-x-1">
+            <MapPinIcon class="w-4 h-4 flex-shrink-0" />
+            <span class="truncate max-w-[450px]" :title="address">{{ address }}</span>
+          </div>
+        </div>
         <div class="flex items-center space-x-1 text-sm text-[#838799]">
             <UsersIcon class="w-4 h-4" />
-            <span>{{ participants }}</span>
+            <span>{{ participants }} người tham gia</span>
         </div>
       </div>
     </div>
 
     <!-- Action Section -->
-    <div class="flex flex-col items-end space-y-2">
+    <div class="flex flex-col items-end space-y-6">
       <span 
         v-if="status"
         class="text-[10px] font-bold px-2 py-0.5 rounded uppercase"
@@ -52,6 +58,7 @@
         {{ statusText || status }}
       </span>
       <Button 
+        v-if="!isCreator"
         size="md" 
         :color="buttonColor"
         class="font-bold px-4 py-3 rounded-[4px]"
@@ -59,14 +66,26 @@
       >
         {{ buttonText }}
       </Button>
+      <Button 
+        v-else
+        size="md" 
+        color="secondary"
+        class="font-bold px-3 py-3 rounded-[4px]"
+        :disabled="disabled"
+        @click.stop="$emit('edit')"
+      >
+        <PencilIcon class="w-5 h-5 text-[#3E414C]" />
+      </Button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ClockIcon, UsersIcon } from '@heroicons/vue/24/outline'
+import { ClockIcon, MapPinIcon, UsersIcon, PencilIcon } from '@heroicons/vue/24/outline'
 import Button from '@/components/atoms/Button.vue'
 import { computed } from 'vue'
+
+defineEmits(['click-card', 'edit'])
 
 const props = defineProps({
   day: {
@@ -93,6 +112,10 @@ const props = defineProps({
     type: String,
     default: ''
   },
+  address: {
+    type: String,
+    default: ''
+  },
   statusText: {
     type: String,
     default: ''
@@ -106,6 +129,10 @@ const props = defineProps({
     default: 'primary' // 'danger', 'primary', 'secondary'
   },
   disabled: {
+    type: Boolean,
+    default: false
+  },
+  isCreator: {
     type: Boolean,
     default: false
   }

@@ -155,6 +155,36 @@ export const createActivity = async (clubId, data) => {
     return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/activities`, data).then((response) => response.data);
 }
 
+export const cancelActivity = async (clubId, activityId, data = {}) => {
+    return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/activities/${activityId}/cancel`, data).then((response) => response.data);
+}
+
+export const getListJoinActivityRequest = async (clubId, activityId, params = {}) => {
+    const queryParams = new URLSearchParams()
+    Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      queryParams.append(key, value)
+    }
+  })
+
+  const queryString = queryParams.toString()
+  const url = `${API_ENDPOINT.CLUB}/${clubId}/activities/${activityId}/participants${queryString ? `?${queryString}` : ''}`
+  const { data } = await axiosInstance.get(url)
+  return data
+}
+
+export const approveJoinActivityRequest = async (clubId, activityId, userId) => {
+    return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/activities/${activityId}/participants/${userId}/approve`).then((response) => response.data);
+}
+
+export const rejectJoinActivityRequest = async (clubId, activityId, userId) => {
+    return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/activities/${activityId}/participants/${userId}/reject`).then((response) => response.data);
+}
+
+export const joinActivityRequest = async (clubId, activityId) => {
+    return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/activities/${activityId}/participants`).then((response) => response.data);
+}
+
 export const markAllAsRead = async (clubId) => {
     return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/notifications/mark-read-all`).then((response) => response.data);
 }
@@ -172,6 +202,18 @@ export const togglePin = async (clubId, notificationId) => {
     return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/notifications/${notificationId}/pin`).then((response) => response.data);
 }
 
+export const updateActivity = async (clubId, activityId, data) => {
+    return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/activities/${activityId}`, data).then((response) => response.data);
+}
+
 export const getNotificationType = async (clubId) => {
     return axiosInstance.get(`${API_ENDPOINT.CLUB}/${clubId}/notifications/types`).then((response) => response.data);
+}
+
+export const cancelActivityJoinRequest = async (clubId, activityId, participantId) => {
+    return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/activities/${activityId}/participants/${participantId}/cancel`).then((response) => response.data);
+}
+
+export const withdrawActivityParticipation = async (clubId, activityId, participantId) => {
+    return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/activities/${activityId}/participants/${participantId}/withdraw`).then((response) => response.data);
 }
