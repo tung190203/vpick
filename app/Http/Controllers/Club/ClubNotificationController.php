@@ -105,7 +105,7 @@ class ClubNotificationController extends Controller
             'status' => ['sometimes', Rule::enum(ClubNotificationStatus::class)],
             'metadata' => 'nullable|array',
             'is_pinned' => 'sometimes|boolean',
-            'scheduled_at' => 'nullable|date|after:now',
+            'scheduled_at' => 'required_if:status,scheduled|nullable|date|after:now',
             'user_ids' => 'nullable|array',
             'user_ids.*' => 'exists:users,id',
         ]);
@@ -194,7 +194,7 @@ class ClubNotificationController extends Controller
             'priority' => ['sometimes', Rule::enum(ClubNotificationPriority::class)],
             'status' => ['sometimes', Rule::enum(ClubNotificationStatus::class)],
             'metadata' => 'nullable|array',
-            'scheduled_at' => 'nullable|date',
+            'scheduled_at' => 'required_if:status,scheduled|nullable|date',
         ]);
 
         if ($request->hasFile('attachment')) {

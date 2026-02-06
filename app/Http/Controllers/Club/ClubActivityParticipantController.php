@@ -12,7 +12,6 @@ use App\Enums\ClubWalletTransactionStatus;
 use App\Enums\PaymentMethod;
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\Club\ClubActivityParticipantResource;
-use App\Models\Club\Club;
 use App\Models\Club\ClubActivity;
 use App\Models\Club\ClubActivityParticipant;
 use App\Models\Club\ClubWalletTransaction;
@@ -144,13 +143,13 @@ class ClubActivityParticipantController extends Controller
             $club = $activity->club;
             $mainWallet = $club->mainWallet;
 
-            // Nếu status là Accepted và activity có fee_amount > 0 và chưa có transaction
-            if ($validated['status'] === ClubActivityParticipantStatus::Accepted->value
+            if (
+                $validated['status'] === ClubActivityParticipantStatus::Accepted->value
                 && $activity->fee_amount > 0
                 && !$participant->wallet_transaction_id
-                && $mainWallet) {
+                && $mainWallet
+            ) {
 
-                // fixed = phí/người; equal = tổng chia đều (fee_amount / max_participants hoặc 1)
                 $feeSplitType = $activity->fee_split_type ?? ClubActivityFeeSplitType::Fixed;
                 $amount = $feeSplitType === ClubActivityFeeSplitType::Fixed
                     ? (float) $activity->fee_amount
@@ -204,9 +203,6 @@ class ClubActivityParticipantController extends Controller
         return ResponseHelper::success('Xóa người tham gia thành công');
     }
 
-    /**
-     * Admin approve yêu cầu tham gia (pending -> accepted)
-     */
     public function approve($clubId, $activityId, $participantId)
     {
         $participant = ClubActivityParticipant::whereHas('activity', function ($q) use ($clubId) {
@@ -236,7 +232,6 @@ class ClubActivityParticipantController extends Controller
             $club = $activity->club;
             $mainWallet = $club->mainWallet;
 
-            // Tạo transaction nếu có phí
             if ($activity->fee_amount > 0 && $mainWallet) {
                 $feeSplitType = $activity->fee_split_type ?? ClubActivityFeeSplitType::Fixed;
                 $amount = $feeSplitType === ClubActivityFeeSplitType::Fixed
@@ -269,9 +264,6 @@ class ClubActivityParticipantController extends Controller
         });
     }
 
-    /**
-     * Admin reject yêu cầu tham gia (pending -> declined)
-     */
     public function reject($clubId, $activityId, $participantId)
     {
         $participant = ClubActivityParticipant::whereHas('activity', function ($q) use ($clubId) {
@@ -299,9 +291,6 @@ class ClubActivityParticipantController extends Controller
         return ResponseHelper::success(new ClubActivityParticipantResource($participant), 'Đã từ chối yêu cầu tham gia');
     }
 
-    /**
-     * Thành viên chấp nhận lời mời (invited -> accepted)
-     */
     public function acceptInvite($clubId, $activityId, $participantId)
     {
         $participant = ClubActivityParticipant::whereHas('activity', function ($q) use ($clubId) {
@@ -330,7 +319,6 @@ class ClubActivityParticipantController extends Controller
             $club = $activity->club;
             $mainWallet = $club->mainWallet;
 
-            // Tạo transaction nếu có phí
             if ($activity->fee_amount > 0 && $mainWallet) {
                 $feeSplitType = $activity->fee_split_type ?? ClubActivityFeeSplitType::Fixed;
                 $amount = $feeSplitType === ClubActivityFeeSplitType::Fixed
@@ -363,9 +351,6 @@ class ClubActivityParticipantController extends Controller
         });
     }
 
-    /**
-     * Thành viên từ chối lời mời (invited -> declined)
-     */
     public function declineInvite($clubId, $activityId, $participantId)
     {
         $participant = ClubActivityParticipant::whereHas('activity', function ($q) use ($clubId) {
@@ -390,9 +375,6 @@ class ClubActivityParticipantController extends Controller
         return ResponseHelper::success(new ClubActivityParticipantResource($participant), 'Đã từ chối lời mời tham gia');
     }
 
-    /**
-     * Thành viên hủy yêu cầu tham gia của mình (pending -> xóa)
-     */
     public function cancel($clubId, $activityId, $participantId)
     {
         $participant = ClubActivityParticipant::whereHas('activity', function ($q) use ($clubId) {
@@ -415,11 +397,6 @@ class ClubActivityParticipantController extends Controller
         return ResponseHelper::success('Đã hủy yêu cầu tham gia');
     }
 
-    /**
-     * Participant rút khỏi sự kiện
-     * - Trước 4 tiếng: hủy khoản thu đã tạo
-     * - Sau 4 tiếng: hủy khoản thu đã tạo, tạo khoản thu nộp phạt
-     */
     public function withdraw($clubId, $activityId, $participantId)
     {
         $participant = ClubActivityParticipant::whereHas('activity', function ($q) use ($clubId) {
@@ -430,28 +407,24 @@ class ClubActivityParticipantController extends Controller
 
         $userId = auth()->id();
 
-        // Chỉ participant mới được rút khỏi sự kiện của chính mình
         if ($participant->user_id !== $userId) {
             return ResponseHelper::error('Chỉ có thể rút khỏi sự kiện của chính mình', 403);
         }
 
         $activity = $participant->activity;
 
-        // Chỉ có thể rút khỏi sự kiện đang scheduled
         if (!$activity->isScheduled()) {
             return ResponseHelper::error('Chỉ có thể rút khỏi sự kiện đang scheduled', 422);
         }
 
-        // Chỉ rút được khi đã accepted
         if ($participant->status !== ClubActivityParticipantStatus::Accepted) {
             return ResponseHelper::error('Chỉ có thể rút khỏi sự kiện khi đã chấp nhận tham gia', 422);
         }
 
-        return DB::transaction(function () use ($participant, $activity, $clubId) {
+        return DB::transaction(function () use ($participant, $activity) {
             $club = $activity->club;
             $mainWallet = $club->mainWallet;
 
-            // Tính thời gian còn lại đến sự kiện
             $hoursUntilStart = Carbon::now()->diffInHours($activity->start_time, false);
             $isBefore4Hours = $hoursUntilStart >= 4;
 
@@ -464,21 +437,22 @@ class ClubActivityParticipantController extends Controller
 
                 // Nếu rút sau 4 tiếng => tạo khoản thu nộp phạt
                 if (!$isBefore4Hours) {
-                    // Tính phí phạt theo penalty_percentage của activity (mặc định 50%)
-                    $penaltyPercentage = $activity->penalty_percentage ?? 50;
-                    $penaltyAmount = $transaction->amount * ($penaltyPercentage / 100);
+                    // Sử dụng penalty_amount cố định hoặc mặc định 0
+                    $penaltyAmount = $activity->penalty_amount ?? 0;
 
-                    $penaltyTransaction = ClubWalletTransaction::create([
-                        'club_wallet_id' => $mainWallet->id,
-                        'direction' => ClubWalletTransactionDirection::In,
-                        'amount' => $penaltyAmount,
-                        'source_type' => ClubWalletTransactionSourceType::ActivityPenalty,
-                        'source_id' => $activity->id,
-                        'payment_method' => PaymentMethod::BankTransfer,
-                        'status' => ClubWalletTransactionStatus::Pending,
-                        'description' => "Phạt rút khỏi sự kiện: {$activity->title} (rút sau 4 tiếng - {$penaltyPercentage}% phí gốc)",
-                        'created_by' => $participant->user_id,
-                    ]);
+                    if ($penaltyAmount > 0) {
+                        ClubWalletTransaction::create([
+                            'club_wallet_id' => $mainWallet->id,
+                            'direction' => ClubWalletTransactionDirection::In,
+                            'amount' => $penaltyAmount,
+                            'source_type' => ClubWalletTransactionSourceType::ActivityPenalty,
+                            'source_id' => $activity->id,
+                            'payment_method' => PaymentMethod::BankTransfer,
+                            'status' => ClubWalletTransactionStatus::Pending,
+                            'description' => "Phạt rút khỏi sự kiện: {$activity->title} (rút sau 4 tiếng - phí phạt " . number_format($penaltyAmount, 0, ',', '.') . " VND)",
+                            'created_by' => $participant->user_id,
+                        ]);
+                    }
 
                     // Cập nhật participant để link với penalty transaction (hoặc giữ nguyên transaction gốc)
                     // Có thể tạo field penalty_transaction_id nếu cần track riêng
@@ -492,7 +466,7 @@ class ClubActivityParticipantController extends Controller
 
             $message = $isBefore4Hours
                 ? 'Đã rút khỏi sự kiện. Khoản thu đã được hủy.'
-                : "Đã rút khỏi sự kiện. Khoản thu đã được hủy và tạo khoản thu phạt ({$activity->penalty_percentage}% phí gốc) do rút sau 4 tiếng.";
+                : "Đã rút khỏi sự kiện. Khoản thu đã được hủy và tạo khoản thu phạt (" . number_format($activity->penalty_amount ?? 0, 0, ',', '.') . " VND) do rút sau 4 tiếng.";
 
             return ResponseHelper::success(new ClubActivityParticipantResource($participant), $message);
         });
