@@ -14,8 +14,8 @@ class CancelActivityRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'cancellation_reason' => 'required|string|max:500',
-            'cancel_transactions' => 'required|boolean',
+            'cancellation_reason' => 'nullable|string|max:500',
+            'cancel_transactions' => 'nullable|boolean',
         ];
     }
 }

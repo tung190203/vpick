@@ -32,7 +32,7 @@ class ClubActivityService
     {
         $query = $club->activities()
             ->with([
-                'participants:id,club_activity_id,user_id'
+                'participants.user'
             ]);
 
         if (!empty($filters['type'])) {

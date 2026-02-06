@@ -13,6 +13,73 @@ use Illuminate\Support\Facades\DB;
 
 class ClubLeaderboardService
 {
+    /**
+     * Tính rank của club dựa trên tổng điểm members trong tháng
+     */
+    public function calculateClubRank(Club $club, ?int $month = null, ?int $year = null): ?int
+    {
+        $month = $month ?? now()->month;
+        $year = $year ?? now()->year;
+
+        $startDate = Carbon::create($year, $month, 1)->startOfMonth();
+        $endDate = Carbon::create($year, $month, 1)->endOfMonth();
+
+        $allClubs = Club::where('status', \App\Enums\ClubStatus::Active)
+            ->with(['joinedMembers.user.sports.scores'])
+            ->get();
+
+        $clubScores = $allClubs->map(function ($clubItem) use ($startDate, $endDate) {
+            $members = $clubItem->joinedMembers;
+
+            if ($members->isEmpty()) {
+                return [
+                    'club_id' => $clubItem->id,
+                    'total_score' => 0,
+                ];
+            }
+
+            $memberIds = $members->pluck('user_id')->filter()->unique();
+            $histories = VnduprHistory::whereIn('user_id', $memberIds)
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->orderBy('created_at', 'asc')
+                ->get()
+                ->groupBy('user_id');
+
+            $totalScore = 0;
+            foreach ($members as $member) {
+                $userId = $member->user_id;
+                $userHistories = $histories->get($userId, collect());
+
+                if ($userHistories->isNotEmpty()) {
+                    $totalScore += $userHistories->last()->score_after;
+                } else {
+                    $vnduprScore = $member->user?->sports->flatMap(fn($sport) => $sport->scores)
+                        ->where('score_type', 'vndupr_score')
+                        ->sortByDesc('created_at')
+                        ->first();
+                    $totalScore += $vnduprScore ? $vnduprScore->score_value : 0;
+                }
+            }
+
+            return [
+                'club_id' => $clubItem->id,
+                'total_score' => $totalScore,
+            ];
+        });
+
+        $sortedClubs = $clubScores->sortByDesc('total_score')->values();
+
+        $rank = null;
+        foreach ($sortedClubs as $index => $item) {
+            if ($item['club_id'] === $club->id) {
+                $rank = $index + 1;
+                break;
+            }
+        }
+
+        return $rank;
+    }
+
     public function getMonthlyLeaderboard(Club $club, int $month, int $year): Collection
     {
         $startDate = Carbon::create($year, $month, 1)->startOfMonth();
