@@ -212,7 +212,8 @@
                         </div>
                         <template v-if="activities.length > 0">
                             <ActivityScheduleCard v-for="(activity, index) in activities" :key="index" v-bind="activity"
-                                @click-card="goToActivityDetail(activity)" @edit="handleEditActivity(activity)" />
+                                @click-card="goToActivityDetail(activity)" @edit="handleEditActivity(activity)"
+                                @register="handleRegisterActivity(activity)" @cancel-join="handleCancelJoinActivity(activity)" @check-in="handleCheckInActivity(activity)" />
                         </template>
                         <div v-else class="p-4 text-center">
                             <p class="text-[#838799]">Hiện chưa có lịch thi đấu</p>
@@ -398,7 +399,8 @@
             <!-- Activity Schedule Modal -->
             <ClubActivityModal :is-open="isActivityModalOpen" :thumbnail="Thumbnail"
                 :upcoming-activities="upcomingActivities" :history-activities="historyActivities"
-                :next-match="nextMatch" :countdown="countdownText" @close="closeActivityModal" />
+                :next-match="nextMatch" :countdown="countdownText" @close="closeActivityModal" @edit="handleEditActivity" 
+                @click-card="goToActivityDetail" @register="handleRegisterActivity" @cancel-join="handleCancelJoinActivity" @check-in="handleCheckInActivity" />
 
             <!-- Edit Club Modal -->
             <ClubEditModal 
@@ -795,31 +797,42 @@ const getVietnameseDay = (date) => {
 }
 
 const formatActivity = (item) => {
+    const userId = getUser.value.id
     const isCompleted = item.status === 'completed' || dayjs().isAfter(dayjs(item.end_time))
-    const isRegistered = item.participants?.some(p => p.user_id === getUser.value.id)
+    const userParticipant = item.participants?.find(p => p.user_id === userId)
+    const isRegistered = !!userParticipant
+
+    let registrationStatus = 'none'
+    if (userParticipant) {
+        if (userParticipant.status === 'pending') {
+            registrationStatus = 'pending'
+        } else if (userParticipant.status === 'accepted' || !userParticipant.status) {
+            registrationStatus = 'accepted'
+        }
+    }
 
     // Determine type (border color)
     let type = 'danger' // Default to red (not registered)
     if (isCompleted) {
         type = 'secondary' // Gray
     } else if (isRegistered) {
-        type = 'primary' // Blue (registered)
+        type = 'primary' // Blue (registered/pending)
     }
 
     // Determine status badge (colors) - ActivityScheduleCard & ActivitySmallCard
-    let status = item.status === 'scheduled' ? 'open' : (item.status === 'ongoing' ? 'private' : 'Hoàn tất')
-    if (isRegistered && !isCompleted) status = 'private'
+    let status = item.is_public ? 'open' : 'private'
+    if (isCompleted) status = 'completed'
 
     // Determine statusText (label) - ActivitySmallCard & updated ActivityScheduleCard
-    let statusText = item.status === 'scheduled' ? 'Mở đăng ký' : (item.status === 'ongoing' ? 'Mở check-in' : 'Hoàn tất')
-    if (isRegistered && !isCompleted) statusText = 'Đã đăng ký'
+    let statusText = item.is_public ? 'Công khai' : 'Nội bộ'
+    if (isCompleted) statusText = 'Hoàn tất'
 
     // Determine button text
     let buttonText = 'Đăng ký'
     if (isCompleted) {
         buttonText = 'Đã xong'
     } else if (isRegistered) {
-        buttonText = 'Check-in ngay'
+        buttonText = registrationStatus === 'pending' ? 'Đang chờ duyệt' : 'Check-in ngay'
     }
 
     return {
@@ -836,7 +849,8 @@ const formatActivity = (item) => {
         isCreator: item.created_by === getUser.value.id,
         location: item.location,
         participants_list: item.participants || [],
-        result: isCompleted ? `Địa điểm: ${item.location}` : null
+        result: isCompleted ? `Địa điểm: ${item.location}` : null,
+        registrationStatus
     }
 }
 
@@ -1169,6 +1183,33 @@ onMounted(async () => {
     }
     await loadAllData()
 })
+const handleRegisterActivity = async (activity) => {
+    try {
+        await ClubService.joinActivityRequest(clubId.value, activity.id)
+        toast.success('Đã gửi yêu cầu tham gia thành công')
+        await getClubActivities()
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Không thể gửi yêu cầu tham gia')
+    }
+}
+
+const handleCancelJoinActivity = async (activity) => {
+    const userId = getUser.value.id
+    const userParticipant = activity.participants_list?.find(p => p.user_id === userId)
+    if (!userParticipant) return
+    
+    try {
+        await ClubService.cancelActivityJoinRequest(clubId.value, activity.id, userParticipant.id)
+        toast.success('Đã hủy yêu cầu tham gia')
+        await getClubActivities()
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Không thể hủy yêu cầu tham gia')
+    }
+}
+
+const handleCheckInActivity = (activity) => {
+    goToActivityDetail(activity)
+}
 </script>
 <style scoped>
 .bg-club-default {

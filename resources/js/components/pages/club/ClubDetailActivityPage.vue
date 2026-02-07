@@ -59,7 +59,20 @@
           </div>
           <p class="text-[#838799]">{{ activity.summary }}</p>
         </div>
-        <div class="flex items-center gap-3" v-if="isOwner">
+        <div class="flex items-center gap-3" v-if="isFinished">
+          <Button 
+            size="lg" 
+            color="white" 
+            class="px-4 py-1 rounded-[4px] font-semibold border border-[#DCDEE6] bg-gray-100 text-[#838799] shadow-sm cursor-not-allowed"
+            :disabled="true"
+          >
+            <div class="flex items-center gap-2">
+              <CheckIcon class="w-5 h-5" />
+              Đã xong
+            </div>
+          </Button>
+        </div>
+        <div class="flex items-center gap-3" v-else-if="isOwner">
           <Button 
             size="lg" 
             color="primary" 
@@ -441,6 +454,11 @@ const isCancelling = ref(false)
 
 const isOwner = computed(() => {
     return activity.value.created_by === getUser.value.id
+})
+
+const isFinished = computed(() => {
+    if (!activity.value.end_time) return false
+    return dayjs().isAfter(dayjs(activity.value.end_time))
 })
 
 const recurringText = computed(() => {
