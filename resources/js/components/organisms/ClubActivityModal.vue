@@ -35,9 +35,9 @@
 
                         <div class="mb-6">
                             <h2 class="text-xl font-semibold mb-1">{{ nextMatch.title }}</h2>
-                            <div class="flex items-center gap-2 opacity-90" v-if="nextMatch.location">
+                            <div class="flex items-center gap-2 opacity-90" v-if="nextMatch.address">
                                 <MapPinIcon class="w-4 h-4" />
-                                <span class="text-sm font-normal">{{ nextMatch.location }}</span>
+                                <span class="text-sm font-normal">{{ nextMatch.address }}</span>
                             </div>
                         </div>
 
@@ -56,6 +56,14 @@
                                 </div>
                             </div>
                             <button
+                                v-if="nextMatch.isCreator"
+                                class="bg-white text-[#D72D36] p-2 rounded-lg font-semibold shadow-sm transition-colors hover:bg-gray-50 flex items-center justify-center"
+                                @click.stop="$emit('edit', nextMatch)"
+                            >
+                                <PencilIcon class="w-5 h-5" />
+                            </button>
+                            <button
+                                v-else
                                 class="bg-white text-[#D72D36] text-sm hover:bg-gray-50 px-6 py-2.5 rounded-lg font-semibold shadow-sm transition-colors">
                                 {{ nextMatch.buttonText }}
                             </button>
@@ -74,7 +82,8 @@
                             diễn ra</h4>
                         <div class="space-y-4 flex-1 overflow-y-auto custom-scrollbar pr-2">
                             <ActivitySmallCard v-for="(activity, index) in upcomingActivities" :key="index"
-                                v-bind="activity" />
+                                v-bind="activity" @edit="$emit('edit', activity)" @click-card="$emit('click-card', activity)" 
+                                @register="$emit('register', activity)" @cancel-join="$emit('cancel-join', activity)" @check-in="$emit('check-in', activity)" />
                             <!-- Additional mocked items to match image if needed -->
                             <div v-if="upcomingActivities.length === 0"
                                 class="flex flex-col items-center justify-center py-8 text-[#838799]">
@@ -91,37 +100,43 @@
                         </h4>
                         <div class="space-y-4 flex-1 overflow-y-auto custom-scrollbar pr-2">
                             <div v-for="(history, index) in historyActivities" :key="index"
-                                class="flex items-stretch justify-between p-4 bg-white rounded-lg shadow-sm border border-[#E5E7EB] transition hover:border-gray-300">
-                                <div class="flex items-center space-x-4">
+                                class="flex items-start justify-between p-4 bg-white rounded-lg shadow-sm border border-[#E5E7EB] transition hover:border-gray-300 gap-3 cursor-pointer" @click="$emit('click-card', history)">
+                                <div class="flex items-center space-x-4 min-w-0">
                                     <!-- Date Section -->
                                     <div
-                                        class="flex flex-col items-center justify-center w-16 h-16 rounded-md border bg-gray-50 border-[#E5E7EB] text-[#838799]">
+                                        class="flex flex-col items-center justify-center w-16 h-16 rounded-md border bg-gray-50 border-[#E5E7EB] text-[#838799] flex-shrink-0">
                                         <span class="text-xs font-bold uppercase">{{ history.day }}</span>
                                         <span class="text-2xl font-bold">{{ history.date }}</span>
                                     </div>
 
                                     <!-- Info Section -->
-                                    <div class="flex flex-col space-y-1">
+                                    <div class="flex flex-col space-y-1 min-w-0">
                                         <div class="flex items-center gap-2">
-                                            <h3 class="text-lg font-semibold text-[#3E414C]">{{ history.title }}
+                                            <h3 class="text-lg font-semibold text-[#3E414C] truncate">{{ history.title }}
                                             </h3>
                                         </div>
 
                                         <div class="flex items-center space-x-4 text-sm text-[#838799]">
                                             <div class="flex items-center space-x-1">
-                                                <ClockIcon class="w-4 h-4" />
+                                                <ClockIcon class="w-4 h-4 flex-shrink-0" />
                                                 <span>{{ history.time }}</span>
                                             </div>
                                         </div>
-                                        <div class="flex items-center space-x-1 text-sm text-[#838799]">
-                                            <CalendarDaysIcon class="w-4 h-4" />
-                                            <span>{{ history.result }}</span>
+                                        <div class="flex items-start space-x-1 text-sm text-[#838799] min-w-0">
+                                            <MapPinIcon class="w-4 h-4 flex-shrink-0 mt-0.5" />
+                                            <span class="truncate" :title="history.address">{{ history.address }}</span>
                                         </div>
                                     </div>
                                 </div>
-                                <span
-                                    class="text-[10px] bg-gray-100 text-gray-500 font-bold px-2 py-0.5 rounded uppercase border border-gray-200 h-fit">
-                                    {{ history.status }}
+                                <span 
+                                    class="text-[10px] font-bold px-2 py-0.5 rounded uppercase whitespace-nowrap h-fit"
+                                    :class="{
+                                        'bg-[#E3F7EF] text-[#2D9B71]': history.status === 'open',
+                                        'bg-[#F2F7FC] text-[#4392E0]': history.status === 'private',
+                                        'bg-[#EDEEF2] text-[#838799]': !['open', 'private'].includes(history.status) || history.status === ' Hoàn tất',
+                                    }"
+                                >
+                                    {{ history.statusText }}
                                 </span>
                             </div>
 
@@ -146,6 +161,7 @@ import {
     MapPinIcon,
     CalendarIcon,
     CalendarDaysIcon,
+    PencilIcon,
 } from '@heroicons/vue/24/outline'
 import ActivitySmallCard from '@/components/molecules/ActivitySmallCard.vue';
 
@@ -176,5 +192,5 @@ defineProps({
     }
 })
 
-defineEmits(['close'])
+defineEmits(['close', 'edit', 'click-card', 'register', 'cancel-join', 'check-in'])
 </script>

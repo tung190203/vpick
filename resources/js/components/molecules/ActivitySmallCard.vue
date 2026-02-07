@@ -1,6 +1,7 @@
 <template>
   <div 
-    class="flex flex-col p-4 bg-white rounded-lg shadow-sm border-l-[2px] mb-4 transition gap-4"
+    class="flex flex-col p-4 bg-white rounded-lg shadow-sm border-l-[2px] mb-4 transition gap-4 cursor-pointer hover:shadow-md hover:border-l-4"
+    @click="$emit('click-card')"
     :class="[
       disabled ? 'border-gray-200 opacity-70 grayscale-[0.5]' : (
         type === 'danger' ? 'border-red-500' : 
@@ -30,6 +31,10 @@
               <ClockIcon class="w-4 h-4" />
               <span>{{ time }}</span>
             </div>
+            <div v-if="address" class="flex items-center space-x-1.5">
+               <MapPinIcon class="w-4 h-4 flex-shrink-0" />
+               <span class="truncate max-w-[200px]" :title="address">{{ address }}</span>
+            </div>
             <div class="flex items-center space-x-1.5">
                <UsersIcon class="w-4 h-4" />
                <span>{{ participants }}</span>
@@ -42,10 +47,11 @@
         </div>
       </div>
 
+      <div class="flex flex-col items-end space-y-4">
        <!-- Status Badge -->
        <span 
           v-if="status"
-          class="text-[11px] font-bold px-2.5 py-1 rounded uppercase whitespace-nowrap"
+          class="text-[10px] font-bold px-2 py-0.5 rounded uppercase whitespace-nowrap h-fit"
           :class="{
               'bg-[#E3F7EF] text-[#2D9B71]': status === 'open',
               'bg-[#F2F7FC] text-[#4392E0]': status === 'private',
@@ -54,23 +60,66 @@
         >
         {{ statusText }}
       </span>
+
+      <!-- Creator Edit Button -->
+      <Button 
+        v-if="isCreator"
+        size="md" 
+        color="secondary"
+        class="font-bold px-3 py-3 rounded-[8px]"
+        :disabled="disabled"
+        @click.stop="$emit('edit')"
+      >
+        <PencilIcon class="w-5 h-5 text-[#3E414C]" />
+      </Button>
+      </div>
     </div>
 
     <!-- Action Section -->
-    <div class="w-full flex space-x-2">
-    <Button v-if="status === 'private'"
+    <div v-if="!isCreator" class="w-full flex items-center justify-between gap-2" @click.stop>
+      <!-- Pending Approval -->
+      <Button v-if="registrationStatus === 'pending'"
         size="md" 
         color="secondary"
-        class="w-full font-semibold text-sm py-2 rounded-md flex justify-center"
+        class="w-full font-semibold text-sm py-2 rounded-md flex justify-center bg-[#EDEEF2] text-[#3E414C] border border-[#DCDEE6] shadow-sm"
         :disabled="disabled"
+        @click="$emit('cancel-join')"
       >
-        Huỷ tham gia
+        <div class="flex items-center gap-2">
+          <ClockIcon class="w-4 h-4" />
+          <span>{{ pendingText }}</span>
+        </div>
       </Button>
-      <Button 
+
+      <!-- Accepted / Participant -->
+      <template v-else-if="registrationStatus === 'accepted'">
+        <Button 
+          size="md" 
+          color="secondary"
+          class="w-full font-semibold text-sm py-2 rounded-md flex justify-center"
+          :disabled="disabled"
+          @click="$emit('cancel-join')"
+        >
+          Huỷ tham gia
+        </Button>
+        <Button 
+          size="md" 
+          color="primary"
+          class="w-full font-semibold text-sm py-2 rounded-md flex justify-center"
+          :disabled="disabled"
+          @click="$emit('check-in')"
+        >
+          Check-in
+        </Button>
+      </template>
+
+      <!-- Not Registered -->
+      <Button v-else
         size="md" 
         :color="buttonColor"
         class="w-full font-semibold text-sm py-2 rounded-md flex justify-center"
         :disabled="disabled"
+        @click="$emit('register')"
       >
         {{ buttonText }}
       </Button>
@@ -79,7 +128,7 @@
 </template>
 
 <script setup>
-import { ClockIcon, UsersIcon, MapPinIcon } from '@heroicons/vue/24/outline'
+import { ClockIcon, UsersIcon, MapPinIcon, PencilIcon } from '@heroicons/vue/24/outline'
 import Button from '@/components/atoms/Button.vue'
 import { computed } from 'vue'
 
@@ -100,7 +149,7 @@ const props = defineProps({
     type: String,
     required: true
   },
-  location: {
+  address: {
     type: String,
     default: ''
   },
@@ -131,8 +180,22 @@ const props = defineProps({
   countdown: {
     type: String,
     default: ''
+  },
+  isCreator: {
+    type: Boolean,
+    default: false
+  },
+  registrationStatus: {
+    type: String,
+    default: 'none' // 'none', 'pending', 'accepted'
+  },
+  pendingText: {
+    type: String,
+    default: 'Đang chờ duyệt'
   }
 })
+
+defineEmits(['click-card', 'edit', 'register', 'cancel-join', 'check-in'])
 
 const buttonColor = computed(() => {
   if (props.type === 'danger') return 'danger'
