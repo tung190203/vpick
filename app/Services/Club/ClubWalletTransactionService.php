@@ -24,12 +24,12 @@ class ClubWalletTransactionService
             $query->where('direction', $filters['direction']);
         }
 
-        if (!empty($filters['source_type'])) {
-            $query->where('source_type', $filters['source_type']);
+        if (!empty($filters['source_types'])) {
+            $query->whereIn('source_type', $filters['source_types']);
         }
 
-        if (!empty($filters['status'])) {
-            $query->where('status', $filters['status']);
+        if (!empty($filters['statuses'])) {
+            $query->whereIn('status', $filters['statuses']);
         }
 
         if (!empty($filters['date_from'])) {
@@ -69,9 +69,10 @@ class ClubWalletTransactionService
         }
 
         if (!empty($filters['search'])) {
-            $query->where(function ($q) use ($filters) {
-                $q->where('description', 'like', '%' . $filters['search'] . '%')
-                    ->orWhere('reference_code', 'like', '%' . $filters['search'] . '%');
+            $term = trim($filters['search']);
+            $query->where(function ($q) use ($term) {
+                $q->where('description', 'like', '%' . $term . '%')
+                    ->orWhere('reference_code', 'like', '%' . $term . '%');
             });
         }
 
@@ -79,8 +80,12 @@ class ClubWalletTransactionService
             $query->where('direction', $filters['direction']);
         }
 
-        if (!empty($filters['source_type'])) {
-            $query->where('source_type', $filters['source_type']);
+        if (!empty($filters['source_types'])) {
+            $query->whereIn('source_type', $filters['source_types']);
+        }
+
+        if (!empty($filters['statuses'])) {
+            $query->whereIn('status', $filters['statuses']);
         }
 
         $perPage = $filters['per_page'] ?? 15;
