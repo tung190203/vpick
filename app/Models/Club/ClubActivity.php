@@ -86,9 +86,6 @@ class ClubActivity extends Model
         return $this->hasMany(ClubActivityParticipant::class);
     }
 
-    /**
-     * Wallet transactions for this activity's fee (In, Confirmed) — used for collected_amount.
-     */
     public function activityFeeTransactions()
     {
         return $this->hasMany(ClubWalletTransaction::class, 'source_id')
@@ -157,14 +154,10 @@ class ClubActivity extends Model
         $this->update(['status' => ClubActivityStatus::Completed]);
     }
 
-    /**
-     * Số tiền mỗi người phải nộp khi tham gia (theo fee_split_type).
-     */
     public function getFeeAmountPerParticipant(): float
     {
         $splitType = $this->fee_split_type ?? ClubActivityFeeSplitType::Fixed;
 
-        // Quỹ bao: không thu phí từ người tham gia
         if ($splitType === ClubActivityFeeSplitType::Fund) {
             return 0;
         }
@@ -181,17 +174,11 @@ class ClubActivity extends Model
         return (float) $this->fee_amount;
     }
 
-    /**
-     * Check if activity is recurring
-     */
     public function isRecurring(): bool
     {
         return $this->recurring_schedule !== null && !empty($this->recurring_schedule);
     }
 
-    /**
-     * Get recurring_schedule attribute with transformed recurring_date
-     */
     public function getRecurringScheduleAttribute($value)
     {
         if (!$value) {
@@ -203,18 +190,15 @@ class ClubActivity extends Model
             return null;
         }
 
-        // Build standardized response structure
         $result = [
             'period' => $data['period'],
             'week_days' => null,
             'recurring_date' => null,
         ];
 
-        // Set week_days for weekly period
         if ($data['period'] === 'weekly') {
             $result['week_days'] = $data['week_days'] ?? null;
         } else {
-            // Transform recurring_date to Vietnamese description for non-weekly periods
             if (isset($data['recurring_date']) && $data['recurring_date']) {
                 $result['recurring_date'] = $this->formatRecurringDateForOutput(
                     $data['period'],
@@ -226,9 +210,6 @@ class ClubActivity extends Model
         return $result;
     }
 
-    /**
-     * Set recurring_schedule attribute
-     */
     public function setRecurringScheduleAttribute($value)
     {
         if (!$value) {
@@ -240,9 +221,6 @@ class ClubActivity extends Model
         $this->attributes['recurring_schedule'] = json_encode($value);
     }
 
-    /**
-     * Format recurring_date for output (Vietnamese description)
-     */
     private function formatRecurringDateForOutput(string $period, string $dateString): ?string
     {
         $date = $this->parseDate($dateString);
@@ -258,9 +236,6 @@ class ClubActivity extends Model
         };
     }
 
-    /**
-     * Parse date string from various formats
-     */
     private function parseDate(string $dateString): ?array
     {
         $formats = ['d/m/Y', 'd-m-Y', 'Y-m-d'];
@@ -281,5 +256,184 @@ class ClubActivity extends Model
         }
 
         return null;
+    }
+
+    public function getRecurringScheduleRaw(): ?array
+    {
+        $value = $this->attributes['recurring_schedule'] ?? null;
+        if (!$value) {
+            return null;
+        }
+
+        $data = json_decode($value, true);
+        return $data && isset($data['period']) ? $data : null;
+    }
+
+    public function calculateNextOccurrence(Carbon $fromDate = null): ?Carbon
+    {
+        if (!$this->isRecurring()) {
+            return null;
+        }
+
+        $schedule = $this->getRecurringScheduleRaw();
+        if (!$schedule) {
+            return null;
+        }
+
+        $fromDate = $fromDate ?? Carbon::now();
+        $period = $schedule['period'];
+
+        return match($period) {
+            'weekly' => $this->calculateNextWeeklyOccurrence($fromDate, $schedule['week_days'] ?? []),
+            'monthly' => $this->calculateNextMonthlyOccurrence($fromDate, $schedule['recurring_date'] ?? null),
+            'quarterly' => $this->calculateNextQuarterlyOccurrence($fromDate, $schedule['recurring_date'] ?? null),
+            'yearly' => $this->calculateNextYearlyOccurrence($fromDate, $schedule['recurring_date'] ?? null),
+            default => null
+        };
+    }
+
+    private function calculateNextWeeklyOccurrence(Carbon $fromDate, array $weekDays): ?Carbon
+    {
+        if (empty($weekDays)) {
+            return null;
+        }
+
+        // Sort week_days
+        sort($weekDays);
+
+        $currentDayOfWeek = $fromDate->dayOfWeek;
+
+        foreach ($weekDays as $targetDay) {
+            if ($targetDay > $currentDayOfWeek) {
+                return $fromDate->copy()->next($targetDay);
+            }
+        }
+
+        return $fromDate->copy()->next($weekDays[0]);
+    }
+
+    private function calculateNextMonthlyOccurrence(Carbon $fromDate, ?string $dateString): ?Carbon
+    {
+        if (!$dateString) {
+            return null;
+        }
+
+        $dateInfo = $this->parseDate($dateString);
+        if (!$dateInfo) {
+            return null;
+        }
+
+        $targetDay = $dateInfo['day'];
+
+        $nextDate = $fromDate->copy()->day(min($targetDay, $fromDate->daysInMonth));
+
+        if ($nextDate->lte($fromDate)) {
+            $nextDate->addMonth();
+            $nextDate->day(min($targetDay, $nextDate->daysInMonth));
+        }
+
+        return $nextDate;
+    }
+
+    private function calculateNextQuarterlyOccurrence(Carbon $fromDate, ?string $dateString): ?Carbon
+    {
+        if (!$dateString) {
+            return null;
+        }
+
+        $dateInfo = $this->parseDate($dateString);
+        if (!$dateInfo) {
+            return null;
+        }
+
+        $targetDay = $dateInfo['day'];
+
+        $quarterStartMonths = [1, 4, 7, 10];
+        $currentMonth = $fromDate->month;
+
+        foreach ($quarterStartMonths as $month) {
+            if ($month >= $currentMonth) {
+                $nextDate = $fromDate->copy()->month($month)->day(min($targetDay, Carbon::create($fromDate->year, $month)->daysInMonth));
+
+                if ($nextDate->gt($fromDate)) {
+                    return $nextDate;
+                }
+            }
+        }
+
+        $nextDate = $fromDate->copy()->addYear()->month(1)->day(min($targetDay, 31));
+        return $nextDate;
+    }
+
+    private function calculateNextYearlyOccurrence(Carbon $fromDate, ?string $dateString): ?Carbon
+    {
+        if (!$dateString) {
+            return null;
+        }
+
+        $dateInfo = $this->parseDate($dateString);
+        if (!$dateInfo) {
+            return null;
+        }
+
+        $targetDay = $dateInfo['day'];
+        $targetMonth = $dateInfo['month'];
+
+        $nextDate = $fromDate->copy()
+            ->month($targetMonth)
+            ->day(min($targetDay, Carbon::create($fromDate->year, $targetMonth)->daysInMonth));
+
+        if ($nextDate->lte($fromDate)) {
+            $nextDate->addYear();
+        }
+
+        return $nextDate;
+    }
+
+    public function cloneForNextOccurrence(): ?ClubActivity
+    {
+        if (!$this->isRecurring() || !$this->isCompleted()) {
+            return null;
+        }
+
+        $nextStartTime = $this->calculateNextOccurrence($this->end_time ?? $this->start_time);
+        if (!$nextStartTime) {
+            return null;
+        }
+
+        $duration = $this->duration ?? ($this->end_time ? $this->start_time->diffInMinutes($this->end_time) : null);
+        $nextEndTime = $duration ? $nextStartTime->copy()->addMinutes($duration) : null;
+
+        $nextCancellationDeadline = null;
+        if ($this->cancellation_deadline && $this->start_time) {
+            $hoursBeforeStart = $this->cancellation_deadline->diffInHours($this->start_time, false);
+            if ($hoursBeforeStart > 0) {
+                $nextCancellationDeadline = $nextStartTime->copy()->subHours($hoursBeforeStart);
+            }
+        }
+
+        $newActivity = $this->replicate([
+            'status',
+            'cancellation_reason',
+            'cancelled_by',
+            'check_in_token',
+        ]);
+
+        $newActivity->start_time = $nextStartTime;
+        $newActivity->end_time = $nextEndTime;
+        $newActivity->cancellation_deadline = $nextCancellationDeadline;
+        $newActivity->status = ClubActivityStatus::Scheduled;
+        $newActivity->save();
+
+        ClubActivityParticipant::create([
+            'club_activity_id' => $newActivity->id,
+            'user_id' => $this->created_by,
+            'status' => ClubActivityParticipantStatus::Accepted,
+        ]);
+
+        $checkInToken = \Illuminate\Support\Str::random(48);
+        $newActivity->update(['check_in_token' => $checkInToken]);
+
+        return $newActivity;
     }
 }
