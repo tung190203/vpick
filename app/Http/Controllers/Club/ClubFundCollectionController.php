@@ -72,7 +72,7 @@ class ClubFundCollectionController extends Controller
 
         return ResponseHelper::success([
             'collection' => new ClubFundCollectionResource($detail['collection']),
-            'paid_members' => $detail['paid_members']->map(function ($item) {
+            'approved_payments' => $detail['approved_payments']->map(function ($item) {
                 return [
                     'user' => new UserResource($item['user']),
                     'amount_due' => $item['amount_due'],
@@ -82,7 +82,17 @@ class ClubFundCollectionController extends Controller
                     'contribution' => new ClubFundContributionResource($item['contribution']),
                 ];
             }),
-            'unpaid_members' => $detail['unpaid_members']->map(function ($item) {
+            'waiting_approval_payments' => $detail['waiting_approval_payments']->map(function ($item) {
+                return [
+                    'user' => new UserResource($item['user']),
+                    'amount_due' => $item['amount_due'],
+                    'amount_paid' => $item['amount_paid'],
+                    'payment_status' => $item['payment_status'],
+                    'paid_at' => $item['paid_at'],
+                    'contribution' => new ClubFundContributionResource($item['contribution']),
+                ];
+            }),
+            'no_payment_yet' => $detail['no_payment_yet']->map(function ($item) {
                 return [
                     'user' => new UserResource($item['user']),
                     'amount_due' => $item['amount_due'],
