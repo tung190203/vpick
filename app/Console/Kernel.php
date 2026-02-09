@@ -13,6 +13,7 @@ class Kernel extends ConsoleKernel
     {
         $schedule->job(new SendMiniTournamentRemindersJob())->everyMinute();
         $schedule->command('system:send-notifications')->everyMinute();
+        $schedule->command('clubs:send-scheduled-notifications')->everyMinute();
         $schedule->call(function () {
             DeviceToken::where('last_seen_at', '<', now()->subDays(60))->delete();
         })->daily();

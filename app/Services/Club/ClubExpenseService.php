@@ -38,10 +38,12 @@ class ClubExpenseService
             throw new \Exception('Chỉ admin/manager/treasurer mới có quyền tạo chi phí');
         }
 
-        return DB::transaction(function () use ($club, $data, $userId) {
+        $description = (string) ($data['description'] ?? $data['title'] ?? '');
+
+        return DB::transaction(function () use ($club, $data, $userId, $description) {
             $expense = ClubExpense::create([
                 'club_id' => $club->id,
-                'title' => $data['title'],
+                'title' => $description,
                 'amount' => $data['amount'],
                 'spent_by' => $userId,
                 'spent_at' => $data['spent_at'] ?? now(),
@@ -58,7 +60,7 @@ class ClubExpenseService
                     'payment_method' => $data['payment_method'],
                     'status' => ClubWalletTransactionStatus::Pending,
                     'reference_code' => $data['reference_code'] ?? null,
-                    'description' => $data['description'] ?? null,
+                    'description' => $description,
                     'created_by' => $userId,
                 ]);
 
@@ -75,6 +77,15 @@ class ClubExpenseService
         if (!$club->canManageFinance($userId)) {
             throw new \Exception('Chỉ admin/manager/treasurer mới có quyền cập nhật');
         }
+
+        if (isset($data['description'])) {
+            $description = (string) $data['description'];
+            $data['title'] = $description;
+            if ($expense->walletTransaction) {
+                $expense->walletTransaction->update(['description' => $description]);
+            }
+        }
+        unset($data['description']);
 
         $expense->update($data);
         return $expense;

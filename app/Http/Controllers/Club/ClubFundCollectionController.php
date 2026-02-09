@@ -13,6 +13,7 @@ use App\Http\Resources\UserResource;
 use App\Models\Club\Club;
 use App\Models\Club\ClubFundCollection;
 use App\Services\Club\ClubFundCollectionService;
+use App\Services\ImageOptimizationService;
 use Illuminate\Http\Request;
 
 class ClubFundCollectionController extends Controller
@@ -53,7 +54,18 @@ class ClubFundCollectionController extends Controller
         }
 
         try {
-            $collection = $this->collectionService->createCollection($club, $request->validated(), $userId);
+            $data = $request->validated();
+
+            if ($request->hasFile('qr_image')) {
+                $data['qr_code_url'] = app(ImageOptimizationService::class)->optimizeThumbnail(
+                    $request->file('qr_image'),
+                    'qr_codes',
+                    90
+                );
+                unset($data['qr_image']);
+            }
+
+            $collection = $this->collectionService->createCollection($club, $data, $userId);
             $collection->load(['creator', 'club', 'contributions.user', 'assignedMembers']);
 
             return ResponseHelper::success(new ClubFundCollectionResource($collection), 'Tạo đợt thu thành công', 201);

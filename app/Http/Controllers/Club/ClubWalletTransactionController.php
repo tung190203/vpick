@@ -50,6 +50,38 @@ class ClubWalletTransactionController extends Controller
         return ResponseHelper::success($data, 'Lấy danh sách giao dịch thành công', 200, $meta);
     }
 
+    public function myTransactions(Request $request, $clubId)
+    {
+        $userId = auth()->id();
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
+        }
+
+        $club = Club::findOrFail($clubId);
+
+        $validated = $request->validate([
+            'page' => 'sometimes|integer|min:1',
+            'per_page' => 'sometimes|integer|min:1|max:100',
+            'date_from' => 'sometimes|date',
+            'date_to' => 'sometimes|date|after_or_equal:date_from',
+            'search' => 'nullable|string|max:255',
+            'direction' => ['sometimes', Rule::enum(ClubWalletTransactionDirection::class)],
+            'source_type' => ['sometimes', Rule::enum(ClubWalletTransactionSourceType::class)],
+        ]);
+
+        $transactions = $this->transactionService->getMyTransactions($club, $userId, $validated);
+
+        $data = ['transactions' => ClubWalletTransactionResource::collection($transactions)];
+        $meta = [
+            'current_page' => $transactions->currentPage(),
+            'per_page' => $transactions->perPage(),
+            'total' => $transactions->total(),
+            'last_page' => $transactions->lastPage(),
+        ];
+
+        return ResponseHelper::success($data, 'Lấy lịch sử giao dịch của tôi thành công', 200, $meta);
+    }
+
     public function store(Request $request, $clubId)
     {
         $club = Club::findOrFail($clubId);

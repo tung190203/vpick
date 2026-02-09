@@ -44,6 +44,41 @@ class ClubWalletTransactionService
         return $query->orderBy('created_at', 'desc')->paginate($perPage);
     }
 
+    public function getMyTransactions(Club $club, int $userId, array $filters): LengthAwarePaginator
+    {
+        $query = ClubWalletTransaction::whereHas('wallet', function ($q) use ($club) {
+            $q->where('club_id', $club->id);
+        })
+            ->where('created_by', $userId)
+            ->with(['wallet', 'creator', 'confirmer']);
+
+        if (!empty($filters['date_from'])) {
+            $query->whereDate('created_at', '>=', $filters['date_from']);
+        }
+
+        if (!empty($filters['date_to'])) {
+            $query->whereDate('created_at', '<=', $filters['date_to']);
+        }
+
+        if (!empty($filters['search'])) {
+            $query->where(function ($q) use ($filters) {
+                $q->where('description', 'like', '%' . $filters['search'] . '%')
+                    ->orWhere('reference_code', 'like', '%' . $filters['search'] . '%');
+            });
+        }
+
+        if (!empty($filters['direction'])) {
+            $query->where('direction', $filters['direction']);
+        }
+
+        if (!empty($filters['source_type'])) {
+            $query->where('source_type', $filters['source_type']);
+        }
+
+        $perPage = $filters['per_page'] ?? 15;
+        return $query->orderBy('created_at', 'desc')->paginate($perPage);
+    }
+
     public function createTransaction(ClubWallet $wallet, array $data, int $creatorId): ClubWalletTransaction
     {
         return ClubWalletTransaction::create([
