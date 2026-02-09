@@ -129,7 +129,11 @@ class ClubFundCollectionController extends Controller
         }
 
         try {
-            $collection = $this->collectionService->updateCollection($collection, $request->validated(), $userId);
+            $data = $request->validated();
+            if (!empty($data['end_date']) && $collection->start_date && $data['end_date'] < $collection->start_date->format('Y-m-d')) {
+                return ResponseHelper::error('Ngày kết thúc phải sau ngày bắt đầu đợt thu', 422);
+            }
+            $collection = $this->collectionService->updateCollection($collection, $data, $userId);
             $collection->load(['creator', 'club', 'contributions.user']);
 
             return ResponseHelper::success(new ClubFundCollectionResource($collection), 'Cập nhật đợt thu thành công');

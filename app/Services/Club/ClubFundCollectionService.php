@@ -140,6 +140,13 @@ class ClubFundCollectionService
             throw new \Exception('Chỉ có thể cập nhật đợt thu đang active');
         }
 
+        if (array_key_exists('amount_per_member', $data) && $data['amount_per_member'] !== null) {
+            $newAmount = (float) $data['amount_per_member'];
+            DB::table('club_fund_collection_members')
+                ->where('club_fund_collection_id', $collection->id)
+                ->update(['amount_due' => $newAmount]);
+        }
+
         $collection->update($data);
         return $collection;
     }
@@ -212,16 +219,19 @@ class ClubFundCollectionService
 
         $collectionIds = $assignedCollections->pluck('id');
 
-        $contributions = \App\Models\Club\ClubFundContribution::whereIn('club_fund_collection_id', $collectionIds)
-            ->where('user_id', $userId)
-            ->get()
-            ->keyBy('club_fund_collection_id');
+        $contributions = $collectionIds->isEmpty()
+            ? collect()
+            : \App\Models\Club\ClubFundContribution::whereIn('club_fund_collection_id', $collectionIds)
+                ->where('user_id', $userId)
+                ->get()
+                ->keyBy('club_fund_collection_id');
 
-        // Số tiền phải đóng của user theo từng đợt thu (pivot) — phải khớp với amount_per_member / từng thành viên
-        $myAmountDueByCollection = DB::table('club_fund_collection_members')
-            ->where('user_id', $userId)
-            ->whereIn('club_fund_collection_id', $collectionIds)
-            ->pluck('amount_due', 'club_fund_collection_id');
+        $myAmountDueByCollection = $collectionIds->isEmpty()
+            ? collect()
+            : DB::table('club_fund_collection_members')
+                ->where('user_id', $userId)
+                ->whereIn('club_fund_collection_id', $collectionIds)
+                ->pluck('amount_due', 'club_fund_collection_id');
 
         $result = $assignedCollections->map(function ($collection) use ($contributions, $myAmountDueByCollection) {
             $contribution = $contributions->get($collection->id);
