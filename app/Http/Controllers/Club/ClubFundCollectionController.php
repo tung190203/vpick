@@ -225,7 +225,20 @@ class ClubFundCollectionController extends Controller
             return ResponseHelper::error('Bạn cần đăng nhập', 401);
         }
 
+        $validated = $request->validate([
+            'payment_status' => 'sometimes|in:need_payment,pending,confirmed',
+        ]);
+
         $result = $this->collectionService->getMyCollections($club, $userId);
+
+        if (!empty($validated['payment_status'])) {
+            $key = $validated['payment_status'];
+            $result = [
+                'need_payment' => $key === 'need_payment' ? $result['need_payment'] : collect(),
+                'pending' => $key === 'pending' ? $result['pending'] : collect(),
+                'confirmed' => $key === 'confirmed' ? $result['confirmed'] : collect(),
+            ];
+        }
 
         return ResponseHelper::success([
             'need_payment' => ClubMyFundCollectionResource::collection($result['need_payment']),

@@ -25,19 +25,11 @@ class ClubWalletTransactionController extends Controller
 
     public function index(Request $request, $clubId)
     {
+        $this->normalizeFilterArrayParams($request);
         $club = Club::findOrFail($clubId);
-
-        $validated = $request->validate([
-            'page' => 'sometimes|integer|min:1',
-            'per_page' => 'sometimes|integer|min:1|max:100',
-            'search' => 'nullable|string|max:255',
+        $validated = $request->validate(array_merge($this->transactionFilterRules(), [
             'wallet_id' => 'sometimes|exists:club_wallets,id',
-            'direction' => ['sometimes', Rule::enum(ClubWalletTransactionDirection::class)],
-            'source_type' => ['sometimes', Rule::enum(ClubWalletTransactionSourceType::class)],
-            'status' => ['sometimes', Rule::enum(ClubWalletTransactionStatus::class)],
-            'date_from' => 'sometimes|date',
-            'date_to' => 'sometimes|date|after_or_equal:date_from',
-        ]);
+        ]));
 
         $transactions = $this->transactionService->getTransactions($club, $validated);
 
@@ -58,17 +50,9 @@ class ClubWalletTransactionController extends Controller
             return ResponseHelper::error('Bạn cần đăng nhập', 401);
         }
 
+        $this->normalizeFilterArrayParams($request);
         $club = Club::findOrFail($clubId);
-
-        $validated = $request->validate([
-            'page' => 'sometimes|integer|min:1',
-            'per_page' => 'sometimes|integer|min:1|max:100',
-            'date_from' => 'sometimes|date',
-            'date_to' => 'sometimes|date|after_or_equal:date_from',
-            'search' => 'nullable|string|max:255',
-            'direction' => ['sometimes', Rule::enum(ClubWalletTransactionDirection::class)],
-            'source_type' => ['sometimes', Rule::enum(ClubWalletTransactionSourceType::class)],
-        ]);
+        $validated = $request->validate($this->transactionFilterRules());
 
         $transactions = $this->transactionService->getMyTransactions($club, $userId, $validated);
 
@@ -189,6 +173,49 @@ class ClubWalletTransactionController extends Controller
             return ResponseHelper::success(new ClubWalletTransactionResource($transaction), 'Giao dịch đã bị từ chối');
         } catch (\Exception $e) {
             return ResponseHelper::error($e->getMessage(), 422);
+        }
+    }
+
+    private function transactionFilterRules(): array
+    {
+        return array_merge([
+            'page' => 'sometimes|integer|min:1',
+            'per_page' => 'sometimes|integer|min:1|max:100',
+            'search' => 'nullable|string|max:255',
+            'direction' => ['sometimes', Rule::enum(ClubWalletTransactionDirection::class)],
+            'date_from' => 'sometimes|date',
+            'date_to' => 'sometimes|date|after_or_equal:date_from',
+        ], $this->enumArrayRules('source_types', ClubWalletTransactionSourceType::class), $this->enumArrayRules('statuses', ClubWalletTransactionStatus::class));
+    }
+
+    private function enumArrayRules(string $key, string $enumClass): array
+    {
+        return [
+            $key => ['sometimes', 'array'],
+            $key . '.*' => [Rule::enum($enumClass)],
+        ];
+    }
+
+    private function normalizeFilterArrayParams(Request $request): void
+    {
+        foreach (['statuses', 'source_types'] as $key) {
+            if (!$request->has($key)) {
+                continue;
+            }
+            $val = $request->input($key);
+            if (is_string($val)) {
+                $request->merge([$key => array_values(array_filter(array_map('trim', explode(',', $val))))]);
+            } elseif (is_array($val)) {
+                $flat = [];
+                foreach ($val as $item) {
+                    if (is_string($item) && str_contains($item, ',')) {
+                        $flat = array_merge($flat, array_map('trim', explode(',', $item)));
+                    } else {
+                        $flat[] = $item;
+                    }
+                }
+                $request->merge([$key => array_values(array_filter($flat))]);
+            }
         }
     }
 }
