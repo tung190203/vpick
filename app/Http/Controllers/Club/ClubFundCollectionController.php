@@ -9,10 +9,12 @@ use App\Http\Requests\Club\StoreFundCollectionRequest;
 use App\Http\Requests\Club\UpdateFundCollectionRequest;
 use App\Http\Resources\Club\ClubFundCollectionResource;
 use App\Http\Resources\Club\ClubFundContributionResource;
+use App\Http\Resources\Club\ClubMyFundCollectionResource;
 use App\Http\Resources\UserResource;
 use App\Models\Club\Club;
 use App\Models\Club\ClubFundCollection;
 use App\Services\Club\ClubFundCollectionService;
+use App\Services\ImageOptimizationService;
 use Illuminate\Http\Request;
 
 class ClubFundCollectionController extends Controller
@@ -28,6 +30,7 @@ class ClubFundCollectionController extends Controller
         $validated = $request->validate([
             'page' => 'sometimes|integer|min:1',
             'per_page' => 'sometimes|integer|min:1|max:100',
+            'search' => 'nullable|string|max:255',
         ]);
 
         $collections = $this->collectionService->getCollections($club, $validated);
@@ -53,7 +56,18 @@ class ClubFundCollectionController extends Controller
         }
 
         try {
-            $collection = $this->collectionService->createCollection($club, $request->validated(), $userId);
+            $data = $request->validated();
+
+            if ($request->hasFile('qr_image')) {
+                $data['qr_code_url'] = app(ImageOptimizationService::class)->optimizeThumbnail(
+                    $request->file('qr_image'),
+                    'qr_codes',
+                    90
+                );
+                unset($data['qr_image']);
+            }
+
+            $collection = $this->collectionService->createCollection($club, $data, $userId);
             $collection->load(['creator', 'club', 'contributions.user', 'assignedMembers']);
 
             return ResponseHelper::success(new ClubFundCollectionResource($collection), 'Tạo đợt thu thành công', 201);
@@ -116,7 +130,11 @@ class ClubFundCollectionController extends Controller
         }
 
         try {
-            $collection = $this->collectionService->updateCollection($collection, $request->validated(), $userId);
+            $data = $request->validated();
+            if (!empty($data['end_date']) && $collection->start_date && $data['end_date'] < $collection->start_date->format('Y-m-d')) {
+                return ResponseHelper::error('Ngày kết thúc phải sau ngày bắt đầu đợt thu', 422);
+            }
+            $collection = $this->collectionService->updateCollection($collection, $data, $userId);
             $collection->load(['creator', 'club', 'contributions.user']);
 
             return ResponseHelper::success(new ClubFundCollectionResource($collection), 'Cập nhật đợt thu thành công');
@@ -210,9 +228,9 @@ class ClubFundCollectionController extends Controller
         $result = $this->collectionService->getMyCollections($club, $userId);
 
         return ResponseHelper::success([
-            'need_payment' => $result['need_payment'],
-            'pending' => $result['pending'],
-            'confirmed' => $result['confirmed'],
+            'need_payment' => ClubMyFundCollectionResource::collection($result['need_payment']),
+            'pending' => ClubMyFundCollectionResource::collection($result['pending']),
+            'confirmed' => ClubMyFundCollectionResource::collection($result['confirmed']),
             'summary' => [
                 'need_payment_count' => $result['need_payment']->count(),
                 'pending_count' => $result['pending']->count(),

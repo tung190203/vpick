@@ -20,7 +20,7 @@
                     <div>
                         <p class="text-sm font-medium text-white opacity-60 mb-1">Quỹ chung hiện có</p>
                         <div class="flex items-baseline space-x-2">
-                            <p class="text-[64px] font-bold leading-tight">5.240.000</p>
+                            <p class="text-[64px] font-bold leading-tight">{{ formatCurrency(fundOverview.balance) }}</p>
                             <p class="text-xs font-semibold text-[#00B377]">VND</p>
                         </div>
                     </div>
@@ -32,7 +32,7 @@
                                 <p>Thu tháng này</p>
                             </div>
                             <div class="flex items-baseline space-x-1">
-                                <p class="text-3xl font-bold">+ 8.400K</p>
+                                <p class="text-3xl font-bold">{{ formatSpecialCurrency(fundOverview.total_income) }}</p>
                             </div>
                         </div>
                         
@@ -42,7 +42,7 @@
                                 <p>Chi tháng này</p>
                             </div>
                             <div class="flex items-baseline space-x-1">
-                                <p class="text-3xl font-bold">- 3.160K</p>
+                                <p class="text-3xl font-bold">{{ formatSpecialCurrency(fundOverview.total_expense) }}</p>
                             </div>
                         </div>
                     </div>
@@ -53,8 +53,8 @@
             <!-- Content Grid: Admin / Secretary / Treasurer -->
             <div class="grid grid-cols-12 gap-6 py-6 flex-1 overflow-hidden" v-if="hasAnyRole(['admin', 'secretary', 'treasurer'])">
                 <!-- Left Column: ĐỢT THU & XÁC NHẬN -->
-                <div class="col-span-4 flex flex-col h-full overflow-hidden">
-                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-full overflow-hidden">
+                <div class="col-span-4 flex flex-col">
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col">
                         <!-- ĐỢT THU ĐANG MỞ -->
                         <div class="p-6 border-b border-gray-100">
                             <div class="flex items-center justify-between mb-6">
@@ -130,9 +130,11 @@
                                     <MagnifyingGlassIcon class="w-5 h-5 text-[#838799]" />
                                 </div>
                                 <input 
+                                    v-model="searchQuery"
                                     type="text" 
                                     placeholder="Tìm kiếm lịch sử giao dịch"
-                                    class="w-full bg-[#EDEEF2] border-none rounded-2xl py-3.5 pl-12 pr-12 text-sm focus:ring-0 placeholder:text-[#9EA2B3] placeholder:font-normal"
+                                    @input="handleSearch"
+                                    class="w-full bg-[#EDEEF2] border-none rounded-md py-3.5 pl-12 pr-12 text-sm focus:ring-0 placeholder:text-[#9EA2B3] placeholder:font-normal"
                                 />
                                 <div class="absolute inset-y-0 right-4 flex items-center">
                                     <FunnelIcon class="w-5 h-5 text-[#838799] cursor-pointer" />
@@ -144,38 +146,26 @@
                         <div class="flex-1 overflow-y-auto px-6">
                             <!-- Transaction Item -->
                             <div class="flex items-center justify-between py-5 border-b border-[#F2F3F5] hover:bg-gray-50/30 transition-colors cursor-pointer last:border-b-0"
-                                v-for="(item, index) in [
-                                    { title: 'Mua bóng', amount: '- 100.000', date: '20/9/2024', type: 'expense', icon: 'racket' },
-                                    { title: 'Quỹ tháng 9/2024', amount: '+ 9.000.000', date: '20/9/2024', type: 'income', icon: 'fund' },
-                                    { title: 'Liên hoan vô địch', amount: '- 3.000.000', date: '20/9/2024', type: 'expense', icon: 'trophy' },
-                                    { title: 'Thu phí lớp học viên', amount: '+ 1.000.000', date: '20/9/2024', type: 'income', icon: 'class' }
-                                ]" :key="index">
+                                v-for="(item, index) in transactions" :key="index">
                                 <div class="flex items-center space-x-4">
-                                    <div :class="[
-                                        'w-11 h-11 rounded-full flex items-center justify-center',
-                                        item.type === 'expense' ? 'bg-[#FEE2E2]' : 'bg-[#E5F7ED]'
-                                    ]">
-                                        <BanknotesIcon v-if="item.icon === 'fund'" class="w-6 h-6 text-[#10B981]" />
-                                        <TrophyIcon v-else-if="item.icon === 'trophy'" class="w-6 h-6 text-[#D72D36]" />
-                                        <AcademicCapIcon v-else-if="item.icon === 'class'" class="w-6 h-6 text-[#10B981]" />
-                                        <div v-else class="w-6 h-6 text-[#D72D36] flex items-center justify-center">
-                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                                <path d="M15 9L9 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                                <path d="M9 9L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                            </svg>
-                                        </div>
-                                    </div>
                                     <div>
-                                        <p class="font-bold text-[#1F2937] text-[15px]">{{ item.title }}</p>
-                                        <p class="text-[12px] text-[#838799] font-medium mt-0.5">
-                                            {{ item.type === 'income' ? 'Thu' : 'Chi' }} ngày {{ item.date }}
+                                        <p class="font-bold text-[#1F2937] text-[15px]">{{ item.description || 'Chưa có mô tả' }}</p>
+                                        <p class="text-[12px] text-[#838799] font-normal mt-0.5">
+                                            {{ item.source_type === 'income' ? 'Thu' : 'Chi' }} ngày {{ formatDatetime(item.created_at, '/') }}
                                         </p>
                                     </div>
                                 </div>
-                                <span :class="['font-bold text-[16px]', item.type === 'expense' ? 'text-[#D72D36]' : 'text-[#10B981]']">
-                                    {{ item.amount }}
+                                <span :class="['font-bold text-[16px]', item.source_type === 'expense' ? 'text-[#D72D36]' : 'text-[#10B981]']">
+                                   <span>{{ item.source_type === 'expense' ? '-' : '+' }}</span> {{ formatCurrency(item.amount) }}
                                 </span>
+                            </div>
+
+                            <!-- Pagination -->
+                            <div class="px-6 pb-6">
+                                <Pagination 
+                                    :meta="{ current_page: currentPage, last_page: lastPage }" 
+                                    @page-change="handlePageChange" 
+                                />
                             </div>
                         </div>
                     </div>
@@ -185,8 +175,8 @@
             <!-- Content Grid: Member / Manager -->
             <div class="grid grid-cols-12 gap-6 py-6 flex-1 overflow-hidden" v-else>
                 <!-- Left Column: CẦN THANH TOÁN -->
-                <div class="col-span-4 flex flex-col h-full overflow-hidden" v-if="hasAnyRole(['manager', 'member'])">
-                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-full overflow-hidden">
+                <div class="col-span-4 flex flex-col" v-if="hasAnyRole(['manager', 'member'])">
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col">
                         <!-- Section Header -->
                         <div class="p-6 pb-4">
                             <div class="flex items-center space-x-2 text-[#838799] font-semibold tracking-wide">
@@ -259,9 +249,11 @@
                                     <MagnifyingGlassIcon class="w-5 h-5 text-[#838799]" />
                                 </div>
                                 <input 
+                                    v-model="searchQuery"
                                     type="text" 
                                     placeholder="Tìm kiếm lịch sử giao dịch"
-                                    class="w-full bg-[#EDEEF2] border-none rounded-2xl py-3.5 pl-12 pr-12 text-sm focus:ring-0 placeholder:text-[#9EA2B3] placeholder:font-normal"
+                                    @input="handleSearch"
+                                    class="w-full bg-[#EDEEF2] border-none rounded-md py-3.5 pl-12 pr-12 text-sm focus:ring-0 placeholder:text-[#9EA2B3] placeholder:font-normal"
                                 />
                                 <div class="absolute inset-y-0 right-4 flex items-center">
                                     <FunnelIcon class="w-5 h-5 text-[#838799] cursor-pointer" />
@@ -271,25 +263,23 @@
 
                         <!-- History List -->
                         <div class="flex-1 overflow-y-auto">
-                            <div v-for="i in 2" :key="i" 
+                            <div v-for="(item, i) in transactions" :key="i" 
                                 class="flex items-center justify-between mx-6 py-5 border-b border-[#dcdee6] hover:bg-gray-50/30 transition-colors cursor-pointer last:border-b-0">
                                 <div class="flex items-center space-x-4">
-                                    <div class="w-11 h-11 rounded-full bg-[#E5F7ED] flex items-center justify-center text-[#10B981]">
-                                        <div class="relative">
-                                            <div class="w-6 h-6 border-2 border-[#10B981] rounded-full flex items-center justify-center">
-                                                <span class="font-bold text-[13px]">$</span>
-                                            </div>
-                                            <div class="absolute -bottom-0.5 -right-0.5 bg-white rounded-full">
-                                                <CheckCircleIcon class="w-4 h-4 text-[#10B981]" />
-                                            </div>
-                                        </div>
-                                    </div>
                                     <div>
-                                        <p class="font-bold text-[#1F2937] text-[15px]">Quỹ tháng {{ 11 - i }}/2024</p>
-                                        <p class="text-[12px] text-[#10B981] font-medium mt-0.5">Hoàn tất: 05/0{{ 10 - i }}/2024</p>
+                                        <p class="font-bold text-[#1F2937] text-[15px]">{{ item.description || 'Chưa có mô tả' }}</p>
+                                        <p class="text-[12px] text-[#10B981] font-normal mt-0.5">Hoàn tất: {{ formatDatetime(item.confirmed_at, '/') }}</p>
                                     </div>
                                 </div>
-                                <span class="font-bold text-[#1F2937] text-[15px]">200.000đ</span>
+                                <span class="font-bold text-[#1F2937] text-[15px]">{{ formatCurrency(item.amount) }}</span>
+                            </div>
+
+                            <!-- Pagination -->
+                            <div class="px-6 pb-6">
+                                <Pagination 
+                                    :meta="{ current_page: currentPage, last_page: lastPage }" 
+                                    @page-change="handlePageChange" 
+                                />
                             </div>
                         </div>
                     </div>
@@ -339,19 +329,19 @@
                                             <div v-for="(qr, index) in qrList" :key="index" class="min-w-full h-full p-1">
                                                 <!-- QR Content Card -->
                                                 <div class="bg-white border border-[#F2F3F5] rounded-[24px] p-6 h-full flex flex-col items-center shadow-sm">
-                                                    <h3 class="text-[20px] font-bold text-[#1F2937] mb-4 truncate w-full text-center">{{ qr.title }}</h3>
+                                                    <h3 class="text-[20px] font-bold text-[#1F2937] mb-2 truncate w-full text-center line-clamp-1" v-tooltip="qr.title">{{ qr.title }}</h3>
                                                     
                                                     <!-- QR Placeholder -->
-                                                    <div class="w-full aspect-square bg-[#F8FAFC] rounded-2xl flex items-center justify-center mb-4 overflow-hidden border border-gray-100 flex-shrink min-h-0">
-                                                        <img src="@/assets/images/qr_code.svg" class="w-2/3 h-2/3 opacity-90" :alt="qr.title" />
+                                                    <div class="w-full aspect-square flex items-center justify-center overflow-hidden flex-shrink min-h-0">
+                                                        <img :src="qr.qr_code_url" class="w-5/6 h-5/6 opacity-90" :alt="qr.title" />
                                                     </div>
 
-                                                    <div class="text-center mb-4 flex-shrink-0">
+                                                    <div class="text-center mb-2 flex-shrink-0">
                                                         <div class="flex items-center justify-center space-x-1.5 mb-1">
                                                             <span class="text-[14px] font-normal text-[#1F2937]">VNĐ</span>
-                                                            <span class="text-[20px] font-bold text-[#4392E0]">{{ qr.amount }}</span>
+                                                            <span class="text-[20px] font-bold text-[#4392E0]">{{ formatCurrency(qr.amount_per_member) }}</span>
                                                         </div>
-                                                        <p class="text-[14px] text-[#838799] font-normal">{{ qr.description }}</p>
+                                                        <p class="text-[14px] text-[#838799] font-normal line-clamp-1" v-tooltip="qr.description">{{ qr.description }}</p>
                                                     </div>
 
                                                     <!-- Action Buttons -->
@@ -453,7 +443,10 @@
                                                     </div>
                                                     <input 
                                                         type="text" 
-                                                        v-model="newQRAmount"
+                                                        :value="newQRAmount"
+                                                        @input="onAmountInput"
+                                                        inputmode="numeric"
+                                                        @keypress="(e) => !/[0-9]/.test(e.key) && e.preventDefault()"
                                                         placeholder="0"
                                                         class="w-full bg-[#EDEEF2] border-none rounded-[4px] py-3 pl-14 pr-4 font-bold text-[#1F2937] focus:ring-0 placeholder:text-[#9EA2B3]"
                                                     />
@@ -492,8 +485,21 @@
                                     </div>
 
                                     <!-- Submit Button -->
-                                    <button class="mx-auto w-fit px-10 py-3 bg-[#D72D36] text-white rounded-[4px] font-bold text-lg hover:bg-[#b91c1c] transition-colors mt-6 flex items-center justify-center">
-                                        Lưu mã QR
+                                    <button 
+                                        @click="handleSaveQRCode"
+                                        :disabled="isSubmittingQR"
+                                        class="mx-auto w-fit px-10 py-3 bg-[#D72D36] text-white rounded-[4px] font-bold text-lg hover:bg-[#b91c1c] transition-colors mt-6 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        <template v-if="isSubmittingQR">
+                                            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            Đang lưu...
+                                        </template>
+                                        <template v-else>
+                                            Lưu mã QR
+                                        </template>
                                      </button>
                                 </div>
                             </div>
@@ -506,7 +512,7 @@
             <ClubCreateFundModal 
                 v-model:isOpen="showCreateFundModal"
                 :club="club"
-                @submit="handleSubmitFund"
+                @submit="handleSubmitFundRevenue"
             />
 
 
@@ -530,6 +536,7 @@
 import Background from '@/assets/images/club-default-thumbnail.svg?url'
 import ClubFundSkeleton from '@/components/molecules/ClubFundSkeleton.vue'
 import ClubCreateFundModal from '@/components/pages/club/partials/ClubCreateFundModal.vue'
+import Pagination from '@/components/molecules/Pagination.vue'
 import {
     ArrowDownIcon,
     ArrowLeftIcon,
@@ -537,10 +544,8 @@ import {
     CalendarIcon,
     MagnifyingGlassIcon,
     FunnelIcon,
-    CheckCircleIcon,
     PlusIcon,
     MinusIcon,
-    BanknotesIcon,
     XMarkIcon,
     ArrowDownTrayIcon,
     ShareIcon,
@@ -549,8 +554,6 @@ import {
     ChevronRightIcon,
     PhotoIcon,
     PencilSquareIcon,
-    TrophyIcon,
-    AcademicCapIcon
 } from '@heroicons/vue/24/outline'
 import { useRouter, useRoute } from 'vue-router'
 import { onMounted, ref, computed } from 'vue'
@@ -559,6 +562,8 @@ import * as ClubService from '@/service/club.js'
 import { toast } from 'vue3-toastify'
 import { useUserStore } from '@/store/auth'
 import { storeToRefs } from 'pinia'
+import { formatCurrency, formatSpecialCurrency } from '@/composables/formatCurrency'
+import { formatDatetime } from '@/composables/formatDatetime'
 
 const userStore = useUserStore()
 const { getUser } = storeToRefs(userStore)
@@ -572,19 +577,52 @@ const currentIndex = ref(0)
 const isInitialLoading = ref(true)
 const fileInput = ref(null)
 const previewImage = ref(null)
+const fundOverview = ref(null)
 
 // Add New QR Form State
 const newQRAmount = ref('')
 const newQRDescription = ref('')
 const applyToOtherClubs = ref(false)
+const selectedFile = ref(null)
+const isSubmittingQR = ref(false)
+const transactions = ref([])
 
 const triggerFileInput = () => {
     fileInput.value?.click()
 }
 
+const onAmountInput = (event) => {
+    // Remove all non-numeric characters
+    let value = event.target.value.replace(/\D/g, '')
+
+    // Format with dots
+    if (value) {
+        value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ".")
+    }
+
+    newQRAmount.value = value
+}
+
+const searchQuery = ref('')
+const currentPage = ref(1)
+const lastPage = ref(1)
+const isTransactionsLoading = ref(false)
+const itemsPerPage = 10
+
+// Debounce for search
+let searchTimeout = null
+const handleSearch = () => {
+    if (searchTimeout) clearTimeout(searchTimeout)
+    searchTimeout = setTimeout(() => {
+        currentPage.value = 1
+        getAllTransaction()
+    }, 500)
+}
+
 const handleFileUpload = (event) => {
     const file = event.target.files[0]
     if (file) {
+        selectedFile.value = file
         // Create preview URL
         previewImage.value = URL.createObjectURL(file)
         console.log('File selected:', file.name)
@@ -593,6 +631,7 @@ const handleFileUpload = (event) => {
 
 const removePreview = () => {
     previewImage.value = null
+    selectedFile.value = null
     if (fileInput.value) {
         fileInput.value.value = ''
     }
@@ -606,23 +645,7 @@ const hasAnyRole = (roles = []) => {
     return roles.includes(currentUserMember.value?.role)
 }
 
-const qrList = ref([
-    {
-        title: 'Quỹ tháng 10/2024',
-        amount: '200.000',
-        description: 'Pickleball SGP - Quy thang 10'
-    },
-    {
-        title: 'Quỹ tháng 11/2024',
-        amount: '200.000',
-        description: 'Pickleball SGP - Quy thang 11'
-    },
-    {
-        title: 'Quỹ tháng 12/2024',
-        amount: '200.000',
-        description: 'Pickleball SGP - Quy thang 12'
-    }
-])
+const qrList = ref([])
 
 const nextQR = () => {
     if (currentIndex.value < qrList.value.length - 1) {
@@ -634,14 +657,6 @@ const prevQR = () => {
     if (currentIndex.value > 0) {
         currentIndex.value--
     }
-}
-
-
-
-const handleSubmitFund = (data) => {
-    console.log('Received fund submission:', data)
-    // Add logic here to call API
-    showCreateFundModal.value = false
 }
 
 const goBack = () => {
@@ -657,6 +672,124 @@ const getClubDetail = async () => {
     }
 }
 
+const getFundOverview = async () => {
+    try {
+        const response = await ClubService.fundOverview(clubId.value)
+        fundOverview.value = response.data
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi lấy thông tin quỹ')
+    }
+}
+
+const getlistQrCodes = async () => {
+    try {
+        const response = await ClubService.listQrCodes(clubId.value)
+        qrList.value = response.data?.qr_codes
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi lấy danh sách mã QR')
+    }
+}
+
+const createQrCode = async (data) => {
+    try {
+        isSubmittingQR.value = true
+        const formData = new FormData();
+        formData.append('content', data.content);
+        formData.append('amount', data.amount);
+        formData.append('image', data.image);
+        formData.append('apply_to_other_clubs', data.apply_to_other_clubs ? 1 : 0);
+        const response = await ClubService.createQrCode(clubId.value, formData)
+        toast.success(response.message || 'Tạo mã QR thành công')
+        
+        // Reset form
+        newQRAmount.value = ''
+        newQRDescription.value = ''
+        applyToOtherClubs.value = false
+        removePreview()
+        
+        // Refresh list
+        await getlistQrCodes()
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi tạo mã QR')
+    } finally {
+        isSubmittingQR.value = false
+    }
+}
+
+const handleSaveQRCode = async () => {
+    if (!selectedFile.value) {
+        toast.error('Vui lòng chọn ảnh mã QR')
+        return
+    }
+    const rawAmount = parseFloat(newQRAmount.value.replace(/\./g, ''))
+    if (!newQRAmount.value || isNaN(rawAmount) || rawAmount <= 0) {
+        toast.error('Vui lòng nhập số tiền hợp lệ')
+        return
+    }
+    if (!newQRDescription.value) {
+        toast.error('Vui lòng nhập nội dung')
+        return
+    }
+
+    await createQrCode({
+        content: newQRDescription.value,
+        amount: rawAmount,
+        image: selectedFile.value,
+        apply_to_other_clubs: applyToOtherClubs.value
+    })
+}
+
+const handleSubmitFundRevenue = async (data) => {
+    const formData = new FormData();
+    formData.append('title', data.title);
+    formData.append('description', data.description);
+    formData.append('target_amount', data.target_amount);
+    formData.append('amount_per_member', data.amount_per_member);
+    formData.append('start_date', data.start_date);
+    formData.append('deadline', data.deadline);
+    formData.append('end_date', data.end_date);
+    
+    if (Array.isArray(data.member_ids)) {
+        data.member_ids.forEach(id => {
+            formData.append('member_ids[]', id);
+        });
+    }
+
+    formData.append('qr_code_url', data.qr_code_url);
+
+    try {
+        const response = await ClubService.createdFundRevenue(clubId.value, formData)
+        toast.success(response.message || 'Tạo khoản thu thành công')
+        showCreateFundModal.value = false
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi tạo khoản thu')
+    }
+}
+
+const getAllTransaction = async () => {
+    try {
+        isTransactionsLoading.value = true
+        const params = {
+            page: currentPage.value,
+            per_page: itemsPerPage,
+            search: searchQuery.value
+        }
+        
+        const response = await ClubService.getAllTransaction(clubId.value, params)
+        transactions.value = response.data?.transactions || []
+        lastPage.value = response.meta?.last_page || 1
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi lấy danh sách giao dịch')
+    } finally {
+        isTransactionsLoading.value = false
+    }
+}
+
+const handlePageChange = (page) => {
+    currentPage.value = page
+    getAllTransaction()
+}
+
 onMounted(async () => {
     if (!clubId.value) {
         isInitialLoading.value = false;
@@ -665,6 +798,9 @@ onMounted(async () => {
     
     isInitialLoading.value = true;
     await getClubDetail();
+    await getFundOverview();
+    await getlistQrCodes();
+    await getAllTransaction();
 
     // Simulate loading delay
     setTimeout(() => {

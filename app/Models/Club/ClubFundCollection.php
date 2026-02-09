@@ -17,6 +17,7 @@ class ClubFundCollection extends Model
         'title',
         'description',
         'target_amount',
+        'amount_per_member',
         'collected_amount',
         'currency',
         'start_date',
@@ -29,6 +30,7 @@ class ClubFundCollection extends Model
     protected $casts = [
         'status' => ClubFundCollectionStatus::class,
         'target_amount' => 'decimal:2',
+        'amount_per_member' => 'decimal:2',
         'collected_amount' => 'decimal:2',
         'start_date' => 'date',
         'end_date' => 'date',

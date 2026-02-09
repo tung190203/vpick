@@ -15,6 +15,7 @@ class AutoCompleteActivities extends Command
     {
         $today = Carbon::now()->startOfDay();
 
+        // Chỉ lấy activities không phải recurring HOẶC là recurring nhưng đã có occurrence tiếp theo
         $activities = ClubActivity::whereIn('status', [
             ClubActivityStatus::Scheduled,
             ClubActivityStatus::Ongoing
@@ -24,8 +25,16 @@ class AutoCompleteActivities extends Command
             ->get();
 
         $count = 0;
+        $skipped = 0;
 
         foreach ($activities as $activity) {
+            // CRITICAL FIX: Skip recurring activities - chúng sẽ được xử lý riêng
+            if ($activity->isRecurring()) {
+                $skipped++;
+                $this->line("⊘ Skipped recurring activity #{$activity->id} '{$activity->title}' - will be handled by recurring logic");
+                continue;
+            }
+
             $activity->update(['status' => ClubActivityStatus::Completed]);
             $count++;
 
@@ -35,7 +44,13 @@ class AutoCompleteActivities extends Command
 
         if ($count > 0) {
             $this->info("Đã tự động complete {$count} hoạt động");
-        } else {
+        }
+        
+        if ($skipped > 0) {
+            $this->info("Đã skip {$skipped} recurring activities");
+        }
+        
+        if ($count === 0 && $skipped === 0) {
             $this->info('Không có hoạt động nào cần complete');
         }
 
