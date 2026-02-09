@@ -9,6 +9,7 @@ use App\Http\Requests\Club\StoreFundCollectionRequest;
 use App\Http\Requests\Club\UpdateFundCollectionRequest;
 use App\Http\Resources\Club\ClubFundCollectionResource;
 use App\Http\Resources\Club\ClubFundContributionResource;
+use App\Http\Resources\Club\ClubMyFundCollectionResource;
 use App\Http\Resources\UserResource;
 use App\Models\Club\Club;
 use App\Models\Club\ClubFundCollection;
@@ -222,9 +223,9 @@ class ClubFundCollectionController extends Controller
         $result = $this->collectionService->getMyCollections($club, $userId);
 
         return ResponseHelper::success([
-            'need_payment' => $result['need_payment'],
-            'pending' => $result['pending'],
-            'confirmed' => $result['confirmed'],
+            'need_payment' => ClubMyFundCollectionResource::collection($result['need_payment']),
+            'pending' => ClubMyFundCollectionResource::collection($result['pending']),
+            'confirmed' => ClubMyFundCollectionResource::collection($result['confirmed']),
             'summary' => [
                 'need_payment_count' => $result['need_payment']->count(),
                 'pending_count' => $result['pending']->count(),

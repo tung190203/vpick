@@ -210,14 +210,24 @@ class ClubFundCollectionService
             ->with(['creator'])
             ->get();
 
-        $contributions = \App\Models\Club\ClubFundContribution::whereIn('club_fund_collection_id', $assignedCollections->pluck('id'))
+        $collectionIds = $assignedCollections->pluck('id');
+
+        $contributions = \App\Models\Club\ClubFundContribution::whereIn('club_fund_collection_id', $collectionIds)
             ->where('user_id', $userId)
             ->get()
             ->keyBy('club_fund_collection_id');
 
-        $result = $assignedCollections->map(function ($collection) use ($contributions) {
+        // Số tiền phải đóng của user theo từng đợt thu (pivot) — phải khớp với amount_per_member / từng thành viên
+        $myAmountDueByCollection = DB::table('club_fund_collection_members')
+            ->where('user_id', $userId)
+            ->whereIn('club_fund_collection_id', $collectionIds)
+            ->pluck('amount_due', 'club_fund_collection_id');
+
+        $result = $assignedCollections->map(function ($collection) use ($contributions, $myAmountDueByCollection) {
             $contribution = $contributions->get($collection->id);
-            $amountDue = (float) ($collection->amount_per_member ?? $collection->target_amount);
+            $amountDue = $myAmountDueByCollection->has($collection->id)
+                ? (float) $myAmountDueByCollection->get($collection->id)
+                : (float) ($collection->amount_per_member ?? $collection->target_amount);
 
             return [
                 'id' => $collection->id,
@@ -340,12 +350,10 @@ class ClubFundCollectionService
 
     private function addNonMemberContributions(Collection $payments, Collection $contributions, Collection $memberUserIds, float $amountPerMember): Collection
     {
-        // Find contributions from non-members
         $nonMemberContributions = $contributions->filter(function ($contribution) use ($memberUserIds) {
             return !$memberUserIds->contains($contribution->user_id);
         });
 
-        // Add non-member contributions to the list
         foreach ($nonMemberContributions as $contribution) {
             if ($contribution->user) {
                 $payments->push([
