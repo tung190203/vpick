@@ -105,17 +105,24 @@ class ClubFundCollectionService
 
         $memberSources = $this->getMemberSources($collection, $amountPerMember);
 
-        $paidMembers = $this->buildPaidMembers($memberSources, $confirmedByUser);
-        $unpaidMembers = $this->buildUnpaidMembers($memberSources, $confirmedByUser, $pendingByUser);
+        $approvedPayments = $this->buildApprovedPayments($memberSources, $confirmedByUser);
+        $waitingApprovalPayments = $this->buildWaitingApprovalPayments($memberSources, $pendingByUser);
+        $noPaymentYet = $this->buildNoPaymentYet($memberSources, $confirmedByUser, $pendingByUser);
+
+        $memberUserIds = $memberSources->pluck('user.id');
+        $approvedPayments = $this->addNonMemberContributions($approvedPayments, $confirmedContributions, $memberUserIds, $amountPerMember);
+        $waitingApprovalPayments = $this->addNonMemberContributions($waitingApprovalPayments, $pendingContributions, $memberUserIds, $amountPerMember);
 
         return [
             'collection' => $collection,
-            'paid_members' => $paidMembers,
-            'unpaid_members' => $unpaidMembers,
+            'approved_payments' => $approvedPayments,
+            'waiting_approval_payments' => $waitingApprovalPayments,
+            'no_payment_yet' => $noPaymentYet,
             'summary' => [
-                'paid_count' => $paidMembers->count(),
-                'pending_count' => $pendingContributions->count(),
-                'unpaid_count' => $unpaidMembers->where('payment_status', 'unpaid')->count(),
+                'total_members' => $memberSources->count(),
+                'approved_count' => $approvedPayments->count(),
+                'waiting_approval_count' => $waitingApprovalPayments->count(),
+                'no_payment_count' => $noPaymentYet->count(),
             ],
         ];
     }
@@ -279,7 +286,7 @@ class ClubFundCollectionService
         })->filter(fn ($item) => $item['user'] !== null)->values();
     }
 
-    private function buildPaidMembers(Collection $memberSources, Collection $confirmedByUser): Collection
+    private function buildApprovedPayments(Collection $memberSources, Collection $confirmedByUser): Collection
     {
         return $memberSources->filter(function ($item) use ($confirmedByUser) {
             return $confirmedByUser->has($item['user']->id);
@@ -296,23 +303,61 @@ class ClubFundCollectionService
         })->values();
     }
 
-    private function buildUnpaidMembers(Collection $memberSources, Collection $confirmedByUser, Collection $pendingByUser): Collection
+    private function buildWaitingApprovalPayments(Collection $memberSources, Collection $pendingByUser): Collection
     {
-        return $memberSources->filter(function ($item) use ($confirmedByUser) {
-            return !$confirmedByUser->has($item['user']->id);
+        return $memberSources->filter(function ($item) use ($pendingByUser) {
+            return $pendingByUser->has($item['user']->id);
         })->map(function ($item) use ($pendingByUser) {
-            $pendingContribution = $pendingByUser->get($item['user']->id);
+            $contribution = $pendingByUser->get($item['user']->id);
             return [
                 'user' => $item['user'],
                 'amount_due' => (float) $item['amount_due'],
-                'amount_paid' => (float) ($pendingContribution?->amount ?? 0),
-                'payment_status' => $pendingContribution
-                    ? ClubFundContributionStatus::Pending->value
-                    : 'unpaid',
-                'paid_at' => $pendingContribution?->created_at?->toISOString(),
-                'contribution' => $pendingContribution,
+                'amount_paid' => (float) $contribution->amount,
+                'payment_status' => ClubFundContributionStatus::Pending->value,
+                'paid_at' => $contribution->created_at?->toISOString(),
+                'contribution' => $contribution,
             ];
         })->values();
+    }
+
+    private function buildNoPaymentYet(Collection $memberSources, Collection $confirmedByUser, Collection $pendingByUser): Collection
+    {
+        return $memberSources->filter(function ($item) use ($confirmedByUser, $pendingByUser) {
+            return !$confirmedByUser->has($item['user']->id) && !$pendingByUser->has($item['user']->id);
+        })->map(function ($item) {
+            return [
+                'user' => $item['user'],
+                'amount_due' => (float) $item['amount_due'],
+                'amount_paid' => 0,
+                'payment_status' => 'unpaid',
+                'paid_at' => null,
+                'contribution' => null,
+            ];
+        })->values();
+    }
+
+    private function addNonMemberContributions(Collection $payments, Collection $contributions, Collection $memberUserIds, float $amountPerMember): Collection
+    {
+        // Find contributions from non-members
+        $nonMemberContributions = $contributions->filter(function ($contribution) use ($memberUserIds) {
+            return !$memberUserIds->contains($contribution->user_id);
+        });
+
+        // Add non-member contributions to the list
+        foreach ($nonMemberContributions as $contribution) {
+            if ($contribution->user) {
+                $payments->push([
+                    'user' => $contribution->user,
+                    'amount_due' => $amountPerMember,
+                    'amount_paid' => (float) $contribution->amount,
+                    'payment_status' => $contribution->status->value,
+                    'paid_at' => $contribution->created_at?->toISOString(),
+                    'contribution' => $contribution,
+                ]);
+            }
+        }
+
+        return $payments;
     }
 
     private function applyQrCodeToOtherClubs(int $userId, int $currentClubId, string $title, array $data, string $today, string $qrCodeUrl): void
