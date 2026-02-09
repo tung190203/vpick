@@ -9,22 +9,19 @@ use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
 class Kernel extends ConsoleKernel
 {
-    /**
-     * Define the application's command schedule.
-     */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
         $schedule->job(new SendMiniTournamentRemindersJob())->everyMinute();
         $schedule->command('system:send-notifications')->everyMinute();
         $schedule->call(function () {
             DeviceToken::where('last_seen_at', '<', now()->subDays(60))->delete();
-        })->daily();        
+        })->daily();
+
+        $schedule->command('activities:auto-complete')->everyFiveMinutes();
+
+        $schedule->command('activities:generate-recurring --days-ahead=30')->hourly();
     }
 
-    /**
-     * Register the commands for the application.
-     */
     protected function commands(): void
     {
         $this->load(__DIR__.'/Commands');
