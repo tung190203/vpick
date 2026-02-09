@@ -44,6 +44,14 @@ class ClubFundCollectionService
 
         $this->updateExpiredCollections($club);
 
+        if (!empty($filters['search'])) {
+            $term = trim($filters['search']);
+            $query->where(function ($q) use ($term) {
+                $q->where('title', 'like', '%' . $term . '%')
+                    ->orWhere('description', 'like', '%' . $term . '%');
+            });
+        }
+
         $perPage = $filters['per_page'] ?? 15;
         return $query->orderBy('created_at', 'desc')->paginate($perPage);
     }
@@ -140,6 +148,13 @@ class ClubFundCollectionService
             throw new \Exception('Chỉ có thể cập nhật đợt thu đang active');
         }
 
+        if (array_key_exists('amount_per_member', $data) && $data['amount_per_member'] !== null) {
+            $newAmount = (float) $data['amount_per_member'];
+            DB::table('club_fund_collection_members')
+                ->where('club_fund_collection_id', $collection->id)
+                ->update(['amount_due' => $newAmount]);
+        }
+
         $collection->update($data);
         return $collection;
     }
@@ -210,14 +225,27 @@ class ClubFundCollectionService
             ->with(['creator'])
             ->get();
 
-        $contributions = \App\Models\Club\ClubFundContribution::whereIn('club_fund_collection_id', $assignedCollections->pluck('id'))
-            ->where('user_id', $userId)
-            ->get()
-            ->keyBy('club_fund_collection_id');
+        $collectionIds = $assignedCollections->pluck('id');
 
-        $result = $assignedCollections->map(function ($collection) use ($contributions) {
+        $contributions = $collectionIds->isEmpty()
+            ? collect()
+            : \App\Models\Club\ClubFundContribution::whereIn('club_fund_collection_id', $collectionIds)
+                ->where('user_id', $userId)
+                ->get()
+                ->keyBy('club_fund_collection_id');
+
+        $myAmountDueByCollection = $collectionIds->isEmpty()
+            ? collect()
+            : DB::table('club_fund_collection_members')
+                ->where('user_id', $userId)
+                ->whereIn('club_fund_collection_id', $collectionIds)
+                ->pluck('amount_due', 'club_fund_collection_id');
+
+        $result = $assignedCollections->map(function ($collection) use ($contributions, $myAmountDueByCollection) {
             $contribution = $contributions->get($collection->id);
-            $amountDue = (float) ($collection->amount_per_member ?? $collection->target_amount);
+            $amountDue = $myAmountDueByCollection->has($collection->id)
+                ? (float) $myAmountDueByCollection->get($collection->id)
+                : (float) ($collection->amount_per_member ?? $collection->target_amount);
 
             return [
                 'id' => $collection->id,
@@ -340,12 +368,10 @@ class ClubFundCollectionService
 
     private function addNonMemberContributions(Collection $payments, Collection $contributions, Collection $memberUserIds, float $amountPerMember): Collection
     {
-        // Find contributions from non-members
         $nonMemberContributions = $contributions->filter(function ($contribution) use ($memberUserIds) {
             return !$memberUserIds->contains($contribution->user_id);
         });
 
-        // Add non-member contributions to the list
         foreach ($nonMemberContributions as $contribution) {
             if ($contribution->user) {
                 $payments->push([

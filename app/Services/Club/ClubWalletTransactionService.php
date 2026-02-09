@@ -40,6 +40,14 @@ class ClubWalletTransactionService
             $query->whereDate('created_at', '<=', $filters['date_to']);
         }
 
+        if (!empty($filters['search'])) {
+            $term = trim($filters['search']);
+            $query->where(function ($q) use ($term) {
+                $q->where('description', 'like', '%' . $term . '%')
+                    ->orWhere('reference_code', 'like', '%' . $term . '%');
+            });
+        }
+
         $perPage = $filters['per_page'] ?? 15;
         return $query->orderBy('created_at', 'desc')->paginate($perPage);
     }

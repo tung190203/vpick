@@ -28,6 +28,16 @@ class ClubExpenseService
             $query->whereDate('spent_at', '<=', $filters['date_to']);
         }
 
+        if (!empty($filters['search'])) {
+            $term = trim($filters['search']);
+            $query->where(function ($q) use ($term) {
+                $q->where('title', 'like', '%' . $term . '%')
+                    ->orWhereHas('walletTransaction', function ($w) use ($term) {
+                        $w->where('description', 'like', '%' . $term . '%');
+                    });
+            });
+        }
+
         $perPage = $filters['per_page'] ?? 15;
         return $query->orderBy('spent_at', 'desc')->paginate($perPage);
     }
