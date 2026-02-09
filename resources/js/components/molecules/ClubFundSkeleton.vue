@@ -51,11 +51,10 @@
       <div class="col-span-8 flex flex-col h-full overflow-hidden">
         <div class="bg-white rounded-[24px] border border-gray-50 flex-1 flex flex-col p-6">
           <div class="h-6 w-40 bg-gray-200 rounded mb-6"></div>
-          <div class="h-12 w-full bg-gray-100 rounded-2xl mb-6"></div>
+          <div class="h-12 w-full bg-gray-100 rounded-md mb-6"></div>
           <div class="space-y-6">
             <div v-for="i in 5" :key="i" class="flex items-center justify-between pb-5 border-b border-gray-100">
               <div class="flex items-center space-x-4">
-                <div class="w-11 h-11 rounded-full bg-gray-200"></div>
                 <div class="space-y-2">
                   <div class="h-5 w-40 bg-gray-200 rounded"></div>
                   <div class="h-3 w-24 bg-gray-100 rounded"></div>

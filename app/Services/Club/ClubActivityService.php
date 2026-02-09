@@ -165,6 +165,14 @@ class ClubActivityService
             ]
         );
 
+        // CRITICAL FIX: Auto-generate occurrences for recurring activities
+        if ($activity->isRecurring()) {
+            $this->generateInitialOccurrences($activity, $userId);
+            
+            // Mark original activity as completed since it's just a template
+            $activity->update(['status' => ClubActivityStatus::Completed]);
+        }
+
         return $activity;
     }
 
@@ -284,6 +292,90 @@ class ClubActivityService
 
             return $activity;
         });
+    }
+
+    /**
+     * Generate initial occurrences for a recurring activity
+     * Creates next 30 days worth of occurrences
+     */
+    private function generateInitialOccurrences(ClubActivity $activity, int $userId): int
+    {
+        $count = 0;
+        $maxIterations = 100;
+        $iteration = 0;
+        $lookAheadDate = Carbon::now()->addDays(30);
+        
+        // Start from the activity's end_time to find next occurrence
+        $fromDate = $activity->end_time ?? $activity->start_time;
+        
+        while ($iteration < $maxIterations) {
+            $iteration++;
+            
+            $nextStartTime = $activity->calculateNextOccurrence($fromDate);
+            
+            if (!$nextStartTime || $nextStartTime->gt($lookAheadDate)) {
+                break;
+            }
+            
+            // Check if occurrence already exists
+            $existing = ClubActivity::where('club_id', $activity->club_id)
+                ->where('title', $activity->title)
+                ->where('recurring_schedule', $activity->attributes['recurring_schedule'] ?? null)
+                ->where('start_time', $nextStartTime)
+                ->exists();
+            
+            if (!$existing) {
+                $this->createNextOccurrence($activity, $nextStartTime, $userId);
+                $count++;
+            }
+            
+            $fromDate = $nextStartTime->copy()->addMinute();
+        }
+        
+        return $count;
+    }
+    
+    /**
+     * Create a single occurrence from recurring activity template
+     */
+    private function createNextOccurrence(ClubActivity $activity, Carbon $nextStartTime, int $userId): ClubActivity
+    {
+        $duration = $activity->duration ?? ($activity->end_time ? $activity->start_time->diffInMinutes($activity->end_time) : null);
+        $nextEndTime = $duration ? $nextStartTime->copy()->addMinutes($duration) : null;
+        
+        $nextCancellationDeadline = null;
+        if ($activity->cancellation_deadline && $activity->start_time) {
+            $hoursBeforeStart = $activity->cancellation_deadline->diffInHours($activity->start_time, false);
+            if ($hoursBeforeStart > 0) {
+                $nextCancellationDeadline = $nextStartTime->copy()->subHours($hoursBeforeStart);
+            }
+        }
+        
+        $newActivity = $activity->replicate([
+            'status',
+            'cancellation_reason',
+            'cancelled_by',
+            'check_in_token',
+        ]);
+        
+        $newActivity->start_time = $nextStartTime;
+        $newActivity->end_time = $nextEndTime;
+        $newActivity->cancellation_deadline = $nextCancellationDeadline;
+        $newActivity->status = ClubActivityStatus::Scheduled;
+        $newActivity->save();
+        
+        // Add creator as participant
+        ClubActivityParticipant::create([
+            'club_activity_id' => $newActivity->id,
+            'user_id' => $userId,
+            'status' => ClubActivityParticipantStatus::Accepted,
+        ]);
+        
+        // Generate check-in token
+        $checkInToken = Str::random(48);
+        $newActivity->update(['check_in_token' => $checkInToken]);
+        
+        return $newActivity;
     }
 
     public function buildCheckInUrl(int $clubId, int $activityId, string $token): string

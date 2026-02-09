@@ -233,6 +233,7 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
 
             Route::prefix('wallet-transactions')->group(function () {
                 Route::get('/', [ClubWalletTransactionController::class, 'index']);
+                Route::get('/my-transactions', [ClubWalletTransactionController::class, 'myTransactions']);
                 Route::post('/', [ClubWalletTransactionController::class, 'store']);
                 Route::get('/{transactionId}', [ClubWalletTransactionController::class, 'show']);
                 Route::put('/{transactionId}', [ClubWalletTransactionController::class, 'update']);
