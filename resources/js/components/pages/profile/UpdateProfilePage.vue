@@ -218,7 +218,7 @@ const getClubs = async (searchQuery = "") => {
         isLoadingClubs.value = true;
         const response = await ClubService.getAllClubs();
         clubs.length = 0;
-        clubs.push(...response);
+        clubs.push(...response.data.clubs);
     } catch (error) {
         toast.error(
             error.response?.data?.message || "Không tải được danh sách câu lạc bộ!"
