@@ -109,12 +109,17 @@ class ClubFundCollectionService
         $waitingApprovalPayments = $this->buildWaitingApprovalPayments($memberSources, $pendingByUser);
         $noPaymentYet = $this->buildNoPaymentYet($memberSources, $confirmedByUser, $pendingByUser);
 
+        $memberUserIds = $memberSources->pluck('user.id');
+        $approvedPayments = $this->addNonMemberContributions($approvedPayments, $confirmedContributions, $memberUserIds, $amountPerMember);
+        $waitingApprovalPayments = $this->addNonMemberContributions($waitingApprovalPayments, $pendingContributions, $memberUserIds, $amountPerMember);
+
         return [
             'collection' => $collection,
             'approved_payments' => $approvedPayments,
             'waiting_approval_payments' => $waitingApprovalPayments,
             'no_payment_yet' => $noPaymentYet,
             'summary' => [
+                'total_members' => $memberSources->count(),
                 'approved_count' => $approvedPayments->count(),
                 'waiting_approval_count' => $waitingApprovalPayments->count(),
                 'no_payment_count' => $noPaymentYet->count(),
@@ -329,6 +334,30 @@ class ClubFundCollectionService
                 'contribution' => null,
             ];
         })->values();
+    }
+
+    private function addNonMemberContributions(Collection $payments, Collection $contributions, Collection $memberUserIds, float $amountPerMember): Collection
+    {
+        // Find contributions from non-members
+        $nonMemberContributions = $contributions->filter(function ($contribution) use ($memberUserIds) {
+            return !$memberUserIds->contains($contribution->user_id);
+        });
+
+        // Add non-member contributions to the list
+        foreach ($nonMemberContributions as $contribution) {
+            if ($contribution->user) {
+                $payments->push([
+                    'user' => $contribution->user,
+                    'amount_due' => $amountPerMember,
+                    'amount_paid' => (float) $contribution->amount,
+                    'payment_status' => $contribution->status->value,
+                    'paid_at' => $contribution->created_at?->toISOString(),
+                    'contribution' => $contribution,
+                ]);
+            }
+        }
+
+        return $payments;
     }
 
     private function applyQrCodeToOtherClubs(int $userId, int $currentClubId, string $title, array $data, string $today, string $qrCodeUrl): void

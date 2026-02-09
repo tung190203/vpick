@@ -46,7 +46,9 @@ class ClubFundCollectionResource extends JsonResource
             'pending_contributions' => $this->when(
                 $this->relationLoaded('contributions'),
                 fn() => ClubFundContributionResource::collection(
-                    $this->contributions->where('status', 'pending')->values()
+                    $this->contributions->filter(function ($contribution) {
+                        return $contribution->status === \App\Enums\ClubFundContributionStatus::Pending;
+                    })->values()
                 )
             ),
             'assigned_members' => UserResource::collection($this->whenLoaded('assignedMembers')),
