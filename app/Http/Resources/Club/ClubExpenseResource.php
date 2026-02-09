@@ -13,7 +13,7 @@ class ClubExpenseResource extends JsonResource
         return [
             'id' => $this->id,
             'club_id' => $this->club_id,
-            'title' => $this->title,
+            'description' => $this->title,
             'amount' => (float) $this->amount,
             'wallet_transaction_id' => $this->wallet_transaction_id,
             'spent_by' => $this->spent_by,

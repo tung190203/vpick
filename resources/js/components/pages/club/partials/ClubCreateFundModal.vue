@@ -5,7 +5,7 @@
             @click.self="close">
             <Transition name="scale">
                 <div v-if="isOpen" 
-                    class="bg-white rounded-[24px] w-full max-w-[850px] max-h-[90vh] transition-all duration-300 flex flex-col p-6 md:p-8 relative shadow-2xl overflow-hidden">
+                    class="bg-white rounded-[24px] w-full max-w-[850px] max-h-[90vh] transition-all duration-300 flex flex-col p-6 md:p-6 relative shadow-2xl overflow-hidden">
                     <!-- Modal Close -->
                     <button 
                         @click="close"
@@ -28,8 +28,9 @@
                                         type="text" 
                                         :value="fundAmount"
                                         @input="onAmountInput"
+                                        @keypress="isNumber($event)"
                                         placeholder="0"
-                                        class="text-[36px] md:text-[48px] font-bold text-[#2D3139] bg-transparent border-none p-0 focus:outline-none w-40 md:w-48 text-center"
+                                        class="text-[36px] md:text-[48px] font-bold text-[#2D3139] bg-transparent border-none p-0 focus:outline-none w-40 md:w-60 text-center"
                                     />
                                     <span class="text-[20px] md:text-[24px] font-bold text-[#838799]">đ</span>
                                 </div>
@@ -42,7 +43,7 @@
                                         type="text" 
                                         v-model="fundTitle"
                                         class="w-full font-semibold text-[#3E414C] bg-transparent border-none p-0 focus:outline-none placeholder:text-gray-300"
-                                        placeholder="VD: Quỹ tháng 11/2024"
+                                        placeholder="VD: Quỹ tháng 1/2026"
                                     />
                                 </div>
 
@@ -69,6 +70,49 @@
                                             </button>
                                         </template>
                                     </VueDatePicker>
+                                </div>
+                            </div>
+
+                            <!-- QR Code Upload Section -->
+                            <div class="space-y-3">
+                                <label class="block text-[11px] font-bold text-[#838799] uppercase tracking-wider">ẢNH QR CHUYỂN KHOẢN</label>
+                                
+                                <div 
+                                    @click="triggerFileInput"
+                                    @dragover.prevent="isDragging = true"
+                                    @dragleave.prevent="isDragging = false"
+                                    @drop.prevent="onDrop"
+                                    :class="[
+                                        'relative border-2 border-dashed rounded-xl transition-all duration-200 cursor-pointer overflow-hidden flex flex-col items-center justify-center min-h-[140px]',
+                                        isDragging ? 'border-[#D72D36] bg-[#D72D36]/5' : 'border-gray-200 hover:border-[#D72D36] hover:bg-gray-50',
+                                        qrCodePreview ? 'border-solid' : ''
+                                    ]"
+                                >
+                                    <input 
+                                        type="file" 
+                                        ref="fileInput" 
+                                        class="hidden" 
+                                        accept="image/*"
+                                        @change="handleFileChange" 
+                                    />
+
+                                    <div v-if="!qrCodePreview" class="flex flex-col items-center p-6 text-center">
+                                        <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-[#D72D36]/10 transition-colors">
+                                            <ArrowUpTrayIcon class="w-6 h-6 text-gray-400 group-hover:text-[#D72D36]" />
+                                        </div>
+                                        <p class="text-sm font-semibold text-[#3E414C]">Thả ảnh vào đây hoặc nhấn để tải lên</p>
+                                        <p class="text-xs text-[#838799] mt-1">Hỗ trợ JPG, PNG (Tối đa 5MB)</p>
+                                    </div>
+
+                                    <div v-else class="relative w-full h-full flex items-center justify-center p-2">
+                                        <img :src="qrCodePreview" class="max-h-[120px] rounded-lg shadow-sm" />
+                                        <button 
+                                            @click.stop="removeQrCode"
+                                            class="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
+                                        >
+                                            <TrashIcon class="w-4 h-4" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -119,7 +163,7 @@
                     </div>
 
                     <!-- Modal Footer -->
-                    <div class="pt-6 md:pt-8 border-t border-[#F2F3F5] flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div class="pt-6 md:pt-6 border-t border-[#F2F3F5] flex flex-col md:flex-row items-center justify-between gap-4">
                         <div>
                             <p class="text-sm font-normal text-[#6B6F80] tracking-wider mb-1">Tổng thu dự kiến</p>
                             <div class="flex items-baseline space-x-1">
@@ -146,7 +190,10 @@ import {
     XMarkIcon,
     CalendarIcon,
     PencilIcon,
-    CheckIcon
+    CheckIcon,
+    PhotoIcon,
+    ArrowUpTrayIcon,
+    TrashIcon
 } from '@heroicons/vue/24/outline'
 import VueDatePicker from '@vuepic/vue-datepicker'
 import '@vuepic/vue-datepicker/dist/main.css'
@@ -166,9 +213,13 @@ const props = defineProps({
 const emit = defineEmits(['update:isOpen', 'submit'])
 
 const fundAmount = ref('')
-const fundTitle = ref('Quỹ tháng 11/2024')
+const fundTitle = ref('')
 const fundDeadline = ref(new Date())
 const selectedMemberIds = ref([])
+const qrCodeFile = ref(null)
+const qrCodePreview = ref(null)
+const isDragging = ref(false)
+const fileInput = ref(null)
 
 const formattedFundDeadline = computed(() => {
     return dayjs(fundDeadline.value).format('DD/MM/YYYY')
@@ -187,6 +238,49 @@ const toggleMemberSelection = (memberId) => {
     }
 }
 
+const isNumber = (evt) => {
+    evt = (evt) ? evt : window.event;
+    var charCode = (evt.which) ? evt.which : evt.keyCode;
+    if ((charCode > 31 && (charCode < 48 || charCode > 57)) && charCode !== 46) {
+        evt.preventDefault();
+    } else {
+        return true;
+    }
+}
+
+const triggerFileInput = () => {
+    fileInput.value.click()
+}
+
+const handleFileChange = (event) => {
+    const file = event.target.files[0]
+    if (file) {
+        processFile(file)
+    }
+}
+
+const onDrop = (event) => {
+    isDragging.value = false
+    const file = event.dataTransfer.files[0]
+    if (file) {
+        processFile(file)
+    }
+}
+
+const processFile = (file) => {
+    if (!file.type.startsWith('image/')) {
+        alert('Vui lòng chọn tệp hình ảnh')
+        return
+    }
+    qrCodeFile.value = file
+    qrCodePreview.value = URL.createObjectURL(file)
+}
+
+const removeQrCode = () => {
+    qrCodeFile.value = null
+    qrCodePreview.value = null
+}
+
 const selectAllMembers = () => {
     if (selectedMemberIds.value.length === props.club.members?.length) {
         selectedMemberIds.value = []
@@ -201,8 +295,8 @@ const formatPrice = (value) => {
 }
 
 const onAmountInput = (event) => {
-    // Remove all non-numeric characters
-    let value = event.target.value.replace(/\D/g, '')
+    // Remove all non-numeric characters (including manual paste or other methods)
+    let value = event.target.value.replace(/[^\d]/g, '')
 
     // Format with dots
     if (value) {
@@ -219,13 +313,33 @@ const totalExpectedAmount = computed(() => {
 
 const submitCreateFund = () => {
     const rawAmount = parseInt(fundAmount.value.replace(/\./g, '')) || 0
+    const deadlineDate = fundDeadline.value
+        ? dayjs(fundDeadline.value)
+        : null
+
     emit('submit', {
         title: fundTitle.value,
-        amount: rawAmount,
-        deadline: fundDeadline.value,
-        members: selectedMemberIds.value
+        description: fundTitle.value,
+        target_amount: rawAmount * selectedMemberIds.value.length,
+        amount_per_member: rawAmount,
+        start_date: dayjs().format('YYYY-MM-DD'),
+        deadline: deadlineDate ? deadlineDate.format('YYYY-MM-DD') : null,
+        end_date: deadlineDate ? deadlineDate.format('YYYY-MM-DD') : null,
+        member_ids: selectedMemberIds.value,
+        qr_code_url: null,
+        qr_code_file: qrCodeFile.value,
     })
     close()
+    resetForm()
+}
+
+const resetForm = () => {
+    fundAmount.value = ''
+    fundTitle.value = ''
+    fundDeadline.value = new Date()
+    selectedMemberIds.value = []
+    qrCodeFile.value = null
+    qrCodePreview.value = null
 }
 </script>
 

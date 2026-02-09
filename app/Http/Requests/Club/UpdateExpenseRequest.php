@@ -14,7 +14,7 @@ class UpdateExpenseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => 'sometimes|string|max:255',
+            'description' => 'sometimes|string|max:65535',
             'amount' => 'sometimes|numeric|min:0.01',
             'spent_at' => 'nullable|date',
             'note' => 'nullable|string',

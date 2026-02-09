@@ -35,7 +35,7 @@ class ClubFundContributionService
 
     public function submitContribution(ClubFundCollection $collection, int $userId, $image, ?string $note = null): ClubFundContribution
     {
-        $amountDue = $collection->target_amount;
+        $amountDue = (float) ($collection->amount_per_member ?? $collection->target_amount);
 
         if ($collection->status !== ClubFundCollectionStatus::Active) {
             throw new \Exception('Đợt thu không còn hoạt động');
@@ -52,7 +52,7 @@ class ClubFundContributionService
 
         $assigned = $collection->assignedMembers()->where('user_id', $userId)->first();
         if ($assigned) {
-            $amountDue = $assigned->pivot?->amount_due ?? $amountDue;
+            $amountDue = (float) ($assigned->pivot?->amount_due ?? $amountDue);
         }
 
         if ($amountDue <= 0) {

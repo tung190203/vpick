@@ -17,7 +17,8 @@ class UpdateFundCollectionRequest extends FormRequest
             'title' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
             'target_amount' => 'sometimes|numeric|min:0.01',
-            'end_date' => 'nullable|date|after:start_date',
+            'amount_per_member' => 'nullable|numeric|min:0',
+            'end_date' => 'nullable|date',
             'qr_code_url' => 'nullable|string',
         ];
     }

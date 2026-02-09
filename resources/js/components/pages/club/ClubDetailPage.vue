@@ -301,100 +301,19 @@
             </div>
 
             <!-- Notification Modal -->
-            <Transition
-                enter-active-class="transition duration-300 ease-out"
-                enter-from-class="opacity-0"
-                enter-to-class="opacity-100"
-                leave-active-class="transition duration-200 ease-in"
-                leave-from-class="opacity-100"
-                leave-to-class="opacity-0"
-            >
-                <div 
-                    v-if="isNotificationModalOpen" 
-                    class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm transform-gpu" 
-                    @click.self="closeNotification"
-                >
-                    <div
-                        class="bg-white rounded-2xl shadow-2xl w-full max-w-lg relative z-[10000] overflow-hidden animate-in fade-in zoom-in duration-300 h-[calc(100vh-7rem)] flex flex-col">
-                        <!-- Fixed Header -->
-                        <div class="p-6 pb-2">
-                            <div class="flex items-center justify-between mb-2">
-                                <h3 class="text-[28px] font-bold text-[#3E414C]">Thông báo</h3>
-                                <button @click="closeNotification"
-                                    class="text-gray-400 hover:text-gray-600 transition-colors">
-                                    <XMarkIcon class="w-8 h-8" stroke-width="2.5" />
-                                </button>
-                            </div>
-                            <div class="flex items-center justify-end">
-                                <button class="text-[#D72D36] text-sm font-semibold hover:opacity-80" @click="markAllAsRead">Đánh dấu đã
-                                    đọc</button>
-                            </div>
-                        </div>
-                        <div v-if="notifications.length === 0" class="flex items-start justify-center mt-4">
-                            <p class="text-[#838799]">Hiện chưa có thông báo</p>
-                        </div>
-
-                        <!-- Scrollable Content -->
-                        <div class="p-6 pt-3 flex-1 overflow-y-auto custom-scrollbar" v-else>
-                            <div class="mb-8">
-                                <div class="space-y-2">
-                                    <div v-for="(notification, index) in notifications" class="cursor-pointer"
-                                        :key="index"
-                                        :class="['flex gap-4 p-4 rounded-2xl transition-colors', !notification.is_read_by_me ? 'bg-[#F8F9FB]' : 'bg-transparent']"  @click="markAsRead(notification.id)">
-                                        <div class="relative flex-shrink-0">
-                                            <div
-                                                :class="['w-14 h-14 rounded-xl flex items-center justify-center', (NOTIFICATION_COLOR_MAP[notification.club_notification_type_id] || NOTIFICATION_COLOR_MAP[1]).cardBg]">
-                                                <component :is="NOTIFICATION_ICON_MAP[notification.club_notification_type_id] || NOTIFICATION_ICON_MAP[1]" class="w-7 h-7" :class="NOTIFICATION_COLOR_MAP[notification.club_notification_type_id].iconColor" />
-                                            </div>
-                                            <div v-if="!notification.is_read_by_me"
-                                                class="absolute -right-1 bottom-0 w-4 h-4 border-2 border-white rounded-full" :class="NOTIFICATION_COLOR_MAP[notification.club_notification_type_id].iconBg">
-                                            </div>
-                                        </div>
-                                        <div class="flex-1 min-w-0 relative">
-                                            <div class="flex items-start justify-between gap-2 mb-1">
-                                                <h4 class="font-semibold text-base text-[#3E414C] truncate">{{
-                                                    notification.title }}
-                                                </h4>
-                                                <div class="flex items-center gap-2">
-                                                    <span class="text-[#838799] text-xs whitespace-nowrap pt-1">{{ getJoinedDate(notification.created_at) }}</span>
-                                                    <button v-if="notification.is_pinned" @click.stop="handleUnpinNotification(notification.id)" class="pt-1 absolute top-[-2rem] right-[-1.5rem] transition-all transform hover:scale-110">
-                                                        <PinIcon class="w-5 h-5 transform rotate-45 transition-transform group-hover:rotate-12 text-[#D72D36]" />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            <p class="text-xs text-[#838799] leading-4 line-clamp-2">{{ notification.content
-                                                }}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Load More Button -->
-                                <div v-if="notificationMeta && notificationMeta.current_page < notificationMeta.last_page" class="mt-4 flex justify-center">
-                                    <button 
-                                        @click="loadMoreNotifications" 
-                                        :disabled="isLoadingMoreNotifications"
-                                        class="text-[#D72D36] font-semibold hover:underline disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                                    >
-                                        <span v-if="isLoadingMoreNotifications" class="w-4 h-4 border-2 border-[#D72D36] border-t-transparent rounded-full animate-spin"></span>
-                                        {{ isLoadingMoreNotifications ? 'Đang tải...' : 'Xem thêm' }}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Create Notification Button -->
-                        <div class="absolute bottom-6 right-6 z-20" v-if="hasAnyRole(['admin', 'manager', 'secretary'])">
-                            <button
-                                class="flex items-center gap-2 bg-[#D72D36] hover:bg-[#c4252e] text-white px-4 py-4 rounded-full shadow-lg transition-colors font-semibold shadow-red-200"
-                                @click="handleCreateNotification">
-                                <NotificationAddIcon class="w-6 h-6" />
-                                <span>Tạo thông báo</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </Transition>
+            <ClubNotificationModal
+                v-model="isNotificationModalOpen"
+                :notifications="notifications"
+                :meta="notificationMeta"
+                :is-loading-more="isLoadingMoreNotifications"
+                :is-admin-or-staff="hasAnyRole(['admin', 'manager', 'secretary'])"
+                @close="closeNotification"
+                @load-more="loadMoreNotifications"
+                @mark-as-read="markAsRead"
+                @mark-all-as-read="markAllAsRead"
+                @unpin="handleUnpinNotification"
+                @create="handleCreateNotification"
+            />
 
             <!-- Activity Schedule Modal -->
             <ClubActivityModal :is-open="isActivityModalOpen" :thumbnail="Thumbnail"
@@ -458,7 +377,6 @@ import {
 import { useRouter, useRoute } from 'vue-router'
 import { computed, onMounted, ref, watch } from 'vue'
 import VerifyIcon from "@/assets/images/verify-icon.svg";
-import NotificationAddIcon from "@/assets/images/notification_add.svg";
 import Button from '@/components/atoms/Button.vue';
 import MessageIcon from "@/assets/images/message.svg";
 import ChangeCircleIcon from "@/assets/images/change_circle.svg";
@@ -470,7 +388,8 @@ import NotificationCard from '@/components/molecules/NotificationCard.vue';
 import ClubInfoTabs from '@/components/organisms/ClubInfoTabs.vue';
 import ClubEditModal from '@/components/organisms/ClubEditModal.vue';
 import ClubZaloModal from '@/components/organisms/ClubZaloModal.vue';
-import { CLUB_STATS, CLUB_MODULES, NOTIFICATION_COLOR_MAP, NOTIFICATION_ICON_MAP } from '@/data/club/index.js';
+import ClubNotificationModal from '@/components/organisms/ClubNotificationModal.vue';
+import { CLUB_STATS, CLUB_MODULES } from '@/data/club/index.js';
 import * as ClubService from '@/service/club.js'
 import { toast } from 'vue3-toastify';
 import { useUserStore } from '@/store/auth'
@@ -478,11 +397,9 @@ import { storeToRefs } from 'pinia'
 import ClubActivityModal from '@/components/organisms/ClubActivityModal.vue';
 import ClubCreateNotificationModal from '@/components/organisms/ClubCreateNotificationModal.vue';
 import DeleteConfirmationModal from '@/components/molecules/DeleteConfirmationModal.vue';
-import { getJoinedDate } from '@/composables/formatDatetime.js'
 import dayjs from 'dayjs'
 import 'dayjs/locale/vi'
 import ClubDetailSkeleton from '@/components/molecules/ClubDetailSkeleton.vue';
-import PinIcon from '@/assets/images/pin_icon.svg'
 
 dayjs.locale('vi')
 
@@ -725,7 +642,7 @@ const handleModuleClick = (module) => {
     } else if (module.key === 'chat') {
         toast.info(`Chức năng ${module.label} đang được phát triển`)
     } else if (module.key === 'fund') {
-        toast.info(`Chức năng ${module.label} đang được phát triển`)
+        router.push({ name: 'club-fund', params: { id: clubId.value } })
     }
 }
 

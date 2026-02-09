@@ -428,6 +428,7 @@ import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { diffTimeText } from '@/composables/formatTime'
 import debounce from 'lodash.debounce'
+import { formatCurrency } from '@/composables/formatCurrency'
 import 'dayjs/locale/vi'
 dayjs.extend(relativeTime)
 dayjs.locale('vi')
@@ -717,10 +718,6 @@ const formatDate = (date) => {
 const formatTimeRange = (start, end) => {
     if (!start || !end) return '18:00 - 20:00'
     return `${dayjs(start).format('HH:mm')} - ${dayjs(end).format('HH:mm')}`
-}
-
-const formatCurrency = (value) => {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value).replace('₫', '')
 }
 
 const goToProfile = (id) => {
