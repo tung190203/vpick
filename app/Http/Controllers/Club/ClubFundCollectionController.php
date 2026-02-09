@@ -30,6 +30,7 @@ class ClubFundCollectionController extends Controller
         $validated = $request->validate([
             'page' => 'sometimes|integer|min:1',
             'per_page' => 'sometimes|integer|min:1|max:100',
+            'search' => 'nullable|string|max:255',
         ]);
 
         $collections = $this->collectionService->getCollections($club, $validated);

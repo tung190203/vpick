@@ -30,6 +30,7 @@ class ClubWalletTransactionController extends Controller
         $validated = $request->validate([
             'page' => 'sometimes|integer|min:1',
             'per_page' => 'sometimes|integer|min:1|max:100',
+            'search' => 'nullable|string|max:255',
             'wallet_id' => 'sometimes|exists:club_wallets,id',
             'direction' => ['sometimes', Rule::enum(ClubWalletTransactionDirection::class)],
             'source_type' => ['sometimes', Rule::enum(ClubWalletTransactionSourceType::class)],
