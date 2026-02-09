@@ -227,3 +227,33 @@ export const cancelActivityJoinRequest = async (clubId, activityId, participantI
 export const withdrawActivityParticipation = async (clubId, activityId, participantId) => {
     return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/activities/${activityId}/participants/${participantId}/withdraw`).then((response) => response.data);
 }
+
+export const getAllTransaction = async (clubId, params = {}) => {
+    const queryParams = new URLSearchParams()
+    Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      queryParams.append(key, value)
+    }
+  })
+
+  const queryString = queryParams.toString()
+  const url = `${API_ENDPOINT.CLUB}/${clubId}/wallet-transactions${queryString ? `?${queryString}` : ''}`
+  const { data } = await axiosInstance.get(url)
+  return data
+}
+
+export const fundOverview = async (clubId) => {
+    return axiosInstance.get(`${API_ENDPOINT.CLUB}/${clubId}/fund/overview`).then((response) => response.data);
+}
+
+export const createdFundRevenue = async (clubId, data) => {
+    return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/fund-collections`, data).then((response) => response.data);
+}
+
+export const listQrCodes = async (clubId) => {
+    return axiosInstance.get(`${API_ENDPOINT.CLUB}/${clubId}/fund-collections/qr-codes`).then((response) => response.data);
+}
+
+export const createQrCode = async (clubId, data) => {
+    return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/fund-collections/qr-codes`, data).then((response) => response.data);
+}
