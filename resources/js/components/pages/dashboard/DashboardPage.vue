@@ -192,13 +192,14 @@
       <div class="space-y-6">
         <div class="bg-white rounded-[8px] shadow p-5">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="font-semibold text-gray-900 text-base">Tính năng ưu thích</h3>
+            <h3 class="font-semibold text-gray-900 text-base">Tính năng ưa thích</h3>
             <button class="text-gray-600 hover:text-gray-700 rounded-full p-2 bg-[#EDEEF2] shadow-md">
               <PencilIcon class="w-3 h-3" />
             </button>
           </div>
           <div class="grid grid-cols-4 gap-4">
-            <div v-for="(f, i) in features" :key="i" class="flex flex-col items-center text-center cursor-pointer">
+            <div v-for="(f, i) in features" :key="i" class="flex flex-col items-center text-center cursor-pointer"
+              @click="navigateTo(f.route)">
               <div class="w-12 h-12 bg-red-100 text-red-600 flex items-center justify-center rounded-full mb-2">
                 <component :is="f.icon" class="w-6 h-6" />
               </div>
@@ -488,10 +489,10 @@ const profileLink = computed(() => {
 });
 
 const features = [
-  { label: "CLB", icon: UserGroupIcon },
-  { label: "Tạo trận", icon: PlusCircleIcon },
-  { label: "Tìm sân", icon: MapPinIconOutline },
-  { label: "Xếp hạng", icon: ChartBarIcon },
+  { label: "CLB", icon: UserGroupIcon, route: '/club' },
+  { label: "Tạo trận", icon: PlusCircleIcon, route: '/match/create' },
+  { label: "Tìm sân", icon: MapPinIconOutline, route: '/court' },
+  { label: "Xếp hạng", icon: ChartBarIcon, route: '/ranking' },
 ];
 const itemsPerPage = 10;
 const currentPage = ref(1);
@@ -711,6 +712,12 @@ function goToTournamentDetail(id) {
 
 function goToProfile(id) {
   router.push({ name: 'profile', params: { id } })
+}
+
+function navigateTo(route) {
+  if (route) {
+    router.push(route)
+  }
 }
 onMounted(async () => {
   await getHomeData();
