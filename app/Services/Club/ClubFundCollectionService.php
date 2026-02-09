@@ -56,12 +56,19 @@ class ClubFundCollectionService
 
         $endDate = $data['end_date'] ?? $data['deadline'] ?? null;
         $titleOrDescription = $data['title'] ?? $data['description'] ?? '';
+        $memberCount = !empty($data['member_ids']) ? count($data['member_ids']) : 0;
+        $amountPerMember = $this->calculateAmountPerMember($data, $memberCount);
+
+        $targetAmount = isset($data['target_amount'])
+            ? (float) $data['target_amount']
+            : (float) ($amountPerMember * $memberCount);
 
         $collection = ClubFundCollection::create([
             'club_id' => $club->id,
             'title' => $titleOrDescription,
             'description' => $titleOrDescription,
-            'target_amount' => $data['target_amount'],
+            'target_amount' => $targetAmount,
+            'amount_per_member' => $memberCount > 0 ? $amountPerMember : null,
             'collected_amount' => 0,
             'currency' => $data['currency'] ?? 'VND',
             'start_date' => $data['start_date'],
@@ -72,11 +79,6 @@ class ClubFundCollectionService
         ]);
 
         if (!empty($data['member_ids'])) {
-            $amountPerMember = $this->calculateAmountPerMember(
-                $data,
-                count($data['member_ids'])
-            );
-
             $syncData = [];
             foreach ($data['member_ids'] as $memberId) {
                 $syncData[$memberId] = ['amount_due' => $amountPerMember];
@@ -208,7 +210,7 @@ class ClubFundCollectionService
 
         $result = $assignedCollections->map(function ($collection) use ($contributions) {
             $contribution = $contributions->get($collection->id);
-            $amountDue = $collection->target_amount;
+            $amountDue = (float) ($collection->amount_per_member ?? $collection->target_amount);
 
             return [
                 'id' => $collection->id,

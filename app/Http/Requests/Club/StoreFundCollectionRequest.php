@@ -40,8 +40,8 @@ class StoreFundCollectionRequest extends FormRequest
         return [
             'title' => 'required_without:description|nullable|string|max:255',
             'description' => 'required_without:title|nullable|string',
-            'target_amount' => 'required|numeric|min:0.01',
-            'amount_per_member' => 'nullable|numeric|min:0.01',
+            'target_amount' => 'required_without:amount_per_member|nullable|numeric|min:0.01',
+            'amount_per_member' => 'required_without:target_amount|nullable|numeric|min:0.01',
             'member_ids' => 'required|array|min:1',
             'member_ids.*' => 'integer|exists:users,id',
             'currency' => 'sometimes|string|max:3',
