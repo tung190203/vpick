@@ -47,7 +47,9 @@ class ClubActivityService
         $activityStatuses = array_intersect($statuses, ['scheduled', 'ongoing', 'completed', 'cancelled']);
 
         if (!$hasAll && !empty($statuses)) {
-            if (!empty($activityStatuses)) {
+            if (($hasRegistered || $hasAvailable) && empty($activityStatuses)) {
+                $query->whereIn('status', ['scheduled', 'ongoing']);
+            } elseif (!empty($activityStatuses)) {
                 $query->whereIn('status', $activityStatuses);
             }
 
