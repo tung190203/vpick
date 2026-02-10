@@ -16,7 +16,7 @@ class ClubFundCollectionResource extends JsonResource
             'title' => $this->title,
             'description' => $this->description,
             'target_amount' => (float) $this->target_amount,
-            'amount_per_member' => (float) ($this->amount_per_member ?? $this->target_amount),
+            'amount_per_member' => (float) ($this->amount_per_member ?? 0),
             'collected_amount' => (float) $this->collected_amount,
             'currency' => $this->currency,
             'start_date' => $this->start_date->format('Y-m-d'),
