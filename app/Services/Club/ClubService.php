@@ -185,7 +185,28 @@ class ClubService
                 }
             }
 
-            $profileFields = ['description', 'phone', 'email', 'website', 'city', 'province', 'country', 'zalo_link', 'zalo_enabled', 'qr_code_enabled'];
+            if (!empty($data['remove_qr_zalo'])) {
+                if (!$profile) {
+                    $profile = $club->profile;
+                }
+
+                if ($profile && $profile->getRawQrZaloPath()) {
+                    $this->deleteImages($profile->getRawQrZaloPath());
+                }
+
+                if ($profile) {
+                    $settings = $profile->settings;
+                    $settings = is_array($settings) ? $settings : [];
+                    $settings['qr_zalo_enabled'] = false;
+
+                    $profile->update([
+                        'qr_zalo' => null,
+                        'settings' => $settings,
+                    ]);
+                }
+            }
+
+            $profileFields = ['description', 'phone', 'email', 'website', 'city', 'province', 'country', 'zalo_link', 'zalo_link_enabled', 'qr_zalo_enabled', 'qr_code_enabled'];
             if (collect($profileFields)->some(fn($field) => isset($data[$field]))) {
                 if (!$profile) {
                     $profile = $club->profile;
@@ -195,7 +216,13 @@ class ClubService
                 $settings = $profile && is_array($profile->settings) ? $profile->settings : [];
 
                 if (isset($data['qr_code_enabled'])) {
-                    $settings['qr_code_enabled'] = $data['qr_code_enabled'];
+                    $settings['qr_code_enabled'] = (bool) $data['qr_code_enabled'];
+                }
+                if (isset($data['zalo_link_enabled'])) {
+                    $settings['zalo_link_enabled'] = (bool) $data['zalo_link_enabled'];
+                }
+                if (isset($data['qr_zalo_enabled'])) {
+                    $settings['qr_zalo_enabled'] = (bool) $data['qr_zalo_enabled'];
                 }
 
                 if (empty($socialLinks)) {
@@ -220,16 +247,12 @@ class ClubService
                 if (array_key_exists('zalo_link', $data)) {
                     $profileUpdate['zalo_link'] = $data['zalo_link'] ?: null;
                 }
-                if (array_key_exists('zalo_enabled', $data)) {
-                    $profileUpdate['zalo_enabled'] = (bool) $data['zalo_enabled'];
-                }
 
                 if ($profile) {
                     $profile->update($profileUpdate);
                 } else {
                     $profileUpdate['club_id'] = $club->id;
                     $profileUpdate['zalo_link'] = array_key_exists('zalo_link', $data) ? ($data['zalo_link'] ?: null) : null;
-                    $profileUpdate['zalo_enabled'] = array_key_exists('zalo_enabled', $data) ? (bool) $data['zalo_enabled'] : false;
                     $profile = ClubProfile::create($profileUpdate);
                 }
             }
