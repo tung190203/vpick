@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Club;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreFundCollectionRequest extends FormRequest
 {
@@ -13,13 +14,11 @@ class StoreFundCollectionRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        // Nếu gửi file ảnh vào key qr_code_url (Postman chọn File) → chuyển sang qr_image để xử lý upload
         if ($this->hasFile('qr_code_url')) {
             $this->merge(['qr_image' => $this->file('qr_code_url')]);
             $this->request->remove('qr_code_url');
         }
 
-        // Form-data: member_ids có thể gửi "10,15,22" hoặc "[10,15,22]" hoặc array → chuẩn hóa thành array int
         if ($this->has('member_ids')) {
             $ids = $this->member_ids;
             if (is_string($ids)) {
@@ -50,6 +49,13 @@ class StoreFundCollectionRequest extends FormRequest
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'qr_code_url' => 'nullable|string',
             'qr_image' => 'nullable|image|mimes:png,jpg,jpeg,gif|max:5120',
+            'qr_code_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('club_fund_collections', 'id')
+                    ->where('club_id', (int) $this->route('clubId'))
+                    ->whereNotNull('qr_code_url'),
+            ],
         ];
     }
 }
