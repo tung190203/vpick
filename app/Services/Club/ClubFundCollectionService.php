@@ -201,7 +201,8 @@ class ClubFundCollectionService
         }
 
         if ($collection->contributions()->exists()) {
-            throw new \Exception('Không thể xóa mã QR đã có giao dịch nộp tiền');
+            $count = $collection->contributions()->count();
+            throw new \Exception("Mã QR đã có {$count} lượt nộp tiền, không thể xóa.");
         }
 
         $collection->delete();
