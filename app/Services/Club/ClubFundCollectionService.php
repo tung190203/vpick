@@ -38,6 +38,7 @@ class ClubFundCollectionService
                 'contributions as pending_count' => function ($q) {
                     $q->where('status', ClubFundContributionStatus::Pending);
                 },
+                'assignedMembers',
             ]);
 
         $this->updateExpiredCollections($club);
