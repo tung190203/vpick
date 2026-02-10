@@ -51,7 +51,7 @@
 
             <!-- Content Grid -->
             <!-- Content Grid: Admin / Secretary / Treasurer -->
-            <div class="grid grid-cols-12 gap-6 py-6 flex-1 overflow-hidden" v-if="hasAnyRole(['admin', 'secretary', 'treasurer'])">
+            <div class="grid grid-cols-12 gap-6 py-6 flex-1" v-if="hasAnyRole(['admin', 'secretary', 'treasurer'])">
                 <!-- Left Column: ĐỢT THU & XÁC NHẬN -->
                 <div class="col-span-4 flex flex-col">
                     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col">
@@ -113,8 +113,8 @@
                 </div>
 
                 <!-- Right Column: LỊCH SỬ THU CHI -->
-                <div class="col-span-8 flex flex-col h-full overflow-hidden">
-                    <div class="bg-white rounded-[24px] shadow-sm border border-gray-50 flex-1 flex flex-col overflow-hidden">
+                <div class="col-span-8 flex flex-col h-full">
+                    <div class="bg-white rounded-[24px] shadow-sm border border-gray-50 flex-1 flex flex-col">
                         <!-- Section Header -->
                         <div class="px-6 pt-6 pb-2 mb-2 flex items-center justify-between">
                             <div class="text-[#838799] font-bold text-[15px] tracking-wider uppercase">
@@ -137,7 +137,129 @@
                                     class="w-full bg-[#EDEEF2] border-none rounded-md py-3.5 pl-12 pr-12 text-sm focus:ring-0 placeholder:text-[#9EA2B3] placeholder:font-normal"
                                 />
                                 <div class="absolute inset-y-0 right-4 flex items-center">
-                                    <FunnelIcon class="w-5 h-5 text-[#838799] cursor-pointer" />
+                                    <div class="relative">
+                                        <FunnelIcon 
+                                            class="w-5 h-5 text-[#838799] cursor-pointer hover:text-[#D72D36] transition-colors" 
+                                            @click="showFilterDropdown = !showFilterDropdown"
+                                        />
+                                        <div v-if="activeFilterCount > 0" class="absolute -top-1 -right-1 w-2 h-2 bg-[#D72D36] rounded-full"></div>
+                                        
+                                        <!-- Filter Dropdown -->
+                                        <Transition name="fade">
+                                            <div v-if="showFilterDropdown" 
+                                                class="absolute right-0 top-full mt-4 w-[650px] bg-white rounded-2xl shadow-2xl border border-gray-100 z-[100] p-6 text-left overflow-visible"
+                                                v-click-outside="() => showFilterDropdown = false">
+                                                <div class="flex items-center justify-between mb-6">
+                                                    <h3 class="text-lg font-bold text-[#1F2937]">Bộ lọc giao dịch</h3>
+                                                    <button @click="clearFilters" class="text-sm text-[#838799] hover:text-[#D72D36] font-medium transition-colors">Xoá lọc</button>
+                                                </div>
+
+                                                <div class="space-y-6 max-h-[80vh] overflow-y-auto pr-2 custom-scrollbar">
+                                                    <!-- Direction -->
+                                                    <div>
+                                                        <label class="block text-xs font-bold text-[#838799] uppercase tracking-wider mb-3">Loại giao dịch</label>
+                                                        <div class="flex gap-2">
+                                                            <button 
+                                                                v-for="opt in [{v: '', l: 'Tất cả'}, {v: 'in', l: 'Thu'}, {v: 'out', l: 'Chi'}]"
+                                                                :key="opt.v"
+                                                                @click="filters.direction = opt.v"
+                                                                :class="[
+                                                                    'flex-1 py-2 px-3 rounded-lg text-sm font-bold transition-all border',
+                                                                    filters.direction === opt.v 
+                                                                        ? 'bg-[#D72D36] text-white border-[#D72D36] shadow-sm' 
+                                                                        : 'bg-gray-50 text-[#3E414C] border-gray-100 hover:border-gray-300'
+                                                                ]"
+                                                            >
+                                                                {{ opt.l }}
+                                                            </button>
+                                                            </div>
+                                                        </div>
+
+                                                    <!-- Source Type -->
+                                                    <div>
+                                                        <label class="block text-xs font-bold text-[#838799] uppercase tracking-wider mb-3">Nguồn tiền</label>
+                                                        <div class="grid grid-cols-2 gap-2">
+                                                            <label 
+                                                                v-for="opt in sourceTypeOptions" 
+                                                                :key="opt.value"
+                                                                class="flex items-center space-x-3 p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors group"
+                                                            >
+                                                                <input 
+                                                                    type="checkbox" 
+                                                                    v-model="filters.source_types" 
+                                                                    :value="opt.value"
+                                                                    class="w-4 h-4 text-[#D72D36] border-gray-300 rounded focus:ring-[#D72D36]"
+                                                                />
+                                                                <span class="text-sm font-medium text-[#3E414C] group-hover:text-[#1F2937]">{{ opt.label }}</span>
+                                                            </label>
+                                                            </div>
+                                                        </div>
+
+                                                    <!-- Status & Date Range row -->
+                                                    <div class="grid grid-cols-2 gap-6">
+                                                        <!-- Status -->
+                                                        <div>
+                                                        <label class="block text-xs font-bold text-[#838799] uppercase tracking-wider mb-3">Trạng thái</label>
+                                                        <div class="grid grid-cols-1 gap-2">
+                                                            <label 
+                                                                v-for="opt in statusOptions" 
+                                                                :key="opt.value"
+                                                                class="flex items-center space-x-3 p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors group"
+                                                            >
+                                                                <input 
+                                                                    type="checkbox" 
+                                                                    v-model="filters.statuses" 
+                                                                    :value="opt.value"
+                                                                    class="w-4 h-4 text-[#D72D36] border-gray-300 rounded focus:ring-[#D72D36]"
+                                                                />
+                                                                <span class="text-sm font-medium text-[#3E414C] group-hover:text-[#1F2937]">{{ opt.label }}</span>
+                                                            </label>
+                                                            </div>
+                                                        </div>
+
+                                                    <!-- Date Range -->
+                                                    <div>
+                                                        <label class="block text-xs font-bold text-[#838799] uppercase tracking-wider mb-3">Khoảng thời gian</label>
+                                                        <div class="space-y-3">
+                                                            <div class="relative">
+                                                                <VueDatePicker teleport="body"
+                                                                    v-model="filters.date_from"
+                                                                    :enable-time-picker="false"
+                                                                    auto-apply
+                                                                    placeholder="Từ ngày"
+                                                                    text-input
+                                                                    :format="'dd/MM/yyyy'"
+                                                                    class="v-datepicker-custom"
+                                                                />
+                                                            </div>
+                                                            <div class="relative">
+                                                                <VueDatePicker teleport="body"
+                                                                    v-model="filters.date_to"
+                                                                    :enable-time-picker="false"
+                                                                    auto-apply
+                                                                    placeholder="Đến ngày"
+                                                                    text-input
+                                                                    :format="'dd/MM/yyyy'"
+                                                                    class="v-datepicker-custom"
+                                                                />
+                                                            </div>
+                                                            </div>
+                                                        </div>
+                                                </div>
+
+                                                </div>
+
+                                                <div class="mt-8">
+                                                    <button 
+                                                        @click="applyFilters"
+                                                        class="w-full py-4 bg-[#2D3139] text-white rounded-xl font-bold hover:bg-black transition-all shadow-lg active:scale-[0.98]"
+                                                    >
+                                                        Áp dụng bộ lọc
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </Transition>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -145,6 +267,9 @@
                         <!-- History List -->
                         <div class="flex-1 overflow-y-auto px-6">
                             <!-- Transaction Item -->
+                            <div v-if="transactions.length === 0" class="text-center py-12">
+                                <p class="text-[#838799] text-sm">Chưa có giao dịch nào</p>
+                            </div>
                             <div class="flex items-center justify-between py-5 border-b border-[#F2F3F5] hover:bg-gray-50/30 transition-colors cursor-pointer last:border-b-0"
                                 v-for="(item, index) in transactions" :key="index">
                                 <div class="flex items-center space-x-4">
@@ -173,7 +298,7 @@
             </div>
 
             <!-- Content Grid: Member / Manager -->
-            <div class="grid grid-cols-12 gap-6 py-6 flex-1 overflow-hidden" v-else>
+            <div class="grid grid-cols-12 gap-6 py-6 flex-1" v-else>
                 <!-- Left Column: CẦN THANH TOÁN -->
                 <div class="col-span-4 flex flex-col" v-if="hasAnyRole(['manager', 'member'])">
                     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col">
@@ -187,7 +312,7 @@
                         </div>
 
                         <!-- Items Container -->
-                        <div class="flex-1 overflow-y-auto px-6 space-y-6">
+                        <div class="flex-1 overflow-y-auto px-6 pb-6 space-y-6">
                             <!-- Actionable Payment Item -->
                             <div class="space-y-4 border-b border-[#dcdee6] pb-4">
                                 <div class="flex justify-between items-start">
@@ -211,7 +336,7 @@
                             </div>
 
                             <!-- Pending Approval Card -->
-                            <div class="bg-[#FDF2E2] rounded-lg p-4 border-l-[3px] border-[#F0AC3A] relative flex flex-col space-y-4 shadow-sm mb-6">
+                            <div class="bg-[#FDF2E2] rounded-lg p-4 border-l-[3px] border-[#F0AC3A] relative flex flex-col space-y-4 shadow-sm">
                                 <div class="flex justify-between items-start">
                                     <h3 class="font-semibold text-[#1F2937]">Quỹ tháng 10/2024</h3>
                                     <span class="text-[#1F2937] font-semibold">200.000đ</span>
@@ -231,10 +356,10 @@
 
                 <!-- Right Column: LỊCH SỬ CỦA TÔI -->
                 <div :class="[
-                    'flex flex-col h-full overflow-hidden',
+                    'flex flex-col h-full',
                     hasAnyRole(['manager', 'member']) ? 'col-span-8' : 'col-span-12'
                 ]">
-                    <div class="bg-white rounded-[24px] shadow-sm border border-gray-50 flex-1 flex flex-col overflow-hidden">
+                    <div class="bg-white rounded-[24px] shadow-sm border border-gray-50 flex-1 flex flex-col">
                         <!-- Section Header -->
                         <div class="px-6 pt-6 pb-2">
                             <div class="text-[#838799] font-bold text-[15px] tracking-wide uppercase">
@@ -256,13 +381,138 @@
                                     class="w-full bg-[#EDEEF2] border-none rounded-md py-3.5 pl-12 pr-12 text-sm focus:ring-0 placeholder:text-[#9EA2B3] placeholder:font-normal"
                                 />
                                 <div class="absolute inset-y-0 right-4 flex items-center">
-                                    <FunnelIcon class="w-5 h-5 text-[#838799] cursor-pointer" />
+                                    <div class="relative">
+                                        <FunnelIcon 
+                                            class="w-5 h-5 text-[#838799] cursor-pointer hover:text-[#D72D36] transition-colors" 
+                                            @click="showFilterDropdown = !showFilterDropdown"
+                                        />
+                                        <div v-if="activeFilterCount > 0" class="absolute -top-1 -right-1 w-2 h-2 bg-[#D72D36] rounded-full"></div>
+                                        
+                                        <!-- Filter Dropdown -->
+                                        <Transition name="fade">
+                                            <div v-if="showFilterDropdown" 
+                                                class="absolute right-0 top-full mt-4 w-[650px] bg-white rounded-2xl shadow-2xl border border-gray-100 z-[100] p-6 text-left overflow-visible"
+                                                v-click-outside="() => showFilterDropdown = false">
+                                                <div class="flex items-center justify-between mb-6">
+                                                    <h3 class="text-lg font-bold text-[#1F2937]">Bộ lọc giao dịch</h3>
+                                                    <button @click="clearFilters" class="text-sm text-[#838799] hover:text-[#D72D36] font-medium transition-colors">Xoá lọc</button>
+                                                </div>
+
+                                                <div class="space-y-6 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                                                    <!-- Direction -->
+                                                    <div>
+                                                        <label class="block text-xs font-bold text-[#838799] uppercase tracking-wider mb-3">Loại giao dịch</label>
+                                                        <div class="flex gap-2">
+                                                            <button 
+                                                                v-for="opt in [{v: '', l: 'Tất cả'}, {v: 'in', l: 'Thu'}, {v: 'out', l: 'Chi'}]"
+                                                                :key="opt.v"
+                                                                @click="filters.direction = opt.v"
+                                                                :class="[
+                                                                    'flex-1 py-2 px-3 rounded-lg text-sm font-bold transition-all border',
+                                                                    filters.direction === opt.v 
+                                                                        ? 'bg-[#D72D36] text-white border-[#D72D36] shadow-sm' 
+                                                                        : 'bg-gray-50 text-[#3E414C] border-gray-100 hover:border-gray-300'
+                                                                ]"
+                                                            >
+                                                                {{ opt.l }}
+                                                            </button>
+                                                            </div>
+                                                        </div>
+
+                                                    <!-- Source Type -->
+                                                    <div>
+                                                        <label class="block text-xs font-bold text-[#838799] uppercase tracking-wider mb-3">Nguồn tiền</label>
+                                                        <div class="grid grid-cols-2 gap-2">
+                                                            <label 
+                                                                v-for="opt in sourceTypeOptions" 
+                                                                :key="opt.value"
+                                                                class="flex items-center space-x-3 p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors group"
+                                                            >
+                                                                <input 
+                                                                    type="checkbox" 
+                                                                    v-model="filters.source_types" 
+                                                                    :value="opt.value"
+                                                                    class="w-4 h-4 text-[#D72D36] border-gray-300 rounded focus:ring-[#D72D36]"
+                                                                />
+                                                                <span class="text-sm font-medium text-[#3E414C] group-hover:text-[#1F2937]">{{ opt.label }}</span>
+                                                            </label>
+                                                            </div>
+                                                        </div>
+
+                                                    <!-- Status & Date Range row -->
+                                                    <div class="grid grid-cols-2 gap-6">
+                                                        <!-- Status -->
+                                                        <div>
+                                                        <label class="block text-xs font-bold text-[#838799] uppercase tracking-wider mb-3">Trạng thái</label>
+                                                        <div class="grid grid-cols-1 gap-2">
+                                                            <label 
+                                                                v-for="opt in statusOptions" 
+                                                                :key="opt.value"
+                                                                class="flex items-center space-x-3 p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors group"
+                                                            >
+                                                                <input 
+                                                                    type="checkbox" 
+                                                                    v-model="filters.statuses" 
+                                                                    :value="opt.value"
+                                                                    class="w-4 h-4 text-[#D72D36] border-gray-300 rounded focus:ring-[#D72D36]"
+                                                                />
+                                                                <span class="text-sm font-medium text-[#3E414C] group-hover:text-[#1F2937]">{{ opt.label }}</span>
+                                                            </label>
+                                                            </div>
+                                                        </div>
+
+                                                    <!-- Date Range -->
+                                                    <div>
+                                                        <label class="block text-xs font-bold text-[#838799] uppercase tracking-wider mb-3">Khoảng thời gian</label>
+                                                        <div class="space-y-3">
+                                                            <div class="relative">
+                                                                <VueDatePicker teleport="body"
+                                                                    v-model="filters.date_from"
+                                                                    :enable-time-picker="false"
+                                                                    auto-apply
+                                                                    placeholder="Từ ngày"
+                                                                    text-input
+                                                                    :format="'dd/MM/yyyy'"
+                                                                    class="v-datepicker-custom"
+                                                                />
+                                                            </div>
+                                                            <div class="relative">
+                                                                <VueDatePicker 
+                                                                    v-model="filters.date_to"
+                                                                    :enable-time-picker="false"
+                                                                    auto-apply
+                                                                    placeholder="Đến ngày"
+                                                                    text-input
+                                                                    :format="'dd/MM/yyyy'"
+                                                                    class="v-datepicker-custom"
+                                                                />
+                                                            </div>
+                                                            </div>
+                                                        </div>
+                                                </div>
+
+                                                </div>
+
+                                                <div class="mt-8">
+                                                    <button 
+                                                        @click="applyFilters"
+                                                        class="w-full py-4 bg-[#2D3139] text-white rounded-xl font-bold hover:bg-black transition-all shadow-lg active:scale-[0.98]"
+                                                    >
+                                                        Áp dụng bộ lọc
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </Transition>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- History List -->
                         <div class="flex-1 overflow-y-auto">
+                            <div v-if="transactions.length === 0" class="text-center py-12">
+                                <p class="text-[#838799] text-sm">Chưa có giao dịch nào</p>
+                            </div>
                             <div v-for="(item, i) in transactions" :key="i" 
                                 class="flex items-center justify-between mx-6 py-5 border-b border-[#dcdee6] hover:bg-gray-50/30 transition-colors cursor-pointer last:border-b-0">
                                 <div class="flex items-center space-x-4">
@@ -515,10 +765,19 @@
                 @submit="handleSubmitFundRevenue"
             />
 
+            <!-- Create Expense Modal -->
+            <ClubCreateExpenseModal 
+                v-model:isOpen="showCreateExpenseModal"
+                @submit="handleSubmitFundExpenses"
+            />
+
 
             <!-- Floating Action Buttons -->
             <div class="fixed bottom-8 right-8 flex flex-col space-y-4" v-if="hasAnyRole(['admin', 'secretary', 'treasurer'])">
-                <button class="w-12 h-12 bg-[#2D3139] text-white rounded-full flex items-center justify-center shadow-lg hover:bg-black transition-all">
+                <button 
+                    @click="showCreateExpenseModal = true"
+                    class="w-12 h-12 bg-[#2D3139] text-white rounded-full flex items-center justify-center shadow-lg hover:bg-black transition-all"
+                >
                     <MinusIcon class="w-6 h-6" />
                 </button>
                 <button 
@@ -535,6 +794,7 @@
 <script setup>
 import Background from '@/assets/images/club-default-thumbnail.svg?url'
 import ClubFundSkeleton from '@/components/molecules/ClubFundSkeleton.vue'
+import ClubCreateExpenseModal from '@/components/pages/club/partials/ClubCreateExpenseModal.vue'
 import ClubCreateFundModal from '@/components/pages/club/partials/ClubCreateFundModal.vue'
 import Pagination from '@/components/molecules/Pagination.vue'
 import {
@@ -556,7 +816,7 @@ import {
     PencilSquareIcon,
 } from '@heroicons/vue/24/outline'
 import { useRouter, useRoute } from 'vue-router'
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, ref, computed, watch } from 'vue'
 import QRCodeIcon from "@/assets/images/qr_code.svg";
 import * as ClubService from '@/service/club.js'
 import { toast } from 'vue3-toastify'
@@ -564,6 +824,9 @@ import { useUserStore } from '@/store/auth'
 import { storeToRefs } from 'pinia'
 import { formatCurrency, formatSpecialCurrency } from '@/composables/formatCurrency'
 import { formatDatetime } from '@/composables/formatDatetime'
+import VueDatePicker from '@vuepic/vue-datepicker'
+import '@vuepic/vue-datepicker/dist/main.css'
+import dayjs from 'dayjs'
 
 const userStore = useUserStore()
 const { getUser } = storeToRefs(userStore)
@@ -573,6 +836,7 @@ const club = ref([]);
 const clubId = ref(route.params.id);
 const showQRModal = ref(false)
 const showCreateFundModal = ref(false)
+const showCreateExpenseModal = ref(false)
 const currentIndex = ref(0)
 const isInitialLoading = ref(true)
 const fileInput = ref(null)
@@ -609,6 +873,59 @@ const lastPage = ref(1)
 const isTransactionsLoading = ref(false)
 const itemsPerPage = 10
 
+const showFilterDropdown = ref(false)
+const filters = ref({
+    direction: '', // 'in' | 'out'
+    source_types: [], // monthly_fee, fund_collection, etc.
+    statuses: [], // pending, confirmed, rejected
+    date_from: null,
+    date_to: null
+})
+
+const sourceTypeOptions = [
+    { value: 'monthly_fee', label: 'Quỹ tháng' },
+    { value: 'fund_collection', label: 'Đợt thu' },
+    { value: 'expense', label: 'Chi phí' },
+    { value: 'donation', label: 'Quyên góp' },
+    { value: 'adjustment', label: 'Điều chỉnh' },
+    { value: 'activity', label: 'Hoạt động' },
+    { value: 'activity_penalty', label: 'Phạt hoạt động' }
+]
+
+const statusOptions = [
+    { value: 'pending', label: 'Chờ duyệt' },
+    { value: 'confirmed', label: 'Đã xác nhận' },
+    { value: 'rejected', label: 'Từ chối' }
+]
+
+const activeFilterCount = computed(() => {
+    let count = 0
+    if (filters.value.direction) count++
+    if (filters.value.source_types.length > 0) count++
+    if (filters.value.statuses.length > 0) count++
+    if (filters.value.date_from) count++
+    if (filters.value.date_to) count++
+    return count
+})
+
+const applyFilters = () => {
+    currentPage.value = 1
+    getAllTransaction()
+    getAllMyTransaction()
+    showFilterDropdown.value = false
+}
+
+const clearFilters = () => {
+    filters.value = {
+        direction: '',
+        source_types: [],
+        statuses: [],
+        date_from: null,
+        date_to: null
+    }
+    applyFilters()
+}
+
 // Debounce for search
 let searchTimeout = null
 const handleSearch = () => {
@@ -616,6 +933,7 @@ const handleSearch = () => {
     searchTimeout = setTimeout(() => {
         currentPage.value = 1
         getAllTransaction()
+        getAllMyTransaction()
     }, 500)
 }
 
@@ -766,13 +1084,33 @@ const handleSubmitFundRevenue = async (data) => {
     }
 }
 
+const handleSubmitFundExpenses = async (data) => {
+    try {
+        const response = await ClubService.createFundExpenses(clubId.value, data)
+        toast.success(response.message || 'Tạo khoản chi thành công')
+        showCreateExpenseModal.value = false
+        // Refresh data
+        await getFundOverview()
+        await getAllTransaction()
+        await getAllMyTransaction()
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi tạo khoản chi')
+    }
+}
+
 const getAllTransaction = async () => {
+    if(!hasAnyRole(['admin', 'secretary'])) return
     try {
         isTransactionsLoading.value = true
         const params = {
             page: currentPage.value,
             per_page: itemsPerPage,
-            search: searchQuery.value
+            search: searchQuery.value,
+            direction: filters.value.direction || undefined,
+            'source_types[]': filters.value.source_types.length > 0 ? filters.value.source_types : undefined,
+            'statuses[]': filters.value.statuses.length > 0 ? filters.value.statuses : undefined,
+            date_from: filters.value.date_from ? dayjs(filters.value.date_from).format('YYYY-MM-DD') : undefined,
+            date_to: filters.value.date_to ? dayjs(filters.value.date_to).format('YYYY-MM-DD') : undefined
         }
         
         const response = await ClubService.getAllTransaction(clubId.value, params)
@@ -785,9 +1123,35 @@ const getAllTransaction = async () => {
     }
 }
 
+const getAllMyTransaction = async () => {
+    if(!hasAnyRole(['member', 'treasurer', 'manager'])) return
+    try {
+        isTransactionsLoading.value = true
+        const params = {
+            page: currentPage.value,
+            per_page: itemsPerPage,
+            search: searchQuery.value,
+            direction: filters.value.direction || undefined,
+            'source_types[]': filters.value.source_types.length > 0 ? filters.value.source_types : undefined,
+            'statuses[]': filters.value.statuses.length > 0 ? filters.value.statuses : undefined,
+            date_from: filters.value.date_from ? dayjs(filters.value.date_from).format('YYYY-MM-DD') : undefined,
+            date_to: filters.value.date_to ? dayjs(filters.value.date_to).format('YYYY-MM-DD') : undefined
+        }
+        
+        const response = await ClubService.getAllMyTransaction(clubId.value, params)
+        transactions.value = response.data?.transactions || []
+        lastPage.value = response.meta?.last_page || 1
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi lấy danh sách giao dịch')
+    } finally {
+        isTransactionsLoading.value = false
+    }
+}
+
 const handlePageChange = (page) => {
     currentPage.value = page
     getAllTransaction()
+    getAllMyTransaction()
 }
 
 onMounted(async () => {
@@ -801,6 +1165,7 @@ onMounted(async () => {
     await getFundOverview();
     await getlistQrCodes();
     await getAllTransaction();
+    await getAllMyTransaction();
 
     // Simulate loading delay
     setTimeout(() => {
@@ -852,5 +1217,23 @@ onMounted(async () => {
 .scale-leave-to {
     opacity: 0;
     transform: scale(0.9) translateY(20px);
+}
+
+.v-datepicker-custom :deep(.dp__input) {
+    background-color: #f9fafb;
+    border: 1px solid #f3f4f6;
+    border-radius: 12px;
+    padding: 12px 16px 12px 42px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+}
+
+.v-datepicker-custom :deep(.dp__input:hover) {
+    border-color: #d1d5db;
+}
+
+.v-datepicker-custom :deep(.dp__input:focus) {
+    border-color: #D72D36;
 }
 </style>

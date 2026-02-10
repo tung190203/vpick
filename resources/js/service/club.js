@@ -242,12 +242,30 @@ export const getAllTransaction = async (clubId, params = {}) => {
   return data
 }
 
+export const getAllMyTransaction = async (clubId, params = {}) => {
+    const queryParams = new URLSearchParams()
+    Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      queryParams.append(key, value)
+    }
+  })
+
+  const queryString = queryParams.toString()
+  const url = `${API_ENDPOINT.CLUB}/${clubId}/wallet-transactions/my-transactions${queryString ? `?${queryString}` : ''}`
+  const { data } = await axiosInstance.get(url)
+  return data
+}
+
 export const fundOverview = async (clubId) => {
     return axiosInstance.get(`${API_ENDPOINT.CLUB}/${clubId}/fund/overview`).then((response) => response.data);
 }
 
 export const createdFundRevenue = async (clubId, data) => {
     return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/fund-collections`, data).then((response) => response.data);
+}
+
+export const createFundExpenses = async (clubId, data) => {
+  return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/expenses`, data).then((response) => response.data);
 }
 
 export const listQrCodes = async (clubId) => {
