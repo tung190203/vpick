@@ -35,7 +35,7 @@ class ClubFundContributionService
 
     public function submitContribution(ClubFundCollection $collection, int $userId, $image, ?string $note = null): ClubFundContribution
     {
-        $amountDue = (float) ($collection->amount_per_member ?? $collection->target_amount);
+        $amountDue = (float) ($collection->amount_per_member ?? 0);
 
         if ($collection->status !== ClubFundCollectionStatus::Active) {
             $message = match ($collection->status) {
