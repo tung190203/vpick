@@ -76,18 +76,14 @@ class ClubResource extends JsonResource
                     return null;
                 }
 
-                $socialLinks = $this->profile->social_links ?: [];
                 $settings = $this->profile->settings ?: [];
-
-                $settingsWithDefaults = array_merge([
-                    'qr_code_enabled' => false,
-                ], $settings);
 
                 return [
                     'id' => $this->profile->id,
                     'description' => $this->profile->description,
                     'cover_image_url' => $this->profile->cover_image_url,
                     'qr_code_image_url' => $this->profile->qr_code_image_url,
+                    'qr_code_enabled' => (bool) ($settings['qr_code_enabled'] ?? false),
                     'phone' => $this->profile->phone,
                     'email' => $this->profile->email,
                     'website' => $this->profile->website,
@@ -98,10 +94,9 @@ class ClubResource extends JsonResource
                     'latitude' => $this->profile->latitude,
                     'longitude' => $this->profile->longitude,
                     'zalo_link' => $this->profile->zalo_link,
-                    'zalo_enabled' => (bool) $this->profile->zalo_enabled,
+                    'zalo_link_enabled' => (bool) ($settings['zalo_link_enabled'] ?? false),
                     'qr_zalo' => $this->profile->qr_zalo_url,
-                    'social_links' => $socialLinks ?: (object) [],
-                    'settings' => (object) $settingsWithDefaults,
+                    'qr_zalo_enabled' => (bool) ($settings['qr_zalo_enabled'] ?? false),
                 ];
             }),
             'wallets' => $this->whenLoaded('wallets'),
