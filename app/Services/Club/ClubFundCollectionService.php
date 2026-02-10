@@ -185,6 +185,28 @@ class ClubFundCollectionService
             ->paginate($perPage);
     }
 
+    public function deleteQrCode(Club $club, int $qrCodeId, int $userId): void
+    {
+        if (!$club->canManageFinance($userId)) {
+            throw new \Exception('Chỉ admin/manager/treasurer mới có quyền xóa mã QR');
+        }
+
+        $collection = $club->fundCollections()
+            ->whereNotNull('qr_code_url')
+            ->where('qr_code_url', '!=', '')
+            ->findOrFail($qrCodeId);
+
+        if ($collection->status !== ClubFundCollectionStatus::Pending) {
+            throw new \Exception('Chỉ có thể xóa mã QR chưa gắn với đợt thu (trạng thái Pending)');
+        }
+
+        if ($collection->contributions()->exists()) {
+            throw new \Exception('Không thể xóa mã QR đã có giao dịch nộp tiền');
+        }
+
+        $collection->delete();
+    }
+
     public function needPaymentForUser(ClubFundCollection $collection, int $userId): bool
     {
         if (!$collection->relationLoaded('assignedMembers')) {

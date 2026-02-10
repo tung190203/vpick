@@ -169,6 +169,25 @@ class ClubFundCollectionController extends Controller
         ], 'Lấy mã QR thành công');
     }
 
+    public function destroyQrCode($clubId, $qrCodeId)
+    {
+        $club = Club::findOrFail($clubId);
+        $userId = auth()->id();
+
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
+        }
+
+        try {
+            $this->collectionService->deleteQrCode($club, (int) $qrCodeId, $userId);
+            return ResponseHelper::success(null, 'Xóa mã QR thành công');
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return ResponseHelper::error('Mã QR không tồn tại', 404);
+        } catch (\Exception $e) {
+            return ResponseHelper::error($e->getMessage(), 422);
+        }
+    }
+
     public function listQrCodes(Request $request, $clubId)
     {
         $club = Club::findOrFail($clubId);
