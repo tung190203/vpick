@@ -4,10 +4,8 @@ namespace App\Services\Club;
 
 use App\Enums\ClubFundCollectionStatus;
 use App\Enums\ClubFundContributionStatus;
-use App\Enums\ClubMemberRole;
 use App\Models\Club\Club;
 use App\Models\Club\ClubFundCollection;
-use App\Models\Club\ClubMember;
 use App\Services\ImageOptimizationService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -40,6 +38,7 @@ class ClubFundCollectionService
                 'contributions as pending_count' => function ($q) {
                     $q->where('status', ClubFundContributionStatus::Pending);
                 },
+                'assignedMembers',
             ]);
 
         $this->updateExpiredCollections($club);
@@ -223,37 +222,53 @@ class ClubFundCollectionService
         return $collection->assignedMembers->contains('id', $userId);
     }
 
-    public function createQrCode(Club $club, array $data, int $userId): ClubFundCollection
+    public function createOrAttachQrCode(Club $club, array $data, int $userId): ClubFundCollection
     {
         if (!$club->canManageFinance($userId)) {
-            throw new \Exception('Chỉ admin/manager/treasurer mới có quyền tạo mã QR');
+            throw new \Exception('Chỉ admin/manager/treasurer mới có quyền tạo/gắn mã QR');
         }
 
         $qrCodeUrl = $this->imageService->optimizeThumbnail($data['image'], 'qr_codes', 90);
-        $title = Str::limit($data['content'], 255);
+
+        if (!empty($data['collection_id'])) {
+            return $this->attachQrToExistingCollection($club, (int) $data['collection_id'], $qrCodeUrl);
+        }
+
+        return $this->createPendingQrCode($club, $qrCodeUrl, $data['content'] ?? null, $userId);
+    }
+
+    private function attachQrToExistingCollection(Club $club, int $collectionId, string $qrCodeUrl): ClubFundCollection
+    {
+        $collection = $club->fundCollections()->findOrFail($collectionId);
+
+        if ($collection->status !== ClubFundCollectionStatus::Active) {
+            throw new \Exception('Chỉ có thể gắn mã QR vào đợt thu đang active');
+        }
+
+        $collection->update(['qr_code_url' => $qrCodeUrl]);
+
+        return $collection->fresh();
+    }
+
+    private function createPendingQrCode(Club $club, string $qrCodeUrl, ?string $content, int $userId): ClubFundCollection
+    {
+        $title = $content ? Str::limit($content, 255) : 'Mã QR chờ gắn đợt thu';
         $today = now()->format('Y-m-d');
 
-        return DB::transaction(function () use ($club, $userId, $data, $title, $today, $qrCodeUrl) {
-            $primary = ClubFundCollection::create([
-                'club_id' => $club->id,
-                'title' => $title,
-                'description' => $data['content'],
-                'target_amount' => $data['amount'],
-                'collected_amount' => 0,
-                'currency' => 'VND',
-                'start_date' => $today,
-                'end_date' => null,
-                'status' => ClubFundCollectionStatus::Pending,
-                'qr_code_url' => $qrCodeUrl,
-                'created_by' => $userId,
-            ]);
-
-            if (!empty($data['apply_to_other_clubs'])) {
-                $this->applyQrCodeToOtherClubs($userId, $club->id, $title, $data, $today, $qrCodeUrl);
-            }
-
-            return $primary;
-        });
+        return ClubFundCollection::create([
+            'club_id' => $club->id,
+            'title' => $title,
+            'description' => $content ?? '',
+            'target_amount' => 0,
+            'amount_per_member' => null,
+            'collected_amount' => 0,
+            'currency' => 'VND',
+            'start_date' => $today,
+            'end_date' => null,
+            'status' => ClubFundCollectionStatus::Pending,
+            'qr_code_url' => $qrCodeUrl,
+            'created_by' => $userId,
+        ]);
     }
 
     public function getMyCollections(Club $club, int $userId): array
@@ -426,35 +441,4 @@ class ClubFundCollectionService
         return $payments;
     }
 
-    private function applyQrCodeToOtherClubs(int $userId, int $currentClubId, string $title, array $data, string $today, string $qrCodeUrl): void
-    {
-        $clubIds = ClubMember::query()
-            ->active()
-            ->where('user_id', $userId)
-            ->whereIn('role', [
-                ClubMemberRole::Admin,
-                ClubMemberRole::Manager,
-                ClubMemberRole::Treasurer,
-            ])
-            ->where('club_id', '!=', $currentClubId)
-            ->pluck('club_id')
-            ->unique()
-            ->values();
-
-        foreach ($clubIds as $otherClubId) {
-            ClubFundCollection::create([
-                'club_id' => $otherClubId,
-                'title' => $title,
-                'description' => $data['content'],
-                'target_amount' => $data['amount'],
-                'collected_amount' => 0,
-                'currency' => 'VND',
-                'start_date' => $today,
-                'end_date' => null,
-                'status' => ClubFundCollectionStatus::Pending,
-                'qr_code_url' => $qrCodeUrl,
-                'created_by' => $userId,
-            ]);
-        }
-    }
 }

@@ -38,7 +38,13 @@ class ClubFundContributionService
         $amountDue = (float) ($collection->amount_per_member ?? $collection->target_amount);
 
         if ($collection->status !== ClubFundCollectionStatus::Active) {
-            throw new \Exception('Đợt thu không còn hoạt động');
+            $message = match ($collection->status) {
+                ClubFundCollectionStatus::Pending => 'Mã QR này chưa được gắn với đợt thu. Vui lòng chờ admin tạo đợt thu và chọn mã QR này.',
+                ClubFundCollectionStatus::Completed => 'Đợt thu đã kết thúc.',
+                ClubFundCollectionStatus::Cancelled => 'Đợt thu đã bị hủy.',
+                default => 'Đợt thu không còn hoạt động.',
+            };
+            throw new \Exception($message);
         }
 
         $existingPending = $collection->contributions()
