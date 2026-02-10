@@ -185,6 +185,27 @@ class ClubService
                 }
             }
 
+            if (!empty($data['remove_qr_zalo'])) {
+                if (!$profile) {
+                    $profile = $club->profile;
+                }
+
+                if ($profile && $profile->getRawQrZaloPath()) {
+                    $this->deleteImages($profile->getRawQrZaloPath());
+                }
+
+                if ($profile) {
+                    $settings = $profile->settings;
+                    $settings = is_array($settings) ? $settings : [];
+                    $settings['qr_zalo_enabled'] = false;
+
+                    $profile->update([
+                        'qr_zalo' => null,
+                        'settings' => $settings,
+                    ]);
+                }
+            }
+
             $profileFields = ['description', 'phone', 'email', 'website', 'city', 'province', 'country', 'zalo_link', 'zalo_link_enabled', 'qr_zalo_enabled', 'qr_code_enabled'];
             if (collect($profileFields)->some(fn($field) => isset($data[$field]))) {
                 if (!$profile) {

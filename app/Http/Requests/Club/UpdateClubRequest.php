@@ -25,6 +25,11 @@ class UpdateClubRequest extends FormRequest
                 'qr_zalo_enabled' => filter_var($this->qr_zalo_enabled, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
             ]);
         }
+        if ($this->has('remove_qr_zalo')) {
+            $this->merge([
+                'remove_qr_zalo' => filter_var($this->remove_qr_zalo, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
+            ]);
+        }
         if ($this->has('qr_code_enabled')) {
             $this->merge([
                 'qr_code_enabled' => filter_var($this->qr_code_enabled, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)
@@ -61,6 +66,7 @@ class UpdateClubRequest extends FormRequest
             'zalo_link_enabled' => 'nullable|boolean',
             'qr_zalo_enabled' => 'nullable|boolean',
             'qr_zalo' => 'nullable|image|mimes:png,jpg,jpeg,gif|max:5120',
+            'remove_qr_zalo' => 'nullable|boolean',
             'qr_code_image_url' => 'nullable|image|mimes:png,jpg,jpeg,gif|max:5120',
             'qr_code_enabled' => 'nullable|boolean',
         ];
