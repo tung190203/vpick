@@ -28,6 +28,14 @@ class ClubFundCollectionController extends Controller
     public function index(Request $request, $clubId)
     {
         $club = Club::findOrFail($clubId);
+        $userId = auth()->id();
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
+        }
+        if (!$club->isMember($userId)) {
+            return ResponseHelper::error('Chỉ thành viên CLB mới xem được', 403);
+        }
+
         $validated = $request->validate([
             'page' => 'sometimes|integer|min:1',
             'per_page' => 'sometimes|integer|min:1|max:100',
@@ -94,6 +102,14 @@ class ClubFundCollectionController extends Controller
     public function show($clubId, $collectionId)
     {
         $collection = ClubFundCollection::where('club_id', $clubId)->findOrFail($collectionId);
+        $userId = auth()->id();
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
+        }
+        if (!$collection->club->isMember($userId)) {
+            return ResponseHelper::error('Chỉ thành viên CLB mới xem được', 403);
+        }
+
         $this->loadCollectionForDetail($collection);
         $detail = $this->collectionService->getCollectionDetail($collection);
 
@@ -158,6 +174,13 @@ class ClubFundCollectionController extends Controller
     public function getQrCode($clubId, $collectionId)
     {
         $collection = ClubFundCollection::where('club_id', $clubId)->findOrFail($collectionId);
+        $userId = auth()->id();
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
+        }
+        if (!$collection->club->isMember($userId)) {
+            return ResponseHelper::error('Chỉ thành viên CLB mới xem được', 403);
+        }
 
         if (!$collection->qr_code_url) {
             return ResponseHelper::error('Đợt thu chưa có mã QR', 404);
@@ -191,6 +214,14 @@ class ClubFundCollectionController extends Controller
     public function listQrCodes(Request $request, $clubId)
     {
         $club = Club::findOrFail($clubId);
+        $userId = auth()->id();
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
+        }
+        if (!$club->isMember($userId)) {
+            return ResponseHelper::error('Chỉ thành viên CLB mới xem được', 403);
+        }
+
         $validated = $request->validate([
             'page' => 'sometimes|integer|min:1',
             'per_page' => 'sometimes|integer|min:1|max:100',
@@ -228,10 +259,16 @@ class ClubFundCollectionController extends Controller
         }
 
         try {
-            $collection = $this->collectionService->createQrCode($club, $request->validated(), $userId);
+            $validated = $request->validated();
+            $collection = $this->collectionService->createOrAttachQrCode($club, $validated, $userId);
             $collection->load(['creator', 'club', 'contributions.user']);
 
-            return ResponseHelper::success(new ClubFundCollectionResource($collection), 'Tạo mã QR thành công', 201);
+            $message = !empty($validated['collection_id'])
+                ? 'Gắn mã QR thành công'
+                : 'Tạo mã QR thành công (chờ gắn đợt thu)';
+            $statusCode = !empty($validated['collection_id']) ? 200 : 201;
+
+            return ResponseHelper::success(new ClubFundCollectionResource($collection), $message, $statusCode);
         } catch (\Exception $e) {
             return ResponseHelper::error($e->getMessage(), 403);
         }
@@ -244,6 +281,9 @@ class ClubFundCollectionController extends Controller
 
         if (!$userId) {
             return ResponseHelper::error('Bạn cần đăng nhập', 401);
+        }
+        if (!$club->isMember($userId)) {
+            return ResponseHelper::error('Chỉ thành viên CLB mới xem được', 403);
         }
 
         $validated = $request->validate([

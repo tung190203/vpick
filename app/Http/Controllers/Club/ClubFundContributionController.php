@@ -22,6 +22,13 @@ class ClubFundContributionController extends Controller
     public function index(Request $request, $clubId, $collectionId)
     {
         $collection = ClubFundCollection::where('club_id', $clubId)->findOrFail($collectionId);
+        $userId = auth()->id();
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
+        }
+        if (!$collection->club->isMember($userId)) {
+            return ResponseHelper::error('Chỉ thành viên CLB mới xem được', 403);
+        }
 
         $validated = $request->validate([
             'page' => 'sometimes|integer|min:1',
@@ -46,6 +53,13 @@ class ClubFundContributionController extends Controller
     {
         $collection = ClubFundCollection::where('club_id', $clubId)->findOrFail($collectionId);
         $userId = auth()->id();
+
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
+        }
+        if (!$collection->club->isMember($userId)) {
+            return ResponseHelper::error('Chỉ thành viên CLB mới được nộp biên lai', 403);
+        }
 
         $validated = $request->validate([
             'image' => 'required|image|mimes:png,jpg,jpeg,gif|max:5120',
@@ -74,6 +88,14 @@ class ClubFundContributionController extends Controller
         })->where('club_fund_collection_id', $collectionId)
             ->with(['user', 'walletTransaction', 'fundCollection'])
             ->findOrFail($contributionId);
+
+        $userId = auth()->id();
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
+        }
+        if (!$contribution->fundCollection->club->isMember($userId)) {
+            return ResponseHelper::error('Chỉ thành viên CLB mới xem được', 403);
+        }
 
         return ResponseHelper::success(new ClubFundContributionResource($contribution), 'Lấy thông tin đóng góp thành công');
     }
