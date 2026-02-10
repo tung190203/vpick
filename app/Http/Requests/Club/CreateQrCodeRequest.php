@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Club;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class CreateQrCodeRequest extends FormRequest
 {
@@ -15,9 +16,13 @@ class CreateQrCodeRequest extends FormRequest
     {
         return [
             'image' => 'required|image|mimes:png,jpg,jpeg,gif|max:5120',
-            'amount' => 'required|numeric|min:0.01',
-            'content' => 'required|string|max:300',
-            'apply_to_other_clubs' => 'sometimes|boolean',
+            'collection_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('club_fund_collections', 'id')
+                    ->where('club_id', (int) $this->route('clubId')),
+            ],
+            'content' => 'nullable|string|max:300',
         ];
     }
 }

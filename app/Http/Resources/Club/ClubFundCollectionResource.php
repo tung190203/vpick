@@ -37,7 +37,10 @@ class ClubFundCollectionResource extends JsonResource
                 $this->pending_count
                 ?? ($this->relationLoaded('contributions') ? $this->contributions->where('status', \App\Enums\ClubFundContributionStatus::Pending)->count() : 0)
             ),
-            'assigned_members_count' => $this->relationLoaded('assignedMembers') ? $this->assignedMembers->count() : 0,
+            'assigned_members_count' => (int) (
+                $this->assigned_members_count
+                ?? ($this->relationLoaded('assignedMembers') ? $this->assignedMembers->count() : 0)
+            ),
             'creator' => new UserResource($this->whenLoaded('creator')),
             'contributions' => ClubFundContributionResource::collection($this->whenLoaded('contributions') ?? []),
             'pending_contributions' => $this->relationLoaded('contributions')
