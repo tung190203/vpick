@@ -98,7 +98,7 @@ class ClubController extends Controller
         $updatableFields = [
             'name', 'address', 'latitude', 'longitude', 'logo_url', 'status', 'is_public',
             'cover_image_url', 'description', 'phone', 'email', 'website', 'city', 'province', 'country',
-            'zalo_link', 'zalo_enabled', 'qr_zalo', 'qr_code_enabled'
+            'zalo_link', 'zalo_link_enabled', 'qr_zalo', 'qr_zalo_enabled', 'remove_qr_zalo', 'qr_code_enabled'
         ];
 
         $hasAnyField = $request->hasAny($updatableFields) ||
@@ -218,7 +218,7 @@ class ClubController extends Controller
             'longitude' => $club->longitude,
             'logo_url' => $club->logo_url,
             'status' => $club->status,
-            'profile' => $club->profile,
+            'profile' => ClubResource::formatProfile($club->profile),
         ], 'Lấy thông tin profile CLB thành công');
     }
 
