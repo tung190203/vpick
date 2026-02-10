@@ -66,6 +66,15 @@ class ClubFundCollectionController extends Controller
                     90
                 );
                 unset($data['qr_image']);
+            } elseif (!empty($data['qr_code_id'])) {
+                $existingQr = ClubFundCollection::where('club_id', $clubId)
+                    ->whereNotNull('qr_code_url')
+                    ->where('qr_code_url', '!=', '')
+                    ->find($data['qr_code_id']);
+                if ($existingQr) {
+                    $data['qr_code_url'] = $existingQr->qr_code_url;
+                }
+                unset($data['qr_code_id']);
             }
 
             $collection = $this->collectionService->createCollection($club, $data, $userId);
@@ -107,6 +116,16 @@ class ClubFundCollectionController extends Controller
             $data = $request->validated();
             if (!empty($data['end_date']) && $collection->start_date && $data['end_date'] < $collection->start_date->format('Y-m-d')) {
                 return ResponseHelper::error('Ngày kết thúc phải sau ngày bắt đầu đợt thu', 422);
+            }
+            if (!empty($data['qr_code_id'])) {
+                $existingQr = ClubFundCollection::where('club_id', $clubId)
+                    ->whereNotNull('qr_code_url')
+                    ->where('qr_code_url', '!=', '')
+                    ->find($data['qr_code_id']);
+                if ($existingQr) {
+                    $data['qr_code_url'] = $existingQr->qr_code_url;
+                }
+                unset($data['qr_code_id']);
             }
             $collection = $this->collectionService->updateCollection($collection, $data, $userId);
             $collection->load(['creator', 'club', 'contributions.user']);
@@ -159,6 +178,15 @@ class ClubFundCollectionController extends Controller
         ]);
 
         $collections = $this->collectionService->getQrCodes($club, $validated);
+        $userId = auth()->id();
+        if ($userId !== null) {
+            foreach ($collections->items() as $collection) {
+                $collection->setAttribute(
+                    'need_payment',
+                    $this->collectionService->needPaymentForUser($collection, $userId)
+                );
+            }
+        }
 
         $data = ['qr_codes' => ClubFundCollectionResource::collection($collections)];
         $meta = [

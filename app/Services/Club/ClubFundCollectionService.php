@@ -180,9 +180,24 @@ class ClubFundCollectionService
         return $club->fundCollections()
             ->whereNotNull('qr_code_url')
             ->where('qr_code_url', '!=', '')
-            ->with(['creator'])
+            ->with(['creator', 'assignedMembers'])
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
+    }
+
+    public function needPaymentForUser(ClubFundCollection $collection, int $userId): bool
+    {
+        if (!$collection->relationLoaded('assignedMembers')) {
+            $hasMembers = $collection->assignedMembers()->exists();
+            if (!$hasMembers) {
+                return true;
+            }
+            return $collection->assignedMembers()->where('user_id', $userId)->exists();
+        }
+        if ($collection->assignedMembers->isEmpty()) {
+            return true;
+        }
+        return $collection->assignedMembers->contains('id', $userId);
     }
 
     public function createQrCode(Club $club, array $data, int $userId): ClubFundCollection

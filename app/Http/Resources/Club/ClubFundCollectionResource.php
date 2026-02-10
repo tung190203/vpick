@@ -46,6 +46,7 @@ class ClubFundCollectionResource extends JsonResource
                 )
                 : [],
             'assigned_members' => UserResource::collection($this->whenLoaded('assignedMembers') ?? []),
+            'need_payment' => $this->when(isset($this->need_payment), (bool) $this->need_payment),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];
