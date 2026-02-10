@@ -110,7 +110,7 @@ class ClubFundCollectionService
 
         $confirmedByUser = $confirmedContributions->keyBy('user_id');
         $pendingByUser = $pendingContributions->keyBy('user_id');
-        $amountPerMember = (float) ($collection->amount_per_member ?? $collection->target_amount);
+        $amountPerMember = (float) ($collection->amount_per_member ?? 0);
 
         $memberSources = $this->getMemberSources($collection, $amountPerMember);
 
@@ -298,7 +298,7 @@ class ClubFundCollectionService
             $contribution = $contributions->get($collection->id);
             $amountDue = $myAmountDueByCollection->has($collection->id)
                 ? (float) $myAmountDueByCollection->get($collection->id)
-                : (float) ($collection->amount_per_member ?? $collection->target_amount);
+                : (float) ($collection->amount_per_member ?? 0);
 
             return [
                 'id' => $collection->id,
