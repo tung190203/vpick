@@ -164,37 +164,40 @@ class ClubService
                 }
             }
 
-            // Handle profile field updates
+            if (isset($data['qr_zalo']) && $data['qr_zalo'] instanceof UploadedFile) {
+                if (!$profile) {
+                    $profile = $club->profile;
+                }
+
+                if ($profile && $profile->getRawQrZaloPath()) {
+                    $this->deleteImages($profile->getRawQrZaloPath());
+                }
+
+                $qrZaloPath = $this->imageService->optimizeThumbnail($data['qr_zalo'], 'zalo_qr', 90);
+
+                if ($profile) {
+                    $profile->update(['qr_zalo' => $qrZaloPath]);
+                } else {
+                    $profile = ClubProfile::create([
+                        'club_id' => $club->id,
+                        'qr_zalo' => $qrZaloPath,
+                    ]);
+                }
+            }
+
             $profileFields = ['description', 'phone', 'email', 'website', 'city', 'province', 'country', 'zalo_link', 'zalo_enabled', 'qr_code_enabled'];
             if (collect($profileFields)->some(fn($field) => isset($data[$field]))) {
                 if (!$profile) {
                     $profile = $club->profile;
                 }
 
-                // Prepare social_links and settings updates
                 $socialLinks = $profile && is_array($profile->social_links) ? $profile->social_links : [];
                 $settings = $profile && is_array($profile->settings) ? $profile->settings : [];
 
-                // Update Zalo link in social_links
-                if (isset($data['zalo_link'])) {
-                    if ($data['zalo_link']) {
-                        $socialLinks['zalo'] = $data['zalo_link'];
-                    } else {
-                        unset($socialLinks['zalo']);
-                    }
-                }
-
-                // Update Zalo enabled in settings
-                if (isset($data['zalo_enabled'])) {
-                    $settings['zalo_enabled'] = $data['zalo_enabled'];
-                }
-
-                // Update QR code enabled in settings
                 if (isset($data['qr_code_enabled'])) {
                     $settings['qr_code_enabled'] = $data['qr_code_enabled'];
                 }
 
-                // Ensure empty arrays are cast to objects in JSON
                 if (empty($socialLinks)) {
                     $socialLinks = (object) [];
                 }
@@ -202,31 +205,32 @@ class ClubService
                     $settings = (object) [];
                 }
 
+                $profileUpdate = [
+                    'description' => $data['description'] ?? $profile?->description ?? null,
+                    'phone' => $data['phone'] ?? $profile?->phone ?? null,
+                    'email' => $data['email'] ?? $profile?->email ?? null,
+                    'website' => $data['website'] ?? $profile?->website ?? null,
+                    'city' => $data['city'] ?? $profile?->city ?? null,
+                    'province' => $data['province'] ?? $profile?->province ?? null,
+                    'country' => $data['country'] ?? $profile?->country ?? null,
+                    'social_links' => $socialLinks,
+                    'settings' => $settings,
+                ];
+
+                if (array_key_exists('zalo_link', $data)) {
+                    $profileUpdate['zalo_link'] = $data['zalo_link'] ?: null;
+                }
+                if (array_key_exists('zalo_enabled', $data)) {
+                    $profileUpdate['zalo_enabled'] = (bool) $data['zalo_enabled'];
+                }
+
                 if ($profile) {
-                    $profile->update([
-                        'description' => $data['description'] ?? $profile->description,
-                        'phone' => $data['phone'] ?? $profile->phone,
-                        'email' => $data['email'] ?? $profile->email,
-                        'website' => $data['website'] ?? $profile->website,
-                        'city' => $data['city'] ?? $profile->city,
-                        'province' => $data['province'] ?? $profile->province,
-                        'country' => $data['country'] ?? $profile->country,
-                        'social_links' => $socialLinks,
-                        'settings' => $settings,
-                    ]);
+                    $profile->update($profileUpdate);
                 } else {
-                    ClubProfile::create([
-                        'club_id' => $club->id,
-                        'description' => $data['description'] ?? null,
-                        'phone' => $data['phone'] ?? null,
-                        'email' => $data['email'] ?? null,
-                        'website' => $data['website'] ?? null,
-                        'city' => $data['city'] ?? null,
-                        'province' => $data['province'] ?? null,
-                        'country' => $data['country'] ?? null,
-                        'social_links' => $socialLinks,
-                        'settings' => $settings,
-                    ]);
+                    $profileUpdate['club_id'] = $club->id;
+                    $profileUpdate['zalo_link'] = array_key_exists('zalo_link', $data) ? ($data['zalo_link'] ?: null) : null;
+                    $profileUpdate['zalo_enabled'] = array_key_exists('zalo_enabled', $data) ? (bool) $data['zalo_enabled'] : false;
+                    $profile = ClubProfile::create($profileUpdate);
                 }
             }
 
@@ -245,19 +249,16 @@ class ClubService
 
     public function deleteClub(Club $club, int $userId): void
     {
-        // Authorization check
         if (!$club->canManage($userId)) {
             throw new \Exception('Chỉ admin/manager mới có quyền xóa CLB');
         }
 
         DB::transaction(function () use ($club) {
-            // Delete logo
             $logoPath = $club->getRawOriginal('logo_url');
             if ($logoPath) {
                 $this->deleteImages($logoPath);
             }
 
-            // Delete cover
             if ($club->profile) {
                 $coverPath = $club->profile->getRawCoverImagePath();
                 if ($coverPath) {
@@ -265,7 +266,6 @@ class ClubService
                 }
             }
 
-            // Soft delete club
             $club->delete();
         });
     }
@@ -311,11 +311,9 @@ class ClubService
             }
         }
 
-        // Get members with ranking
         $members = $club->joinedMembers()->with(['user' => User::FULL_RELATIONS])->get();
         $enrichedMembers = $this->memberService->enrichMembersWithRanking($members);
 
-        // Set the enriched members relation
         $club->setRelation('members', $enrichedMembers);
 
         return $club;
@@ -325,7 +323,6 @@ class ClubService
     {
         $query = Club::withFullRelations()->orderBy('created_at', 'desc');
 
-        // Filter private clubs: Only show public clubs OR clubs where user is member/creator
         if ($userId) {
             $query->where(function ($q) use ($userId) {
                 $q->where('is_public', true)
@@ -340,7 +337,6 @@ class ClubService
             $query->where('is_public', true);
         }
 
-        // Apply search filters
         if (!empty($filters['name'])) {
             $query->search(['name'], $filters['name']);
         }
@@ -349,10 +345,8 @@ class ClubService
             $query->search(['address'], $filters['address']);
         }
 
-        // Check if there are any text filters
         $hasFilter = !empty($filters['name']) || !empty($filters['address']);
 
-        // Apply bounds filter (only if no text search)
         if (
             !$hasFilter &&
             (!empty($filters['minLat']) ||
@@ -368,12 +362,10 @@ class ClubService
             );
         }
 
-        // Apply distance ordering
         if (!empty($filters['lat']) && !empty($filters['lng'])) {
             $query->orderByDistance($filters['lat'], $filters['lng']);
         }
 
-        // Apply radius filter
         if (!empty($filters['lat']) && !empty($filters['lng']) && !empty($filters['radius'])) {
             $query->nearBy($filters['lat'], $filters['lng'], $filters['radius']);
         }
@@ -390,12 +382,10 @@ class ClubService
             throw new \Exception('Bạn không phải thành viên active của CLB này');
         }
 
-        // Check if admin is the only admin
         if ($member->role === ClubMemberRole::Admin) {
             $adminCount = $this->memberService->countActiveAdmins($club);
 
             if ($adminCount === 1) {
-                // Admin only, must transfer ownership
                 if (!$transferToUserId) {
                     throw new \Exception('Bạn là admin duy nhất của CLB. Vui lòng nhượng lại quyền quản lý cho thành viên khác trước khi rời.');
                 }
@@ -411,12 +401,10 @@ class ClubService
                 }
 
                 return DB::transaction(function () use ($member, $newAdmin) {
-                    // Promote member to admin
                     $newAdmin->update([
                         'role' => ClubMemberRole::Admin,
                     ]);
 
-                    // Current admin leaves club
                     $member->update([
                         'membership_status' => ClubMembershipStatus::Left,
                         'status' => ClubMemberStatus::Inactive,
@@ -431,10 +419,8 @@ class ClubService
                     ];
                 });
             }
-            // Multiple admins, can leave normally
         }
 
-        // Regular member or admin with other admins → leave normally
         $member->update([
             'membership_status' => ClubMembershipStatus::Left,
             'status' => ClubMemberStatus::Inactive,
