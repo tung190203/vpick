@@ -71,42 +71,43 @@ class ClubResource extends JsonResource
                     ->exists(),
                 false
             ),
-            'profile' => $this->whenLoaded('profile', function () {
-                if (!$this->profile) {
-                    return null;
-                }
-
-                $socialLinks = $this->profile->social_links ?: [];
-                $settings = $this->profile->settings ?: [];
-
-                $settingsWithDefaults = array_merge([
-                    'qr_code_enabled' => false,
-                ], $settings);
-
-                return [
-                    'id' => $this->profile->id,
-                    'description' => $this->profile->description,
-                    'cover_image_url' => $this->profile->cover_image_url,
-                    'qr_code_image_url' => $this->profile->qr_code_image_url,
-                    'phone' => $this->profile->phone,
-                    'email' => $this->profile->email,
-                    'website' => $this->profile->website,
-                    'address' => $this->profile->address,
-                    'city' => $this->profile->city,
-                    'province' => $this->profile->province,
-                    'country' => $this->profile->country,
-                    'latitude' => $this->profile->latitude,
-                    'longitude' => $this->profile->longitude,
-                    'zalo_link' => $this->profile->zalo_link,
-                    'zalo_enabled' => (bool) $this->profile->zalo_enabled,
-                    'qr_zalo' => $this->profile->qr_zalo_url,
-                    'social_links' => $socialLinks ?: (object) [],
-                    'settings' => (object) $settingsWithDefaults,
-                ];
-            }),
+            'profile' => $this->whenLoaded('profile', fn () => static::formatProfile($this->profile)),
             'wallets' => $this->whenLoaded('wallets'),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
+        ];
+    }
+
+    /**
+     * Format profile for API (không trả social_links, settings; trả đủ field phẳng gồm qr_zalo_enabled).
+     */
+    public static function formatProfile(?\Illuminate\Database\Eloquent\Model $profile): ?array
+    {
+        if (!$profile) {
+            return null;
+        }
+
+        $settings = $profile->settings ?? [];
+
+        return [
+            'id' => $profile->id,
+            'description' => $profile->description,
+            'cover_image_url' => $profile->cover_image_url,
+            'qr_code_image_url' => $profile->qr_code_image_url,
+            'qr_code_enabled' => (bool) ($settings['qr_code_enabled'] ?? false),
+            'phone' => $profile->phone,
+            'email' => $profile->email,
+            'website' => $profile->website,
+            'address' => $profile->address,
+            'city' => $profile->city,
+            'province' => $profile->province,
+            'country' => $profile->country,
+            'latitude' => $profile->latitude,
+            'longitude' => $profile->longitude,
+            'zalo_link' => $profile->zalo_link,
+            'zalo_link_enabled' => (bool) ($settings['zalo_link_enabled'] ?? false),
+            'qr_zalo' => $profile->qr_zalo_url,
+            'qr_zalo_enabled' => (bool) ($settings['qr_zalo_enabled'] ?? false),
         ];
     }
 
