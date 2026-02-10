@@ -25,33 +25,28 @@ class ClubFundCollectionResource extends JsonResource
             'qr_code_url' => $this->qr_code_url,
             'created_by' => $this->created_by,
             'progress_percentage' => $this->when(isset($this->progress_percentage), $this->progress_percentage),
-            'contributions_count' => $this->when(
-                isset($this->contributions_count),
-                (int) $this->contributions_count,
-                $this->whenLoaded('contributions', fn() => $this->contributions->count())
+            'contributions_count' => (int) (
+                $this->contributions_count
+                ?? ($this->relationLoaded('contributions') ? $this->contributions->count() : 0)
             ),
-            'confirmed_count' => $this->when(
-                isset($this->confirmed_count),
-                (int) $this->confirmed_count,
-                $this->whenLoaded('contributions', fn() => $this->contributions->where('status', 'confirmed')->count())
+            'confirmed_count' => (int) (
+                $this->confirmed_count
+                ?? ($this->relationLoaded('contributions') ? $this->contributions->where('status', \App\Enums\ClubFundContributionStatus::Confirmed)->count() : 0)
             ),
-            'pending_count' => $this->when(
-                isset($this->pending_count),
-                (int) $this->pending_count,
-                $this->whenLoaded('contributions', fn() => $this->contributions->where('status', 'pending')->count())
+            'pending_count' => (int) (
+                $this->pending_count
+                ?? ($this->relationLoaded('contributions') ? $this->contributions->where('status', \App\Enums\ClubFundContributionStatus::Pending)->count() : 0)
             ),
-            'assigned_members_count' => $this->whenLoaded('assignedMembers', fn() => $this->assignedMembers->count()),
+            'assigned_members_count' => $this->relationLoaded('assignedMembers') ? $this->assignedMembers->count() : 0,
             'creator' => new UserResource($this->whenLoaded('creator')),
-            'contributions' => ClubFundContributionResource::collection($this->whenLoaded('contributions')),
-            'pending_contributions' => $this->when(
-                $this->relationLoaded('contributions'),
-                fn() => ClubFundContributionResource::collection(
-                    $this->contributions->filter(function ($contribution) {
-                        return $contribution->status === \App\Enums\ClubFundContributionStatus::Pending;
-                    })->values()
+            'contributions' => ClubFundContributionResource::collection($this->whenLoaded('contributions') ?? []),
+            'pending_contributions' => $this->relationLoaded('contributions')
+                ? ClubFundContributionResource::collection(
+                    $this->contributions->filter(fn ($c) => $c->status === \App\Enums\ClubFundContributionStatus::Pending)->values()
                 )
-            ),
-            'assigned_members' => UserResource::collection($this->whenLoaded('assignedMembers')),
+                : [],
+            'assigned_members' => UserResource::collection($this->whenLoaded('assignedMembers') ?? []),
+            'need_payment' => $this->when(isset($this->need_payment), (bool) $this->need_payment),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];
