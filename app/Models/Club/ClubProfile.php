@@ -23,6 +23,9 @@ class ClubProfile extends Model
         'country',
         'latitude',
         'longitude',
+        'zalo_link',
+        'zalo_enabled',
+        'qr_zalo',
         'social_links',
         'settings',
     ];
@@ -30,6 +33,7 @@ class ClubProfile extends Model
     protected $casts = [
         'latitude' => 'decimal:8',
         'longitude' => 'decimal:8',
+        'zalo_enabled' => 'boolean',
         'social_links' => 'array',
         'settings' => 'array',
     ];
@@ -72,6 +76,26 @@ class ClubProfile extends Model
     public function getRawQrCodeImagePath(): ?string
     {
         return $this->attributes['qr_code_image_url'] ?? null;
+    }
+
+    /**
+     * Trả về URL đầy đủ của ảnh QR nhóm Zalo.
+     */
+    public function getQrZaloUrlAttribute(): ?string
+    {
+        $value = $this->attributes['qr_zalo'] ?? null;
+        if (empty($value)) {
+            return null;
+        }
+        return str_starts_with($value, 'http') ? $value : asset('storage/' . $value);
+    }
+
+    /**
+     * Lấy raw path QR Zalo từ DB - dùng cho việc xóa ảnh
+     */
+    public function getRawQrZaloPath(): ?string
+    {
+        return $this->attributes['qr_zalo'] ?? null;
     }
 
     public function club()

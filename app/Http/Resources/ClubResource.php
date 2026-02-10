@@ -79,9 +79,7 @@ class ClubResource extends JsonResource
                 $socialLinks = $this->profile->social_links ?: [];
                 $settings = $this->profile->settings ?: [];
 
-                // Ensure settings always have default values
                 $settingsWithDefaults = array_merge([
-                    'zalo_enabled' => false,
                     'qr_code_enabled' => false,
                 ], $settings);
 
@@ -99,6 +97,9 @@ class ClubResource extends JsonResource
                     'country' => $this->profile->country,
                     'latitude' => $this->profile->latitude,
                     'longitude' => $this->profile->longitude,
+                    'zalo_link' => $this->profile->zalo_link,
+                    'zalo_enabled' => (bool) $this->profile->zalo_enabled,
+                    'qr_zalo' => $this->profile->qr_zalo_url,
                     'social_links' => $socialLinks ?: (object) [],
                     'settings' => (object) $settingsWithDefaults,
                 ];
