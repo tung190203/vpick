@@ -54,6 +54,7 @@ class UpdateClubRequest extends FormRequest
             'country' => 'nullable|string|max:100',
             'zalo_link' => 'required_if:zalo_enabled,true|nullable|string|max:500',
             'zalo_enabled' => 'nullable|boolean',
+            'qr_zalo' => 'nullable|image|mimes:png,jpg,jpeg,gif|max:5120',
             'qr_code_image_url' => 'nullable|image|mimes:png,jpg,jpeg,gif|max:5120',
             'qr_code_enabled' => 'nullable|boolean',
         ];

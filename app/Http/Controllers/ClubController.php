@@ -98,13 +98,14 @@ class ClubController extends Controller
         $updatableFields = [
             'name', 'address', 'latitude', 'longitude', 'logo_url', 'status', 'is_public',
             'cover_image_url', 'description', 'phone', 'email', 'website', 'city', 'province', 'country',
-            'zalo_link', 'zalo_enabled', 'qr_code_enabled'
+            'zalo_link', 'zalo_enabled', 'qr_zalo', 'qr_code_enabled'
         ];
 
         $hasAnyField = $request->hasAny($updatableFields) ||
                        $request->hasFile('logo_url') ||
                        $request->hasFile('cover_image_url') ||
-                       $request->hasFile('qr_code_image_url');
+                       $request->hasFile('qr_code_image_url') ||
+                       $request->hasFile('qr_zalo');
 
         if (!$hasAnyField) {
             return ResponseHelper::error('Không có trường nào được gửi lên để cập nhật', 400);
