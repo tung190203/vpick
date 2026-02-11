@@ -61,6 +61,7 @@ class UpdateActivityRequest extends FormRequest
             'longitude' => 'nullable|numeric|between:-180,180',
             'cancellation_deadline' => 'nullable|date|before:start_time',
             'cancellation_deadline_hours' => 'nullable|integer|min:1|max:168',
+            'cancellation_deadline_minutes' => 'nullable|integer|min:1|max:10080',
             'recurring_schedule' => ['nullable', 'array', new ValidRecurringSchedule()],
             'reminder_minutes' => 'sometimes|integer|min:0',
             'fee_amount' => 'nullable|numeric|min:0',

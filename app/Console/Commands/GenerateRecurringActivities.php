@@ -107,9 +107,9 @@ class GenerateRecurringActivities extends Command
 
         $nextCancellationDeadline = null;
         if ($activity->cancellation_deadline && $activity->start_time) {
-            $hoursBeforeStart = $activity->cancellation_deadline->diffInHours($activity->start_time, false);
-            if ($hoursBeforeStart > 0) {
-                $nextCancellationDeadline = $nextStartTime->copy()->subHours($hoursBeforeStart);
+            $minutesBeforeStart = $activity->cancellation_deadline->diffInMinutes($activity->start_time, false);
+            if ($minutesBeforeStart > 0) {
+                $nextCancellationDeadline = $nextStartTime->copy()->subMinutes($minutesBeforeStart);
             }
         }
 

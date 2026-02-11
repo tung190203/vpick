@@ -55,6 +55,7 @@ class StoreActivityRequest extends FormRequest
             'longitude' => 'nullable|numeric|between:-180,180',
             'cancellation_deadline' => 'nullable|date|before:start_time',
             'cancellation_deadline_hours' => 'nullable|integer|min:1|max:168',
+            'cancellation_deadline_minutes' => 'nullable|integer|min:1|max:10080',
             'mini_tournament_id' => 'nullable|exists:mini_tournaments,id',
             'recurring_schedule' => ['nullable', 'array', new ValidRecurringSchedule()],
             'reminder_minutes' => 'sometimes|integer|min:0',

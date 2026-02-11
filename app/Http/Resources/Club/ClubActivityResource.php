@@ -20,10 +20,11 @@ class ClubActivityResource extends JsonResource
             'type' => $this->type,
             'is_recurring' => $this->recurring_schedule !== null,
             'recurring_schedule' => $this->recurring_schedule,
-            'start_time' => $this->start_time?->toISOString(),
-            'end_time' => $this->end_time?->toISOString(),
+            'start_time' => $this->start_time?->format('c'),
+            'end_time' => $this->end_time?->format('c'),
             'duration' => $this->duration,
-            'cancellation_deadline' => $this->cancellation_deadline?->toISOString(),
+            'cancellation_deadline' => $this->cancellation_deadline?->format('c'),
+            'cancellation_deadline_minutes' => $this->cancellation_deadline_minutes,
             'cancellation_deadline_hours' => $this->cancellation_deadline_hours,
             'location' => $this->address,
             'address' => $this->address,
@@ -47,7 +48,17 @@ class ClubActivityResource extends JsonResource
             'created_by' => $this->created_by,
             'participants_count' => $this->whenLoaded('participants', fn() => $this->participants->count()),
             'accepted_count' => $this->whenLoaded('participants', fn() => $this->participants->where('status', ClubActivityParticipantStatus::Accepted)->count()),
-            'participants' => ClubActivityParticipantResource::collection($this->whenLoaded('participants')),
+            'participants' => $this->whenLoaded('participants', function () {
+                $grouped = $this->participants->groupBy(fn($p) => $p->status?->value ?? $p->status);
+                return [
+                    'pending' => ClubActivityParticipantResource::collection($grouped->get('pending', collect())),
+                    'invited' => ClubActivityParticipantResource::collection($grouped->get('invited', collect())),
+                    'accepted' => ClubActivityParticipantResource::collection($grouped->get('accepted', collect())),
+                    'attended' => ClubActivityParticipantResource::collection($grouped->get('attended', collect())),
+                    'declined' => ClubActivityParticipantResource::collection($grouped->get('declined', collect())),
+                    'absent' => ClubActivityParticipantResource::collection($grouped->get('absent', collect())),
+                ];
+            }),
             'creator' => new UserResource($this->whenLoaded('creator')),
             'mini_tournament' => $this->whenLoaded('miniTournament'),
             'created_at' => $this->created_at?->toISOString(),

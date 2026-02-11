@@ -112,7 +112,10 @@
                                                 </div>
                                                 <span class="font-bold text-[#1F2937] text-sm">{{ tr.user?.full_name }}</span>
                                             </div>
-                                            <button class="bg-[#10B981] text-white px-4 py-1.5 rounded-[4px] text-[9px] font-bold hover:bg-[#059669] transition-colors">
+                                            <button 
+                                                @click="handleApproveContribution(collection.id, tr.id)"
+                                                class="bg-[#10B981] text-white px-4 py-1.5 rounded-[4px] text-[9px] font-bold hover:bg-[#059669] transition-colors"
+                                            >
                                                 Duyệt
                                             </button>
                                         </div>
@@ -1208,6 +1211,22 @@ const confirmDeleteQR = (qrId) => {
 const handleOpenCollectionDetail = (id) => {
     selectedCollectionId.value = id
     showCollectionDetailModal.value = true
+}
+
+const handleApproveContribution = async (collectionId, contributionId) => {
+    try {
+        const response = await ClubService.confirmFundContribution(clubId.value, collectionId, contributionId)
+        toast.success(response.message || 'Duyệt giao dịch thành công')
+        
+        // Refresh data
+        await getFundOverview()
+        await getAllTransaction()
+        await getAllMyTransaction()
+        await getFundCollection()
+        await getMyCollections()
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi duyệt giao dịch')
+    }
 }
 
 const handleViewDetail = (item) => {
