@@ -7,6 +7,10 @@ use App\Enums\ClubNotificationPriority;
 use App\Enums\ClubNotificationStatus;
 use App\Models\Club\Club;
 use App\Models\Club\ClubNotification;
+use App\Models\Club\ClubNotificationRecipient;
+use App\Models\User;
+use Illuminate\Notifications\DatabaseNotification;
+use App\Notifications\ClubNotificationSentNotification;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -66,6 +70,11 @@ class ClubNotificationService
                 }
             }
 
+            $status = $data['status'] ?? ClubNotificationStatus::Draft;
+            if ($status === ClubNotificationStatus::Sent && $notification->recipients()->count() > 0) {
+                $this->dispatchUserNotifications($club, $notification);
+            }
+
             return $notification;
         });
     }
@@ -116,7 +125,19 @@ class ClubNotificationService
             }
         }
 
+        $this->dispatchUserNotifications($club, $notification);
+
         return $notification;
+    }
+
+    private function dispatchUserNotifications(Club $club, ClubNotification $notification): void
+    {
+        $recipientUserIds = $notification->recipients()->pluck('user_id')->unique();
+        $users = User::whereIn('id', $recipientUserIds)->get();
+
+        foreach ($users as $user) {
+            $user->notify(new ClubNotificationSentNotification($club, $notification));
+        }
     }
 
     public function markAsRead(ClubNotification $notification, int $userId, bool $canManage): void
@@ -136,11 +157,40 @@ class ClubNotificationService
         } else {
             $recipient->markAsRead();
         }
+
+        $this->syncLaravelNotificationRead($notification->id, $userId);
+    }
+
+    /**
+     * Đồng bộ: club notification mark-read → Laravel notifications table
+     */
+    public function syncLaravelNotificationRead(int $clubNotificationId, int $userId): void
+    {
+        DatabaseNotification::where('notifiable_type', User::class)
+            ->where('notifiable_id', $userId)
+            ->where('type', ClubNotificationSentNotification::class)
+            ->where('data->club_notification_id', $clubNotificationId)
+            ->update(['read_at' => now()]);
+    }
+
+    /**
+     * Đồng bộ: Laravel notification mark-read → club_notification_recipients
+     */
+    public function syncClubRecipientRead(int $clubNotificationId, int $userId): void
+    {
+        ClubNotificationRecipient::updateOrCreate(
+            [
+                'club_notification_id' => $clubNotificationId,
+                'user_id' => $userId,
+            ],
+            ['is_read' => true, 'read_at' => now()]
+        );
     }
 
     public function markAllAsRead(Club $club, int $userId, bool $canManage): string
     {
         return DB::transaction(function () use ($club, $userId, $canManage) {
+            $recipients = 0;
             if ($canManage) {
                 $notifications = $club->notifications()->get();
 
@@ -157,23 +207,35 @@ class ClubNotificationService
                         $recipient->markAsRead();
                     }
                 }
-
-                return 'Đã đánh dấu đọc tất cả thông báo';
+            } else {
+                $recipients = DB::table('club_notification_recipients')
+                    ->join('club_notifications', 'club_notification_recipients.club_notification_id', '=', 'club_notifications.id')
+                    ->where('club_notifications.club_id', $club->id)
+                    ->where('club_notification_recipients.user_id', $userId)
+                    ->where('club_notification_recipients.is_read', false)
+                    ->update([
+                        'club_notification_recipients.is_read' => true,
+                        'club_notification_recipients.read_at' => now(),
+                    ]);
             }
 
-            $recipients = DB::table('club_notification_recipients')
-                ->join('club_notifications', 'club_notification_recipients.club_notification_id', '=', 'club_notifications.id')
-                ->where('club_notifications.club_id', $club->id)
-                ->where('club_notification_recipients.user_id', $userId)
-                ->where('club_notification_recipients.is_read', false)
-                ->update([
-                    'club_notification_recipients.is_read' => true,
-                    'club_notification_recipients.read_at' => now(),
-                ]);
+            $this->syncAllLaravelNotificationsForClub($club->id, $userId);
 
-            return $recipients > 0
-                ? "Đã đánh dấu đọc {$recipients} thông báo"
-                : 'Không có thông báo chưa đọc';
+            return $canManage
+                ? 'Đã đánh dấu đọc tất cả thông báo'
+                : ($recipients > 0 ? "Đã đánh dấu đọc {$recipients} thông báo" : 'Không có thông báo chưa đọc');
         });
+    }
+
+    /**
+     * Đồng bộ mark-all-read: cập nhật tất cả Laravel notifications của club cho user
+     */
+    private function syncAllLaravelNotificationsForClub(int $clubId, int $userId): void
+    {
+        DatabaseNotification::where('notifiable_type', User::class)
+            ->where('notifiable_id', $userId)
+            ->where('type', ClubNotificationSentNotification::class)
+            ->where('data->club_id', $clubId)
+            ->update(['read_at' => now()]);
     }
 }
