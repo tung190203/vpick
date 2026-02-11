@@ -28,7 +28,7 @@ class ClubJoinRequestController extends Controller
         $userId = auth()->id();
 
         if (!$club->canManage($userId)) {
-            return ResponseHelper::error('Chỉ admin/manager mới có quyền xem yêu cầu tham gia', 403);
+            return ResponseHelper::error('Chỉ admin/manager/secretary mới có quyền xem yêu cầu tham gia', 403);
         }
 
         $requests = $this->joinRequestService->getJoinRequests($club, $request->validated());
@@ -98,7 +98,7 @@ class ClubJoinRequestController extends Controller
         $reviewerId = auth()->id();
 
         if (!$club->canManage($reviewerId)) {
-            return ResponseHelper::error('Chỉ admin/manager mới có quyền duyệt', 403);
+            return ResponseHelper::error('Chỉ admin/manager/secretary mới có quyền duyệt', 403);
         }
 
         if (!empty($request->input('user_id'))) {
@@ -136,7 +136,7 @@ class ClubJoinRequestController extends Controller
         $reviewerId = auth()->id();
 
         if (!$club->canManage($reviewerId)) {
-            return ResponseHelper::error('Chỉ admin/manager mới có quyền từ chối', 403);
+            return ResponseHelper::error('Chỉ admin/manager/secretary mới có quyền từ chối', 403);
         }
 
         if (!empty($request->input('user_id'))) {

@@ -45,7 +45,7 @@ class ClubExpenseService
     public function createExpense(Club $club, array $data, int $userId): ClubExpense
     {
         if (!$club->canManageFinance($userId)) {
-            throw new \Exception('Chỉ admin/manager/treasurer mới có quyền tạo chi phí');
+            throw new \Exception('Chỉ admin/manager/secretary/treasurer mới có quyền tạo chi phí');
         }
 
         $description = (string) ($data['description'] ?? $data['title'] ?? '');
@@ -85,7 +85,7 @@ class ClubExpenseService
     {
         $club = $expense->club;
         if (!$club->canManageFinance($userId)) {
-            throw new \Exception('Chỉ admin/manager/treasurer mới có quyền cập nhật');
+            throw new \Exception('Chỉ admin/manager/secretary/treasurer mới có quyền cập nhật');
         }
 
         if (isset($data['description'])) {
@@ -105,7 +105,7 @@ class ClubExpenseService
     {
         $club = $expense->club;
         if (!$club->canManageFinance($userId)) {
-            throw new \Exception('Chỉ admin/manager/treasurer mới có quyền xóa');
+            throw new \Exception('Chỉ admin/manager/secretary/treasurer mới có quyền xóa');
         }
 
         $expense->delete();

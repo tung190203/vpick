@@ -47,7 +47,7 @@ class ClubMemberController extends Controller
         $userId = auth()->id();
 
         if (!$club->canManage($userId)) {
-            return ResponseHelper::error('Chỉ admin/manager mới có quyền thêm thành viên', 403);
+            return ResponseHelper::error('Chỉ admin/manager/secretary mới có quyền thêm thành viên', 403);
         }
 
         try {
@@ -106,7 +106,7 @@ class ClubMemberController extends Controller
         $club = $member->club;
 
         if (!$club->canManage($userId)) {
-            return ResponseHelper::error('Chỉ admin/manager mới có quyền thực hiện', 403);
+            return ResponseHelper::error('Chỉ admin/manager/secretary mới có quyền thực hiện', 403);
         }
 
         try {
