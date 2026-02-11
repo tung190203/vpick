@@ -71,6 +71,14 @@ class ClubResource extends JsonResource
                     ->exists(),
                 false
             ),
+            'has_pending_invitation' => $this->when(auth()->check(), fn () =>
+                ClubMember::where('club_id', $this->id)
+                    ->where('user_id', auth()->id())
+                    ->where('membership_status', ClubMembershipStatus::Pending)
+                    ->whereNotNull('invited_by')
+                    ->exists(),
+                false
+            ),
             'profile' => $this->whenLoaded('profile', fn () => static::formatProfile($this->profile), static::getDefaultProfile()),
             'wallets' => $this->whenLoaded('wallets'),
             'created_at' => $this->created_at?->toISOString(),
