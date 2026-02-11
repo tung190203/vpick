@@ -46,7 +46,7 @@
                                 <template v-for="(participant, pIdx) in nextMatch.participants_list?.slice(0, 3)" :key="pIdx">
                                     <div
                                         class="w-10 h-10 rounded-full border-2 border-[#D72D36] bg-gray-200 flex items-center justify-center text-gray-500 text-xs font-bold overflow-hidden">
-                                        <img :src="participant.avatar || 'https://i.pravatar.cc/150'" alt="avatar"
+                                        <img :src="participant.user.avatar_url || 'https://i.pravatar.cc/150'" alt="avatar"
                                             class="w-full h-full object-cover">
                                     </div>
                                 </template>
@@ -64,7 +64,9 @@
                             </button>
                             <button
                                 v-else
-                                class="bg-white text-[#D72D36] text-sm hover:bg-gray-50 px-6 py-2.5 rounded-lg font-semibold shadow-sm transition-colors">
+                                class="bg-white text-[#D72D36] text-sm hover:bg-gray-50 px-6 py-2.5 rounded-lg font-semibold shadow-sm transition-colors"
+                                @click.stop="nextMatch.registrationStatus === 'pending' ? $emit('cancel-join', nextMatch) : (nextMatch.registrationStatus === 'accepted' ? $emit('check-in', nextMatch) : $emit('register', nextMatch))"
+                            >
                                 {{ nextMatch.buttonText }}
                             </button>
                         </div>
