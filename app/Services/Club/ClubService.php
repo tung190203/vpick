@@ -53,13 +53,11 @@ class ClubService
                 'created_by' => $userId,
             ]);
 
-            // Create profile if cover exists
-            if ($coverPath) {
-                ClubProfile::create([
-                    'club_id' => $club->id,
-                    'cover_image_url' => $coverPath,
-                ]);
-            }
+            ClubProfile::create([
+                'club_id' => $club->id,
+                'cover_image_url' => $coverPath,
+                'description' => $data['description'] ?? null,
+            ]);
 
             // Create admin member
             ClubMember::create([
