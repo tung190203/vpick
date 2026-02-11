@@ -6,6 +6,7 @@ use App\Enums\ClubFundCollectionStatus;
 use App\Enums\ClubFundContributionStatus;
 use App\Models\Club\Club;
 use App\Models\Club\ClubFundCollection;
+use App\Notifications\ClubFundCollectionReminderNotification;
 use App\Services\ImageOptimizationService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -205,6 +206,37 @@ class ClubFundCollectionService
         }
 
         $collection->delete();
+    }
+
+    public function sendReminder(ClubFundCollection $collection, int $targetUserId, int $requesterId): void
+    {
+        $club = $collection->club;
+        if (!$club->canManageFinance($requesterId)) {
+            throw new \Exception('Chỉ admin/manager/secretary/treasurer mới có quyền nhắc nhở');
+        }
+
+        if ($collection->status !== ClubFundCollectionStatus::Active) {
+            throw new \Exception('Chỉ có thể nhắc nhở cho đợt thu đang active');
+        }
+
+        $detail = $this->getCollectionDetail($collection);
+        $noPaymentYet = $detail['no_payment_yet'];
+        $targetItem = $noPaymentYet->firstWhere('user.id', $targetUserId);
+
+        if (!$targetItem) {
+            throw new \Exception('Thành viên này không thuộc danh sách chưa đóng hoặc đã đóng khoản thu');
+        }
+
+        $user = \App\Models\User::findOrFail($targetUserId);
+        $collectionTitle = $collection->title ?: $collection->description ?: 'Đợt thu quỹ';
+        $clubName = $club->name;
+
+        $user->notify(new ClubFundCollectionReminderNotification(
+            $collection,
+            $collectionTitle,
+            $clubName,
+            (float) ($targetItem['amount_due'] ?? 0)
+        ));
     }
 
     public function needPaymentForUser(ClubFundCollection $collection, int $userId): bool
