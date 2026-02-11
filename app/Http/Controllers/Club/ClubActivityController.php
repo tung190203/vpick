@@ -72,9 +72,7 @@ class ClubActivityController extends Controller
             ->with([
                 'creator' => User::FULL_RELATIONS,
                 'club',
-                'participants' => function ($query) {
-                    $query->where('status', 'accepted');
-                },
+                'participants',
                 'participants.user' => User::FULL_RELATIONS,
                 'miniTournament'
             ])

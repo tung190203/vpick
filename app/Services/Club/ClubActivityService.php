@@ -112,9 +112,13 @@ class ClubActivityService
         }
 
         $cancellationDeadline = $data['cancellation_deadline'] ?? null;
-        if (!$cancellationDeadline && isset($data['cancellation_deadline_hours'])) {
+        if (!$cancellationDeadline) {
             $startTime = Carbon::parse($data['start_time']);
-            $cancellationDeadline = $startTime->copy()->subHours($data['cancellation_deadline_hours']);
+            if (isset($data['cancellation_deadline_minutes'])) {
+                $cancellationDeadline = $startTime->copy()->subMinutes($data['cancellation_deadline_minutes']);
+            } elseif (isset($data['cancellation_deadline_hours'])) {
+                $cancellationDeadline = $startTime->copy()->subHours($data['cancellation_deadline_hours']);
+            }
         }
 
         $qrCodeUrl = null;
@@ -189,16 +193,20 @@ class ClubActivityService
             $data['end_time'] = $startTime->copy()->addMinutes($data['duration']);
         }
 
-        if (isset($data['cancellation_deadline_hours'])) {
+        if (isset($data['cancellation_deadline_minutes']) || isset($data['cancellation_deadline_hours'])) {
             $startTime = Carbon::parse($data['start_time'] ?? $activity->start_time);
-            $data['cancellation_deadline'] = $startTime->copy()->subHours($data['cancellation_deadline_hours']);
+            if (isset($data['cancellation_deadline_minutes'])) {
+                $data['cancellation_deadline'] = $startTime->copy()->subMinutes($data['cancellation_deadline_minutes']);
+            } else {
+                $data['cancellation_deadline'] = $startTime->copy()->subHours($data['cancellation_deadline_hours']);
+            }
         }
 
         if (isset($data['qr_image']) && $data['qr_image'] instanceof UploadedFile) {
             $data['qr_code_url'] = $this->imageService->optimizeThumbnail($data['qr_image'], 'activity_qr_codes', 90);
         }
 
-        unset($data['cancellation_deadline_hours']);
+        unset($data['cancellation_deadline_hours'], $data['cancellation_deadline_minutes']);
         unset($data['qr_image']);
 
         $activity->update($data);
@@ -345,9 +353,9 @@ class ClubActivityService
         
         $nextCancellationDeadline = null;
         if ($activity->cancellation_deadline && $activity->start_time) {
-            $hoursBeforeStart = $activity->cancellation_deadline->diffInHours($activity->start_time, false);
-            if ($hoursBeforeStart > 0) {
-                $nextCancellationDeadline = $nextStartTime->copy()->subHours($hoursBeforeStart);
+            $minutesBeforeStart = $activity->cancellation_deadline->diffInMinutes($activity->start_time, false);
+            if ($minutesBeforeStart > 0) {
+                $nextCancellationDeadline = $nextStartTime->copy()->subMinutes($minutesBeforeStart);
             }
         }
         
