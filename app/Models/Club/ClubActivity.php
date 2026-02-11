@@ -179,6 +179,23 @@ class ClubActivity extends Model
         return $this->recurring_schedule !== null && !empty($this->recurring_schedule);
     }
 
+    /** Số phút trước start_time (để hiển thị "30 phút" hoặc "1 Tiếng"). */
+    public function getCancellationDeadlineMinutesAttribute(): ?int
+    {
+        if (!$this->cancellation_deadline || !$this->start_time) {
+            return null;
+        }
+        $minutes = $this->cancellation_deadline->diffInMinutes($this->start_time, false);
+        return $minutes > 0 ? (int) $minutes : null;
+    }
+
+    /** Số giờ trước start_time (cho backward compat, làm tròn). */
+    public function getCancellationDeadlineHoursAttribute(): ?float
+    {
+        $minutes = $this->cancellation_deadline_minutes;
+        return $minutes !== null ? round($minutes / 60, 1) : null;
+    }
+
     public function getRecurringScheduleAttribute($value)
     {
         if (!$value) {
@@ -298,18 +315,19 @@ class ClubActivity extends Model
             return null;
         }
 
-        // Sort week_days
         sort($weekDays);
 
         $currentDayOfWeek = $fromDate->dayOfWeek;
 
         foreach ($weekDays as $targetDay) {
             if ($targetDay > $currentDayOfWeek) {
-                return $fromDate->copy()->next($targetDay);
+                $daysToAdd = $targetDay - $currentDayOfWeek;
+                return $fromDate->copy()->addDays($daysToAdd)->setTimeFromTimeString($fromDate->format('H:i:s'));
             }
         }
 
-        return $fromDate->copy()->next($weekDays[0]);
+        $daysToAdd = 7 - $currentDayOfWeek + $weekDays[0];
+        return $fromDate->copy()->addDays($daysToAdd)->setTimeFromTimeString($fromDate->format('H:i:s'));
     }
 
     private function calculateNextMonthlyOccurrence(Carbon $fromDate, ?string $dateString): ?Carbon
@@ -406,9 +424,9 @@ class ClubActivity extends Model
 
         $nextCancellationDeadline = null;
         if ($this->cancellation_deadline && $this->start_time) {
-            $hoursBeforeStart = $this->cancellation_deadline->diffInHours($this->start_time, false);
-            if ($hoursBeforeStart > 0) {
-                $nextCancellationDeadline = $nextStartTime->copy()->subHours($hoursBeforeStart);
+            $minutesBeforeStart = $this->cancellation_deadline->diffInMinutes($this->start_time, false);
+            if ($minutesBeforeStart > 0) {
+                $nextCancellationDeadline = $nextStartTime->copy()->subMinutes($minutesBeforeStart);
             }
         }
 
