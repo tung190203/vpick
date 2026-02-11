@@ -142,7 +142,8 @@ class ClubMemberController extends Controller
 
         $validated = $request->validate([
             'scope' => 'required|in:club,friends,area,all',
-            'source_club_id' => 'required_if:scope,club|exists:clubs,id',
+            'club_id' => 'required|exists:clubs,id',
+            'source_club_id' => 'sometimes|nullable|exists:clubs,id',
             'search' => 'sometimes|string|max:255',
             'per_page' => 'sometimes|integer|min:1|max:200',
             'lat' => 'required_if:scope,area|numeric',
@@ -220,8 +221,11 @@ class ClubMemberController extends Controller
             $query->whereIn('users.visibility', [User::VISIBILITY_PUBLIC]);
         }
 
-        $query->where('users.id', '!=', $user->id);
+        $club = Club::findOrFail($validated['club_id']);
+        $memberUserIds = $club->members()->pluck('user_id')->toArray();
+        $query->whereNotIn('users.id', array_merge([$user->id], $memberUserIds));
 
+        // 🔍 Tìm kiếm tên người dùng (áp dụng cho tất cả scope)
         if (!empty($validated['search'])) {
             $query->where('users.full_name', 'like', '%' . $validated['search'] . '%');
         }
