@@ -16,33 +16,33 @@
                     </div>
                 </div>
                 
-                <div class="flex items-end justify-between">
+                <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-8 lg:gap-0">
                     <div>
                         <p class="text-sm font-medium text-white opacity-60 mb-1">Quỹ chung hiện có</p>
                         <div class="flex items-baseline space-x-2">
-                            <p class="text-[64px] font-bold leading-tight">{{ formatCurrency(fundOverview.balance) }}</p>
+                            <p class="text-4xl md:text-5xl lg:text-[64px] font-bold leading-tight">{{ formatCurrency(fundOverview.balance) }}</p>
                             <p class="text-xs font-semibold text-[#00B377]">VND</p>
                         </div>
                     </div>
                     
-                    <div class="flex items-center space-x-6">
-                        <div class="flex flex-col items-start bg-[#3E414C]/80 backdrop-blur-sm p-6 rounded-2xl min-w-[280px] space-y-2 border border-white/10">
+                    <div class="flex flex-col md:flex-row items-center justify-between gap-4 lg:gap-6">
+                        <div class="flex flex-col items-start bg-[#3E414C]/80 backdrop-blur-sm p-6 rounded-2xl w-full md:w-[280px] space-y-2 border border-white/10">
                             <div class="flex items-center space-x-2 text-[#4ADE80] font-semibold text-sm">
                                 <ArrowDownIcon class="w-4 h-4" />
                                 <p>Thu tháng này</p>
                             </div>
                             <div class="flex items-baseline space-x-1">
-                                <p class="text-3xl font-bold">{{ formatSpecialCurrency(fundOverview.total_income) }}</p>
+                                <p class="text-2xl md:text-3xl font-bold">{{ formatSpecialCurrency(fundOverview.total_income) }}</p>
                             </div>
                         </div>
                         
-                        <div class="flex flex-col items-start bg-[#3E414C]/80 backdrop-blur-sm p-6 rounded-2xl min-w-[280px] space-y-2 border border-white/10">
+                        <div class="flex flex-col items-start bg-[#3E414C]/80 backdrop-blur-sm p-6 rounded-2xl w-full md:w-[280px] space-y-2 border border-white/10">
                             <div class="flex items-center space-x-2 text-[#F87171] font-semibold text-sm">
                                 <ArrowUpIcon class="w-4 h-4" />
                                 <p>Chi tháng này</p>
                             </div>
                             <div class="flex items-baseline space-x-1">
-                                <p class="text-3xl font-bold">{{ formatSpecialCurrency(fundOverview.total_expense) }}</p>
+                                <p class="text-2xl md:text-3xl font-bold">{{ formatSpecialCurrency(fundOverview.total_expense) }}</p>
                             </div>
                         </div>
                     </div>
@@ -53,67 +53,84 @@
             <!-- Content Grid: Admin / Secretary / Treasurer -->
             <div class="grid grid-cols-12 gap-6 py-6 flex-1" v-if="hasAnyRole(['admin', 'secretary', 'treasurer'])">
                 <!-- Left Column: ĐỢT THU & XÁC NHẬN -->
-                <div class="col-span-4 flex flex-col">
+                <div class="col-span-12 lg:col-span-4 flex flex-col">
                     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col">
-                        <!-- ĐỢT THU ĐANG MỞ -->
-                        <div class="p-6 border-b border-gray-100">
-                            <div class="flex items-center justify-between mb-6">
-                                <h2 class="text-[#838799] font-bold text-[13px] tracking-wider uppercase">ĐỢT THU ĐANG MỞ</h2>
-                                <button class="text-[#D72D36] text-[13px] font-bold">Xem chi tiết</button>
-                            </div>
-
-                            <div class="space-y-4">
-                                <div class="flex justify-between items-start">
-                                    <h3 class="text-[17px] font-bold text-[#1F2937]">Quỹ tháng 10/2024</h3>
-                                    <div class="text-right">
-                                        <p class="text-[17px] font-bold text-[#1F2937]">200.000đ</p>
-                                        <p class="text-[12px] text-[#838799]">/người</p>
+                        <template v-if="fundCollections.length > 0">
+                            <div v-for="collection in fundCollections.slice(0, 1)" :key="collection.id" class="flex flex-col">
+                                <!-- ĐỢT THU ĐANG MỞ -->
+                                <div class="p-6 border-b border-gray-100">
+                                    <div class="flex items-center justify-between mb-6">
+                                        <h2 class="text-[#838799] font-bold text-[13px] tracking-wider uppercase">ĐỢT THU ĐANG MỞ</h2>
+                                        <button 
+                                            @click="handleOpenCollectionDetail(collection.id)"
+                                            class="text-[#D72D36] text-[13px] font-bold"
+                                        >
+                                            Xem chi tiết
+                                        </button>
                                     </div>
-                                </div>
-                                
-                                <p class="text-[13px] text-[#838799]">Hạn chót: 30/10</p>
 
-                                <div class="space-y-2">
-                                    <div class="w-full h-2 bg-[#F2F3F5] rounded-full overflow-hidden">
-                                        <div class="h-full bg-[#D72D36] rounded-full" style="width: 70%"></div>
-                                    </div>
-                                    <div class="flex justify-between items-center text-[13px]">
-                                        <span class="text-[#1F2937] font-medium">Đã thu: 28/40 người</span>
-                                        <span class="text-[#1F2937] font-bold">70%</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Cần xác nhận -->
-                        <div class="flex-1 flex flex-col overflow-hidden p-6">
-                            <div class="mb-4">
-                                <div class="flex items-center space-x-2 text-[#838799] font-bold text-[15px] tracking-wider">
-                                    <span>Cần xác nhận</span>
-                                    <span>•</span>
-                                    <span class="text-[#D72D36]">({{ 2 }})</span>
-                                </div>
-                            </div>
-
-                            <div class="flex-1 overflow-y-auto">
-                                <div v-for="i in 2" :key="i" class="flex items-center justify-between py-4 border-b border-[#F2F3F5] last:border-b-0">
-                                    <div class="flex items-center space-x-3">
-                                        <div class="w-10 h-10 rounded-full bg-gray-100 overflow-hidden">
-                                            <img :src="`https://ui-avatars.com/api/?name=${i === 1 ? 'Hoang Nam' : 'Quoc Tuan'}&background=random`" alt="avatar" />
+                                    <div class="space-y-4">
+                                        <div class="flex justify-between items-start">
+                                            <h3 class="text-[17px] font-bold text-[#1F2937] flex-1 min-w-[120px] break-words line-clamp-1 mr-4" v-tooltip="collection.title">{{ collection.title }}</h3>
+                                            <div class="text-right flex-shrink-0 max-w-[50%]">
+                                                <p class="text-[17px] font-bold text-[#1F2937] truncate whitespace-nowrap" v-tooltip="formatCurrency(collection.amount_per_member) + ' ' + collection.currency">
+                                                    {{ formatCurrency(collection.amount_per_member) + ' ' + collection.currency }}
+                                                </p>
+                                                <p class="text-[12px] text-[#838799]">/người</p>
+                                            </div>
                                         </div>
-                                        <span class="font-bold text-[#1F2937] text-sm">{{ i === 1 ? 'Hoàng Nam' : 'Quốc Tuấn' }}</span>
+                                        
+                                        <p class="text-[13px] text-[#838799]">Hạn chót: {{ formatDatetime(collection.end_date, '/') }}</p>
+
+                                        <div class="space-y-2">
+                                            <div class="w-full h-2 bg-[#F2F3F5] rounded-full overflow-hidden">
+                                                <div class="h-full bg-[#D72D36] rounded-full" :style="{ width: (collection.progress_percentage) + '%' }"></div>
+                                            </div>
+                                            <div class="flex justify-between items-center text-[13px]">
+                                                <span class="text-[#1F2937] font-medium">Đã thu: {{ collection.confirmed_count }}/{{ collection.assigned_members_count }} người</span>
+                                                <span class="text-[#1F2937] font-bold">{{ Number(collection.progress_percentage).toFixed(2) }}%</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <button class="bg-[#10B981] text-white px-4 py-1.5 rounded-[4px] text-[9px] font-bold hover:bg-[#059669] transition-colors">
-                                        Duyệt
-                                    </button>
+                                </div>
+
+                                <!-- Cần xác nhận -->
+                                <div class="flex flex-col overflow-hidden p-6" v-if="collection.pending_count > 0">
+                                    <div class="mb-4">
+                                        <div class="flex items-center space-x-2 text-[#838799] font-bold text-[15px] tracking-wider">
+                                            <span>Cần xác nhận</span>
+                                            <span>•</span>
+                                            <span class="text-[#D72D36]">({{ collection.pending_count }})</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="overflow-y-auto">
+                                        <div v-for="(tr, idx) in collection.pending_contributions" :key="idx" class="flex items-center justify-between py-4 border-b border-[#F2F3F5] last:border-b-0">
+                                            <div class="flex items-center space-x-3">
+                                                <div class="w-10 h-10 rounded-full bg-gray-100 overflow-hidden">
+                                                    <img :src="tr.user?.avatar_url || `https://ui-avatars.com/api/?name=${tr.user?.full_name}&background=random`" alt="avatar" />
+                                                </div>
+                                                <span class="font-bold text-[#1F2937] text-sm">{{ tr.user?.full_name }}</span>
+                                            </div>
+                                            <button class="bg-[#10B981] text-white px-4 py-1.5 rounded-[4px] text-[9px] font-bold hover:bg-[#059669] transition-colors">
+                                                Duyệt
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-else class="flex flex-col items-center justify-center p-6 text-center">
+                                    <p class="text-[#838799] text-[13px]">Không có giao dịch chờ duyệt</p>
                                 </div>
                             </div>
+                        </template>
+                        <div v-else class="flex flex-col items-center justify-center p-12 text-center">
+                            <p class="text-[#838799] text-sm font-medium">Hiện không có khoản thu nào</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Right Column: LỊCH SỬ THU CHI -->
-                <div class="col-span-8 flex flex-col h-full">
+                <div class="col-span-12 lg:col-span-8 flex flex-col h-full">
                     <div class="bg-white rounded-[24px] shadow-sm border border-gray-50 flex-1 flex flex-col">
                         <!-- Section Header -->
                         <div class="px-6 pt-6 pb-2 mb-2 flex items-center justify-between">
@@ -140,7 +157,7 @@
                                     <div class="relative">
                                         <FunnelIcon 
                                             class="w-5 h-5 text-[#838799] cursor-pointer hover:text-[#D72D36] transition-colors" 
-                                            @click="showFilterDropdown = !showFilterDropdown"
+                                            @click.stop="showFilterDropdown = !showFilterDropdown"
                                         />
                                         <div v-if="activeFilterCount > 0" class="absolute -top-1 -right-1 w-2 h-2 bg-[#D72D36] rounded-full"></div>
                                         
@@ -188,7 +205,7 @@
                                                                     type="checkbox" 
                                                                     v-model="filters.source_types" 
                                                                     :value="opt.value"
-                                                                    class="w-4 h-4 text-[#D72D36] border-gray-300 rounded focus:ring-[#D72D36]"
+                                                                    class="w-4 h-4 text-[#D72D36] border-gray-300 rounded focus:ring-[#D72D36] accent-[#D72D36]"
                                                                 />
                                                                 <span class="text-sm font-medium text-[#3E414C] group-hover:text-[#1F2937]">{{ opt.label }}</span>
                                                             </label>
@@ -210,7 +227,7 @@
                                                                     type="checkbox" 
                                                                     v-model="filters.statuses" 
                                                                     :value="opt.value"
-                                                                    class="w-4 h-4 text-[#D72D36] border-gray-300 rounded focus:ring-[#D72D36]"
+                                                                    class="w-4 h-4 text-[#D72D36] border-gray-300 rounded focus:ring-[#D72D36] accent-[#D72D36]"
                                                                 />
                                                                 <span class="text-sm font-medium text-[#3E414C] group-hover:text-[#1F2937]">{{ opt.label }}</span>
                                                             </label>
@@ -222,7 +239,7 @@
                                                         <label class="block text-xs font-bold text-[#838799] uppercase tracking-wider mb-3">Khoảng thời gian</label>
                                                         <div class="space-y-3">
                                                             <div class="relative">
-                                                                <VueDatePicker teleport="body"
+                                                                <VueDatePicker 
                                                                     v-model="filters.date_from"
                                                                     :enable-time-picker="false"
                                                                     auto-apply
@@ -233,7 +250,7 @@
                                                                 />
                                                             </div>
                                                             <div class="relative">
-                                                                <VueDatePicker teleport="body"
+                                                                <VueDatePicker 
                                                                     v-model="filters.date_to"
                                                                     :enable-time-picker="false"
                                                                     auto-apply
@@ -300,54 +317,78 @@
             <!-- Content Grid: Member / Manager -->
             <div class="grid grid-cols-12 gap-6 py-6 flex-1" v-else>
                 <!-- Left Column: CẦN THANH TOÁN -->
-                <div class="col-span-4 flex flex-col" v-if="hasAnyRole(['manager', 'member'])">
+                <div class="col-span-12 lg:col-span-4 flex flex-col" v-if="hasAnyRole(['manager', 'member'])">
                     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col">
                         <!-- Section Header -->
                         <div class="p-6 pb-4">
                             <div class="flex items-center space-x-2 text-[#838799] font-semibold tracking-wide">
                                 <span>CẦN THANH TOÁN</span>
                                 <span class="text-[#838799]">•</span>
-                                <span class="text-[#D72D36] tracking-normal">({{ 1 }})</span>
+                                <span class="text-[#D72D36] tracking-normal" v-if="myTransactions.need_payment.length > 0">({{ myTransactions.need_payment.length }})</span>
                             </div>
                         </div>
 
                         <!-- Items Container -->
-                        <div class="flex-1 overflow-y-auto px-6 pb-6 space-y-6">
-                            <!-- Actionable Payment Item -->
-                            <div class="space-y-4 border-b border-[#dcdee6] pb-4">
-                                <div class="flex justify-between items-start">
-                                    <div>
-                                        <h3 class="font-semibold text-[#1F2937]">Quỹ tháng 10/2024</h3>
-                                        <div class="flex items-center space-x-1.5 mt-1 text-[#D72D36]">
-                                            <CalendarIcon class="w-4 h-4" />
-                                            <span class="text-sm font-semibold">Hạn chót: Hôm nay</span>
+                        <div class="flex flex-col flex-1 overflow-hidden">
+                            <!-- Need Payment List -->
+                            <div class="max-h-[350px] overflow-y-auto overflow-x-hidden px-6 pb-4 space-y-6 custom-scrollbar border-b border-gray-100">
+                                <template v-if="myTransactions.need_payment && myTransactions.need_payment.length > 0">
+                                    <!-- Actionable Payment Item -->
+                                    <div class="space-y-4 border-b border-[#dcdee6] pb-4" v-for="(item, index) in myTransactions.need_payment" :key="index">
+                                        <div class="flex justify-between items-start">
+                                            <div>
+                                                <h3 class="font-semibold text-[#1F2937]">{{ item.description }}</h3>
+                                                <div class="flex items-center space-x-1.5 mt-1 text-[#D72D36]">
+                                                    <CalendarIcon class="w-4 h-4" />
+                                                    <span class="text-sm font-semibold">Hạn chót: {{ formatDatetime(item.end_date, '/') }}</span>
+                                                </div>
+                                            </div>
+                                            <span class="text-[#D72D36] font-semibold">{{ formatCurrency(item.amount_due) + 'đ' }}</span>
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <button 
+                                                @click="handleViewDetail(item)"
+                                                class="py-2.5 px-4 bg-[#F2F3F5] text-[#2D3139] rounded-[4px] font-bold text-sm hover:bg-gray-200 transition-colors"
+                                            >
+                                                Chi tiết
+                                            </button>
+                                            <button 
+                                                @click="handlePayNow(item)"
+                                                class="py-2.5 px-4 bg-[#2D3139] text-white rounded-[4px] font-bold text-sm hover:bg-black transition-colors"
+                                            >
+                                                Thanh toán ngay
+                                            </button>
                                         </div>
                                     </div>
-                                    <span class="text-[#D72D36] font-semibold">200.000đ</span>
-                                </div>
-                                <div class="grid grid-cols-2 gap-3">
-                                    <button class="py-2.5 px-4 bg-[#F2F3F5] text-[#2D3139] rounded-[4px] font-bold text-sm hover:bg-gray-200 transition-colors">
-                                        Chi tiết
-                                    </button>
-                                    <button class="py-2.5 px-4 bg-[#2D3139] text-white rounded-[4px] font-bold text-sm hover:bg-black transition-colors">
-                                        Thanh toán ngay
-                                    </button>
+                                </template>
+                                <div v-else class="flex flex-col items-center justify-center py-8 text-center">
+                                    <p class="text-[#838799] text-sm font-medium">Không có khoản thu cần thanh toán</p>
                                 </div>
                             </div>
 
-                            <!-- Pending Approval Card -->
-                            <div class="bg-[#FDF2E2] rounded-lg p-4 border-l-[3px] border-[#F0AC3A] relative flex flex-col space-y-4 shadow-sm">
-                                <div class="flex justify-between items-start">
-                                    <h3 class="font-semibold text-[#1F2937]">Quỹ tháng 10/2024</h3>
-                                    <span class="text-[#1F2937] font-semibold">200.000đ</span>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center text-[12px] text-[#A6753A] font-medium">
-                                        <span>Đã chuyển khoản</span>
-                                        <span class="mx-1.5 text-[#A6753A]">•</span>
-                                        <span>Chờ admin xác nhận</span>
+                            <!-- Pending Approval Section -->
+                            <div class="flex flex-col flex-1 overflow-hidden mt-2">
+                                <div class="max-h-[300px] overflow-y-auto overflow-x-hidden px-6 pb-6 space-y-4 custom-scrollbar">
+                                    <template v-if="myTransactions.pending && myTransactions.pending.length > 0">
+                                        <!-- Pending Approval Card (Sample) -->
+                                        <div class="bg-[#FDF2E2] rounded-lg p-4 border-l-[3px] border-[#F0AC3A] relative flex flex-col space-y-4 shadow-sm" v-for="(item, index) in myTransactions.pending" :key="index">
+                                            <div class="flex justify-between items-start">
+                                                <h3 class="font-semibold text-[#1F2937]">{{ item.description }}</h3>
+                                                <span class="text-[#1F2937] font-semibold">{{ formatCurrency(item.my_contribution?.amount) + 'đ' }}</span>
+                                            </div>
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center text-[12px] text-[#A6753A] font-medium">
+                                                    <span>Đã chuyển khoản</span>
+                                                    <span class="mx-1.5 text-[#A6753A]">•</span>
+                                                    <span>Chờ admin xác nhận</span>
+                                                </div>
+                                                <div class="bg-[#F0A31D] text-white px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider">Chờ duyệt</div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                    <div v-else class="flex flex-col items-center justify-center py-8 text-center">
+                                        <p class="text-[#838799] text-sm font-medium">Không có khoản thu nào cần chờ xác nhận</p>
                                     </div>
-                                    <div class="bg-[#F0A31D] text-white px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider">Chờ duyệt</div>
                                 </div>
                             </div>
                         </div>
@@ -357,7 +398,7 @@
                 <!-- Right Column: LỊCH SỬ CỦA TÔI -->
                 <div :class="[
                     'flex flex-col h-full',
-                    hasAnyRole(['manager', 'member']) ? 'col-span-8' : 'col-span-12'
+                    hasAnyRole(['manager', 'member']) ? 'col-span-12 lg:col-span-8' : 'col-span-12'
                 ]">
                     <div class="bg-white rounded-[24px] shadow-sm border border-gray-50 flex-1 flex flex-col">
                         <!-- Section Header -->
@@ -384,7 +425,7 @@
                                     <div class="relative">
                                         <FunnelIcon 
                                             class="w-5 h-5 text-[#838799] cursor-pointer hover:text-[#D72D36] transition-colors" 
-                                            @click="showFilterDropdown = !showFilterDropdown"
+                                            @click.stop="showFilterDropdown = !showFilterDropdown"
                                         />
                                         <div v-if="activeFilterCount > 0" class="absolute -top-1 -right-1 w-2 h-2 bg-[#D72D36] rounded-full"></div>
                                         
@@ -432,7 +473,7 @@
                                                                     type="checkbox" 
                                                                     v-model="filters.source_types" 
                                                                     :value="opt.value"
-                                                                    class="w-4 h-4 text-[#D72D36] border-gray-300 rounded focus:ring-[#D72D36]"
+                                                                    class="w-4 h-4 text-[#D72D36] border-gray-300 rounded focus:ring-[#D72D36] accent-[#D72D36]"
                                                                 />
                                                                 <span class="text-sm font-medium text-[#3E414C] group-hover:text-[#1F2937]">{{ opt.label }}</span>
                                                             </label>
@@ -454,7 +495,7 @@
                                                                     type="checkbox" 
                                                                     v-model="filters.statuses" 
                                                                     :value="opt.value"
-                                                                    class="w-4 h-4 text-[#D72D36] border-gray-300 rounded focus:ring-[#D72D36]"
+                                                                    class="w-4 h-4 text-[#D72D36] border-gray-300 rounded focus:ring-[#D72D36] accent-[#D72D36]"
                                                                 />
                                                                 <span class="text-sm font-medium text-[#3E414C] group-hover:text-[#1F2937]">{{ opt.label }}</span>
                                                             </label>
@@ -466,7 +507,7 @@
                                                         <label class="block text-xs font-bold text-[#838799] uppercase tracking-wider mb-3">Khoảng thời gian</label>
                                                         <div class="space-y-3">
                                                             <div class="relative">
-                                                                <VueDatePicker teleport="body"
+                                                                <VueDatePicker 
                                                                     v-model="filters.date_from"
                                                                     :enable-time-picker="false"
                                                                     auto-apply
@@ -518,10 +559,10 @@
                                 <div class="flex items-center space-x-4">
                                     <div>
                                         <p class="font-bold text-[#1F2937] text-[15px]">{{ item.description || 'Chưa có mô tả' }}</p>
-                                        <p class="text-[12px] text-[#10B981] font-normal mt-0.5">Hoàn tất: {{ formatDatetime(item.confirmed_at, '/') }}</p>
+                                        <p class="text-[12px] text-[#10B981] font-normal mt-0.5">Hoàn tất: {{ formatDatetime(item.created_at, '/') }}</p>
                                     </div>
                                 </div>
-                                <span class="font-bold text-[#1F2937] text-[15px]">{{ formatCurrency(item.amount) }}</span>
+                                <span class="font-bold text-[#1F2937] text-[15px]">{{ formatCurrency(item.amount) + item.currency }}</span>
                             </div>
 
                             <!-- Pagination -->
@@ -544,8 +585,8 @@
                     <Transition name="scale">
                         <div v-if="showQRModal" 
                             :class="[
-                                'bg-white rounded-[24px] w-full transition-all duration-300 flex flex-col p-8 relative shadow-2xl overflow-hidden',
-                                hasAnyRole(['admin', 'secretary', 'treasurer']) ? 'max-w-[850px] min-h-[600px]' : 'max-w-[390px] h-[85vh]'
+                                'bg-white rounded-[24px] w-full transition-all duration-300 flex flex-col p-6 relative shadow-2xl overflow-hidden',
+                                hasAnyRole(['admin', 'secretary', 'treasurer']) ? 'max-w-[850px] min-h-[600px] lg:p-8' : 'max-w-[390px] h-fit max-h-[90vh]'
                             ]">
                             <!-- Modal Close -->
                             <button 
@@ -559,9 +600,9 @@
                                 <h2 class="text-[22px] font-bold text-[#2D3139] mb-4">Mã QR</h2>
                             </div>
 
-                            <div :class="['flex min-h-0 gap-10', hasAnyRole(['admin', 'secretary', 'treasurer']) ? 'flex-row' : 'flex-col']">
+                            <div :class="['flex min-h-0 gap-10 flex-col', hasAnyRole(['admin', 'secretary', 'treasurer']) ? 'lg:flex-row' : '']">
                                 <!-- Left Column: MÃ QR HIỆN CÓ -->
-                                <div :class="[hasAnyRole(['admin', 'secretary', 'treasurer']) ? 'w-[45%] flex flex-col' : 'flex-1 flex flex-col min-h-0']">
+                                <div :class="[hasAnyRole(['admin', 'secretary', 'treasurer']) ? 'w-full lg:w-[45%] flex flex-col' : 'w-full flex flex-col min-h-0']">
                                     <!-- Section Subtitle -->
                                     <div class="mb-6 flex-shrink-0">
                                         <div class="flex items-center space-x-2 text-[#838799] text-sm font-semibold tracking-wider uppercase">
@@ -572,7 +613,7 @@
                                     </div>
 
                                     <!-- Swiper Container -->
-                                    <div class="flex-1 overflow-hidden relative mb-6 min-h-0">
+                                    <div class="w-full overflow-hidden relative mb-6 min-h-0">
                                         <div 
                                             class="flex h-full transition-transform duration-500 ease-out"
                                             :style="{ transform: `translateX(-${currentIndex * 100}%)` }">
@@ -586,23 +627,28 @@
                                                         <img :src="qr.qr_code_url" class="w-5/6 h-5/6 opacity-90" :alt="qr.title" />
                                                     </div>
 
-                                                    <div class="text-center mb-2 flex-shrink-0">
+                                                    <div class="text-center mb-2 flex-shrink-0 w-full">
                                                         <div class="flex items-center justify-center space-x-1.5 mb-1">
                                                             <span class="text-[14px] font-normal text-[#1F2937]">VNĐ</span>
                                                             <span class="text-[20px] font-bold text-[#4392E0]">{{ formatCurrency(qr.amount_per_member) }}</span>
                                                         </div>
-                                                        <p class="text-[14px] text-[#838799] font-normal line-clamp-1" v-tooltip="qr.description">{{ qr.description }}</p>
+                                                        <p class="text-[14px] text-[#838799] font-normal line-clamp-1 w-full" v-tooltip="qr.description">{{ qr.description }}</p>
                                                     </div>
 
                                                     <!-- Action Buttons -->
                                                     <div class="flex items-center justify-center space-x-4 w-full mt-auto">
+                                                        <button v-if="hasAnyRole(['member', 'manager'])" 
+                                                            @click="handleOpenReceiptModal(qr.id)"
+                                                            class="w-12 h-12 rounded-full bg-[#F3F4F6] flex items-center justify-center text-[#141519] hover:bg-gray-200 transition-colors">
+                                                            <CreditCardIcon class="w-5 h-5" />
+                                                        </button>
                                                         <button class="w-12 h-12 rounded-full bg-[#F3F4F6] flex items-center justify-center text-[#141519] hover:bg-gray-200 transition-colors">
                                                             <ArrowDownTrayIcon class="w-5 h-5" />
                                                         </button>
                                                         <button class="w-12 h-12 rounded-full bg-[#F3F4F6] flex items-center justify-center text-[#141519] hover:bg-gray-200 transition-colors">
                                                             <ShareIcon class="w-5 h-5" />
                                                         </button>
-                                                        <button class="w-12 h-12 rounded-full bg-[#F3F4F6] flex items-center justify-center hover:bg-gray-200 transition-colors text-[#141519]">
+                                                        <button v-if="hasAnyRole(['admin', 'secretary', 'treasurer'])" class="w-12 h-12 rounded-full bg-[#F3F4F6] flex items-center justify-center hover:bg-gray-200 transition-colors text-[#141519]" @click="confirmDeleteQR(qr.id)">
                                                             <TrashIcon class="w-5 h-5" />
                                                         </button>
                                                     </div>
@@ -640,7 +686,7 @@
                                 </div>
 
                                 <!-- Right Column: THÊM MÃ QR MỚI (Admin only) -->
-                                <div v-if="hasAnyRole(['admin', 'secretary', 'treasurer'])" class="w-[55%] flex flex-col">
+                                <div v-if="hasAnyRole(['admin', 'secretary', 'treasurer'])" class="w-full lg:w-[55%] flex flex-col">
                                     <div class="mb-6">
                                         <h2 class="text-[14px] font-bold text-[#838799] tracking-wider uppercase">THÊM MÃ QR MỚI</h2>
                                     </div>
@@ -686,20 +732,56 @@
                                         <!-- Form Fields -->
                                         <div class="space-y-6">
                                             <div>
-                                                <label class="block text-sm font-bold text-[#1F2937] mb-2 uppercase tracking-wide">Số tiền</label>
-                                                <div class="relative">
-                                                    <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                                                        <span class="text-[#9EA2B3] font-bold text-sm">VNĐ</span>
+                                                <label class="block text-sm font-bold text-[#1F2937] mb-2 uppercase tracking-wide">Khoản thu</label>
+                                                <div class="relative" v-click-outside="() => showCollectionDropdown = false">
+                                                    <!-- Dropdown Toggle -->
+                                                    <div 
+                                                        @click="toggleCollectionDropdown"
+                                                        class="w-full bg-[#EDEEF2] border-none rounded-[4px] py-3 pl-4 pr-4 font-bold text-[#1F2937] cursor-pointer flex items-center justify-between"
+                                                    >
+                                                        <span :class="{'text-[#9EA2B3]': !selectedCollectionId}" class="truncate mr-2">
+                                                            {{ selectedCollection ? (selectedCollection.description || selectedCollection.title) : 'Chọn khoản thu' }}
+                                                        </span>
+                                                        <ChevronDownIcon :class="['w-5 h-5 text-[#9EA2B3] transition-transform duration-200', { 'rotate-180': showCollectionDropdown }]" />
                                                     </div>
-                                                    <input 
-                                                        type="text" 
-                                                        :value="newQRAmount"
-                                                        @input="onAmountInput"
-                                                        inputmode="numeric"
-                                                        @keypress="(e) => !/[0-9]/.test(e.key) && e.preventDefault()"
-                                                        placeholder="0"
-                                                        class="w-full bg-[#EDEEF2] border-none rounded-[4px] py-3 pl-14 pr-4 font-bold text-[#1F2937] focus:ring-0 placeholder:text-[#9EA2B3]"
-                                                    />
+
+                                                    <!-- Dropdown Menu -->
+                                                    <Transition name="fade">
+                                                        <div 
+                                                            v-if="showCollectionDropdown"
+                                                            class="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-100 rounded-[12px] shadow-xl z-[100] overflow-hidden"
+                                                        >
+                                                            <div 
+                                                                class="max-h-[160px] overflow-y-auto overflow-x-hidden custom-scrollbar"
+                                                                @scroll="handleCollectionScroll"
+                                                            >
+                                                                <div 
+                                                                    v-for="collection in fundCollections" 
+                                                                    :key="collection.id"
+                                                                    @click="selectCollection(collection)"
+                                                                    :class="[
+                                                                        'px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors border-b border-gray-50 last:border-b-0',
+                                                                        selectedCollectionId === collection.id ? 'bg-[#D72D36]/5 text-[#D72D36]' : 'text-[#1F2937]'
+                                                                    ]"
+                                                                >
+                                                                    <p class="font-bold text-sm truncate" v-tooltip="collection.description || collection.title">{{ collection.description || collection.title }}</p>
+                                                                    <p class="text-[11px] text-[#838799] mt-0.5">Hạn: {{ formatDatetime(collection.end_date, '/') }}</p>
+                                                                </div>
+
+                                                                <!-- Loading More State -->
+                                                                <div v-if="isFundCollectionLoadingMore" class="py-4 flex justify-center">
+                                                                    <svg class="animate-spin h-5 w-5 text-[#D72D36]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                                    </svg>
+                                                                </div>
+                                                                
+                                                                <div v-if="fundCollections.length === 0 && !isFundCollectionLoading" class="p-6 text-center">
+                                                                    <p class="text-sm text-[#838799]">Không có khoản thu nào</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </Transition>
                                                 </div>
                                             </div>
 
@@ -771,6 +853,31 @@
                 @submit="handleSubmitFundExpenses"
             />
 
+            <!-- Delete Confirmation Modal -->
+            <DeleteConfirmationModal
+                v-model="showDeleteQRModal"
+                title="Xác nhận xoá QR Code"
+                message="Bạn có chắc chắn muốn xoá mã QR này không? Thao tác này không thể hoàn tác."
+                confirmButtonText="Xoá ngay"
+                @confirm="handleConfirmDelete"
+            />
+
+            <!-- Fund Collection Detail Modal -->
+            <ClubCollectionDetailModal
+                v-model:isOpen="showCollectionDetailModal"
+                :clubId="clubId"
+                :fundCollections="allCollections"
+                :initialCollectionId="selectedCollectionId"
+            />
+
+            <!-- Submit Receipt Modal -->
+            <ClubSubmitReceiptModal
+                v-model:isOpen="showSubmitReceiptModal"
+                :clubId="clubId"
+                :collectionId="selectedCollectionIdForReceipt"
+                @success="handleReceiptSuccess"
+            />
+
 
             <!-- Floating Action Buttons -->
             <div class="fixed bottom-8 right-8 flex flex-col space-y-4" v-if="hasAnyRole(['admin', 'secretary', 'treasurer'])">
@@ -796,6 +903,9 @@ import Background from '@/assets/images/club-default-thumbnail.svg?url'
 import ClubFundSkeleton from '@/components/molecules/ClubFundSkeleton.vue'
 import ClubCreateExpenseModal from '@/components/pages/club/partials/ClubCreateExpenseModal.vue'
 import ClubCreateFundModal from '@/components/pages/club/partials/ClubCreateFundModal.vue'
+import ClubCollectionDetailModal from '@/components/pages/club/partials/ClubCollectionDetailModal.vue'
+import ClubSubmitReceiptModal from '@/components/pages/club/partials/ClubSubmitReceiptModal.vue'
+import DeleteConfirmationModal from '@/components/molecules/DeleteConfirmationModal.vue'
 import Pagination from '@/components/molecules/Pagination.vue'
 import {
     ArrowDownIcon,
@@ -812,11 +922,13 @@ import {
     TrashIcon,
     ChevronLeftIcon,
     ChevronRightIcon,
+    ChevronDownIcon,
     PhotoIcon,
     PencilSquareIcon,
+    CreditCardIcon,
 } from '@heroicons/vue/24/outline'
 import { useRouter, useRoute } from 'vue-router'
-import { onMounted, ref, computed, watch } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import QRCodeIcon from "@/assets/images/qr_code.svg";
 import * as ClubService from '@/service/club.js'
 import { toast } from 'vue3-toastify'
@@ -827,6 +939,7 @@ import { formatDatetime } from '@/composables/formatDatetime'
 import VueDatePicker from '@vuepic/vue-datepicker'
 import '@vuepic/vue-datepicker/dist/main.css'
 import dayjs from 'dayjs'
+import { vClickOutside } from "@/directives/clickOutside"
 
 const userStore = useUserStore()
 const { getUser } = storeToRefs(userStore)
@@ -837,6 +950,11 @@ const clubId = ref(route.params.id);
 const showQRModal = ref(false)
 const showCreateFundModal = ref(false)
 const showCreateExpenseModal = ref(false)
+const showDeleteQRModal = ref(false)
+const showCollectionDetailModal = ref(false)
+const showSubmitReceiptModal = ref(false)
+const selectedCollectionIdForReceipt = ref(null)
+const qrToDelete = ref(null)
 const currentIndex = ref(0)
 const isInitialLoading = ref(true)
 const fileInput = ref(null)
@@ -844,7 +962,7 @@ const previewImage = ref(null)
 const fundOverview = ref(null)
 
 // Add New QR Form State
-const newQRAmount = ref('')
+const selectedCollectionId = ref('')
 const newQRDescription = ref('')
 const applyToOtherClubs = ref(false)
 const selectedFile = ref(null)
@@ -872,6 +990,36 @@ const currentPage = ref(1)
 const lastPage = ref(1)
 const isTransactionsLoading = ref(false)
 const itemsPerPage = 10
+const fundCollections = ref([])
+const isFundCollectionLoading = ref(false)
+const fundCollectionPage = ref(1)
+const fundCollectionLastPage = ref(1)
+const isFundCollectionLoadingMore = ref(false)
+const showCollectionDropdown = ref(false)
+const myTransactions = ref([])
+
+const selectedCollection = computed(() => {
+    return fundCollections.value.find(c => c.id === selectedCollectionId.value) || null
+})
+
+const allCollections = computed(() => {
+    let collections = []
+    if (hasAnyRole(['admin', 'secretary'])) {
+        collections = fundCollections.value
+    } else if (myTransactions.value) {
+        collections = [
+            ...(myTransactions.value.need_payment || []),
+            ...(myTransactions.value.pending || []),
+            ...(myTransactions.value.confirmed || [])
+        ]
+    }
+    
+    return collections.map(c => ({
+        ...c,
+        title: c.title || c.description,
+        amount_per_member: c.amount_per_member || c.amount_due || c.my_contribution?.amount || c.amount || 0
+    }))
+})
 
 const showFilterDropdown = ref(false)
 const filters = ref({
@@ -1013,14 +1161,14 @@ const createQrCode = async (data) => {
         isSubmittingQR.value = true
         const formData = new FormData();
         formData.append('content', data.content);
-        formData.append('amount', data.amount);
+        formData.append('collection_id', data.collection_id);
         formData.append('image', data.image);
         formData.append('apply_to_other_clubs', data.apply_to_other_clubs ? 1 : 0);
         const response = await ClubService.createQrCode(clubId.value, formData)
         toast.success(response.message || 'Tạo mã QR thành công')
         
         // Reset form
-        newQRAmount.value = ''
+        selectedCollectionId.value = ''
         newQRDescription.value = ''
         applyToOtherClubs.value = false
         removePreview()
@@ -1034,14 +1182,84 @@ const createQrCode = async (data) => {
     }
 }
 
+const deleteQrCode = async (qrCodeId) => {
+    try {
+        isSubmittingQR.value = true
+        const response = await ClubService.deleteQrCode(clubId.value, qrCodeId)
+        toast.success(response.message || 'Xóa mã QR thành công')
+        await getlistQrCodes()
+        
+        // Adjust currentIndex if necessary
+        if (currentIndex.value >= qrList.value.length && currentIndex.value > 0) {
+            currentIndex.value = qrList.value.length - 1
+        }
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi xóa mã QR')
+    } finally {
+        isSubmittingQR.value = false
+    }
+}
+
+const confirmDeleteQR = (qrId) => {
+    qrToDelete.value = qrId
+    showDeleteQRModal.value = true
+}
+
+const handleOpenCollectionDetail = (id) => {
+    selectedCollectionId.value = id
+    showCollectionDetailModal.value = true
+}
+
+const handleViewDetail = (item) => {
+    selectedCollectionId.value = item.id
+    showCollectionDetailModal.value = true
+}
+
+const handlePayNow = (item) => {
+    // Try matching by URL first, then by ID
+    const qrIndex = qrList.value.findIndex(qr => 
+        (qr.qr_code_url && qr.qr_code_url === item.qr_code_url) || 
+        (Number(qr.id) === Number(item.id))
+    )
+    
+    if (qrIndex !== -1) {
+        currentIndex.value = qrIndex
+        showQRModal.value = true
+    } else {
+        toast.info('Khoản thu này hiện chưa có mã QR thanh toán')
+    }
+}
+
+const handleOpenReceiptModal = (collectionId) => {
+    if (!collectionId) {
+        toast.error('Mã QR này chưa được gắn với đợt thu nào')
+        return
+    }
+    selectedCollectionIdForReceipt.value = collectionId
+    showSubmitReceiptModal.value = true
+}
+
+const handleReceiptSuccess = async () => {
+    await getFundOverview()
+    await getAllTransaction()
+    await getAllMyTransaction()
+    await getMyCollections()
+}
+
+const handleConfirmDelete = async () => {
+    if (qrToDelete.value) {
+        await deleteQrCode(qrToDelete.value)
+        qrToDelete.value = null
+    }
+}
+
 const handleSaveQRCode = async () => {
     if (!selectedFile.value) {
         toast.error('Vui lòng chọn ảnh mã QR')
         return
     }
-    const rawAmount = parseFloat(newQRAmount.value.replace(/\./g, ''))
-    if (!newQRAmount.value || isNaN(rawAmount) || rawAmount <= 0) {
-        toast.error('Vui lòng nhập số tiền hợp lệ')
+    if (!selectedCollectionId.value) {
+        toast.error('Vui lòng chọn khoản thu')
         return
     }
     if (!newQRDescription.value) {
@@ -1051,7 +1269,7 @@ const handleSaveQRCode = async () => {
 
     await createQrCode({
         content: newQRDescription.value,
-        amount: rawAmount,
+        collection_id: selectedCollectionId.value,
         image: selectedFile.value,
         apply_to_other_clubs: applyToOtherClubs.value
     })
@@ -1072,8 +1290,7 @@ const handleSubmitFundRevenue = async (data) => {
             formData.append('member_ids[]', id);
         });
     }
-
-    formData.append('qr_code_url', data.qr_code_url);
+    formData.append('qr_image', data.qr_image);
 
     try {
         const response = await ClubService.createdFundRevenue(clubId.value, formData)
@@ -1093,9 +1310,37 @@ const handleSubmitFundExpenses = async (data) => {
         await getFundOverview()
         await getAllTransaction()
         await getAllMyTransaction()
+        await getlistQrCodes()
     } catch (error) {
         toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi tạo khoản chi')
     }
+}
+
+const toggleCollectionDropdown = () => {
+    showCollectionDropdown.value = !showCollectionDropdown.value
+    if (showCollectionDropdown.value && fundCollections.value.length === 0) {
+        fundCollectionPage.value = 1
+        getFundCollection()
+    }
+}
+
+const selectCollection = (collection) => {
+    selectedCollectionId.value = collection.id
+    showCollectionDropdown.value = false
+}
+
+const handleCollectionScroll = (e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.target
+    if (scrollTop + clientHeight >= scrollHeight - 20) {
+        loadMoreCollections()
+    }
+}
+
+const loadMoreCollections = async () => {
+    if (isFundCollectionLoadingMore.value || fundCollectionPage.value >= fundCollectionLastPage.value) return
+    
+    fundCollectionPage.value++
+    await getFundCollection(true)
 }
 
 const getAllTransaction = async () => {
@@ -1154,6 +1399,49 @@ const handlePageChange = (page) => {
     getAllMyTransaction()
 }
 
+const getFundCollection = async (isLoadMore = false) => {
+    if(!hasAnyRole(['admin', 'secretary'])) return
+    try {
+        if (isLoadMore) {
+            isFundCollectionLoadingMore.value = true
+        } else {
+            isFundCollectionLoading.value = true
+            fundCollectionPage.value = 1
+        }
+
+        const response = await ClubService.getFundCollection(clubId.value, {
+            status: 'active',
+            page: fundCollectionPage.value,
+            per_page: 10
+        })
+
+        const newCollections = response.data?.collections || []
+        if (isLoadMore) {
+            fundCollections.value = [...fundCollections.value, ...newCollections]
+        } else {
+            fundCollections.value = newCollections
+        }
+        
+        fundCollectionLastPage.value = response.meta?.last_page || 1
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi lấy danh sách khoản thu')
+    } finally {
+        isFundCollectionLoading.value = false
+        isFundCollectionLoadingMore.value = false
+    }
+}
+
+const getMyCollections = async () => {
+    if(!hasAnyRole(['manager', 'member'])) return
+    
+    try {
+        const response = await ClubService.getMyCollections(clubId.value)
+        myTransactions.value = response.data || []
+    } catch (error) {
+        toast.error('Không thể tải thông tin chi tiết đợt thanh toán')
+    }
+}
+
 onMounted(async () => {
     if (!clubId.value) {
         isInitialLoading.value = false;
@@ -1166,6 +1454,8 @@ onMounted(async () => {
     await getlistQrCodes();
     await getAllTransaction();
     await getAllMyTransaction();
+    await getFundCollection();
+    await getMyCollections();
 
     // Simulate loading delay
     setTimeout(() => {
@@ -1235,5 +1525,22 @@ onMounted(async () => {
 
 .v-datepicker-custom :deep(.dp__input:focus) {
     border-color: #D72D36;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #E5E7EB;
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #D1D5DB;
 }
 </style>

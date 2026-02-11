@@ -220,7 +220,7 @@ class Club extends Model
         $member = $this->activeMembers()->where('user_id', $userId)->first();
         if (!$member) return false;
 
-        return in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager]);
+        return in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary]);
     }
 
     public function canManageFinance($userId)
@@ -228,7 +228,7 @@ class Club extends Model
         $member = $this->activeMembers()->where('user_id', $userId)->first();
         if (!$member) return false;
 
-        return in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Treasurer]);
+        return in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary, ClubMemberRole::Treasurer]);
     }
 
     /**

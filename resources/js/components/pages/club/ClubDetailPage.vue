@@ -1,5 +1,5 @@
 <template>
-    <div class="m-4 max-w-8xl h-[calc(100vh-7rem)] rounded-md flex flex-col">
+    <div class="p-4 mx-auto w-full max-w-8xl rounded-md flex flex-col overflow-y-auto">
         <!-- Loading Skeleton -->
         <ClubDetailSkeleton v-if="isInitialLoading" />
 
@@ -89,9 +89,9 @@
                 </div>
 
                 <!-- Stats Cards -->
-                <div class="grid grid-cols-3 gap-4 mt-8 relative z-10">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-8 relative z-10">
                     <div v-for="(stat, index) in statsAdmin" :key="index"
-                        class="bg-[#3E414C]/80 backdrop-blur-md rounded-2xl p-6 border border-white/5 shadow-inner">
+                        class="bg-[#3E414C]/80 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-white/5 shadow-inner">
                         <p class="text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wide">{{ stat.label }}</p>
                         <div class="flex items-baseline space-x-1">
                             <span class="text-4xl font-bold">{{ stat.value }}</span>
@@ -161,7 +161,7 @@
                             <div class="text-sm font-semibold">{{ club.profile.address }}</div>
                         </div>
                         <div class="flex items-center space-x-2">
-                            <div class="text-[44px] font-bold">{{ club.name }}</div>
+                            <div class="text-3xl sm:text-4xl lg:text-[44px] font-bold">{{ club.name }}</div>
                             <div v-if="club.is_verified" class="bg-[#4392E0] rounded-full p-1">
                                 <VerifyIcon class="w-6 h-6 text-white" />
                             </div>
@@ -169,7 +169,7 @@
                         <div class="flex items-center space-x-2" v-if="!is_joined">
                             <template v-if="!club.has_pending_request">
                                 <Button size="md" color="danger"
-                                    class="px-[75px] bg-[#D72D36] border border-[#D72D36] text-white hover:bg-white hover:text-[#D72D36] flex gap-2"
+                                    class="px-6 sm:px-12 md:px-[75px] bg-[#D72D36] border border-[#D72D36] text-white hover:bg-white hover:text-[#D72D36] flex gap-2"
                                     @click.stop="joinClubRequest">
                                     <PlusIcon class="w-5 h-5" />
                                     Tham gia CLB
@@ -177,7 +177,7 @@
                             </template>
                             <template v-else>
                                 <Button size="md" color="danger"
-                                    class="px-[75px] bg-[#D72D36] border border-[#D72D36] text-white hover:bg-white hover:text-[#D72D36] flex gap-2"
+                                    class="px-6 sm:px-12 md:px-[75px] bg-[#D72D36] border border-[#D72D36] text-white hover:bg-white hover:text-[#D72D36] flex gap-2"
                                     @click.stop="cancelJoinRequest">
                                     Hủy tham gia
                                 </Button>
@@ -190,7 +190,7 @@
                 </div>
             </div>
             <div class="grid grid-cols-12 gap-4 py-4">
-                <div class="col-span-8">
+                <div class="col-span-12 lg:col-span-8 order-2 lg:order-1">
                     <div v-if="is_joined">
                         <div class="flex items-baseline justify-between">
                             <h2 class="text-2xl text-[#838799] font-semibold uppercase mb-4">Thông báo</h2>
@@ -225,7 +225,7 @@
                         @leaderboard-page-change="handleLeaderboardPageChange" @tab-change="handleTabChange"
                         @refresh-club="getClubDetail" />
                 </div>
-                <div class="col-span-4 space-y-4">
+                <div class="col-span-12 lg:col-span-4 space-y-4 order-1 lg:order-2">
                     <div class="max-w-3xl mx-auto" v-if="!hasAnyRole(['admin', 'manager', 'secretary', 'treasurer'])">
                         <div class="bg-white rounded-2xl shadow-md px-6 py-5">
                             <div class="grid grid-cols-3 divide-x divide-gray-200 text-center">
@@ -811,9 +811,9 @@ const handleUpdateZalo = async (data) => {
     isUpdatingZalo.value = true
     try {
         const formData = new FormData()
-        formData.append('zalo_enabled', data.zalo_enabled ? '1' : '0')
+        formData.append('zalo_link_enabled', data.zalo_link_enabled ? '1' : '0')
         formData.append('zalo_link', data.zalo_link || '')
-        formData.append('qr_code_enabled', data.qr_code_enabled ? '1' : '0')
+        formData.append('qr_zalo_enabled', data.qr_zalo_enabled ? '1' : '0')
 
         if (data.qr_code_image_url instanceof File) {
             formData.append('qr_code_image_url', data.qr_code_image_url)

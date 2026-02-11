@@ -5,14 +5,22 @@ namespace App\Services\Club;
 use App\Enums\ClubMemberRole;
 use App\Enums\ClubMemberStatus;
 use App\Enums\ClubMembershipStatus;
+use App\Enums\ClubNotificationPriority;
+use App\Enums\ClubNotificationStatus;
 use App\Models\Club\Club;
 use App\Models\Club\ClubMember;
+use App\Models\Club\ClubNotificationType;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
 class ClubMemberManagementService
 {
+    public function __construct(
+        protected ClubNotificationService $notificationService
+    ) {
+    }
+
     public function getMembers(Club $club, array $filters): LengthAwarePaginator
     {
         $query = $club->members()->with(['user' => User::FULL_RELATIONS, 'reviewer']);
@@ -90,8 +98,9 @@ class ClubMemberManagementService
         $isSelfUpdate = $member->user_id === $userId;
         $currentUserMember = $club->activeMembers()->where('user_id', $userId)->first();
         $currentUserRole = $currentUserMember?->role;
+        $oldRole = $member->role;
 
-        return DB::transaction(function () use ($member, $data, $userId, $club, $isSelfUpdate, $currentUserRole) {
+        $member = DB::transaction(function () use ($member, $data, $userId, $club, $isSelfUpdate, $currentUserRole) {
             if (isset($data['role'])) {
                 $this->validateRoleUpdate($data['role'], $isSelfUpdate, $currentUserRole, $member, $club);
             }
@@ -116,8 +125,14 @@ class ClubMemberManagementService
                 $member->update($data);
             }
 
-            return $member;
+            return $member->fresh();
         });
+
+        if ($member->role->value !== $oldRole->value) {
+            $this->notifyRoleChange($member, $club, $userId);
+        }
+
+        return $member;
     }
 
     public function kickMember(ClubMember $member, int $kickerId): void
@@ -180,5 +195,25 @@ class ClubMemberManagementService
                 throw new \Exception($message);
             }
         }
+    }
+
+    private function notifyRoleChange(ClubMember $member, Club $club, int $updaterId): void
+    {
+        $memberType = ClubNotificationType::where('slug', 'member')->first();
+        if (!$memberType) {
+            return;
+        }
+
+        $roleLabel = $member->role->label();
+        $clubName = $club->name;
+
+        $this->notificationService->createNotification($club, [
+            'club_notification_type_id' => $memberType->id,
+            'title' => 'Bạn được bổ nhiệm làm ' . $roleLabel,
+            'content' => "Bạn được bổ nhiệm làm {$roleLabel} trong CLB {$clubName}.",
+            'priority' => ClubNotificationPriority::Normal,
+            'status' => ClubNotificationStatus::Sent,
+            'user_ids' => [$member->user_id],
+        ], $updaterId);
     }
 }

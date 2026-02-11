@@ -216,7 +216,7 @@ const fundAmount = ref('')
 const fundTitle = ref('')
 const fundDeadline = ref(new Date())
 const selectedMemberIds = ref([])
-const qrCodeFile = ref(null)
+const qrImageFile = ref(null)
 const qrCodePreview = ref(null)
 const isDragging = ref(false)
 const fileInput = ref(null)
@@ -272,12 +272,12 @@ const processFile = (file) => {
         alert('Vui lòng chọn tệp hình ảnh')
         return
     }
-    qrCodeFile.value = file
+    qrImageFile.value = file
     qrCodePreview.value = URL.createObjectURL(file)
 }
 
 const removeQrCode = () => {
-    qrCodeFile.value = null
+    qrImageFile.value = null
     qrCodePreview.value = null
 }
 
@@ -326,8 +326,7 @@ const submitCreateFund = () => {
         deadline: deadlineDate ? deadlineDate.format('YYYY-MM-DD') : null,
         end_date: deadlineDate ? deadlineDate.format('YYYY-MM-DD') : null,
         member_ids: selectedMemberIds.value,
-        qr_code_url: null,
-        qr_code_file: qrCodeFile.value,
+        qr_image: qrImageFile.value,
     })
     close()
     resetForm()
@@ -338,7 +337,7 @@ const resetForm = () => {
     fundTitle.value = ''
     fundDeadline.value = new Date()
     selectedMemberIds.value = []
-    qrCodeFile.value = null
+    qrImageFile.value = null
     qrCodePreview.value = null
 }
 </script>

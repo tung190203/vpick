@@ -73,7 +73,7 @@ class ClubWalletTransactionController extends Controller
         $userId = auth()->id();
 
         if (!$club->canManageFinance($userId)) {
-            return ResponseHelper::error('Chỉ admin/manager/treasurer mới có quyền tạo giao dịch', 403);
+            return ResponseHelper::error('Chỉ admin/manager/secretary/treasurer mới có quyền tạo giao dịch', 403);
         }
 
         $validated = $request->validate([
@@ -115,7 +115,7 @@ class ClubWalletTransactionController extends Controller
         $userId = auth()->id();
         $club = $transaction->wallet->club;
         if (!$club->canManageFinance($userId)) {
-            return ResponseHelper::error('Chỉ admin/manager/treasurer mới có quyền cập nhật', 403);
+            return ResponseHelper::error('Chỉ admin/manager/secretary/treasurer mới có quyền cập nhật', 403);
         }
 
         $validated = $request->validate([
@@ -143,7 +143,7 @@ class ClubWalletTransactionController extends Controller
         $userId = auth()->id();
         $club = $transaction->wallet->club;
         if (!$club->canManageFinance($userId)) {
-            return ResponseHelper::error('Chỉ admin/manager/treasurer mới có quyền xác nhận', 403);
+            return ResponseHelper::error('Chỉ admin/manager/secretary/treasurer mới có quyền xác nhận', 403);
         }
 
         try {
@@ -164,7 +164,7 @@ class ClubWalletTransactionController extends Controller
         $userId = auth()->id();
         $club = $transaction->wallet->club;
         if (!$club->canManageFinance($userId)) {
-            return ResponseHelper::error('Chỉ admin/manager/treasurer mới có quyền từ chối', 403);
+            return ResponseHelper::error('Chỉ admin/manager/secretary/treasurer mới có quyền từ chối', 403);
         }
 
         try {
