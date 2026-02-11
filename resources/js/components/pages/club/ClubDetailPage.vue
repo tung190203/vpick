@@ -505,24 +505,15 @@ const statsAdmin = computed(() => [
 ])
 
 const nextMatch = computed(() => {
-    const now = dayjs()
-    const oneHourLater = now.add(1, 'hour')
+  const now = dayjs()
 
-    const registered = activities.value.filter(a => {
-        const startTime = dayjs(a.start_time)
+  const upcoming = activities.value
+    .filter(a => dayjs(a.start_time).isAfter(now))
+    .sort((a, b) =>
+      dayjs(a.start_time).diff(dayjs(b.start_time))
+    )
 
-        return (
-            a.status === 'private' &&
-            startTime.isAfter(now) &&
-            startTime.isBefore(oneHourLater)
-        )
-    })
-
-    if (registered.length === 0) return null
-
-    return registered.sort(
-        (a, b) => dayjs(a.start_time).diff(dayjs(b.start_time))
-    )[0]
+  return upcoming[0] || null
 })
 
 const startCountdown = () => {
@@ -700,11 +691,11 @@ const handleEditActivity = (activity) => {
     })
 }
 
-const goToActivityDetail = (activity) => {
+const goToActivityDetail = (activity, query = {}) => {
     router.push({
         name: 'club-detail-activity',
         params: { id: clubId.value },
-        query: { activityId: activity.id }
+        query: { activityId: activity.id, ...query }
     })
 }
 
@@ -943,10 +934,10 @@ const getClubActivities = async () => {
         const allActivities = (response.data.activities || []).map(formatActivity)
 
         // Split into main list, upcoming, and history
-        activities.value = allActivities.slice(0, 3) // Show first 3 on main page
-
         upcomingActivities.value = allActivities.filter(a => a.status !== 'completed' && !dayjs().isAfter(dayjs(a.end_time)))
         historyActivities.value = allActivities.filter(a => a.status === 'completed' || dayjs().isAfter(dayjs(a.end_time)))
+
+        activities.value = upcomingActivities.value.slice(0, 5)
 
         startCountdown()
     } catch (error) {
@@ -1125,7 +1116,7 @@ const handleCancelJoinActivity = async (activity) => {
 }
 
 const handleCheckInActivity = (activity) => {
-    goToActivityDetail(activity)
+    goToActivityDetail(activity, { showCheckin: true })
 }
 </script>
 <style scoped>
