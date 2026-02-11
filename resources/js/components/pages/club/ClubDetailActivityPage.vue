@@ -392,6 +392,32 @@
       :is-submitting="isCancelling"
       @confirm="confirmCancelEvent"
     />
+
+    <!-- Check-in QR Modal -->
+    <div v-if="showCheckinModal" class="fixed inset-0 z-[10001] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="showCheckinModal = false"></div>
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md relative z-[10002] overflow-hidden animate-in fade-in zoom-in duration-300 flex flex-col items-center p-8">
+            <button @click="showCheckinModal = false" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
+                <XMarkIcon class="w-6 h-6" stroke-width="2" />
+            </button>
+            <h3 class="text-xl font-bold text-[#3E414C] mb-6">Mã QR Check-in</h3>
+            <div class="p-4 bg-gray-50 rounded-xl mb-6">
+                <qrcode-vue :value="activity.qr_code_url" :size="240" level="H" class="rounded-[4px]" />
+            </div>
+            <p class="text-center text-[#3E414C] font-semibold text-lg max-w-[280px]">
+                Mở app Picki và quét mã QR để checkin hoạt động
+            </p>
+            <Button 
+                size="md" 
+                color="white" 
+                class="w-full mt-8 bg-[#FFF5F5] text-[#D72D36] border-none font-bold py-3 hover:bg-[#FFEBEB]"
+                @click="downloadQR"
+            >
+                <ArrowDownTrayIcon class="w-5 h-5 mr-2" />
+                Tải xuống mã QR
+            </Button>
+        </div>
+    </div>
   </div>
 </template>
 
@@ -452,6 +478,7 @@ const isLoading = ref(true)
 const joinActivityRequests = ref([])
 const showCancelModal = ref(false)
 const isCancelling = ref(false)
+const showCheckinModal = ref(false)
 
 const isOwner = computed(() => {
     return activity.value.created_by === getUser.value.id
@@ -542,7 +569,7 @@ const getActivityDetail = async () => {
             }
             
             if (data.participants) {
-                participants.value = data.participants.map(p => ({
+                participants.value = data.participants?.accepted?.map(p => ({
                     id: p.id,
                     name: p.user?.full_name || 'Thành viên',
                     avatar: p.user?.avatar_url || p.user?.thumbnail,
@@ -767,6 +794,9 @@ onMounted(async () => {
             ])
         } finally {
             isLoading.value = false
+            if (route.query.showCheckin === 'true') {
+                showCheckinModal.value = true
+            }
         }
     }
 })
