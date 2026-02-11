@@ -260,6 +260,23 @@ export const fundOverview = async (clubId) => {
     return axiosInstance.get(`${API_ENDPOINT.CLUB}/${clubId}/fund/overview`).then((response) => response.data);
 }
 
+export const getFundCollection = async (clubId, params = {}) => {
+    const queryParams = new URLSearchParams()
+    Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      queryParams.append(key, value)
+    }
+  })
+
+  const queryString = queryParams.toString()
+  const url = `${API_ENDPOINT.CLUB}/${clubId}/fund-collections${queryString ? `?${queryString}` : ''}`
+    return axiosInstance.get(url).then((response) => response.data);
+}
+
+export const getFundCollectionDetail = async (clubId, collectionId) => {
+    return axiosInstance.get(`${API_ENDPOINT.CLUB}/${clubId}/fund-collections/${collectionId}`).then((response) => response.data);
+}
+
 export const createdFundRevenue = async (clubId, data) => {
     return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/fund-collections`, data).then((response) => response.data);
 }
@@ -274,4 +291,24 @@ export const listQrCodes = async (clubId) => {
 
 export const createQrCode = async (clubId, data) => {
     return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/fund-collections/qr-codes`, data).then((response) => response.data);
+}
+
+export const deleteQrCode = async (clubId, qrCodeId) => {
+    return axiosInstance.delete(`${API_ENDPOINT.CLUB}/${clubId}/fund-collections/qr-codes/${qrCodeId}`).then((response) => response.data);
+}
+
+export const getMyCollections = async (clubId, params = {}) => {
+    return axiosInstance.get(`${API_ENDPOINT.CLUB}/${clubId}/fund-collections/my-collections`).then((response) => response.data);
+}
+
+export const confirmFundContribution = async (clubId, collectionId, contributionId) => {
+    return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/fund-collections/${collectionId}/contributions/${contributionId}/confirm`).then((response) => response.data);
+}
+
+export const rejectFundContribution = async (clubId, collectionId, contributionId, data) => {
+    return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/fund-collections/${collectionId}/contributions/${contributionId}/reject`, data).then((response) => response.data);
+}
+
+export const submitContributionReceipt = async (clubId, collectionId, data) => {
+    return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/fund-collections/${collectionId}/contributions/receipt`, data).then((response) => response.data);
 }

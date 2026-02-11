@@ -185,19 +185,21 @@
               </div>
             </div>
           </div>
-          <div class="flex items-center gap-2">
+
+          <!-- Action Buttons (Desktop only) -->
+          <div class="hidden lg:flex items-center gap-2 mt-4">
             <Button color="danger"
-            class="flex-1 lg:flex-none lg:w-44 py-3 font-bold text-white rounded-[4px] shadow-lg shadow-red-200 hover:shadow-red-300 transition-all active:scale-95"
-            @click="handleSubmit" :disabled="isLoading">
-            <div v-if="isLoading"
-              class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto"></div>
-            <span v-else>Tạo lịch</span>
-          </Button>
-          <Button color="white"
-            class="flex-1 lg:flex-none lg:w-44 py-3 font-bold text-[#3E414C] bg-[#F0F2F5] rounded-[4px] border-none hover:bg-gray-200 transition-colors"
-            @click="saveAsTemplate">
-            Lưu mẫu
-          </Button>
+              class="w-44 py-3 font-bold text-white rounded-[8px] shadow-lg shadow-red-200 hover:shadow-red-300 transition-all active:scale-95"
+              @click="handleSubmit" :disabled="isLoading">
+              <div v-if="isLoading"
+                class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto"></div>
+              <span v-else>Tạo lịch sinh hoạt</span>
+            </Button>
+            <Button color="white"
+              class="w-44 py-3 font-bold text-[#3E414C] bg-[#F0F2F5] rounded-[8px] border-none hover:bg-gray-200 transition-colors"
+              @click="saveAsTemplate">
+              Lưu mẫu
+            </Button>
           </div>
         </div>
 
@@ -370,6 +372,23 @@
             </div>
           </div>
         </div>
+
+        <!-- Action Buttons (Mobile/Tablet only) -->
+        <div class="col-span-12 lg:hidden flex flex-col sm:flex-row items-center gap-4 mt-4">
+          <Button color="danger"
+            class="w-full py-3.5 font-bold text-white rounded-[8px] shadow-lg shadow-red-200 hover:shadow-red-300 transition-all active:scale-95"
+            @click="handleSubmit" :disabled="isLoading">
+            <div v-if="isLoading"
+              class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto"></div>
+            <span v-else>Tạo lịch sinh hoạt</span>
+          </Button>
+          <Button color="white"
+            class="w-full py-3.5 font-bold text-[#3E414C] bg-[#F0F2F5] rounded-[8px] border-none hover:bg-gray-200 transition-colors"
+            @click="saveAsTemplate">
+            Lưu mẫu
+          </Button>
+        </div>
+
       </div>
     </div>
   </div>
