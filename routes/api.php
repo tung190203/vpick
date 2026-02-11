@@ -183,6 +183,7 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
         Route::get('/my-invitations', [ClubJoinRequestController::class, 'myInvitations']);
         Route::get('/search-location', [ClubController::class, 'searchLocation']);
         Route::get('/location-detail', [ClubController::class, 'detailGooglePlace']);
+        Route::get('/members/candidates', [ClubMemberController::class, 'getCandidates']);
         Route::get('/{clubId}', [ClubController::class, 'show']);
         Route::put('/{clubId}', [ClubController::class, 'update']);
         Route::delete('/{clubId}', [ClubController::class, 'destroy']);
