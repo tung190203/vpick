@@ -171,6 +171,26 @@ class ClubFundCollectionController extends Controller
         }
     }
 
+    public function remind($clubId, $collectionId, $userId)
+    {
+        $collection = ClubFundCollection::where('club_id', $clubId)->findOrFail($collectionId);
+        $requesterId = auth()->id();
+
+        if (!$requesterId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
+        }
+        if (!$collection->club->isMember($requesterId)) {
+            return ResponseHelper::error('Chỉ thành viên CLB mới sử dụng được chức năng này', 403);
+        }
+
+        try {
+            $this->collectionService->sendReminder($collection, (int) $userId, $requesterId);
+            return ResponseHelper::success(null, 'Đã gửi nhắc nhở thành công');
+        } catch (\Exception $e) {
+            return ResponseHelper::error($e->getMessage(), 422);
+        }
+    }
+
     public function getQrCode($clubId, $collectionId)
     {
         $collection = ClubFundCollection::where('club_id', $clubId)->findOrFail($collectionId);
