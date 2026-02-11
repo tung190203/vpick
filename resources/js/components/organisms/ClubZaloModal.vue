@@ -28,7 +28,7 @@
                     </div>
                      <!-- Toggle Switch -->
                     <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" v-model="form.zalo_enabled" class="sr-only peer">
+                        <input type="checkbox" v-model="form.zalo_link_enabled" class="sr-only peer">
                         <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#D72D36]"></div>
                     </label>
                 </div>
@@ -39,7 +39,7 @@
                         <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <LinkIcon class="h-5 w-5 text-[#3E414C]" />
                         </span>
-                        <input type="text" v-model="form.zalo_link" class="block w-full pl-10 pr-3 py-2.5 bg-[#EDEEF2] border border-gray-200 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#D72D36]/20 focus:border-[#D72D36]" placeholder="https://zalo.me/g/..." :disabled="!form.zalo_enabled" />
+                        <input type="text" v-model="form.zalo_link" class="block w-full pl-10 pr-3 py-2.5 bg-[#EDEEF2] border border-gray-200 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#D72D36]/20 focus:border-[#D72D36]" placeholder="https://zalo.me/g/..." :disabled="!form.zalo_link_enabled" />
                     </div>
                 </div>
 
@@ -63,13 +63,13 @@
                     </div>
                      <!-- Toggle Switch -->
                     <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" v-model="form.qr_code_enabled" class="sr-only peer">
+                        <input type="checkbox" v-model="form.qr_zalo_enabled" class="sr-only peer">
                         <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#D72D36]"></div>
                     </label>
                 </div>
 
                 <!-- Image Uploader -->
-                <div class="border-2 border-dashed border-gray-200 rounded-xl bg-white p-6 flex flex-col items-center justify-center cursor-pointer hover:border-[#D72D36]/50 hover:bg-gray-50 transition-all relative overflow-hidden" @click="triggerFileInput" :class="{'opacity-50 pointer-events-none': !form.qr_code_enabled}">
+                <div class="border-2 border-dashed border-gray-200 rounded-xl bg-white p-6 flex flex-col items-center justify-center cursor-pointer hover:border-[#D72D36]/50 hover:bg-gray-50 transition-all relative overflow-hidden" @click="triggerFileInput" :class="{'opacity-50 pointer-events-none': !form.qr_zalo_enabled}">
                     
                     <template v-if="form.qr_preview_url">
                          <img :src="form.qr_preview_url" class="max-h-64 object-contain rounded-lg" alt="QR Code" />
@@ -86,7 +86,7 @@
                          <p class="text-xs text-gray-400 mt-1">PNG, JPG, GIF (Tối đa 5MB)</p>
                     </template>
 
-                    <input type="file" ref="qrInput" class="hidden" accept="image/*" @change="handleFileChange" :disabled="!form.qr_code_enabled" />
+                    <input type="file" ref="qrInput" class="hidden" accept="image/*" @change="handleFileChange" :disabled="!form.qr_zalo_enabled" />
                 </div>
             </div>
 
@@ -125,9 +125,9 @@ const emit = defineEmits(['update:modelValue', 'save'])
 const qrInput = ref(null)
 
 const form = ref({
-    zalo_enabled: false,
+    zalo_link_enabled: false,
     zalo_link: '',
-    qr_code_enabled: false,
+    qr_zalo_enabled: false,
     qr_preview_url: null,
     qr_code_image_url: null
 })
@@ -135,13 +135,11 @@ const form = ref({
 watch(() => props.club, (newVal) => {
     if (newVal?.profile) {
         const profile = newVal.profile
-        const socialLinks = profile.social_links || {}
-        const settings = profile.settings || {}
 
-        form.value.zalo_link = socialLinks.zalo || ''
-        form.value.zalo_enabled = !!settings.zalo_enabled
+        form.value.zalo_link = profile.zalo_link || ''
+        form.value.zalo_link_enabled = !!profile.zalo_link_enabled
         form.value.qr_preview_url = profile.qr_code_image_url || null
-        form.value.qr_code_enabled = !!settings.qr_code_enabled
+        form.value.qr_zalo_enabled = !!profile.qr_zalo_enabled
     }
 }, { immediate: true })
 
@@ -150,7 +148,7 @@ const closeModal = () => {
 }
 
 const triggerFileInput = () => {
-    if (form.value.qr_code_enabled && qrInput.value) {
+    if (form.value.qr_zalo_enabled && qrInput.value) {
         qrInput.value.click()
     }
 }

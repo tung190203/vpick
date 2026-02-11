@@ -10,7 +10,7 @@
       class="absolute -top-2 -right-2 transition-all transform hover:scale-110 group z-10"
       title="Bỏ ghim"
     >
-      <PinIcon class="w-5 h-5 transform rotate-45 transition-transform group-hover:rotate-12" :class="currentColors.title" />
+      <PinIcon class="w-5 h-5 transform rotate-45 transition-transform group-hover:rotate-12 !text-[#D72D36]" />
     </button>
 
     <!-- Icon Section -->
