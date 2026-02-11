@@ -68,10 +68,11 @@ class ClubResource extends JsonResource
                 ClubMember::where('club_id', $this->id)
                     ->where('user_id', auth()->id())
                     ->where('membership_status', ClubMembershipStatus::Pending)
+                    ->whereNull('invited_by')
                     ->exists(),
                 false
             ),
-            'has_pending_invitation' => $this->when(auth()->check(), fn () =>
+            'has_invitation' => $this->when(auth()->check(), fn () =>
                 ClubMember::where('club_id', $this->id)
                     ->where('user_id', auth()->id())
                     ->where('membership_status', ClubMembershipStatus::Pending)
