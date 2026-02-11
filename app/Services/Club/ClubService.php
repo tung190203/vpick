@@ -53,13 +53,11 @@ class ClubService
                 'created_by' => $userId,
             ]);
 
-            // Create profile if cover exists
-            if ($coverPath) {
-                ClubProfile::create([
-                    'club_id' => $club->id,
-                    'cover_image_url' => $coverPath,
-                ]);
-            }
+            ClubProfile::create([
+                'club_id' => $club->id,
+                'cover_image_url' => $coverPath,
+                'description' => $data['description'] ?? null,
+            ]);
 
             // Create admin member
             ClubMember::create([
@@ -88,7 +86,7 @@ class ClubService
     {
         // Authorization check
         if (!$club->canManage($userId)) {
-            throw new \Exception('Chỉ admin/manager mới có quyền cập nhật CLB');
+            throw new \Exception('Chỉ admin/manager/secretary mới có quyền cập nhật CLB');
         }
 
         // QR code validation
@@ -273,7 +271,7 @@ class ClubService
     public function deleteClub(Club $club, int $userId): void
     {
         if (!$club->canManage($userId)) {
-            throw new \Exception('Chỉ admin/manager mới có quyền xóa CLB');
+            throw new \Exception('Chỉ admin/manager/secretary mới có quyền xóa CLB');
         }
 
         DB::transaction(function () use ($club) {
@@ -462,7 +460,7 @@ class ClubService
     public function updateFund(Club $club, string $qrCodeUrl, int $userId): array
     {
         if (!$club->canManageFinance($userId)) {
-            throw new \Exception('Chỉ admin/manager/treasurer mới có quyền cập nhật quỹ');
+            throw new \Exception('Chỉ admin/manager/secretary/treasurer mới có quyền cập nhật quỹ');
         }
 
         $mainWallet = $club->mainWallet;

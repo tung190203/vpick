@@ -111,7 +111,7 @@ class ClubFundContributionController extends Controller
         $userId = auth()->id();
 
         if (!$club->canManageFinance($userId)) {
-            return ResponseHelper::error('Chỉ admin/manager/treasurer mới có quyền xác nhận', 403);
+            return ResponseHelper::error('Chỉ admin/manager/secretary/treasurer mới có quyền xác nhận', 403);
         }
 
         try {
@@ -134,7 +134,7 @@ class ClubFundContributionController extends Controller
         $userId = auth()->id();
 
         if (!$club->canManageFinance($userId)) {
-            return ResponseHelper::error('Chỉ admin/manager/treasurer mới có quyền từ chối', 403);
+            return ResponseHelper::error('Chỉ admin/manager/secretary/treasurer mới có quyền từ chối', 403);
         }
 
         $request->validate(['reason' => 'required|string']);
