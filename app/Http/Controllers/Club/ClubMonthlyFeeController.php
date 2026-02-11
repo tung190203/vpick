@@ -36,7 +36,7 @@ class ClubMonthlyFeeController extends Controller
         $userId = auth()->id();
 
         if (!$club->canManageFinance($userId)) {
-            return ResponseHelper::error('Chỉ admin/manager/treasurer mới có quyền tạo cấu hình phí', 403);
+            return ResponseHelper::error('Chỉ admin/manager/secretary/treasurer mới có quyền tạo cấu hình phí', 403);
         }
 
         $validated = $request->validate([
@@ -64,7 +64,7 @@ class ClubMonthlyFeeController extends Controller
 
         $club = $fee->club;
         if (!$club->canManageFinance($userId)) {
-            return ResponseHelper::error('Chỉ admin/manager/treasurer mới có quyền cập nhật', 403);
+            return ResponseHelper::error('Chỉ admin/manager/secretary/treasurer mới có quyền cập nhật', 403);
         }
 
         $validated = $request->validate([
@@ -85,7 +85,7 @@ class ClubMonthlyFeeController extends Controller
 
         $club = $fee->club;
         if (!$club->canManage($userId)) {
-            return ResponseHelper::error('Chỉ admin/manager mới có quyền xóa', 403);
+            return ResponseHelper::error('Chỉ admin/manager/secretary mới có quyền xóa', 403);
         }
 
         try {

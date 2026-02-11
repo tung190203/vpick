@@ -31,6 +31,7 @@ class StoreClubRequest extends FormRequest
             'longitude' => 'nullable|string',
             'logo_url' => 'nullable|image|max:2048',
             'cover_image_url' => 'nullable|image|max:2048',
+            'description' => 'nullable|string|max:5000',
             'status' => ['nullable', Rule::enum(ClubStatus::class)],
             'is_public' => 'nullable|boolean',
         ];

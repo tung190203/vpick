@@ -41,7 +41,7 @@ class ClubWalletController extends Controller
         $userId = auth()->id();
 
         if (!$club->canManageFinance($userId)) {
-            return ResponseHelper::error('Chỉ admin/manager/treasurer mới có quyền tạo ví', 403);
+            return ResponseHelper::error('Chỉ admin/manager/secretary/treasurer mới có quyền tạo ví', 403);
         }
 
         $validated = $request->validate([
@@ -68,7 +68,7 @@ class ClubWalletController extends Controller
 
         $userId = auth()->id();
         if (!$wallet->club->canManageFinance($userId)) {
-            return ResponseHelper::error('Chỉ admin/manager/treasurer mới có quyền xem thông tin ví', 403);
+            return ResponseHelper::error('Chỉ admin/manager/secretary/treasurer mới có quyền xem thông tin ví', 403);
         }
 
         return ResponseHelper::success(new ClubWalletResource($wallet), 'Lấy thông tin ví thành công');
@@ -83,7 +83,7 @@ class ClubWalletController extends Controller
 
         $club = $wallet->club;
         if (!$club->canManageFinance($userId)) {
-            return ResponseHelper::error('Chỉ admin/manager/treasurer mới có quyền cập nhật ví', 403);
+            return ResponseHelper::error('Chỉ admin/manager/secretary/treasurer mới có quyền cập nhật ví', 403);
         }
 
         $validated = $request->validate([
@@ -103,7 +103,7 @@ class ClubWalletController extends Controller
             ->firstOrFail();
 
         if (!$wallet->club->canManage(auth()->id())) {
-            return ResponseHelper::error('Chỉ admin/manager mới có quyền xóa ví', 403);
+            return ResponseHelper::error('Chỉ admin/manager/secretary mới có quyền xóa ví', 403);
         }
 
         try {
