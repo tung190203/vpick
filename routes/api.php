@@ -423,6 +423,12 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
         Route::post('/mark-as-read', [NotificationController::class, 'markAsRead']);
         Route::post('/delete', [NotificationController::class, 'delete']);
     });
+    // Alias: api/notifications/* (để client gọi api/notifications/index thay vì api/user-notifications/index)
+    Route::prefix('notifications')->group(function () {
+        Route::match(['get', 'post'], '/index', [NotificationController::class, 'index']);
+        Route::post('/mark-as-read', [NotificationController::class, 'markAsRead']);
+        Route::post('/delete', [NotificationController::class, 'delete']);
+    });
     Route::prefix('mini-tournament-notifications')->group(function () {
         Route::post('/subscribe/{miniTournamentId}', [MiniTournamentNotificationController::class, 'subscribe']);
         Route::post('/unsubscribe/{miniTournamentId}', [MiniTournamentNotificationController::class, 'unsubscribe']);

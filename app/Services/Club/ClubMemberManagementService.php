@@ -11,6 +11,8 @@ use App\Models\Club\Club;
 use App\Models\Club\ClubMember;
 use App\Models\Club\ClubNotificationType;
 use App\Models\User;
+use App\Notifications\ClubInvitationNotification;
+use App\Notifications\ClubRoleChangeNotification;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
@@ -80,7 +82,7 @@ class ClubMemberManagementService
             throw new \Exception('Người dùng đã là thành viên của CLB này');
         }
 
-        return ClubMember::create([
+        $member = ClubMember::create([
             'club_id' => $club->id,
             'user_id' => $data['user_id'],
             'invited_by' => $inviterId,
@@ -91,6 +93,18 @@ class ClubMemberManagementService
             'message' => $data['message'] ?? null,
             'joined_at' => null,
         ]);
+
+        $invitedUser = User::find($data['user_id']);
+        $inviter = User::find($inviterId);
+        if ($invitedUser && $inviter) {
+            $invitedUser->notify(new ClubInvitationNotification(
+                $club,
+                $member,
+                $inviter->full_name ?: $inviter->email
+            ));
+        }
+
+        return $member;
     }
 
     public function updateMember(ClubMember $member, array $data, int $userId, Club $club): ClubMember
@@ -199,21 +213,25 @@ class ClubMemberManagementService
 
     private function notifyRoleChange(ClubMember $member, Club $club, int $updaterId): void
     {
-        $memberType = ClubNotificationType::where('slug', 'member')->first();
-        if (!$memberType) {
-            return;
+        $roleLabel = $member->role->label();
+        $user = $member->user;
+
+        // Laravel notification → hiển thị trong api/notifications/index, có club_id
+        if ($user) {
+            $user->notify(new ClubRoleChangeNotification($club, $member, $roleLabel, $updaterId));
         }
 
-        $roleLabel = $member->role->label();
-        $clubName = $club->name;
-
-        $this->notificationService->createNotification($club, [
-            'club_notification_type_id' => $memberType->id,
-            'title' => 'Bạn được bổ nhiệm làm ' . $roleLabel,
-            'content' => "Bạn được bổ nhiệm làm {$roleLabel} trong CLB {$clubName}.",
-            'priority' => ClubNotificationPriority::Normal,
-            'status' => ClubNotificationStatus::Sent,
-            'user_ids' => [$member->user_id],
-        ], $updaterId);
+        // Club notification (nội bộ CLB)
+        $memberType = ClubNotificationType::where('slug', 'member')->first();
+        if ($memberType) {
+            $this->notificationService->createNotification($club, [
+                'club_notification_type_id' => $memberType->id,
+                'title' => 'Bạn được bổ nhiệm làm ' . $roleLabel,
+                'content' => "Bạn được bổ nhiệm làm {$roleLabel} trong CLB {$club->name}.",
+                'priority' => ClubNotificationPriority::Normal,
+                'status' => ClubNotificationStatus::Sent,
+                'user_ids' => [$member->user_id],
+            ], $updaterId);
+        }
     }
 }

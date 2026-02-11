@@ -64,7 +64,7 @@
         class="font-bold px-4 py-3 rounded-[4px]"
         :class="{ 'bg-[#EDEEF2] text-[#3E414C] border border-[#DCDEE6] shadow-sm': registrationStatus === 'pending' }"
         :disabled="disabled"
-        @click.stop="registrationStatus === 'pending' ? $emit('cancel-join') : $emit('register')"
+        @click.stop="registrationStatus === 'pending' ? $emit('cancel-join') : (registrationStatus === 'accepted' ? $emit('check-in') : $emit('register'))"
       >
         <div class="flex items-center gap-2">
            <ClockIcon v-if="registrationStatus === 'pending'" class="w-4 h-4" />
@@ -90,7 +90,7 @@ import { ClockIcon, MapPinIcon, UsersIcon, PencilIcon } from '@heroicons/vue/24/
 import Button from '@/components/atoms/Button.vue'
 import { computed } from 'vue'
 
-defineEmits(['click-card', 'edit'])
+defineEmits(['click-card', 'edit', 'register', 'cancel-join', 'check-in'])
 
 const props = defineProps({
   day: {

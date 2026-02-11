@@ -4,10 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\NotificationResource;
+use App\Models\User;
+use App\Notifications\ClubNotificationSentNotification;
+use App\Services\Club\ClubNotificationService;
 use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
+    public function __construct(
+        protected ClubNotificationService $clubNotificationService
+    ) {
+    }
     const DEFAULT_PER_PAGE = 15;
     public function index(Request $request)
     {
@@ -16,9 +23,9 @@ class NotificationController extends Controller
             'per_page' => 'integer|min:1|max:200',
         ]);
 
+        /** @var User $user */
         $user = auth()->user();
         $type = $validated['type'] ?? 'all';
-        $query = $user->notifications()->latest();
 
         if ($type === 'unread') {
             $query = $user->unreadNotifications()->latest();
@@ -57,6 +64,7 @@ class NotificationController extends Controller
             'notification_id' => 'nullable|exists:notifications,id',
         ]);
 
+        /** @var User $user */
         $user = auth()->user();
         if (!empty($validated['notification_id'])) {
             $notification = $user->notifications()
@@ -65,8 +73,30 @@ class NotificationController extends Controller
 
             if ($notification && $notification->read_at === null) {
                 $notification->markAsRead();
+
+                if ($notification->type === ClubNotificationSentNotification::class) {
+                    $clubNotificationId = $notification->data['club_notification_id'] ?? null;
+                    if ($clubNotificationId) {
+                        $this->clubNotificationService->syncClubRecipientRead(
+                            (int) $clubNotificationId,
+                            $user->id
+                        );
+                    }
+                }
             }
         } else {
+            $unreadList = $user->unreadNotifications;
+            foreach ($unreadList as $n) {
+                if ($n->type === ClubNotificationSentNotification::class) {
+                    $clubNotificationId = $n->data['club_notification_id'] ?? null;
+                    if ($clubNotificationId) {
+                        $this->clubNotificationService->syncClubRecipientRead(
+                            (int) $clubNotificationId,
+                            $user->id
+                        );
+                    }
+                }
+            }
             $user->unreadNotifications->markAsRead();
         }
 
@@ -79,6 +109,7 @@ class NotificationController extends Controller
             'notification_id' => 'nullable|exists:notifications,id',
         ]);
 
+        /** @var User $user */
         $user = auth()->user();
         if (!empty($validated['notification_id'])) {
             $notification = $user->notifications()
