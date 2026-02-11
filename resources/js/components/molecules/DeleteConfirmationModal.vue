@@ -1,7 +1,7 @@
 <template>
     <Transition name="modal-fade">
       <div v-if="modelValue"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900 bg-opacity-50 backdrop-blur-sm"
+        class="fixed inset-0 z-[10001] flex items-center justify-center p-4 bg-gray-900 bg-opacity-50 backdrop-blur-sm"
         @click.self="closeModal">
         
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm transform transition-all duration-300 overflow-hidden"

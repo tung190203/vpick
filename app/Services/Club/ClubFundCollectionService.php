@@ -58,7 +58,7 @@ class ClubFundCollectionService
     public function createCollection(Club $club, array $data, int $userId): ClubFundCollection
     {
         if (!$club->canManageFinance($userId)) {
-            throw new \Exception('Chỉ admin/manager/treasurer mới có quyền tạo đợt thu');
+            throw new \Exception('Chỉ admin/manager/secretary/treasurer mới có quyền tạo đợt thu');
         }
 
         $endDate = $data['end_date'] ?? $data['deadline'] ?? null;
@@ -162,7 +162,7 @@ class ClubFundCollectionService
     {
         $club = $collection->club;
         if (!$club->canManageFinance($userId)) {
-            throw new \Exception('Chỉ admin/manager/treasurer mới có quyền hủy đợt thu');
+            throw new \Exception('Chỉ admin/manager/secretary/treasurer mới có quyền hủy đợt thu');
         }
 
         if ($collection->status !== ClubFundCollectionStatus::Active) {
@@ -187,7 +187,7 @@ class ClubFundCollectionService
     public function deleteQrCode(Club $club, int $qrCodeId, int $userId): void
     {
         if (!$club->canManageFinance($userId)) {
-            throw new \Exception('Chỉ admin/manager/treasurer mới có quyền xóa mã QR');
+            throw new \Exception('Chỉ admin/manager/secretary/treasurer mới có quyền xóa mã QR');
         }
 
         $collection = $club->fundCollections()
@@ -225,7 +225,7 @@ class ClubFundCollectionService
     public function createOrAttachQrCode(Club $club, array $data, int $userId): ClubFundCollection
     {
         if (!$club->canManageFinance($userId)) {
-            throw new \Exception('Chỉ admin/manager/treasurer mới có quyền tạo/gắn mã QR');
+            throw new \Exception('Chỉ admin/manager/secretary/treasurer mới có quyền tạo/gắn mã QR');
         }
 
         $qrCodeUrl = $this->imageService->optimizeThumbnail($data['image'], 'qr_codes', 90);

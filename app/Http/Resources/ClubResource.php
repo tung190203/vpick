@@ -71,20 +71,17 @@ class ClubResource extends JsonResource
                     ->exists(),
                 false
             ),
-            'profile' => $this->whenLoaded('profile', fn () => static::formatProfile($this->profile)),
+            'profile' => $this->whenLoaded('profile', fn () => static::formatProfile($this->profile), static::getDefaultProfile()),
             'wallets' => $this->whenLoaded('wallets'),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];
     }
 
-    /**
-     * Format profile for API (không trả social_links, settings; trả đủ field phẳng gồm qr_zalo_enabled).
-     */
-    public static function formatProfile(?\Illuminate\Database\Eloquent\Model $profile): ?array
+    public static function formatProfile(?\Illuminate\Database\Eloquent\Model $profile): array
     {
         if (!$profile) {
-            return null;
+            return static::getDefaultProfile();
         }
 
         $settings = $profile->settings ?? [];
@@ -108,6 +105,33 @@ class ClubResource extends JsonResource
             'zalo_link_enabled' => (bool) ($settings['zalo_link_enabled'] ?? false),
             'qr_zalo' => $profile->qr_zalo_url,
             'qr_zalo_enabled' => (bool) ($settings['qr_zalo_enabled'] ?? false),
+        ];
+    }
+
+    /**
+     * Cấu trúc profile mặc định khi CLB chưa có profile (tránh null cho frontend).
+     */
+    protected static function getDefaultProfile(): array
+    {
+        return [
+            'id' => null,
+            'description' => null,
+            'cover_image_url' => null,
+            'qr_code_image_url' => null,
+            'qr_code_enabled' => false,
+            'phone' => null,
+            'email' => null,
+            'website' => null,
+            'address' => null,
+            'city' => null,
+            'province' => null,
+            'country' => null,
+            'latitude' => null,
+            'longitude' => null,
+            'zalo_link' => null,
+            'zalo_link_enabled' => false,
+            'qr_zalo' => null,
+            'qr_zalo_enabled' => false,
         ];
     }
 

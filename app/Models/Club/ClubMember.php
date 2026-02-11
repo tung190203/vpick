@@ -110,17 +110,17 @@ class ClubMember extends Model
 
     public function isManager()
     {
-        return in_array($this->role, [ClubMemberRole::Admin, ClubMemberRole::Manager]);
+        return in_array($this->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary]);
     }
 
     public function canManageFinance()
     {
-        return in_array($this->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Treasurer]);
+        return in_array($this->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary, ClubMemberRole::Treasurer]);
     }
 
     public function canManageMembers()
     {
-        return in_array($this->role, [ClubMemberRole::Admin, ClubMemberRole::Manager]);
+        return in_array($this->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary]);
     }
 
     /** Đang chờ duyệt (yêu cầu vào hoặc lời mời) — status = pending. */
