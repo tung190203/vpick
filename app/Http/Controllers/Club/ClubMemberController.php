@@ -12,6 +12,8 @@ use App\Models\Club\Club;
 use App\Models\Club\ClubMember;
 use App\Models\User;
 use App\Services\Club\ClubMemberManagementService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ClubMemberController extends Controller
 {
@@ -132,5 +134,141 @@ class ClubMemberController extends Controller
         $statistics = $this->memberManagementService->getMemberStatistics($club);
 
         return ResponseHelper::success($statistics, 'Lấy thống kê thành viên thành công');
+    }
+
+    public function getCandidates(Request $request)
+    {
+        $user = auth()->user();
+
+        $validated = $request->validate([
+            'scope' => 'required|in:club,friends,area,all',
+            'club_id' => 'required|exists:clubs,id', // CLB đang mời (để loại trừ member)
+            'source_club_id' => 'required_if:scope,club|exists:clubs,id', // Khi scope=club: CLB lấy danh sách user
+            'search' => 'sometimes|string|max:255',
+            'per_page' => 'sometimes|integer|min:1|max:200',
+            'lat' => 'required_if:scope,area|numeric',
+            'lng' => 'required_if:scope,area|numeric',
+            'radius' => 'required_if:scope,area|numeric|min:0.1|max:200',
+        ]);
+
+        $perPage = $validated['per_page'] ?? 20;
+        $scope = $validated['scope'];
+
+        // Initial query
+        $query = User::withFullRelations();
+
+        // 🎯 Tùy theo phạm vi (scope)
+        switch ($scope) {
+            case 'club':
+                $query->whereHas('clubs', fn($q) => $q->where('clubs.id', $validated['source_club_id']));
+                break;
+
+            case 'friends':
+                $query->whereExists(function ($q) use ($user) {
+                    $q->select(DB::raw(1))
+                        ->from('follows as f1')
+                        ->whereColumn('f1.followable_id', 'users.id')
+                        ->where('f1.user_id', $user->id)
+                        ->where('f1.followable_type', User::class);
+                })
+                    ->whereExists(function ($q) use ($user) {
+                        $q->select(DB::raw(1))
+                            ->from('follows as f2')
+                            ->whereColumn('f2.user_id', 'users.id')
+                            ->where('f2.followable_id', $user->id)
+                            ->where('f2.followable_type', User::class);
+                    });
+                break;
+
+            case 'area':
+                $lat = $validated['lat'];
+                $lng = $validated['lng'];
+                $radius = $validated['radius'];
+
+                $haversine = "(6371 * acos(
+                        cos(radians(?))
+                        * cos(radians(users.latitude))
+                        * cos(radians(users.longitude) - radians(?))
+                        + sin(radians(?))
+                        * sin(radians(users.latitude))
+                    ))";
+
+                $query->whereNotNull('users.latitude')
+                    ->whereNotNull('users.longitude')
+                    ->whereRaw("$haversine <= ?", [
+                        $lat,
+                        $lng,
+                        $lat,
+                        $radius
+                    ])
+                    ->orderByRaw("$haversine asc", [
+                        $lat,
+                        $lng,
+                        $lat
+                    ]);
+                break;
+            case 'all':
+                break;
+        }
+
+        // 🔐 Visibility filter (trừ scope 'all' hoặc tương tự như tournament logic)
+        if ($scope !== 'all') {
+            $query->whereIn('users.visibility', [
+                User::VISIBILITY_PUBLIC,
+                User::VISIBILITY_FRIEND_ONLY
+            ]);
+        } else {
+            $query->whereIn('users.visibility', [User::VISIBILITY_PUBLIC]);
+        }
+
+        // 4. Loại trừ người đã là thành viên CLB (bất kể status)
+        $club = Club::findOrFail($validated['club_id']);
+        $memberUserIds = $club->members()->pluck('user_id')->toArray();
+        $query->whereNotIn('users.id', array_merge([$user->id], $memberUserIds));
+
+        // 🔍 Tìm kiếm tên người dùng (áp dụng cho tất cả scope)
+        if (!empty($validated['search'])) {
+            $query->where('users.full_name', 'like', '%' . $validated['search'] . '%');
+        }
+
+        // 🧮 Phân trang
+        $paginated = $query->paginate($perPage);
+        $candidates = $paginated->getCollection()->map(function ($u) {
+            return [
+                'id' => $u->id,
+                'name' => $u->full_name,
+                'visibility' => $u->visibility,
+                'avatar_url' => $u->avatar_url,
+                'thumbnail' => $u->thumbnail,
+                'gender' => $u->gender,
+                'gender_text' => $u->gender_text,
+                'sports' => $u->sports->map(function ($userSport) {
+                    $scores = $userSport->scores
+                        ->pluck('score_value', 'score_type')
+                        ->toArray();
+
+                    return [
+                        'sport_id' => $userSport->sport_id,
+                        'sport_icon' => $userSport->sport?->icon,
+                        'sport_name' => $userSport->sport?->name,
+                        'scores' => [
+                            'personal_score' => $scores['personal_score'] ?? '0.000',
+                            'dupr_score'     => $scores['dupr_score'] ?? '0.000',
+                            'vndupr_score'   => $scores['vndupr_score'] ?? '0.000',
+                        ],
+                    ];
+                }),
+                'invited' => false, // Default to false, frontend will handle this based on response from sending invite
+            ];
+        });
+
+        return ResponseHelper::success([
+            'result' => $candidates,
+        ], 'Danh sách ứng viên', 200, [
+            'current_page' => $paginated->currentPage(),
+            'last_page'    => $paginated->lastPage(),
+            'per_page'     => $paginated->perPage(),
+            'total'        => $paginated->total(),
+        ]);
     }
 }
