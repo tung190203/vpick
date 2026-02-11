@@ -299,6 +299,7 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
                 Route::put('/{collectionId}', [ClubFundCollectionController::class, 'update']);
                 Route::delete('/{collectionId}', [ClubFundCollectionController::class, 'destroy']);
                 Route::get('/{collectionId}/qr-code', [ClubFundCollectionController::class, 'getQrCode']);
+                Route::post('/{collectionId}/remind/{userId}', [ClubFundCollectionController::class, 'remind']);
 
                 Route::prefix('{collectionId}/contributions')->group(function () {
                     Route::get('/', [ClubFundContributionController::class, 'index']);
