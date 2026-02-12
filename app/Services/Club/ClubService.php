@@ -268,9 +268,8 @@ class ClubService
                     if ($user) {
                         $user->notify(new ClubRenamedNotification($club, $oldName, $newName));
                         SendPushJob::dispatch($user->id, 'CLB đã đổi tên', $message, [
-                            'type' => 'CLUB',
+                            'type' => 'CLUB_RENAMED',
                             'club_id' => (string) $club->id,
-                            'screen' => 'detail',
                         ]);
                     }
                 });

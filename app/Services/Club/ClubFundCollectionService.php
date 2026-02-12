@@ -108,10 +108,9 @@ class ClubFundCollectionService
                 if ($user) {
                     $user->notify(new ClubFundCollectionCreatedNotification($club, $collection, $amountPerMember));
                     SendPushJob::dispatch($user->id, 'Khoản thu mới cần đóng', $message, [
-                        'type' => 'CLUB',
+                        'type' => 'CLUB_FUND_COLLECTION_CREATED',
                         'club_id' => (string) $club->id,
-                        'screen' => 'fund',
-                        'id' => (string) $collection->id,
+                        'club_fund_collection_id' => (string) $collection->id,
                     ]);
                 }
             }
