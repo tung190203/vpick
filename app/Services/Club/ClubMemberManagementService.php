@@ -5,11 +5,8 @@ namespace App\Services\Club;
 use App\Enums\ClubMemberRole;
 use App\Enums\ClubMemberStatus;
 use App\Enums\ClubMembershipStatus;
-use App\Enums\ClubNotificationPriority;
-use App\Enums\ClubNotificationStatus;
 use App\Models\Club\Club;
 use App\Models\Club\ClubMember;
-use App\Models\Club\ClubNotificationType;
 use App\Models\User;
 use App\Jobs\SendPushJob;
 use App\Notifications\ClubInvitationCancelledNotification;
@@ -262,7 +259,7 @@ class ClubMemberManagementService
         $roleLabel = $member->role->label();
         $user = $member->user;
 
-        // Laravel notification → hiển thị trong api/notifications/index, có club_id
+        // Một thông báo duy nhất: Laravel notification + push (không tạo thêm club notification để tránh trùng)
         if ($user) {
             $message = "Bạn được bổ nhiệm làm {$roleLabel} trong CLB {$club->name}";
             $user->notify(new ClubRoleChangeNotification($club, $member, $roleLabel, $updaterId));
@@ -271,19 +268,6 @@ class ClubMemberManagementService
                 'club_id' => (string) $club->id,
                 'club_member_id' => (string) $member->id,
             ]);
-        }
-
-        // Club notification (nội bộ CLB)
-        $memberType = ClubNotificationType::where('slug', 'member')->first();
-        if ($memberType) {
-            $this->notificationService->createNotification($club, [
-                'club_notification_type_id' => $memberType->id,
-                'title' => 'Bạn được bổ nhiệm làm ' . $roleLabel,
-                'content' => "Bạn được bổ nhiệm làm {$roleLabel} trong CLB {$club->name}.",
-                'priority' => ClubNotificationPriority::Normal,
-                'status' => ClubNotificationStatus::Sent,
-                'user_ids' => [$member->user_id],
-            ], $updaterId);
         }
     }
 }
