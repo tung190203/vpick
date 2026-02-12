@@ -37,10 +37,14 @@ class ClubActivityParticipantService
         if ($statusFilter) {
             $query->where('status', $statusFilter);
         } else {
-            $query->where('status', ClubActivityParticipantStatus::Accepted);
+            // Danh sách thành viên đăng ký = đã duyệt (Accepted) + đã check-in (Attended) để người check-in vẫn nằm trong list
+            $query->whereIn('status', [
+                ClubActivityParticipantStatus::Accepted,
+                ClubActivityParticipantStatus::Attended,
+            ]);
         }
 
-        $participants = $query->get();
+        $participants = $query->orderBy('created_at')->get();
 
         return [
             'participants' => $participants,
@@ -48,6 +52,7 @@ class ClubActivityParticipantService
             'pending_count' => $allParticipants->where('status', ClubActivityParticipantStatus::Pending)->count(),
             'invited_count' => $allParticipants->where('status', ClubActivityParticipantStatus::Invited)->count(),
             'accepted_count' => $allParticipants->where('status', ClubActivityParticipantStatus::Accepted)->count(),
+            'attended_count' => $allParticipants->where('status', ClubActivityParticipantStatus::Attended)->count(),
         ];
     }
 
