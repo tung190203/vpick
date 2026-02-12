@@ -5,6 +5,7 @@ namespace App\Services\Club;
 use App\Enums\ClubWalletTransactionDirection;
 use App\Enums\ClubWalletTransactionSourceType;
 use App\Enums\ClubWalletTransactionStatus;
+use App\Enums\ClubWalletType;
 use App\Models\Club\Club;
 use App\Models\Club\ClubExpense;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -12,6 +13,10 @@ use Illuminate\Support\Facades\DB;
 
 class ClubExpenseService
 {
+    public function __construct(
+        protected ClubWalletService $walletService
+    ) {
+    }
     public function getExpenses(Club $club, array $filters): LengthAwarePaginator
     {
         $query = $club->expenses()->with(['spender', 'walletTransaction']);
@@ -61,21 +66,26 @@ class ClubExpenseService
             ]);
 
             $mainWallet = $club->mainWallet;
-            if ($mainWallet) {
-                $transaction = $mainWallet->transactions()->create([
-                    'direction' => ClubWalletTransactionDirection::Out,
-                    'amount' => $data['amount'],
-                    'source_type' => ClubWalletTransactionSourceType::Expense,
-                    'source_id' => $expense->id,
-                    'payment_method' => $data['payment_method'],
-                    'status' => ClubWalletTransactionStatus::Pending,
-                    'reference_code' => $data['reference_code'] ?? null,
-                    'description' => $description,
-                    'created_by' => $userId,
+            if (!$mainWallet) {
+                $mainWallet = $this->walletService->createWallet($club, [
+                    'type' => ClubWalletType::Main,
+                    'currency' => 'VND',
                 ]);
-
-                $expense->update(['wallet_transaction_id' => $transaction->id]);
             }
+
+            $transaction = $mainWallet->transactions()->create([
+                'direction' => ClubWalletTransactionDirection::Out,
+                'amount' => $data['amount'],
+                'source_type' => ClubWalletTransactionSourceType::Expense,
+                'source_id' => $expense->id,
+                'payment_method' => $data['payment_method'],
+                'status' => ClubWalletTransactionStatus::Pending,
+                'reference_code' => $data['reference_code'] ?? null,
+                'description' => $description,
+                'created_by' => $userId,
+            ]);
+
+            $expense->update(['wallet_transaction_id' => $transaction->id]);
 
             return $expense;
         });
