@@ -338,3 +338,7 @@ export const getClubCandidates = async (params = {}) => {
 export const inviteMember = async (clubId, data) => {
     return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/members`, data).then((response) => response.data);
 }
+
+export const checkInActivity = async (clubId, activityId, token) => {
+    return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/activities/${activityId}/check-in`, { token }).then((response) => response.data);
+}
