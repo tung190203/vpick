@@ -7,6 +7,8 @@ use App\Enums\ClubFundContributionStatus;
 use App\Jobs\SendPushJob;
 use App\Models\Club\Club;
 use App\Models\Club\ClubFundCollection;
+use App\Models\User;
+use App\Notifications\ClubFundCollectionCreatedNotification;
 use App\Notifications\ClubFundCollectionReminderNotification;
 use App\Services\ImageOptimizationService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -93,6 +95,26 @@ class ClubFundCollectionService
                 $syncData[$memberId] = ['amount_due' => $amountPerMember];
             }
             $collection->assignedMembers()->sync($syncData);
+
+            // Notify assigned members: "Bạn có khoản thu mới cần đóng"
+            $collectionTitle = $collection->title ?: $collection->description ?: 'Đợt thu quỹ';
+            $message = "Bạn có khoản thu mới cần đóng: {$collectionTitle} tại CLB {$club->name}";
+            if ($amountPerMember > 0) {
+                $message .= ' - Số tiền: ' . number_format($amountPerMember, 0, ',', '.') . ' VND';
+            }
+
+            foreach ($data['member_ids'] as $memberUserId) {
+                $user = User::find($memberUserId);
+                if ($user) {
+                    $user->notify(new ClubFundCollectionCreatedNotification($club, $collection, $amountPerMember));
+                    SendPushJob::dispatch($user->id, 'Khoản thu mới cần đóng', $message, [
+                        'type' => 'CLUB',
+                        'club_id' => (string) $club->id,
+                        'screen' => 'fund',
+                        'id' => (string) $collection->id,
+                    ]);
+                }
+            }
         }
 
         return $collection;
