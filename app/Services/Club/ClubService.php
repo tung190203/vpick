@@ -6,10 +6,12 @@ use App\Enums\ClubMemberRole;
 use App\Enums\ClubMembershipStatus;
 use App\Enums\ClubMemberStatus;
 use App\Enums\ClubStatus;
+use App\Jobs\SendPushJob;
 use App\Models\Club\Club;
 use App\Models\Club\ClubMember;
 use App\Models\Club\ClubProfile;
 use App\Models\User;
+use App\Notifications\ClubRenamedNotification;
 use App\Services\ImageOptimizationService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
@@ -99,7 +101,9 @@ class ClubService
             }
         }
 
-        return DB::transaction(function () use ($club, $data) {
+        return DB::transaction(function () use ($club, $data, $userId) {
+            $oldName = $club->name;
+
             // Handle logo upload
             $logoPath = $club->getRawOriginal('logo_url');
             if (isset($data['logo_url']) && $data['logo_url'] instanceof UploadedFile) {
@@ -253,6 +257,22 @@ class ClubService
                     $profileUpdate['zalo_link'] = array_key_exists('zalo_link', $data) ? ($data['zalo_link'] ?: null) : null;
                     $profile = ClubProfile::create($profileUpdate);
                 }
+            }
+
+            // Notify all active members when club name is changed
+            $newName = $club->name;
+            if (isset($data['name']) && $oldName !== $newName) {
+                $message = "CLB {$oldName} đã được quản trị viên đổi tên thành {$newName}";
+                $club->activeMembers()->with('user')->each(function (ClubMember $member) use ($club, $oldName, $newName, $message) {
+                    $user = $member->user;
+                    if ($user) {
+                        $user->notify(new ClubRenamedNotification($club, $oldName, $newName));
+                        SendPushJob::dispatch($user->id, 'CLB đã đổi tên', $message, [
+                            'type' => 'CLUB_RENAMED',
+                            'club_id' => (string) $club->id,
+                        ]);
+                    }
+                });
             }
 
             // Refresh and load relations

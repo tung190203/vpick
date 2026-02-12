@@ -137,9 +137,9 @@ class ClubFundContributionController extends Controller
             return ResponseHelper::error('Chỉ admin/manager/secretary/treasurer mới có quyền từ chối', 403);
         }
 
-        $request->validate(['reason' => 'required|string']);
+        $validated = $request->validate(['reason' => 'required|string']);
 
-        $contribution = $this->contributionService->rejectContribution($contribution);
+        $contribution = $this->contributionService->rejectContribution($contribution, $validated['reason']);
         $contribution->load(['user', 'walletTransaction']);
         return ResponseHelper::success(new ClubFundContributionResource($contribution), 'Đóng góp đã bị từ chối');
     }
