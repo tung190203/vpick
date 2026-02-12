@@ -79,8 +79,16 @@ export const cancelJoinRequest = async (clubId) => {
     return axiosInstance.delete(`${API_ENDPOINT.CLUB}/${clubId}/join-requests`).then((response) => response.data);
 }
 
-export const leaveClub = async (clubId) => {
-    return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/leave`).then((response) => response.data);
+export const leaveClub = async (clubId, data) => {
+    return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/leave`, data).then((response) => response.data);
+}
+
+export const acceptInvite = async (clubId) => {
+    return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/invitations/accept`).then((response) => response.data);
+}
+
+export const declineInvite = async (clubId) => {
+    return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/invitations/reject`).then((response) => response.data);
 }
 
 export const clubNotification = async (clubId, params = {}) => {
@@ -311,4 +319,22 @@ export const rejectFundContribution = async (clubId, collectionId, contributionI
 
 export const submitContributionReceipt = async (clubId, collectionId, data) => {
     return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/fund-collections/${collectionId}/contributions/receipt`, data).then((response) => response.data);
+}
+
+export const getClubCandidates = async (params = {}) => {
+    const queryParams = new URLSearchParams()
+    Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      queryParams.append(key, value)
+    }
+  })
+
+  const queryString = queryParams.toString()
+  const url = `${API_ENDPOINT.CLUB}/members/candidates${queryString ? `?${queryString}` : ''}`
+  const { data } = await axiosInstance.get(url)
+  return data
+}
+
+export const inviteMember = async (clubId, data) => {
+    return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/members`, data).then((response) => response.data);
 }
