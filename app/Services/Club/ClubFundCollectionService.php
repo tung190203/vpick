@@ -8,6 +8,7 @@ use App\Jobs\SendPushJob;
 use App\Models\Club\Club;
 use App\Models\Club\ClubFundCollection;
 use App\Models\User;
+use App\Notifications\ClubFundCollectionCancelledNotification;
 use App\Notifications\ClubFundCollectionCreatedNotification;
 use App\Notifications\ClubFundCollectionReminderNotification;
 use App\Services\ImageOptimizationService;
@@ -190,6 +191,25 @@ class ClubFundCollectionService
 
         if ($collection->status !== ClubFundCollectionStatus::Active) {
             throw new \Exception('Chỉ có thể hủy đợt thu đang active');
+        }
+
+        $collectionTitle = $collection->title ?: $collection->description ?: 'Đợt thu quỹ';
+        $message = "Đợt thu {$collectionTitle} tại CLB {$club->name} đã bị hủy";
+
+        $assignedUserIds = $collection->assignedMembers()->pluck('id')->unique();
+        foreach ($assignedUserIds as $memberUserId) {
+            if ($memberUserId == $userId) {
+                continue;
+            }
+            $user = User::find($memberUserId);
+            if ($user) {
+                $user->notify(new ClubFundCollectionCancelledNotification($club, $collection));
+                SendPushJob::dispatch($user->id, 'Đợt thu đã bị hủy', $message, [
+                    'type' => 'CLUB_FUND_COLLECTION_CANCELLED',
+                    'club_id' => (string) $club->id,
+                    'club_fund_collection_id' => (string) $collection->id,
+                ]);
+            }
         }
 
         $collection->update(['status' => ClubFundCollectionStatus::Cancelled]);
