@@ -10,7 +10,7 @@
 
                     <!-- Header -->
                     <div class="flex items-center justify-between p-6">
-                        <h2 class="text-xl font-semibold text-gray-800">Mời nhóm</h2>
+                        <h2 class="text-xl font-semibold text-gray-800">{{ title }}</h2>
                         <button @click="closeModal" class="text-gray-400 hover:text-gray-600 transition-colors">
                             <XMarkIcon class="w-6 h-6" />
                         </button>
@@ -189,10 +189,15 @@ const props = defineProps({
     searchQuery: String,
     activeScope: String,
     currentRadius: Number,
+    currentClubId: [String, Number],
     isLoadingMore: Boolean,
     hasMore: {
         type: Boolean,
         default: true
+    },
+    title: {
+        type: String,
+        default: 'Mời nhóm'
     }
 })
 
@@ -220,7 +225,7 @@ const tabs = [
     { id: 'area', label: 'Trong khu vực của bạn' }
 ]
 
-const selectedClub = ref('')
+const selectedClub = ref(props.currentClubId || '')
 const localSearchQuery = ref(props.searchQuery || '')
 const localRadius = ref(props.currentRadius || 10)
 const scrollContainer = ref(null)
@@ -236,6 +241,7 @@ watch(
 
 watch(() => props.searchQuery, v => (localSearchQuery.value = v))
 watch(() => props.currentRadius, v => (localRadius.value = v))
+watch(() => props.currentClubId, v => (selectedClub.value = v))
 
 const sliderStyle = computed(() => {
     const percent = ((localRadius.value - 1) / 49) * 100
