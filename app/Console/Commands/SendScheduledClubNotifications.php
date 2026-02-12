@@ -4,11 +4,17 @@ namespace App\Console\Commands;
 
 use App\Enums\ClubNotificationStatus;
 use App\Models\Club\ClubNotification;
+use App\Services\Club\ClubNotificationService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
 class SendScheduledClubNotifications extends Command
 {
+    public function __construct(
+        protected ClubNotificationService $notificationService
+    ) {
+        parent::__construct();
+    }
     protected $signature = 'clubs:send-scheduled-notifications';
     protected $description = 'Send scheduled club notifications that are due';
 
@@ -32,9 +38,9 @@ class SendScheduledClubNotifications extends Command
             try {
                 $this->sendScheduledNotification($notification);
                 $successCount++;
-                
+
                 $this->info("✓ Sent notification #{$notification->id}: {$notification->title}");
-                
+
                 Log::info('Scheduled club notification sent', [
                     'notification_id' => $notification->id,
                     'club_id' => $notification->club_id,
@@ -43,9 +49,9 @@ class SendScheduledClubNotifications extends Command
                 ]);
             } catch (\Exception $e) {
                 $failCount++;
-                
+
                 $this->error("✗ Failed to send notification #{$notification->id}: {$e->getMessage()}");
-                
+
                 Log::error('Failed to send scheduled club notification', [
                     'notification_id' => $notification->id,
                     'club_id' => $notification->club_id,
@@ -72,13 +78,13 @@ class SendScheduledClubNotifications extends Command
         // Create recipients if not specified
         if ($notification->recipients()->count() === 0) {
             $club = $notification->club;
-            
+
             if (!$club) {
                 throw new \Exception("Club not found for notification #{$notification->id}");
             }
 
             $allMembers = $club->activeMembers()->pluck('user_id');
-            
+
             if ($allMembers->isEmpty()) {
                 Log::warning('No active members found for club', [
                     'club_id' => $club->id,
@@ -93,5 +99,7 @@ class SendScheduledClubNotifications extends Command
                 ]);
             }
         }
+
+        $this->notificationService->dispatchUserNotificationsForSentNotification($notification);
     }
 }
