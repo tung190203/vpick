@@ -196,7 +196,7 @@ class ClubFundCollectionService
         $collectionTitle = $collection->title ?: $collection->description ?: 'Đợt thu quỹ';
         $message = "Đợt thu {$collectionTitle} tại CLB {$club->name} đã bị hủy";
 
-        $assignedUserIds = $collection->assignedMembers()->pluck('id')->unique();
+        $assignedUserIds = $collection->assignedMembers()->pluck('users.id')->unique();
         foreach ($assignedUserIds as $memberUserId) {
             if ($memberUserId == $userId) {
                 continue;
