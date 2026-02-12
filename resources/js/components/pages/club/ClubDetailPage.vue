@@ -26,8 +26,13 @@
                     </div>
 
                     <div class="flex items-center">
-                        <div class="p-2 cursor-pointer hover:bg-white/10 rounded-full transition-colors" @click="toggleChangeClub">
+                        <div class="p-2 cursor-pointer hover:bg-white/10 rounded-full transition-colors"
+                            @click="toggleChangeClub">
                             <ChangeCircleIcon class="w-6 h-6 text-white" />
+                        </div>
+                        <div class="p-2 cursor-pointer hover:bg-white/10 rounded-full transition-colors"
+                            @click="inviteMembers">
+                            <UserPlusIcon class="w-6 h-6 text-white" />
                         </div>
                         <div class="p-2 cursor-pointer hover:bg-white/10 rounded-full transition-colors"
                             @click="toggleMenu">
@@ -52,11 +57,12 @@
                             </button>
                             <button v-if="currentUserRole === 'admin' && adminCount === 1"
                                 class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-100 transition-colors"
-                                @click="openNotification">
+                                @click="openTransferModal">
                                 <CompareArrowsIcon class="w-5 h-5 text-gray-500" />
                                 <span class="font-medium">Nhượng CLB</span>
                             </button>
-                            <button v-if="(currentUserRole === 'admin' && adminCount > 1) || hasAnyRole(['manager', 'secretary', 'treasurer'])"
+                            <button
+                                v-if="(currentUserRole === 'admin' && adminCount > 1) || hasAnyRole(['manager', 'secretary', 'treasurer'])"
                                 class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-[#FBEAEA] transition-colors"
                                 @click="leaveClub">
                                 <ArrowRightOnRectangleIcon class="w-5 h-5 text-[#D72D36]" />
@@ -69,16 +75,21 @@
                                 <span class="font-medium text-[#D72D36]">Xoá CLB</span>
                             </button>
                         </div>
-                        <div v-if="isChangeClubOpen" class="absolute right-0 top-14 w-56 bg-white rounded-xl shadow-2xl z-50 text-gray-800 border border-gray-100 animate-in fade-in zoom-in duration-200">
+                        <div v-if="isChangeClubOpen"
+                            class="absolute right-0 top-14 w-56 bg-white rounded-xl shadow-2xl z-50 text-gray-800 border border-gray-100 animate-in fade-in zoom-in duration-200">
                             <div class="py-2 max-h-48 overflow-y-auto custom-scrollbar">
                                 <template v-for="item in myClubs" :key="item.id">
-                                   <div class="flex items-center space-x-3 px-4 py-3 hover:bg-gray-100 transition-colors cursor-pointer" @click="changeClub(item)">
-                                        <img v-if="item.logo_url" :src="item.logo_url" alt="" class="w-8 h-8 rounded-full object-cover">
-                                        <div v-else class="w-8 h-8 rounded-full bg-red-100 text-[#D72D36] flex items-center justify-center font-bold text-xs">
+                                    <div class="flex items-center space-x-3 px-4 py-3 hover:bg-gray-100 transition-colors cursor-pointer"
+                                        @click="changeClub(item)">
+                                        <img v-if="item.logo_url" :src="item.logo_url" alt=""
+                                            class="w-8 h-8 rounded-full object-cover">
+                                        <div v-else
+                                            class="w-8 h-8 rounded-full bg-red-100 text-[#D72D36] flex items-center justify-center font-bold text-xs">
                                             {{ item.name.charAt(0).toUpperCase() }}
                                         </div>
                                         <span class="font-medium truncate" v-tooltip="item.name">{{ item.name }}</span>
-                                        <span v-if="item.id == clubId" class="ml-auto text-[10px] bg-green-50 text-green-600 px-1.5 py-0.5 rounded-full font-bold uppercase whitespace-nowrap">
+                                        <span v-if="item.id == clubId"
+                                            class="ml-auto text-[10px] bg-green-50 text-green-600 px-1.5 py-0.5 rounded-full font-bold uppercase whitespace-nowrap">
                                             hiện tại
                                         </span>
                                     </div>
@@ -96,7 +107,7 @@
                         <div class="flex items-baseline space-x-1">
                             <span class="text-4xl font-bold">{{ stat.value }}</span>
                             <span class="text-sm font-medium opacity-60 ml-2" :class="stat.unitClass">{{ stat.unit
-                                }}</span>
+                            }}</span>
                         </div>
                     </div>
                 </div>
@@ -151,23 +162,36 @@
                     </div>
                 </div>
                 <!-- Backdrop -->
-                <div v-if="isMenuOpen || isChangeClubOpen" class="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm" @click="closeMenu">
+                <div v-if="isMenuOpen || isChangeClubOpen" class="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm"
+                    @click="closeMenu">
                 </div>
                 <div class="flex items-center">
                     <div>
                         <div v-if="club.profile?.address"
-                            class="flex items-center space-x-2 relative rounded-full overflow-hidden bg-white w-fit text-black py-1 px-2">
+                            class="flex items-center space-x-2 relative rounded-full overflow-hidden bg-white w-fit text-black py-1 px-2 mb-2">
                             <MapPinIcon class="w-5 h-5" />
                             <div class="text-sm font-semibold">{{ club.profile.address }}</div>
                         </div>
-                        <div class="flex items-center space-x-2">
+                        <div class="flex items-center space-x-2 mb-2">
                             <div class="text-3xl sm:text-4xl lg:text-[44px] font-bold">{{ club.name }}</div>
                             <div v-if="club.is_verified" class="bg-[#4392E0] rounded-full p-1">
                                 <VerifyIcon class="w-6 h-6 text-white" />
                             </div>
                         </div>
                         <div class="flex items-center space-x-2" v-if="!is_joined">
-                            <template v-if="!club.has_pending_request">
+                            <template v-if="club.has_invitation">
+                                <Button size="md" color="success"
+                                    class="px-6 sm:px-12 md:px-[35px] bg-[#00B377] border border-[#00B377] text-white hover:bg-[#009664] hover:border-[#009664] flex gap-2"
+                                    @click.stop="acceptJoinClubInvitation">
+                                    Đồng ý
+                                </Button>
+                                <Button size="md" color="danger"
+                                    class="px-6 sm:px-12 md:px-[35px] bg-[#D72D36] border border-[#D72D36] text-white hover:bg-[#b5222a] hover:border-[#b5222a] flex gap-2"
+                                    @click.stop="rejectJoinClubInvitation">
+                                    Từ chối
+                                </Button>
+                            </template>
+                            <template v-else-if="!club.has_pending_request">
                                 <Button size="md" color="danger"
                                     class="px-6 sm:px-12 md:px-[75px] bg-[#D72D36] border border-[#D72D36] text-white hover:bg-white hover:text-[#D72D36] flex gap-2"
                                     @click.stop="joinClubRequest">
@@ -182,7 +206,8 @@
                                     Hủy tham gia
                                 </Button>
                             </template>
-                            <Button size="md" color="white" class="bg-[#FBEAEB] rounded-full p-2">
+                            <Button v-if="club.profile?.qr_zalo_enabled || club.profile?.zalo_link_enabled" size="md"
+                                color="white" class="bg-[#FBEAEB] rounded-full p-2" @click="openClubChat">
                                 <MessageIcon class="w-6.5 h-6.5 text-[#D72D36]" />
                             </Button>
                         </div>
@@ -194,7 +219,8 @@
                     <div v-if="is_joined">
                         <div class="flex items-baseline justify-between">
                             <h2 class="text-2xl text-[#838799] font-semibold uppercase mb-4">Thông báo</h2>
-                            <p class="text-[#D72D36] font-semibold cursor-pointer" @click="openNotification">Xem tất cả</p>
+                            <p class="text-[#D72D36] font-semibold cursor-pointer" @click="openNotification">Xem tất cả
+                            </p>
                         </div>
                         <template v-if="notifications.length > 0 && pinnedNotifications.length > 0">
                             <NotificationCard v-for="(notification, index) in pinnedNotifications" :key="index"
@@ -213,15 +239,18 @@
                         <template v-if="activities.length > 0">
                             <ActivityScheduleCard v-for="(activity, index) in activities" :key="index" v-bind="activity"
                                 @click-card="goToActivityDetail(activity)" @edit="handleEditActivity(activity)"
-                                @register="handleRegisterActivity(activity)" @cancel-join="handleCancelJoinActivity(activity)" @check-in="handleCheckInActivity(activity)" />
+                                @register="handleRegisterActivity(activity)"
+                                @cancel-join="handleCancelJoinActivity(activity)"
+                                @check-in="handleCheckInActivity(activity)" />
                         </template>
                         <div v-else class="p-4 text-center">
                             <p class="text-[#838799]">Hiện chưa có lịch thi đấu</p>
                         </div>
                     </div>
-                    <ClubInfoTabs :club="club" :isJoined="is_joined" :currentUserRole="currentUserRole" :top-three="topThree" :leaderboard="leaderboard"
-                        :leaderboard-meta="leaderboardMeta" :leaderboard-filters="leaderboardFilters"
-                        :leaderboard-loading="isLeaderboardLoading" @leaderboard-filter="handleLeaderboardFilter"
+                    <ClubInfoTabs :club="club" :isJoined="is_joined" :currentUserRole="currentUserRole"
+                        :top-three="topThree" :leaderboard="leaderboard" :leaderboard-meta="leaderboardMeta"
+                        :leaderboard-filters="leaderboardFilters" :leaderboard-loading="isLeaderboardLoading"
+                        @leaderboard-filter="handleLeaderboardFilter"
                         @leaderboard-page-change="handleLeaderboardPageChange" @tab-change="handleTabChange"
                         @refresh-club="getClubDetail" />
                 </div>
@@ -240,12 +269,15 @@
                             </div>
                         </div>
                     </div>
-                    <div class="max-w-3xl mx-auto" v-if="hasAnyRole(['admin', 'manager', 'secretary', 'treasurer', 'member'])">
+                    <div class="max-w-3xl mx-auto"
+                        v-if="hasAnyRole(['admin', 'manager', 'secretary', 'treasurer', 'member'])">
                         <div class="bg-white rounded-2xl shadow-md px-2 py-5">
-                            <div class="grid grid-cols-4 text-center">
-                                <div v-for="(module, index) in clubModules" :key="index"
+                            <div class="grid text-center"
+                                :class="filteredClubModules.length === 4 ? 'grid-cols-4' : 'grid-cols-3'">
+                                <div v-for="(module, index) in filteredClubModules" :key="index"
                                     class="flex flex-col items-center gap-2">
-                                    <div class="text-[#D72D36] rounded-md bg-[#FBEAEB] p-4 cursor-pointer" @click="handleModuleClick(module)">
+                                    <div class="text-[#D72D36] rounded-md bg-[#FBEAEB] p-4 cursor-pointer"
+                                        @click="handleModuleClick(module)">
                                         <component :is="module.icon" class="w-6 h-6" />
                                     </div>
                                     <div class="text-sm text-[#3E414C]">{{ module.label }}</div>
@@ -253,7 +285,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="max-w-3xl mx-auto" v-if="hasAnyRole(['admin','secretary'])">
+                    <div class="max-w-3xl mx-auto" v-if="hasAnyRole(['admin', 'secretary'])">
                         <div class="bg-white rounded-2xl shadow-md p-6">
                             <div class="flex items-center gap-2 mb-6">
                                 <p class="uppercase font-bold text-[#838799] text-sm">Yêu cầu tham gia</p>
@@ -265,26 +297,27 @@
                                 <template v-for="(request, index) in joiningRequests" :key="request.id">
                                     <div class="flex items-center justify-between">
                                         <div class="flex items-center space-x-4">
-                                            <img :src="request.user.avatar_url" alt="Avatar" class="w-12 h-12 rounded-full object-cover border border-gray-100" />
+                                            <img :src="request.user.avatar_url" alt="Avatar"
+                                                class="w-12 h-12 rounded-full object-cover border border-gray-100" />
                                             <div>
-                                                <h4 class="font-bold text-[#3E414C] text-base">{{ request.user.full_name }}</h4>
+                                                <h4 class="font-bold text-[#3E414C] text-base">{{ request.user.full_name
+                                                    }}</h4>
                                                 <p class="text-xs text-[#838799] mt-1">
-                                                    Trình {{ Number(request.user.sports[0].scores.vndupr_score).toFixed(1) }}
+                                                    Trình {{
+                                                        Number(request.user.sports[0].scores.vndupr_score).toFixed(1) }}
                                                     {{ request.message ? `• ${request.message}` : '' }}
                                                 </p>
                                             </div>
                                         </div>
                                         <div class="flex items-center space-x-3">
-                                            <button 
+                                            <button
                                                 class="w-10 h-10 rounded-full bg-[#D72D36] flex items-center justify-center hover:bg-[#c4252e] transition-colors"
-                                                @click="rejectJoinRequest(request.id)"
-                                            >
+                                                @click="rejectJoinRequest(request.id)">
                                                 <XMarkIcon class="w-5 h-5 text-white" stroke-width="2.5" />
                                             </button>
-                                            <button 
+                                            <button
                                                 class="w-10 h-10 rounded-full bg-[#00B377] flex items-center justify-center hover:bg-[#00a16b] transition-colors"
-                                                @click="approveJoinRequest(request.id)"
-                                            >
+                                                @click="approveJoinRequest(request.id)">
                                                 <CheckIcon class="w-5 h-5 text-white" stroke-width="2.5" />
                                             </button>
                                         </div>
@@ -301,64 +334,114 @@
             </div>
 
             <!-- Notification Modal -->
-            <ClubNotificationModal
-                v-model="isNotificationModalOpen"
-                :notifications="notifications"
-                :meta="notificationMeta"
-                :is-loading-more="isLoadingMoreNotifications"
-                :is-admin-or-staff="hasAnyRole(['admin', 'manager', 'secretary'])"
-                @close="closeNotification"
-                @load-more="loadMoreNotifications"
-                @mark-as-read="markAsRead"
-                @mark-all-as-read="markAllAsRead"
-                @unpin="handleUnpinNotification"
-                @create="handleCreateNotification"
-            />
+            <ClubNotificationModal v-model="isNotificationModalOpen" :notifications="notifications"
+                :meta="notificationMeta" :is-loading-more="isLoadingMoreNotifications"
+                :is-admin-or-staff="hasAnyRole(['admin', 'manager', 'secretary'])" @close="closeNotification"
+                @load-more="loadMoreNotifications" @mark-as-read="markAsRead" @mark-all-as-read="markAllAsRead"
+                @unpin="handleUnpinNotification" @create="handleCreateNotification" />
 
             <!-- Activity Schedule Modal -->
             <ClubActivityModal :is-open="isActivityModalOpen" :thumbnail="Thumbnail"
                 :upcoming-activities="upcomingActivities" :history-activities="historyActivities"
-                :next-match="nextMatch" :countdown="countdownText" @close="closeActivityModal" @edit="handleEditActivity" 
-                @click-card="goToActivityDetail" @register="handleRegisterActivity" @cancel-join="handleCancelJoinActivity" @check-in="handleCheckInActivity" />
+                :next-match="nextMatch" :countdown="countdownText" @close="closeActivityModal"
+                @edit="handleEditActivity" @click-card="goToActivityDetail" @register="handleRegisterActivity"
+                @cancel-join="handleCancelJoinActivity" @check-in="handleCheckInActivity" />
 
             <!-- Edit Club Modal -->
-            <ClubEditModal 
-                v-model="isEditModalOpen" 
-                :club="club" 
-                :is-loading="isUpdatingClub"
-                @save="handleUpdateClub" 
-            />
+            <ClubEditModal v-model="isEditModalOpen" :club="club" :is-loading="isUpdatingClub"
+                @save="handleUpdateClub" />
 
             <!-- Zalo Modal -->
-            <ClubZaloModal 
-                v-model="isZaloModalOpen" 
-                :club="club" 
-                :is-loading="isUpdatingZalo"
-                @save="handleUpdateZalo" 
-            />
+            <ClubZaloModal v-model="isZaloModalOpen" :club="club" :is-loading="isUpdatingZalo"
+                @save="handleUpdateZalo" />
 
             <!-- Create Notification Modal -->
-             <ClubCreateNotificationModal
-                v-model="isCreateNotificationModalOpen"
-                :club="club"
-                :is-loading="isCreatingNotification"
-                @create="handleCreateNotificationSubmit"
-                :notification-type="notificationType"
-            />
+            <ClubCreateNotificationModal v-model="isCreateNotificationModalOpen" :club="club"
+                :is-loading="isCreatingNotification" @create="handleCreateNotificationSubmit"
+                :notification-type="notificationType" />
 
-            <DeleteConfirmationModal
-                v-model="isDeleteModalOpen"
-                title="Xoá câu lạc bộ"
+            <DeleteConfirmationModal v-model="isDeleteModalOpen" title="Xoá câu lạc bộ"
                 message="Bạn có chắc chắn muốn xoá câu lạc bộ này? Thao tác này không thể hoàn tác."
-                confirmButtonText="Xoá ngay"
-                @confirm="confirmDeleteClub"
-            />
+                confirmButtonText="Xoá ngay" @confirm="confirmDeleteClub" />
+
+            <ClubTransferModal v-model="isTransferModalOpen" :club-id="clubId" :is-submitting="isSubmittingTransfer"
+                @confirm="handleTransferConfirm" />
+
+            <!-- Zalo QR Modal -->
+            <Transition name="modal">
+                <div v-if="isZaloQRModalOpen" class="fixed inset-0 z-[10000] flex items-center justify-center">
+                    <Transition name="backdrop">
+                        <div v-if="isZaloQRModalOpen" class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                            @click="isZaloQRModalOpen = false"></div>
+                    </Transition>
+                    <Transition name="modal-content">
+                        <div v-if="isZaloQRModalOpen"
+                            class="relative bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4 z-10">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-xl font-bold text-[#3E414C]">Mã QR nhóm Zalo</h3>
+                                <button @click="isZaloQRModalOpen = false"
+                                    class="text-gray-400 hover:text-gray-600 transition-colors">
+                                    <XMarkIcon class="w-6 h-6" />
+                                </button>
+                            </div>
+                            <div class="flex flex-col items-center">
+                                <img :src="club.profile?.qr_code_image_url" alt="Zalo QR Code"
+                                    class="w-64 h-64 object-contain rounded-lg border border-gray-200" />
+                                <p class="text-sm text-[#838799] mt-4 text-center">Quét mã QR để tham gia nhóm Zalo của
+                                    câu lạc bộ
+                                </p>
+                            </div>
+                        </div>
+                    </Transition>
+                </div>
+            </Transition>
+
+            <!-- Zalo Link Confirmation Modal -->
+            <Transition name="modal">
+                <div v-if="isZaloLinkConfirmModalOpen" class="fixed inset-0 z-[10000] flex items-center justify-center">
+                    <Transition name="backdrop">
+                        <div v-if="isZaloLinkConfirmModalOpen" class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                            @click="isZaloLinkConfirmModalOpen = false"></div>
+                    </Transition>
+                    <Transition name="modal-content">
+                        <div v-if="isZaloLinkConfirmModalOpen"
+                            class="relative bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4 z-10">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-xl font-bold text-[#3E414C]">Mở nhóm Zalo</h3>
+                                <button @click="isZaloLinkConfirmModalOpen = false"
+                                    class="text-gray-400 hover:text-gray-600 transition-colors">
+                                    <XMarkIcon class="w-6 h-6" />
+                                </button>
+                            </div>
+                            <div class="mb-6">
+                                <p class="text-[#838799] text-center">Bạn có muốn mở nhóm Zalo của câu lạc bộ không?</p>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <button @click="isZaloLinkConfirmModalOpen = false"
+                                    class="flex-1 px-4 py-2.5 rounded-lg border border-gray-300 text-[#3E414C] font-medium hover:bg-gray-50 transition-colors">
+                                    Hủy
+                                </button>
+                                <button @click="confirmOpenZaloLink"
+                                    class="flex-1 px-4 py-2.5 rounded-lg bg-[#D72D36] text-white font-medium hover:bg-[#c4252e] transition-colors">
+                                    Xác nhận
+                                </button>
+                            </div>
+                        </div>
+                    </Transition>
+                </div>
+            </Transition>
         </template>
     </div>
+    <InviteGroup v-model="showInviteModal" :data="inviteGroupData" :clubs="clubs" :active-scope="activeScope"
+        :search-query="searchQuery" :current-radius="currentRadius" :current-club-id="selectedClub"
+        :is-loading-more="isLoadingMoreInvite" :has-more="hasMoreInvite" @update:searchQuery="onSearchChange"
+        @change-scope="onScopeChange" @change-club="onClubChange" @update:radius="onRadiusChange"
+        @invite="handleInviteAction" @load-more="loadMoreInviteUsers" title="Mời thành viên" />
 </template>
 
 <script setup>
 import Background from '@/assets/images/club-default-thumbnail.svg?url'
+import InviteGroup from '@/components/molecules/InviteGroup.vue'
 import Thumbnail from "@/assets/images/dashboard-bg.svg?url";
 import {
     ArrowLeftIcon,
@@ -372,7 +455,7 @@ import {
     XMarkIcon,
     CheckIcon,
     TrashIcon,
-    ArrowRightOnRectangleIcon
+    ArrowRightOnRectangleIcon,
 } from '@heroicons/vue/24/outline'
 import { useRouter, useRoute } from 'vue-router'
 import { computed, onMounted, ref, watch } from 'vue'
@@ -396,10 +479,15 @@ import { useUserStore } from '@/store/auth'
 import { storeToRefs } from 'pinia'
 import ClubActivityModal from '@/components/organisms/ClubActivityModal.vue';
 import ClubCreateNotificationModal from '@/components/organisms/ClubCreateNotificationModal.vue';
+import ClubTransferModal from '@/components/organisms/ClubTransferModal.vue';
 import DeleteConfirmationModal from '@/components/molecules/DeleteConfirmationModal.vue';
 import dayjs from 'dayjs'
 import 'dayjs/locale/vi'
 import ClubDetailSkeleton from '@/components/molecules/ClubDetailSkeleton.vue';
+import UserPlusIcon from '@/assets/images/group_add_member.svg';
+import debounce from 'lodash.debounce'
+import { getVietnameseDay } from '@/composables/formatedDate'
+import { getRoleName } from '@/helpers/role'
 
 dayjs.locale('vi')
 
@@ -415,9 +503,13 @@ const isEditModalOpen = ref(false)
 const isZaloModalOpen = ref(false)
 const isCreateNotificationModalOpen = ref(false)
 const isDeleteModalOpen = ref(false)
+const isTransferModalOpen = ref(false)
+const isZaloQRModalOpen = ref(false)
+const isZaloLinkConfirmModalOpen = ref(false)
 const isUpdatingClub = ref(false)
 const isUpdatingZalo = ref(false)
 const isCreatingNotification = ref(false)
+const isSubmittingTransfer = ref(false)
 const club = ref([]);
 const clubId = ref(route.params.id);
 const userStore = useUserStore()
@@ -436,7 +528,18 @@ const activityPerPage = ref(20)
 const fund = ref([])
 const notificationType = ref([])
 const hasFetchedLeaderboard = ref(false)
-
+const showInviteModal = ref(false)
+const clubs = ref([])
+const selectedClub = ref(null);
+const activeScope = ref('all');
+const searchQuery = ref('');
+const inviteGroupData = ref([]);
+const invitePage = ref(1)
+const isLoadingMoreInvite = ref(false)
+const hasMoreInvite = ref(true)
+const userLatitude = ref(null);
+const userLongitude = ref(null);
+const currentRadius = ref(10);
 const topThree = ref([])
 const leaderboard = ref([])
 const leaderboardMeta = ref({})
@@ -448,9 +551,7 @@ const leaderboardFilters = ref({
 })
 const isInitialLoading = ref(true)
 const isLeaderboardLoading = ref(false)
-
 const joiningRequests = ref([])
-
 const countdownText = ref('')
 let countdownInterval = null
 
@@ -470,50 +571,71 @@ const adminCount = computed(() => {
     return club.value?.members?.filter(member => member.role === 'admin').length || 0
 })
 
-const getRoleName = (role) => {
-    switch (role) {
-        case 'admin':
-            return 'Quản trị viên'
-        case 'manager':
-            return 'Quản lý'
-        case 'secretary':
-            return 'Thư ký'
-        case 'treasurer':
-            return 'Thủ quỹ'
-        default:
-            return 'Thành viên'
-    }
+const inviteMembers = async () => {
+    invitePage.value = 1
+    hasMoreInvite.value = true
+    searchQuery.value = ''
+    activeScope.value = 'all'
+    await getInviteGroupData()
+    showInviteModal.value = true
 }
 
-const statsAdmin = computed(() => [
-    {
-        label: 'Quỹ hiện tại',
-        value: fund.value?.balance?.toLocaleString() || 0,
-        unit: fund.value?.currency,
-        unitClass: 'text-[#00B377]'
-    },
-    {
-        label: 'Thành viên',
-        value: club.value?.quantity_members ?? 0,
-        unit: 'người'
-    },
-    {
-        label: 'Hoạt động tuần này',
-        value: activities.value.filter(a => dayjs(a.start_time).isSame(dayjs(), 'week')).length || 0,
-        unit: 'Buổi'
+const getMyClubs = async () => {
+    if (!hasAnyRole(['admin', 'secretary', 'manager', 'manager'])) {
+        return
     }
-])
+    try {
+        const response = await ClubService.myClubs();
+        clubs.value = response || [];
+
+        if (clubs.value.length === 0) {
+            selectedClub.value = null;
+        } else {
+            selectedClub.value = clubs.value[0].id;
+        }
+    } catch (e) {
+        clubs.value = [];
+        selectedClub.value = null;
+    }
+};
+
+const statsAdmin = computed(() => {
+    const now = dayjs()
+    const fundBalance = Number(fund.value?.balance ?? 0)
+    const activitiesThisWeek = activities.value?.filter(a =>
+        dayjs(a.start_time).isSame(now, 'week')
+    ).length ?? 0
+
+    return [
+        {
+            label: 'Quỹ hiện tại',
+            value: fundBalance.toLocaleString(),
+            unit: fund.value?.currency,
+            unitClass: 'text-[#00B377]'
+        },
+        {
+            label: 'Thành viên',
+            value: club.value?.quantity_members ?? 0,
+            unit: 'người'
+        },
+        {
+            label: 'Hoạt động tuần này',
+            value: activitiesThisWeek,
+            unit: 'Buổi'
+        }
+    ]
+})
 
 const nextMatch = computed(() => {
-  const now = dayjs()
+    const now = dayjs()
 
-  const upcoming = activities.value
-    .filter(a => dayjs(a.start_time).isAfter(now))
-    .sort((a, b) =>
-      dayjs(a.start_time).diff(dayjs(b.start_time))
-    )
+    const upcoming = activities.value
+        .filter(a => dayjs(a.start_time).isAfter(now))
+        .sort((a, b) =>
+            dayjs(a.start_time).diff(dayjs(b.start_time))
+        )
 
-  return upcoming[0] || null
+    return upcoming[0] || null
 })
 
 const startCountdown = () => {
@@ -550,6 +672,15 @@ const statsValue = computed(() => ({
     level: club.value?.skill_level?.min + ' - ' + club.value?.skill_level?.max ?? '1-5',
     price: club.value?.guest_fee ?? '50K'
 }));
+
+const filteredClubModules = computed(() => {
+    return clubModules.filter(module => {
+        if (module.key === 'chat') {
+            return club.value?.profile?.qr_zalo_enabled || club.value?.profile?.zalo_link_enabled
+        }
+        return true
+    })
+})
 
 const toggleMenu = () => {
     isMenuOpen.value = !isMenuOpen.value
@@ -595,11 +726,16 @@ const openZaloModal = () => {
     isZaloModalOpen.value = true
 }
 
+const openTransferModal = () => {
+    isTransferModalOpen.value = true
+}
+
 watch(
     () => [
         isNotificationModalOpen.value,
         isEditModalOpen.value,
         isZaloModalOpen.value,
+        isTransferModalOpen.value,
     ],
     (values) => {
         if (values.some(v => v)) {
@@ -621,6 +757,19 @@ const closeActivityModal = () => {
     isActivityModalOpen.value = false
 }
 
+const openClubChat = () => {
+    // Priority: zalo_link_enabled > qr_zalo_enabled
+    if (club.value?.profile?.zalo_link_enabled && club.value?.profile?.zalo_link) {
+        // Show confirmation modal before redirecting to Zalo
+        isZaloLinkConfirmModalOpen.value = true
+    } else if (club.value?.profile?.qr_zalo_enabled && club.value?.profile?.qr_code_image_url) {
+        // Show QR modal
+        isZaloQRModalOpen.value = true
+    } else {
+        toast.info('Chức năng nhóm chat chưa được cấu hình')
+    }
+}
+
 const handleModuleClick = (module) => {
     if (module.key === 'schedule') {
         if (!hasAnyRole(['admin', 'manager', 'secretary'])) {
@@ -631,13 +780,13 @@ const handleModuleClick = (module) => {
     } else if (module.key === 'notification') {
         openNotification()
     } else if (module.key === 'chat') {
-        toast.info(`Chức năng ${module.label} đang được phát triển`)
+        openClubChat()
     } else if (module.key === 'fund') {
         router.push({ name: 'club-fund', params: { id: clubId.value } })
     }
 }
 
-const handleCreateNotification = async() => {
+const handleCreateNotification = async () => {
     await getNotificationType()
     isCreateNotificationModalOpen.value = true
     isNotificationModalOpen.value = false
@@ -657,9 +806,9 @@ const handleCreateNotificationSubmit = async (data) => {
                 formData.append('user_ids[]', id)
             })
         } else {
-             formData.append('user_ids[]', data.user_ids)
+            formData.append('user_ids[]', data.user_ids)
         }
-        
+
         if (data.attachment) {
             formData.append('attachment', data.attachment)
         }
@@ -697,11 +846,6 @@ const goToActivityDetail = (activity, query = {}) => {
         params: { id: clubId.value },
         query: { activityId: activity.id, ...query }
     })
-}
-
-const getVietnameseDay = (date) => {
-    const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
-    return days[dayjs(date).day()]
 }
 
 const formatActivity = (item) => {
@@ -777,16 +921,16 @@ const handleUpdateClub = async (data) => {
         const formData = new FormData()
         Object.keys(data).forEach(key => {
             if (data[key] !== null && data[key] !== undefined) {
-                 if (key === 'cover_file' && data[key]) {
+                if (key === 'cover_file' && data[key]) {
                     formData.append('cover_image_url', data[key])
-                 } else if (key === 'logo_file' && data[key]) {
+                } else if (key === 'logo_file' && data[key]) {
                     formData.append('logo_url', data[key])
-                 } else if (!['cover_image_url', 'logo_url', 'cover_file', 'logo_file'].includes(key)) {
+                } else if (!['cover_image_url', 'logo_url', 'cover_file', 'logo_file'].includes(key)) {
                     formData.append(key, data[key])
-                 }
+                }
             }
         })
-        
+
         await ClubService.updateClub(clubId.value, formData)
         await getClubDetail()
         isEditModalOpen.value = false
@@ -903,7 +1047,7 @@ const markAllAsRead = async () => {
 }
 
 const handleUnpinNotification = async (notificationId) => {
-    if(!hasAnyRole(['admin', 'manager', 'secretary'])) return
+    if (!hasAnyRole(['admin', 'manager', 'secretary'])) return
     try {
         await ClubService.togglePin(clubId.value, notificationId)
         await getClubNotification()
@@ -932,11 +1076,8 @@ const getClubActivities = async () => {
             per_page: activityPerPage.value,
         })
         const allActivities = (response.data.activities || []).map(formatActivity)
-
-        // Split into main list, upcoming, and history
         upcomingActivities.value = allActivities.filter(a => a.status !== 'completed' && !dayjs().isAfter(dayjs(a.end_time)))
         historyActivities.value = allActivities.filter(a => a.status === 'completed' || dayjs().isAfter(dayjs(a.end_time)))
-
         activities.value = upcomingActivities.value.slice(0, 5)
 
         startCountdown()
@@ -957,7 +1098,6 @@ const getClubLeaderBoard = async () => {
 
         const allData = response.data.leaderboard
 
-        // Only update topThree if we are on the first page
         if (leaderboardFilters.value.page === 1) {
             topThree.value = allData.slice(0, 3)
             leaderboard.value = allData.slice(3)
@@ -975,7 +1115,7 @@ const getClubLeaderBoard = async () => {
 }
 
 const getClubJoiningRequests = async () => {
-    if(!hasAnyRole(['admin', 'secretary'])){
+    if (!hasAnyRole(['admin', 'secretary'])) {
         isInitialLoading.value = false
         return
     }
@@ -1007,8 +1147,6 @@ const rejectJoinRequest = async (requestId) => {
     }
 }
 
-
-
 const handleLeaderboardFilter = (filters) => {
     leaderboardFilters.value = { ...leaderboardFilters.value, ...filters, page: 1 }
     getClubLeaderBoard()
@@ -1025,18 +1163,6 @@ const getFund = async () => {
         fund.value = response.data
     } catch (error) {
         toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi lấy thông tin quỹ')
-    }
-}
-
-const getMyClubs = async () => {
-    if(!hasAnyRole(['admin', 'secretary', 'manager', 'manager'])){
-        return
-    }
-    try {
-        const response = await ClubService.myClubs()
-        myClubs.value = response
-    } catch (error) {
-        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi lấy thông tin câu lạc bộ của tôi')
     }
 }
 
@@ -1076,6 +1202,22 @@ const confirmDeleteClub = async () => {
     }
 }
 
+const handleTransferConfirm = async (transferToUserId) => {
+    isSubmittingTransfer.value = true
+    try {
+        await ClubService.leaveClub(clubId.value, {
+            transfer_to_user_id: transferToUserId
+        })
+        toast.success('Nhượng câu lạc bộ và rời đi thành công')
+        isTransferModalOpen.value = false
+        router.push({ name: 'club' })
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi nhượng câu lạc bộ')
+    } finally {
+        isSubmittingTransfer.value = false
+    }
+}
+
 watch(() => route.params.id, (newId) => {
     if (newId && newId !== clubId.value) {
         clubId.value = newId
@@ -1084,13 +1226,157 @@ watch(() => route.params.id, (newId) => {
     }
 })
 
-onMounted(async () => {
-    if (!clubId.value) {
-        isInitialLoading.value = false;
-        return;
+const acceptJoinClubInvitation = async () => {
+    try {
+        await ClubService.acceptInvite(clubId.value)
+        toast.success('Bạn đã tham gia CLB thành công')
+        await getClubDetail()
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi chấp nhận lời mời')
     }
-    await loadAllData()
-})
+}
+
+const rejectJoinClubInvitation = async () => {
+    try {
+        await ClubService.declineInvite(clubId.value)
+        toast.success('Đã từ chối lời mời tham gia CLB')
+        await getClubDetail()
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi từ chối lời mời')
+    }
+}
+
+const confirmOpenZaloLink = () => {
+    if (club.value?.profile?.zalo_link) {
+        window.open(club.value.profile.zalo_link, '_blank')
+        isZaloLinkConfirmModalOpen.value = false
+    }
+}
+
+const getInviteGroupData = async ({ loadMore = false } = {}) => {
+    if (activeScope.value === 'club' && !selectedClub.value) {
+        inviteGroupData.value = []
+        return
+    }
+
+    if (isLoadingMoreInvite.value) return
+
+    if (!loadMore) {
+        invitePage.value = 1
+        hasMoreInvite.value = true
+    }
+
+    if (!hasMoreInvite.value) return
+
+    isLoadingMoreInvite.value = true
+
+    const payload = {
+        scope: activeScope.value,
+        per_page: 20,
+        page: invitePage.value,
+        club_id: clubId.value,
+        ...(activeScope.value === 'club' ? { source_club_id: selectedClub.value } : {}),
+        ...(activeScope.value === 'area'
+            ? {
+                lat: userLatitude.value,
+                lng: userLongitude.value,
+                radius: currentRadius.value
+            }
+            : {}),
+        ...(searchQuery.value ? { search: searchQuery.value } : {})
+    }
+
+    try {
+        const resp = await ClubService.getClubCandidates(payload)
+        const newData = resp?.data?.result || []
+
+        if (loadMore) {
+            if (inviteGroupData.value?.result) {
+                inviteGroupData.value.result.push(...newData)
+            }
+        } else {
+            inviteGroupData.value = resp?.data
+        }
+
+        if (newData.length < 20) {
+            hasMoreInvite.value = false
+        } else {
+            invitePage.value++
+        }
+    } catch (e) {
+        if (!loadMore) {
+            inviteGroupData.value = []
+        }
+    } finally {
+        isLoadingMoreInvite.value = false
+    }
+}
+
+const onSearchChange = debounce(async (query) => {
+    searchQuery.value = query
+    await getInviteGroupData({ loadMore: false })
+}, 300)
+
+const onScopeChange = async (scope) => {
+    activeScope.value = scope
+
+    if (scope === 'area') {
+        await initializeUserLocation()
+    }
+
+    await getInviteGroupData({ loadMore: false })
+}
+
+const onClubChange = async (clubId) => {
+    selectedClub.value = clubId
+    await getInviteGroupData({ loadMore: false })
+}
+
+const onRadiusChange = debounce(async (radius) => {
+    currentRadius.value = radius
+    await getInviteGroupData({ loadMore: false })
+}, 300)
+
+const loadMoreInviteUsers = async () => {
+    await getInviteGroupData({ loadMore: true })
+}
+
+
+const initializeUserLocation = async () => {
+    if (getUser.value?.latitude && getUser.value?.longitude) {
+        userLatitude.value = getUser.value.latitude;
+        userLongitude.value = getUser.value.longitude;
+    } else {
+        try {
+            const position = await new Promise((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject);
+            });
+            userLatitude.value = position.coords.latitude;
+            userLongitude.value = position.coords.longitude;
+        } catch (error) {
+            toast.error('Không thể lấy vị trí hiện tại. Vui lòng cho phép truy cập vị trí.');
+            userLatitude.value = null;
+            userLongitude.value = null;
+        }
+    }
+};
+
+const handleInviteAction = async (user) => {
+    try {
+        await ClubService.inviteMember(clubId.value, { user_id: user.id })
+        toast.success(`Đã gửi lời mời đến ${user.name}`)
+        // Update local state to show invited
+        if (inviteGroupData.value?.result) {
+            const index = inviteGroupData.value.result.findIndex(u => u.id === user.id)
+            if (index !== -1) {
+                inviteGroupData.value.result[index].invited = true
+            }
+        }
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Không thể gửi lời mời')
+    }
+}
+
 const handleRegisterActivity = async (activity) => {
     try {
         await ClubService.joinActivityRequest(clubId.value, activity.id)
@@ -1105,7 +1391,7 @@ const handleCancelJoinActivity = async (activity) => {
     const userId = getUser.value.id
     const userParticipant = activity.participants_list?.find(p => p.user_id === userId)
     if (!userParticipant) return
-    
+
     try {
         await ClubService.cancelActivityJoinRequest(clubId.value, activity.id, userParticipant.id)
         toast.success('Đã hủy yêu cầu tham gia')
@@ -1118,6 +1404,14 @@ const handleCancelJoinActivity = async (activity) => {
 const handleCheckInActivity = (activity) => {
     goToActivityDetail(activity, { showCheckin: true })
 }
+
+onMounted(async () => {
+    if (!clubId.value) {
+        isInitialLoading.value = false;
+        return;
+    }
+    await loadAllData()
+})
 </script>
 <style scoped>
 .bg-club-default {
@@ -1129,13 +1423,70 @@ const handleCheckInActivity = (activity) => {
 }
 
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
+    width: 6px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
+    background: transparent;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #E5E7EB;
-  border-radius: 20px;
+    background-color: #E5E7EB;
+    border-radius: 20px;
+}
+
+/* Modal animations */
+.modal-enter-active,
+.modal-leave-active {
+    transition: opacity 0.3s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+    opacity: 0;
+}
+
+/* Backdrop animations */
+.backdrop-enter-active,
+.backdrop-leave-active {
+    transition: opacity 0.3s ease;
+}
+
+.backdrop-enter-from,
+.backdrop-leave-to {
+    opacity: 0;
+}
+
+/* Modal content animations */
+.modal-content-enter-active {
+    animation: modal-scale-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modal-content-leave-active {
+    animation: modal-scale-out 0.2s ease-in;
+}
+
+@keyframes modal-scale-in {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes modal-scale-out {
+    from {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
 }
 </style>
