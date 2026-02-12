@@ -4,8 +4,12 @@ namespace App\Services\Club;
 
 use App\Enums\ClubFundCollectionStatus;
 use App\Enums\ClubFundContributionStatus;
+use App\Jobs\SendPushJob;
+use App\Models\Club\Club;
 use App\Models\Club\ClubFundCollection;
 use App\Models\Club\ClubFundContribution;
+use App\Notifications\ClubFundContributionApprovedNotification;
+use App\Notifications\ClubFundContributionRejectedNotification;
 use App\Services\ImageOptimizationService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -83,7 +87,7 @@ class ClubFundContributionService
             throw new \Exception('Chỉ có thể xác nhận đóng góp đang pending');
         }
 
-        return DB::transaction(function () use ($contribution, $confirmerId) {
+        $contribution = DB::transaction(function () use ($contribution, $confirmerId) {
             $contribution->confirm();
 
             if ($contribution->walletTransaction) {
@@ -92,11 +96,47 @@ class ClubFundContributionService
 
             return $contribution;
         });
+
+        $user = $contribution->user;
+        $collection = $contribution->fundCollection;
+        $club = $collection->club;
+        if ($user && $club) {
+            $collectionTitle = $collection->title ?: $collection->description ?: 'Đợt thu quỹ';
+            $message = "Yêu cầu thanh toán của bạn cho khoản thu {$collectionTitle} đã được chấp nhận";
+            $user->notify(new ClubFundContributionApprovedNotification($club, $collection, $contribution));
+            SendPushJob::dispatch($user->id, 'Thanh toán đã được chấp nhận', $message, [
+                'type' => 'CLUB',
+                'club_id' => (string) $club->id,
+                'screen' => 'fund',
+                'id' => (string) $collection->id,
+            ]);
+        }
+
+        return $contribution;
     }
 
-    public function rejectContribution(ClubFundContribution $contribution): ClubFundContribution
+    public function rejectContribution(ClubFundContribution $contribution, ?string $rejectionReason = null): ClubFundContribution
     {
         $contribution->reject();
+
+        $user = $contribution->user;
+        $collection = $contribution->fundCollection;
+        $club = $collection->club;
+        if ($user && $club) {
+            $collectionTitle = $collection->title ?: $collection->description ?: 'Đợt thu quỹ';
+            $message = "Yêu cầu thanh toán của bạn cho khoản thu {$collectionTitle} đã bị từ chối";
+            if ($rejectionReason) {
+                $message .= ": {$rejectionReason}";
+            }
+            $user->notify(new ClubFundContributionRejectedNotification($club, $collection, $contribution, $rejectionReason));
+            SendPushJob::dispatch($user->id, 'Thanh toán đã bị từ chối', $message, [
+                'type' => 'CLUB',
+                'club_id' => (string) $club->id,
+                'screen' => 'fund',
+                'id' => (string) $collection->id,
+            ]);
+        }
+
         return $contribution;
     }
 }
