@@ -105,10 +105,10 @@ class ClubFundContributionService
             $message = "Yêu cầu thanh toán của bạn cho khoản thu {$collectionTitle} đã được chấp nhận";
             $user->notify(new ClubFundContributionApprovedNotification($club, $collection, $contribution));
             SendPushJob::dispatch($user->id, 'Thanh toán đã được chấp nhận', $message, [
-                'type' => 'CLUB',
+                'type' => 'CLUB_FUND_CONTRIBUTION_APPROVED',
                 'club_id' => (string) $club->id,
-                'screen' => 'fund',
-                'id' => (string) $collection->id,
+                'club_fund_collection_id' => (string) $collection->id,
+                'club_fund_contribution_id' => (string) $contribution->id,
             ]);
         }
 
@@ -130,10 +130,10 @@ class ClubFundContributionService
             }
             $user->notify(new ClubFundContributionRejectedNotification($club, $collection, $contribution, $rejectionReason));
             SendPushJob::dispatch($user->id, 'Thanh toán đã bị từ chối', $message, [
-                'type' => 'CLUB',
+                'type' => 'CLUB_FUND_CONTRIBUTION_REJECTED',
                 'club_id' => (string) $club->id,
-                'screen' => 'fund',
-                'id' => (string) $collection->id,
+                'club_fund_collection_id' => (string) $collection->id,
+                'club_fund_contribution_id' => (string) $contribution->id,
             ]);
         }
 
