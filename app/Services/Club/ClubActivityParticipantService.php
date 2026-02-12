@@ -6,13 +6,22 @@ use App\Enums\ClubActivityFeeSplitType;
 use App\Enums\ClubActivityParticipantStatus;
 use App\Enums\ClubActivityStatus;
 use App\Enums\ClubMemberRole;
+use App\Enums\ClubMemberStatus;
+use App\Enums\ClubMembershipStatus;
 use App\Enums\ClubWalletTransactionDirection;
 use App\Enums\ClubWalletTransactionSourceType;
 use App\Enums\ClubWalletTransactionStatus;
 use App\Enums\PaymentMethod;
+use App\Jobs\SendPushJob;
 use App\Models\Club\ClubActivity;
 use App\Models\Club\ClubActivityParticipant;
+use App\Models\Club\ClubMember;
 use App\Models\Club\ClubWalletTransaction;
+use App\Models\User;
+use App\Notifications\ClubActivityInvitationNotification;
+use App\Notifications\ClubActivityJoinApprovedNotification;
+use App\Notifications\ClubActivityJoinRejectedNotification;
+use App\Notifications\ClubActivityJoinRequestNotification;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -70,6 +79,11 @@ class ClubActivityParticipantService
                 'wallet_transaction_id' => null, // Reset transaction
             ]);
 
+            $applicant = User::find($userId);
+            if ($applicant) {
+                $this->notifyManagersOfJoinRequest($activity, $applicant);
+            }
+
             return $existingParticipant;
         }
 
@@ -77,11 +91,45 @@ class ClubActivityParticipantService
             throw new \Exception('Sự kiện đã đủ số lượng người tham gia');
         }
 
-        return ClubActivityParticipant::create([
+        $participant = ClubActivityParticipant::create([
             'club_activity_id' => $activity->id,
             'user_id' => $userId,
             'status' => ClubActivityParticipantStatus::Pending,
         ]);
+
+        $applicant = User::find($userId);
+        if ($applicant) {
+            $this->notifyManagersOfJoinRequest($activity, $applicant);
+        }
+
+        return $participant;
+    }
+
+    private function notifyManagersOfJoinRequest(ClubActivity $activity, User $applicant): void
+    {
+        $club = $activity->club;
+        $managerUserIds = ClubMember::where('club_id', $club->id)
+            ->where('membership_status', ClubMembershipStatus::Joined)
+            ->where('status', ClubMemberStatus::Active)
+            ->whereIn('role', [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary])
+            ->pluck('user_id')
+            ->unique()
+            ->filter(fn ($id) => $id !== $applicant->id);
+
+        $applicantName = $applicant->full_name ?: $applicant->email;
+        $message = "{$applicantName} muốn tham gia sự kiện {$activity->title} tại CLB {$club->name}";
+
+        foreach ($managerUserIds as $recipientId) {
+            $user = User::find($recipientId);
+            if ($user) {
+                $user->notify(new ClubActivityJoinRequestNotification($club, $activity, $applicant));
+                SendPushJob::dispatch($user->id, 'Yêu cầu tham gia sự kiện', $message, [
+                    'type' => 'CLUB_ACTIVITY_JOIN_REQUEST',
+                    'club_id' => (string) $club->id,
+                    'club_activity_id' => (string) $activity->id,
+                ]);
+            }
+        }
     }
 
     public function inviteUsers(ClubActivity $activity, array $userIds, int $inviterId): array
@@ -118,6 +166,17 @@ class ClubActivityParticipantService
                 $participant->load('user');
                 $invited[] = $participant;
                 $currentCount++;
+
+                $user = User::find($userId);
+                if ($user) {
+                    $message = "Bạn được mời tham gia sự kiện {$activity->title} tại CLB {$club->name}";
+                    $user->notify(new ClubActivityInvitationNotification($club, $activity));
+                    SendPushJob::dispatch($user->id, 'Lời mời tham gia sự kiện', $message, [
+                        'type' => 'CLUB_ACTIVITY_INVITATION',
+                        'club_id' => (string) $club->id,
+                        'club_activity_id' => (string) $activity->id,
+                    ]);
+                }
             }
         }
 
@@ -165,7 +224,7 @@ class ClubActivityParticipantService
             throw new \Exception('Sự kiện đã đủ số lượng người tham gia');
         }
 
-        return DB::transaction(function () use ($participant, $activity) {
+        $participant = DB::transaction(function () use ($participant, $activity) {
             if ($activity->fee_amount > 0) {
                 $this->createFeeTransaction($participant, $activity);
             } else {
@@ -174,6 +233,20 @@ class ClubActivityParticipantService
 
             return $participant;
         });
+
+        $user = $participant->user;
+        $club = $activity->club;
+        if ($user && $club) {
+            $message = "Yêu cầu tham gia sự kiện {$activity->title} đã được duyệt";
+            $user->notify(new ClubActivityJoinApprovedNotification($club, $activity));
+            SendPushJob::dispatch($user->id, 'Yêu cầu tham gia sự kiện đã được duyệt', $message, [
+                'type' => 'CLUB_ACTIVITY_JOIN_APPROVED',
+                'club_id' => (string) $club->id,
+                'club_activity_id' => (string) $activity->id,
+            ]);
+        }
+
+        return $participant;
     }
 
     public function rejectRequest(ClubActivityParticipant $participant, int $rejecterId): ClubActivityParticipant
@@ -191,6 +264,17 @@ class ClubActivityParticipantService
         }
 
         $participant->decline();
+
+        $user = $participant->user;
+        if ($user && $club) {
+            $message = "Yêu cầu tham gia sự kiện {$activity->title} đã bị từ chối";
+            $user->notify(new ClubActivityJoinRejectedNotification($club, $activity));
+            SendPushJob::dispatch($user->id, 'Yêu cầu tham gia sự kiện đã bị từ chối', $message, [
+                'type' => 'CLUB_ACTIVITY_JOIN_REJECTED',
+                'club_id' => (string) $club->id,
+                'club_activity_id' => (string) $activity->id,
+            ]);
+        }
 
         return $participant;
     }

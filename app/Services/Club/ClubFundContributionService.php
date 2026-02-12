@@ -4,8 +4,18 @@ namespace App\Services\Club;
 
 use App\Enums\ClubFundCollectionStatus;
 use App\Enums\ClubFundContributionStatus;
+use App\Enums\ClubMemberRole;
+use App\Enums\ClubMemberStatus;
+use App\Enums\ClubMembershipStatus;
+use App\Jobs\SendPushJob;
+use App\Models\Club\Club;
 use App\Models\Club\ClubFundCollection;
 use App\Models\Club\ClubFundContribution;
+use App\Models\Club\ClubMember;
+use App\Models\User;
+use App\Notifications\ClubFundContributionApprovedNotification;
+use App\Notifications\ClubFundContributionRejectedNotification;
+use App\Notifications\ClubFundContributionSubmittedNotification;
 use App\Services\ImageOptimizationService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -67,7 +77,7 @@ class ClubFundContributionService
 
         $receiptUrl = $this->imageService->optimizeThumbnail($image, 'fund_contribution_receipts', 90);
 
-        return ClubFundContribution::create([
+        $contribution = ClubFundContribution::create([
             'club_fund_collection_id' => $collection->id,
             'user_id' => $userId,
             'amount' => $amountDue,
@@ -75,6 +85,37 @@ class ClubFundContributionService
             'note' => $note,
             'status' => ClubFundContributionStatus::Pending,
         ]);
+
+        $club = $collection->club;
+        $submitter = User::find($userId);
+        $financeManagerUserIds = ClubMember::where('club_id', $club->id)
+            ->where('membership_status', ClubMembershipStatus::Joined)
+            ->where('status', ClubMemberStatus::Active)
+            ->whereIn('role', [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary, ClubMemberRole::Treasurer])
+            ->pluck('user_id')
+            ->unique()
+            ->filter(fn ($id) => $id !== $userId);
+
+        if ($submitter && $club) {
+            $collectionTitle = $collection->title ?: $collection->description ?: 'Đợt thu quỹ';
+            $message = ($submitter->full_name ?: $submitter->email) . " đã nộp thanh toán cho khoản thu {$collectionTitle} tại CLB {$club->name}";
+            $amountStr = number_format($contribution->amount, 0, ',', '.') . ' VND';
+
+            foreach ($financeManagerUserIds as $recipientId) {
+                $user = User::find($recipientId);
+                if ($user) {
+                    $user->notify(new ClubFundContributionSubmittedNotification($club, $collection, $contribution, $submitter));
+                    SendPushJob::dispatch($user->id, 'Yêu cầu thanh toán mới', $message . ' - ' . $amountStr, [
+                        'type' => 'CLUB_FUND_CONTRIBUTION_SUBMITTED',
+                        'club_id' => (string) $club->id,
+                        'club_fund_collection_id' => (string) $collection->id,
+                        'club_fund_contribution_id' => (string) $contribution->id,
+                    ]);
+                }
+            }
+        }
+
+        return $contribution;
     }
 
     public function confirmContribution(ClubFundContribution $contribution, int $confirmerId): ClubFundContribution
@@ -83,7 +124,7 @@ class ClubFundContributionService
             throw new \Exception('Chỉ có thể xác nhận đóng góp đang pending');
         }
 
-        return DB::transaction(function () use ($contribution, $confirmerId) {
+        $contribution = DB::transaction(function () use ($contribution, $confirmerId) {
             $contribution->confirm();
 
             if ($contribution->walletTransaction) {
@@ -92,11 +133,47 @@ class ClubFundContributionService
 
             return $contribution;
         });
+
+        $user = $contribution->user;
+        $collection = $contribution->fundCollection;
+        $club = $collection->club;
+        if ($user && $club) {
+            $collectionTitle = $collection->title ?: $collection->description ?: 'Đợt thu quỹ';
+            $message = "Yêu cầu thanh toán của bạn cho khoản thu {$collectionTitle} đã được chấp nhận";
+            $user->notify(new ClubFundContributionApprovedNotification($club, $collection, $contribution));
+            SendPushJob::dispatch($user->id, 'Thanh toán đã được chấp nhận', $message, [
+                'type' => 'CLUB_FUND_CONTRIBUTION_APPROVED',
+                'club_id' => (string) $club->id,
+                'club_fund_collection_id' => (string) $collection->id,
+                'club_fund_contribution_id' => (string) $contribution->id,
+            ]);
+        }
+
+        return $contribution;
     }
 
-    public function rejectContribution(ClubFundContribution $contribution): ClubFundContribution
+    public function rejectContribution(ClubFundContribution $contribution, ?string $rejectionReason = null): ClubFundContribution
     {
         $contribution->reject();
+
+        $user = $contribution->user;
+        $collection = $contribution->fundCollection;
+        $club = $collection->club;
+        if ($user && $club) {
+            $collectionTitle = $collection->title ?: $collection->description ?: 'Đợt thu quỹ';
+            $message = "Yêu cầu thanh toán của bạn cho khoản thu {$collectionTitle} đã bị từ chối";
+            if ($rejectionReason) {
+                $message .= ": {$rejectionReason}";
+            }
+            $user->notify(new ClubFundContributionRejectedNotification($club, $collection, $contribution, $rejectionReason));
+            SendPushJob::dispatch($user->id, 'Thanh toán đã bị từ chối', $message, [
+                'type' => 'CLUB_FUND_CONTRIBUTION_REJECTED',
+                'club_id' => (string) $club->id,
+                'club_fund_collection_id' => (string) $collection->id,
+                'club_fund_contribution_id' => (string) $contribution->id,
+            ]);
+        }
+
         return $contribution;
     }
 }

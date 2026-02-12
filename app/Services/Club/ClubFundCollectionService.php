@@ -4,8 +4,12 @@ namespace App\Services\Club;
 
 use App\Enums\ClubFundCollectionStatus;
 use App\Enums\ClubFundContributionStatus;
+use App\Jobs\SendPushJob;
 use App\Models\Club\Club;
 use App\Models\Club\ClubFundCollection;
+use App\Models\User;
+use App\Notifications\ClubFundCollectionCancelledNotification;
+use App\Notifications\ClubFundCollectionCreatedNotification;
 use App\Notifications\ClubFundCollectionReminderNotification;
 use App\Services\ImageOptimizationService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -92,6 +96,25 @@ class ClubFundCollectionService
                 $syncData[$memberId] = ['amount_due' => $amountPerMember];
             }
             $collection->assignedMembers()->sync($syncData);
+
+            // Notify assigned members: "Bạn có khoản thu mới cần đóng"
+            $collectionTitle = $collection->title ?: $collection->description ?: 'Đợt thu quỹ';
+            $message = "Bạn có khoản thu mới cần đóng: {$collectionTitle} tại CLB {$club->name}";
+            if ($amountPerMember > 0) {
+                $message .= ' - Số tiền: ' . number_format($amountPerMember, 0, ',', '.') . ' VND';
+            }
+
+            foreach ($data['member_ids'] as $memberUserId) {
+                $user = User::find($memberUserId);
+                if ($user) {
+                    $user->notify(new ClubFundCollectionCreatedNotification($club, $collection, $amountPerMember));
+                    SendPushJob::dispatch($user->id, 'Khoản thu mới cần đóng', $message, [
+                        'type' => 'CLUB_FUND_COLLECTION_CREATED',
+                        'club_id' => (string) $club->id,
+                        'club_fund_collection_id' => (string) $collection->id,
+                    ]);
+                }
+            }
         }
 
         return $collection;
@@ -170,6 +193,25 @@ class ClubFundCollectionService
             throw new \Exception('Chỉ có thể hủy đợt thu đang active');
         }
 
+        $collectionTitle = $collection->title ?: $collection->description ?: 'Đợt thu quỹ';
+        $message = "Đợt thu {$collectionTitle} tại CLB {$club->name} đã bị hủy";
+
+        $assignedUserIds = $collection->assignedMembers()->pluck('id')->unique();
+        foreach ($assignedUserIds as $memberUserId) {
+            if ($memberUserId == $userId) {
+                continue;
+            }
+            $user = User::find($memberUserId);
+            if ($user) {
+                $user->notify(new ClubFundCollectionCancelledNotification($club, $collection));
+                SendPushJob::dispatch($user->id, 'Đợt thu đã bị hủy', $message, [
+                    'type' => 'CLUB_FUND_COLLECTION_CANCELLED',
+                    'club_id' => (string) $club->id,
+                    'club_fund_collection_id' => (string) $collection->id,
+                ]);
+            }
+        }
+
         $collection->update(['status' => ClubFundCollectionStatus::Cancelled]);
     }
 
@@ -230,13 +272,19 @@ class ClubFundCollectionService
         $user = \App\Models\User::findOrFail($targetUserId);
         $collectionTitle = $collection->title ?: $collection->description ?: 'Đợt thu quỹ';
         $clubName = $club->name;
+        $amountDue = (float) ($targetItem['amount_due'] ?? 0);
 
-        $user->notify(new ClubFundCollectionReminderNotification(
-            $collection,
-            $collectionTitle,
-            $clubName,
-            (float) ($targetItem['amount_due'] ?? 0)
-        ));
+        $user->notify(new ClubFundCollectionReminderNotification($collection, $collectionTitle, $clubName, $amountDue));
+
+        $message = "Bạn được nhắc nhở đóng khoản thu {$collectionTitle} ở CLB {$clubName}";
+        if ($amountDue > 0) {
+            $message .= ' - Số tiền: ' . number_format($amountDue, 0, ',', '.') . ' VND';
+        }
+        SendPushJob::dispatch($user->id, 'Nhắc nhở đóng khoản thu', $message, [
+            'type' => 'CLUB_FUND_REMINDER',
+            'club_id' => (string) $club->id,
+            'club_fund_collection_id' => (string) $collection->id,
+        ]);
     }
 
     public function needPaymentForUser(ClubFundCollection $collection, int $userId): bool

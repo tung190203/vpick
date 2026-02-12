@@ -11,9 +11,11 @@ use App\Enums\ClubWalletTransactionSourceType;
 use App\Enums\ClubWalletTransactionStatus;
 use App\Enums\PaymentMethod;
 use App\Models\Club\Club;
+use App\Jobs\SendPushJob;
 use App\Models\Club\ClubActivity;
 use App\Models\Club\ClubActivityParticipant;
 use App\Models\Club\ClubWalletTransaction;
+use App\Notifications\ClubActivityCancelledNotification;
 use App\Services\ImageOptimizationService;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -172,7 +174,7 @@ class ClubActivityService
         // CRITICAL FIX: Auto-generate occurrences for recurring activities
         if ($activity->isRecurring()) {
             $this->generateInitialOccurrences($activity, $userId);
-            
+
             // Mark original activity as completed since it's just a template
             $activity->update(['status' => ClubActivityStatus::Completed]);
         }
@@ -298,6 +300,25 @@ class ClubActivityService
                 }
             }
 
+            // Notify participants (accepted/attended) that activity was cancelled
+            $participantsToNotify = $activity->participants()
+                ->whereIn('status', [ClubActivityParticipantStatus::Accepted, ClubActivityParticipantStatus::Attended])
+                ->with('user')
+                ->get();
+
+            $message = "Sự kiện {$activity->title} tại CLB {$club->name} đã bị hủy";
+            foreach ($participantsToNotify as $participant) {
+                $user = $participant->user;
+                if ($user) {
+                    $user->notify(new ClubActivityCancelledNotification($club, $activity));
+                    SendPushJob::dispatch($user->id, 'Sự kiện đã bị hủy', $message, [
+                        'type' => 'CLUB_ACTIVITY_CANCELLED',
+                        'club_id' => (string) $club->id,
+                        'club_activity_id' => (string) $activity->id,
+                    ]);
+                }
+            }
+
             return $activity;
         });
     }
@@ -312,37 +333,37 @@ class ClubActivityService
         $maxIterations = 100;
         $iteration = 0;
         $lookAheadDate = Carbon::now()->addDays(30);
-        
+
         // Start from the activity's end_time to find next occurrence
         $fromDate = $activity->end_time ?? $activity->start_time;
-        
+
         while ($iteration < $maxIterations) {
             $iteration++;
-            
+
             $nextStartTime = $activity->calculateNextOccurrence($fromDate);
-            
+
             if (!$nextStartTime || $nextStartTime->gt($lookAheadDate)) {
                 break;
             }
-            
+
             // Check if occurrence already exists
             $existing = ClubActivity::where('club_id', $activity->club_id)
                 ->where('title', $activity->title)
                 ->where('recurring_schedule', $activity->attributes['recurring_schedule'] ?? null)
                 ->where('start_time', $nextStartTime)
                 ->exists();
-            
+
             if (!$existing) {
                 $this->createNextOccurrence($activity, $nextStartTime, $userId);
                 $count++;
             }
-            
+
             $fromDate = $nextStartTime->copy()->addMinute();
         }
-        
+
         return $count;
     }
-    
+
     /**
      * Create a single occurrence from recurring activity template
      */
@@ -350,7 +371,7 @@ class ClubActivityService
     {
         $duration = $activity->duration ?? ($activity->end_time ? $activity->start_time->diffInMinutes($activity->end_time) : null);
         $nextEndTime = $duration ? $nextStartTime->copy()->addMinutes($duration) : null;
-        
+
         $nextCancellationDeadline = null;
         if ($activity->cancellation_deadline && $activity->start_time) {
             $minutesBeforeStart = $activity->cancellation_deadline->diffInMinutes($activity->start_time, false);
@@ -358,31 +379,31 @@ class ClubActivityService
                 $nextCancellationDeadline = $nextStartTime->copy()->subMinutes($minutesBeforeStart);
             }
         }
-        
+
         $newActivity = $activity->replicate([
             'status',
             'cancellation_reason',
             'cancelled_by',
             'check_in_token',
         ]);
-        
+
         $newActivity->start_time = $nextStartTime;
         $newActivity->end_time = $nextEndTime;
         $newActivity->cancellation_deadline = $nextCancellationDeadline;
         $newActivity->status = ClubActivityStatus::Scheduled;
         $newActivity->save();
-        
+
         // Add creator as participant
         ClubActivityParticipant::create([
             'club_activity_id' => $newActivity->id,
             'user_id' => $userId,
             'status' => ClubActivityParticipantStatus::Accepted,
         ]);
-        
+
         // Generate check-in token
         $checkInToken = Str::random(48);
         $newActivity->update(['check_in_token' => $checkInToken]);
-        
+
         return $newActivity;
     }
 
