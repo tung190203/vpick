@@ -181,12 +181,12 @@
                         <div class="flex items-center space-x-2" v-if="!is_joined">
                             <template v-if="club.has_invitation">
                                 <Button size="md" color="success"
-                                    class="px-6 sm:px-12 md:px-[35px] bg-[#00B377] border border-[#00B377] text-white hover:bg-white hover:text-[#00B377] flex gap-2"
+                                    class="px-6 sm:px-12 md:px-[35px] bg-[#00B377] border border-[#00B377] text-white hover:bg-[#009664] hover:border-[#009664] flex gap-2"
                                     @click.stop="acceptJoinClubInvitation">
                                     Đồng ý
                                 </Button>
                                 <Button size="md" color="danger"
-                                    class="px-6 sm:px-12 md:px-[35px] bg-[#D72D36] border border-[#D72D36] text-white hover:bg-white hover:text-[#D72D36] flex gap-2"
+                                    class="px-6 sm:px-12 md:px-[35px] bg-[#D72D36] border border-[#D72D36] text-white hover:bg-[#b5222a] hover:border-[#b5222a] flex gap-2"
                                     @click.stop="rejectJoinClubInvitation">
                                     Từ chối
                                 </Button>
@@ -206,7 +206,8 @@
                                     Hủy tham gia
                                 </Button>
                             </template>
-                            <Button size="md" color="white" class="bg-[#FBEAEB] rounded-full p-2">
+                            <Button v-if="club.profile?.qr_zalo_enabled || club.profile?.zalo_link_enabled" size="md"
+                                color="white" class="bg-[#FBEAEB] rounded-full p-2" @click="openClubChat">
                                 <MessageIcon class="w-6.5 h-6.5 text-[#D72D36]" />
                             </Button>
                         </div>
@@ -756,6 +757,19 @@ const closeActivityModal = () => {
     isActivityModalOpen.value = false
 }
 
+const openClubChat = () => {
+    // Priority: zalo_link_enabled > qr_zalo_enabled
+    if (club.value?.profile?.zalo_link_enabled && club.value?.profile?.zalo_link) {
+        // Show confirmation modal before redirecting to Zalo
+        isZaloLinkConfirmModalOpen.value = true
+    } else if (club.value?.profile?.qr_zalo_enabled && club.value?.profile?.qr_code_image_url) {
+        // Show QR modal
+        isZaloQRModalOpen.value = true
+    } else {
+        toast.info('Chức năng nhóm chat chưa được cấu hình')
+    }
+}
+
 const handleModuleClick = (module) => {
     if (module.key === 'schedule') {
         if (!hasAnyRole(['admin', 'manager', 'secretary'])) {
@@ -766,16 +780,7 @@ const handleModuleClick = (module) => {
     } else if (module.key === 'notification') {
         openNotification()
     } else if (module.key === 'chat') {
-        // Priority: zalo_link_enabled > qr_zalo_enabled
-        if (club.value?.profile?.zalo_link_enabled && club.value?.profile?.zalo_link) {
-            // Show confirmation modal before redirecting to Zalo
-            isZaloLinkConfirmModalOpen.value = true
-        } else if (club.value?.profile?.qr_zalo_enabled && club.value?.profile?.qr_code_image_url) {
-            // Show QR modal
-            isZaloQRModalOpen.value = true
-        } else {
-            toast.info('Chức năng nhóm chat chưa được cấu hình')
-        }
+        openClubChat()
     } else if (module.key === 'fund') {
         router.push({ name: 'club-fund', params: { id: clubId.value } })
     }
