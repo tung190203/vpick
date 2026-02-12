@@ -82,9 +82,7 @@ class ClubMemberManagementService
             throw new \Exception('Người dùng đã là thành viên của CLB này');
         }
 
-        $member = ClubMember::create([
-            'club_id' => $club->id,
-            'user_id' => $data['user_id'],
+        $attributes = [
             'invited_by' => $inviterId,
             'role' => $data['role'] ?? ClubMemberRole::Member,
             'position' => $data['position'] ?? null,
@@ -92,7 +90,24 @@ class ClubMemberManagementService
             'status' => ClubMemberStatus::Pending,
             'message' => $data['message'] ?? null,
             'joined_at' => null,
-        ]);
+            'left_at' => null,
+            'reviewed_by' => null,
+            'reviewed_at' => null,
+            'rejection_reason' => null,
+        ];
+
+        // updateOrCreate: invite người mới (tạo mới) hoặc re-invite người đã kick/left (update record cũ)
+        $member = ClubMember::withTrashed()->updateOrCreate(
+            [
+                'club_id' => $club->id,
+                'user_id' => $data['user_id'],
+            ],
+            array_merge($attributes, ['club_id' => $club->id, 'user_id' => $data['user_id']])
+        );
+
+        if ($member->trashed()) {
+            $member->restore();
+        }
 
         $invitedUser = User::find($data['user_id']);
         $inviter = User::find($inviterId);
