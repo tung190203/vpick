@@ -4,6 +4,7 @@ namespace App\Services\Club;
 
 use App\Enums\ClubFundCollectionStatus;
 use App\Enums\ClubFundContributionStatus;
+use App\Jobs\SendPushJob;
 use App\Models\Club\Club;
 use App\Models\Club\ClubFundCollection;
 use App\Notifications\ClubFundCollectionReminderNotification;
@@ -230,13 +231,19 @@ class ClubFundCollectionService
         $user = \App\Models\User::findOrFail($targetUserId);
         $collectionTitle = $collection->title ?: $collection->description ?: 'Đợt thu quỹ';
         $clubName = $club->name;
+        $amountDue = (float) ($targetItem['amount_due'] ?? 0);
 
-        $user->notify(new ClubFundCollectionReminderNotification(
-            $collection,
-            $collectionTitle,
-            $clubName,
-            (float) ($targetItem['amount_due'] ?? 0)
-        ));
+        $user->notify(new ClubFundCollectionReminderNotification($collection, $collectionTitle, $clubName, $amountDue));
+
+        $message = "Bạn được nhắc nhở đóng khoản thu {$collectionTitle} ở CLB {$clubName}";
+        if ($amountDue > 0) {
+            $message .= ' - Số tiền: ' . number_format($amountDue, 0, ',', '.') . ' VND';
+        }
+        SendPushJob::dispatch($user->id, 'Nhắc nhở đóng khoản thu', $message, [
+            'type' => 'CLUB_FUND_REMINDER',
+            'club_id' => (string) $club->id,
+            'club_fund_collection_id' => (string) $collection->id,
+        ]);
     }
 
     public function needPaymentForUser(ClubFundCollection $collection, int $userId): bool
