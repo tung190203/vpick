@@ -1,5 +1,5 @@
 <template>
-    <div class="mt-8 bg-white rounded-2xl shadow-sm overflow-hidden flex flex-col">
+    <div class="mt-8 bg-white rounded-2xl shadow-sm flex flex-col">
         <div class="flex border-b border-gray-200 mx-2">
             <button v-for="tab in tabs" :key="tab.id" @click="handleTabClick(tab.id)"
                 class="flex-1 py-4 text-center font-semibold transition-all relative"
@@ -10,7 +10,8 @@
         </div>
 
         <div class="relative">
-            <div class="p-8 transition-all duration-500 ease-in-out overflow-hidden"
+            <div class="p-8 transition-all duration-500 ease-in-out"
+                :class="{ 'overflow-hidden': shouldLimitHeight }"
                 :style="{ maxHeight: shouldLimitHeight ? (isExpanded ? contentHeight + 'px' : '300px') : 'none' }"
                 ref="contentWrapper">
                 <!-- Tab Content -->

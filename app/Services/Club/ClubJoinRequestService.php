@@ -9,6 +9,7 @@ use App\Models\Club\Club;
 use App\Models\Club\ClubMember;
 use App\Models\User;
 use App\Jobs\SendPushJob;
+use App\Notifications\ClubInvitationDeclinedNotification;
 use App\Notifications\ClubJoinRequestApprovedNotification;
 use App\Notifications\ClubJoinRequestReceivedNotification;
 use App\Notifications\ClubJoinRequestRejectedNotification;
@@ -238,10 +239,28 @@ class ClubJoinRequestService
             ->where('user_id', $userId)
             ->where('membership_status', ClubMembershipStatus::Pending)
             ->whereNotNull('invited_by')
+            ->with(['user', 'club'])
             ->first();
 
         if (!$member) {
             throw new \Exception('Không tìm thấy lời mời tham gia CLB này');
+        }
+
+        $club = $member->club;
+        $declinedUser = $member->user;
+        $inviterId = $member->invited_by;
+
+        if ($inviterId && $declinedUser && $club) {
+            $inviter = User::find($inviterId);
+            $userName = $declinedUser->full_name ?: $declinedUser->email ?: 'Thành viên';
+            $message = "{$userName} đã từ chối lời mời tham gia CLB {$club->name}";
+            if ($inviter) {
+                $inviter->notify(new ClubInvitationDeclinedNotification($club, $declinedUser));
+                SendPushJob::dispatch($inviterId, 'Từ chối lời mời tham gia CLB', $message, [
+                    'type' => 'CLUB_INVITATION_DECLINED',
+                    'club_id' => (string) $club->id,
+                ]);
+            }
         }
 
         $member->delete();
