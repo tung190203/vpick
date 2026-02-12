@@ -12,18 +12,18 @@
     "src": "node_modules/leaflet/dist/images/marker-icon.png"
   },
   "resources/css/app.css": {
-    "file": "assets/app-V8k-p8Zh.css",
+    "file": "assets/app-BAHIhDY9.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-GhEkO9yz.js",
+    "file": "assets/app-zNAonD5l.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "css": [
-      "assets/app-Bw4PciHM.css",
-      "assets/app-V8k-p8Zh.css"
+      "assets/app-DwO8waPL.css",
+      "assets/app-BAHIhDY9.css"
     ],
     "assets": [
       "assets/dashboard-bg-j02aDZD4.svg",
