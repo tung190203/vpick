@@ -462,6 +462,7 @@ import 'swiper/css/pagination';
 import 'swiper/css/free-mode'
 import { Html5Qrcode } from "html5-qrcode";
 import * as HomeService from "@/service/home";
+import * as ClubService from "@/service/club";
 import Background from "@/assets/images/dashboard-bg.svg?url";
 import { useUserStore } from "@/store/auth";
 import { storeToRefs } from "pinia";
@@ -592,6 +593,38 @@ const openQrScanner = async () => {
   }
 };
 
+// Helper function to check if URL is a check-in URL
+const isCheckInUrl = (url) => {
+  try {
+    const urlObj = new URL(url);
+    // Check if URL matches pattern: /api/clubs/{clubId}/activities/{activityId}/check-in
+    const pathRegex = /\/api\/clubs\/(\d+)\/activities\/(\d+)\/check-in/;
+    return pathRegex.test(urlObj.pathname);
+  } catch (e) {
+    return false;
+  }
+};
+
+// Helper function to parse check-in URL
+const parseCheckInUrl = (url) => {
+  try {
+    const urlObj = new URL(url);
+    const pathRegex = /\/api\/clubs\/(\d+)\/activities\/(\d+)\/check-in/;
+    const match = urlObj.pathname.match(pathRegex);
+    
+    if (match) {
+      return {
+        clubId: match[1],
+        activityId: match[2],
+        token: urlObj.searchParams.get('token')
+      };
+    }
+    return null;
+  } catch (e) {
+    return null;
+  }
+};
+
 // HÀM SỬ DỤNG MÃ (CHUYỂN HƯỚNG) (ĐÃ SỬA)
 const useScannedCode = async () => {
   const url = decodedQrCode.value;
@@ -611,8 +644,44 @@ const useScannedCode = async () => {
   isShowingConfirmation.value = false;
   isShowingScanner.value = false;
 
-  // 3. Chuyển hướng
-  if (url) {
+  // 3. Kiểm tra nếu là check-in URL
+  if (url && isCheckInUrl(url)) {
+    const checkInData = parseCheckInUrl(url);
+    
+    if (checkInData && checkInData.token) {
+      try {
+        // Gọi API check-in
+        const response = await ClubService.checkInActivity(
+          checkInData.clubId,
+          checkInData.activityId,
+          checkInData.token
+        );
+
+        // Chuyển hướng đến trang success với thông tin activity
+        router.push({
+          name: 'checkin-success',
+          query: {
+            clubId: checkInData.clubId,
+            activityId: checkInData.activityId,
+            message: response.message || 'Check-in thành công!',
+            activityData: JSON.stringify(response.data?.activity || {})
+          }
+        });
+      } catch (error) {
+        console.error('Check-in error:', error);
+        // Chuyển hướng đến trang success với error
+        router.push({
+          name: 'checkin-success',
+          query: {
+            error: error.response?.data?.message || 'Check-in thất bại. Vui lòng thử lại.'
+          }
+        });
+      }
+    } else {
+      toast.error('Mã QR check-in không hợp lệ');
+    }
+  } else if (url) {
+    // 4. Nếu không phải check-in URL, chuyển hướng bình thường
     window.open(url, '_self');
   }
 };
