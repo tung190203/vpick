@@ -160,6 +160,11 @@ class Club extends Model
         ]);
     }
 
+    public function scopeWithListRelations($query)
+    {
+        return $query->with(['profile'])->withCount('activeMembers');
+    }
+
     public function scopeSearch($query, $fillable, $searchTerm)
     {
         if ($searchTerm) {
@@ -172,26 +177,21 @@ class Club extends Model
         return $query;
     }
 
-    /** Đang là thành viên (membership_status = joined, status = active). */
     public function hasMember($userId)
     {
-        // members() đã filter membership_status = Joined, chỉ cần check status = Active
         return $this->members()
             ->where('user_id', $userId)
             ->where('status', ClubMemberStatus::Active)
             ->exists();
     }
 
-    /** Đang là thành viên active (có quyền leave, vào CLB...). */
     public function isMember($userId)
     {
         return $this->activeMembers()->where('user_id', $userId)->exists();
     }
 
-    /** User có thể gửi join request: chưa joined hoặc đã rejected/left. */
     public function canSendJoinRequest($userId): bool
     {
-        // Query trực tiếp từ ClubMember để check tất cả status, không chỉ Joined
         $existing = ClubMember::where('club_id', $this->id)
             ->where('user_id', $userId)
             ->first();
@@ -205,10 +205,8 @@ class Club extends Model
         ], true);
     }
 
-    /** Đang có request pending của user (chờ duyệt). */
     public function hasPendingRequest($userId): bool
     {
-        // Query trực tiếp từ ClubMember để check Pending status, không dùng members() (chỉ trả về Joined)
         return ClubMember::where('club_id', $this->id)
             ->where('user_id', $userId)
             ->where('membership_status', ClubMembershipStatus::Pending)
@@ -231,9 +229,6 @@ class Club extends Model
         return in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary, ClubMemberRole::Treasurer]);
     }
 
-    /**
-     * Đếm số lượng admin active trong CLB
-     */
     public function countActiveAdmins(): int
     {
         return $this->activeMembers()
@@ -241,9 +236,6 @@ class Club extends Model
             ->count();
     }
 
-    /**
-     * Kiểm tra xem có ít nhất 1 admin active còn lại sau khi remove/suspend member này không
-     */
     public function hasAtLeastOneAdminAfterRemoving($memberIdToRemove): bool
     {
         $remainingAdmins = $this->activeMembers()

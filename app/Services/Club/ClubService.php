@@ -3,8 +3,8 @@
 namespace App\Services\Club;
 
 use App\Enums\ClubMemberRole;
-use App\Enums\ClubMembershipStatus;
 use App\Enums\ClubMemberStatus;
+use App\Enums\ClubMembershipStatus;
 use App\Enums\ClubStatus;
 use App\Models\Club\Club;
 use App\Models\Club\ClubMember;
@@ -342,7 +342,7 @@ class ClubService
 
     public function searchClubs(array $filters, ?int $userId): LengthAwarePaginator
     {
-        $query = Club::withFullRelations()->orderBy('created_at', 'desc');
+        $query = Club::withListRelations()->orderBy('created_at', 'desc');
 
         if ($userId) {
             $query->where(function ($q) use ($userId) {
@@ -393,6 +393,36 @@ class ClubService
 
         $perPage = $filters['perPage'] ?? Club::PER_PAGE;
         return $query->paginate($perPage);
+    }
+
+    /**
+     * Gắn is_member, has_pending_request, has_invitation cho từng club (1 query thay vì 3*N)
+     */
+    public function attachUserMembershipStatus(iterable $clubs, int $userId): void
+    {
+        $clubIds = collect($clubs)->pluck('id')->filter()->unique()->values()->all();
+        if (empty($clubIds)) {
+            return;
+        }
+
+        $rows = ClubMember::whereIn('club_id', $clubIds)
+            ->where('user_id', $userId)
+            ->get(['club_id', 'membership_status', 'status', 'invited_by']);
+
+        $byClub = $rows->groupBy('club_id');
+
+        foreach ($clubs as $club) {
+            $m = $byClub->get($club->id)?->first();
+            $club->setAttribute('_is_member', $m
+                ? ($m->membership_status === ClubMembershipStatus::Joined && $m->status === ClubMemberStatus::Active)
+                : false);
+            $club->setAttribute('_has_pending_request', $m
+                ? ($m->membership_status === ClubMembershipStatus::Pending && $m->invited_by === null)
+                : false);
+            $club->setAttribute('_has_invitation', $m
+                ? ($m->membership_status === ClubMembershipStatus::Pending && $m->invited_by !== null)
+                : false);
+        }
     }
 
     public function leaveClub(Club $club, int $userId, ?int $transferToUserId = null): array

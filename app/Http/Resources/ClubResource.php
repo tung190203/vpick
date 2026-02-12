@@ -30,34 +30,24 @@ class ClubResource extends JsonResource
             'is_verified' => (bool) $this->is_verified,
             'rank' => $this->when(isset($this->rank), $this->rank),
             'created_by' => $this->created_by,
-            'members' => ClubMemberResource::collection($this->whenLoaded('members')),
-            'quantity_members' => $this->whenLoaded('members', fn() =>
-                $this->members
-                    ->filter(fn($m) => $m->user !== null) // Chỉ đếm members có user tồn tại
-                    ->where('membership_status', ClubMembershipStatus::Joined)
-                    ->where('status', ClubMemberStatus::Active)
-                    ->count(),
+            'members' => ClubMemberResource::collection($this->whenLoaded('activeMembers', $this->whenLoaded('members', collect()))),
+            'quantity_members' => $this->when(isset($this->active_members_count), fn () => $this->active_members_count,
+                $this->whenLoaded('members', fn () =>
+                    $this->members
+                        ->filter(fn ($m) => $m->user !== null)
+                        ->where('membership_status', ClubMembershipStatus::Joined)
+                        ->where('status', ClubMemberStatus::Active)
+                        ->count(),
                 0
-            ),
-            'skill_level' => $this->whenLoaded('members', function () {
-                $scores = $this->members
-                    ->filter(fn($m) => $m->user !== null) // Chỉ lấy members có user tồn tại
-                    ->where('membership_status', ClubMembershipStatus::Joined)
-                    ->where('status', ClubMemberStatus::Active)
-                    ->map(fn($member) => $this->getMemberVnduprScore($member))
-                    ->filter(fn($score) => $score !== null);
-
-                if ($scores->isEmpty()) {
-                    return null;
-                }
-
-                return [
-                    'min' => round($scores->min(), 1),
-                    'max' => round($scores->max(), 1),
-                ];
-            }, null),
+            )),
+            'skill_level' => $this->whenLoaded('activeMembers', fn () => $this->computeSkillLevel($this->activeMembers))
+                ?? $this->whenLoaded('members', fn () => $this->computeSkillLevel(
+                    $this->members->filter(fn ($m) => $m->user !== null)
+                        ->where('membership_status', ClubMembershipStatus::Joined)
+                        ->where('status', ClubMemberStatus::Active)
+                )),
             'is_member' => $this->when(auth()->check(), fn () =>
-                ClubMember::where('club_id', $this->id)
+                array_key_exists('_is_member', $this->resource->getAttributes()) ? (bool) $this->_is_member : ClubMember::where('club_id', $this->id)
                     ->where('user_id', auth()->id())
                     ->where('membership_status', ClubMembershipStatus::Joined)
                     ->where('status', ClubMemberStatus::Active)
@@ -65,7 +55,7 @@ class ClubResource extends JsonResource
                 false
             ),
             'has_pending_request' => $this->when(auth()->check(), fn () =>
-                ClubMember::where('club_id', $this->id)
+                array_key_exists('_has_pending_request', $this->resource->getAttributes()) ? (bool) $this->_has_pending_request : ClubMember::where('club_id', $this->id)
                     ->where('user_id', auth()->id())
                     ->where('membership_status', ClubMembershipStatus::Pending)
                     ->whereNull('invited_by')
@@ -73,7 +63,7 @@ class ClubResource extends JsonResource
                 false
             ),
             'has_invitation' => $this->when(auth()->check(), fn () =>
-                ClubMember::where('club_id', $this->id)
+                array_key_exists('_has_invitation', $this->resource->getAttributes()) ? (bool) $this->_has_invitation : ClubMember::where('club_id', $this->id)
                     ->where('user_id', auth()->id())
                     ->where('membership_status', ClubMembershipStatus::Pending)
                     ->whereNotNull('invited_by')
@@ -141,6 +131,18 @@ class ClubResource extends JsonResource
             'zalo_link_enabled' => false,
             'qr_zalo' => null,
             'qr_zalo_enabled' => false,
+        ];
+    }
+
+    /**
+     * Tính skill_level từ collection members
+     */
+    protected function computeSkillLevel($members): ?array
+    {
+        $scores = $members->map(fn ($member) => $this->getMemberVnduprScore($member))->filter(fn ($s) => $s !== null);
+        return $scores->isEmpty() ? null : [
+            'min' => round($scores->min(), 1),
+            'max' => round($scores->max(), 1),
         ];
     }
 

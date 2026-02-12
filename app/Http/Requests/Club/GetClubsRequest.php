@@ -14,6 +14,7 @@ class GetClubsRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'page' => 'sometimes|integer|min:1',
             'name' => 'sometimes|string|max:255',
             'address' => 'sometimes|string|max:255',
             'lat' => 'nullable|numeric',

@@ -38,6 +38,12 @@ class ClubController extends Controller
         $userId = auth()->id();
         $clubs = $this->clubService->searchClubs($request->validated(), $userId);
 
+        if ($userId && $clubs->isNotEmpty()) {
+            /** @var ClubService $clubService */
+            $clubService = $this->clubService;
+            $clubService->attachUserMembershipStatus($clubs->items(), $userId);
+        }
+
         $data = [
             'clubs' => ClubResource::collection($clubs),
         ];
