@@ -222,13 +222,14 @@ class ClubMemberManagementService
 
     private function validateRoleUpdate(string $newRole, bool $isSelfUpdate, ?ClubMemberRole $currentUserRole, ClubMember $member, Club $club): void
     {
-        $canUpdateRole = in_array($currentUserRole, [ClubMemberRole::Admin, ClubMemberRole::Secretary], true);
+        $currentRoleValue = $currentUserRole?->value;
+        $canUpdateRole = in_array($currentRoleValue, [ClubMemberRole::Admin->value, ClubMemberRole::Secretary->value], true);
 
         if (!$canUpdateRole) {
             throw new \Exception('Chỉ admin hoặc thư ký mới có quyền thay đổi role của thành viên');
         }
 
-        if ($currentUserRole === ClubMemberRole::Secretary && $newRole === ClubMemberRole::Admin->value) {
+        if ($currentRoleValue === ClubMemberRole::Secretary->value && $newRole === ClubMemberRole::Admin->value) {
             throw new \Exception('Thư ký không có quyền chỉ định role Quản trị viên');
         }
 
