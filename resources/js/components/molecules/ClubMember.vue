@@ -163,7 +163,9 @@
       </div>
 
       <!-- Pagination -->
-      <Pagination :meta="paginationMeta" @page-change="goToPage" />
+      <div class="min-h-[60px] mt-4">
+        <Pagination :meta="paginationMeta" @page-change="goToPage" />
+      </div>
       </div>
     </div>
 
