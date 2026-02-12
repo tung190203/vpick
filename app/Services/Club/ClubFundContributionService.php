@@ -7,6 +7,11 @@ use App\Enums\ClubFundContributionStatus;
 use App\Enums\ClubMemberRole;
 use App\Enums\ClubMemberStatus;
 use App\Enums\ClubMembershipStatus;
+use App\Enums\ClubWalletTransactionDirection;
+use App\Enums\ClubWalletTransactionSourceType;
+use App\Enums\ClubWalletTransactionStatus;
+use App\Enums\ClubWalletType;
+use App\Enums\PaymentMethod;
 use App\Jobs\SendPushJob;
 use App\Models\Club\Club;
 use App\Models\Club\ClubFundCollection;
@@ -23,7 +28,8 @@ use Illuminate\Support\Facades\DB;
 class ClubFundContributionService
 {
     public function __construct(
-        protected ImageOptimizationService $imageService
+        protected ImageOptimizationService $imageService,
+        protected ClubWalletService $walletService
     ) {
     }
 
@@ -127,11 +133,36 @@ class ClubFundContributionService
         $contribution = DB::transaction(function () use ($contribution, $confirmerId) {
             $contribution->confirm();
 
-            if ($contribution->walletTransaction) {
-                $contribution->walletTransaction->confirm($confirmerId);
+            $club = $contribution->fundCollection->club;
+            $mainWallet = $club->mainWallet;
+            if (!$mainWallet) {
+                $mainWallet = $this->walletService->createWallet($club, [
+                    'type' => ClubWalletType::Main,
+                    'currency' => 'VND',
+                ]);
             }
 
-            return $contribution;
+            if ($contribution->walletTransaction) {
+                $contribution->walletTransaction->confirm($confirmerId);
+            } else {
+                $collection = $contribution->fundCollection;
+                $description = $collection->title ?: $collection->description ?: 'Đợt thu quỹ';
+                $transaction = $mainWallet->transactions()->create([
+                    'direction' => ClubWalletTransactionDirection::In,
+                    'amount' => $contribution->amount,
+                    'source_type' => ClubWalletTransactionSourceType::FundCollection,
+                    'source_id' => $contribution->id,
+                    'payment_method' => PaymentMethod::Other,
+                    'status' => ClubWalletTransactionStatus::Confirmed,
+                    'description' => $description,
+                    'created_by' => $contribution->user_id,
+                    'confirmed_by' => $confirmerId,
+                    'confirmed_at' => now(),
+                ]);
+                $contribution->update(['wallet_transaction_id' => $transaction->id]);
+            }
+
+            return $contribution->fresh();
         });
 
         $user = $contribution->user;
