@@ -8,6 +8,10 @@ use App\Enums\ClubMembershipStatus;
 use App\Models\Club\Club;
 use App\Models\Club\ClubMember;
 use App\Models\User;
+use App\Jobs\SendPushJob;
+use App\Notifications\ClubJoinRequestApprovedNotification;
+use App\Notifications\ClubJoinRequestReceivedNotification;
+use App\Notifications\ClubJoinRequestRejectedNotification;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
@@ -45,7 +49,7 @@ class ClubJoinRequestService
             throw new \Exception('Bạn không thể gửi yêu cầu tham gia');
         }
 
-        return DB::transaction(function () use ($club, $userId, $message) {
+        $member = DB::transaction(function () use ($club, $userId, $message) {
             $existing = ClubMember::where('club_id', $club->id)
                 ->where('user_id', $userId)
                 ->lockForUpdate()
@@ -86,6 +90,35 @@ class ClubJoinRequestService
                 'message' => $message,
             ]);
         });
+
+        $applicant = User::find($userId);
+        if ($applicant) {
+            $this->notifyAdminsOfNewJoinRequest($club, $applicant);
+        }
+
+        return $member;
+    }
+
+    private function notifyAdminsOfNewJoinRequest(Club $club, User $applicant): void
+    {
+        $adminUserIds = ClubMember::where('club_id', $club->id)
+            ->where('membership_status', ClubMembershipStatus::Joined)
+            ->where('status', ClubMemberStatus::Active)
+            ->whereIn('role', [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary])
+            ->pluck('user_id');
+
+        $applicantName = $applicant->full_name ?: $applicant->email;
+        $message = "Có yêu cầu tham gia mới từ {$applicantName} tại CLB {$club->name}";
+
+        $users = User::whereIn('id', $adminUserIds)->get();
+        foreach ($users as $user) {
+            $user->notify(new ClubJoinRequestReceivedNotification($club, $applicant));
+            SendPushJob::dispatch($user->id, 'Yêu cầu tham gia CLB mới', $message, [
+                'type' => 'CLUB_JOIN_REQUEST',
+                'club_id' => (string) $club->id,
+                'applicant_id' => (string) $applicant->id,
+            ]);
+        }
     }
 
     public function cancelMyRequest(Club $club, int $userId): void
@@ -124,6 +157,17 @@ class ClubJoinRequestService
             'joined_at' => now(),
         ]);
 
+        $user = $member->user;
+        $club = $member->club;
+        if ($user && $club) {
+            $message = "Bạn đã được chấp nhận tham gia CLB {$club->name}";
+            $user->notify(new ClubJoinRequestApprovedNotification($club));
+            SendPushJob::dispatch($user->id, 'Yêu cầu tham gia CLB đã được duyệt', $message, [
+                'type' => 'CLUB_JOIN_APPROVED',
+                'club_id' => (string) $club->id,
+            ]);
+        }
+
         return $member;
     }
 
@@ -140,6 +184,20 @@ class ClubJoinRequestService
             'reviewed_by' => $reviewerId,
             'reviewed_at' => now(),
         ]);
+
+        $user = $member->user;
+        $club = $member->club;
+        if ($user && $club) {
+            $message = "Yêu cầu tham gia CLB {$club->name} đã bị từ chối";
+            if ($rejectionReason) {
+                $message .= ": {$rejectionReason}";
+            }
+            $user->notify(new ClubJoinRequestRejectedNotification($club, $rejectionReason));
+            SendPushJob::dispatch($user->id, 'Yêu cầu tham gia CLB đã bị từ chối', $message, [
+                'type' => 'CLUB_JOIN_REJECTED',
+                'club_id' => (string) $club->id,
+            ]);
+        }
     }
 
     public function getMyInvitations(int $userId): \Illuminate\Support\Collection

@@ -11,7 +11,9 @@ use App\Models\Club\Club;
 use App\Models\Club\ClubMember;
 use App\Models\Club\ClubNotificationType;
 use App\Models\User;
+use App\Jobs\SendPushJob;
 use App\Notifications\ClubInvitationNotification;
+use App\Notifications\ClubMemberKickedNotification;
 use App\Notifications\ClubRoleChangeNotification;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -112,11 +114,14 @@ class ClubMemberManagementService
         $invitedUser = User::find($data['user_id']);
         $inviter = User::find($inviterId);
         if ($invitedUser && $inviter) {
-            $invitedUser->notify(new ClubInvitationNotification(
-                $club,
-                $member,
-                $inviter->full_name ?: $inviter->email
-            ));
+            $inviterName = $inviter->full_name ?: $inviter->email;
+            $message = "Bạn được mời tham gia CLB {$club->name} bởi {$inviterName}";
+            $invitedUser->notify(new ClubInvitationNotification($club, $member, $inviterName));
+            SendPushJob::dispatch($invitedUser->id, 'Lời mời tham gia CLB', $message, [
+                'type' => 'CLUB_INVITATION',
+                'club_id' => (string) $club->id,
+                'club_member_id' => (string) $member->id,
+            ]);
         }
 
         return $member;
@@ -179,6 +184,16 @@ class ClubMemberManagementService
             'status' => ClubMemberStatus::Suspended,
             'left_at' => now(),
         ]);
+
+        $club = $member->club;
+        $user = $member->user;
+        if ($user && $club) {
+            $user->notify(new ClubMemberKickedNotification($club));
+            SendPushJob::dispatch($user->id, 'Bạn đã bị đuổi khỏi CLB', "Bạn đã bị đuổi khỏi CLB {$club->name}", [
+                'type' => 'CLUB_MEMBER_KICKED',
+                'club_id' => (string) $club->id,
+            ]);
+        }
     }
 
     public function cancelInvitation(ClubMember $member, int $inviterId): void
@@ -233,7 +248,13 @@ class ClubMemberManagementService
 
         // Laravel notification → hiển thị trong api/notifications/index, có club_id
         if ($user) {
+            $message = "Bạn được bổ nhiệm làm {$roleLabel} trong CLB {$club->name}";
             $user->notify(new ClubRoleChangeNotification($club, $member, $roleLabel, $updaterId));
+            SendPushJob::dispatch($user->id, 'Bạn được bổ nhiệm làm ' . $roleLabel, $message, [
+                'type' => 'CLUB_ROLE_CHANGE',
+                'club_id' => (string) $club->id,
+                'club_member_id' => (string) $member->id,
+            ]);
         }
 
         // Club notification (nội bộ CLB)

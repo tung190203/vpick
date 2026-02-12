@@ -10,9 +10,14 @@ use App\Enums\ClubWalletTransactionDirection;
 use App\Enums\ClubWalletTransactionSourceType;
 use App\Enums\ClubWalletTransactionStatus;
 use App\Enums\PaymentMethod;
+use App\Jobs\SendPushJob;
 use App\Models\Club\ClubActivity;
 use App\Models\Club\ClubActivityParticipant;
 use App\Models\Club\ClubWalletTransaction;
+use App\Models\User;
+use App\Notifications\ClubActivityInvitationNotification;
+use App\Notifications\ClubActivityJoinApprovedNotification;
+use App\Notifications\ClubActivityJoinRejectedNotification;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -118,6 +123,17 @@ class ClubActivityParticipantService
                 $participant->load('user');
                 $invited[] = $participant;
                 $currentCount++;
+
+                $user = User::find($userId);
+                if ($user) {
+                    $message = "Bạn được mời tham gia sự kiện {$activity->title} tại CLB {$club->name}";
+                    $user->notify(new ClubActivityInvitationNotification($club, $activity));
+                    SendPushJob::dispatch($user->id, 'Lời mời tham gia sự kiện', $message, [
+                        'type' => 'CLUB_ACTIVITY_INVITATION',
+                        'club_id' => (string) $club->id,
+                        'club_activity_id' => (string) $activity->id,
+                    ]);
+                }
             }
         }
 
@@ -165,7 +181,7 @@ class ClubActivityParticipantService
             throw new \Exception('Sự kiện đã đủ số lượng người tham gia');
         }
 
-        return DB::transaction(function () use ($participant, $activity) {
+        $participant = DB::transaction(function () use ($participant, $activity) {
             if ($activity->fee_amount > 0) {
                 $this->createFeeTransaction($participant, $activity);
             } else {
@@ -174,6 +190,20 @@ class ClubActivityParticipantService
 
             return $participant;
         });
+
+        $user = $participant->user;
+        $club = $activity->club;
+        if ($user && $club) {
+            $message = "Yêu cầu tham gia sự kiện {$activity->title} đã được duyệt";
+            $user->notify(new ClubActivityJoinApprovedNotification($club, $activity));
+            SendPushJob::dispatch($user->id, 'Yêu cầu tham gia sự kiện đã được duyệt', $message, [
+                'type' => 'CLUB_ACTIVITY_JOIN_APPROVED',
+                'club_id' => (string) $club->id,
+                'club_activity_id' => (string) $activity->id,
+            ]);
+        }
+
+        return $participant;
     }
 
     public function rejectRequest(ClubActivityParticipant $participant, int $rejecterId): ClubActivityParticipant
@@ -191,6 +221,17 @@ class ClubActivityParticipantService
         }
 
         $participant->decline();
+
+        $user = $participant->user;
+        if ($user && $club) {
+            $message = "Yêu cầu tham gia sự kiện {$activity->title} đã bị từ chối";
+            $user->notify(new ClubActivityJoinRejectedNotification($club, $activity));
+            SendPushJob::dispatch($user->id, 'Yêu cầu tham gia sự kiện đã bị từ chối', $message, [
+                'type' => 'CLUB_ACTIVITY_JOIN_REJECTED',
+                'club_id' => (string) $club->id,
+                'club_activity_id' => (string) $activity->id,
+            ]);
+        }
 
         return $participant;
     }
