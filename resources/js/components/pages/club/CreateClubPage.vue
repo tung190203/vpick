@@ -329,22 +329,11 @@ const submitClub = async (isDraft = false) => {
             toast.success('Lưu nháp thành công')
         } else {
             toast.success('Tạo CLB thành công')
-            router.push({ name: 'club.detail', params: { id: res.data.id } })
+            router.push({ name: 'club-detail', params: { id: res.data.id } })
         }
     } catch (error) {
         console.error('Error creating club:', error)
-        if (error.response?.status === 422 && error.response?.data?.errors) {
-            // Map backend validation errors
-            const backendErrors = error.response.data.errors
-            Object.keys(backendErrors).forEach(key => {
-                errors.value[key] = backendErrors[key][0]
-            })
-            toast.error('Vui lòng kiểm tra lại thông tin')
-        } else if (error.response?.data?.message) {
-            toast.error(error.response.data.message)
-        } else {
-            toast.error('Có lỗi xảy ra, vui lòng thử lại')
-        }
+        toast.error('Có lỗi xảy ra, vui lòng thử lại')
     } finally {
         isLoading.value = false
     }

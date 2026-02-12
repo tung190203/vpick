@@ -317,8 +317,13 @@
                     </div>
                   </div>
                 </div>
-
-                <h4 class="font-bold text-[#8E95A2] text-[13px] uppercase tracking-[0.2em] mb-4">THÀNH VIÊN</h4>
+                  <div class="flex items-center gap-2 mb-4">
+                    <h4 class="font-bold text-[#8E95A2] text-[13px] uppercase tracking-[0.2em]">THÀNH VIÊN</h4>
+                    <span class="w-1 h-1 rounded-full bg-[#3E414C]"></span>
+                    <span class="px-2 py-0.5 text-[#838799] text-[13px] font-bold uppercase tracking-[0.2rem]">
+                      Đã check-in ({{ totalParticipantAttended }})
+                    </span>
+                  </div>
                 <div class="space-y-0" v-if="participants && participants.length">
                   <div v-for="(user, index) in participants" :key="user.id" 
                     class="flex items-center gap-5 py-5 group cursor-pointer" @click="goToProfile(user.userId)"
@@ -547,6 +552,10 @@ const recurringText = computed(() => {
     return `Lặp lại: ${selectedLabels.join(', ')}`
 })
 
+const totalParticipantAttended = computed(() => {
+  return participants.value.filter(p => p.status === 'attended').length
+})
+
 const feeSplitLabel = computed(() => {
   const map = {
     equal: 'Chia đều',
@@ -691,7 +700,18 @@ const updateEvent = () => {
 }
 
 const shareEvent = () => {
-    toast.info('Đã sao chép liên kết sự kiện')
+    navigator.share({
+        title: activity.value.title,
+        text: activity.value.description,
+        url: activity.value.check_in_url
+    })
+    .then(() => {
+        toast.info('Đã chia sẻ sự kiện')
+    })
+    .catch((error) => {
+        console.error('Error sharing:', error)
+        toast.error('Không thể chia sẻ sự kiện')
+    })
 }
 
 const cancelEvent = () => {
