@@ -6,14 +6,9 @@ use App\Models\Club\Club;
 use App\Models\Club\ClubFundCollection;
 use App\Models\Club\ClubFundContribution;
 use App\Models\User;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Notification;
 
-class ClubFundContributionSubmittedNotification extends Notification implements ShouldQueue
+class ClubFundContributionSubmittedNotification extends ClubNotificationBase
 {
-    use Queueable;
-
     public function __construct(
         public Club $club,
         public ClubFundCollection $collection,
@@ -22,27 +17,19 @@ class ClubFundContributionSubmittedNotification extends Notification implements 
     ) {
     }
 
-    public function via(object $notifiable): array
-    {
-        return ['database'];
-    }
-
     public function toDatabase(object $notifiable): array
     {
         $submitterName = $this->submitter->full_name ?: $this->submitter->email;
         $collectionTitle = $this->collection->title ?: $this->collection->description ?: 'Đợt thu quỹ';
         $message = "{$submitterName} đã nộp thanh toán cho khoản thu {$collectionTitle} tại CLB {$this->club->name}";
 
-        return [
+        return self::payload('Yêu cầu thanh toán mới', $message, [
             'club_id' => $this->club->id,
             'club_fund_collection_id' => $this->collection->id,
             'club_fund_contribution_id' => $this->contribution->id,
             'submitter_id' => $this->submitter->id,
             'submitter_name' => $submitterName,
-            'collection_title' => $collectionTitle,
             'amount' => (float) $this->contribution->amount,
-            'title' => 'Yêu cầu thanh toán mới',
-            'message' => $message,
-        ];
+        ]);
     }
 }

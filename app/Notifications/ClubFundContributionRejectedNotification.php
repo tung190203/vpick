@@ -5,25 +5,15 @@ namespace App\Notifications;
 use App\Models\Club\Club;
 use App\Models\Club\ClubFundCollection;
 use App\Models\Club\ClubFundContribution;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Notification;
 
-class ClubFundContributionRejectedNotification extends Notification implements ShouldQueue
+class ClubFundContributionRejectedNotification extends ClubNotificationBase
 {
-    use Queueable;
-
     public function __construct(
         public Club $club,
         public ClubFundCollection $collection,
         public ClubFundContribution $contribution,
         public ?string $rejectionReason = null
     ) {
-    }
-
-    public function via(object $notifiable): array
-    {
-        return ['database'];
     }
 
     public function toDatabase(object $notifiable): array
@@ -34,15 +24,11 @@ class ClubFundContributionRejectedNotification extends Notification implements S
             $message .= ": {$this->rejectionReason}";
         }
 
-        return [
+        return self::payload('Thanh toán đã bị từ chối', $message, [
             'club_id' => $this->club->id,
             'club_fund_collection_id' => $this->collection->id,
             'club_fund_contribution_id' => $this->contribution->id,
-            'collection_title' => $collectionTitle,
-            'amount' => (float) $this->contribution->amount,
             'rejection_reason' => $this->rejectionReason,
-            'title' => 'Thanh toán đã bị từ chối',
-            'message' => $message,
-        ];
+        ]);
     }
 }
