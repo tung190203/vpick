@@ -12,6 +12,7 @@ use App\Models\Club\ClubMember;
 use App\Models\Club\ClubNotificationType;
 use App\Models\User;
 use App\Jobs\SendPushJob;
+use App\Notifications\ClubInvitationCancelledNotification;
 use App\Notifications\ClubInvitationNotification;
 use App\Notifications\ClubMemberKickedNotification;
 use App\Notifications\ClubRoleChangeNotification;
@@ -200,6 +201,20 @@ class ClubMemberManagementService
     {
         if ($member->membership_status !== ClubMembershipStatus::Pending || $member->invited_by !== $inviterId) {
             throw new \Exception('Chỉ có thể hủy lời mời do chính bạn gửi');
+        }
+
+        $club = $member->club;
+        $invitedUser = $member->user;
+        $inviter = User::find($inviterId);
+        $inviterName = $inviter ? ($inviter->full_name ?: $inviter->email) : 'Người mời';
+
+        if ($invitedUser && $club) {
+            $message = "Lời mời tham gia CLB {$club->name} đã bị hủy bởi {$inviterName}";
+            $invitedUser->notify(new ClubInvitationCancelledNotification($club, $inviterName));
+            SendPushJob::dispatch($invitedUser->id, 'Lời mời tham gia CLB đã bị hủy', $message, [
+                'type' => 'CLUB_INVITATION_CANCELLED',
+                'club_id' => (string) $club->id,
+            ]);
         }
 
         $member->delete();
