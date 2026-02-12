@@ -118,6 +118,11 @@ class ClubExpenseService
             throw new \Exception('Chỉ admin/manager/secretary/treasurer mới có quyền xóa');
         }
 
+        $transaction = $expense->walletTransaction;
+        if ($transaction && !$transaction->isRejected()) {
+            $transaction->reject($userId);
+        }
+
         $expense->delete();
     }
 
