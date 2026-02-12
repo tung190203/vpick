@@ -13,6 +13,7 @@
         <div class="flex space-x-2">
           <div class="w-10 h-10 bg-gray-300 rounded-full"></div>
           <div class="w-10 h-10 bg-gray-300 rounded-full"></div>
+          <div class="w-10 h-10 bg-gray-300 rounded-full"></div>
         </div>
       </div>
 

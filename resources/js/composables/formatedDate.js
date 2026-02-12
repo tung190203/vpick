@@ -1,4 +1,6 @@
 import { computed } from 'vue'
+import dayjs from 'dayjs'
+import 'dayjs/locale/vi'
 
 export function useFormattedDate(date) {
   const formattedDate = computed(() => {
@@ -18,3 +20,9 @@ export function useFormattedDate(date) {
 
   return { formattedDate }
 }
+
+export const getVietnameseDay = (date) => {
+    const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
+    return days[dayjs(date).day()]
+}
+

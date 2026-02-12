@@ -569,7 +569,7 @@ const getActivityDetail = async () => {
             }
             
             if (data.participants) {
-                participants.value = data.participants?.accepted?.map(p => ({
+                participants.value = data.participants?.map(p => ({
                     id: p.id,
                     name: p.user?.full_name || 'Thành viên',
                     avatar: p.user?.avatar_url || p.user?.thumbnail,
