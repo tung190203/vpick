@@ -40,6 +40,7 @@ import MiniMatchVerifyPage from '@/components/pages/mini-tournament/MiniMatchVer
 import NotificationsPage from '@/components/pages/notifications/NotificationsPage.vue'
 import SettingsPage from '@/components/pages/profile/SettingsPage.vue'
 import MapPage from '@/components/pages/map/MapPage.vue'
+import CheckInSuccessPage from '@/components/pages/checkin/CheckInSuccessPage.vue'
 import { ROLE } from '@/constants/index.js'
 
 export const route = [
@@ -388,6 +389,11 @@ export const route = [
     path: '/verify-email',
     name: 'verify-email',
     component: VerifyEmailPage
+  },
+  {
+    path: '/checkin/success',
+    name: 'checkin-success',
+    component: CheckInSuccessPage
   },
   {
     path: '/privacy-policy',

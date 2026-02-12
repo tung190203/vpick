@@ -362,7 +362,7 @@
             <div class="overflow-hidden">
               <div class="p-8 flex flex-col items-center">
                 <div ref="qrcodeContainer" class="p-4 mb-6">
-                  <qrcode-vue :value="activity.qr_code_url" :size="200" level="H" class="rounded-[4px]" />
+                  <qrcode-vue :value="activity.check_in_url" :size="200" level="H" class="rounded-[4px]" />
                 </div>
                 <Button 
                     size="md" 
@@ -402,7 +402,7 @@
             </button>
             <h3 class="text-xl font-bold text-[#3E414C] mb-6">Mã QR Check-in</h3>
             <div class="p-4 bg-gray-50 rounded-xl mb-6">
-                <qrcode-vue :value="activity.qr_code_url" :size="240" level="H" class="rounded-[4px]" />
+                <qrcode-vue :value="activity.check_in_url" :size="240" level="H" class="rounded-[4px]" />
             </div>
             <p class="text-center text-[#3E414C] font-semibold text-lg max-w-[280px]">
                 Mở app Picki và quét mã QR để checkin hoạt động
