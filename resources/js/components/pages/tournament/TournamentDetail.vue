@@ -556,6 +556,7 @@
   :active-scope="activeScope"
   :search-query="searchQuery"
   :current-radius="currentRadius"
+  :current-club-id="selectedClub"
   :is-loading-more="isLoadingMoreInvite"
   :has-more="hasMoreInvite"
   @update:searchQuery="onSearchChange"
