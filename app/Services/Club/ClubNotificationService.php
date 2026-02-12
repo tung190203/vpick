@@ -5,6 +5,7 @@ namespace App\Services\Club;
 use App\Enums\ClubMemberRole;
 use App\Enums\ClubNotificationPriority;
 use App\Enums\ClubNotificationStatus;
+use App\Jobs\SendPushJob;
 use App\Models\Club\Club;
 use App\Models\Club\ClubNotification;
 use App\Models\Club\ClubNotificationRecipient;
@@ -130,13 +131,30 @@ class ClubNotificationService
         return $notification;
     }
 
+    public function dispatchUserNotificationsForSentNotification(ClubNotification $notification): void
+    {
+        $club = $notification->club;
+        if (!$club) {
+            return;
+        }
+        $this->dispatchUserNotifications($club, $notification);
+    }
+
     private function dispatchUserNotifications(Club $club, ClubNotification $notification): void
     {
         $recipientUserIds = $notification->recipients()->pluck('user_id')->unique();
         $users = User::whereIn('id', $recipientUserIds)->get();
 
+        $title = $notification->title ?: 'Thông báo từ CLB';
+        $body = $notification->content ?: $club->name;
+
         foreach ($users as $user) {
             $user->notify(new ClubNotificationSentNotification($club, $notification));
+            SendPushJob::dispatch($user->id, $title, $body, [
+                'type' => 'CLUB_NOTIFICATION',
+                'club_id' => (string) $club->id,
+                'club_notification_id' => (string) $notification->id,
+            ]);
         }
     }
 
