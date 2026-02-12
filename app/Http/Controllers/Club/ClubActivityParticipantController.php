@@ -35,6 +35,7 @@ class ClubActivityParticipantController extends Controller
             'pending_count' => $result['pending_count'],
             'invited_count' => $result['invited_count'],
             'accepted_count' => $result['accepted_count'],
+            'attended_count' => $result['attended_count'] ?? 0,
         ];
 
         return ResponseHelper::success($data, 'Lấy danh sách người tham gia thành công');

@@ -48,6 +48,7 @@ class ClubActivityResource extends JsonResource
             'created_by' => $this->created_by,
             'participants_count' => $this->whenLoaded('participants', fn() => $this->participants->count()),
             'accepted_count' => $this->whenLoaded('participants', fn() => $this->participants->where('status', ClubActivityParticipantStatus::Accepted)->count()),
+            'attended_count' => $this->whenLoaded('participants', fn() => $this->participants->where('status', ClubActivityParticipantStatus::Attended)->count()),
             'participants' => $this->whenLoaded('participants', fn() => ClubActivityParticipantResource::collection($this->participants)),
             'creator' => new UserResource($this->whenLoaded('creator')),
             'mini_tournament' => $this->whenLoaded('miniTournament'),
