@@ -582,7 +582,7 @@ const getActivityDetail = async () => {
                     id: p.id,
                     name: p.user?.full_name || 'Thành viên',
                     avatar: p.user?.avatar_url || p.user?.thumbnail,
-                    level: p.user.sports[0]?.scores?.vndupr_score || 'N/A',
+                    level: p.user?.sports[0]?.scores?.vndupr_score || 'N/A',
                     joined_at: p.created_at ? dayjs(p.created_at).fromNow() : 'Vừa tham gia',
                     status: p.status,
                     userId: p.user_id
@@ -592,7 +592,7 @@ const getActivityDetail = async () => {
             if (data.creator) {
                 creator.value = {
                     name: data.creator.full_name,
-                    level: data.creator.sports[0]?.scores?.vndupr_score || 'N/A',
+                    level: data.creator?.sports[0]?.scores?.vndupr_score || 'N/A',
                     avatar: data.creator.avatar_url || data.creator.thumbnail
                 }
             }

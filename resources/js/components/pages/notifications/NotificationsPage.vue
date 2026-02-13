@@ -374,13 +374,6 @@ const redirectByType = (n) => {
       break
 
     case 'MiniTournamentInvitationNotification':
-      if (!d.tournament_id) return
-      router.push({
-        name: 'mini-tournament-detail',
-        params: { id: d.tournament_id }
-      })
-      break
-
     case 'MiniTournamentJoinConfirmedNotification':
       if (!d.tournament_id) return
       router.push({
@@ -390,18 +383,60 @@ const redirectByType = (n) => {
       break
 
     case 'TournamentInvitationNotification':
+    case 'TournamentJoinConfirmedNotification':
       if (!d.tournament_id) return
       router.push({
         name: 'tournament-detail',
         params: { id: d.tournament_id }
       })
       break
-
-    case 'TournamentJoinConfirmedNotification':
-      if (!d.tournament_id) return
+    
+    case 'ClubRoleChangeNotification':
+    case 'ClubInvitationNotification':
+    case 'ClubInvitationCancelledNotification':
+    case 'ClubInvitationDeclinedNotification':
+    case 'ClubJoinRequestApprovedNotification':
+    case 'ClubJoinRequestReceivedNotification':
+    case 'ClubJoinRequestRejectedNotification':
+    case 'ClubMemberKickedNotification':
+    case 'ClubNotificationSentNotification':
+    case 'ClubRenamedNotification':
+      if (!d.club_id) return
       router.push({
-        name: 'tournament-detail',
-        params: { id: d.tournament_id }
+        name: 'club-detail',
+        params: { id: d.club_id },
+        query: { showNotifications: true }
+      })
+      break
+    
+    case 'ClubActivityCancelledNotification':
+    case 'ClubActivityInvitationNotification':
+    case 'ClubActivityJoinApprovedNotification':
+    case 'ClubActivityJoinRejectedNotification':
+    case 'ClubActivityJoinRequestNotification':
+      if (!d.club_id || !d.club_activity_id) return
+
+      router.push({
+        name: 'club-detail-activity',
+        params: { id: d.club_id },
+        query: { activityId: d.club_activity_id }
+      })
+      break
+
+    case 'ClubFundCollectionCreatedNotification':
+    case 'ClubFundCollectionReminderNotification':
+    case 'ClubFundContributionApprovedNotification':
+    case 'ClubFundContributionRejectedNotification':
+    case 'ClubFundContributionSubmittedNotification':
+      if (!d.club_id || !d.club_fund_collection_id) return
+
+      router.push({
+        name: 'club-fund',
+        params: { id: d.club_id },
+        query: { 
+          collectionId: d.club_fund_collection_id,
+          contributionId: d.club_fund_contribution_id
+        }
       })
       break
 

@@ -283,7 +283,7 @@ const onScroll = () => {
 
 const convertLevel = user => {
     if (!user?.sports?.length) return '0'
-    return parseFloat(user.sports[0]?.scores?.vndupr_score || 0).toFixed(1)
+    return parseFloat(user?.sports[0]?.scores?.vndupr_score || 0).toFixed(1)
 }
 </script>
 
