@@ -185,9 +185,17 @@ class ClubActivityService
     public function updateActivity(ClubActivity $activity, array $data, int $userId): ClubActivity
     {
         $club = $activity->club;
-        $member = $club->members()->where('user_id', $userId)->first();
+        $member = $club->activeMembers()->where('user_id', $userId)->first();
         if (!$member || !in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary]) || $activity->created_by !== $userId) {
             throw new \Exception('Không có quyền cập nhật hoạt động này');
+        }
+
+        if ($activity->status === ClubActivityStatus::Cancelled) {
+            throw new \Exception('Không thể cập nhật sự kiện đã bị hủy');
+        }
+
+        if ($activity->status === ClubActivityStatus::Completed) {
+            throw new \Exception('Không thể cập nhật sự kiện đã hoàn thành');
         }
 
         if (isset($data['duration']) && isset($data['start_time'])) {
@@ -237,6 +245,10 @@ class ClubActivityService
         $member = $club->activeMembers()->where('user_id', $userId)->first();
         if (!$member || !in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary])) {
             throw new \Exception('Chỉ admin/manager/secretary mới có quyền đánh dấu hoàn thành');
+        }
+
+        if (!$activity->isScheduled() && !$activity->isOngoing()) {
+            throw new \Exception('Chỉ có thể đánh dấu hoàn thành sự kiện đang scheduled hoặc ongoing');
         }
 
         $activity->markAsCompleted();
