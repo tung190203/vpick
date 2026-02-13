@@ -1,6 +1,6 @@
 <template>
     <div v-if="isOpen" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
             <!-- Header -->
             <div class="flex items-center justify-between p-4 border-b">
                 <h3 class="text-lg font-semibold text-gray-800">Chỉnh sửa ảnh</h3>
@@ -10,12 +10,15 @@
             </div>
 
             <!-- Cropper Area -->
-            <div class="flex-1 overflow-hidden bg-gray-100 min-h-[300px] flex items-center justify-center relative">
+            <div class="flex-1 overflow-hidden bg-gray-100 min-h-[400px] flex items-center justify-center relative">
                 <cropper
                     ref="cropperRef"
-                    class="w-full h-full max-h-[60vh]"
+                    class="h-full w-full object-contain"
                     :src="image"
                     :stencil-props="stencilProps"
+                    :check-orientation="true"
+                    image-restriction="stencil"
+                    :default-size="defaultSize"
                 />
             </div>
 
@@ -55,6 +58,13 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'save']);
 const cropperRef = ref(null);
+
+const defaultSize = ({ imageSize, visibleArea }) => {
+    return {
+        width: (visibleArea || imageSize).width,
+        height: (visibleArea || imageSize).height,
+    }
+}
 
 const cropImage = () => {
     const { canvas } = cropperRef.value.getResult();
