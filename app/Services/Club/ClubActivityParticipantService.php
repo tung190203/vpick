@@ -58,6 +58,14 @@ class ClubActivityParticipantService
 
     public function joinActivity(ClubActivity $activity, int $userId): ClubActivityParticipant
     {
+        if ($activity->status === ClubActivityStatus::Cancelled) {
+            throw new \Exception('Sự kiện đã bị hủy');
+        }
+
+        if ($activity->status === ClubActivityStatus::Completed) {
+            throw new \Exception('Sự kiện đã kết thúc');
+        }
+
         $club = $activity->club;
         $member = $club->activeMembers()->where('user_id', $userId)->first();
 
@@ -139,6 +147,14 @@ class ClubActivityParticipantService
 
     public function inviteUsers(ClubActivity $activity, array $userIds, int $inviterId): array
     {
+        if ($activity->status === ClubActivityStatus::Cancelled) {
+            throw new \Exception('Sự kiện đã bị hủy');
+        }
+
+        if ($activity->status === ClubActivityStatus::Completed) {
+            throw new \Exception('Sự kiện đã kết thúc');
+        }
+
         $club = $activity->club;
         $member = $club->activeMembers()->where('user_id', $inviterId)->first();
 
@@ -214,6 +230,13 @@ class ClubActivityParticipantService
     public function approveRequest(ClubActivityParticipant $participant, int $approverId): ClubActivityParticipant
     {
         $activity = $participant->activity;
+        if ($activity->status === ClubActivityStatus::Cancelled) {
+            throw new \Exception('Sự kiện đã bị hủy');
+        }
+        if ($activity->status === ClubActivityStatus::Completed) {
+            throw new \Exception('Sự kiện đã kết thúc');
+        }
+
         $club = $activity->club;
         $member = $club->activeMembers()->where('user_id', $approverId)->first();
 
@@ -257,6 +280,10 @@ class ClubActivityParticipantService
     public function rejectRequest(ClubActivityParticipant $participant, int $rejecterId): ClubActivityParticipant
     {
         $activity = $participant->activity;
+        if ($activity->status === ClubActivityStatus::Cancelled) {
+            throw new \Exception('Sự kiện đã bị hủy');
+        }
+
         $club = $activity->club;
         $member = $club->activeMembers()->where('user_id', $rejecterId)->first();
 
@@ -295,6 +322,12 @@ class ClubActivityParticipantService
         }
 
         $activity = $participant->activity;
+        if ($activity->status === ClubActivityStatus::Cancelled) {
+            throw new \Exception('Sự kiện đã bị hủy');
+        }
+        if ($activity->status === ClubActivityStatus::Completed) {
+            throw new \Exception('Sự kiện đã kết thúc');
+        }
 
         if ($activity->max_participants !== null && $activity->acceptedParticipants()->count() >= $activity->max_participants) {
             throw new \Exception('Sự kiện đã đủ số lượng người tham gia');
@@ -419,6 +452,14 @@ class ClubActivityParticipantService
     {
         if ($activity->status === ClubActivityStatus::Cancelled) {
             throw new \Exception('Sự kiện đã bị hủy');
+        }
+
+        if ($activity->status === ClubActivityStatus::Completed) {
+            throw new \Exception('Sự kiện đã kết thúc, không thể check-in');
+        }
+
+        if ($activity->end_time && $activity->end_time->isPast()) {
+            throw new \Exception('Sự kiện đã qua giờ kết thúc, không thể check-in');
         }
 
         if (!$activity->check_in_token || $activity->check_in_token !== $token) {
