@@ -13,9 +13,9 @@ class ClubMemberKickedNotification extends ClubNotificationBase
 
     public function toDatabase(object $notifiable): array
     {
-        $message = "Bạn đã bị đuổi khỏi CLB {$this->club->name}";
+        $message = "Bạn đã bị buộc rời khỏi CLB {$this->club->name}";
 
-        return self::payload('Bạn đã bị đuổi khỏi CLB', $message, [
+        return self::payload('Bạn đã bị buộc rời khỏi CLB', $message, [
             'club_id' => $this->club->id,
         ]);
     }

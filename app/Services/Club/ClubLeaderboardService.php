@@ -82,9 +82,6 @@ class ClubLeaderboardService
 
     public function getMonthlyLeaderboard(Club $club, int $month, int $year): Collection
     {
-        $startDate = Carbon::create($year, $month, 1)->startOfMonth();
-        $endDate = Carbon::create($year, $month, 1)->endOfMonth();
-
         $members = $club->joinedMembers()->with(['user.sports.scores'])->get();
 
         if ($members->isEmpty()) {
@@ -93,8 +90,8 @@ class ClubLeaderboardService
 
         $memberIds = $members->pluck('user_id')->filter()->unique();
 
-        // Get histories for the month
-        $histories = $this->getMemberHistories($memberIds, $startDate, $endDate);
+        // Lấy toàn bộ lịch sử (không lọc theo tháng) cho monthly_stats
+        $histories = $this->getMemberHistories($memberIds);
 
         $matchIds = $histories->flatten()->pluck('match_id')->filter()->unique();
         $miniMatchIds = $histories->flatten()->pluck('mini_match_id')->filter()->unique();
@@ -115,10 +112,12 @@ class ClubLeaderboardService
         });
     }
 
-    private function getMemberHistories(Collection $memberIds, Carbon $startDate, Carbon $endDate): Collection
+    /**
+     * Lấy toàn bộ lịch sử vndupr của members (không lọc theo tháng).
+     */
+    private function getMemberHistories(Collection $memberIds): Collection
     {
         return VnduprHistory::whereIn('user_id', $memberIds)
-            ->whereBetween('created_at', [$startDate, $endDate])
             ->orderBy('created_at', 'asc')
             ->get()
             ->groupBy('user_id');
