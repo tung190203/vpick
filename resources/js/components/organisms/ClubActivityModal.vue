@@ -80,8 +80,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 h-full">
                     <!-- Upcoming Activities -->
                     <div class="flex flex-col h-full overflow-hidden">
-                        <h4 class="text-sm font-bold text-[#838799] uppercase tracking-wider mb-4 flex-shrink-0">Sắp
-                            diễn ra</h4>
+                        <h4 class="text-sm font-bold text-[#838799] uppercase tracking-wider mb-4 flex-shrink-0">Đang diễn ra</h4>
                         <div class="space-y-4 flex-1 overflow-y-auto custom-scrollbar pr-2">
                             <ActivitySmallCard v-for="(activity, index) in upcomingActivities" :key="index"
                                 v-bind="activity" @edit="$emit('edit', activity)" @click-card="$emit('click-card', activity)" 
@@ -97,9 +96,7 @@
 
                     <!-- Recent History -->
                     <div class="flex flex-col h-full overflow-hidden">
-                        <h4 class="text-sm font-bold text-[#838799] uppercase tracking-wider mb-4 flex-shrink-0">Lịch sử
-                            gần đây
-                        </h4>
+                        <h4 class="text-sm font-bold text-[#838799] uppercase tracking-wider mb-4 flex-shrink-0">Đã kết thúc</h4>
                         <div class="space-y-4 flex-1 overflow-y-auto custom-scrollbar pr-2">
                             <div v-for="(history, index) in historyActivities" :key="index"
                                 class="flex items-start justify-between p-4 bg-white rounded-lg shadow-sm border border-[#E5E7EB] transition hover:border-gray-300 gap-3 cursor-pointer" @click="$emit('click-card', history)">

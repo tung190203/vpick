@@ -18,10 +18,10 @@
                         <h2 class="text-[20px] font-bold text-[#1F2937]">Tạo Khoản Thu</h2>
                     </div>
 
-                    <div class="flex flex-col md:flex-row gap-6 md:gap-10 min-h-0 flex-1 overflow-y-auto md:overflow-visible custom-scrollbar">
+                    <div class="flex flex-col md:flex-row gap-6 md:gap-10 min-h-0 flex-1 overflow-y-auto md:overflow-hidden custom-scrollbar">
                         <!-- Left Column: Form Info -->
-                        <div class="w-full md:w-[45%] flex flex-col space-y-6 md:space-y-8">
-                            <div class="flex flex-col items-center">
+                        <div class="w-full md:w-[45%] flex flex-col space-y-6 md:space-y-8 md:overflow-y-auto custom-scrollbar pr-2 flex-shrink-0">
+                            <div class="flex flex-col items-center flex-shrink-0">
                                 <p class="font-semibold text-[#838799] uppercase tracking-wider mb-4">SỐ TIỀN MỖI NGƯỜI</p>
                                 <div class="flex items-center justify-center space-x-1 border-b-2 rounded-[4px] border-[#E36C72] pb-2 px-8 w-fit mx-auto">
                                     <input 
@@ -36,7 +36,7 @@
                                 </div>
                             </div>
 
-                            <div class="bg-white border border-[#F2F3F5] rounded-xl shadow-sm overflow-hidden">
+                            <div class="bg-white border border-[#F2F3F5] rounded-xl shadow-sm overflow-hidden flex-shrink-0">
                                 <div class="p-5 border-b border-[#F2F3F5]">
                                     <label class="block text-[11px] font-bold text-[#838799] uppercase tracking-wider mb-2">NỘI DUNG THU</label>
                                     <input 
@@ -47,34 +47,36 @@
                                     />
                                 </div>
 
-                                <div class="p-5 flex items-center justify-between">
-                                    <div>
-                                        <label class="block text-[11px] font-bold text-[#838799] uppercase tracking-wider mb-2 whitespace-nowrap">HẠN CHÓT (DEADLINE)</label>
-                                        <div class="flex items-center space-x-2">
+                                <div class="p-5">
+                                    <label class="block text-[11px] font-bold text-[#838799] uppercase tracking-wider mb-2 whitespace-nowrap">HẠN CHÓT (DEADLINE)</label>
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-2 mr-2">
                                             <CalendarIcon class="w-5 h-5 text-[#D72D36]" />
-                                            <span class="font-semibold text-[#3E414C]">{{ formattedFundDeadline }}</span>
+                                            <span class="font-semibold text-[#3E414C] whitespace-nowrap">{{ formattedFundDeadline }}</span>
+                                        </div>
+                                        <div class="flex-shrink-0">
+                                            <VueDatePicker 
+                                                v-model="fundDeadline" 
+                                                :enable-time-picker="false" 
+                                                auto-apply
+                                                :format="'dd/MM/yyyy'" 
+                                                teleport="body"
+                                                position="right"
+                                                class="w-auto"
+                                            >
+                                                <template #trigger>
+                                                    <button class="p-2 bg-[#F2F3F5] rounded-[4px] hover:bg-gray-200 transition-colors">
+                                                        <PencilIcon class="w-5 h-5 text-[#3E414C]" />
+                                                    </button>
+                                                </template>
+                                            </VueDatePicker>
                                         </div>
                                     </div>
-                                    <VueDatePicker 
-                                        v-model="fundDeadline" 
-                                        :enable-time-picker="false" 
-                                        auto-apply
-                                        :format="'dd/MM/yyyy'" 
-                                        teleport="body"
-                                        position="right"
-                                        class="w-auto flex justify-end"
-                                    >
-                                        <template #trigger>
-                                            <button class="p-2 bg-[#F2F3F5] rounded-[4px] hover:bg-gray-200 transition-colors">
-                                                <PencilIcon class="w-5 h-5 text-[#3E414C]" />
-                                            </button>
-                                        </template>
-                                    </VueDatePicker>
                                 </div>
                             </div>
 
                             <!-- QR Code Upload Section -->
-                            <div class="space-y-3">
+                            <div class="space-y-3 flex-shrink-0">
                                 <label class="block text-[11px] font-bold text-[#838799] uppercase tracking-wider">ẢNH QR CHUYỂN KHOẢN</label>
                                 
                                 <div 
@@ -182,6 +184,13 @@
             </Transition>
         </div>
     </Transition>
+
+    <ImageCropperModal
+        :is-open="showCropper"
+        :image="cropImageSrc"
+        @close="showCropper = false"
+        @save="handleCropSave"
+    />
 </template>
 
 <script setup>
@@ -198,6 +207,7 @@ import {
 import VueDatePicker from '@vuepic/vue-datepicker'
 import '@vuepic/vue-datepicker/dist/main.css'
 import dayjs from 'dayjs'
+import ImageCropperModal from '@/components/molecules/ImageCropperModal.vue'
 
 const props = defineProps({
     isOpen: {
@@ -220,6 +230,8 @@ const qrImageFile = ref(null)
 const qrCodePreview = ref(null)
 const isDragging = ref(false)
 const fileInput = ref(null)
+const showCropper = ref(false)
+const cropImageSrc = ref(null)
 
 const formattedFundDeadline = computed(() => {
     return dayjs(fundDeadline.value).format('DD/MM/YYYY')
@@ -272,8 +284,28 @@ const processFile = (file) => {
         alert('Vui lòng chọn tệp hình ảnh')
         return
     }
+    
+    // Create URL for cropper
+    const reader = new FileReader()
+    reader.onload = (e) => {
+        cropImageSrc.value = e.target.result
+        showCropper.value = true
+    }
+    reader.readAsDataURL(file)
+    
+    // Clear input value to allow selecting same file again
+    if (fileInput.value) {
+        fileInput.value.value = ''
+    }
+}
+
+const handleCropSave = (blob) => {
+    // Convert blob to file to ensure it has a name and type for backend processing
+    const file = new File([blob], "qr-code.jpg", { type: "image/jpeg" })
     qrImageFile.value = file
-    qrCodePreview.value = URL.createObjectURL(file)
+    qrCodePreview.value = URL.createObjectURL(blob)
+    showCropper.value = false
+    cropImageSrc.value = null
 }
 
 const removeQrCode = () => {
