@@ -115,7 +115,7 @@
                 <span
                     class="absolute -bottom-1 -left-1 bg-blue-500 text-white text-[8px] font-semibold border border-white rounded-full px-1.5 w-4 h-4 flex items-center justify-center"
                 >
-                {{ getUser.sports?.[0]?.scores?.vndupr_score ? Number(getUser.sports[0].scores.vndupr_score).toFixed(1) : '' }}
+                {{ getUser?.sports?.[0]?.scores?.vndupr_score ? Number(getUser.sports[0].scores.vndupr_score).toFixed(1) : '' }}
                 </span>
             </div>
             <div class="text-left">
