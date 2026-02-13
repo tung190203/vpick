@@ -871,6 +871,7 @@
                 :clubId="clubId"
                 :fundCollections="allCollections"
                 :initialCollectionId="selectedCollectionId"
+                :initialContributionId="selectedContributionId"
             />
 
             <!-- Submit Receipt Modal -->
@@ -931,7 +932,7 @@ import {
     CreditCardIcon,
 } from '@heroicons/vue/24/outline'
 import { useRouter, useRoute } from 'vue-router'
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, ref, computed, watch } from 'vue'
 import QRCodeIcon from "@/assets/images/qr_code.svg";
 import * as ClubService from '@/service/club.js'
 import { toast } from 'vue3-toastify'
@@ -957,6 +958,7 @@ const showDeleteQRModal = ref(false)
 const showCollectionDetailModal = ref(false)
 const showSubmitReceiptModal = ref(false)
 const selectedCollectionIdForReceipt = ref(null)
+const selectedContributionId = ref(null)
 const qrToDelete = ref(null)
 const currentIndex = ref(0)
 const isInitialLoading = ref(true)
@@ -1476,11 +1478,25 @@ onMounted(async () => {
     await getFundCollection();
     await getMyCollections();
 
+    if (route.query.collectionId) {
+        selectedCollectionId.value = route.query.collectionId
+        selectedContributionId.value = route.query.contributionId
+        showCollectionDetailModal.value = true
+    }
+
     // Simulate loading delay
     setTimeout(() => {
         isInitialLoading.value = false
     }, 1000)
 })
+
+watch(() => route.query, (newQuery) => {
+    if (newQuery.collectionId) {
+        selectedCollectionId.value = newQuery.collectionId
+        selectedContributionId.value = newQuery.contributionId
+        showCollectionDetailModal.value = true
+    }
+}, { deep: true })
 </script>
 <style scoped>
 .bg-club-default {
