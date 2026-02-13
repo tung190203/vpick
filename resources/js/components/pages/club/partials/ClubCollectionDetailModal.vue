@@ -27,7 +27,7 @@
                                     @click="selectCollection(collection.id)"
                                     :class="[
                                         'p-4 rounded cursor-pointer transition-all duration-200 relative group flex items-center',
-                                        selectedCollectionId === collection.id 
+                                        Number(selectedCollectionId) === Number(collection.id) 
                                             ? 'bg-gray-50 shadow-sm' 
                                             : 'bg-white hover:bg-gray-50'
                                     ]"
@@ -36,7 +36,7 @@
                                         <div class="flex justify-between items-start mb-1">
                                             <h3 :class="[
                                                 'font-bold text-[15px] flex-1 mr-2 transition-colors line-clamp-1 max-w-[200px]',
-                                                selectedCollectionId === collection.id ? 'text-[#1F2937]' : 'text-gray-500'
+                                                Number(selectedCollectionId) === Number(collection.id) ? 'text-[#1F2937]' : 'text-gray-500'
                                             ]" v-tooltip="collection.title">
                                                 {{ collection.title }}
                                             </h3>
@@ -144,7 +144,16 @@
                                                             <p class="text-xs text-gray-400 mt-0.5">Xác nhận: {{ formatDatetime(member.paid_at) }}</p>
                                                         </div>
                                                     </div>
-                                                    <span class="text-[12px] font-bold text-[#10B981] bg-[#10B981]/5 px-4 py-1.5 rounded-full border border-[#10B981]/10">Đã xác nhận</span>
+                                                    <span 
+                                                        :class="[
+                                                            'text-[12px] font-bold px-4 py-1.5 rounded-full border transition-all',
+                                                            Number(member.id) === Number(props.initialContributionId)
+                                                                ? 'bg-[#10B981] text-white border-transparent scale-105 shadow-md shadow-[#10B981]/20'
+                                                                : 'text-[#10B981] bg-[#10B981]/5 border-[#10B981]/10'
+                                                        ]"
+                                                    >
+                                                        Đã xác nhận
+                                                    </span>
                                                 </div>
                                             </div>
 
@@ -169,8 +178,14 @@
                                                         </div>
                                                         <button 
                                                             @click="onApprove(member)"
-                                                            class="bg-[#10B981] text-white px-5 py-1.5 rounded-full text-sm font-bold hover:bg-[#059669] transition-all active:scale-95">
-                                                            Duyệt
+                                                            :class="[
+                                                                'px-5 py-1.5 rounded-full text-sm font-bold transition-all active:scale-95',
+                                                                Number(member.contribution?.id) === Number(props.initialContributionId)
+                                                                    ? 'bg-[#D72D36] text-white animate-pulse shadow-lg shadow-[#D72D36]/20'
+                                                                    : 'bg-[#10B981] text-white hover:bg-[#059669]'
+                                                            ]"
+                                                        >
+                                                            {{ Number(member.contribution?.id) === Number(props.initialContributionId) ? 'CẦN DUYỆT' : 'Duyệt' }}
                                                         </button>
                                                     </div>
                                                 </div>
@@ -246,7 +261,8 @@ const props = defineProps({
         type: Array,
         default: () => []
     },
-    initialCollectionId: [String, Number]
+    initialCollectionId: [String, Number],
+    initialContributionId: [String, Number]
 })
 
 const emit = defineEmits(['update:isOpen'])
@@ -273,6 +289,20 @@ const fetchDetails = async () => {
         activeTab.value = 'paid'
         const response = await ClubService.getFundCollectionDetail(props.clubId, selectedCollectionId.value)
         details.value = response.data
+
+        if (props.initialContributionId) {
+            // Check in approved payments
+            const isApproved = details.value.approved_payments?.some(p => Number(p.id) === Number(props.initialContributionId))
+            if (isApproved) {
+                activeTab.value = 'paid'
+            } else {
+                // Check in waiting approval
+                const isWaiting = details.value.waiting_approval_payments?.some(p => Number(p.contribution?.id) === Number(props.initialContributionId))
+                if (isWaiting) {
+                    activeTab.value = 'unpaid'
+                }
+            }
+        }
     } catch (error) {
         toast.error('Không thể tải thông tin chi tiết đợt thu')
     } finally {
@@ -329,6 +359,17 @@ watch(() => props.initialCollectionId, (newId) => {
     if (newId) {
         selectedCollectionId.value = newId
         if (props.isOpen) fetchDetails()
+    }
+})
+
+onMounted(() => {
+    if (props.isOpen) {
+        if (props.initialCollectionId) {
+            selectedCollectionId.value = props.initialCollectionId
+        } else if (props.fundCollections.length > 0) {
+            selectedCollectionId.value = props.fundCollections[0].id
+        }
+        fetchDetails()
     }
 })
 </script>

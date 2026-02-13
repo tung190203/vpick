@@ -478,9 +478,19 @@ const deselectAllMembers = () => {
     selectedMemberIds.value.clear()
 }
 
+watch(
+  () => notificationTypes.value,
+  (types) => {
+    if (types.length && !form.club_notification_type_id) {
+      form.club_notification_type_id = types[0].value
+    }
+  },
+  { immediate: true }
+)
+
 const resetForm = () => {
     form.title = ''
-    form.club_notification_type_id = null
+    form.club_notification_type_id = notificationTypes.value[0]?.value || null
     form.content = ''
     form.attachment = null
     form.is_pinned = false
