@@ -193,7 +193,8 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 mx-10 mb-10 items-start">
                     <div v-for="club in clubs" :key="club.id"
-                        class="flex justify-between hover:bg-gray-100 rounded-md p-4 cursor-pointer">
+                        class="flex justify-between hover:bg-gray-100 rounded-md p-4 cursor-pointer"
+                        @click="router.push({ name: 'club-detail', params: { id: club.id } })">
                         <div class="flex gap-4">
                             <HomeIcon class="w-5 h-5" />
                             <p class="truncate w-40 text-sm text-[#4392E0] font-semibold" v-tooltip="club.name">
@@ -280,13 +281,14 @@ import {
 import SportLevelCard from "@/components/molecules/SportLevelCard.vue";
 import SportSelectCard from "@/components/molecules/SportSelectCard.vue";
 import ImageCropperModal from "@/components/molecules/ImageCropperModal.vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { toast } from "vue3-toastify";
 import { useUserStore } from "@/store/auth";
 import { storeToRefs } from "pinia";
 import { getVisibilityText }  from "@/composables/formatVisibilityText";
 
 const route = useRoute();
+const router = useRouter();
 const id = route.params.id;
 const user = ref({});
 const defaultAvatar = "/images/default-avatar.png";

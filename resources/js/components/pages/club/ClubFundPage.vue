@@ -1317,6 +1317,11 @@ const handleSubmitFundRevenue = async (data) => {
         const response = await ClubService.createdFundRevenue(clubId.value, formData)
         toast.success(response.message || 'Tạo khoản thu thành công')
         showCreateFundModal.value = false
+        // Refresh data
+        await getFundOverview()
+        await getAllTransaction()
+        await getAllMyTransaction()
+        await getFundCollection()
     } catch (error) {
         toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi tạo khoản thu')
     }
@@ -1331,7 +1336,7 @@ const handleSubmitFundExpenses = async (data) => {
         await getFundOverview()
         await getAllTransaction()
         await getAllMyTransaction()
-        await getlistQrCodes()
+        await getFundCollection()
     } catch (error) {
         toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi tạo khoản chi')
     }
