@@ -370,7 +370,7 @@ class ClubService
 
     public function searchClubs(array $filters, ?int $userId): LengthAwarePaginator
     {
-        $query = Club::withFullRelations()->orderBy('created_at', 'desc');
+        $query = Club::withListRelations()->orderBy('created_at', 'desc');
 
         if ($userId) {
             $query->where(function ($q) use ($userId) {
@@ -419,8 +419,45 @@ class ClubService
             $query->nearBy($filters['lat'], $filters['lng'], $filters['radius']);
         }
 
-        $perPage = $filters['perPage'] ?? Club::PER_PAGE;
-        return $query->paginate($perPage);
+        $perPage = $filters['per_page'] ?? $filters['perPage'] ?? Club::PER_PAGE;
+        $clubs = $query->paginate($perPage);
+
+        if ($userId && $clubs->isNotEmpty()) {
+            $this->attachUserMembershipStatus($clubs->items(), $userId);
+        } else {
+            foreach ($clubs->items() as $club) {
+                $club->is_admin = false;
+            }
+        }
+
+        return $clubs;
+    }
+
+    /**
+     * Gắn is_member, has_pending_request, has_invitation cho từng club (1 query thay vì 3*N).
+     */
+    private function attachUserMembershipStatus(array $clubs, int $userId): void
+    {
+        $clubIds = array_map(fn ($c) => $c->id, $clubs);
+        $memberships = ClubMember::whereIn('club_id', $clubIds)
+            ->where('user_id', $userId)
+            ->get()
+            ->groupBy('club_id');
+
+        foreach ($clubs as $club) {
+            $members = $memberships->get($club->id, collect());
+            $activeMember = $members->first(fn ($m) =>
+                $m->membership_status === ClubMembershipStatus::Joined && $m->status === ClubMemberStatus::Active
+            );
+            $club->is_member = $activeMember !== null;
+            $club->is_admin = $activeMember && $activeMember->role === ClubMemberRole::Admin;
+            $club->has_pending_request = $members->contains(fn ($m) =>
+                $m->membership_status === ClubMembershipStatus::Pending && $m->invited_by === null
+            );
+            $club->has_invitation = $members->contains(fn ($m) =>
+                $m->membership_status === ClubMembershipStatus::Pending && $m->invited_by !== null
+            );
+        }
     }
 
     public function leaveClub(Club $club, int $userId, ?int $transferToUserId = null): array

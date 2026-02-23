@@ -7,9 +7,9 @@
         leave-from-class="opacity-100"
         leave-to-class="opacity-0"
     >
-        <div 
-            v-if="modelValue" 
-            class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm transform-gpu" 
+        <div
+            v-if="modelValue"
+            class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm transform-gpu"
             @click.self="close"
         >
             <div
@@ -40,7 +40,7 @@
                             <div v-for="(notification, index) in notifications" class="cursor-pointer"
                                 :key="index"
                                 :class="['flex gap-4 p-4 rounded-2xl transition-colors', !notification.is_read_by_me ? 'bg-[#F8F9FB]' : 'bg-transparent']"  
-                                @click="$emit('markAsRead', notification.id)"
+                                @click="handleNotificationClick(notification)"
                             >
                                 <div class="relative flex-shrink-0">
                                     <div
@@ -62,7 +62,8 @@
                                                 <button v-if="notification.is_pinned" @click.stop="$emit('unpin', notification.id)" class="transition-all transform hover:scale-110">
                                                     <PinIcon class="w-5 h-5 transform rotate-45 transition-transform group-hover:rotate-12 text-[#D72D36]" />
                                                 </button>
-                                                <button v-else @click.stop="$emit('pin', notification.id)" class="transition-all transform hover:scale-110">
+                                                <button v-else @click.stop="$emit('pin', notification.id)" class="transition-all transform hover:scale-110"
+                                                    :title="canPinMore ? 'Ghim thông báo' : 'Đã đạt giới hạn ghim thông báo, vui lòng gỡ bớt ghim trước khi ghim thêm'">
                                                     <PinIcon class="w-5 h-5 text-gray-300 hover:text-[#D72D36]" />
                                                 </button>
                                             </div>
@@ -72,11 +73,11 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Load More Button -->
                         <div v-if="meta && meta.current_page < meta.last_page" class="mt-4 flex justify-center">
-                            <button 
-                                @click="$emit('loadMore')" 
+                            <button
+                                @click="$emit('loadMore')"
                                 :disabled="isLoadingMore"
                                 class="text-[#D72D36] font-semibold hover:underline disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                             >
@@ -128,14 +129,25 @@ defineProps({
     isAdminOrStaff: {
         type: Boolean,
         default: false
+    },
+    canPinMore: {
+        type: Boolean,
+        default: true
     }
 })
 
-const emit = defineEmits(['update:modelValue', 'close', 'loadMore', 'markAsRead', 'markAllAsRead', 'unpin', 'pin', 'create'])
+const emit = defineEmits(['update:modelValue', 'close', 'loadMore', 'markAsRead', 'markAllAsRead', 'unpin', 'pin', 'create', 'clickNotification'])
 
 const close = () => {
     emit('update:modelValue', false)
     emit('close')
+}
+
+const handleNotificationClick = (notification) => {
+    if (!notification.is_read_by_me) {
+        emit('markAsRead', notification.id)
+    }
+    emit('clickNotification', notification)
 }
 </script>
 
