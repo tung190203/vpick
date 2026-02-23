@@ -17,6 +17,95 @@ use Carbon\Carbon;
 
 class UserMatchStatsController extends Controller
 {
+
+    public static function getSportStats(int $userId, int $sportId): array
+    {
+        $matchCount = (int) DB::table('vndupr_history')
+            ->join('matches', 'vndupr_history.match_id', '=', 'matches.id')
+            ->join('tournament_types', 'matches.tournament_type_id', '=', 'tournament_types.id')
+            ->join('tournaments', 'tournament_types.tournament_id', '=', 'tournaments.id')
+            ->where('vndupr_history.user_id', $userId)
+            ->where('tournaments.sport_id', $sportId)
+            ->whereNotNull('vndupr_history.match_id')
+            ->selectRaw('COUNT(DISTINCT vndupr_history.match_id) as cnt')
+            ->value('cnt');
+
+        $miniMatchCount = (int) DB::table('vndupr_history')
+            ->join('mini_matches', 'vndupr_history.mini_match_id', '=', 'mini_matches.id')
+            ->join('mini_tournaments', 'mini_matches.mini_tournament_id', '=', 'mini_tournaments.id')
+            ->where('vndupr_history.user_id', $userId)
+            ->where('mini_tournaments.sport_id', $sportId)
+            ->whereNotNull('vndupr_history.mini_match_id')
+            ->selectRaw('COUNT(DISTINCT vndupr_history.mini_match_id) as cnt')
+            ->value('cnt');
+
+        $matchesPlayed = $matchCount + $miniMatchCount;
+
+        if ($matchesPlayed === 0) {
+            return [
+                'matches_played' => 0,
+                'wins' => 0,
+                'losses' => 0,
+                'win_rate' => 0,
+                'score_change' => 0,
+            ];
+        }
+
+        $matchWins = (int) DB::table('vndupr_history')
+            ->join('matches', 'vndupr_history.match_id', '=', 'matches.id')
+            ->join('tournament_types', 'matches.tournament_type_id', '=', 'tournament_types.id')
+            ->join('tournaments', 'tournament_types.tournament_id', '=', 'tournaments.id')
+            ->join('team_members', function ($join) use ($userId) {
+                $join->on('team_members.team_id', '=', 'matches.winner_id')
+                    ->where('team_members.user_id', '=', $userId);
+            })
+            ->where('vndupr_history.user_id', $userId)
+            ->where('tournaments.sport_id', $sportId)
+            ->whereNotNull('vndupr_history.match_id')
+            ->whereNotNull('matches.winner_id')
+            ->selectRaw('COUNT(DISTINCT vndupr_history.match_id) as cnt')
+            ->value('cnt');
+
+        $miniMatchWins = (int) DB::table('vndupr_history')
+            ->join('mini_matches', 'vndupr_history.mini_match_id', '=', 'mini_matches.id')
+            ->join('mini_tournaments', 'mini_matches.mini_tournament_id', '=', 'mini_tournaments.id')
+            ->join('mini_team_members', function ($join) use ($userId) {
+                $join->on('mini_team_members.mini_team_id', '=', 'mini_matches.team_win_id')
+                    ->where('mini_team_members.user_id', '=', $userId);
+            })
+            ->where('vndupr_history.user_id', $userId)
+            ->where('mini_tournaments.sport_id', $sportId)
+            ->whereNotNull('vndupr_history.mini_match_id')
+            ->whereNotNull('mini_matches.team_win_id')
+            ->selectRaw('COUNT(DISTINCT vndupr_history.mini_match_id) as cnt')
+            ->value('cnt');
+
+        $wins = $matchWins + $miniMatchWins;
+        $losses = $matchesPlayed - $wins;
+        $winRate = round(($wins / $matchesPlayed) * 100, 2);
+
+        $firstHistory = DB::table('vndupr_history')
+            ->where('user_id', $userId)
+            ->orderBy('created_at', 'asc')
+            ->first();
+        $lastHistory = DB::table('vndupr_history')
+            ->where('user_id', $userId)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        $scoreBefore = $firstHistory ? (float) $firstHistory->score_before : 0;
+        $scoreAfter = $lastHistory ? (float) $lastHistory->score_after : 0;
+        $scoreChange = round($scoreAfter - $scoreBefore, 3);
+
+        return [
+            'matches_played' => $matchesPlayed,
+            'wins' => $wins,
+            'losses' => $losses,
+            'win_rate' => $winRate,
+            'score_change' => $scoreChange,
+        ];
+    }
+
     public function dataset(Request $request)
     {
         $userId = $request->query('user_id', auth()->id());
@@ -49,7 +138,7 @@ class UserMatchStatsController extends Controller
             ->whereHas('tournamentType.tournament', fn($q) => $q->where('sport_id', $sportId))
             ->get()
             ->keyBy('id');
-    
+
         $minis = MiniMatch::with([
                 'team1.members:id',
                 'team2.members:id',
@@ -89,11 +178,11 @@ class UserMatchStatsController extends Controller
         $checkWin = function ($history) use ($matches, $minis, $miniTeamMembersByTeam, $userId) {
             if ($history->match_id && $matches->has($history->match_id)) {
                 $match = $matches[$history->match_id];
-    
+
                 // Lấy danh sách user_id từ members collection
                 $homeUserIds = $match->homeTeam->members->pluck('id')->all();
                 $awayUserIds = $match->awayTeam->members->pluck('id')->all();
-    
+
                 return (
                     ($match->winner_id == $match->home_team_id && in_array($userId, $homeUserIds)) ||
                     ($match->winner_id == $match->away_team_id && in_array($userId, $awayUserIds))
@@ -118,7 +207,7 @@ class UserMatchStatsController extends Controller
             // Sắp xếp theo thời gian mới nhất
             $sortedHistories = $historiesCollection->sortByDesc('created_at')->values();
             $totalMatches = $sortedHistories->count();
-    
+
             if ($totalMatches == 0) {
                 return ['win_rate' => 0, 'performance' => 0];
             }
@@ -154,9 +243,9 @@ class UserMatchStatsController extends Controller
         $removeDuplicates = function ($historiesCollection) {
             $unique = collect();
             $seen = [];
-            
+
             foreach ($historiesCollection as $h) {
-                $key = $h->match_id ? 'match_' . $h->match_id : 'mini_' . $h->mini_match_id;  
+                $key = $h->match_id ? 'match_' . $h->match_id : 'mini_' . $h->mini_match_id;
                 if (!isset($seen[$key])) {
                     $seen[$key] = true;
                     $unique->push($h);

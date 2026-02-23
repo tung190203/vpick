@@ -6,8 +6,8 @@
         <template v-else>
             <!-- Admin/Staff View -->
             <div v-if="hasAnyRole(['admin', 'manager', 'secretary', 'treasurer'])"
-                class=" text-white rounded-[8px] shadow-lg px-6 pt-4 pb-6 relative overflow-hidden flex flex-col justify-between min-h-[290px]"
-                :style="{ backgroundImage: `url(${Background})` }">
+                class=" text-white rounded-[8px] shadow-lg px-6 pt-4 pb-6 relative overflow-hidden flex flex-col justify-between aspect-[4/1] bg-cover bg-center"
+                :style="{ backgroundImage: `url(${club.profile?.cover_image_url || Background})` }">
                 <div class="flex items-center justify-between relative z-20">
                     <div class="flex items-center space-x-4">
                         <div class="bg-white/10 p-2 rounded-full cursor-pointer hover:bg-white/20 transition-colors"
@@ -46,7 +46,7 @@
                         <div v-if="isMenuOpen"
                             class="absolute right-0 top-14 w-56 bg-white rounded-xl shadow-2xl py-2 z-50 text-gray-800 border border-gray-100 animate-in fade-in zoom-in duration-200">
                             <!-- Add admin specific menu items if needed, for now reuse existing -->
-                            <button v-if="hasAnyRole(['admin'])"
+                            <button v-if="hasAnyRole(['admin', 'secretary'])"
                                 class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-100 transition-colors"
                                 @click="openEditModal">
                                 <EditNoteIcon class="w-5 h-5 text-gray-500" />
@@ -125,8 +125,8 @@
 
             <!-- Member/Guest View (Existing) -->
             <div v-else
-                class="bg-club-default text-white rounded-[8px] shadow-lg p-6 relative overflow-hidden flex flex-col justify-between"
-                :style="{ backgroundImage: `url(${Background})` }">
+                class="bg-club-default text-white rounded-[8px] shadow-lg p-6 relative overflow-hidden flex flex-col justify-between aspect-[4/1] bg-cover bg-center"
+                :style="{ backgroundImage: `url(${club.profile?.cover_image_url || Background})` }">
                 <div class="flex items-center justify-between">
                     <div>
                         <ArrowLeftIcon class="w-6 h-6 cursor-pointer text-white" @click="goBack" />
@@ -225,12 +225,13 @@
                             <p class="text-[#D72D36] font-semibold cursor-pointer" @click="openNotification">Xem tất cả
                             </p>
                         </div>
-                        <template v-if="notifications.length > 0 && pinnedNotifications.length > 0">
+                        <template v-if="pinnedNotifications.length > 0">
                             <NotificationCard v-for="(notification, index) in pinnedNotifications" :key="index"
-                                :data="notification" 
+                                :data="notification"
                                 :is-admin="hasAnyRole(['admin', 'manager', 'secretary'])"
                                 @unpin="handleUnpinNotification" 
-                                @pin="handlePinNotification" />
+                                @pin="handlePinNotification"
+                                @click="handleNotificationClick(notification)" />
                         </template>
                         <div v-else class="p-4 text-center">
                             <p class="text-[#838799]">Hiện chưa có thông báo ghim nào</p>
@@ -256,9 +257,10 @@
                     <ClubInfoTabs :club="club" :isJoined="is_joined" :currentUserRole="currentUserRole"
                         :top-three="topThree" :leaderboard="leaderboard" :leaderboard-meta="leaderboardMeta"
                         :leaderboard-filters="leaderboardFilters" :leaderboard-loading="isLeaderboardLoading"
+                        :is-saving="isUpdatingIntro"
                         @leaderboard-filter="handleLeaderboardFilter"
                         @leaderboard-page-change="handleLeaderboardPageChange" @tab-change="handleTabChange"
-                        @refresh-club="getClubDetail" />
+                        @refresh-club="getClubDetail" @update-intro="handleUpdateIntro" />
                 </div>
                 <div class="col-span-12 lg:col-span-4 space-y-4 order-1 lg:order-2">
                     <div class="max-w-3xl mx-auto" v-if="!hasAnyRole(['admin', 'manager', 'secretary', 'treasurer'])">
@@ -282,9 +284,14 @@
                                 :class="filteredClubModules.length === 4 ? 'grid-cols-4' : 'grid-cols-3'">
                                 <div v-for="(module, index) in filteredClubModules" :key="index"
                                     class="flex flex-col items-center gap-2">
-                                    <div class="text-[#D72D36] rounded-md bg-[#FBEAEB] p-4 cursor-pointer"
+                                    <div class="text-[#D72D36] rounded-md bg-[#FBEAEB] p-4 cursor-pointer relative"
                                         @click="handleModuleClick(module)">
                                         <component :is="module.icon" class="w-6 h-6" />
+                                        <!-- Notification Badge -->
+                                        <div v-if="module.key === 'notification' && hasUnreadNotifications"
+                                            class="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center animate-bounce-subtle shadow-sm">
+                                            <div class="w-3.5 h-3.5 bg-[#D72D36] rounded-full"></div>
+                                        </div>
                                     </div>
                                     <div class="text-sm text-[#3E414C]">{{ module.label }}</div>
                                 </div>
@@ -310,7 +317,7 @@
                                                     }}</h4>
                                                 <p class="text-xs text-[#838799] mt-1">
                                                     Trình {{
-                                                        Number(request.user?.sports[0].scores.vndupr_score).toFixed(1) }}
+                                                        Number(request.user?.sports[0]?.scores?.vndupr_score).toFixed(1) }}
                                                     {{ request.message ? `• ${request.message}` : '' }}
                                                 </p>
                                             </div>
@@ -342,9 +349,17 @@
             <!-- Notification Modal -->
             <ClubNotificationModal v-model="isNotificationModalOpen" :notifications="notifications"
                 :meta="notificationMeta" :is-loading-more="isLoadingMoreNotifications"
-                :is-admin-or-staff="hasAnyRole(['admin', 'manager', 'secretary'])" @close="closeNotification"
+                :is-admin-or-staff="hasAnyRole(['admin', 'manager', 'secretary'])"
+                :can-pin-more="pinnedNotifications.length < MAX_PINNED_NOTIFICATIONS"
+                @close="closeNotification"
                 @load-more="loadMoreNotifications" @mark-as-read="markAsRead" @mark-all-as-read="markAllAsRead"
-                @unpin="handleUnpinNotification" @pin="handlePinNotification" @create="handleCreateNotification" />
+                @unpin="handleUnpinNotification" @pin="handlePinNotification" @create="handleCreateNotification"
+                @click-notification="handleNotificationClick" />
+
+            <!-- Notification Detail Modal -->
+            <ClubNotificationDetailModal v-model="isDetailModalOpen" :notification="selectedNotification"
+                :is-admin="hasAnyRole(['admin', 'manager', 'secretary'])"
+                @unpin="handleUnpinNotification" @pin="handlePinNotification" />
 
             <!-- Activity Schedule Modal -->
             <ClubActivityModal :is-open="isActivityModalOpen" :thumbnail="Thumbnail"
@@ -380,7 +395,7 @@
 
             <!-- Pin Confirmation Modal -->
             <DeleteConfirmationModal v-model="isPinModalOpen" title="Ghim thông báo"
-                message="Bạn muốn ghim thông báo này?" confirmButtonText="Ghim ngay"
+                message="Bạn muốn ghim thông báo này? (Tối đa 3 thông báo được ghim)" confirmButtonText="Ghim ngay"
                 confirmButtonClass="!bg-[#00B377] hover:!bg-[#009664]"
                 @confirm="confirmPinNotification" />
 
@@ -489,6 +504,7 @@ import ClubInfoTabs from '@/components/organisms/ClubInfoTabs.vue';
 import ClubEditModal from '@/components/organisms/ClubEditModal.vue';
 import ClubZaloModal from '@/components/organisms/ClubZaloModal.vue';
 import ClubNotificationModal from '@/components/organisms/ClubNotificationModal.vue';
+import ClubNotificationDetailModal from '@/components/organisms/ClubNotificationDetailModal.vue';
 import { CLUB_STATS, CLUB_MODULES } from '@/data/club/index.js';
 import * as ClubService from '@/service/club.js'
 import { toast } from 'vue3-toastify';
@@ -519,6 +535,7 @@ const isActivityModalOpen = ref(false)
 const isEditModalOpen = ref(false)
 const isZaloModalOpen = ref(false)
 const isCreateNotificationModalOpen = ref(false)
+const isDetailModalOpen = ref(false)
 const isDeleteModalOpen = ref(false)
 const isTransferModalOpen = ref(false)
 const isZaloQRModalOpen = ref(false)
@@ -531,11 +548,13 @@ const isUnpinModalOpen = ref(false)
 const isPinModalOpen = ref(false)
 const notificationToUnpin = ref(null)
 const notificationToPin = ref(null)
+const isUpdatingIntro = ref(false)
 const club = ref([]);
 const clubId = ref(route.params.id);
 const userStore = useUserStore()
 const { getUser } = storeToRefs(userStore)
 const notifications = ref([])
+const pinnedNotifications = ref([])
 const notificationMeta = ref({})
 const currentNotificationPage = ref(1)
 const notificationPerPage = ref(15)
@@ -573,6 +592,7 @@ const leaderboardFilters = ref({
 const isInitialLoading = ref(true)
 const isLeaderboardLoading = ref(false)
 const joiningRequests = ref([])
+const selectedNotification = ref(null)
 const countdownText = ref('')
 let countdownInterval = null
 
@@ -704,6 +724,10 @@ const filteredClubModules = computed(() => {
     })
 })
 
+const hasUnreadNotifications = computed(() => {
+    return notifications.value.some(n => !n.is_read_by_me) || pinnedNotifications.value.some(n => !n.is_read_by_me)
+})
+
 const toggleMenu = () => {
     isMenuOpen.value = !isMenuOpen.value
     if (isMenuOpen.value) {
@@ -761,6 +785,7 @@ watch(
         isTransferModalOpen.value,
         isUnpinModalOpen.value,
         isPinModalOpen.value,
+        isDetailModalOpen.value,
     ],
     (values) => {
         if (values.some(v => v)) {
@@ -815,6 +840,11 @@ const handleCreateNotification = async () => {
     await getNotificationType()
     isCreateNotificationModalOpen.value = true
     isNotificationModalOpen.value = false
+}
+
+const handleNotificationClick = (notification) => {
+    selectedNotification.value = notification
+    isDetailModalOpen.value = true
 }
 
 const handleCreateNotificationSubmit = async (data) => {
@@ -940,6 +970,22 @@ const getClubDetail = async () => {
     }
 }
 
+const handleUpdateIntro = async (newDescription) => {
+    isUpdatingIntro.value = true
+    try {
+        const formData = new FormData()
+        formData.append('description', newDescription)
+        
+        await ClubService.updateClub(clubId.value, formData)
+        await getClubDetail()
+        toast.success('Cập nhật giới thiệu thành công')
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật giới thiệu')
+    } finally {
+        isUpdatingIntro.value = false
+    }
+}
+
 const handleUpdateClub = async (data) => {
     isUpdatingClub.value = true
     try {
@@ -1051,10 +1097,29 @@ const loadMoreNotifications = async () => {
     }
 }
 
+const getPinnedNotifications = async () => {
+    try {
+        const response = await ClubService.clubNotification(clubId.value, {
+            is_pinned: true,
+            status: 'sent',
+            per_page: 10
+        })
+        pinnedNotifications.value = response.data.notifications
+    } catch (error) {
+        console.error('Error fetching pinned notifications:', error)
+    }
+}
+
 const markAsRead = async (notificationId) => {
     try {
         await ClubService.markAsRead(clubId.value, notificationId)
-        await getClubNotification()
+        await Promise.all([
+            getClubNotification(),
+            getPinnedNotifications()
+        ])
+        if (selectedNotification.value && selectedNotification.value.id === notificationId) {
+            selectedNotification.value = { ...selectedNotification.value, is_read_by_me: true }
+        }
     } catch (error) {
         toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi đánh dấu thông báo đã đọc')
     }
@@ -1064,7 +1129,10 @@ const markAllAsRead = async () => {
     try {
         await ClubService.markAllAsRead(clubId.value)
         currentNotificationPage.value = 1
-        await getClubNotification()
+        await Promise.all([
+            getClubNotification(),
+            getPinnedNotifications()
+        ])
         toast.success('Đánh dấu tất cả thông báo đã đọc')
     } catch (error) {
         toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi đánh dấu tất cả thông báo đã đọc')
@@ -1081,7 +1149,14 @@ const confirmUnpinNotification = async () => {
     if (!notificationToUnpin.value) return
     try {
         await ClubService.togglePin(clubId.value, notificationToUnpin.value)
-        await getClubNotification()
+        const unpinnedId = notificationToUnpin.value
+        await Promise.all([
+            getClubNotification(),
+            getPinnedNotifications()
+        ])
+        if (selectedNotification.value && selectedNotification.value.id === unpinnedId) {
+            selectedNotification.value = { ...selectedNotification.value, is_pinned: false }
+        }
         toast.success('Đã gỡ ghim thông báo')
     } catch (error) {
         toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi gỡ ghim thông báo')
@@ -1090,8 +1165,15 @@ const confirmUnpinNotification = async () => {
     }
 }
 
+const MAX_PINNED_NOTIFICATIONS = 3
+
 const handlePinNotification = (notificationId) => {
     if (!hasAnyRole(['admin', 'manager', 'secretary'])) return
+    const pinnedCount = notifications.value.filter(n => n.is_pinned).length
+    if (pinnedCount >= MAX_PINNED_NOTIFICATIONS) {
+        toast.error('Đã đạt giới hạn ghim thông báo. Vui lòng gỡ bớt thông báo ghim trước khi ghim thêm.')
+        return
+    }
     notificationToPin.value = notificationId
     isPinModalOpen.value = true
 }
@@ -1100,7 +1182,14 @@ const confirmPinNotification = async () => {
     if (!notificationToPin.value) return
     try {
         await ClubService.togglePin(clubId.value, notificationToPin.value)
-        await getClubNotification()
+        const pinnedId = notificationToPin.value
+        await Promise.all([
+            getClubNotification(),
+            getPinnedNotifications()
+        ])
+        if (selectedNotification.value && selectedNotification.value.id === pinnedId) {
+            selectedNotification.value = { ...selectedNotification.value, is_pinned: true }
+        }
         toast.success('Đã ghim thông báo')
     } catch (error) {
         toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi ghim thông báo')
@@ -1109,9 +1198,9 @@ const confirmPinNotification = async () => {
     }
 }
 
-const pinnedNotifications = computed(() => {
-    return notifications.value.filter(notification => notification.is_pinned === true)
-})
+const deleteClub = () => {
+    isDeleteModalOpen.value = true
+}
 
 const is_joined = computed(() => {
     return club.value?.members?.some(member => member.user_id === getUser.value.id && member.status == 'active') ?? false
@@ -1230,6 +1319,7 @@ const loadAllData = async () => {
         await getClubDetail()
         await Promise.all([
             getClubNotification(),
+            getPinnedNotifications(),
             getClubActivities(),
             getClubJoiningRequests(),
             getFund(),
@@ -1240,9 +1330,6 @@ const loadAllData = async () => {
     }
 }
 
-const deleteClub = () => {
-    isDeleteModalOpen.value = true
-}
 
 const confirmDeleteClub = async () => {
     try {
@@ -1550,5 +1637,18 @@ watch(() => route.query.showNotifications, (newVal) => {
         opacity: 0;
         transform: scale(0.9) translateY(-20px);
     }
+}
+
+@keyframes bounce-subtle {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-2px);
+    }
+}
+
+.animate-bounce-subtle {
+    animation: bounce-subtle 1s infinite ease-in-out;
 }
 </style>
