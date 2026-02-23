@@ -1,6 +1,7 @@
 <template>
-    <div v-if="isOpen" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
+  <Teleport to="body">
+    <div v-if="isOpen" class="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]">
             <!-- Header -->
             <div class="flex items-center justify-between p-4 border-b">
                 <h3 class="text-lg font-semibold text-gray-800">Chỉnh sửa ảnh</h3>
@@ -10,7 +11,7 @@
             </div>
 
             <!-- Cropper Area -->
-            <div class="flex-1 overflow-hidden bg-gray-100 min-h-[400px] flex items-center justify-center relative">
+            <div class="flex-1 overflow-hidden bg-gray-100 min-h-[300px] flex items-center justify-center relative">
                 <cropper
                     ref="cropperRef"
                     class="h-full w-full object-contain"
@@ -37,6 +38,7 @@
             </div>
         </div>
     </div>
+  </Teleport>
 </template>
 
 <script setup>

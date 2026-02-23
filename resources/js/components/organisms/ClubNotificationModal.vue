@@ -39,8 +39,8 @@
                         <div class="space-y-2">
                             <div v-for="(notification, index) in notifications" class="cursor-pointer"
                                 :key="index"
-                                :class="['flex gap-4 p-4 rounded-2xl transition-colors', !notification.is_read_by_me ? 'bg-[#F8F9FB]' : 'bg-transparent']"
-                                @click="$emit('markAsRead', notification.id)"
+                                :class="['flex gap-4 p-4 rounded-2xl transition-colors', !notification.is_read_by_me ? 'bg-[#F8F9FB]' : 'bg-transparent']"  
+                                @click="handleNotificationClick(notification)"
                             >
                                 <div class="relative flex-shrink-0">
                                     <div
@@ -136,11 +136,18 @@ defineProps({
     }
 })
 
-const emit = defineEmits(['update:modelValue', 'close', 'loadMore', 'markAsRead', 'markAllAsRead', 'unpin', 'pin', 'create'])
+const emit = defineEmits(['update:modelValue', 'close', 'loadMore', 'markAsRead', 'markAllAsRead', 'unpin', 'pin', 'create', 'clickNotification'])
 
 const close = () => {
     emit('update:modelValue', false)
     emit('close')
+}
+
+const handleNotificationClick = (notification) => {
+    if (!notification.is_read_by_me) {
+        emit('markAsRead', notification.id)
+    }
+    emit('clickNotification', notification)
 }
 </script>
 
