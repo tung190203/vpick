@@ -58,9 +58,14 @@
                                         </h4>
                                         <div class="flex items-center gap-2">
                                             <span class="text-[#838799] text-xs whitespace-nowrap pt-1">{{ getJoinedDate(notification.created_at) }}</span>
-                                            <button v-if="notification.is_pinned" @click.stop="$emit('unpin', notification.id)" class="pt-1 absolute top-[-2rem] right-[-1.5rem] transition-all transform hover:scale-110">
-                                                <PinIcon class="w-5 h-5 transform rotate-45 transition-transform group-hover:rotate-12 text-[#D72D36]" />
-                                            </button>
+                                            <div v-if="isAdminOrStaff" class="pt-1 absolute top-[-2rem] right-[-1.5rem]">
+                                                <button v-if="notification.is_pinned" @click.stop="$emit('unpin', notification.id)" class="transition-all transform hover:scale-110">
+                                                    <PinIcon class="w-5 h-5 transform rotate-45 transition-transform group-hover:rotate-12 text-[#D72D36]" />
+                                                </button>
+                                                <button v-else @click.stop="$emit('pin', notification.id)" class="transition-all transform hover:scale-110">
+                                                    <PinIcon class="w-5 h-5 text-gray-300 hover:text-[#D72D36]" />
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                     <p class="text-xs text-[#838799] leading-4 line-clamp-2">{{ notification.content }}</p>
@@ -126,7 +131,7 @@ defineProps({
     }
 })
 
-const emit = defineEmits(['update:modelValue', 'close', 'loadMore', 'markAsRead', 'markAllAsRead', 'unpin', 'create'])
+const emit = defineEmits(['update:modelValue', 'close', 'loadMore', 'markAsRead', 'markAllAsRead', 'unpin', 'pin', 'create'])
 
 const close = () => {
     emit('update:modelValue', false)
