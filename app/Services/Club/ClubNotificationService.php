@@ -56,7 +56,7 @@ class ClubNotificationService
         }
 
         $perPage = $filters['per_page'] ?? 15;
-        return $query->orderBy('created_at', 'desc')->paginate($perPage);
+        return $query->orderBy('is_pinned', 'desc')->orderBy('created_at', 'desc')->paginate($perPage);
     }
 
     public function createNotification(Club $club, array $data, int $creatorId, ?string $attachmentUrl = null): ClubNotification
