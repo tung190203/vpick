@@ -138,6 +138,11 @@ class Club extends Model
         return $this->hasMany(ClubNotification::class);
     }
 
+    public function reports()
+    {
+        return $this->hasMany(ClubReport::class);
+    }
+
     public function tournaments()
     {
         return $this->hasMany(Tournament::class);

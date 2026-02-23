@@ -31,6 +31,7 @@ use App\Http\Controllers\Club\ClubMonthlyFeeController;
 use App\Http\Controllers\Club\ClubMonthlyFeePaymentController;
 use App\Http\Controllers\Club\ClubDashboardController;
 use App\Http\Controllers\Club\ClubJoinRequestController;
+use App\Http\Controllers\Club\ClubReportController;
 use App\Http\Controllers\CompetitionLocationYardController;
 use App\Http\Controllers\DeviceTokenController;
 use App\Http\Controllers\FacilityController;
@@ -198,6 +199,8 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
             Route::get('/fund/qr-code', [ClubWalletController::class, 'getFundQrCode']);
             Route::get('/dashboard', [ClubDashboardController::class, 'index']);
             Route::get('/leaderboard', [ClubController::class, 'getMonthlyLeaderboard']);
+            Route::post('/report', [ClubReportController::class, 'store']);
+            Route::get('/reports', [ClubReportController::class, 'index']);
 
             Route::prefix('members')->group(function () {
                 Route::get('/', [ClubMemberController::class, 'index']);
