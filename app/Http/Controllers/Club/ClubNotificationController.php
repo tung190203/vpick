@@ -46,6 +46,7 @@ class ClubNotificationController extends Controller
         $canManage = $member && in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary]);
 
         $notifications = $this->notificationService->getNotifications($club, $userId, $validated, $canManage);
+        $unreadCount = $this->notificationService->getUnreadCount($club, $userId);
 
         $data = ['notifications' => ClubNotificationResource::collection($notifications)];
         $meta = [
@@ -53,6 +54,7 @@ class ClubNotificationController extends Controller
             'per_page' => $notifications->perPage(),
             'total' => $notifications->total(),
             'last_page' => $notifications->lastPage(),
+            'unread_count' => $unreadCount,
         ];
         return ResponseHelper::success($data, 'Lấy danh sách thông báo thành công', 200, $meta);
     }
