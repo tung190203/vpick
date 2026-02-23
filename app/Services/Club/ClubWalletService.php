@@ -7,6 +7,7 @@ use App\Enums\ClubWalletTransactionDirection;
 use App\Enums\ClubWalletTransactionStatus;
 use App\Models\Club\Club;
 use App\Models\Club\ClubWallet;
+use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
@@ -81,6 +82,12 @@ class ClubWalletService
         return $query->orderBy('created_at', 'desc')->paginate($perPage);
     }
 
+    /**
+     * Tổng quan quỹ: tổng quỹ hiện tại (balance), thu tháng này, chi tháng này.
+     * - balance: tổng từ mọi giao dịch đã xác nhận (In - Out).
+     * - total_income / total_expense: mặc định theo tháng hiện tại (confirmed_at trong tháng).
+     * - Nếu FE gửi date_from, date_to thì lọc theo khoảng đó (theo confirmed_at).
+     */
     public function getFundOverview(Club $club, ?string $dateFrom = null, ?string $dateTo = null): array
     {
         $mainWallet = $club->mainWallet;
@@ -95,23 +102,30 @@ class ClubWalletService
             ];
         }
 
-        $query = $mainWallet->transactions()->where('status', ClubWalletTransactionStatus::Confirmed);
+        $balance = (int) $mainWallet->balance;
 
-        if ($dateFrom) {
-            $query->whereDate('created_at', '>=', $dateFrom);
+        if (empty($dateFrom) && empty($dateTo)) {
+            $dateFrom = Carbon::now()->startOfMonth()->toDateString();
+            $dateTo = Carbon::now()->endOfMonth()->toDateString();
         }
 
-        if ($dateTo) {
-            $query->whereDate('created_at', '<=', $dateTo);
+        $baseQuery = $mainWallet->transactions()
+            ->where('status', ClubWalletTransactionStatus::Confirmed);
+
+        if (!empty($dateFrom)) {
+            $baseQuery->whereDate('confirmed_at', '>=', $dateFrom);
+        }
+        if (!empty($dateTo)) {
+            $baseQuery->whereDate('confirmed_at', '<=', $dateTo);
         }
 
-        $totalIncome = (clone $query)->where('direction', ClubWalletTransactionDirection::In)->sum('amount');
-        $totalExpense = (clone $query)->where('direction', ClubWalletTransactionDirection::Out)->sum('amount');
+        $totalIncome = (clone $baseQuery)->where('direction', ClubWalletTransactionDirection::In)->sum('amount');
+        $totalExpense = (clone $baseQuery)->where('direction', ClubWalletTransactionDirection::Out)->sum('amount');
         $pendingTransactions = $mainWallet->transactions()->where('status', ClubWalletTransactionStatus::Pending)->count();
         $activeCollections = $club->fundCollections()->where('status', ClubFundCollectionStatus::Active)->count();
 
         return [
-            'balance' => (int) $mainWallet->balance,
+            'balance' => $balance,
             'total_income' => (int) $totalIncome,
             'total_expense' => (int) $totalExpense,
             'pending_transactions' => (int) $pendingTransactions,

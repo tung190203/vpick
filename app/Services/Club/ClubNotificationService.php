@@ -18,6 +18,20 @@ use Illuminate\Support\Facades\Storage;
 
 class ClubNotificationService
 {
+    public function getUnreadCount(Club $club, ?int $userId): int
+    {
+        if (!$userId) {
+            return 0;
+        }
+
+        return $club->notifications()
+            ->where('status', ClubNotificationStatus::Sent)
+            ->whereHas('recipients', function ($q) use ($userId) {
+                $q->where('user_id', $userId)->where('is_read', false);
+            })
+            ->count();
+    }
+
     public function getNotifications(Club $club, int $userId, array $filters, bool $canManage): LengthAwarePaginator
     {
         $query = $club->notifications()->with(['type', 'creator', 'recipients.user']);
@@ -42,7 +56,7 @@ class ClubNotificationService
         }
 
         $perPage = $filters['per_page'] ?? 15;
-        return $query->orderBy('created_at', 'desc')->paginate($perPage);
+        return $query->orderBy('is_pinned', 'desc')->orderBy('created_at', 'desc')->paginate($perPage);
     }
 
     public function createNotification(Club $club, array $data, int $creatorId, ?string $attachmentUrl = null): ClubNotification

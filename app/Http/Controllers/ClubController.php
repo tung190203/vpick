@@ -14,6 +14,7 @@ use App\Http\Requests\Club\UpdateClubFundRequest;
 use App\Http\Requests\Club\UpdateClubRequest;
 use App\Http\Requests\Club\VerifyClubRequest;
 use App\Http\Resources\Club\ClubLeaderboardResource;
+use App\Http\Resources\Club\ClubListResource;
 use App\Http\Resources\ClubResource;
 use App\Models\Club\Club;
 use App\Models\User;
@@ -39,7 +40,7 @@ class ClubController extends Controller
         $clubs = $this->clubService->searchClubs($request->validated(), $userId);
 
         $data = [
-            'clubs' => ClubResource::collection($clubs),
+            'clubs' => ClubListResource::collection($clubs),
         ];
 
         $meta = [

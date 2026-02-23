@@ -11,11 +11,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class ClubResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
+
     public function toArray(Request $request): array
     {
         return [
@@ -117,9 +113,6 @@ class ClubResource extends JsonResource
         ];
     }
 
-    /**
-     * Cấu trúc profile mặc định khi CLB chưa có profile (tránh null cho frontend).
-     */
     protected static function getDefaultProfile(): array
     {
         return [
@@ -144,9 +137,6 @@ class ClubResource extends JsonResource
         ];
     }
 
-    /**
-     * Lấy điểm vndupr của member (từ user.vnduprScores hoặc user.sports.scores)
-     */
     protected function getMemberVnduprScore($member): ?float
     {
         $user = $member->user ?? null;
