@@ -2,6 +2,7 @@
   <div 
     class="relative flex items-start p-4 rounded-2xl border-l-[2px] mb-4 transition shadow-sm cursor-pointer"
     :class="[currentColors.cardBg, currentColors.border]"
+    @click="$emit('click')"
   >
     <!-- Pin/Unpin Button - Floating at top right corner -->
     <div v-if="isAdmin" class="absolute -top-2 -right-2 z-10">
@@ -65,7 +66,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['unpin', 'pin'])
+const emit = defineEmits(['unpin', 'pin', 'click'])
 
 const colorMap = NOTIFICATION_COLOR_MAP;
 

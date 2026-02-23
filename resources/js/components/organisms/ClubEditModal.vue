@@ -16,8 +16,8 @@
             <!-- Cover & Avatar -->
             <div class="relative mb-8">
               <!-- Cover Image -->
-              <div class="h-32 w-full rounded-xl bg-gray-100 overflow-hidden relative group">
-                <img :src="form.cover_image_url || defaultCover" class="w-full min-h-[144px] object-cover" alt="Cover" />
+              <div class="aspect-[4/1] w-full rounded-xl bg-gray-100 overflow-hidden relative group">
+                <img :src="form.cover_image_url || defaultCover" class="w-full h-full object-cover" alt="Cover" />
                 <div class="absolute bottom-2 right-2 bg-[#4392E0] rounded-full p-1 shadow-sm cursor-pointer hover:bg-[#4392E0] transition-colors" @click="triggerFileInput('coverInput')">
                   <PencilIcon class="w-3 h-3 text-white" />
                 </div>
@@ -74,6 +74,14 @@
       </div>
     </Transition>
   </Teleport>
+
+  <ImageCropperModal
+    :is-open="cropper.isOpen"
+    :image="cropper.image"
+    :stencil-props="cropper.stencilProps"
+    @close="cropper.isOpen = false"
+    @save="onCropSave"
+  />
 </template>
 
 <script setup>
@@ -81,6 +89,7 @@ import { ref, watch } from 'vue'
 import { XMarkIcon, PencilIcon, CheckIcon } from '@heroicons/vue/24/outline'
 import Button from '@/components/atoms/Button.vue'
 import Toggle from '@/components/atoms/Toggle.vue'
+import ImageCropperModal from '@/components/molecules/ImageCropperModal.vue'
 import defaultCover from '@/assets/images/club-default-thumbnail.svg?url'
 
 const defaultAvatar = "/images/default-avatar.png";
@@ -108,6 +117,15 @@ const form = ref({
 
 const coverInput = ref(null)
 const avatarInput = ref(null)
+
+const cropper = ref({
+    isOpen: false,
+    image: null,
+    type: null,
+    stencilProps: {
+        aspectRatio: 1
+    }
+})
 
 watch(() => props.club, (newVal) => {
     if (newVal) {
@@ -139,14 +157,32 @@ const handleFileChange = (event, type) => {
     const reader = new FileReader()
     reader.onload = (e) => {
         if (type === 'cover') {
-            form.value.cover_image_url = e.target.result
-            form.value.cover_file = file
+            cropper.value = {
+                isOpen: true,
+                image: e.target.result,
+                type: 'cover',
+                stencilProps: {
+                    aspectRatio: 4 / 1
+                }
+            }
         } else {
             form.value.logo_url = e.target.result
             form.value.logo_file = file
         }
     }
     reader.readAsDataURL(file)
+}
+
+const onCropSave = (blob) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+        if (cropper.value.type === 'cover') {
+            form.value.cover_image_url = e.target.result
+            form.value.cover_file = blob
+        }
+        cropper.value.isOpen = false
+    }
+    reader.readAsDataURL(blob)
 }
 
 const handleSubmit = () => {

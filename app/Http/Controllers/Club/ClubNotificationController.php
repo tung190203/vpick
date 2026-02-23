@@ -18,6 +18,8 @@ use Illuminate\Validation\Rule;
 
 class ClubNotificationController extends Controller
 {
+    private const MAX_PINNED_NOTIFICATIONS = 3;
+
     public function __construct(
         protected ClubNotificationService $notificationService
     ) {
@@ -46,6 +48,7 @@ class ClubNotificationController extends Controller
         $canManage = $member && in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary]);
 
         $notifications = $this->notificationService->getNotifications($club, $userId, $validated, $canManage);
+        $unreadCount = $this->notificationService->getUnreadCount($club, $userId);
 
         $data = ['notifications' => ClubNotificationResource::collection($notifications)];
         $meta = [
@@ -53,6 +56,7 @@ class ClubNotificationController extends Controller
             'per_page' => $notifications->perPage(),
             'total' => $notifications->total(),
             'last_page' => $notifications->lastPage(),
+            'unread_count' => $unreadCount,
         ];
         return ResponseHelper::success($data, 'Lấy danh sách thông báo thành công', 200, $meta);
     }
@@ -87,6 +91,17 @@ class ClubNotificationController extends Controller
             'user_ids' => 'nullable|array',
             'user_ids.*' => 'exists:users,id',
         ]);
+
+        $isPinned = $validated['is_pinned'] ?? false;
+        if ($isPinned) {
+            $pinnedCount = $club->notifications()->where('is_pinned', true)->count();
+            if ($pinnedCount >= self::MAX_PINNED_NOTIFICATIONS) {
+                return ResponseHelper::error(
+                    'Đã đạt giới hạn 3 thông báo ghim. Vui lòng gỡ bớt thông báo ghim trước khi ghim thêm.',
+                    422
+                );
+            }
+        }
 
         $attachmentUrl = $validated['attachment_url'] ?? null;
         if ($request->hasFile('attachment')) {
@@ -188,6 +203,16 @@ class ClubNotificationController extends Controller
         $member = $club->activeMembers()->where('user_id', $userId)->first();
         if (!$member || !in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary])) {
             return ResponseHelper::error('Chỉ admin/manager/secretary mới có quyền ghim thông báo', 403);
+        }
+
+        if (!$notification->is_pinned) {
+            $pinnedCount = $club->notifications()->where('is_pinned', true)->count();
+            if ($pinnedCount >= self::MAX_PINNED_NOTIFICATIONS) {
+                return ResponseHelper::error(
+                    'Đã đạt giới hạn 3 thông báo ghim. Vui lòng gỡ bớt thông báo ghim trước khi ghim thêm.',
+                    422
+                );
+            }
         }
 
         $notification->togglePin();

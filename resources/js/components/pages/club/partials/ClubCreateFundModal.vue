@@ -148,7 +148,7 @@
                                                 <img :src="member.user?.avatar_url || `https://ui-avatars.com/api/?name=${member.user?.full_name || 'User'}&background=random`" class="w-full h-full object-cover" />
                                             </div>
                                             <div class="absolute bottom-0 left-0 w-4 h-4 bg-[#4392E0] text-white text-[8px] font-semibold rounded-full border border-white flex items-center justify-center">
-                                                {{ Number(member.user?.sports[0].scores?.vndupr_score).toFixed(1) || 0 }}
+                                                {{ Number(member.user?.sports[0]?.scores?.vndupr_score).toFixed(1) || 0 }}
                                             </div>
                                         </div>
                                         <span class="font-bold text-[#1F2937] text-[15px] truncate max-w-[150px] md:max-w-none">{{ member.user?.full_name || 'Thành viên' }}</span>

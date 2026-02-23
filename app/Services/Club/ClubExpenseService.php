@@ -79,10 +79,12 @@ class ClubExpenseService
                 'source_type' => ClubWalletTransactionSourceType::Expense,
                 'source_id' => $expense->id,
                 'payment_method' => $data['payment_method'],
-                'status' => ClubWalletTransactionStatus::Pending,
+                'status' => ClubWalletTransactionStatus::Confirmed,
                 'reference_code' => $data['reference_code'] ?? null,
                 'description' => $description,
                 'created_by' => $userId,
+                'confirmed_by' => $userId,
+                'confirmed_at' => now(),
             ]);
 
             $expense->update(['wallet_transaction_id' => $transaction->id]);
