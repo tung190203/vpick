@@ -27,8 +27,11 @@
 
                     <div class="flex items-center">
                         <div class="p-2 cursor-pointer hover:bg-white/10 rounded-full transition-colors"
-                            @click="toggleChangeClub">
+                            @click="toggleChangeClub" v-if="myClubs.length > 0">
                             <ChangeCircleIcon class="w-6 h-6 text-white" />
+                        </div>
+                        <div v-else class="text-white/70 text-sm font-medium px-2">
+                            Chưa có CLB nào
                         </div>
                         <div class="p-2 cursor-pointer hover:bg-white/10 rounded-full transition-colors"
                             @click="inviteMembers">
@@ -224,7 +227,10 @@
                         </div>
                         <template v-if="notifications.length > 0 && pinnedNotifications.length > 0">
                             <NotificationCard v-for="(notification, index) in pinnedNotifications" :key="index"
-                                :data="notification" @unpin="handleUnpinNotification" />
+                                :data="notification" 
+                                :is-admin="hasAnyRole(['admin', 'manager', 'secretary'])"
+                                @unpin="handleUnpinNotification" 
+                                @pin="handlePinNotification" />
                         </template>
                         <div v-else class="p-4 text-center">
                             <p class="text-[#838799]">Hiện chưa có thông báo ghim nào</p>
@@ -338,7 +344,7 @@
                 :meta="notificationMeta" :is-loading-more="isLoadingMoreNotifications"
                 :is-admin-or-staff="hasAnyRole(['admin', 'manager', 'secretary'])" @close="closeNotification"
                 @load-more="loadMoreNotifications" @mark-as-read="markAsRead" @mark-all-as-read="markAllAsRead"
-                @unpin="handleUnpinNotification" @create="handleCreateNotification" />
+                @unpin="handleUnpinNotification" @pin="handlePinNotification" @create="handleCreateNotification" />
 
             <!-- Activity Schedule Modal -->
             <ClubActivityModal :is-open="isActivityModalOpen" :thumbnail="Thumbnail"
@@ -366,6 +372,17 @@
 
             <ClubTransferModal v-model="isTransferModalOpen" :club-id="clubId" :is-submitting="isSubmittingTransfer"
                 @confirm="handleTransferConfirm" />
+
+            <!-- Unpin Confirmation Modal -->
+            <DeleteConfirmationModal v-model="isUnpinModalOpen" title="Bỏ ghim thông báo"
+                message="Bạn muốn bỏ ghim thông báo này?" confirmButtonText="Bỏ ghim"
+                @confirm="confirmUnpinNotification" />
+
+            <!-- Pin Confirmation Modal -->
+            <DeleteConfirmationModal v-model="isPinModalOpen" title="Ghim thông báo"
+                message="Bạn muốn ghim thông báo này?" confirmButtonText="Ghim ngay"
+                confirmButtonClass="!bg-[#00B377] hover:!bg-[#009664]"
+                @confirm="confirmPinNotification" />
 
             <!-- Zalo QR Modal -->
             <Transition name="modal">
@@ -510,6 +527,10 @@ const isUpdatingClub = ref(false)
 const isUpdatingZalo = ref(false)
 const isCreatingNotification = ref(false)
 const isSubmittingTransfer = ref(false)
+const isUnpinModalOpen = ref(false)
+const isPinModalOpen = ref(false)
+const notificationToUnpin = ref(null)
+const notificationToPin = ref(null)
 const club = ref([]);
 const clubId = ref(route.params.id);
 const userStore = useUserStore()
@@ -586,6 +607,7 @@ const getMyClubs = async () => {
     }
     try {
         const response = await ClubService.myClubs();
+        myClubs.value = response || [];
         clubs.value = response || [];
 
         if (clubs.value.length === 0) {
@@ -736,6 +758,9 @@ watch(
         isEditModalOpen.value,
         isZaloModalOpen.value,
         isTransferModalOpen.value,
+        isTransferModalOpen.value,
+        isUnpinModalOpen.value,
+        isPinModalOpen.value,
     ],
     (values) => {
         if (values.some(v => v)) {
@@ -1046,14 +1071,41 @@ const markAllAsRead = async () => {
     }
 }
 
-const handleUnpinNotification = async (notificationId) => {
+const handleUnpinNotification = (notificationId) => {
     if (!hasAnyRole(['admin', 'manager', 'secretary'])) return
+    notificationToUnpin.value = notificationId
+    isUnpinModalOpen.value = true
+}
+
+const confirmUnpinNotification = async () => {
+    if (!notificationToUnpin.value) return
     try {
-        await ClubService.togglePin(clubId.value, notificationId)
+        await ClubService.togglePin(clubId.value, notificationToUnpin.value)
         await getClubNotification()
         toast.success('Đã gỡ ghim thông báo')
     } catch (error) {
         toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi gỡ ghim thông báo')
+    } finally {
+        notificationToUnpin.value = null
+    }
+}
+
+const handlePinNotification = (notificationId) => {
+    if (!hasAnyRole(['admin', 'manager', 'secretary'])) return
+    notificationToPin.value = notificationId
+    isPinModalOpen.value = true
+}
+
+const confirmPinNotification = async () => {
+    if (!notificationToPin.value) return
+    try {
+        await ClubService.togglePin(clubId.value, notificationToPin.value)
+        await getClubNotification()
+        toast.success('Đã ghim thông báo')
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi ghim thông báo')
+    } finally {
+        notificationToPin.value = null
     }
 }
 
