@@ -3,15 +3,25 @@
     class="relative flex items-start p-4 rounded-2xl border-l-[2px] mb-4 transition shadow-sm cursor-pointer"
     :class="[currentColors.cardBg, currentColors.border]"
   >
-    <!-- Pin Button - Floating at top right corner -->
-    <button 
-      v-if="data.is_pinned" 
-      @click.stop="$emit('unpin', data.id)" 
-      class="absolute -top-2 -right-2 transition-all transform hover:scale-110 group z-10"
-      title="Bỏ ghim"
-    >
-      <PinIcon class="w-5 h-5 transform rotate-45 transition-transform group-hover:rotate-12 !text-[#D72D36]" />
-    </button>
+    <!-- Pin/Unpin Button - Floating at top right corner -->
+    <div v-if="isAdmin" class="absolute -top-2 -right-2 z-10">
+      <button 
+        v-if="data.is_pinned" 
+        @click.stop="$emit('unpin', data.id)" 
+        class="transition-all transform hover:scale-110 group"
+        title="Bỏ ghim"
+      >
+        <PinIcon class="w-5 h-5 transform rotate-45 transition-transform group-hover:rotate-12 !text-[#D72D36]" />
+      </button>
+      <button 
+        v-else 
+        @click.stop="$emit('pin', data.id)" 
+        class="transition-all transform hover:scale-110 group"
+        title="Ghim thông báo"
+      >
+        <PinIcon class="w-5 h-5 transition-all text-gray-300 group-hover:text-[#D72D36]" />
+      </button>
+    </div>
 
     <!-- Icon Section -->
     <div 
@@ -48,10 +58,14 @@ const props = defineProps({
   data: {
     type: Object,
     required: true
+  },
+  isAdmin: {
+    type: Boolean,
+    default: false
   }
 })
 
-const emit = defineEmits(['unpin'])
+const emit = defineEmits(['unpin', 'pin'])
 
 const colorMap = NOTIFICATION_COLOR_MAP;
 
