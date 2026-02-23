@@ -227,9 +227,9 @@
                         </div>
                         <template v-if="notifications.length > 0 && pinnedNotifications.length > 0">
                             <NotificationCard v-for="(notification, index) in pinnedNotifications" :key="index"
-                                :data="notification" 
+                                :data="notification"
                                 :is-admin="hasAnyRole(['admin', 'manager', 'secretary'])"
-                                @unpin="handleUnpinNotification" 
+                                @unpin="handleUnpinNotification"
                                 @pin="handlePinNotification" />
                         </template>
                         <div v-else class="p-4 text-center">
@@ -342,7 +342,9 @@
             <!-- Notification Modal -->
             <ClubNotificationModal v-model="isNotificationModalOpen" :notifications="notifications"
                 :meta="notificationMeta" :is-loading-more="isLoadingMoreNotifications"
-                :is-admin-or-staff="hasAnyRole(['admin', 'manager', 'secretary'])" @close="closeNotification"
+                :is-admin-or-staff="hasAnyRole(['admin', 'manager', 'secretary'])"
+                :can-pin-more="pinnedNotifications.length < MAX_PINNED_NOTIFICATIONS"
+                @close="closeNotification"
                 @load-more="loadMoreNotifications" @mark-as-read="markAsRead" @mark-all-as-read="markAllAsRead"
                 @unpin="handleUnpinNotification" @pin="handlePinNotification" @create="handleCreateNotification" />
 
@@ -380,7 +382,7 @@
 
             <!-- Pin Confirmation Modal -->
             <DeleteConfirmationModal v-model="isPinModalOpen" title="Ghim thông báo"
-                message="Bạn muốn ghim thông báo này?" confirmButtonText="Ghim ngay"
+                message="Bạn muốn ghim thông báo này? (Tối đa 3 thông báo được ghim)" confirmButtonText="Ghim ngay"
                 confirmButtonClass="!bg-[#00B377] hover:!bg-[#009664]"
                 @confirm="confirmPinNotification" />
 
@@ -1090,8 +1092,15 @@ const confirmUnpinNotification = async () => {
     }
 }
 
+const MAX_PINNED_NOTIFICATIONS = 3
+
 const handlePinNotification = (notificationId) => {
     if (!hasAnyRole(['admin', 'manager', 'secretary'])) return
+    const pinnedCount = notifications.value.filter(n => n.is_pinned).length
+    if (pinnedCount >= MAX_PINNED_NOTIFICATIONS) {
+        toast.error('Đã đạt giới hạn ghim thông báo. Vui lòng gỡ bớt thông báo ghim trước khi ghim thêm.')
+        return
+    }
     notificationToPin.value = notificationId
     isPinModalOpen.value = true
 }
