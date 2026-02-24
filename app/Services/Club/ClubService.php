@@ -348,27 +348,27 @@ class ClubService
 
     public function getClubDetail(Club $club, ?int $userId): Club
     {
-        // Authorization check for private clubs - chỉ thành viên active mới xem được (creator đã out thì mất quyền)
+        $isMember = $userId && $club->members()
+            ->where('user_id', $userId)
+            ->where('membership_status', ClubMembershipStatus::Joined)
+            ->where('status', ClubMemberStatus::Active)
+            ->exists();
+
+        // Private clubs: chỉ thành viên mới xem được
         if (!$club->is_public) {
             if (!$userId) {
                 throw new \Exception('CLB này là riêng tư. Bạn cần đăng nhập để xem');
             }
-
-            $isMember = $club->members()
-                ->where('user_id', $userId)
-                ->where('membership_status', ClubMembershipStatus::Joined)
-                ->where('status', ClubMemberStatus::Active)
-                ->exists();
-
             if (!$isMember) {
                 throw new \Exception('Bạn không có quyền xem CLB riêng tư này');
             }
         }
 
-        $members = $club->joinedMembers()->with(['user' => User::FULL_RELATIONS])->get();
-        $enrichedMembers = $this->memberService->enrichMembersWithRanking($members);
-
-        $club->setRelation('members', $enrichedMembers);
+        if ($isMember) {
+            $members = $club->joinedMembers()->with(['user' => User::FULL_RELATIONS])->get();
+            $enrichedMembers = $this->memberService->enrichMembersWithRanking($members);
+            $club->setRelation('members', $enrichedMembers);
+        }
 
         return $club;
     }
