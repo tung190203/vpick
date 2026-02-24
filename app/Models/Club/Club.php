@@ -227,6 +227,15 @@ class Club extends Model
         return in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary]);
     }
 
+    /** Chỉ admin và thư ký mới có quyền sửa footer. */
+    public function canEditFooter($userId): bool
+    {
+        $member = $this->activeMembers()->where('user_id', $userId)->first();
+        if (!$member) return false;
+
+        return in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Secretary]);
+    }
+
     public function canManageFinance($userId)
     {
         $member = $this->activeMembers()->where('user_id', $userId)->first();

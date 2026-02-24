@@ -76,6 +76,29 @@ class ClubActivityService
             $query->whereDate('start_time', '<=', $filters['date_to']);
         }
 
+        $shouldCollapseRecurring = $hasAll
+            || empty($statuses)
+            || in_array('scheduled', $activityStatuses)
+            || in_array('ongoing', $activityStatuses)
+            || (($hasRegistered || $hasAvailable) && empty($activityStatuses));
+
+        if ($shouldCollapseRecurring) {
+            $query->where(function ($q) {
+                $q->whereNull('recurring_schedule')
+                    ->orWhereNotIn('status', [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing])
+                    ->orWhereNotExists(function ($sub) {
+                        $sub->select(DB::raw(1))
+                            ->from('club_activities as a2')
+                            ->whereColumn('a2.club_id', 'club_activities.club_id')
+                            ->whereColumn('a2.title', 'club_activities.title')
+                            ->whereRaw('(a2.recurring_schedule <=> club_activities.recurring_schedule)')
+                            ->whereIn('a2.status', [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing])
+                            ->whereColumn('a2.start_time', '<', 'club_activities.start_time')
+                            ->whereColumn('a2.id', '!=', 'club_activities.id');
+                    });
+            });
+        }
+
         $perPage = $filters['per_page'] ?? 15;
 
         if ($userId) {
@@ -171,12 +194,10 @@ class ClubActivityService
             ]
         );
 
-        // CRITICAL FIX: Auto-generate occurrences for recurring activities
+        // Auto-generate future occurrences for recurring activities
+        // The original activity stays as scheduled - it is the first occurrence
         if ($activity->isRecurring()) {
             $this->generateInitialOccurrences($activity, $userId);
-
-            // Mark original activity as completed since it's just a template
-            $activity->update(['status' => ClubActivityStatus::Completed]);
         }
 
         return $activity;

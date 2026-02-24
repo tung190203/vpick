@@ -76,6 +76,7 @@ class ClubResource extends JsonResource
                     ->exists(),
                 false
             ),
+            'can_edit_footer' => $this->when(auth()->check(), fn () => $this->resource->canEditFooter(auth()->id()), false),
             'profile' => $this->whenLoaded('profile', fn () => static::formatProfile($this->profile), static::getDefaultProfile()),
             'wallets' => $this->whenLoaded('wallets'),
             'created_at' => $this->created_at?->toISOString(),
@@ -104,6 +105,7 @@ class ClubResource extends JsonResource
             'city' => $profile->city,
             'province' => $profile->province,
             'country' => $profile->country,
+            'footer' => $profile->footer,
             'latitude' => $profile->latitude,
             'longitude' => $profile->longitude,
             'zalo_link' => $profile->zalo_link,
@@ -128,6 +130,7 @@ class ClubResource extends JsonResource
             'city' => null,
             'province' => null,
             'country' => null,
+            'footer' => null,
             'latitude' => null,
             'longitude' => null,
             'zalo_link' => null,
