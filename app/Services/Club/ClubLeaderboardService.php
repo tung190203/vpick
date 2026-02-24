@@ -106,7 +106,16 @@ class ClubLeaderboardService
             return $this->calculateMemberStats($member, $allHistories, $sportId);
         });
 
-        return $leaderboardData->sortByDesc('vndupr_score')->values()->map(function ($item, $index) {
+        $sorted = $leaderboardData->sortByDesc('vndupr_score')->values();
+        $verified = $sorted->filter(fn($item) => ($item['monthly_stats']['matches_played'] ?? 0) >= 10);
+        $unverified = $sorted->filter(fn($item) => ($item['monthly_stats']['matches_played'] ?? 0) < 10);
+
+        // Top 3: chỉ user đã verified (>= 10 trận)
+        $topThree = $verified->take(3)->values();
+        $rest = $verified->skip(3)->concat($unverified)->sortByDesc('vndupr_score')->values();
+        $combined = $topThree->concat($rest)->values();
+
+        return $combined->map(function ($item, $index) {
             $item['rank'] = $index + 1;
             return $item;
         });
