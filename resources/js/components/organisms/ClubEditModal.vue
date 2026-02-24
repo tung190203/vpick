@@ -55,7 +55,7 @@
                     <label class="block text-sm font-medium text-gray-700">Chỉnh sửa giới thiệu</label>
                     <span class="text-xs text-gray-400">{{ form.description?.length || 0 }}/300</span>
                 </div>
-                <textarea v-model="form.description" rows="4" maxlength="300" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D72D36]/20 focus:border-[#D72D36] transition-colors resize-none placeholder:text-gray-400" placeholder="Hãy chia sẻ một chút về CLB"></textarea>
+                <textarea v-model="form.description" rows="4" maxlength="300" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D72D36]/20 focus:border-[#D72D36] transition-colors placeholder:text-gray-400" placeholder="Hãy chia sẻ một chút về CLB"></textarea>
               </div>
 
               <!-- Visibility -->

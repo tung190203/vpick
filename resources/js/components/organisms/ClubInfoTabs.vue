@@ -16,8 +16,8 @@
                 <div v-show="activeTab === 'intro'" ref="introContent" class="relative">
                     <Transition name="fade-slide" mode="out-in">
                         <div v-if="isEditingIntro" :key="'edit'" class="space-y-4">
-                            <textarea v-model="editDescription" rows="6" 
-                                class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D72D36]/20 focus:border-[#D72D36] transition-colors resize-none placeholder:text-gray-400"
+                            <textarea v-model="editDescription" rows="6" maxlength="300"
+                                class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D72D36]/20 focus:border-[#D72D36] transition-colors placeholder:text-gray-400"
                                 placeholder="Nhập giới thiệu về CLB..."></textarea>
                             <div class="flex items-center gap-3">
                                 <button @click="cancelEditIntro"

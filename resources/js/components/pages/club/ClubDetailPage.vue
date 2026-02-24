@@ -4,23 +4,42 @@
         <ClubDetailSkeleton v-if="isInitialLoading" />
 
         <template v-else>
+            <!-- Global Backdrop for menu closing -->
+            <div v-if="isMenuOpen || isChangeClubOpen" class="fixed inset-0 z-[35]"
+                @click="closeMenu">
+            </div>
             <!-- Admin/Staff View -->
             <div v-if="hasAnyRole(['admin', 'manager', 'secretary', 'treasurer'])"
-                class=" text-white rounded-[8px] shadow-lg px-6 pt-4 pb-6 relative overflow-hidden flex flex-col justify-between aspect-[4/1] bg-cover bg-center"
+                class=" text-white rounded-[8px] shadow-lg px-6 pt-4 pb-6 relative flex flex-col justify-between aspect-[4/1] bg-cover bg-center"
                 :style="{ backgroundImage: `url(${club.profile?.cover_image_url || Background})` }">
-                <div class="flex items-center justify-between relative z-20">
+                <!-- Overlay to improve readability on white backgrounds -->
+                <div class="absolute inset-0 backdrop-blur-[1px] z-10 rounded-[8px]"
+                    style="background: linear-gradient(to bottom, rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.38))"></div>
+
+                <div class="flex items-center justify-between relative z-40">
                     <div class="flex items-center space-x-4">
                         <div class="bg-white/10 p-2 rounded-full cursor-pointer hover:bg-white/20 transition-colors"
                             @click="goBack">
                             <ArrowLeftIcon class="w-6 h-6 text-white" />
                         </div>
-                        <div class="flex flex-col">
-                            <div class="flex items-center space-x-2">
-                                <h1 class="text-4xl font-bold leading-tight">{{ club.name }}</h1>
-                                <div v-if="club.is_verified" class="bg-[#4392E0] rounded-full p-1">
-                                    <VerifyIcon class="w-5 h-5 text-white" />
-                                </div>
+
+                        <!-- Logo Container -->
+                        <div class="relative">
+                            <img v-if="club.logo_url" :src="club.logo_url"
+                                class="w-16 h-16 rounded-full object-cover border-2 border-white/20 shadow-sm" />
+                            <div v-else
+                                class="w-16 h-16 rounded-full bg-red-100 text-[#D72D36] flex items-center justify-center font-bold text-2xl border-2 border-white/20">
+                                {{ club.name?.charAt(0).toUpperCase() }}
                             </div>
+                            <!-- Verify Badge -->
+                            <div v-if="club.is_verified"
+                                class="absolute bottom-0 right-0 bg-[#4392E0] rounded-full p-0.5 border border-white shadow-sm">
+                                <VerifyIcon class="w-4 h-4 text-white" />
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col">
+                            <h1 class="text-4xl font-bold leading-tight">{{ club.name }}</h1>
                             <p class="text-gray-400 text-sm font-medium">{{ getRoleName(currentUserRole) }}</p>
                         </div>
                     </div>
@@ -42,7 +61,6 @@
                             <EllipsisVerticalIcon class="w-6 h-6 text-white" />
                         </div>
 
-                        <!-- Dropdown Menu (Same as member) -->
                         <div v-if="isMenuOpen"
                             class="absolute right-0 top-14 w-56 bg-white rounded-xl shadow-2xl py-2 z-50 text-gray-800 border border-gray-100 animate-in fade-in zoom-in duration-200">
                             <!-- Add admin specific menu items if needed, for now reuse existing -->
@@ -103,7 +121,7 @@
                 </div>
 
                 <!-- Stats Cards -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-8 relative z-10">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-8 relative z-20">
                     <div v-for="(stat, index) in statsAdmin" :key="index"
                         class="bg-[#3E414C]/80 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-white/5 shadow-inner">
                         <p class="text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wide">{{ stat.label }}</p>
@@ -125,9 +143,13 @@
 
             <!-- Member/Guest View (Existing) -->
             <div v-else
-                class="bg-club-default text-white rounded-[8px] shadow-lg p-6 relative overflow-hidden flex flex-col justify-between aspect-[4/1] bg-cover bg-center"
+                class="bg-club-default text-white rounded-[8px] shadow-lg p-6 relative flex flex-col justify-between aspect-[4/1] bg-cover bg-center"
                 :style="{ backgroundImage: `url(${club.profile?.cover_image_url || Background})` }">
-                <div class="flex items-center justify-between">
+                <!-- Overlay for readability -->
+                <div class="absolute inset-0 backdrop-blur-[1px] z-10 rounded-[8px]"
+                    style="background: linear-gradient(to bottom, rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.38))"></div>
+
+                <div class="flex items-center justify-between relative z-40">
                     <div>
                         <ArrowLeftIcon class="w-6 h-6 cursor-pointer text-white" @click="goBack" />
                     </div>
@@ -137,7 +159,7 @@
 
                         <!-- Dropdown Menu -->
                         <div v-if="isMenuOpen"
-                            class="absolute right-0 top-10 w-56 bg-white rounded-xl shadow-2xl py-2 z-[10000] text-gray-800 border border-gray-100 animate-in fade-in zoom-in duration-200">
+                            class="absolute right-0 top-10 w-56 bg-white rounded-xl shadow-2xl py-2 z-50 text-gray-800 border border-gray-100 animate-in fade-in zoom-in duration-200">
                             <button
                                 class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-100 transition-colors"
                                 @click="openNotification" v-if="is_joined">
@@ -164,21 +186,32 @@
                         </div>
                     </div>
                 </div>
-                <!-- Backdrop -->
-                <div v-if="isMenuOpen || isChangeClubOpen" class="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm"
-                    @click="closeMenu">
-                </div>
-                <div class="flex items-center">
+                <div class="flex items-center relative z-20">
                     <div>
                         <div v-if="club.profile?.address"
                             class="flex items-center space-x-2 relative rounded-full overflow-hidden bg-white w-fit text-black py-1 px-2 mb-2">
                             <MapPinIcon class="w-5 h-5" />
                             <div class="text-sm font-semibold">{{ club.profile.address }}</div>
                         </div>
-                        <div class="flex items-center space-x-2 mb-2">
-                            <div class="text-3xl sm:text-4xl lg:text-[44px] font-bold">{{ club.name }}</div>
-                            <div v-if="club.is_verified" class="bg-[#4392E0] rounded-full p-1">
-                                <VerifyIcon class="w-6 h-6 text-white" />
+                        <div class="flex items-center space-x-4 mb-2">
+                             <!-- Logo Container -->
+                            <div class="relative">
+                                <img v-if="club.logo_url" :src="club.logo_url"
+                                    class="w-16 h-16 rounded-full object-cover border-2 border-white/20 shadow-sm" />
+                                <div v-else
+                                    class="w-16 h-16 rounded-full bg-red-100 text-[#D72D36] flex items-center justify-center font-bold text-2xl border-2 border-white/20">
+                                    {{ club.name?.charAt(0).toUpperCase() }}
+                                </div>
+                                <!-- Verify Badge -->
+                                <div v-if="club.is_verified"
+                                    class="absolute bottom-0 right-0 bg-[#4392E0] rounded-full p-0.5 border border-white shadow-sm">
+                                    <VerifyIcon class="w-4 h-4 text-white" />
+                                </div>
+                            </div>
+
+                            <div class="flex flex-col">
+                                <h1 class="text-3xl sm:text-4xl lg:text-[44px] font-bold leading-tight">{{ club.name }}</h1>
+                                <p class="text-white/70 text-sm font-medium">{{ is_joined ? getRoleName(currentUserRole) : 'Khách' }}</p>
                             </div>
                         </div>
                         <div class="flex items-center space-x-2" v-if="!is_joined">
@@ -364,9 +397,14 @@
             <!-- Activity Schedule Modal -->
             <ClubActivityModal :is-open="isActivityModalOpen" :thumbnail="Thumbnail"
                 :upcoming-activities="upcomingActivities" :history-activities="historyActivities"
-                :next-match="nextMatch" :countdown="countdownText" @close="closeActivityModal"
+                :next-match="nextMatch" :countdown="countdownText" 
+                :is-loading-upcoming="isLoadingMoreUpcoming" :is-loading-history="isLoadingMoreHistory"
+                :has-more-upcoming="currentUpcomingPage < upcomingMeta.last_page"
+                :has-more-history="currentHistoryPage < historyMeta.last_page"
+                @close="closeActivityModal"
                 @edit="handleEditActivity" @click-card="goToActivityDetail" @register="handleRegisterActivity"
-                @cancel-join="handleCancelJoinActivity" @check-in="handleCheckInActivity" />
+                @cancel-join="handleCancelJoinActivity" @check-in="handleCheckInActivity"
+                @load-more-upcoming="handleLoadMoreUpcoming" @load-more-history="handleLoadMoreHistory" />
 
             <!-- Edit Club Modal -->
             <ClubEditModal v-model="isEditModalOpen" :club="club" :is-loading="isUpdatingClub"
@@ -563,7 +601,12 @@ const myClubs = ref([])
 const activities = ref([])
 const upcomingActivities = ref([])
 const historyActivities = ref([])
-const currentActivityPage = ref(1)
+const upcomingMeta = ref({})
+const historyMeta = ref({})
+const currentUpcomingPage = ref(1)
+const currentHistoryPage = ref(1)
+const isLoadingMoreUpcoming = ref(false)
+const isLoadingMoreHistory = ref(false)
 const activityPerPage = ref(20)
 const fund = ref([])
 const notificationType = ref([])
@@ -711,8 +754,8 @@ const startCountdown = () => {
 
 const statsValue = computed(() => ({
     members: club.value?.quantity_members ?? 0,
-    level: club.value?.skill_level?.min + ' - ' + club.value?.skill_level?.max ?? '1-5',
-    price: club.value?.guest_fee ?? '50K'
+    level: club.value?.skill_level?.min + ' - ' + club.value?.skill_level?.max ?? '-',
+    price: club.value?.rank ?? '-'
 }));
 
 const filteredClubModules = computed(() => {
@@ -801,6 +844,8 @@ const closeNotification = () => {
 
 const openActivityModal = () => {
     isActivityModalOpen.value = true
+    getMoreUpcomingActivities()
+    getMoreHistoryActivities()
 }
 
 const closeActivityModal = () => {
@@ -1213,17 +1258,81 @@ const goBack = () => {
 const getClubActivities = async () => {
     try {
         const response = await ClubService.getClubActivities(clubId.value, {
-            page: currentActivityPage.value,
+            page: 1,
             per_page: activityPerPage.value,
         })
         const allActivities = (response.data.activities || []).map(formatActivity)
-        upcomingActivities.value = allActivities.filter(a => a.status !== 'completed' && !dayjs().isAfter(dayjs(a.end_time)))
-        historyActivities.value = allActivities.filter(a => a.status === 'completed' || dayjs().isAfter(dayjs(a.end_time)))
-        activities.value = upcomingActivities.value.slice(0, 5)
+        activities.value = allActivities.filter(a => a.status !== 'completed' && !dayjs().isAfter(dayjs(a.end_time))).slice(0, 5)
 
         startCountdown()
     } catch (error) {
         toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi lấy thông tin hoạt động')
+    }
+}
+
+const getMoreUpcomingActivities = async (append = false) => {
+    if (append) {
+        isLoadingMoreUpcoming.value = true
+    } else {
+        currentUpcomingPage.value = 1
+    }
+    try {
+        const response = await ClubService.getClubActivities(clubId.value, {
+            page: currentUpcomingPage.value,
+            per_page: activityPerPage.value,
+            statuses: ['scheduled', 'ongoing']
+        })
+        const formatted = (response.data.activities || []).map(formatActivity)
+        if (append) {
+            upcomingActivities.value = [...upcomingActivities.value, ...formatted]
+        } else {
+            upcomingActivities.value = formatted
+        }
+        upcomingMeta.value = response.meta
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi lấy danh sách hoạt động sắp tới')
+    } finally {
+        isLoadingMoreUpcoming.value = false
+    }
+}
+
+const getMoreHistoryActivities = async (append = false) => {
+    if (append) {
+        isLoadingMoreHistory.value = true
+    } else {
+        currentHistoryPage.value = 1
+    }
+    try {
+        const response = await ClubService.getClubActivities(clubId.value, {
+            page: currentHistoryPage.value,
+            per_page: activityPerPage.value,
+            statuses: ['completed', 'cancelled']
+        })
+        const formatted = (response.data.activities || []).map(formatActivity)
+        if (append) {
+            historyActivities.value = [...historyActivities.value, ...formatted]
+        } else {
+            historyActivities.value = formatted
+        }
+        historyMeta.value = response.meta
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi lấy lịch sử hoạt động')
+    } finally {
+        isLoadingMoreHistory.value = false
+    }
+}
+
+const handleLoadMoreUpcoming = async () => {
+    if (currentUpcomingPage.value < upcomingMeta.value.last_page) {
+        currentUpcomingPage.value++
+        await getMoreUpcomingActivities(true)
+    }
+}
+
+const handleLoadMoreHistory = async () => {
+    if (currentHistoryPage.value < historyMeta.value.last_page) {
+        currentHistoryPage.value++
+        await getMoreHistoryActivities(true)
     }
 }
 
