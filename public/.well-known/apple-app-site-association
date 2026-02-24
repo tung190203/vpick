@@ -6,7 +6,9 @@
         "appID": "6FX9L9YT45.com.picki.pickleball",
         "paths": [
           "/mini-tournament-detail/*",
-          "/tournament-detail/*"
+          "/tournament-detail/*",
+  	  "/profile-detail/*",
+	  "/club-detail/*"
         ]
       }
     ]

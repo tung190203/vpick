@@ -210,7 +210,7 @@ export const route = [
         }
       },
       {
-        path: '/club',
+        path: '/clubs',
         meta: {
           role: [ROLE.PLAYER]
         },
