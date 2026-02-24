@@ -91,6 +91,14 @@ class ClubResource extends JsonResource
     protected function toLimitedArray(): array
     {
         $profile = $this->profile;
+        $activeMembers = $this->resource->relationLoaded('activeMembers')
+            ? $this->resource->activeMembers
+            : $this->resource->activeMembers()->with(['user.vnduprScores', 'user.sports.scores'])->get();
+        $scores = $activeMembers->map(fn ($m) => $this->getMemberVnduprScore($m))->filter(fn ($s) => $s !== null);
+        $skillLevel = $scores->isEmpty() ? null : [
+            'min' => round($scores->min(), 1),
+            'max' => round($scores->max(), 1),
+        ];
 
         return [
             'id' => $this->id,
@@ -102,12 +110,17 @@ class ClubResource extends JsonResource
             'status' => $this->status,
             'is_public' => (bool) ($this->is_public ?? true),
             'is_verified' => (bool) $this->is_verified,
+            'quantity_members' => $activeMembers->count(),
+            'skill_level' => $skillLevel,
+            'rank' => $this->rank ?? null,
             'is_member' => false,
             'profile' => [
                 'id' => $profile?->id,
                 'description' => $profile?->description,
                 'cover_image_url' => $profile?->cover_image_url,
                 'footer' => $profile?->footer,
+                'zalo_link_enabled' => (bool) (($profile?->settings ?? [])['zalo_link_enabled'] ?? false),
+                'qr_zalo_enabled' => (bool) (($profile?->settings ?? [])['qr_zalo_enabled'] ?? false),
             ],
         ];
     }
