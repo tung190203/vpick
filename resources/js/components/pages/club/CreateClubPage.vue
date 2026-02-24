@@ -84,7 +84,7 @@
                                 <span class="text-xs text-gray-400">{{ form.description.length }}/300</span>
                             </div>
                             <textarea v-model="form.description" rows="4" maxlength="300"
-                                class="w-full px-4 py-3 bg-gray-100 border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D72D36]/20 transition-colors resize-none placeholder:text-gray-400 text-gray-900"
+                                class="w-full px-4 py-3 bg-gray-100 border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D72D36]/20 transition-colors placeholder:text-gray-400 text-gray-900"
                                 placeholder="Hãy chia sẻ một chút về CLB của bạn"></textarea>
                         </div>
                     </div>

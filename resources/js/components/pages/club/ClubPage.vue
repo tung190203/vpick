@@ -98,7 +98,7 @@
                     </div>
 
                     <!-- Description -->
-                    <p class="text-sm text-gray-600 line-clamp-2 mb-4 leading-relaxed">
+                    <p class="text-sm text-gray-600 line-clamp-2 mb-4 leading-relaxed whitespace-pre-wrap">
                         {{ club.profile?.description || 'Chưa có mô tả' }}
                     </p>
 
