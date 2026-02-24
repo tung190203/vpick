@@ -167,7 +167,7 @@ class Club extends Model
 
     public function scopeWithListRelations($query)
     {
-        return $query->with(['profile:id,club_id,cover_image_url'])
+        return $query->with(['profile:id,club_id,cover_image_url,description'])
             ->withCount(['activeMembers as members_count']);
     }
 
