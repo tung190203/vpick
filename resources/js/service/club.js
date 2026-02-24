@@ -2,16 +2,7 @@ import axiosInstance from "@/utils/httpRequest.js";
 import {API_ENDPOINT} from "@/constants/index.js";
 
 export const getAllClubs = async (params = {}) => {
-    const queryParams = new URLSearchParams()
-    Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') {
-      queryParams.append(key, value)
-    }
-  })
-
-  const queryString = queryParams.toString()
-  const url = `${API_ENDPOINT.CLUB}${queryString ? `?${queryString}` : ''}`
-  const { data } = await axiosInstance.get(url)
+  const { data } = await axiosInstance.get(API_ENDPOINT.CLUB, { params })
   return data
 }
 
@@ -52,18 +43,7 @@ export const deleteClub = async (clubId) => {
 }
 
 export const getMembers = async (clubId, params = {}) => {
-  const queryParams = new URLSearchParams()
-
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') {
-      queryParams.append(key, value)
-    }
-  })
-
-  const queryString = queryParams.toString()
-  const url = `${API_ENDPOINT.CLUB}/${clubId}/members${queryString ? `?${queryString}` : ''}`
-
-  const { data } = await axiosInstance.get(url)
+  const { data } = await axiosInstance.get(`${API_ENDPOINT.CLUB}/${clubId}/members`, { params })
   return data
 }
 
@@ -92,30 +72,12 @@ export const declineInvite = async (clubId) => {
 }
 
 export const clubNotification = async (clubId, params = {}) => {
-    const queryParams = new URLSearchParams()
-    Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') {
-      queryParams.append(key, value)
-    }
-  })
-
-  const queryString = queryParams.toString()
-  const url = `${API_ENDPOINT.CLUB}/${clubId}/notifications${queryString ? `?${queryString}` : ''}`
-  const { data } = await axiosInstance.get(url)
+  const { data } = await axiosInstance.get(`${API_ENDPOINT.CLUB}/${clubId}/notifications`, { params })
   return data
 }
 
 export const getClubActivities = async (clubId, params = {}) => {
-    const queryParams = new URLSearchParams()
-    Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') {
-      queryParams.append(key, value)
-    }
-  })
-
-  const queryString = queryParams.toString()
-  const url = `${API_ENDPOINT.CLUB}/${clubId}/activities${queryString ? `?${queryString}` : ''}`
-  const { data } = await axiosInstance.get(url)
+  const { data } = await axiosInstance.get(`${API_ENDPOINT.CLUB}/${clubId}/activities`, { params })
   return data
 }
 
@@ -124,16 +86,7 @@ export const getClubActivityDetail = async(clubId, activityId) => {
 }
 
 export const getClubLeaderBoard = async (clubId, params = {}) => {
-    const queryParams = new URLSearchParams()
-    Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') {
-      queryParams.append(key, value)
-    }
-  })
-
-  const queryString = queryParams.toString()
-  const url = `${API_ENDPOINT.CLUB}/${clubId}/leaderboard${queryString ? `?${queryString}` : ''}`
-  const { data } = await axiosInstance.get(url)
+  const { data } = await axiosInstance.get(`${API_ENDPOINT.CLUB}/${clubId}/leaderboard`, { params })
   return data
 }
 
@@ -142,30 +95,12 @@ export const getFund = async (clubId) => {
 }
 
 export const searchLocation = async (params = {}) => {
-    const queryParams = new URLSearchParams()
-    Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') {
-      queryParams.append(key, value)
-    }
-  })
-
-  const queryString = queryParams.toString()
-  const url = `${API_ENDPOINT.CLUB}/search-location${queryString ? `?${queryString}` : ''}`
-  const { data } = await axiosInstance.get(url)
+  const { data } = await axiosInstance.get(`${API_ENDPOINT.CLUB}/search-location`, { params })
   return data
 }
 
 export const locationDetail = async (params = {}) => {
-    const queryParams = new URLSearchParams()
-    Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') {
-      queryParams.append(key, value)
-    }
-  })
-
-  const queryString = queryParams.toString()
-  const url = `${API_ENDPOINT.CLUB}/location-detail${queryString ? `?${queryString}` : ''}`
-  const { data } = await axiosInstance.get(url)
+  const { data } = await axiosInstance.get(`${API_ENDPOINT.CLUB}/location-detail`, { params })
   return data
 }
 
@@ -178,16 +113,7 @@ export const cancelActivity = async (clubId, activityId, data = {}) => {
 }
 
 export const getListJoinActivityRequest = async (clubId, activityId, params = {}) => {
-    const queryParams = new URLSearchParams()
-    Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') {
-      queryParams.append(key, value)
-    }
-  })
-
-  const queryString = queryParams.toString()
-  const url = `${API_ENDPOINT.CLUB}/${clubId}/activities/${activityId}/participants${queryString ? `?${queryString}` : ''}`
-  const { data } = await axiosInstance.get(url)
+  const { data } = await axiosInstance.get(`${API_ENDPOINT.CLUB}/${clubId}/activities/${activityId}/participants`, { params })
   return data
 }
 
@@ -237,30 +163,12 @@ export const withdrawActivityParticipation = async (clubId, activityId, particip
 }
 
 export const getAllTransaction = async (clubId, params = {}) => {
-    const queryParams = new URLSearchParams()
-    Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') {
-      queryParams.append(key, value)
-    }
-  })
-
-  const queryString = queryParams.toString()
-  const url = `${API_ENDPOINT.CLUB}/${clubId}/wallet-transactions${queryString ? `?${queryString}` : ''}`
-  const { data } = await axiosInstance.get(url)
+  const { data } = await axiosInstance.get(`${API_ENDPOINT.CLUB}/${clubId}/wallet-transactions`, { params })
   return data
 }
 
 export const getAllMyTransaction = async (clubId, params = {}) => {
-    const queryParams = new URLSearchParams()
-    Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') {
-      queryParams.append(key, value)
-    }
-  })
-
-  const queryString = queryParams.toString()
-  const url = `${API_ENDPOINT.CLUB}/${clubId}/wallet-transactions/my-transactions${queryString ? `?${queryString}` : ''}`
-  const { data } = await axiosInstance.get(url)
+  const { data } = await axiosInstance.get(`${API_ENDPOINT.CLUB}/${clubId}/wallet-transactions/my-transactions`, { params })
   return data
 }
 
@@ -269,16 +177,7 @@ export const fundOverview = async (clubId) => {
 }
 
 export const getFundCollection = async (clubId, params = {}) => {
-    const queryParams = new URLSearchParams()
-    Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') {
-      queryParams.append(key, value)
-    }
-  })
-
-  const queryString = queryParams.toString()
-  const url = `${API_ENDPOINT.CLUB}/${clubId}/fund-collections${queryString ? `?${queryString}` : ''}`
-    return axiosInstance.get(url).then((response) => response.data);
+    return axiosInstance.get(`${API_ENDPOINT.CLUB}/${clubId}/fund-collections`, { params }).then((response) => response.data);
 }
 
 export const getFundCollectionDetail = async (clubId, collectionId) => {
@@ -322,16 +221,7 @@ export const submitContributionReceipt = async (clubId, collectionId, data) => {
 }
 
 export const getClubCandidates = async (params = {}) => {
-    const queryParams = new URLSearchParams()
-    Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') {
-      queryParams.append(key, value)
-    }
-  })
-
-  const queryString = queryParams.toString()
-  const url = `${API_ENDPOINT.CLUB}/members/candidates${queryString ? `?${queryString}` : ''}`
-  const { data } = await axiosInstance.get(url)
+  const { data } = await axiosInstance.get(`${API_ENDPOINT.CLUB}/members/candidates`, { params })
   return data
 }
 

@@ -24,7 +24,7 @@ class ClubResource extends JsonResource
             'status' => $this->status,
             'is_public' => (bool) ($this->is_public ?? true),
             'is_verified' => (bool) $this->is_verified,
-            'rank' => $this->when(isset($this->rank), $this->rank),
+            'rank' => $this->rank ?? null,
             'created_by' => $this->created_by,
             'members' => ClubMemberResource::collection($this->whenLoaded('members')),
             'quantity_members' => $this->whenLoaded('members', fn() =>

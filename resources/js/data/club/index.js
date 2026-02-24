@@ -11,6 +11,7 @@ import { UserIcon } from '@heroicons/vue/24/outline'
 import DateIcon from "@/assets/images/date.svg";
 import FinancialIcon from "@/assets/images/money-atm.svg";
 import MembersIcon from "@/assets/images/members.svg";
+import IcPickleball from "@/assets/images/ic_pickleball.svg";
 
 export const CLUB_STATS = [
   {
@@ -20,13 +21,13 @@ export const CLUB_STATS = [
   },
   {
     key: 'level',
-    icon: BarChart,
+    icon: IcPickleball,
     label: 'Trình độ'
   },
   {
     key: 'price',
-    icon: MoneyTization,
-    label: 'Vãng lai/Buổi'
+    icon: BarChart,
+    label: 'Thứ hạng CLB'
   }
 ];
 
