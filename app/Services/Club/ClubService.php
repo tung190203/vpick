@@ -348,20 +348,19 @@ class ClubService
 
     public function getClubDetail(Club $club, ?int $userId): Club
     {
-        // Authorization check for private clubs
+        // Authorization check for private clubs - chỉ thành viên active mới xem được (creator đã out thì mất quyền)
         if (!$club->is_public) {
             if (!$userId) {
                 throw new \Exception('CLB này là riêng tư. Bạn cần đăng nhập để xem');
             }
 
-            $isCreator = $club->created_by === $userId;
             $isMember = $club->members()
                 ->where('user_id', $userId)
                 ->where('membership_status', ClubMembershipStatus::Joined)
                 ->where('status', ClubMemberStatus::Active)
                 ->exists();
 
-            if (!$isCreator && !$isMember) {
+            if (!$isMember) {
                 throw new \Exception('Bạn không có quyền xem CLB riêng tư này');
             }
         }
@@ -381,7 +380,6 @@ class ClubService
         if ($userId) {
             $query->where(function ($q) use ($userId) {
                 $q->where('is_public', true)
-                    ->orWhere('created_by', $userId)
                     ->orWhereHas('members', function ($memberQuery) use ($userId) {
                         $memberQuery->where('user_id', $userId)
                             ->where('membership_status', ClubMembershipStatus::Joined)
@@ -498,6 +496,7 @@ class ClubService
                     ]);
 
                     $member->update([
+                        'role' => ClubMemberRole::Member,
                         'membership_status' => ClubMembershipStatus::Left,
                         'status' => ClubMemberStatus::Inactive,
                         'left_at' => now(),
@@ -514,6 +513,7 @@ class ClubService
         }
 
         $member->update([
+            'role' => ClubMemberRole::Member,
             'membership_status' => ClubMembershipStatus::Left,
             'status' => ClubMemberStatus::Inactive,
             'left_at' => now(),
