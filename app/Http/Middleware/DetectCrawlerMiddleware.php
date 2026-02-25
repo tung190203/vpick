@@ -1,0 +1,49 @@
+<?php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+class DetectCrawlerMiddleware
+{
+    protected array $crawlerUserAgents = [
+        'facebookexternalhit',
+        'Facebot',
+        'Twitterbot',
+        'Slackbot',
+        'WhatsApp',
+        'TelegramBot',
+        'LinkedInBot',
+        'Pinterest',
+        'Googlebot',
+        'bingbot',
+        'Discordbot',
+        'Applebot',
+        'Zalo',
+    ];
+
+    public function handle(Request $request, Closure $next): Response
+    {
+        $userAgent = $request->userAgent() ?? '';
+        $isCrawler = $this->isCrawler($userAgent);
+
+        $request->attributes->set('is_crawler', $isCrawler);
+
+        return $next($request);
+    }
+
+    protected function isCrawler(string $userAgent): bool
+    {
+        $userAgent = strtolower($userAgent);
+
+        foreach ($this->crawlerUserAgents as $bot) {
+            if (str_contains($userAgent, strtolower($bot))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
