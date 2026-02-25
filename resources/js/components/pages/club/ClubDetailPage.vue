@@ -57,6 +57,10 @@
                             <UserPlusIcon class="w-6 h-6 text-white" />
                         </div>
                         <div class="p-2 cursor-pointer hover:bg-white/10 rounded-full transition-colors"
+                            @click="shareClub">
+                            <ShareIcon class="w-6 h-6 text-white" />
+                        </div>
+                        <div class="p-2 cursor-pointer hover:bg-white/10 rounded-full transition-colors"
                             @click="toggleMenu">
                             <EllipsisVerticalIcon class="w-6 h-6 text-white" />
                         </div>
@@ -167,7 +171,7 @@
                                 <span class="font-medium">Thông báo</span>
                             </button>
                             <button
-                                class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-100 transition-colors">
+                                class="w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-100 transition-colors" @click="handleReportClub">
                                 <InformationCircleIcon class="w-5 h-5 text-gray-500" />
                                 <span class="font-medium">Báo cáo CLB</span>
                             </button>
@@ -270,7 +274,7 @@
                             <p class="text-[#838799]">Hiện chưa có thông báo ghim nào</p>
                         </div>
                     </div>
-                    <div>
+                    <div v-if="is_joined">
                         <div class="flex items-baseline justify-between">
                             <h2 class="text-2xl text-[#838799] font-semibold uppercase mb-4">Lịch hoạt động</h2>
                             <p class="text-[#D72D36] font-semibold cursor-pointer" @click="openActivityModal">Xem tất cả
@@ -507,6 +511,7 @@
         :is-loading-more="isLoadingMoreInvite" :has-more="hasMoreInvite" @update:searchQuery="onSearchChange"
         @change-scope="onScopeChange" @change-club="onClubChange" @update:radius="onRadiusChange"
         @invite="handleInviteAction" @load-more="loadMoreInviteUsers" title="Mời thành viên" />
+    <ClubReportModal v-model="isReportModalOpen" :is-loading="isReportingClub" @submit="submitClubReport" />
 </template>
 
 <script setup>
@@ -559,6 +564,7 @@ import UserPlusIcon from '@/assets/images/group_add_member.svg';
 import debounce from 'lodash.debounce'
 import { getVietnameseDay } from '@/composables/formatedDate'
 import { getRoleName } from '@/helpers/role'
+import ClubReportModal from '@/components/organisms/ClubReportModal.vue'
 
 dayjs.locale('vi')
 
@@ -638,6 +644,8 @@ const joiningRequests = ref([])
 const selectedNotification = ref(null)
 const countdownText = ref('')
 let countdownInterval = null
+const isReportModalOpen = ref(false)
+const isReportingClub = ref(false)
 
 const currentUserMember = computed(() => {
     return club.value?.members?.find(member => member.user_id === getUser.value.id) || null
@@ -752,11 +760,15 @@ const startCountdown = () => {
     countdownInterval = setInterval(update, 1000)
 }
 
-const statsValue = computed(() => ({
-    members: club.value?.quantity_members ?? 0,
-    level: club.value?.skill_level?.min + ' - ' + club.value?.skill_level?.max ?? '-',
-    price: club.value?.rank ?? '-'
-}));
+const statsValue = computed(() => {
+    const sl = club.value?.skill_level
+    const levelStr = sl && sl.min != null && sl.max != null ? `${sl.min} - ${sl.max}` : '-'
+    return {
+        members: club.value?.quantity_members ?? 0,
+        level: levelStr,
+        price: club.value?.rank ?? '-'
+    }
+});
 
 const filteredClubModules = computed(() => {
     return clubModules.filter(module => {
@@ -799,8 +811,27 @@ const changeClub = (item) => {
     router.push({ name: 'club-detail', params: { id: item.id } })
 }
 
-const shareClub = () => {
-    toast.info('Chức năng đang được phát triển')
+const shareClub = async () => {
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile && navigator.share) {
+        try {
+            await navigator.share({
+                title: club.value?.name,
+                text: `Tham gia câu lạc bộ ${club.value?.name}`,
+                url: window.location.href,
+            });
+        } catch (error) {
+            console.error('Lỗi khi chia sẻ:', error);
+        }
+    } else {
+        try {
+            await navigator.clipboard.writeText(window.location.href);
+            toast.success('Đã sao chép link câu lạc bộ');
+        } catch (error) {
+            console.error('Lỗi khi sao chép:', error);
+            toast.error('Không thể sao chép link');
+        }
+    }
 }
 
 const openNotification = () => {
@@ -829,6 +860,7 @@ watch(
         isUnpinModalOpen.value,
         isPinModalOpen.value,
         isDetailModalOpen.value,
+        isReportModalOpen.value,
     ],
     (values) => {
         if (values.some(v => v)) {
@@ -1651,6 +1683,23 @@ const handleCancelJoinActivity = async (activity) => {
 
 const handleCheckInActivity = (activity) => {
     goToActivityDetail(activity, { showCheckin: true })
+}
+
+const handleReportClub = () => {
+    isReportModalOpen.value = true
+}
+
+const submitClubReport = async (data) => {
+    isReportingClub.value = true
+    try {
+        await ClubService.reportClub(clubId.value, data)
+        toast.success('Báo cáo CLB thành công')
+        isReportModalOpen.value = false
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Không thể báo cáo CLB')
+    } finally {
+        isReportingClub.value = false
+    }
 }
 
 onMounted(async () => {

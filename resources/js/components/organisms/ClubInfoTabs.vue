@@ -1,9 +1,12 @@
 <template>
     <div class="mt-8 bg-white rounded-2xl shadow-sm flex flex-col">
         <div class="flex border-b border-gray-200 mx-2">
-            <button v-for="tab in tabs" :key="tab.id" @click="handleTabClick(tab.id)"
+            <button v-for="tab in tabs" :key="tab.id" @click="handleTabClick(tab)"
                 class="flex-1 py-4 text-center font-semibold transition-all relative"
-                :class="activeTab === tab.id ? 'text-[#D72D36]' : 'text-[#838799]'">
+                :class="[
+                    activeTab === tab.id ? 'text-[#D72D36]' : 'text-[#838799]',
+                    !props.isJoined && tab.id !== 'intro' && 'opacity-50 cursor-not-allowed pointer-events-none'
+                ]">
                 {{ tab.name }}
                 <div v-if="activeTab === tab.id" class="absolute bottom-0 left-0 w-full h-1 bg-[#D72D36]"></div>
             </button>
@@ -223,12 +226,13 @@ const toggleExpand = () => {
     isExpanded.value = !isExpanded.value
 }
 
-const handleTabClick = (tabId) => {
-    activeTab.value = tabId
-    if (tabId === 'members') {
+const handleTabClick = (tab) => {
+    if (!props.isJoined && tab.id !== 'intro') return
+    activeTab.value = tab.id
+    if (tab.id === 'members') {
         hasMembersTabBeenActive.value = true
     }
-    emit('tab-change', tabId)
+    emit('tab-change', tab.id)
 }
 
 watch(activeTab, () => {

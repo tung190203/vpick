@@ -178,6 +178,7 @@ class ClubMemberManagementService
         }
 
         $member->update([
+            'role' => ClubMemberRole::Member,
             'membership_status' => ClubMembershipStatus::Left,
             'status' => ClubMemberStatus::Suspended,
             'left_at' => now(),

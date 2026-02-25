@@ -36,7 +36,7 @@ class ClubReportController extends Controller
             return ResponseHelper::error('Bạn đã báo cáo CLB này và đang chờ xử lý', 422);
         }
 
-        $report = $this->reportService->createReport($club, $userId);
+        $report = $this->reportService->createReport($club, $userId, $request->validated());
         $report->load(['reporter', 'club']);
 
         return ResponseHelper::success(

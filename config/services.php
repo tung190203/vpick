@@ -44,5 +44,7 @@ return [
     ],
     'firebase' => [
         'project_id' => env('FIREBASE_PROJECT_ID'),
-    ]
+    ],
+
+    'club_report_notification_email' => env('CLUB_REPORT_NOTIFICATION_EMAIL', 'truongvanthang@gmail.com'),
 ];
