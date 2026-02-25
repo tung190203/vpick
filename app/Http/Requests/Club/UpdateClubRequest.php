@@ -40,6 +40,20 @@ class UpdateClubRequest extends FormRequest
                 'is_public' => filter_var($this->is_public, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)
             ]);
         }
+        // Chuỗi rỗng cho latitude/longitude gây lỗi decimal - chuyển thành null
+        $merge = [];
+        if ($this->has('latitude') && (trim((string) ($this->latitude ?? '')) === '')) {
+            $merge['latitude'] = null;
+        }
+        if ($this->has('longitude') && (trim((string) ($this->longitude ?? '')) === '')) {
+            $merge['longitude'] = null;
+        }
+        if ($this->has('address') && (trim((string) ($this->address ?? '')) === '')) {
+            $merge['address'] = null;
+        }
+        if ($merge) {
+            $this->merge($merge);
+        }
     }
 
     public function rules(): array
@@ -49,10 +63,10 @@ class UpdateClubRequest extends FormRequest
         return [
             'name' => "nullable|string|max:255|unique:clubs,name,{$clubId},id,deleted_at,NULL",
             'address' => 'nullable|string|max:255',
-            'latitude' => 'nullable|string',
-            'longitude' => 'nullable|string',
-            'logo_url' => 'nullable|image|max:2048',
-            'cover_image_url' => 'nullable|image|max:2048',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'logo_url' => 'nullable|image|max:5120',
+            'cover_image_url' => 'nullable|image|max:5120',
             'status' => ['nullable', Rule::enum(ClubStatus::class)],
             'is_public' => 'nullable|boolean',
             'description' => 'nullable|string',
@@ -62,6 +76,7 @@ class UpdateClubRequest extends FormRequest
             'city' => 'nullable|string|max:100',
             'province' => 'nullable|string|max:100',
             'country' => 'nullable|string|max:100',
+            'footer' => 'nullable|string|max:1000',
             'zalo_link' => 'required_if:zalo_link_enabled,true|nullable|string|max:500',
             'zalo_link_enabled' => 'nullable|boolean',
             'qr_zalo_enabled' => 'nullable|boolean',
@@ -69,6 +84,14 @@ class UpdateClubRequest extends FormRequest
             'remove_qr_zalo' => 'nullable|boolean',
             'qr_code_image_url' => 'nullable|image|mimes:png,jpg,jpeg,gif|max:5120',
             'qr_code_enabled' => 'nullable|boolean',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'logo_url.max' => 'Đã xảy ra lỗi vui lòng thử lại sau',
+            'cover_image_url.max' => 'Đã xảy ra lỗi vui lòng thử lại sau',
         ];
     }
 }

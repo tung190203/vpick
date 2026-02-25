@@ -75,7 +75,12 @@ class ClubController extends Controller
 
     public function show($clubId)
     {
-        $club = Club::withFullRelations()->findOrFail($clubId);
+        try {
+            $club = Club::withFullRelations()->findOrFail($clubId);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return ResponseHelper::error('Câu lạc bộ không còn tồn tại trong hệ thống', 404);
+        }
+
         $userId = auth()->id();
 
         try {
@@ -99,7 +104,7 @@ class ClubController extends Controller
 
         $updatableFields = [
             'name', 'address', 'latitude', 'longitude', 'logo_url', 'status', 'is_public',
-            'cover_image_url', 'description', 'phone', 'email', 'website', 'city', 'province', 'country',
+            'cover_image_url', 'description', 'phone', 'email', 'website', 'city', 'province', 'country', 'footer',
             'zalo_link', 'zalo_link_enabled', 'qr_zalo', 'qr_zalo_enabled', 'remove_qr_zalo', 'qr_code_enabled'
         ];
 

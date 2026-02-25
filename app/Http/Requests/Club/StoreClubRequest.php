@@ -29,11 +29,19 @@ class StoreClubRequest extends FormRequest
             'address' => 'nullable|string|max:255',
             'latitude' => 'nullable|string',
             'longitude' => 'nullable|string',
-            'logo_url' => 'nullable|image|max:2048',
-            'cover_image_url' => 'nullable|image|max:2048',
+            'logo_url' => 'nullable|image|max:5120',
+            'cover_image_url' => 'nullable|image|max:5120',
             'description' => 'nullable|string|max:5000',
             'status' => ['nullable', Rule::enum(ClubStatus::class)],
             'is_public' => 'nullable|boolean',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'logo_url.max' => 'Đã xảy ra lỗi vui lòng thử lại sau',
+            'cover_image_url.max' => 'Đã xảy ra lỗi vui lòng thử lại sau',
         ];
     }
 }

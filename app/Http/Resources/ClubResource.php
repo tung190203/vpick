@@ -14,6 +14,16 @@ class ClubResource extends JsonResource
 
     public function toArray(Request $request): array
     {
+        $isMember = auth()->check() && ClubMember::where('club_id', $this->id)
+            ->where('user_id', auth()->id())
+            ->where('membership_status', ClubMembershipStatus::Joined)
+            ->where('status', ClubMemberStatus::Active)
+            ->exists();
+
+        if (!$isMember) {
+            return $this->toLimitedArray();
+        }
+
         return [
             'id' => $this->id,
             'name' => $this->name,
@@ -52,14 +62,7 @@ class ClubResource extends JsonResource
                     'max' => round($scores->max(), 1),
                 ];
             }, null),
-            'is_member' => $this->when(auth()->check(), fn () =>
-                ClubMember::where('club_id', $this->id)
-                    ->where('user_id', auth()->id())
-                    ->where('membership_status', ClubMembershipStatus::Joined)
-                    ->where('status', ClubMemberStatus::Active)
-                    ->exists(),
-                false
-            ),
+            'is_member' => true,
             'has_pending_request' => $this->when(auth()->check(), fn () =>
                 ClubMember::where('club_id', $this->id)
                     ->where('user_id', auth()->id())
@@ -76,10 +79,59 @@ class ClubResource extends JsonResource
                     ->exists(),
                 false
             ),
+            'can_edit_footer' => $this->when(auth()->check(), fn () => $this->resource->canEditFooter(auth()->id()), false),
             'profile' => $this->whenLoaded('profile', fn () => static::formatProfile($this->profile), static::getDefaultProfile()),
             'wallets' => $this->whenLoaded('wallets'),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
+        ];
+    }
+
+    /** Chỉ trả về thông tin chung + giới thiệu + footer khi chưa tham gia CLB */
+    protected function toLimitedArray(): array
+    {
+        $profile = $this->profile;
+        $activeMembers = $this->resource->relationLoaded('activeMembers')
+            ? $this->resource->activeMembers
+            : $this->resource->activeMembers()->with(['user.vnduprScores', 'user.sports.scores'])->get();
+        $scores = $activeMembers->map(fn ($m) => $this->getMemberVnduprScore($m))->filter(fn ($s) => $s !== null);
+        $skillLevel = $scores->isEmpty() ? null : [
+            'min' => round($scores->min(), 1),
+            'max' => round($scores->max(), 1),
+        ];
+
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'address' => $this->address,
+            'latitude' => $this->latitude,
+            'longitude' => $this->longitude,
+            'logo_url' => $this->logo_url,
+            'status' => $this->status,
+            'is_public' => (bool) ($this->is_public ?? true),
+            'is_verified' => (bool) $this->is_verified,
+            'quantity_members' => $activeMembers->count(),
+            'skill_level' => $skillLevel,
+            'rank' => $this->rank ?? null,
+            'is_member' => false,
+            'has_pending_request' => auth()->check() && ClubMember::where('club_id', $this->id)
+                ->where('user_id', auth()->id())
+                ->where('membership_status', ClubMembershipStatus::Pending)
+                ->whereNull('invited_by')
+                ->exists(),
+            'has_invitation' => auth()->check() && ClubMember::where('club_id', $this->id)
+                ->where('user_id', auth()->id())
+                ->where('membership_status', ClubMembershipStatus::Pending)
+                ->whereNotNull('invited_by')
+                ->exists(),
+            'profile' => [
+                'id' => $profile?->id,
+                'description' => $profile?->description,
+                'cover_image_url' => $profile?->cover_image_url,
+                'footer' => $profile?->footer,
+                'zalo_link_enabled' => (bool) (($profile?->settings ?? [])['zalo_link_enabled'] ?? false),
+                'qr_zalo_enabled' => (bool) (($profile?->settings ?? [])['qr_zalo_enabled'] ?? false),
+            ],
         ];
     }
 
@@ -104,6 +156,7 @@ class ClubResource extends JsonResource
             'city' => $profile->city,
             'province' => $profile->province,
             'country' => $profile->country,
+            'footer' => $profile->footer,
             'latitude' => $profile->latitude,
             'longitude' => $profile->longitude,
             'zalo_link' => $profile->zalo_link,
@@ -128,6 +181,7 @@ class ClubResource extends JsonResource
             'city' => null,
             'province' => null,
             'country' => null,
+            'footer' => null,
             'latitude' => null,
             'longitude' => null,
             'zalo_link' => null,

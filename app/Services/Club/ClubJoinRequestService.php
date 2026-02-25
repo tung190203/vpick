@@ -67,6 +67,7 @@ class ClubJoinRequestService
 
                 if (in_array($existing->membership_status, [ClubMembershipStatus::Rejected, ClubMembershipStatus::Left, ClubMembershipStatus::Cancelled], true)) {
                     $existing->update([
+                        'role' => ClubMemberRole::Member,
                         'membership_status' => ClubMembershipStatus::Pending,
                         'status' => ClubMemberStatus::Pending,
                         'message' => $message,
