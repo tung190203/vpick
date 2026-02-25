@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\MetaPreviewController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -13,6 +14,24 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+/*
+|--------------------------------------------------------------------------
+| Link Card Preview (og:meta) for crawlers - must be before catch-all
+|--------------------------------------------------------------------------
+*/
+Route::middleware('crawler')->group(function () {
+    Route::get('/clubs/{id}', [MetaPreviewController::class, 'club'])->where('id', '[0-9]+');
+    Route::get('/tournament-detail/{id}', [MetaPreviewController::class, 'tournament'])->where('id', '[0-9]+');
+    Route::get('/mini-tournament-detail/{id}', [MetaPreviewController::class, 'miniTournament'])->where('id', '[0-9]+');
+    Route::get('/clubs/{clubId}/edit-activity/{activityId}', [MetaPreviewController::class, 'clubActivity'])
+        ->where(['clubId' => '[0-9]+', 'activityId' => '[0-9]+']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| SPA catch-all
+|--------------------------------------------------------------------------
+*/
 Route::get('/{any}', function () {
     return view('app');
 })->where('any', '.*');
