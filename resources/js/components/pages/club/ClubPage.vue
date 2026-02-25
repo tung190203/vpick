@@ -18,7 +18,7 @@
                             type="text" 
                             v-model="search" 
                             placeholder="Tìm kiếm câu lạc bộ..."
-                            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all focus:outline-none"
                         />
                     </div>
                 </div>
@@ -72,21 +72,33 @@
                     v-for="club in clubs" 
                     :key="club.id"
                     @click="handleClubClick(club)"
-                    class="bg-white rounded-[8px] shadow hover:shadow-lg transition-all cursor-pointer p-5"
+                    class="bg-white rounded-[8px] shadow hover:shadow-lg transition-all cursor-pointer flex flex-col overflow-hidden"
                 >
-                    <!-- Header: Logo + Name -->
-                    <div class="flex items-start gap-4 mb-4">
-                        <div class="relative shrink-0">
+                    <!-- Cover Image -->
+                    <div class="w-full h-24 sm:h-28 bg-gray-100 shrink-0 relative">
+                        <img 
+                            :src="club.cover_image_url || Background" 
+                            alt="Cover" 
+                            class="w-full h-full object-cover"
+                        />
+                    </div>
+                    
+                    <!-- Content -->
+                    <div class="px-5 pb-5 pt-0 flex-1 flex flex-col relative">
+                        <!-- Header: Logo + Name overlay -->
+                        <div class="relative -mt-6 mb-3 inline-block self-start">
                             <img 
                                 :src="club.logo_url || 'https://picki.vn/images/default-avatar.png'" 
                                 alt="Logo"
-                                class="w-16 h-16 rounded-full object-cover border-2 border-gray-100"
+                                class="w-16 h-16 rounded-full object-cover border-4 border-white bg-white shadow-sm"
                             />
-                            <div v-if="club.is_verified" class="absolute -bottom-1 -right-1 bg-[#4392E0] rounded-full p-1">
-                                <VerifyIcon class="w-4 h-4 text-white" />
+                            <div v-if="club.is_verified" class="absolute bottom-0 right-0 bg-[#4392E0] rounded-full p-1 z-10 border-2 border-white box-content">
+                                <VerifyIcon class="w-3 h-3 text-white" />
                             </div>
                         </div>
-                        <div class="flex-1 min-w-0">
+
+                        <!-- Name & Address -->
+                        <div class="mb-4">
                             <h3 class="text-base font-bold text-gray-900 mb-1 line-clamp-1" v-tooltip="club.name">
                                 {{ club.name }}
                             </h3>
@@ -95,33 +107,33 @@
                                 <span class="line-clamp-2" v-tooltip="club.address">{{ club.address }}</span>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Description -->
-                    <p class="text-sm text-gray-600 line-clamp-2 mb-4 leading-relaxed whitespace-pre-wrap">
-                        {{ club.profile?.description || 'Chưa có mô tả' }}
-                    </p>
+                        <!-- Description -->
+                        <p class="text-sm text-gray-600 line-clamp-2 mb-4 leading-relaxed whitespace-pre-wrap">
+                            {{ club.profile?.description || 'Chưa có mô tả' }}
+                        </p>
 
-                    <!-- Stats -->
-                    <div class="flex items-center justify-between pt-4 border-t border-gray-100">
-                        <div class="flex items-center gap-4 text-xs text-gray-600">
-                            <div class="flex items-center gap-1">
-                                <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-                                </svg>
-                                <span class="font-medium">{{ club.quantity_members }}</span>
-                            </div>
-                            <div class="flex items-center gap-1">
-                                <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                </svg>
-                                <span class="font-medium">{{ club.skill_level?.min || 0 }}-{{ club.skill_level?.max || 0 }}</span>
-                            </div>
-                            <div v-if="club.vnrank" class="flex items-center gap-1 text-yellow-600">
-                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                                </svg>
-                                <span class="font-medium">{{ club.vnrank }}</span>
+                        <!-- Stats -->
+                        <div class="flex items-center justify-between pt-4 border-t border-gray-100 mt-auto">
+                            <div class="flex items-center gap-4 text-xs text-gray-600">
+                                <div class="flex items-center gap-1">
+                                    <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                                    </svg>
+                                    <span class="font-medium">{{ club.quantity_members }}</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                    </svg>
+                                    <span class="font-medium">{{ club.skill_level?.min || 0 }}-{{ club.skill_level?.max || 0 }}</span>
+                                </div>
+                                <div v-if="club.vnrank" class="flex items-center gap-1 text-yellow-600">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                    </svg>
+                                    <span class="font-medium">{{ club.vnrank }}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -156,6 +168,7 @@
 
 <script setup>
 import { ref, watch, onMounted } from 'vue'
+import Background from '@/assets/images/club-default-thumbnail.svg?url'
 import * as ClubService from '@/service/club.js'
 import { MapPinIcon } from '@heroicons/vue/24/solid'
 import VerifyIcon from "@/assets/images/verify-icon.svg";
