@@ -75,7 +75,12 @@ class ClubController extends Controller
 
     public function show($clubId)
     {
-        $club = Club::withFullRelations()->findOrFail($clubId);
+        try {
+            $club = Club::withFullRelations()->findOrFail($clubId);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return ResponseHelper::error('Câu lạc bộ không còn tồn tại trong hệ thống', 404);
+        }
+
         $userId = auth()->id();
 
         try {
