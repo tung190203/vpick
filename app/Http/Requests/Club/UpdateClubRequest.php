@@ -40,6 +40,20 @@ class UpdateClubRequest extends FormRequest
                 'is_public' => filter_var($this->is_public, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)
             ]);
         }
+        // Chuỗi rỗng cho latitude/longitude gây lỗi decimal - chuyển thành null
+        $merge = [];
+        if ($this->has('latitude') && (trim((string) ($this->latitude ?? '')) === '')) {
+            $merge['latitude'] = null;
+        }
+        if ($this->has('longitude') && (trim((string) ($this->longitude ?? '')) === '')) {
+            $merge['longitude'] = null;
+        }
+        if ($this->has('address') && (trim((string) ($this->address ?? '')) === '')) {
+            $merge['address'] = null;
+        }
+        if ($merge) {
+            $this->merge($merge);
+        }
     }
 
     public function rules(): array
@@ -49,8 +63,8 @@ class UpdateClubRequest extends FormRequest
         return [
             'name' => "nullable|string|max:255|unique:clubs,name,{$clubId},id,deleted_at,NULL",
             'address' => 'nullable|string|max:255',
-            'latitude' => 'nullable|string',
-            'longitude' => 'nullable|string',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
             'logo_url' => 'nullable|image|max:2048',
             'cover_image_url' => 'nullable|image|max:2048',
             'status' => ['nullable', Rule::enum(ClubStatus::class)],

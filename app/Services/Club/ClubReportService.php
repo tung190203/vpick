@@ -10,13 +10,13 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class ClubReportService
 {
-    public function createReport(Club $club, int $userId): ClubReport
+    public function createReport(Club $club, int $userId, array $data = []): ClubReport
     {
         return ClubReport::create([
             'club_id' => $club->id,
             'user_id' => $userId,
-            'reason_type' => ClubReportReasonType::Other,
-            'description' => null,
+            'reason_type' => $data['reason_type'] ?? ClubReportReasonType::Other,
+            'description' => $data['reason'] ?? null,
             'status' => ClubReportStatus::Pending,
         ]);
     }
