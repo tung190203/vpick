@@ -16,7 +16,7 @@ class ClubReportResource extends JsonResource
             'user_id' => $this->user_id,
             'reason_type' => $this->reason_type,
             'reason_label' => $this->reason_type?->label(),
-            'description' => $this->description,
+            'reason' => $this->description,
             'status' => $this->status,
             'status_label' => $this->status?->label(),
             'reviewed_by' => $this->reviewed_by,
