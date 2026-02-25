@@ -30,7 +30,7 @@
                     <span class="font-semibold text-gray-900">{{ totalClubs }}</span> câu lạc bộ
                 </p>
                 <button 
-                    @click="router.push('/club/create')"
+                    @click="router.push({ name: 'create-club' })"
                     class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg shadow transition-colors"
                 >
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -174,16 +174,17 @@ const lastPage = ref(1)
 const getAllClubs = async () => {
     loading.value = true
     try {
-        const response = await ClubService.getAllClubs({
-            name: search.value,
-            page: page.value,
-            perPage: perPage.value
-        })
-        clubs.value = response.data?.clubs || []
-        totalClubs.value = response.meta?.total || 0
-        lastPage.value = response.meta?.last_page || 1
+        const params = { page: page.value, per_page: perPage.value }
+        if (search.value?.trim()) params.name = search.value.trim()
+        const response = await ClubService.getAllClubs(params)
+        // Laravel Resource::collection wraps in { data: [...] }
+        const clubsData = response.data?.clubs
+        clubs.value = Array.isArray(clubsData) ? clubsData : (clubsData?.data || [])
+        totalClubs.value = response.meta?.total ?? 0
+        lastPage.value = response.meta?.last_page ?? 1
     } catch (error) {
-        console.error(error)
+        console.error('Lỗi tải danh sách CLB:', error)
+        clubs.value = []
     } finally {
         loading.value = false
     }

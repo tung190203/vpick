@@ -167,7 +167,7 @@ class Club extends Model
 
     public function scopeWithListRelations($query)
     {
-        return $query->with(['profile:id,club_id,cover_image_url'])
+        return $query->with(['profile:id,club_id,cover_image_url,description'])
             ->withCount(['activeMembers as members_count']);
     }
 
@@ -225,6 +225,15 @@ class Club extends Model
         if (!$member) return false;
 
         return in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary]);
+    }
+
+    /** Chỉ admin và thư ký mới có quyền sửa footer. */
+    public function canEditFooter($userId): bool
+    {
+        $member = $this->activeMembers()->where('user_id', $userId)->first();
+        if (!$member) return false;
+
+        return in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Secretary]);
     }
 
     public function canManageFinance($userId)

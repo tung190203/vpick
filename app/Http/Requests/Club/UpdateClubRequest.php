@@ -62,6 +62,7 @@ class UpdateClubRequest extends FormRequest
             'city' => 'nullable|string|max:100',
             'province' => 'nullable|string|max:100',
             'country' => 'nullable|string|max:100',
+            'footer' => 'nullable|string|max:1000',
             'zalo_link' => 'required_if:zalo_link_enabled,true|nullable|string|max:500',
             'zalo_link_enabled' => 'nullable|boolean',
             'qr_zalo_enabled' => 'nullable|boolean',

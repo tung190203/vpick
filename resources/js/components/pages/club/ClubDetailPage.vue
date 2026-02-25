@@ -752,11 +752,15 @@ const startCountdown = () => {
     countdownInterval = setInterval(update, 1000)
 }
 
-const statsValue = computed(() => ({
-    members: club.value?.quantity_members ?? 0,
-    level: club.value?.skill_level?.min + ' - ' + club.value?.skill_level?.max ?? '-',
-    price: club.value?.rank ?? '-'
-}));
+const statsValue = computed(() => {
+    const sl = club.value?.skill_level
+    const levelStr = sl && sl.min != null && sl.max != null ? `${sl.min} - ${sl.max}` : '-'
+    return {
+        members: club.value?.quantity_members ?? 0,
+        level: levelStr,
+        price: club.value?.rank ?? '-'
+    }
+});
 
 const filteredClubModules = computed(() => {
     return clubModules.filter(module => {

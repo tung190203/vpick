@@ -22,6 +22,9 @@ class ClubListResource extends JsonResource
             'created_by' => $this->created_by,
             'quantity_members' => $this->when(isset($this->members_count), (int) $this->members_count, 0),
             'cover_image_url' => $this->whenLoaded('profile', fn () => $this->profile?->cover_image_url),
+            'profile' => $this->whenLoaded('profile', fn () => [
+                'description' => $this->profile?->description,
+            ]),
             'is_member' => (bool) ($this->is_member ?? false),
             'is_admin' => (bool) ($this->is_admin ?? false),
             'has_pending_request' => (bool) ($this->has_pending_request ?? false),

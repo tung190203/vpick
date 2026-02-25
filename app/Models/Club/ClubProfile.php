@@ -21,6 +21,7 @@ class ClubProfile extends Model
         'city',
         'province',
         'country',
+        'footer',
         'latitude',
         'longitude',
         'zalo_link',
