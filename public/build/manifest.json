@@ -12,21 +12,24 @@
     "src": "node_modules/leaflet/dist/images/marker-icon.png"
   },
   "resources/css/app.css": {
-    "file": "assets/app-D3pA33Ay.css",
+    "file": "assets/app-BLANwNSf.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-qmoyw2ef.js",
+    "file": "assets/app-COnR4Pl7.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "css": [
-      "assets/app-ByQNCwpr.css",
-      "assets/app-D3pA33Ay.css"
+      "assets/app-B7Y6NVUP.css",
+      "assets/app-BLANwNSf.css"
     ],
     "assets": [
       "assets/dashboard-bg-j02aDZD4.svg",
+      "assets/1st-_NX0ViaL.png",
+      "assets/2nd-DWCvOKvA.png",
+      "assets/3rd-Bp28LztR.png",
       "assets/splash-bg-hSO4uccQ.png",
       "assets/club-default-thumbnail-BMB6u-Xk.svg",
       "assets/silver-R3zTUbpa.png",
@@ -78,6 +81,18 @@
   "resources/js/assets/images/splash-bg.png": {
     "file": "assets/splash-bg-hSO4uccQ.png",
     "src": "resources/js/assets/images/splash-bg.png"
+  },
+  "resources/js/assets/ranking/1st.png": {
+    "file": "assets/1st-_NX0ViaL.png",
+    "src": "resources/js/assets/ranking/1st.png"
+  },
+  "resources/js/assets/ranking/2nd.png": {
+    "file": "assets/2nd-DWCvOKvA.png",
+    "src": "resources/js/assets/ranking/2nd.png"
+  },
+  "resources/js/assets/ranking/3rd.png": {
+    "file": "assets/3rd-Bp28LztR.png",
+    "src": "resources/js/assets/ranking/3rd.png"
   },
   "resources/js/assets/ranking/bronze.png": {
     "file": "assets/bronze-Bp5Lnjt9.png",
