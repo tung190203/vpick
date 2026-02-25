@@ -65,8 +65,8 @@ class UpdateClubRequest extends FormRequest
             'address' => 'nullable|string|max:255',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
-            'logo_url' => 'nullable|image|max:2048',
-            'cover_image_url' => 'nullable|image|max:2048',
+            'logo_url' => 'nullable|image|max:5120',
+            'cover_image_url' => 'nullable|image|max:5120',
             'status' => ['nullable', Rule::enum(ClubStatus::class)],
             'is_public' => 'nullable|boolean',
             'description' => 'nullable|string',
@@ -84,6 +84,14 @@ class UpdateClubRequest extends FormRequest
             'remove_qr_zalo' => 'nullable|boolean',
             'qr_code_image_url' => 'nullable|image|mimes:png,jpg,jpeg,gif|max:5120',
             'qr_code_enabled' => 'nullable|boolean',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'logo_url.max' => 'Đã xảy ra lỗi vui lòng thử lại sau',
+            'cover_image_url.max' => 'Đã xảy ra lỗi vui lòng thử lại sau',
         ];
     }
 }
