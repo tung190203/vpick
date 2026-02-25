@@ -40,7 +40,7 @@
 
                         <div class="flex flex-col">
                             <h1 class="text-4xl font-bold leading-tight">{{ club.name }}</h1>
-                            <p class="text-gray-400 text-sm font-medium">{{ getRoleName(currentUserRole) }}</p>
+                            <p class="text-white text-sm font-medium bg-black/40 px-4 py-1 rounded-md w-fit">{{ getRoleName(currentUserRole) }}</p>
                         </div>
                     </div>
 
@@ -59,6 +59,10 @@
                         <div class="p-2 cursor-pointer hover:bg-white/10 rounded-full transition-colors"
                             @click="shareClub">
                             <ShareIcon class="w-6 h-6 text-white" />
+                        </div>
+                        <div class="p-2 cursor-pointer hover:bg-white/10 rounded-full transition-colors"
+                            @click="handleCampaign">
+                            <CampaignIcon class="w-6 h-6 text-white" />
                         </div>
                         <div class="p-2 cursor-pointer hover:bg-white/10 rounded-full transition-colors"
                             @click="toggleMenu">
@@ -504,6 +508,11 @@
                     </Transition>
                 </div>
             </Transition>
+
+            <!-- Footer -->
+            <div v-if="club.profile?.footer || club.footer" class="mt-8 pt-6 pb-4 border-t border-gray-100 text-center font-bold text-[#838799] text-sm w-full">
+                <p class="whitespace-pre-line leading-relaxed">{{ club.profile?.footer || club.footer }}</p>
+            </div>
         </template>
     </div>
     <InviteGroup v-model="showInviteModal" :data="inviteGroupData" :clubs="clubs" :active-scope="activeScope"
@@ -532,6 +541,7 @@ import {
     TrashIcon,
     ArrowRightOnRectangleIcon,
 } from '@heroicons/vue/24/outline'
+import CampaignIcon from "@/assets/images/campaign.svg";
 import { useRouter, useRoute } from 'vue-router'
 import { computed, onMounted, ref, watch } from 'vue'
 import VerifyIcon from "@/assets/images/verify-icon.svg";
@@ -719,6 +729,10 @@ const statsAdmin = computed(() => {
     ]
 })
 
+const handleCampaign = () => {
+    toast.info('Tính năng đang phát triển')
+}
+
 const nextMatch = computed(() => {
     const now = dayjs()
 
@@ -762,7 +776,7 @@ const startCountdown = () => {
 
 const statsValue = computed(() => {
     const sl = club.value?.skill_level
-    const levelStr = sl && sl.min != null && sl.max != null ? `${sl.min} - ${sl.max}` : '-'
+    const levelStr = sl && sl.min != null && sl.max != null ? (sl.min === sl.max ? `${sl.min}` : `${sl.min} - ${sl.max}`) : '-'
     return {
         members: club.value?.quantity_members ?? 0,
         level: levelStr,

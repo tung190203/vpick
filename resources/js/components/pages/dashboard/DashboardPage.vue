@@ -257,15 +257,22 @@
                   </div>
                   
                   <div class="flex items-center space-x-6 text-right">
-                    <div class="flex flex-col items-center min-w-[64px]">
+                    <div class="flex flex-col items-center justify-between min-w-[64px] min-h-[52px]">
                       <p class="text-[10px] font-semibold text-[#4392E0] tracking-tight">Xếp hạng</p>
-                      <span class="text-xs text-gray-500 leading-tight">{{ f.rank }}</span>
+                      <div class="flex items-center justify-center h-[36px]">
+                        <img v-if="f.rank === 1" :src="Rank1Icon" alt="1st" class="w-10 h-10 object-contain" />
+                        <img v-else-if="f.rank === 2" :src="Rank2Icon" alt="2nd" class="w-10 h-10 object-contain" />
+                        <img v-else-if="f.rank === 3" :src="Rank3Icon" alt="3rd" class="w-10 h-10 object-contain" />
+                        <span v-else class="text-xs text-gray-500 leading-tight">{{ f.rank }}</span>
+                      </div>
                     </div>
-                    <div class="flex flex-col items-center min-w-[64px]">
+                    <div class="flex flex-col items-center justify-between min-w-[64px] min-h-[52px]">
                       <p class="text-[10px] font-semibold text-[#4392E0] tracking-tight">Điểm trình</p>
-                      <span class="text-xs text-gray-500 leading-tight">
-                        {{ Number(f.sports[0]?.scores?.vndupr_score || 0).toFixed(2) }}
-                      </span>
+                      <div class="flex items-center justify-center h-[36px]">
+                        <span class="text-xs text-gray-500 leading-tight">
+                          {{ Number(f.sports[0]?.scores?.vndupr_score || 0).toFixed(2) }}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </li>
@@ -468,6 +475,9 @@ import { useUserStore } from "@/store/auth";
 import { storeToRefs } from "pinia";
 import VerifyIcon from "@/assets/images/verify-icon.svg";
 import AnchorIcon from "@/assets/images/anchor.svg";
+import Rank1Icon from "@/assets/ranking/1st.png";
+import Rank2Icon from "@/assets/ranking/2nd.png";
+import Rank3Icon from "@/assets/ranking/3rd.png";
 
 const userStore = useUserStore();
 const { getUser } = storeToRefs(userStore);
