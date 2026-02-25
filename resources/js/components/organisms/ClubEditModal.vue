@@ -58,6 +58,15 @@
                 <textarea v-model="form.description" rows="4" maxlength="300" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D72D36]/20 focus:border-[#D72D36] transition-colors placeholder:text-gray-400" placeholder="Hãy chia sẻ một chút về CLB"></textarea>
               </div>
 
+              <!-- Footer -->
+              <div>
+                <div class="flex justify-between mb-1">
+                    <label class="block text-sm font-medium text-gray-700">Footer</label>
+                    <span class="text-xs text-gray-400">{{ form.footer?.length || 0 }}/300</span>
+                </div>
+                <textarea v-model="form.footer" rows="4" maxlength="300" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D72D36]/20 focus:border-[#D72D36] transition-colors placeholder:text-gray-400" placeholder="Nhập nội dung footer"></textarea>
+              </div>
+
               <!-- Visibility -->
               <Toggle :value="form.is_public" label="Công khai CLB" description="Cho phép mọi người có thể tìm thấy CLB" @update="val => form.is_public = val" />
             </div>
@@ -108,6 +117,7 @@ const emit = defineEmits(['update:modelValue', 'save'])
 const form = ref({
     name: '',
     description: '',
+    footer: '',
     is_public: true,
     cover_image_url: null,
     logo_url: null,
@@ -132,6 +142,7 @@ watch(() => props.club, (newVal) => {
         form.value = {
             name: newVal.name || '',
             description: newVal.profile?.description || '',
+            footer: newVal.profile?.footer || newVal.footer || '',
             is_public: newVal.is_public ?? true,
             cover_image_url: newVal.profile.cover_image_url || null,
             logo_url: newVal.logo_url || null,
