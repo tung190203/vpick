@@ -114,6 +114,16 @@ class ClubResource extends JsonResource
             'skill_level' => $skillLevel,
             'rank' => $this->rank ?? null,
             'is_member' => false,
+            'has_pending_request' => auth()->check() && ClubMember::where('club_id', $this->id)
+                ->where('user_id', auth()->id())
+                ->where('membership_status', ClubMembershipStatus::Pending)
+                ->whereNull('invited_by')
+                ->exists(),
+            'has_invitation' => auth()->check() && ClubMember::where('club_id', $this->id)
+                ->where('user_id', auth()->id())
+                ->where('membership_status', ClubMembershipStatus::Pending)
+                ->whereNotNull('invited_by')
+                ->exists(),
             'profile' => [
                 'id' => $profile?->id,
                 'description' => $profile?->description,
