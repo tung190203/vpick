@@ -99,6 +99,11 @@ class ClubService
             throw new \Exception('Chỉ admin/manager/secretary mới có quyền cập nhật CLB');
         }
 
+        // Footer chỉ admin và thư ký mới được sửa
+        if (array_key_exists('footer', $data) && !$club->canEditFooter($userId)) {
+            throw new \Exception('Chỉ admin và thư ký mới có quyền sửa thông tin footer');
+        }
+
         // QR code validation
         if (isset($data['qr_code_enabled']) && $data['qr_code_enabled']) {
             $hasNewImage = isset($data['qr_code_image_url']) && $data['qr_code_image_url'] instanceof UploadedFile;
@@ -216,7 +221,7 @@ class ClubService
                 }
             }
 
-            $profileFields = ['description', 'phone', 'email', 'website', 'city', 'province', 'country', 'zalo_link', 'zalo_link_enabled', 'qr_zalo_enabled', 'qr_code_enabled'];
+            $profileFields = ['description', 'phone', 'email', 'website', 'city', 'province', 'country', 'footer', 'zalo_link', 'zalo_link_enabled', 'qr_zalo_enabled', 'qr_code_enabled'];
             if (collect($profileFields)->some(fn($field) => isset($data[$field]))) {
                 if (!$profile) {
                     $profile = $club->profile;
@@ -250,6 +255,7 @@ class ClubService
                     'city' => $data['city'] ?? $profile?->city ?? null,
                     'province' => $data['province'] ?? $profile?->province ?? null,
                     'country' => $data['country'] ?? $profile?->country ?? null,
+                    'footer' => array_key_exists('footer', $data) ? ($data['footer'] ?: null) : ($profile?->footer ?? null),
                     'social_links' => $socialLinks,
                     'settings' => $settings,
                 ];
@@ -342,28 +348,27 @@ class ClubService
 
     public function getClubDetail(Club $club, ?int $userId): Club
     {
-        // Authorization check for private clubs
+        $isMember = $userId && $club->members()
+            ->where('user_id', $userId)
+            ->where('membership_status', ClubMembershipStatus::Joined)
+            ->where('status', ClubMemberStatus::Active)
+            ->exists();
+
+        // Private clubs: chỉ thành viên mới xem được
         if (!$club->is_public) {
             if (!$userId) {
                 throw new \Exception('CLB này là riêng tư. Bạn cần đăng nhập để xem');
             }
-
-            $isCreator = $club->created_by === $userId;
-            $isMember = $club->members()
-                ->where('user_id', $userId)
-                ->where('membership_status', ClubMembershipStatus::Joined)
-                ->where('status', ClubMemberStatus::Active)
-                ->exists();
-
-            if (!$isCreator && !$isMember) {
+            if (!$isMember) {
                 throw new \Exception('Bạn không có quyền xem CLB riêng tư này');
             }
         }
 
-        $members = $club->joinedMembers()->with(['user' => User::FULL_RELATIONS])->get();
-        $enrichedMembers = $this->memberService->enrichMembersWithRanking($members);
-
-        $club->setRelation('members', $enrichedMembers);
+        if ($isMember) {
+            $members = $club->joinedMembers()->with(['user' => User::FULL_RELATIONS])->get();
+            $enrichedMembers = $this->memberService->enrichMembersWithRanking($members);
+            $club->setRelation('members', $enrichedMembers);
+        }
 
         return $club;
     }
@@ -375,7 +380,6 @@ class ClubService
         if ($userId) {
             $query->where(function ($q) use ($userId) {
                 $q->where('is_public', true)
-                    ->orWhere('created_by', $userId)
                     ->orWhereHas('members', function ($memberQuery) use ($userId) {
                         $memberQuery->where('user_id', $userId)
                             ->where('membership_status', ClubMembershipStatus::Joined)
@@ -492,6 +496,7 @@ class ClubService
                     ]);
 
                     $member->update([
+                        'role' => ClubMemberRole::Member,
                         'membership_status' => ClubMembershipStatus::Left,
                         'status' => ClubMemberStatus::Inactive,
                         'left_at' => now(),
@@ -508,6 +513,7 @@ class ClubService
         }
 
         $member->update([
+            'role' => ClubMemberRole::Member,
             'membership_status' => ClubMembershipStatus::Left,
             'status' => ClubMemberStatus::Inactive,
             'left_at' => now(),

@@ -33,15 +33,21 @@
         </div>
 
         <!-- Top 3 Section -->
-        <div v-if="topThree.length > 0" class="flex justify-center items-end gap-6 mb-12 py-4">
-            <!-- Rank 2 -->
-            <div v-if="topThree[1]" class="flex flex-col items-center flex-1 max-w-[120px]">
-                <span class="text-xl font-semibold text-[#4F80FF] mb-2">Top 2</span>
-                <div class="relative mb-3">
+        <div v-if="topThree.length > 0" class="flex justify-center items-end gap-2 sm:gap-6 mb-16 pt-12">
+
+            <!-- Rank 2 (Silver) -->
+            <div v-if="topThree[1]" class="flex flex-col items-center flex-1 max-w-[120px] relative">
+                <div class="text-[#4F80FF] font-bold text-sm mb-1 uppercase tracking-wide">Top 2</div>
+                <div class="relative w-32 h-32 sm:w-36 sm:h-36 flex items-center justify-center mb-2">
+                    <!-- Frame -->
+                    <img src="@/assets/ranking/silver.png" alt="Silver Frame"
+                        class="absolute inset-0 w-full h-full object-contain z-20 pointer-events-none" />
+                    <!-- Avatar -->
                     <img :src="topThree[1].user.avatar_url || defaultAvatar" alt="Rank 2"
-                        class="w-20 h-20 rounded-full border-2 border-[#4F80FF] shadow-lg object-cover" />
-                    <div
-                        class="absolute -bottom-24 left-1/2 -translate-x-1/2 px-3 py-1 bg-[#4F80FF] text-[10px] text-white rounded-full font-bold whitespace-nowrap">
+                        class="absolute rounded-full object-cover z-10"
+                        style="width: 47%; height: 47%; top: 57%; left: 50%; transform: translate(-50%, -60%);" />
+                    <!-- Badge -->
+                    <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 px-3 py-0.5 bg-[#475569] text-[10px] text-white rounded-full font-bold whitespace-nowrap z-30">
                         Win {{ topThree[1].monthly_stats?.win_rate || 0 }}%
                     </div>
                 </div>
@@ -51,20 +57,22 @@
                 </div>
             </div>
 
-            <!-- Rank 1 -->
-            <div v-if="topThree[0]" class="flex flex-col items-center flex-1 max-w-[140px] -mt-6">
-                <span class="text-xl font-semibold text-[#D72D36] mb-2">Top 1</span>
-                <div class="relative mb-3">
-                    <div class="absolute top-[80px] left-1/2 -translate-x-1/2">
-                        <div
-                            class="bg-[#D72D36] text-[10px] text-white px-3 py-1 rounded-full font-bold shadow-sm whitespace-nowrap">
-                            Xuất sắc
-                        </div>
-                    </div>
+            <!-- Rank 1 (Gold) -->
+            <div v-if="topThree[0]" class="flex flex-col items-center flex-1 max-w-[160px] relative -mt-8">
+                <div class="text-[#D72D36] font-black text-base mb-1 uppercase tracking-wide">Top 1</div>
+                <div class="relative w-40 h-40 sm:w-48 sm:h-48 flex items-center justify-center mb-4">
+                    <!-- Glow -->
+                    <div class="absolute inset-0 rounded-full animate-pulse-subtle"></div>
+                    <!-- Frame -->
+                    <img src="@/assets/ranking/gold.png" alt="Gold Frame"
+                        class="absolute inset-0 w-full h-full object-contain z-20 pointer-events-none" />
+                    <!-- Avatar -->
                     <img :src="topThree[0].user.avatar_url || defaultAvatar" alt="Rank 1"
-                        class="w-24 h-24 rounded-full border-2 border-[#D72D36] shadow-xl object-cover" />
-                    <div
-                        class="absolute -bottom-[103px] left-1/2 -translate-x-1/2 px-3 py-1 bg-[#D72D36] text-[10px] text-white rounded-full font-bold whitespace-nowrap">
+                        class="absolute rounded-full object-cover z-10"
+                        style="width: 48%; height: 48%; top: 57%; left: 50%; transform: translate(-50%, -62%);" />
+                        
+                    <!-- Badge -->
+                    <div class="absolute bottom-1 left-1/2 -translate-x-1/2 px-4 py-1 bg-[#ca8a04] text-[10px] text-white rounded-full font-black whitespace-nowrap z-30 border border-yellow-300">
                         Win {{ topThree[0].monthly_stats?.win_rate || 0 }}%
                     </div>
                 </div>
@@ -74,14 +82,19 @@
                 </div>
             </div>
 
-            <!-- Rank 3 -->
-            <div v-if="topThree[2]" class="flex flex-col items-center flex-1 max-w-[120px]">
-                <span class="text-xl font-semibold text-[#FFB84F] mb-2">Top 3</span>
-                <div class="relative mb-3">
+            <!-- Rank 3 (Bronze) -->
+            <div v-if="topThree[2]" class="flex flex-col items-center flex-1 max-w-[120px] relative">
+                <div class="text-[#FFB84F] font-bold text-sm mb-1 uppercase tracking-wide">Top 3</div>
+                <div class="relative w-32 h-32 sm:w-36 sm:h-36 flex items-center justify-center mb-2">
+                    <!-- Frame -->
+                    <img src="@/assets/ranking/bronze.png" alt="Bronze Frame"
+                        class="absolute inset-0 w-full h-full object-contain z-20 pointer-events-none" />
+                    <!-- Avatar -->
                     <img :src="topThree[2].user.avatar_url || defaultAvatar" alt="Rank 3"
-                        class="w-20 h-20 rounded-full border-2 border-[#FFB84F] shadow-lg object-cover" />
-                    <div
-                        class="absolute -bottom-24 left-1/2 -translate-x-1/2 px-3 py-1 bg-[#FFB84F] text-[10px] text-white rounded-full font-bold whitespace-nowrap">
+                        class="absolute rounded-full object-cover z-10"
+                        style="width: 47%; height: 47%; top: 57%; left: 50%; transform: translate(-50%, -60%);" />
+                    <!-- Badge -->
+                    <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 px-3 py-0.5 bg-[#92400e] text-[10px] text-white rounded-full font-bold whitespace-nowrap z-30">
                         Win {{ topThree[2].monthly_stats?.win_rate || 0 }}%
                     </div>
                 </div>
@@ -217,3 +230,21 @@ watch(() => props.filters, (newFilters) => {
     tempYear.value = newFilters.year
 }, { deep: true })
 </script>
+
+<style scoped>
+@keyframes pulse-subtle {
+    0%, 100% { opacity: 0.8; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.02); }
+}
+
+.animate-pulse-subtle {
+    animation: pulse-subtle 3s ease-in-out infinite;
+}
+
+.line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+</style>

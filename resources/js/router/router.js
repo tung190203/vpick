@@ -416,6 +416,34 @@ export const route = [
     component: ForbiddenPage,
   },
   {
+    path: '/club',
+    redirect: '/clubs'
+  },
+  {
+    path: '/club/create',
+    redirect: '/clubs/create'
+  },
+  {
+    path: '/club/:id',
+    redirect: to => `/clubs/${to.params.id}`
+  },
+  {
+    path: '/club/:id/fund',
+    redirect: to => `/clubs/${to.params.id}/fund`
+  },
+  {
+    path: '/club/:id/detail-activity',
+    redirect: to => `/clubs/${to.params.id}/detail-activity`
+  },
+  {
+    path: '/club/:id/create-activity',
+    redirect: to => `/clubs/${to.params.id}/create-activity`
+  },
+  {
+    path: '/club/:id/edit-activity/:activityId',
+    redirect: to => `/clubs/${to.params.id}/edit-activity/${to.params.activityId}`
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: '/not-found'
   }

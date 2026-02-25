@@ -14,8 +14,9 @@ class GetClubsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'sometimes|string|max:255',
-            'address' => 'sometimes|string|max:255',
+            'name' => 'nullable|string|max:255',
+            'address' => 'nullable|string|max:255',
+            'page' => 'nullable|integer|min:1',
             'lat' => 'nullable|numeric',
             'lng' => 'nullable|numeric',
             'radius' => 'nullable|numeric|min:1',
@@ -23,7 +24,7 @@ class GetClubsRequest extends FormRequest
             'maxLat' => 'nullable|numeric',
             'minLng' => 'nullable|numeric',
             'maxLng' => 'nullable|numeric',
-            'per_page' => 'sometimes|integer|min:1|max:200',
+            'per_page' => 'nullable|integer|min:1|max:200',
         ];
     }
 }
