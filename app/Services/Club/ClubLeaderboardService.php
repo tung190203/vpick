@@ -9,17 +9,25 @@ use App\Models\Sport;
 use App\Models\VnduprHistory;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 class ClubLeaderboardService
 {
     /**
      * Tính rank của club dựa trên tổng điểm members trong tháng
+     * Cache 5 phút để tránh load toàn bộ clubs mỗi request
      */
     public function calculateClubRank(Club $club, ?int $month = null, ?int $year = null): ?int
     {
         $month = $month ?? now()->month;
         $year = $year ?? now()->year;
 
+        $cacheKey = "club_rank:{$club->id}:{$year}:{$month}";
+        return Cache::remember($cacheKey, 300, fn () => $this->computeClubRank($club, $month, $year));
+    }
+
+    private function computeClubRank(Club $club, int $month, int $year): ?int
+    {
         $startDate = Carbon::create($year, $month, 1)->startOfMonth();
         $endDate = Carbon::create($year, $month, 1)->endOfMonth();
 
