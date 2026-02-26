@@ -4,6 +4,9 @@
 <meta property="og:url" content="{{ $url }}" />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="PICKI" />
+@if(config('services.facebook.client_id'))
+<meta property="fb:app_id" content="{{ config('services.facebook.client_id') }}" />
+@endif
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="{{ $title }}" />
 <meta name="twitter:description" content="{{ $description }}" />

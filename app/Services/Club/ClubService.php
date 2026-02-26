@@ -12,6 +12,7 @@ use App\Models\Club\Club;
 use App\Models\Club\ClubMember;
 use App\Models\Club\ClubProfile;
 use App\Models\User;
+use App\Notifications\ClubDissolvedNotification;
 use App\Notifications\ClubRenamedNotification;
 use App\Services\ImageOptimizationService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -30,13 +31,11 @@ class ClubService
     public function createClub(array $data, int $userId): Club
     {
         return DB::transaction(function () use ($data, $userId) {
-            // Handle logo upload
             $logoPath = null;
             if (isset($data['logo_url']) && $data['logo_url'] instanceof UploadedFile) {
                 $logoPath = $this->imageService->optimize($data['logo_url'], 'logos');
             }
 
-            // Handle cover upload
             $coverPath = null;
             if (isset($data['cover_image_url']) && $data['cover_image_url'] instanceof UploadedFile) {
                 $coverPath = $this->imageService->optimize($data['cover_image_url'], 'covers');
@@ -45,7 +44,6 @@ class ClubService
             $status = $data['status'] ?? ClubStatus::Active->value;
             $isPublic = $data['is_public'] ?? true;
 
-            // Create club
             $club = Club::create([
                 'name' => $data['name'],
                 'address' => $data['address'] ?? null,
@@ -63,7 +61,6 @@ class ClubService
                 'description' => $data['description'] ?? null,
             ]);
 
-            // Create admin member
             ClubMember::create([
                 'club_id' => $club->id,
                 'user_id' => $userId,
@@ -73,13 +70,11 @@ class ClubService
                 'joined_at' => now(),
             ]);
 
-            // Create main wallet for thu/chi and fund overview
             $this->walletService->createWallet($club, [
                 'type' => ClubWalletType::Main,
                 'currency' => 'VND',
             ]);
 
-            // Load relations
             $club->load([
                 'members.user' => function ($query) {
                     $query->with(User::FULL_RELATIONS);
@@ -94,17 +89,14 @@ class ClubService
 
     public function updateClub(Club $club, array $data, int $userId): Club
     {
-        // Authorization check
         if (!$club->canManage($userId)) {
             throw new \Exception('Chỉ admin/manager/secretary mới có quyền cập nhật CLB');
         }
 
-        // Footer chỉ admin và thư ký mới được sửa
         if (array_key_exists('footer', $data) && !$club->canEditFooter($userId)) {
             throw new \Exception('Chỉ admin và thư ký mới có quyền sửa thông tin footer');
         }
 
-        // QR code validation
         if (isset($data['qr_code_enabled']) && $data['qr_code_enabled']) {
             $hasNewImage = isset($data['qr_code_image_url']) && $data['qr_code_image_url'] instanceof UploadedFile;
             $hasExistingImage = $club->profile && $club->profile->qr_code_image_url;
@@ -117,7 +109,6 @@ class ClubService
         return DB::transaction(function () use ($club, $data, $userId) {
             $oldName = $club->name;
 
-            // Handle logo upload
             $logoPath = $club->getRawOriginal('logo_url');
             if (isset($data['logo_url']) && $data['logo_url'] instanceof UploadedFile) {
                 if ($logoPath) {
@@ -126,7 +117,6 @@ class ClubService
                 $logoPath = $this->imageService->optimize($data['logo_url'], 'logos');
             }
 
-            // Update club
             $club->update([
                 'name' => $data['name'] ?? $club->name,
                 'address' => $data['address'] ?? $club->address,
@@ -137,10 +127,8 @@ class ClubService
                 'is_public' => $data['is_public'] ?? $club->is_public,
             ]);
 
-            // Handle profile updates
             $profile = $club->profile;
 
-            // Handle cover image upload
             if (isset($data['cover_image_url']) && $data['cover_image_url'] instanceof UploadedFile) {
                 if ($profile && $profile->getRawCoverImagePath()) {
                     $this->deleteImages($profile->getRawCoverImagePath());
@@ -157,7 +145,6 @@ class ClubService
                 }
             }
 
-            // Handle QR code image upload
             if (isset($data['qr_code_image_url']) && $data['qr_code_image_url'] instanceof UploadedFile) {
                 if (!$profile) {
                     $profile = $club->profile;
@@ -273,7 +260,6 @@ class ClubService
                 }
             }
 
-            // Notify all active members when club name is changed
             $newName = $club->name;
             if (isset($data['name']) && $oldName !== $newName) {
                 $message = "CLB {$oldName} đã được quản trị viên đổi tên thành {$newName}";
@@ -289,7 +275,6 @@ class ClubService
                 });
             }
 
-            // Refresh and load relations
             $club->refresh()->load([
                 'members.user' => function ($query) {
                     $query->with(User::FULL_RELATIONS);
@@ -308,7 +293,21 @@ class ClubService
             throw new \Exception('Chỉ admin/manager/secretary mới có quyền xóa CLB');
         }
 
-        DB::transaction(function () use ($club) {
+        DB::transaction(function () use ($club, $userId) {
+            $club->activeMembers()->with('user')->each(function (ClubMember $member) use ($club, $userId) {
+                if ($member->user_id === $userId) {
+                    return;
+                }
+                $user = $member->user;
+                if ($user) {
+                    $user->notify(new ClubDissolvedNotification($club));
+                    SendPushJob::dispatch($user->id, 'CLB đã giải tán', "CLB {$club->name} đã bị giải tán", [
+                        'type' => 'CLUB_DISSOLVED',
+                        'club_id' => (string) $club->id,
+                    ]);
+                }
+            });
+
             $logoPath = $club->getRawOriginal('logo_url');
             if ($logoPath) {
                 $this->deleteImages($logoPath);
@@ -354,7 +353,6 @@ class ClubService
             ->where('status', ClubMemberStatus::Active)
             ->exists();
 
-        // Private clubs: chỉ thành viên mới xem được
         if (!$club->is_public) {
             if (!$userId) {
                 throw new \Exception('CLB này là riêng tư. Bạn cần đăng nhập để xem');
@@ -365,9 +363,10 @@ class ClubService
         }
 
         if ($isMember) {
-            $members = $club->joinedMembers()->with(['user' => User::FULL_RELATIONS])->get();
-            $enrichedMembers = $this->memberService->enrichMembersWithRanking($members);
-            $club->setRelation('members', $enrichedMembers);
+            $members = $club->joinedMembers()
+                ->with(['user' => fn ($q) => $q->with(['sports', 'sports.sport', 'sports.scores'])])
+                ->get();
+            $club->setRelation('members', $members);
         }
 
         return $club;
@@ -437,9 +436,6 @@ class ClubService
         return $clubs;
     }
 
-    /**
-     * Gắn is_member, has_pending_request, has_invitation cho từng club (1 query thay vì 3*N).
-     */
     private function attachUserMembershipStatus(array $clubs, int $userId): void
     {
         $clubIds = array_map(fn ($c) => $c->id, $clubs);
