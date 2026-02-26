@@ -10,13 +10,22 @@ use Illuminate\Support\Facades\Log;
 
 class FirebaseService
 {
-    protected string $projectId;
+    protected ?string $projectId;
     protected string $credentialsPath;
 
     public function __construct()
     {
-        $this->projectId = config('services.firebase.project_id');
+        $this->projectId = config('services.firebase.project_id') ?: null;
         $this->credentialsPath = storage_path('app/firebase/firebase.json');
+    }
+
+    protected function isConfigured(): bool
+    {
+        if (empty($this->projectId) || !file_exists($this->credentialsPath)) {
+            Log::warning('Firebase chưa cấu hình: cần FIREBASE_PROJECT_ID trong .env và file storage/app/firebase/firebase.json');
+            return false;
+        }
+        return true;
     }
 
     protected function getAccessToken(): string
@@ -38,6 +47,9 @@ class FirebaseService
         string $body,
         array $data = []
     ): bool {
+        if (!$this->isConfigured()) {
+            return false;
+        }
         if (!$device->is_enabled) {
             return false;
         }
@@ -52,7 +64,7 @@ class FirebaseService
                     'body' => $body,
                 ],
                 'data' => array_map('strval', $data),
-                
+
                 // Cấu hình riêng cho Android
                 'android' => [
                     'notification' => [
@@ -60,7 +72,7 @@ class FirebaseService
                         'channel_id' => 'picki',
                     ],
                 ],
-                
+
                 // Cấu hình riêng cho iOS
                 'apns' => [
                     'payload' => [
@@ -121,8 +133,11 @@ class FirebaseService
         string $body,
         array $data = []
     ): bool {
+        if (!$this->isConfigured()) {
+            return false;
+        }
         $url = "https://fcm.googleapis.com/v1/projects/{$this->projectId}/messages:send";
-    
+
         $payload = [
             'message' => [
                 'topic' => $topic,
@@ -131,7 +146,7 @@ class FirebaseService
                     'body' => $body,
                 ],
                 'data' => array_map('strval', $data),
-                
+
                 // Cấu hình riêng cho Android
                 'android' => [
                     'notification' => [
@@ -139,7 +154,7 @@ class FirebaseService
                         'channel_id' => 'picki',
                     ],
                 ],
-                
+
                 // Cấu hình riêng cho iOS
                 'apns' => [
                     'payload' => [
@@ -151,7 +166,7 @@ class FirebaseService
                 ],
             ],
         ];
-    
+
         try {
             (new Client())->post($url, [
                 'headers' => [
@@ -160,14 +175,14 @@ class FirebaseService
                 ],
                 'json' => $payload,
             ]);
-    
+
             return true;
         } catch (\Throwable $e) {
             Log::error('FCM topic push failed', [
                 'topic' => $topic,
                 'error' => $e->getMessage(),
             ]);
-    
+
             return false;
         }
     }

@@ -521,6 +521,12 @@
         @change-scope="onScopeChange" @change-club="onClubChange" @update:radius="onRadiusChange"
         @invite="handleInviteAction" @load-more="loadMoreInviteUsers" title="Mời thành viên" />
     <ClubReportModal v-model="isReportModalOpen" :is-loading="isReportingClub" @submit="submitClubReport" />
+    <PromotionModal
+        v-model="isPromotionModalOpen"
+        promotable-type="club"
+        :promotable-id="Number(clubId)"
+        @success="toast.success('Đã gửi quảng bá thành công')"
+    />
 </template>
 
 <script setup>
@@ -575,6 +581,7 @@ import debounce from 'lodash.debounce'
 import { getVietnameseDay } from '@/composables/formatedDate'
 import { getRoleName } from '@/helpers/role'
 import ClubReportModal from '@/components/organisms/ClubReportModal.vue'
+import PromotionModal from '@/components/organisms/PromotionModal.vue'
 
 dayjs.locale('vi')
 
@@ -656,6 +663,7 @@ const countdownText = ref('')
 let countdownInterval = null
 const isReportModalOpen = ref(false)
 const isReportingClub = ref(false)
+const isPromotionModalOpen = ref(false)
 
 const currentUserMember = computed(() => {
     return club.value?.members?.find(member => member.user_id === getUser.value.id) || null
@@ -730,14 +738,14 @@ const statsAdmin = computed(() => {
 })
 
 const handleCampaign = () => {
-    toast.info('Tính năng đang phát triển')
+    isPromotionModalOpen.value = true
 }
 
 const nextMatch = computed(() => {
     const now = dayjs()
 
     const upcoming = activities.value
-        .filter(a => dayjs(a.start_time).isAfter(now))
+        .filter(a => a.status !== 'cancelled' && a.status !== 'completed' && dayjs(a.start_time).isAfter(now))
         .sort((a, b) =>
             dayjs(a.start_time).diff(dayjs(b.start_time))
         )
@@ -972,10 +980,12 @@ const handleCreateNotificationSubmit = async (data) => {
 
 const getNotificationType = async () => {
     try {
-        const response = await ClubService.getNotificationType(clubId.value)
-        notificationType.value = response.data
+        const types = await ClubService.getNotificationType(clubId.value)
+        notificationType.value = Array.isArray(types) ? types : []
     } catch (error) {
         console.error('Error fetching notification types:', error)
+        notificationType.value = []
+        toast.error(error.response?.data?.message || 'Không thể tải danh sách loại thông báo')
     }
 }
 
@@ -996,7 +1006,8 @@ const goToActivityDetail = (activity, query = {}) => {
 
 const formatActivity = (item) => {
     const userId = getUser.value.id
-    const isCompleted = item.status === 'completed' || dayjs().isAfter(dayjs(item.end_time))
+    const isCancelled = item.status === 'cancelled'
+    const isCompleted = item.status === 'completed' || dayjs().isAfter(dayjs(item.end_time)) || isCancelled
     const userParticipant = item.participants?.find(p => p.user_id === userId)
     const isRegistered = !!userParticipant
 
@@ -1019,16 +1030,18 @@ const formatActivity = (item) => {
 
     // Determine status badge (colors) - ActivityScheduleCard & ActivitySmallCard
     let status = item.is_public ? 'open' : 'private'
-    if (isCompleted) status = 'completed'
+    if (isCancelled) status = 'cancelled'
+    else if (isCompleted) status = 'completed'
 
     // Determine statusText (label) - ActivitySmallCard & updated ActivityScheduleCard
     let statusText = item.is_public ? 'Công khai' : 'Nội bộ'
-    if (isCompleted) statusText = 'Hoàn tất'
+    if (isCancelled) statusText = 'Đã hủy'
+    else if (isCompleted) statusText = 'Hoàn tất'
 
     // Determine button text
     let buttonText = 'Đăng ký'
     if (isCompleted) {
-        buttonText = 'Đã xong'
+        buttonText = isCancelled ? 'Đã hủy' : 'Đã xong'
     } else if (isRegistered) {
         buttonText = registrationStatus === 'pending' ? 'Đang chờ duyệt' : 'Check-in ngay'
     }
@@ -1306,9 +1319,12 @@ const getClubActivities = async () => {
         const response = await ClubService.getClubActivities(clubId.value, {
             page: 1,
             per_page: activityPerPage.value,
+            statuses: ['scheduled', 'ongoing'],
         })
-        const allActivities = (response.data.activities || []).map(formatActivity)
-        activities.value = allActivities.filter(a => a.status !== 'completed' && !dayjs().isAfter(dayjs(a.end_time))).slice(0, 5)
+        const activitiesData = response.data?.activities
+        const activitiesList = Array.isArray(activitiesData) ? activitiesData : (activitiesData?.data || [])
+        const allActivities = activitiesList.map(formatActivity)
+        activities.value = allActivities.slice(0, 5)
 
         startCountdown()
     } catch (error) {
@@ -1328,7 +1344,9 @@ const getMoreUpcomingActivities = async (append = false) => {
             per_page: activityPerPage.value,
             statuses: ['scheduled', 'ongoing']
         })
-        const formatted = (response.data.activities || []).map(formatActivity)
+        const activitiesData = response.data?.activities
+        const activitiesList = Array.isArray(activitiesData) ? activitiesData : (activitiesData?.data || [])
+        const formatted = activitiesList.map(formatActivity)
         if (append) {
             upcomingActivities.value = [...upcomingActivities.value, ...formatted]
         } else {
@@ -1354,7 +1372,9 @@ const getMoreHistoryActivities = async (append = false) => {
             per_page: activityPerPage.value,
             statuses: ['completed', 'cancelled']
         })
-        const formatted = (response.data.activities || []).map(formatActivity)
+        const activitiesData = response.data?.activities
+        const activitiesList = Array.isArray(activitiesData) ? activitiesData : (activitiesData?.data || [])
+        const formatted = activitiesList.map(formatActivity)
         if (append) {
             historyActivities.value = [...historyActivities.value, ...formatted]
         } else {

@@ -98,6 +98,17 @@
           <Button 
             size="lg" 
             color="white" 
+            class="px-4 py-1 rounded-[4px] font-semibold border border-[#D72D36] bg-[#FFF5F5] text-[#D72D36] shadow-sm transition-all hover:bg-[#FFEBEB]"
+            @click="openPromotionModal"
+          >
+            <div class="flex items-center gap-2">
+              <MegaphoneIcon class="w-5 h-5" />
+              Quảng bá
+            </div>
+          </Button>
+          <Button 
+            size="lg" 
+            color="white" 
             class="px-4 py-1 rounded-[4px] font-semibold border border-[#DCDEE6] bg-[#EDEEF2] text-[#3E414C] shadow-sm transition-all hover:bg-gray-50"
             @click="cancelEvent"
           >
@@ -130,6 +141,17 @@
             <div class="flex items-center gap-2">
               <ShareIcon class="w-5 h-5" />
               Chia sẻ
+            </div>
+          </Button>
+          <Button 
+            size="lg" 
+            color="white" 
+            class="px-4 py-1 rounded-[4px] font-semibold border border-[#D72D36] bg-[#FFF5F5] text-[#D72D36] shadow-sm transition-all hover:bg-[#FFEBEB]"
+            @click="openPromotionModal"
+          >
+            <div class="flex items-center gap-2">
+              <MegaphoneIcon class="w-5 h-5" />
+              Quảng bá
             </div>
           </Button>
         </div>
@@ -398,6 +420,13 @@
       @confirm="confirmCancelEvent"
     />
 
+    <PromotionModal
+      v-model="isPromotionModalOpen"
+      promotable-type="club_activity"
+      :promotable-id="Number(activity.id ?? activityId)"
+      @success="toast.success('Đã gửi quảng bá thành công')"
+    />
+
     <!-- Check-in QR Modal -->
     <div v-if="showCheckinModal" class="fixed inset-0 z-[10001] flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="showCheckinModal = false"></div>
@@ -439,7 +468,8 @@ import {
     XMarkIcon,
     PlusCircleIcon,
     CheckIcon,
-    WrenchIcon
+    WrenchIcon,
+    MegaphoneIcon
 } from '@heroicons/vue/24/outline'
 import RegistrationIcon from '@/assets/images/registration.svg'
 import PriceCheckIcon from '@/assets/images/price_check.svg'
@@ -448,6 +478,7 @@ import ShieldCheckIcon from "@/assets/images/shield_check.svg";
 import QrcodeIcon from '@/assets/images/qr_code.svg'
 import Button from '@/components/atoms/Button.vue'
 import CancelActivityModal from '@/components/molecules/CancelActivityModal.vue'
+import PromotionModal from '@/components/organisms/PromotionModal.vue'
 import QrcodeVue from 'qrcode.vue'
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -484,6 +515,7 @@ const joinActivityRequests = ref([])
 const showCancelModal = ref(false)
 const isCancelling = ref(false)
 const showCheckinModal = ref(false)
+const isPromotionModalOpen = ref(false)
 
 const isOwner = computed(() => {
     return activity.value.created_by === getUser.value.id
@@ -699,8 +731,12 @@ const updateEvent = () => {
     router.push({name: 'club-activity-edit', params: {id: clubId, activityId: activityId.value}})
 }
 
+const openPromotionModal = () => {
+  isPromotionModalOpen.value = true
+}
+
 const shareEvent = () => {
-    navigator.share({
+   navigator.share({
         title: activity.value.title,
         text: activity.value.description,
         url: activity.value.check_in_url

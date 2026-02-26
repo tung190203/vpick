@@ -102,22 +102,29 @@ class ValidRecurringSchedule implements ValidationRule
             return;
         }
 
-        // Validate date format (dd/MM/yyyy, dd-MM-yyyy, or yyyy-MM-dd)
+        // Validate date format (dd/MM/yyyy, dd-MM-yyyy, yyyy-MM-dd, hoặc có thêm HH:mm:ss)
         $dateString = $value['recurring_date'];
         if (!$this->isValidDateString($dateString)) {
-            $fail('Field "recurring_date" phải là ngày hợp lệ với format: dd/MM/yyyy, dd-MM-yyyy, hoặc yyyy-MM-dd.');
+            $fail('Field "recurring_date" phải là ngày hợp lệ với format: dd/MM/yyyy, dd-MM-yyyy, yyyy-MM-dd, hoặc yyyy-MM-dd HH:mm:ss.');
             return;
         }
     }
 
     /**
-     * Check if date string is valid
+     * Check if date string is valid (chấp nhận cả date và datetime)
      */
     private function isValidDateString(string $dateString): bool
     {
-        // Try parsing with different formats
-        $formats = ['d/m/Y', 'd-m-Y', 'Y-m-d'];
-        
+        $formats = [
+            'd/m/Y',
+            'd-m-Y',
+            'Y-m-d',
+            'Y-m-d H:i:s',
+            'Y-m-d H:i',
+            'd/m/Y H:i:s',
+            'd-m-Y H:i:s',
+        ];
+
         foreach ($formats as $format) {
             try {
                 $date = Carbon::createFromFormat($format, $dateString);
