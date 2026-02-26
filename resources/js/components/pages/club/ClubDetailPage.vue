@@ -521,6 +521,12 @@
         @change-scope="onScopeChange" @change-club="onClubChange" @update:radius="onRadiusChange"
         @invite="handleInviteAction" @load-more="loadMoreInviteUsers" title="Mời thành viên" />
     <ClubReportModal v-model="isReportModalOpen" :is-loading="isReportingClub" @submit="submitClubReport" />
+    <PromotionModal
+        v-model="isPromotionModalOpen"
+        promotable-type="club"
+        :promotable-id="Number(clubId)"
+        @success="toast.success('Đã gửi quảng bá thành công')"
+    />
 </template>
 
 <script setup>
@@ -575,6 +581,7 @@ import debounce from 'lodash.debounce'
 import { getVietnameseDay } from '@/composables/formatedDate'
 import { getRoleName } from '@/helpers/role'
 import ClubReportModal from '@/components/organisms/ClubReportModal.vue'
+import PromotionModal from '@/components/organisms/PromotionModal.vue'
 
 dayjs.locale('vi')
 
@@ -656,6 +663,7 @@ const countdownText = ref('')
 let countdownInterval = null
 const isReportModalOpen = ref(false)
 const isReportingClub = ref(false)
+const isPromotionModalOpen = ref(false)
 
 const currentUserMember = computed(() => {
     return club.value?.members?.find(member => member.user_id === getUser.value.id) || null
@@ -730,7 +738,7 @@ const statsAdmin = computed(() => {
 })
 
 const handleCampaign = () => {
-    toast.info('Tính năng đang phát triển')
+    isPromotionModalOpen.value = true
 }
 
 const nextMatch = computed(() => {
@@ -972,10 +980,12 @@ const handleCreateNotificationSubmit = async (data) => {
 
 const getNotificationType = async () => {
     try {
-        const response = await ClubService.getNotificationType(clubId.value)
-        notificationType.value = response.data
+        const types = await ClubService.getNotificationType(clubId.value)
+        notificationType.value = Array.isArray(types) ? types : []
     } catch (error) {
         console.error('Error fetching notification types:', error)
+        notificationType.value = []
+        toast.error(error.response?.data?.message || 'Không thể tải danh sách loại thông báo')
     }
 }
 

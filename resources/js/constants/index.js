@@ -40,6 +40,7 @@ export const API_ENDPOINT = {
   // user_notification: thông báo riêng từng thành viên (không phải thông báo CLB)
   NOTIFICATION: '/user-notifications',
   MAP: '/map',
+  PROMOTION: '/promotion',
 };
 
 export const TOURNAMENT_STATUS = {
