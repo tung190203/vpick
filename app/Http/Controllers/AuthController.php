@@ -230,6 +230,8 @@ class AuthController extends Controller
             $user = User::find($payload->get('sub'));
             if (!$user) return ResponseHelper::error('Người dùng không tồn tại', 404, ['status_code' => 'USER_NOT_FOUND']);
 
+            $user->update(['last_login' => now()]);
+
             $newAccessToken = JWTAuth::claims(['type' => 'access'])->fromUser($user);
             return ResponseHelper::success([
                 'access_token' => $newAccessToken,

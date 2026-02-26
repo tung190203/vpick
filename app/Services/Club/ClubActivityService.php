@@ -55,6 +55,11 @@ class ClubActivityService
                 $query->whereIn('status', $activityStatuses);
             }
 
+            // Tab "ĐANG DIỄN RA": loại activities đã qua end_time (dù status còn scheduled)
+            if (!empty($activityStatuses) && !in_array('completed', $activityStatuses) && !in_array('cancelled', $activityStatuses)) {
+                $query->where('end_time', '>=', now());
+            }
+
             if ($userId && ($hasRegistered || $hasAvailable)) {
                 if ($hasRegistered && !$hasAvailable) {
                     $query->whereHas('participants', function ($q) use ($userId) {

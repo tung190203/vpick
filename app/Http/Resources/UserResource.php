@@ -12,11 +12,7 @@ use App\Http\Resources\ClubResource;
 
 class UserResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
+
     public function toArray(Request $request): array
     {
         $vnRank = $this->vn_rank;
@@ -59,6 +55,8 @@ class UserResource extends JsonResource
                 ? ($this->is_following_count && $this->is_followed_by_count)
                 : ($request->user() ? $request->user()->isFriendWith($this->resource) : false),
             'vn_rank' => $vnRank ?? null,
+            'last_login' => $this->last_login?->toISOString(),
+            'is_online' => $this->isOnline(),
         ];
     }
 }

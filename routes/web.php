@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 Route::middleware('crawler')->group(function () {
+    Route::get('/', [MetaPreviewController::class, 'home']);
     Route::get('/clubs/{id}', [MetaPreviewController::class, 'club'])->where('id', '[0-9]+');
     Route::get('/tournament-detail/{id}', [MetaPreviewController::class, 'tournament'])->where('id', '[0-9]+');
     Route::get('/mini-tournament-detail/{id}', [MetaPreviewController::class, 'miniTournament'])->where('id', '[0-9]+');
