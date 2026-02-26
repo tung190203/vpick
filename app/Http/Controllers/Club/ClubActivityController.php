@@ -43,7 +43,10 @@ class ClubActivityController extends Controller
 
         $activities = $this->activityService->getActivities($club, $filters, $userId);
 
-        $data = ['activities' => ClubActivityListResource::collection($activities)];
+        // Trả về mảng phẳng để frontend nhận đúng (tránh Resource::collection bọc { data, links, meta })
+        $data = [
+            'activities' => ClubActivityListResource::collection($activities->items())->toArray($request),
+        ];
         $meta = [
             'current_page' => $activities->currentPage(),
             'per_page' => $activities->perPage(),

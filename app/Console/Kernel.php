@@ -19,8 +19,6 @@ class Kernel extends ConsoleKernel
         })->daily();
 
         $schedule->command('activities:auto-complete')->everyFiveMinutes();
-
-        $schedule->command('activities:generate-recurring --days-ahead=30')->hourly();
     }
 
     protected function commands(): void

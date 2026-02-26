@@ -37,6 +37,7 @@ use App\Http\Controllers\DeviceTokenController;
 use App\Http\Controllers\FacilityController;
 use App\Http\Controllers\FollowController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\MapController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MiniTournamentController;
@@ -265,6 +266,10 @@ Route::middleware(['auth:api', 'update.last_login', 'throttle:api'])->group(func
     Route::post('/notifications/setting', [DeviceTokenController::class, 'update']);
     Route::delete('/device-token/delete', [DeviceTokenController::class, 'destroy']);
     Route::get('/me', [AuthController::class, 'me']);
+    Route::prefix('promotion')->group(function () {
+        Route::get('/recipients', [PromotionController::class, 'recipients']);
+        Route::post('/send', [PromotionController::class, 'send']);
+    });
     Route::prefix('user')->group(function () {
         Route::match(['get', 'post'], '/index', [UserController::class, 'index']);
         Route::get('/{id}', [UserController::class, 'show']);

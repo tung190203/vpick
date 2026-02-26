@@ -237,6 +237,7 @@
                 { label: 'Gửi link', icon: LinkIcon, onClick: copyLink },
                 { label: 'Quét mã QR', icon: QrCodeIcon, onClick: showQRCode },
                 isCreator ? { label: 'Mời nhóm', icon: UserMultiple, onClick: () => openInviteModalDefault() } : null,
+                isCreator ? { label: 'Quảng bá', icon: MegaphoneIcon, onClick: openPromotionModal } : null,
                 isCreator ? { label: 'Yêu cầu xác nhận KQ', icon: ClipboardDocumentCheckIcon } : null,
             ].filter(Boolean)" :subtitle="'Hãy chia sẻ thông tin tới bạn bè để cùng tham gia kèo đấu'" />
     </div>
@@ -247,4 +248,5 @@
                  @change-scope="onScopeChange" @change-club="onClubChange" @invite="handleInvite" />
     <DeleteConfirmationModal v-model="showDeleteModal" title="Xác nhận hủy bỏ kèo đấu" message="Thao tác này không thể hoàn tác." confirmButtonText="Xác nhận" @confirm="removeMiniTournament" />
     <DeleteConfirmationModal v-model="showDelineMiniParticipantModal" title="Xác nhận từ chối tham gia kèo đấu" message="Thao tác này không thể hoàn tác." confirmButtonText="Xác nhận" @confirm="declineMiniTournament" />
+    <PromotionModal v-model="isPromotionModalOpen" promotable-type="mini_tournament" :promotable-id="Number(id)" @success="toast.success('Đã gửi quảng bá thành công')" />
 </div>

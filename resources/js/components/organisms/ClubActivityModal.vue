@@ -138,7 +138,8 @@
                                     :class="{
                                         'bg-[#E3F7EF] text-[#2D9B71]': history.status === 'open',
                                         'bg-[#F2F7FC] text-[#4392E0]': history.status === 'private',
-                                        'bg-[#EDEEF2] text-[#838799]': !['open', 'private'].includes(history.status) || history.status === ' Hoàn tất',
+                                        'bg-[#FBEAEA] text-[#D72D36]': history.status === 'cancelled',
+                                        'bg-[#EDEEF2] text-[#838799]': history.status === 'completed' || !['open', 'private', 'cancelled', 'completed'].includes(history.status),
                                     }"
                                 >
                                     {{ history.statusText }}
