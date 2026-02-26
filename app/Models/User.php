@@ -180,12 +180,23 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'last_login' => 'datetime',
         'password' => 'hashed',
     ];
     public function setPasswordAttribute($password)
     {
         $this->attributes['password'] = bcrypt($password);
     }
+
+    /** User được coi là online nếu last_login trong vòng 5 phút gần đây. */
+    public function isOnline(int $minutesThreshold = 5): bool
+    {
+        if (!$this->last_login) {
+            return false;
+        }
+        return $this->last_login->diffInMinutes(now()) <= $minutesThreshold;
+    }
+
     // Lấy danh sách người dùng mà người này theo dõi
     public function follows()
     {
