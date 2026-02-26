@@ -146,7 +146,7 @@ class ClubActivity extends Model
 
     public function canBeCancelled()
     {
-        return $this->status === ClubActivityStatus::Scheduled;
+        return in_array($this->status, [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing]);
     }
 
     public function markAsCompleted()

@@ -16,7 +16,6 @@ class AutoCompleteActivitiesCommand extends Command
         $now = now();
         $completed = 0;
         $ongoing = 0;
-        $skippedRecurring = 0;
 
         // 1. scheduled -> ongoing (khi start_time <= now < end_time)
         $toOngoing = ClubActivity::where('status', ClubActivityStatus::Scheduled)
@@ -30,23 +29,18 @@ class AutoCompleteActivitiesCommand extends Command
             $this->line("  → Ongoing: #{$activity->id} {$activity->title}");
         }
 
-        // 2. scheduled/ongoing -> completed (khi end_time < now)
+        // 2. scheduled/ongoing -> completed (khi end_time < now) - kể cả recurring
         $toComplete = ClubActivity::whereIn('status', [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing])
             ->where('end_time', '<', $now)
             ->get();
 
         foreach ($toComplete as $activity) {
-            if ($activity->isRecurring()) {
-                $skippedRecurring++;
-                $this->line("  ⊘ Skipped recurring #{$activity->id} - handled by recurring logic");
-                continue;
-            }
             $activity->update(['status' => ClubActivityStatus::Completed]);
             $completed++;
             $this->line("  ✓ Completed: #{$activity->id} {$activity->title}");
         }
 
-        $this->info("Đã cập nhật: {$ongoing} ongoing, {$completed} completed. Skipped {$skippedRecurring} recurring.");
+        $this->info("Đã cập nhật: {$ongoing} ongoing, {$completed} completed.");
 
         return 0;
     }

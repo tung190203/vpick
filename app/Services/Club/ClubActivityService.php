@@ -48,15 +48,14 @@ class ClubActivityService
         $hasAvailable = in_array('available', $statuses);
         $activityStatuses = array_intersect($statuses, ['scheduled', 'ongoing', 'completed', 'cancelled']);
 
-        if (!$hasAll && !empty($statuses)) {
-            $isHistoryTab = !empty($activityStatuses)
-                && empty(array_diff($activityStatuses, ['completed', 'cancelled']));
+        $isHistoryOnly = !empty($activityStatuses)
+            && empty(array_diff($activityStatuses, ['completed', 'cancelled']));
 
+        if (!$hasAll && !empty($statuses)) {
             if (($hasRegistered || $hasAvailable) && empty($activityStatuses)) {
                 $query->whereIn('status', ['scheduled', 'ongoing']);
             } elseif (!empty($activityStatuses)) {
-                if ($isHistoryTab) {
-                    // Tab "ĐÃ KẾT THÚC": hiển thị completed/cancelled HOẶC end_time đã qua (dù status còn scheduled)
+                if ($isHistoryOnly) {
                     $query->where(function ($q) {
                         $q->whereIn('status', ['completed', 'cancelled'])
                             ->orWhere('end_time', '<', now());
@@ -81,6 +80,9 @@ class ClubActivityService
                     });
                 }
             }
+        } elseif (!$hasAll && empty($statuses)) {
+            $query->whereIn('status', ['scheduled', 'ongoing'])
+                ->where('end_time', '>=', now());
         }
 
         if (!empty($filters['date_from'])) {
@@ -124,9 +126,6 @@ class ClubActivityService
 
         $perPage = $filters['per_page'] ?? 15;
 
-        // Tab "Đã kết thúc": sắp xếp mới nhất trước
-        $isHistoryOnly = !empty($activityStatuses)
-            && empty(array_diff($activityStatuses, ['completed', 'cancelled']));
         $orderDirection = $isHistoryOnly ? 'desc' : 'asc';
 
         if ($userId) {
@@ -323,7 +322,7 @@ class ClubActivityService
         }
 
         if (!$activity->canBeCancelled()) {
-            throw new \Exception('Chỉ có thể hủy sự kiện đang scheduled');
+            throw new \Exception('Chỉ có thể hủy sự kiện đang scheduled hoặc ongoing');
         }
 
         return DB::transaction(function () use ($activity, $club, $userId, $cancellationReason, $cancelTransactions) {

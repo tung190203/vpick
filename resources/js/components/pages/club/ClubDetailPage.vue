@@ -745,7 +745,7 @@ const nextMatch = computed(() => {
     const now = dayjs()
 
     const upcoming = activities.value
-        .filter(a => dayjs(a.start_time).isAfter(now))
+        .filter(a => a.status !== 'cancelled' && a.status !== 'completed' && dayjs(a.start_time).isAfter(now))
         .sort((a, b) =>
             dayjs(a.start_time).diff(dayjs(b.start_time))
         )
@@ -1006,7 +1006,8 @@ const goToActivityDetail = (activity, query = {}) => {
 
 const formatActivity = (item) => {
     const userId = getUser.value.id
-    const isCompleted = item.status === 'completed' || dayjs().isAfter(dayjs(item.end_time))
+    const isCancelled = item.status === 'cancelled'
+    const isCompleted = item.status === 'completed' || dayjs().isAfter(dayjs(item.end_time)) || isCancelled
     const userParticipant = item.participants?.find(p => p.user_id === userId)
     const isRegistered = !!userParticipant
 
@@ -1029,16 +1030,18 @@ const formatActivity = (item) => {
 
     // Determine status badge (colors) - ActivityScheduleCard & ActivitySmallCard
     let status = item.is_public ? 'open' : 'private'
-    if (isCompleted) status = 'completed'
+    if (isCancelled) status = 'cancelled'
+    else if (isCompleted) status = 'completed'
 
     // Determine statusText (label) - ActivitySmallCard & updated ActivityScheduleCard
     let statusText = item.is_public ? 'Công khai' : 'Nội bộ'
-    if (isCompleted) statusText = 'Hoàn tất'
+    if (isCancelled) statusText = 'Đã hủy'
+    else if (isCompleted) statusText = 'Hoàn tất'
 
     // Determine button text
     let buttonText = 'Đăng ký'
     if (isCompleted) {
-        buttonText = 'Đã xong'
+        buttonText = isCancelled ? 'Đã hủy' : 'Đã xong'
     } else if (isRegistered) {
         buttonText = registrationStatus === 'pending' ? 'Đang chờ duyệt' : 'Check-in ngay'
     }
@@ -1316,11 +1319,12 @@ const getClubActivities = async () => {
         const response = await ClubService.getClubActivities(clubId.value, {
             page: 1,
             per_page: activityPerPage.value,
+            statuses: ['scheduled', 'ongoing'],
         })
         const activitiesData = response.data?.activities
         const activitiesList = Array.isArray(activitiesData) ? activitiesData : (activitiesData?.data || [])
         const allActivities = activitiesList.map(formatActivity)
-        activities.value = allActivities.filter(a => a.status !== 'completed' && !dayjs().isAfter(dayjs(a.end_time))).slice(0, 5)
+        activities.value = allActivities.slice(0, 5)
 
         startCountdown()
     } catch (error) {
