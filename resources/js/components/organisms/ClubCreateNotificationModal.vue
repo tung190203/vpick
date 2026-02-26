@@ -38,8 +38,8 @@
                     @click="toggleTypeDropdown"
                   >
                      <div class="flex items-center gap-3">
-                        <component :is="selectedTypeObj.icon" class="w-5 h-5 text-gray-500" />
-                        <span class="font-bold text-gray-700">{{ selectedTypeObj.label }}</span>
+                        <component v-if="selectedTypeObj.icon" :is="selectedTypeObj.icon" class="w-5 h-5 text-gray-500" />
+                        <span class="font-bold" :class="selectedTypeObj.label ? 'text-gray-700' : 'text-gray-400'">{{ selectedTypeObj.label || 'Chọn loại thông báo' }}</span>
                      </div>
                      <ChevronDownIcon class="h-4 w-4 text-gray-500 transition-transform duration-200" :class="{'rotate-180': isTypeDropdownOpen}" />
                   </div>
@@ -348,7 +348,8 @@ const iconMapping = {
 }
 
 const notificationTypes = computed(() => {
-    return props.notificationType.map(type => ({
+    const types = Array.isArray(props.notificationType) ? props.notificationType : []
+    return types.map(type => ({
         value: type.id,
         label: type.name,
         icon: iconMapping[type.icon] || BellIcon

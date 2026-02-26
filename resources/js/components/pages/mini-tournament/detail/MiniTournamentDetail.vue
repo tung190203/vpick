@@ -14,7 +14,8 @@ import {
     UsersIcon,
     CreditCardIcon,
     ClipboardDocumentCheckIcon,
-    FaceSmileIcon
+    FaceSmileIcon,
+    MegaphoneIcon
 } from '@heroicons/vue/24/outline'
 import UserCard from '@/components/molecules/UserCard.vue'
 import InviteGroup from '@/components/molecules/InviteGroup.vue'
@@ -34,6 +35,7 @@ import QRcodeModal from '@/components/molecules/QRcodeModal.vue';
 import DeleteConfirmationModal from '@/components/molecules/DeleteConfirmationModal.vue';
 import MiniMatchScheduleTab from '@/components/molecules/mini-match-schedule-tab/MiniMatchScheduleTab.vue'
 import ChatFormMiniTournament from '@/components/organisms/ChatFormMiniTournament.vue'
+import PromotionModal from '@/components/organisms/PromotionModal.vue'
 
 export default {
     name: 'MiniTournamentDetail',
@@ -63,7 +65,9 @@ export default {
         InviteGroup,
         ShareAction,
         DeleteConfirmationModal,
-        ChatFormMiniTournament
+        ChatFormMiniTournament,
+        PromotionModal,
+        MegaphoneIcon
     },
 
     setup() {
@@ -91,6 +95,7 @@ export default {
         const descriptionModel = ref('');
         const isEditingDescription = ref(false);
         const showDeleteModal = ref(false);
+        const isPromotionModalOpen = ref(false);
         const currentParticipant = ref(null)
         const isUserConfirmed = ref(false)
         const showDelineMiniParticipantModal = ref(false)
@@ -217,6 +222,10 @@ export default {
                 staff => staff.role === 1 && staff.user?.id === getUser.value.id
             )
         })
+
+        const openPromotionModal = () => {
+            isPromotionModalOpen.value = true;
+        };
 
         const openInviteModalDefault = async () => {
             inviteType.value = 'staff'
@@ -481,6 +490,7 @@ export default {
             CreditCardIcon,
             ClipboardDocumentCheckIcon,
             FaceSmileIcon,
+            MegaphoneIcon,
             ChatFormMiniTournament,
             DeleteConfirmationModal,
             QRcodeModal,
@@ -490,6 +500,7 @@ export default {
             ShareAction,
             tabs,
             formatEventDate,
+            id,
             mini,
             autoApprove,
             subActiveTab,
@@ -509,6 +520,8 @@ export default {
             isEditingDescription,
             isDescriptionChanged,
             showDeleteModal,
+            isPromotionModalOpen,
+            openPromotionModal,
             MiniMatchScheduleTab,
             isUserConfirmed,
             currentParticipant,

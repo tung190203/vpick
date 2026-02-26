@@ -146,7 +146,7 @@ class ClubActivity extends Model
 
     public function canBeCancelled()
     {
-        return $this->status === ClubActivityStatus::Scheduled;
+        return in_array($this->status, [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing]);
     }
 
     public function markAsCompleted()
@@ -255,12 +255,12 @@ class ClubActivity extends Model
 
     private function parseDate(string $dateString): ?array
     {
-        $formats = ['d/m/Y', 'd-m-Y', 'Y-m-d'];
+        $formats = ['d/m/Y', 'd-m-Y', 'Y-m-d', 'Y-m-d H:i:s', 'Y-m-d H:i', 'd/m/Y H:i:s', 'd-m-Y H:i:s'];
 
         foreach ($formats as $format) {
             try {
                 $date = Carbon::createFromFormat($format, $dateString);
-                if ($date && $date->format($format) === $dateString) {
+                if ($date) {
                     return [
                         'day' => $date->day,
                         'month' => $date->month,
