@@ -25,7 +25,7 @@
 
                 <RouterLink class="whitespace-nowrap" to="/friends" :class="linkClass('/friends')">
                     <UsersIcon class="w-5 h-5" />
-                    Bạn bè
+                    Cộng đồng
                 </RouterLink>
 
                 <RouterLink class="whitespace-nowrap"
