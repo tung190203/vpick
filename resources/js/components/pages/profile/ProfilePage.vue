@@ -191,18 +191,18 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 mx-10 mb-10 items-start">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 mx-10 mb-10 items-center justify-items-center">
                     <div v-for="club in clubs" :key="club.id"
-                        class="flex justify-between hover:bg-gray-100 rounded-md p-4 cursor-pointer"
+                        class="flex items-center gap-6 hover:bg-gray-100 rounded-md p-4 cursor-pointer"
                         @click="router.push({ name: 'club-detail', params: { id: club.id } })">
-                        <div class="flex gap-4">
-                            <HomeIcon class="w-5 h-5" />
-                            <p class="truncate w-40 text-sm text-[#4392E0] font-semibold" v-tooltip="club.name">
+                        <div class="flex justify-center items-center gap-4 min-w-0">
+                            <img :src="club.logo_url || '/images/default-avatar.png'" alt="" class="w-10 h-10 rounded-full flex-shrink-0">
+                            <p class="truncate w-40 text-sm text-[#4392E0] font-semibold" v-tooltip="club.name" :title="club.name">
                                 {{ club.name }}
                             </p>
                         </div>
-                        <div class="flex gap-4">
-                            <p class="text-[#4392E0] text-xs">Hoạt động</p>
+                        <div class="flex items-center gap-2">
+                            <p class="text-[#4392E0] text-xs text-nowrap">Hoạt động</p>
                             <ChevronRightIcon class="w-4 h-4" />
                         </div>
                     </div>
@@ -270,10 +270,8 @@ import {
     StarIcon,
     ChatBubbleBottomCenterTextIcon,
     PencilIcon,
-    CameraIcon,
     ExclamationCircleIcon,
     QuestionMarkCircleIcon,
-    HomeIcon,
     EyeIcon,
     XMarkIcon
 } from "@heroicons/vue/24/outline";
