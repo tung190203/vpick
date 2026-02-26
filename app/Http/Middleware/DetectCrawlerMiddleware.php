@@ -9,8 +9,15 @@ use Symfony\Component\HttpFoundation\Response;
 class DetectCrawlerMiddleware
 {
     protected array $crawlerUserAgents = [
+        // Meta / Facebook / Messenger / Instagram
         'facebookexternalhit',
+        'facebookcatalog',
         'Facebot',
+        'meta-externalfetcher',  // Messenger user-initiated link fetch
+        'meta-externalagent',
+        'meta-externalads',
+        'meta-webindexer',
+        // Other platforms
         'Twitterbot',
         'Slackbot',
         'WhatsApp',

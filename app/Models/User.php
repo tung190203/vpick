@@ -180,13 +180,22 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'last_login' => 'datetime',
         'password' => 'hashed',
     ];
     public function setPasswordAttribute($password)
     {
         $this->attributes['password'] = bcrypt($password);
     }
-    // Lấy danh sách người dùng mà người này theo dõi
+
+    public function isOnline(int $minutesThreshold = 15): bool
+    {
+        if (!$this->last_login) {
+            return false;
+        }
+        return $this->last_login->diffInMinutes(now()) <= $minutesThreshold;
+    }
+
     public function follows()
     {
         return $this->morphMany(Follow::class, 'followable');
@@ -239,14 +248,13 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         return $this->hasManyThrough(
             UserSportScore::class,
             UserSport::class,
-            'user_id',      // FK trên bảng user_sport
-            'user_sport_id',// FK trên bảng user_sport_scores
-            'id',           // PK trên users
-            'id'            // PK trên user_sport
+            'user_id',
+            'user_sport_id',
+            'id',
+            'id'
         )->where('score_type', 'vndupr_score');
     }
 
-    /** CLB mà user đang tham gia (membership_status = joined, status = active). */
     public function clubs()
     {
         return $this->belongsToMany(Club::class, 'club_members')
@@ -269,14 +277,13 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
     public function matches()
     {
         return $this->hasManyThrough(
-            Matches::class,          // bảng cuối
-            Participant::class,    // bảng trung gian
-            'user_id',             // FK trên participants trỏ về users
-            'participant1_id',     // FK trên matches trỏ về participants
-            'id',                  // PK của users
-            'id'                   // PK của participants
+            Matches::class,
+            Participant::class,
+            'user_id',
+            'participant1_id',
+            'id',
+            'id'
         )->orWhereHas('participant2', fn($q) => $q->where('user_id', $this->id));
-        // 👆 đoạn này hơi đặc biệt, vì match có cả participant1_id và participant2_id
     }
 
     public function miniMatches()
@@ -301,7 +308,6 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         return $this->hasMany(Message::class, 'receiver_id');
     }
 
-    /** Relations đủ cho UserResource (dùng chung loadFullRelations + Club member/join-request). */
     public const FULL_RELATIONS = ['referee', 'follows', 'playTimes', 'sports', 'sports.sport', 'sports.scores', 'clubs'];
 
     public function scopeWithFullRelations($query)
@@ -330,7 +336,6 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
     public function scopeVisibleFor($query, User $currentUser)
     {
         return $query->where(function ($q) use ($currentUser) {
-            // Luôn thấy user open
             $q->where('visibility', 'open');
 
             $q->orWhere(function ($q2) use ($currentUser) {

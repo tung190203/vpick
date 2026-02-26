@@ -11,6 +11,20 @@ use Illuminate\View\View;
 
 class MetaPreviewController extends Controller
 {
+    public function home(Request $request): View
+    {
+        if (!$request->attributes->get('is_crawler', false)) {
+            return view('app');
+        }
+
+        $title = config('app.name') . ' - Nền tảng Pickleball Việt Nam';
+        $description = 'PICKI - Ứng dụng kết nối cộng đồng Pickleball. Tìm CLB, tham gia giải đấu, quản lý hoạt động và kết nối với người chơi.';
+        $image = $this->absoluteUrl(asset('favicon.png'));
+        $url = $this->canonicalUrl($request, '/');
+
+        return view('meta.home', compact('title', 'description', 'image', 'url'));
+    }
+
     public function club(Request $request, int $id): View
     {
         if (!$request->attributes->get('is_crawler', false)) {

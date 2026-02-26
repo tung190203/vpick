@@ -2,7 +2,7 @@
 
 namespace App\Http\Resources\Club;
 
-use App\Http\Resources\UserResource;
+use App\Http\Resources\Club\ClubMemberUserResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -19,7 +19,7 @@ class ClubMemberResource extends JsonResource
             'status' => $this->status,
             'message' => $this->when($this->membership_status?->value === 'pending', $this->message),
             'joined_at' => $this->joined_at?->toISOString(),
-            'user' => new UserResource($this->whenLoaded('user')),
+            'user' => new ClubMemberUserResource($this->whenLoaded('user')),
         ];
     }
 }
