@@ -112,9 +112,17 @@
                   {{ getVpScore(member.user) }}
                 </div>
                 <!-- Online Status Indicator -->
-                <div v-if="isOnline(member.user?.last_login)"
-                  class="absolute bottom-[-1px] right-[-1px] w-4 h-4 bg-emerald-500 rounded-full border-2 border-white">
-                </div>
+                <template v-if="getOnlineStatus(member.user?.last_login).show">
+                  <!-- Active: green dot -->
+                  <div v-if="getOnlineStatus(member.user?.last_login).isActive"
+                    class="absolute bottom-[-1px] right-[-1px] w-4 h-4 bg-emerald-500 rounded-full border-2 border-white">
+                  </div>
+                  <!-- Recently offline: time label badge -->
+                  <div v-else
+                    class="absolute bottom-[-4px] right-[-6px] min-w-[20px] h-[18px] bg-green-100 rounded-full border-2 border-white flex items-center justify-center px-[3px]">
+                    <span class="text-green-500 font-bold leading-none" style="font-size: 8px;">{{ getOnlineStatus(member.user?.last_login).label }}</span>
+                  </div>
+                </template>
               </div>
 
               <div>
@@ -426,12 +434,22 @@ const getVpScore = (user) => {
   return score ? Number(score).toFixed(1) : '0';
 }
 
-const isOnline = (lastLogin) => {
-  if (!lastLogin) return false
+const getOnlineStatus = (lastLogin) => {
+  if (!lastLogin) return { show: false, isActive: false, label: '' }
   const lastLoginDate = new Date(lastLogin)
   const now = new Date()
-  const diffMinutes = (now - lastLoginDate) / (1000 * 60)
-  return diffMinutes < 15 // Online if logged in within last 15 minutes
+  const diffMinutes = Math.floor((now - lastLoginDate) / (1000 * 60))
+
+  if (diffMinutes <= 1) {
+    // Vừa online: hiện chấm xanh
+    return { show: true, isActive: true, label: '' }
+  } else if (diffMinutes < 60) {
+    // Online 5–60 phút trước: hiện nhãn thời gian
+    return { show: true, isActive: false, label: `${diffMinutes} phút` }
+  } else {
+    // Quá 60 phút: ẩn hoàn toàn
+    return { show: false, isActive: false, label: '' }
+  }
 }
 
 const toggleMenu = (id) => {

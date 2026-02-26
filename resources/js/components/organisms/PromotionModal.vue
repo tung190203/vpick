@@ -71,6 +71,7 @@ const handleSend = async () => {
   try {
     await sendPromotion(props.promotableType, props.promotableId)
     emit('success')
+    sending.value = false
     closeModal()
   } catch (err) {
     toast.error(err?.response?.data?.message || 'Không thể gửi quảng bá')
