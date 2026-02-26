@@ -14,10 +14,13 @@ use App\Models\Club\Club;
 use App\Models\Club\ClubActivity;
 use App\Models\User;
 use App\Services\Club\ClubActivityService;
+use Illuminate\Support\Facades\Cache;
 
 class ClubActivityController extends Controller
 {
     private const ACTIVITY_COLLECTED_SUM = 'activityFeeTransactions as collected_amount';
+
+    private const ACTIVITIES_CACHE_TTL = 60; // seconds
 
     public function __construct(
         protected ClubActivityService $activityService
@@ -28,8 +31,17 @@ class ClubActivityController extends Controller
     {
         $club = Club::findOrFail($clubId);
         $userId = auth()->id();
+        $filters = $request->validated();
 
-        $activities = $this->activityService->getActivities($club, $request->validated(), $userId);
+        $version = (int) Cache::get('club_activities_version:' . $clubId, 0);
+        $cacheKey = 'club_activities:' . $clubId . ':' . $version . ':' . md5(json_encode($filters) . ':' . ($userId ?? 'guest'));
+
+        $cached = Cache::get($cacheKey);
+        if ($cached !== null) {
+            return response()->json($cached);
+        }
+
+        $activities = $this->activityService->getActivities($club, $filters, $userId);
 
         $data = ['activities' => ClubActivityListResource::collection($activities)];
         $meta = [
@@ -39,7 +51,11 @@ class ClubActivityController extends Controller
             'last_page' => $activities->lastPage(),
         ];
 
-        return ResponseHelper::success($data, 'Lấy danh sách hoạt động thành công', 200, $meta);
+        $response = ResponseHelper::success($data, 'Lấy danh sách hoạt động thành công', 200, $meta);
+        $responseData = $response->getData(true);
+        Cache::put($cacheKey, $responseData, self::ACTIVITIES_CACHE_TTL);
+
+        return $response;
     }
 
     public function store(StoreActivityRequest $request, $clubId)
@@ -53,6 +69,8 @@ class ClubActivityController extends Controller
 
         try {
             $activity = $this->activityService->createActivity($club, $request->validated(), $userId);
+
+            Cache::increment('club_activities_version:' . $clubId);
 
             $activity->load([
                 'creator' => User::FULL_RELATIONS,
@@ -94,6 +112,8 @@ class ClubActivityController extends Controller
         try {
             $activity = $this->activityService->updateActivity($activity, $request->validated(), $userId);
 
+            Cache::increment('club_activities_version:' . $clubId);
+
             $activity->load([
                 'creator' => User::FULL_RELATIONS,
                 'participants.user' => User::FULL_RELATIONS
@@ -117,6 +137,7 @@ class ClubActivityController extends Controller
 
         try {
             $this->activityService->deleteActivity($activity, $userId);
+            Cache::increment('club_activities_version:' . $clubId);
             return ResponseHelper::success('Xóa hoạt động thành công');
         } catch (\Exception $e) {
             $statusCode = str_contains($e->getMessage(), 'scheduled') ? 422 : 403;
@@ -135,6 +156,8 @@ class ClubActivityController extends Controller
 
         try {
             $activity = $this->activityService->completeActivity($activity, $userId);
+
+            Cache::increment('club_activities_version:' . $clubId);
 
             $activity->load([
                 'creator' => User::FULL_RELATIONS,
@@ -164,6 +187,8 @@ class ClubActivityController extends Controller
                 $request->input('cancellation_reason'),
                 $request->input('cancel_transactions')
             );
+
+            Cache::increment('club_activities_version:' . $clubId);
 
             $activity->load([
                 'creator' => User::FULL_RELATIONS,
