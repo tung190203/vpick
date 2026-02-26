@@ -48,11 +48,21 @@ class ClubActivityService
         $hasAvailable = in_array('available', $statuses);
         $activityStatuses = array_intersect($statuses, ['scheduled', 'ongoing', 'completed', 'cancelled']);
 
+        $isHistoryOnly = !empty($activityStatuses)
+            && empty(array_diff($activityStatuses, ['completed', 'cancelled']));
+
         if (!$hasAll && !empty($statuses)) {
             if (($hasRegistered || $hasAvailable) && empty($activityStatuses)) {
                 $query->whereIn('status', ['scheduled', 'ongoing']);
             } elseif (!empty($activityStatuses)) {
-                $query->whereIn('status', $activityStatuses);
+                if ($isHistoryOnly) {
+                    $query->where(function ($q) {
+                        $q->whereIn('status', ['completed', 'cancelled'])
+                            ->orWhere('end_time', '<', now());
+                    });
+                } else {
+                    $query->whereIn('status', $activityStatuses);
+                }
             }
 
             if (!empty($activityStatuses) && !in_array('completed', $activityStatuses) && !in_array('cancelled', $activityStatuses)) {
@@ -70,6 +80,9 @@ class ClubActivityService
                     });
                 }
             }
+        } elseif (!$hasAll && empty($statuses)) {
+            $query->whereIn('status', ['scheduled', 'ongoing'])
+                ->where('end_time', '>=', now());
         }
 
         if (!empty($filters['date_from'])) {
@@ -113,6 +126,8 @@ class ClubActivityService
 
         $perPage = $filters['per_page'] ?? 15;
 
+        $orderDirection = $isHistoryOnly ? 'desc' : 'asc';
+
         if ($userId) {
             $query->selectRaw('club_activities.*, EXISTS(
                 SELECT 1 FROM club_activity_participants
@@ -127,9 +142,9 @@ class ClubActivityService
                 'attended'
             ])
                 ->orderBy('is_registered', 'desc')
-                ->orderBy('start_time', 'asc');
+                ->orderBy('start_time', $orderDirection);
         } else {
-            $query->orderBy('start_time', 'asc');
+            $query->orderBy('start_time', $orderDirection);
         }
 
         return $query->paginate($perPage);
@@ -286,6 +301,11 @@ class ClubActivityService
 
         $activity->markAsCompleted();
 
+        // Recurring: tạo occurrence tiếp theo nếu chưa có (đảm bảo luôn có lịch sắp tới)
+        if ($activity->isRecurring()) {
+            $this->ensureNextOccurrenceExists($activity, $userId);
+        }
+
         return $activity;
     }
 
@@ -302,7 +322,7 @@ class ClubActivityService
         }
 
         if (!$activity->canBeCancelled()) {
-            throw new \Exception('Chỉ có thể hủy sự kiện đang scheduled');
+            throw new \Exception('Chỉ có thể hủy sự kiện đang scheduled hoặc ongoing');
         }
 
         return DB::transaction(function () use ($activity, $club, $userId, $cancellationReason, $cancelTransactions) {
@@ -366,6 +386,55 @@ class ClubActivityService
 
             return $activity;
         });
+    }
+
+    /**
+     * Đảm bảo có occurrence tiếp theo sau khi activity recurring hoàn thành (gọi từ cron hoặc manual).
+     * Tạo occurrence mới nếu chưa có trong 30 ngày tới.
+     */
+    public function ensureNextOccurrenceForCompleted(ClubActivity $completedActivity): void
+    {
+        if (!$completedActivity->isRecurring()) {
+            return;
+        }
+        $userId = $completedActivity->created_by ?? 0;
+        if ($userId > 0) {
+            $this->ensureNextOccurrenceExists($completedActivity, $userId);
+        }
+    }
+
+    /**
+     * Đảm bảo có occurrence tiếp theo sau khi activity recurring hoàn thành.
+     * Tạo occurrence mới nếu chưa có trong 30 ngày tới.
+     */
+    private function ensureNextOccurrenceExists(ClubActivity $completedActivity, int $userId): void
+    {
+        $fromDate = $completedActivity->end_time ?? $completedActivity->start_time;
+        $lookAheadDate = Carbon::now()->addDays(30);
+        $maxIterations = 50;
+        $iteration = 0;
+
+        while ($iteration < $maxIterations) {
+            $iteration++;
+            $nextStartTime = $completedActivity->calculateNextOccurrence($fromDate);
+
+            if (!$nextStartTime || $nextStartTime->gt($lookAheadDate)) {
+                break;
+            }
+
+            $rawSchedule = $completedActivity->attributes['recurring_schedule'] ?? null;
+            $existing = ClubActivity::where('club_id', $completedActivity->club_id)
+                ->where('title', $completedActivity->title)
+                ->where('recurring_schedule', $rawSchedule)
+                ->where('start_time', $nextStartTime)
+                ->exists();
+
+            if (!$existing) {
+                $this->createNextOccurrence($completedActivity, $nextStartTime, $userId);
+            }
+
+            $fromDate = $nextStartTime->copy()->addMinute();
+        }
     }
 
     /**

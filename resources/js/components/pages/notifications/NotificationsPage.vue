@@ -223,6 +223,21 @@ const parseNotification = (n) => {
       message = 'Có người vừa theo dõi bạn'
       break
 
+    case 'CLUB_ACTIVITY_PROMOTION':
+      title = data.title || 'Lời mời tham gia sự kiện'
+      message = data.message || 'Bạn được mời tham gia sự kiện'
+      break
+
+    case 'CLUB_PROMOTION':
+      title = data.title || 'Lời mời tham gia CLB'
+      message = data.message || 'Bạn được mời tham gia CLB'
+      break
+
+    case 'MINI_TOURNAMENT_PROMOTION':
+      title = data.title || 'Lời mời tham gia kèo đấu'
+      message = data.message || 'Bạn được mời tham gia kèo đấu'
+      break
+
     case 'VerifyEmailNotification':
       title = 'Xác thực email'
       message = 'Vui lòng xác thực email của bạn'
@@ -437,6 +452,31 @@ const redirectByType = (n) => {
           collectionId: d.club_fund_collection_id,
           contributionId: d.club_fund_contribution_id
         }
+      })
+      break
+
+    case 'CLUB_ACTIVITY_PROMOTION':
+      if (!d.club_id || !d.club_activity_id) return
+      router.push({
+        name: 'club-detail-activity',
+        params: { id: d.club_id },
+        query: { activityId: d.club_activity_id }
+      })
+      break
+
+    case 'CLUB_PROMOTION':
+      if (!d.club_id) return
+      router.push({
+        name: 'club-detail',
+        params: { id: d.club_id }
+      })
+      break
+
+    case 'MINI_TOURNAMENT_PROMOTION':
+      if (!d.mini_tournament_id) return
+      router.push({
+        name: 'mini-tournament-detail',
+        params: { id: d.mini_tournament_id }
       })
       break
 

@@ -151,7 +151,12 @@ export const updateActivity = async (clubId, activityId, data) => {
 }
 
 export const getNotificationType = async (clubId) => {
-    return axiosInstance.get(`${API_ENDPOINT.CLUB}/${clubId}/notifications/types`).then((response) => response.data);
+    const response = await axiosInstance.get(`${API_ENDPOINT.CLUB}/${clubId}/notifications/types`)
+    const data = response?.data
+    if (Array.isArray(data)) return data
+    if (Array.isArray(data?.data)) return data.data
+    if (Array.isArray(data?.data?.data)) return data.data.data
+    return []
 }
 
 export const cancelActivityJoinRequest = async (clubId, activityId, participantId) => {

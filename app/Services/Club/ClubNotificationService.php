@@ -86,8 +86,21 @@ class ClubNotificationService
             }
 
             $status = $data['status'] ?? ClubNotificationStatus::Draft;
-            if ($status === ClubNotificationStatus::Sent && $notification->recipients()->count() > 0) {
-                $this->dispatchUserNotifications($club, $notification);
+            $isSent = $status === ClubNotificationStatus::Sent
+                || (is_string($status) && strtolower($status) === 'sent');
+            if ($isSent) {
+                if ($notification->recipients()->count() === 0) {
+                    $allMemberUserIds = $club->activeMembers()->pluck('user_id');
+                    foreach ($allMemberUserIds as $memberUserId) {
+                        $notification->recipients()->firstOrCreate(
+                            ['user_id' => $memberUserId],
+                            ['is_read' => false]
+                        );
+                    }
+                }
+                if ($notification->recipients()->count() > 0) {
+                    $this->dispatchUserNotifications($club, $notification);
+                }
             }
 
             return $notification;

@@ -39,7 +39,7 @@ class ClubResource extends JsonResource
             'members' => ClubMemberResource::collection($this->whenLoaded('members')),
             'quantity_members' => $this->whenLoaded('members', fn() =>
                 $this->members
-                    ->filter(fn($m) => $m->user !== null) // Chỉ đếm members có user tồn tại
+                    ->filter(fn($m) => $m->user !== null)
                     ->where('membership_status', ClubMembershipStatus::Joined)
                     ->where('status', ClubMemberStatus::Active)
                     ->count(),
@@ -47,7 +47,7 @@ class ClubResource extends JsonResource
             ),
             'skill_level' => $this->whenLoaded('members', function () {
                 $scores = $this->members
-                    ->filter(fn($m) => $m->user !== null) // Chỉ lấy members có user tồn tại
+                    ->filter(fn($m) => $m->user !== null)
                     ->where('membership_status', ClubMembershipStatus::Joined)
                     ->where('status', ClubMemberStatus::Active)
                     ->map(fn($member) => $this->getMemberVnduprScore($member))
