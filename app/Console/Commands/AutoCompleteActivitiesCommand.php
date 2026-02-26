@@ -4,12 +4,19 @@ namespace App\Console\Commands;
 
 use App\Enums\ClubActivityStatus;
 use App\Models\Club\ClubActivity;
+use App\Services\Club\ClubActivityService;
 use Illuminate\Console\Command;
 
 class AutoCompleteActivitiesCommand extends Command
 {
     protected $signature = 'activities:auto-complete';
-    protected $description = 'Tự động cập nhật status: scheduled->ongoing (đang diễn ra), scheduled/ongoing->completed (đã qua end_time)';
+    protected $description = 'Tự động cập nhật status: scheduled->ongoing (đang diễn ra), scheduled/ongoing->completed (đã qua end_time). Với recurring: tạo occurrence tiếp theo.';
+
+    public function __construct(
+        private ClubActivityService $activityService
+    ) {
+        parent::__construct();
+    }
 
     public function handle(): int
     {
@@ -38,6 +45,12 @@ class AutoCompleteActivitiesCommand extends Command
             $activity->update(['status' => ClubActivityStatus::Completed]);
             $completed++;
             $this->line("  ✓ Completed: #{$activity->id} {$activity->title}");
+
+            // Recurring: tạo occurrence tiếp theo nếu chưa có (giống khi admin bấm "Hoàn thành")
+            if ($activity->isRecurring()) {
+                $activity->refresh();
+                $this->activityService->ensureNextOccurrenceForCompleted($activity);
+            }
         }
 
         $this->info("Đã cập nhật: {$ongoing} ongoing, {$completed} completed.");

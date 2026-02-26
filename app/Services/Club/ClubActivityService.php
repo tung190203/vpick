@@ -389,6 +389,21 @@ class ClubActivityService
     }
 
     /**
+     * Đảm bảo có occurrence tiếp theo sau khi activity recurring hoàn thành (gọi từ cron hoặc manual).
+     * Tạo occurrence mới nếu chưa có trong 30 ngày tới.
+     */
+    public function ensureNextOccurrenceForCompleted(ClubActivity $completedActivity): void
+    {
+        if (!$completedActivity->isRecurring()) {
+            return;
+        }
+        $userId = $completedActivity->created_by ?? 0;
+        if ($userId > 0) {
+            $this->ensureNextOccurrenceExists($completedActivity, $userId);
+        }
+    }
+
+    /**
      * Đảm bảo có occurrence tiếp theo sau khi activity recurring hoàn thành.
      * Tạo occurrence mới nếu chưa có trong 30 ngày tới.
      */
