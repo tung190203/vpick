@@ -12,18 +12,18 @@
     "src": "node_modules/leaflet/dist/images/marker-icon.png"
   },
   "resources/css/app.css": {
-    "file": "assets/app-DbpDyTU7.css",
+    "file": "assets/app-DP4JO4Sn.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-WO0RdQ3J.js",
+    "file": "assets/app-CByn3bBO.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "css": [
-      "assets/app-C-zckQoj.css",
-      "assets/app-DbpDyTU7.css"
+      "assets/app-DHDdhC3U.css",
+      "assets/app-DP4JO4Sn.css"
     ],
     "assets": [
       "assets/dashboard-bg-j02aDZD4.svg",
@@ -32,9 +32,6 @@
       "assets/3rd-Bp28LztR.png",
       "assets/splash-bg-hSO4uccQ.png",
       "assets/club-default-thumbnail-BMB6u-Xk.svg",
-      "assets/silver-R3zTUbpa.png",
-      "assets/gold-CtO91gpL.png",
-      "assets/bronze-Bp5Lnjt9.png",
       "assets/bracket_banner-BPBAgU1S.png",
       "assets/pickleball-banner-CEzsk-BQ.png",
       "assets/pickleball-banner-1-DkgNn8B4.png",
@@ -93,17 +90,5 @@
   "resources/js/assets/ranking/3rd.png": {
     "file": "assets/3rd-Bp28LztR.png",
     "src": "resources/js/assets/ranking/3rd.png"
-  },
-  "resources/js/assets/ranking/bronze.png": {
-    "file": "assets/bronze-Bp5Lnjt9.png",
-    "src": "resources/js/assets/ranking/bronze.png"
-  },
-  "resources/js/assets/ranking/gold.png": {
-    "file": "assets/gold-CtO91gpL.png",
-    "src": "resources/js/assets/ranking/gold.png"
-  },
-  "resources/js/assets/ranking/silver.png": {
-    "file": "assets/silver-R3zTUbpa.png",
-    "src": "resources/js/assets/ranking/silver.png"
   }
 }
