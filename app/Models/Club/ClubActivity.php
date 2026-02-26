@@ -319,15 +319,17 @@ class ClubActivity extends Model
 
         $currentDayOfWeek = $fromDate->dayOfWeek;
 
+        $timeString = $this->start_time?->format('H:i:s') ?? $fromDate->format('H:i:s');
+
         foreach ($weekDays as $targetDay) {
             if ($targetDay > $currentDayOfWeek) {
                 $daysToAdd = $targetDay - $currentDayOfWeek;
-                return $fromDate->copy()->addDays($daysToAdd)->setTimeFromTimeString($fromDate->format('H:i:s'));
+                return $fromDate->copy()->addDays($daysToAdd)->setTimeFromTimeString($timeString);
             }
         }
 
         $daysToAdd = 7 - $currentDayOfWeek + $weekDays[0];
-        return $fromDate->copy()->addDays($daysToAdd)->setTimeFromTimeString($fromDate->format('H:i:s'));
+        return $fromDate->copy()->addDays($daysToAdd)->setTimeFromTimeString($timeString);
     }
 
     private function calculateNextMonthlyOccurrence(Carbon $fromDate, ?string $dateString): ?Carbon
@@ -344,6 +346,9 @@ class ClubActivity extends Model
         $targetDay = $dateInfo['day'];
 
         $nextDate = $fromDate->copy()->day(min($targetDay, $fromDate->daysInMonth));
+        if ($this->start_time) {
+            $nextDate->setTimeFromTimeString($this->start_time->format('H:i:s'));
+        }
 
         if ($nextDate->lte($fromDate)) {
             $nextDate->addMonth();
@@ -369,9 +374,14 @@ class ClubActivity extends Model
         $quarterStartMonths = [1, 4, 7, 10];
         $currentMonth = $fromDate->month;
 
+        $timeString = $this->start_time?->format('H:i:s');
+
         foreach ($quarterStartMonths as $month) {
             if ($month >= $currentMonth) {
                 $nextDate = $fromDate->copy()->month($month)->day(min($targetDay, Carbon::create($fromDate->year, $month)->daysInMonth));
+                if ($timeString) {
+                    $nextDate->setTimeFromTimeString($timeString);
+                }
 
                 if ($nextDate->gt($fromDate)) {
                     return $nextDate;
@@ -380,6 +390,9 @@ class ClubActivity extends Model
         }
 
         $nextDate = $fromDate->copy()->addYear()->month(1)->day(min($targetDay, 31));
+        if ($timeString) {
+            $nextDate->setTimeFromTimeString($timeString);
+        }
         return $nextDate;
     }
 
@@ -400,6 +413,10 @@ class ClubActivity extends Model
         $nextDate = $fromDate->copy()
             ->month($targetMonth)
             ->day(min($targetDay, Carbon::create($fromDate->year, $targetMonth)->daysInMonth));
+
+        if ($this->start_time) {
+            $nextDate->setTimeFromTimeString($this->start_time->format('H:i:s'));
+        }
 
         if ($nextDate->lte($fromDate)) {
             $nextDate->addYear();
