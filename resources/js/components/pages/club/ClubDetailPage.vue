@@ -1317,7 +1317,9 @@ const getClubActivities = async () => {
             page: 1,
             per_page: activityPerPage.value,
         })
-        const allActivities = (response.data.activities || []).map(formatActivity)
+        const activitiesData = response.data?.activities
+        const activitiesList = Array.isArray(activitiesData) ? activitiesData : (activitiesData?.data || [])
+        const allActivities = activitiesList.map(formatActivity)
         activities.value = allActivities.filter(a => a.status !== 'completed' && !dayjs().isAfter(dayjs(a.end_time))).slice(0, 5)
 
         startCountdown()
@@ -1338,7 +1340,9 @@ const getMoreUpcomingActivities = async (append = false) => {
             per_page: activityPerPage.value,
             statuses: ['scheduled', 'ongoing']
         })
-        const formatted = (response.data.activities || []).map(formatActivity)
+        const activitiesData = response.data?.activities
+        const activitiesList = Array.isArray(activitiesData) ? activitiesData : (activitiesData?.data || [])
+        const formatted = activitiesList.map(formatActivity)
         if (append) {
             upcomingActivities.value = [...upcomingActivities.value, ...formatted]
         } else {
@@ -1364,7 +1368,9 @@ const getMoreHistoryActivities = async (append = false) => {
             per_page: activityPerPage.value,
             statuses: ['completed', 'cancelled']
         })
-        const formatted = (response.data.activities || []).map(formatActivity)
+        const activitiesData = response.data?.activities
+        const activitiesList = Array.isArray(activitiesData) ? activitiesData : (activitiesData?.data || [])
+        const formatted = activitiesList.map(formatActivity)
         if (append) {
             historyActivities.value = [...historyActivities.value, ...formatted]
         } else {
