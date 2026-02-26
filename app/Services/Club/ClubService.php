@@ -365,9 +365,12 @@ class ClubService
         }
 
         if ($isMember) {
-            $members = $club->joinedMembers()->with(['user' => User::FULL_RELATIONS])->get();
-            $enrichedMembers = $this->memberService->enrichMembersWithRanking($members);
-            $club->setRelation('members', $enrichedMembers);
+            // Chỉ load relations cần thiết; không gọi enrichMembersWithRanking (250+ query với 50 members)
+            // Ranking/win_rate load riêng qua API leaderboard khi user mở tab
+            $members = $club->joinedMembers()
+                ->with(['user' => fn ($q) => $q->with(['sports', 'sports.sport', 'sports.scores'])])
+                ->get();
+            $club->setRelation('members', $members);
         }
 
         return $club;
