@@ -35,7 +35,7 @@ class ClubActivityService
         $query = $club->activities()
             ->with([
                 'participants.user',
-                'creator'
+                'creator',
             ]);
 
         if (!empty($filters['type'])) {
@@ -55,7 +55,6 @@ class ClubActivityService
                 $query->whereIn('status', $activityStatuses);
             }
 
-            // Tab "ĐANG DIỄN RA": loại activities đã qua end_time (dù status còn scheduled)
             if (!empty($activityStatuses) && !in_array('completed', $activityStatuses) && !in_array('cancelled', $activityStatuses)) {
                 $query->where('end_time', '>=', now());
             }
@@ -88,19 +87,27 @@ class ClubActivityService
             || (($hasRegistered || $hasAvailable) && empty($activityStatuses));
 
         if ($shouldCollapseRecurring) {
-            $query->where(function ($q) {
+            $firstsSub = DB::table('club_activities')
+                ->select('club_id', 'title', 'recurring_schedule', DB::raw('MIN(start_time) as min_start'))
+                ->where('club_id', $club->id)
+                ->whereNotNull('recurring_schedule')
+                ->whereIn('status', [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing])
+                ->groupBy('club_id', 'title', 'recurring_schedule');
+
+            $firstOccurrenceIds = DB::table('club_activities as ca')
+                ->select('ca.id')
+                ->joinSub($firstsSub, 'firsts', function ($join) {
+                    $join->on('ca.club_id', '=', 'firsts.club_id')
+                        ->on('ca.title', '=', 'firsts.title')
+                        ->whereRaw('(ca.recurring_schedule <=> firsts.recurring_schedule)')
+                        ->on('ca.start_time', '=', 'firsts.min_start')
+                        ->whereIn('ca.status', [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing]);
+                });
+
+            $query->where(function ($q) use ($firstOccurrenceIds) {
                 $q->whereNull('recurring_schedule')
                     ->orWhereNotIn('status', [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing])
-                    ->orWhereNotExists(function ($sub) {
-                        $sub->select(DB::raw(1))
-                            ->from('club_activities as a2')
-                            ->whereColumn('a2.club_id', 'club_activities.club_id')
-                            ->whereColumn('a2.title', 'club_activities.title')
-                            ->whereRaw('(a2.recurring_schedule <=> club_activities.recurring_schedule)')
-                            ->whereIn('a2.status', [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing])
-                            ->whereColumn('a2.start_time', '<', 'club_activities.start_time')
-                            ->whereColumn('a2.id', '!=', 'club_activities.id');
-                    });
+                    ->orWhereIn('id', $firstOccurrenceIds);
             });
         }
 
