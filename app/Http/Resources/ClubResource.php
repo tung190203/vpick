@@ -87,7 +87,6 @@ class ClubResource extends JsonResource
         ];
     }
 
-    /** Chỉ trả về thông tin chung + giới thiệu + footer khi chưa tham gia CLB */
     protected function toLimitedArray(): array
     {
         $profile = $this->profile;
