@@ -128,13 +128,15 @@
                                 </div>
 
                                 <!-- Info -->
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex items-center gap-2">
-                                        <span class="font-semibold text-gray-800">{{ user.name }}</span>
+                                <div class="flex-1 min-w-0 pr-2">
+                                    <div class="w-full">
+                                        <div class="font-semibold text-gray-800 truncate" :title="user.name">
+                                            {{ user.name }}
+                                        </div>
                                     </div>
-                                    <div class="flex items-center gap-2 text-sm text-gray-500">
-                                        <component :is="user.gender == 1 ? maleIcon : femaleIcon" class="w-4 h-4" />
-                                        <span>{{ user.gender_text }}</span>
+                                    <div class="flex items-center gap-2 text-sm text-gray-500 mt-0.5">
+                                        <component :is="user.gender == 1 ? maleIcon : femaleIcon" class="w-4 h-4 flex-shrink-0" />
+                                        <span class="truncate">{{ user.gender_text }}</span>
                                     </div>
                                 </div>
 

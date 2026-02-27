@@ -46,6 +46,7 @@ class ClubActivityResource extends JsonResource
                 : null,
             'status' => $this->status,
             'created_by' => $this->created_by,
+            'creator_always_join' => (bool) ($this->creator_always_join ?? true),
             'participants_count' => $this->whenLoaded('participants', fn() => $this->participants->count()),
             'accepted_count' => $this->whenLoaded('participants', fn() => $this->participants->where('status', ClubActivityParticipantStatus::Accepted)->count()),
             'attended_count' => $this->whenLoaded('participants', fn() => $this->participants->where('status', ClubActivityParticipantStatus::Attended)->count()),
