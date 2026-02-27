@@ -4,42 +4,74 @@ namespace App\Console\Commands;
 
 use App\Enums\ClubActivityStatus;
 use App\Models\Club\ClubActivity;
-use Illuminate\Console\Command;
 use Carbon\Carbon;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 
 class AutoCompleteActivities extends Command
 {
     protected $signature = 'activities:auto-complete';
-    protected $description = 'Tự động chuyển các hoạt động đã qua ngày sang trạng thái completed';
+
+    protected $description = 'Đồng bộ status activity theo thời gian (scheduled/ongoing/completed)';
+
     public function handle()
     {
-        $today = Carbon::now()->startOfDay();
-
-        // Chỉ lấy activities không phải recurring HOẶC là recurring nhưng đã có occurrence tiếp theo
-        $activities = ClubActivity::whereIn('status', [
-            ClubActivityStatus::Scheduled,
-            ClubActivityStatus::Ongoing
-        ])
-            ->whereNotNull('end_time')
-            ->whereDate('end_time', '<', $today)
+        $activities = ClubActivity::where('status', '!=', ClubActivityStatus::Cancelled)
             ->get();
 
-        $count = 0;
+        $now = Carbon::now();
+        $updatedCompleted = 0;
+        $updatedOngoing = 0;
+        $updatedScheduled = 0;
+        $affectedClubIds = [];
 
         foreach ($activities as $activity) {
-            $activity->update(['status' => ClubActivityStatus::Completed]);
-            $count++;
+            $targetStatus = $this->computeStatus($activity, $now);
 
-            $activityDate = $activity->end_time->format('d/m/Y');
-            $this->info("✓ Activity #{$activity->id} '{$activity->title}' (ngày {$activityDate}) đã được đánh dấu completed");
+            if ($activity->status !== $targetStatus) {
+                $activity->update(['status' => $targetStatus]);
+                $affectedClubIds[$activity->club_id] = true;
+
+                $activityInfo = "#{$activity->id} '{$activity->title}'";
+                match ($targetStatus) {
+                    ClubActivityStatus::Completed => $this->info("✓ Activity {$activityInfo} → completed"),
+                    ClubActivityStatus::Ongoing => $this->info("✓ Activity {$activityInfo} → ongoing"),
+                    ClubActivityStatus::Scheduled => $this->info("✓ Activity {$activityInfo} → scheduled"),
+                    default => null,
+                };
+
+                match ($targetStatus) {
+                    ClubActivityStatus::Completed => $updatedCompleted++,
+                    ClubActivityStatus::Ongoing => $updatedOngoing++,
+                    ClubActivityStatus::Scheduled => $updatedScheduled++,
+                    default => null,
+                };
+            }
         }
 
-        if ($count > 0) {
-            $this->info("Đã tự động complete {$count} hoạt động");
-        } elseif ($count === 0) {
-            $this->info('Không có hoạt động nào cần complete');
+        $total = $updatedCompleted + $updatedOngoing + $updatedScheduled;
+        if ($total > 0) {
+            foreach (array_keys($affectedClubIds) as $clubId) {
+                Cache::increment('club_activities_version:' . $clubId);
+            }
+            $this->info("Đã đồng bộ {$total} hoạt động (completed: {$updatedCompleted}, ongoing: {$updatedOngoing}, scheduled: {$updatedScheduled})");
+        } else {
+            $this->info('Không có hoạt động nào cần cập nhật');
         }
 
         return 0;
+    }
+
+    private function computeStatus(ClubActivity $activity, Carbon $now): ClubActivityStatus
+    {
+        if ($activity->end_time && $activity->end_time->lte($now)) {
+            return ClubActivityStatus::Completed;
+        }
+        if ($activity->start_time && $activity->end_time
+            && $now->gte($activity->start_time) && $now->lt($activity->end_time)) {
+            return ClubActivityStatus::Ongoing;
+        }
+
+        return ClubActivityStatus::Scheduled;
     }
 }
