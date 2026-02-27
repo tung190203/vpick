@@ -188,6 +188,8 @@ Route::middleware(['auth:api', 'update.last_login'])->group(function () {
                     Route::post('/{participantId}/decline-invite', [ClubActivityParticipantController::class, 'declineInvite']);
                     Route::post('/{participantId}/cancel', [ClubActivityParticipantController::class, 'cancel']);
                     Route::post('/{participantId}/withdraw', [ClubActivityParticipantController::class, 'withdraw']);
+                    Route::post('/self/check-in', [ClubActivityParticipantController::class, 'selfCheckIn']);
+                    Route::post('/self/absent', [ClubActivityParticipantController::class, 'selfMarkAbsent']);
                 });
             });
 
