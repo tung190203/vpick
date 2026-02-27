@@ -294,7 +294,7 @@
                                 v-for="(item, index) in transactions" :key="index">
                                 <div class="flex items-center space-x-4">
                                     <div>
-                                        <p class="font-bold text-[#1F2937] text-[15px]">{{ item.description || 'Chưa có mô tả' }}</p>
+                                        <p class="font-bold text-[#1F2937] text-[15px] whitespace-pre-line">{{ item.description || 'Chưa có mô tả' }}</p>
                                         <p class="text-[12px] text-[#838799] font-normal mt-0.5">
                                             {{ item.source_type === 'income' ? 'Thu' : 'Chi' }} ngày {{ formatDatetime(item.created_at, '/') }}
                                         </p>
@@ -340,7 +340,7 @@
                                     <div class="space-y-4 border-b border-[#dcdee6] pb-4" v-for="(item, index) in myTransactions.need_payment" :key="index">
                                         <div class="flex justify-between items-start">
                                             <div>
-                                                <h3 class="font-semibold text-[#1F2937]">{{ item.description }}</h3>
+                                                <h3 class="font-semibold text-[#1F2937] whitespace-pre-line">{{ item.description }}</h3>
                                                 <div class="flex items-center space-x-1.5 mt-1 text-[#D72D36]">
                                                     <CalendarIcon class="w-4 h-4" />
                                                     <span class="text-sm font-semibold">Hạn chót: {{ formatDatetime(item.end_date, '/') }}</span>
@@ -376,7 +376,7 @@
                                         <!-- Pending Approval Card (Sample) -->
                                         <div class="bg-[#FDF2E2] rounded-lg p-4 border-l-[3px] border-[#F0AC3A] relative flex flex-col space-y-4 shadow-sm" v-for="(item, index) in myTransactions.pending" :key="index">
                                             <div class="flex justify-between items-start">
-                                                <h3 class="font-semibold text-[#1F2937]">{{ item.description }}</h3>
+                                                <h3 class="font-semibold text-[#1F2937] whitespace-pre-line">{{ item.description }}</h3>
                                                 <span class="text-[#1F2937] font-semibold">{{ formatCurrency(item.my_contribution?.amount) + 'đ' }}</span>
                                             </div>
                                             <div class="flex items-center justify-between">
@@ -561,7 +561,7 @@
                                 class="flex items-center justify-between mx-6 py-5 border-b border-[#dcdee6] hover:bg-gray-50/30 transition-colors cursor-pointer last:border-b-0">
                                 <div class="flex items-center space-x-4">
                                     <div>
-                                        <p class="font-bold text-[#1F2937] text-[15px]">{{ item.description || 'Chưa có mô tả' }}</p>
+                                        <p class="font-bold text-[#1F2937] text-[15px] whitespace-pre-line">{{ item.description || 'Chưa có mô tả' }}</p>
                                         <p class="text-[12px] text-[#10B981] font-normal mt-0.5">Hoàn tất: {{ formatDatetime(item.created_at, '/') }}</p>
                                     </div>
                                 </div>

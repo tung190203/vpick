@@ -491,6 +491,68 @@ class ClubActivityParticipantService
         $participant->update([
             'status' => ClubActivityParticipantStatus::Attended,
             'checked_in_at' => now(),
+            'is_absent' => false,
+        ]);
+
+        return $participant;
+    }
+
+    public function manualCheckIn(ClubActivityParticipant $participant, int $userId): ClubActivityParticipant
+    {
+        $activity = $participant->activity;
+
+        if ($activity->status === ClubActivityStatus::Cancelled) {
+            throw new \Exception('Sự kiện đã bị hủy');
+        }
+
+        if ($activity->status === ClubActivityStatus::Completed) {
+            throw new \Exception('Sự kiện đã kết thúc, không thể check-in');
+        }
+
+        if ($activity->end_time && $activity->end_time->isPast()) {
+            throw new \Exception('Sự kiện đã qua giờ kết thúc, không thể check-in');
+        }
+
+        if ($participant->user_id !== $userId) {
+            throw new \Exception('Chỉ có thể check-in cho chính mình');
+        }
+
+        if ($participant->status === ClubActivityParticipantStatus::Attended) {
+            return $participant;
+        }
+
+        if ($participant->status !== ClubActivityParticipantStatus::Accepted) {
+            throw new \Exception('Chỉ có thể check-in khi người tham gia đã được duyệt');
+        }
+
+        $participant->update([
+            'status' => ClubActivityParticipantStatus::Attended,
+            'checked_in_at' => now(),
+            'is_absent' => false,
+        ]);
+
+        return $participant;
+    }
+
+    public function markAbsent(ClubActivityParticipant $participant, int $userId): ClubActivityParticipant
+    {
+        $activity = $participant->activity;
+
+        if ($activity->status === ClubActivityStatus::Cancelled) {
+            throw new \Exception('Sự kiện đã bị hủy');
+        }
+
+        if ($activity->status === ClubActivityStatus::Completed) {
+            throw new \Exception('Sự kiện đã kết thúc, không thể báo vắng');
+        }
+
+        if ($participant->user_id !== $userId) {
+            throw new \Exception('Chỉ có thể báo vắng cho chính mình');
+        }
+
+        $participant->update([
+            'status' => ClubActivityParticipantStatus::Absent,
+            'is_absent' => true,
         ]);
 
         return $participant;

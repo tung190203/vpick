@@ -142,12 +142,25 @@ export const createNotification = async (clubId, data) => {
     return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/notifications`, data).then((response) => response.data);
 }
 
+export const deleteNotification = async (clubId, notificationId) => {
+    return axiosInstance.delete(`${API_ENDPOINT.CLUB}/${clubId}/notifications/${notificationId}`).then((response) => response.data);
+}
+
+export const updateNotification = async (clubId, notificationId, data) => {
+    return axiosInstance.put(`${API_ENDPOINT.CLUB}/${clubId}/notifications/${notificationId}`, data).then((response) => response.data);
+}
+
 export const togglePin = async (clubId, notificationId) => {
     return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/notifications/${notificationId}/pin`).then((response) => response.data);
 }
 
 export const updateActivity = async (clubId, activityId, data) => {
-    return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/activities/${activityId}`, data).then((response) => response.data);
+    const isFormData = data instanceof FormData
+    if (isFormData) {
+        if (!data.has('_method')) data.append('_method', 'PUT')
+        return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/activities/${activityId}`, data).then((response) => response.data);
+    }
+    return axiosInstance.put(`${API_ENDPOINT.CLUB}/${clubId}/activities/${activityId}`, data).then((response) => response.data);
 }
 
 export const getNotificationType = async (clubId) => {

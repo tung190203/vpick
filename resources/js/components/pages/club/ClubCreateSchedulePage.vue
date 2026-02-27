@@ -76,6 +76,16 @@
                 </div>
               </div>
 
+              <!-- Creator Always Join -->
+              <div class="flex items-center justify-between py-2 border-b border-gray-50 pb-4">
+                <div class="space-y-1">
+                  <label class="text-sm font-bold text-[#838799] uppercase tracking-wider">NGƯỜI TẠO LUÔN THAM GIA</label>
+                </div>
+                <div class="flex items-center gap-6">
+                  <Toggle v-model="form.creator_always_join" />
+                </div>
+              </div>
+
               <!-- Max Participants -->
               <div class="flex items-center justify-between py-2 border-b border-gray-50 pb-4">
                 <div class="space-y-1">
@@ -479,6 +489,7 @@ const form = ref({
   fee_split_type: 'equal',
   is_public: true,
   max_participants: 1,
+  creator_always_join: true,
   qr_image: null,
   qr_file: null,
 })
@@ -658,6 +669,8 @@ const handleSubmit = async () => {
     if (isLimitParticipants.value) {
       formData.append('max_participants', form.value.max_participants)
     }
+
+    formData.append('creator_always_join', form.value.creator_always_join ? 1 : 0)
 
     if (form.value.qr_file) {
       formData.append('qr_image', form.value.qr_file)

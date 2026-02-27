@@ -57,7 +57,7 @@
               {{ activity.is_private ? 'Private' : 'Public' }}
             </span>
           </div>
-          <p class="text-[#838799]">{{ activity.summary }}</p>
+          <p class="text-[#838799] whitespace-pre-line">{{ activity.summary }}</p>
         </div>
         <div class="flex items-center gap-3" v-if="isFinished">
           <Button 
