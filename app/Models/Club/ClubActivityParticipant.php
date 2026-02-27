@@ -20,6 +20,7 @@ class ClubActivityParticipant extends Model
         'sport_score',
         'vndupr_score',
         'checked_in_at',
+        'is_absent',
     ];
 
     protected $casts = [
@@ -27,6 +28,7 @@ class ClubActivityParticipant extends Model
         'sport_score' => 'decimal:2',
         'vndupr_score' => 'decimal:2',
         'checked_in_at' => 'datetime',
+        'is_absent' => 'boolean',
     ];
 
     public function activity()

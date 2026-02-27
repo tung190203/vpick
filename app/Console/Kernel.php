@@ -18,7 +18,7 @@ class Kernel extends ConsoleKernel
             DeviceToken::where('last_seen_at', '<', now()->subDays(60))->delete();
         })->daily();
 
-        $schedule->command('activities:auto-complete')->everyFiveMinutes();
+        $schedule->command('activities:auto-complete')->everyTwoMinutes();
     }
 
     protected function commands(): void
