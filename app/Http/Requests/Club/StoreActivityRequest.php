@@ -39,6 +39,11 @@ class StoreActivityRequest extends FormRequest
                 'allow_member_invite' => filter_var($this->allow_member_invite, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false
             ]);
         }
+        if ($this->has('creator_always_join')) {
+            $this->merge([
+                'creator_always_join' => filter_var($this->creator_always_join, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true
+            ]);
+        }
     }
 
     public function rules(): array
@@ -68,6 +73,7 @@ class StoreActivityRequest extends FormRequest
             'is_public' => 'sometimes|boolean',
             'max_participants' => 'nullable|integer|min:1',
             'qr_image' => 'nullable|image|mimes:png,jpg,jpeg|max:5120',
+            'creator_always_join' => 'sometimes|boolean',
         ];
     }
 }

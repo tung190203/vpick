@@ -16,6 +16,7 @@ class ClubActivityParticipantResource extends JsonResource
             'user_id' => $this->user_id,
             'status' => $this->status,
             'has_checked_in' => $this->checked_in_at !== null,
+            'is_absent' => (bool) ($this->is_absent ?? false),
             'has_paid' => $this->wallet_transaction_id !== null,
             'user' => new UserResource($this->whenLoaded('user')),
             'sport_score' => $this->sport_score ? (float) $this->sport_score : null,

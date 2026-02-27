@@ -301,6 +301,75 @@ class ClubActivityParticipantController extends Controller
         }
     }
 
+    public function selfCheckIn($clubId, $activityId)
+    {
+        $userId = auth()->id();
+
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
+        }
+
+        $participant = ClubActivityParticipant::whereHas('activity', function ($q) use ($clubId) {
+            $q->where('club_id', $clubId);
+        })->where('club_activity_id', $activityId)
+            ->where('user_id', $userId)
+            ->with(['activity', 'user'])
+            ->first();
+
+        if (!$participant) {
+            return ResponseHelper::error('Bạn chưa tham gia hoạt động này', 422);
+        }
+
+        try {
+            $participant = $this->participantService->manualCheckIn($participant, $userId);
+            $participant->load(['user']);
+
+            return ResponseHelper::success(
+                new ClubActivityParticipantResource($participant),
+                'Đã check-in hoạt động'
+            );
+        } catch (\Exception $e) {
+            $statusCode = str_contains($e->getMessage(), 'đã bị hủy') ||
+                         str_contains($e->getMessage(), 'kết thúc') ||
+                         str_contains($e->getMessage(), 'được duyệt') ? 422 : 403;
+            return ResponseHelper::error($e->getMessage(), $statusCode);
+        }
+    }
+
+    public function selfMarkAbsent($clubId, $activityId)
+    {
+        $userId = auth()->id();
+
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
+        }
+
+        $participant = ClubActivityParticipant::whereHas('activity', function ($q) use ($clubId) {
+            $q->where('club_id', $clubId);
+        })->where('club_activity_id', $activityId)
+            ->where('user_id', $userId)
+            ->with(['activity', 'user'])
+            ->first();
+
+        if (!$participant) {
+            return ResponseHelper::error('Bạn chưa tham gia hoạt động này', 422);
+        }
+
+        try {
+            $participant = $this->participantService->markAbsent($participant, $userId);
+            $participant->load(['user']);
+
+            return ResponseHelper::success(
+                new ClubActivityParticipantResource($participant),
+                'Đã báo vắng cho người tham gia'
+            );
+        } catch (\Exception $e) {
+            $statusCode = str_contains($e->getMessage(), 'đã bị hủy') ||
+                         str_contains($e->getMessage(), 'kết thúc') ? 422 : 403;
+            return ResponseHelper::error($e->getMessage(), $statusCode);
+        }
+    }
+
     public function checkIn(CheckInRequest $request, $clubId, $activityId)
     {
         $activity = ClubActivity::where('club_id', $clubId)->findOrFail($activityId);

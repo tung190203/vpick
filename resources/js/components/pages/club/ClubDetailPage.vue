@@ -400,7 +400,10 @@
             <!-- Notification Detail Modal -->
             <ClubNotificationDetailModal v-model="isDetailModalOpen" :notification="selectedNotification"
                 :is-admin="hasAnyRole(['admin', 'manager', 'secretary'])"
-                @unpin="handleUnpinNotification" @pin="handlePinNotification" />
+                :is-updating="isUpdatingNotification"
+                :notification-types="notificationType"
+                @unpin="handleUnpinNotification" @pin="handlePinNotification"
+                @update="handleUpdateNotification" @delete="handleDeleteNotificationAsk" />
 
             <!-- Activity Schedule Modal -->
             <ClubActivityModal :is-open="isActivityModalOpen" :thumbnail="Thumbnail"
@@ -444,6 +447,11 @@
                 message="Bạn muốn ghim thông báo này? (Tối đa 3 thông báo được ghim)" confirmButtonText="Ghim ngay"
                 confirmButtonClass="!bg-[#00B377] hover:!bg-[#009664]"
                 @confirm="confirmPinNotification" />
+
+            <!-- Delete Notification Confirmation Modal -->
+            <DeleteConfirmationModal v-model="isDeleteNotificationModalOpen" title="Xoá thông báo"
+                message="Bạn có chắc chắn muốn xoá thông báo này? Thao tác này không thể hoàn tác."
+                confirmButtonText="Xoá ngay" @confirm="confirmDeleteNotification" />
 
             <!-- Zalo QR Modal -->
             <Transition name="modal">
@@ -604,11 +612,14 @@ const isZaloLinkConfirmModalOpen = ref(false)
 const isUpdatingClub = ref(false)
 const isUpdatingZalo = ref(false)
 const isCreatingNotification = ref(false)
+const isUpdatingNotification = ref(false)
 const isSubmittingTransfer = ref(false)
 const isUnpinModalOpen = ref(false)
 const isPinModalOpen = ref(false)
+const isDeleteNotificationModalOpen = ref(false)
 const notificationToUnpin = ref(null)
 const notificationToPin = ref(null)
+const notificationToDelete = ref(null)
 const isUpdatingIntro = ref(false)
 const club = ref([]);
 const clubId = ref(route.params.id);
@@ -969,12 +980,58 @@ const handleCreateNotificationSubmit = async (data) => {
 
         await ClubService.createNotification(clubId.value, formData)
         await getClubNotification()
+        await getPinnedNotifications()
         isCreateNotificationModalOpen.value = false
         toast.success('Tạo thông báo thành công')
     } catch (error) {
         toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi tạo thông báo')
     } finally {
         isCreatingNotification.value = false
+    }
+}
+
+const handleUpdateNotification = async (data) => {
+    isUpdatingNotification.value = true
+    try {
+        const formData = new FormData()
+        formData.append('title', data.title)
+        formData.append('content', data.content || '')
+        if (data.club_notification_type_id) {
+            formData.append('club_notification_type_id', data.club_notification_type_id)
+        }
+        if (data.attachment) {
+            formData.append('attachment', data.attachment)
+        }
+        await ClubService.updateNotification(clubId.value, data.id, formData)
+        await getClubNotification()
+        await getPinnedNotifications()
+        // Update selectedNotification to reflect changes in view mode
+        const updated = notifications.value.find(n => n.id === data.id) ||
+            pinnedNotifications.value.find(n => n.id === data.id)
+        if (updated) selectedNotification.value = updated
+        toast.success('Cập nhật thông báo thành công')
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật thông báo')
+    } finally {
+        isUpdatingNotification.value = false
+    }
+}
+
+const handleDeleteNotificationAsk = (id) => {
+    notificationToDelete.value = id
+    isDeleteNotificationModalOpen.value = true
+}
+
+const confirmDeleteNotification = async () => {
+    try {
+        await ClubService.deleteNotification(clubId.value, notificationToDelete.value)
+        await getClubNotification()
+        await getPinnedNotifications()
+        isDeleteNotificationModalOpen.value = false
+        isDetailModalOpen.value = false // close detail modal if it's open
+        toast.success('Xoá thông báo thành công')
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi xoá thông báo')
     }
 }
 
@@ -1742,6 +1799,8 @@ onMounted(async () => {
         return;
     }
     await loadAllData()
+    // Always load notification types in background so they are ready for edit modal
+    getNotificationType()
 
     if (route.query.showNotifications) {
         openNotification()

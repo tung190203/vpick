@@ -37,7 +37,7 @@
       <div class="flex items-start justify-between">
         <h3 class="text-xl font-semibold leading-tight pr-8" :class="currentColors.title">{{ data.title }}</h3>
       </div>
-      <p class="leading-relaxed" :class="currentColors.content">
+      <p class="leading-relaxed line-clamp-2" :class="currentColors.content">
         {{ data.content }}
       </p>
       <div class="flex items-center text-xs space-x-1" :class="currentColors.subText">
