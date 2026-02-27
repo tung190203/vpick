@@ -203,6 +203,7 @@ class ClubActivityService
             'max_participants' => $data['max_participants'] ?? null,
             'status' => ClubActivityStatus::Scheduled,
             'created_by' => $userId,
+            'creator_always_join' => isset($data['creator_always_join']) ? (bool) $data['creator_always_join'] : true,
         ]);
 
         $checkInToken = Str::random(48);
@@ -211,15 +212,17 @@ class ClubActivityService
             'qr_code_url' => $qrCodeUrl,
         ]);
 
-        ClubActivityParticipant::firstOrCreate(
-            [
-                'club_activity_id' => $activity->id,
-                'user_id' => $userId,
-            ],
-            [
-                'status' => ClubActivityParticipantStatus::Accepted,
-            ]
-        );
+        if ($activity->creator_always_join) {
+            ClubActivityParticipant::firstOrCreate(
+                [
+                    'club_activity_id' => $activity->id,
+                    'user_id' => $userId,
+                ],
+                [
+                    'status' => ClubActivityParticipantStatus::Accepted,
+                ]
+            );
+        }
 
         return $activity;
     }
