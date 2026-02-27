@@ -4,11 +4,6 @@ namespace App\Http\Resources\Club;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-
-/**
- * Lightweight resource for activity list view
- * Only includes fields needed for displaying activity cards
- */
 class ClubActivityListResource extends JsonResource
 {
     public function toArray(Request $request): array
@@ -27,6 +22,7 @@ class ClubActivityListResource extends JsonResource
             'is_recurring' => $this->recurring_schedule !== null,
             'recurring_schedule' => $this->recurring_schedule,
             'created_by' => $this->created_by,
+            'creator_always_join' => (bool) ($this->creator_always_join ?? true),
             'creator' => new \App\Http\Resources\UserResource($this->whenLoaded('creator')),
             'fee_split_type' => $this->fee_split_type,
             'fee_amount' => $this->fee_amount ? (float) $this->fee_amount : null,

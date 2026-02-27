@@ -48,6 +48,7 @@ class ClubActivity extends Model
         'max_participants',
         'qr_code_url',
         'check_in_token',
+        'creator_always_join',
     ];
 
     protected $casts = [
@@ -64,6 +65,7 @@ class ClubActivity extends Model
         'longitude' => 'float',
         'allow_member_invite' => 'boolean',
         'is_public' => 'boolean',
+        'creator_always_join' => 'boolean',
     ];
 
     public function club()
