@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Enums\ClubActivityStatus;
 use App\Models\Club\ClubActivity;
+use App\Services\Club\ClubActivityService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
@@ -13,6 +14,12 @@ class AutoCompleteActivities extends Command
     protected $signature = 'activities:auto-complete';
 
     protected $description = 'Đồng bộ status activity theo thời gian (scheduled/ongoing/completed)';
+
+    public function __construct(
+        protected ClubActivityService $activityService
+    ) {
+        parent::__construct();
+    }
 
     public function handle()
     {
@@ -46,6 +53,15 @@ class AutoCompleteActivities extends Command
                     ClubActivityStatus::Scheduled => $updatedScheduled++,
                     default => null,
                 };
+
+                // Recurring: tạo occurrence tiếp theo khi activity hoàn thành (chỉ khi complete, không khi cancel)
+                if ($targetStatus === ClubActivityStatus::Completed && $activity->isRecurring()) {
+                    try {
+                        $this->activityService->ensureNextOccurrenceForCompleted($activity);
+                    } catch (\Throwable $e) {
+                        $this->warn("Không thể tạo occurrence tiếp theo cho #{$activity->id}: {$e->getMessage()}");
+                    }
+                }
             }
         }
 

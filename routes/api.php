@@ -169,7 +169,7 @@ Route::middleware(['auth:api', 'update.last_login'])->group(function () {
                 Route::get('/', [ClubActivityController::class, 'index']);
                 Route::post('/', [ClubActivityController::class, 'store']);
                 Route::get('/{activityId}', [ClubActivityController::class, 'show']);
-                Route::put('/{activityId}', [ClubActivityController::class, 'update']);
+                Route::match(['put', 'post'], '/{activityId}', [ClubActivityController::class, 'update']);
                 Route::delete('/{activityId}', [ClubActivityController::class, 'destroy']);
                 Route::post('/{activityId}/complete', [ClubActivityController::class, 'complete']);
                 Route::post('/{activityId}/cancel', [ClubActivityController::class, 'cancel']);
@@ -420,7 +420,7 @@ Route::middleware(['auth:api', 'update.last_login', 'throttle:api'])->group(func
                 Route::get('/', [ClubActivityController::class, 'index']);
                 Route::post('/', [ClubActivityController::class, 'store']);
                 Route::get('/{activityId}', [ClubActivityController::class, 'show']);
-                Route::put('/{activityId}', [ClubActivityController::class, 'update']);
+                Route::match(['put', 'post'], '/{activityId}', [ClubActivityController::class, 'update']);
                 Route::delete('/{activityId}', [ClubActivityController::class, 'destroy']);
                 Route::post('/{activityId}/complete', [ClubActivityController::class, 'complete']);
                 Route::post('/{activityId}/cancel', [ClubActivityController::class, 'cancel']);

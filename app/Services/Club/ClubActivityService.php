@@ -221,12 +221,6 @@ class ClubActivityService
             ]
         );
 
-        // Auto-generate future occurrences for recurring activities
-        // The original activity stays as scheduled - it is the first occurrence
-        if ($activity->isRecurring()) {
-            $this->generateInitialOccurrences($activity, $userId);
-        }
-
         return $activity;
     }
 
@@ -384,8 +378,27 @@ class ClubActivityService
                 }
             }
 
+            // Recurring: hủy chỉ áp dụng cho ngày đó, vẫn tạo lịch occurrence tiếp theo
+            if ($activity->isRecurring()) {
+                $this->ensureNextOccurrenceForCancelled($activity);
+            }
+
             return $activity;
         });
+    }
+
+    /**
+     * Đảm bảo có occurrence tiếp theo sau khi hủy một occurrence của recurring (chỉ hủy ngày đó, lịch tiếp vẫn tạo).
+     */
+    public function ensureNextOccurrenceForCancelled(ClubActivity $cancelledActivity): void
+    {
+        if (!$cancelledActivity->isRecurring()) {
+            return;
+        }
+        $userId = $cancelledActivity->created_by ?? 0;
+        if ($userId > 0) {
+            $this->ensureNextOccurrenceExists($cancelledActivity, $userId);
+        }
     }
 
     /**
@@ -403,38 +416,44 @@ class ClubActivityService
         }
     }
 
-    /**
-     * Đảm bảo có occurrence tiếp theo sau khi activity recurring hoàn thành.
-     * Tạo occurrence mới nếu chưa có trong 30 ngày tới.
-     */
     private function ensureNextOccurrenceExists(ClubActivity $completedActivity, int $userId): void
     {
         $fromDate = $completedActivity->end_time ?? $completedActivity->start_time;
-        $lookAheadDate = Carbon::now()->addDays(30);
-        $maxIterations = 50;
-        $iteration = 0;
-
-        while ($iteration < $maxIterations) {
-            $iteration++;
-            $nextStartTime = $completedActivity->calculateNextOccurrence($fromDate);
-
-            if (!$nextStartTime || $nextStartTime->gt($lookAheadDate)) {
-                break;
-            }
-
-            $rawSchedule = $completedActivity->attributes['recurring_schedule'] ?? null;
-            $existing = ClubActivity::where('club_id', $completedActivity->club_id)
-                ->where('title', $completedActivity->title)
-                ->where('recurring_schedule', $rawSchedule)
-                ->where('start_time', $nextStartTime)
-                ->exists();
-
-            if (!$existing) {
-                $this->createNextOccurrence($completedActivity, $nextStartTime, $userId);
-            }
-
-            $fromDate = $nextStartTime->copy()->addMinute();
+        if (!$fromDate) {
+            return;
         }
+
+        // Tính occurrence tiếp theo dựa trên thời điểm hoàn thành
+        $nextStartTime = $completedActivity->calculateNextOccurrence($fromDate);
+
+        // Nếu không còn occurrence tiếp theo thì dừng
+        if (!$nextStartTime) {
+            return;
+        }
+
+        // Tránh trường hợp nextStartTime trùng hoặc trước fromDate (do chỉnh sửa giờ)
+        if ($nextStartTime->lte($fromDate)) {
+            $nextStartTime = $completedActivity->calculateNextOccurrence($nextStartTime->copy()->addMinute());
+            if (!$nextStartTime) {
+                return;
+            }
+        }
+
+        $rawSchedule = $completedActivity->attributes['recurring_schedule'] ?? null;
+        $existing = ClubActivity::where('club_id', $completedActivity->club_id)
+            ->where('title', $completedActivity->title)
+            ->where('recurring_schedule', $rawSchedule)
+            ->whereBetween('start_time', [
+                $nextStartTime->copy()->startOfMinute(),
+                $nextStartTime->copy()->endOfMinute(),
+            ])
+            ->exists();
+
+        if ($existing) {
+            return;
+        }
+
+        $this->createNextOccurrence($completedActivity, $nextStartTime, $userId);
     }
 
     /**
@@ -460,11 +479,21 @@ class ClubActivityService
                 break;
             }
 
+            // Tránh tạo trùng ngày
+            if ($nextStartTime->lte($fromDate)) {
+                $fromDate = $nextStartTime->copy()->addMinute();
+                continue;
+            }
+
             // Check if occurrence already exists
+            $rawSchedule = $activity->attributes['recurring_schedule'] ?? null;
             $existing = ClubActivity::where('club_id', $activity->club_id)
                 ->where('title', $activity->title)
-                ->where('recurring_schedule', $activity->attributes['recurring_schedule'] ?? null)
-                ->where('start_time', $nextStartTime)
+                ->where('recurring_schedule', $rawSchedule)
+                ->whereBetween('start_time', [
+                    $nextStartTime->copy()->startOfMinute(),
+                    $nextStartTime->copy()->endOfMinute(),
+                ])
                 ->exists();
 
             if (!$existing) {

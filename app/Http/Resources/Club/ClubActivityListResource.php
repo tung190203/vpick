@@ -4,11 +4,6 @@ namespace App\Http\Resources\Club;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-
-/**
- * Lightweight resource for activity list view
- * Only includes fields needed for displaying activity cards
- */
 class ClubActivityListResource extends JsonResource
 {
     public function toArray(Request $request): array
