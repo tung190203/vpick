@@ -85,9 +85,46 @@ class ClubActivityService
                 ->where('end_time', '>=', now());
         }
 
+        $shouldCollapseRecurring = $hasAll
+            || empty($statuses)
+            || in_array('scheduled', $activityStatuses)
+            || in_array('ongoing', $activityStatuses)
+            || (($hasRegistered || $hasAvailable) && empty($activityStatuses));
+
         $dateFrom = $filters['date_from'] ?? $filters['from_date'] ?? null;
         $dateTo = $filters['date_to'] ?? $filters['to_date'] ?? null;
         $includeNextOccurrence = !empty($filters['include_next_occurrence_for_series_done_this_week']);
+
+        $driver = $query->getConnection()->getDriverName();
+        $periodExpr = $driver === 'mysql'
+            ? "JSON_UNQUOTE(JSON_EXTRACT(club_activities.recurring_schedule, '$.period'))"
+            : "json_extract(club_activities.recurring_schedule, '$.period')";
+
+        $firstOccurrenceIdsMonthlyQuarterlyYearly = [];
+        if ($shouldCollapseRecurring) {
+            $periodExprSub = $driver === 'mysql'
+                ? "JSON_UNQUOTE(JSON_EXTRACT(recurring_schedule, '$.period'))"
+                : "json_extract(recurring_schedule, '$.period')";
+            $firstsSeriesSub = DB::table('club_activities')
+                ->select('recurrence_series_id', DB::raw('MIN(start_time) as min_start'))
+                ->where('club_id', $club->id)
+                ->whereNotNull('recurrence_series_id')
+                ->whereNull('recurrence_series_cancelled_at')
+                ->whereIn('status', [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing])
+                ->whereRaw("({$periodExprSub} IN ('monthly', 'quarterly', 'yearly'))")
+                ->groupBy('recurrence_series_id');
+
+            $firstOccurrenceIdsMonthlyQuarterlyYearly = DB::table('club_activities as ca')
+                ->joinSub($firstsSeriesSub, 'firsts', function ($join) {
+                    $join->on('ca.recurrence_series_id', '=', 'firsts.recurrence_series_id')
+                        ->on('ca.start_time', '=', 'firsts.min_start')
+                        ->whereIn('ca.status', [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing]);
+                })
+                ->where('ca.club_id', $club->id)
+                ->whereNull('ca.recurrence_series_cancelled_at')
+                ->pluck('ca.id')
+                ->all();
+        }
 
         $nextOccurrenceIds = [];
         if ($includeNextOccurrence && !empty($dateFrom) && !empty($dateTo)) {
@@ -114,9 +151,11 @@ class ClubActivityService
             }
         }
 
-        if (!empty($dateFrom) || !empty($dateTo) || !empty($nextOccurrenceIds)) {
-            $query->where(function ($q) use ($dateFrom, $dateTo, $nextOccurrenceIds) {
-                $hasDateRange = !empty($dateFrom) || !empty($dateTo);
+        $hasDateRange = !empty($dateFrom) || !empty($dateTo);
+        $includeMonthlyQuarterlyYearlyFirstInRange = $hasDateRange && $shouldCollapseRecurring && !empty($firstOccurrenceIdsMonthlyQuarterlyYearly);
+
+        if ($hasDateRange || !empty($nextOccurrenceIds) || $includeMonthlyQuarterlyYearlyFirstInRange) {
+            $query->where(function ($q) use ($dateFrom, $dateTo, $nextOccurrenceIds, $firstOccurrenceIdsMonthlyQuarterlyYearly, $hasDateRange, $includeMonthlyQuarterlyYearlyFirstInRange) {
                 if ($hasDateRange) {
                     $q->where(function ($q2) use ($dateFrom, $dateTo) {
                         if (!empty($dateFrom)) {
@@ -134,40 +173,13 @@ class ClubActivityService
                         $q->whereIn('club_activities.id', $nextOccurrenceIds);
                     }
                 }
+                if ($includeMonthlyQuarterlyYearlyFirstInRange) {
+                    $q->orWhereIn('club_activities.id', $firstOccurrenceIdsMonthlyQuarterlyYearly);
+                }
             });
         }
 
-        $shouldCollapseRecurring = $hasAll
-            || empty($statuses)
-            || in_array('scheduled', $activityStatuses)
-            || in_array('ongoing', $activityStatuses)
-            || (($hasRegistered || $hasAvailable) && empty($activityStatuses));
-
         if ($shouldCollapseRecurring) {
-            $driver = $query->getConnection()->getDriverName();
-            $periodExpr = $driver === 'mysql'
-                ? "JSON_UNQUOTE(JSON_EXTRACT(club_activities.recurring_schedule, '$.period'))"
-                : "json_extract(club_activities.recurring_schedule, '$.period')";
-
-            $firstsSeriesSub = DB::table('club_activities')
-                ->select('recurrence_series_id', DB::raw('MIN(start_time) as min_start'))
-                ->where('club_id', $club->id)
-                ->whereNotNull('recurrence_series_id')
-                ->whereIn('status', [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing])
-                ->whereRaw("({$periodExpr} IN ('monthly', 'quarterly', 'yearly'))")
-                ->groupBy('recurrence_series_id');
-
-            $firstOccurrenceIdsMonthlyQuarterlyYearly = DB::table('club_activities as ca')
-                ->select('ca.id')
-                ->joinSub($firstsSeriesSub, 'firsts', function ($join) {
-                    $join->on('ca.recurrence_series_id', '=', 'firsts.recurrence_series_id')
-                        ->on('ca.start_time', '=', 'firsts.min_start')
-                        ->whereIn('ca.status', [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing]);
-                })
-                ->where('ca.club_id', $club->id)
-                ->pluck('id')
-                ->all();
-
             $query->where(function ($q) use ($periodExpr, $firstOccurrenceIdsMonthlyQuarterlyYearly) {
                 $q->whereNull('club_activities.recurring_schedule')
                     ->orWhereNotIn('club_activities.status', [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing])
