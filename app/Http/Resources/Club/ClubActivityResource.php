@@ -20,6 +20,7 @@ class ClubActivityResource extends JsonResource
             'type' => $this->type,
             'is_recurring' => $this->recurring_schedule !== null,
             'recurring_schedule' => $this->recurring_schedule,
+            'recurrence_series_id' => $this->recurrence_series_id,
             'start_time' => $this->start_time?->format('c'),
             'end_time' => $this->end_time?->format('c'),
             'duration' => $this->duration,
