@@ -108,7 +108,6 @@ success "Main branch updated"
 BUILDS=(
   "dev|build:dev|build(dev): update assets|DEV"
   "deploy|build:prod|build(prod): update assets|PROD"
-  "dev1|build:dev1|build(dev1): update assets|DEV1"
 )
 
 for BUILD in "${BUILDS[@]}"; do
