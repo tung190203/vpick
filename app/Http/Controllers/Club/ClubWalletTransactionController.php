@@ -10,10 +10,13 @@ use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Club\ClubWalletTransactionResource;
 use App\Models\Club\Club;
+use App\Models\Club\ClubActivity;
+use App\Models\Club\ClubActivityParticipant;
 use App\Models\Club\ClubWallet;
 use App\Models\Club\ClubWalletTransaction;
 use App\Services\Club\ClubWalletTransactionService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class ClubWalletTransactionController extends Controller
@@ -78,21 +81,94 @@ class ClubWalletTransactionController extends Controller
 
         $validated = $request->validate([
             'club_wallet_id' => 'required|exists:club_wallets,id',
-            'direction' => ['required', Rule::enum(ClubWalletTransactionDirection::class)],
+            'direction' => ['required_without:participant_ids', Rule::enum(ClubWalletTransactionDirection::class)],
             'amount' => 'required|numeric|min:0.01',
             'source_type' => ['nullable', Rule::enum(ClubWalletTransactionSourceType::class)],
             'source_id' => 'nullable|integer',
+            'activity_id' => ['required_with:participant_ids', 'required_if:source_type,activity', 'nullable', 'exists:club_activities,id'],
+            'participant_id' => ['nullable', 'exists:club_activity_participants,id'],
+            'participant_ids' => ['nullable', 'array', 'min:1'],
+            'participant_ids.*' => ['integer', 'exists:club_activity_participants,id'],
+            'collection_type' => ['required_with:participant_ids', 'in:fixed,equal'],
             'payment_method' => ['required', Rule::enum(PaymentMethod::class)],
             'reference_code' => 'nullable|string|max:255',
             'description' => 'nullable|string',
+            'included_in_club_fund' => 'sometimes|boolean',
         ]);
+
+        if (!empty($validated['participant_ids']) && !empty($validated['participant_id'])) {
+            return ResponseHelper::error('Chỉ dùng participant_id hoặc participant_ids, không dùng cả hai', 422);
+        }
 
         $wallet = ClubWallet::findOrFail($validated['club_wallet_id']);
         if ($wallet->club_id != $clubId) {
             return ResponseHelper::error('Ví không thuộc CLB này', 403);
         }
 
-        $transaction = $this->transactionService->createTransaction($wallet, $validated, $userId);
+        $activityId = $validated['activity_id'] ?? null;
+        $participantId = $validated['participant_id'] ?? null;
+        $participantIds = $validated['participant_ids'] ?? [];
+
+        // Batch mode: tạo nhiều giao dịch thu cho nhiều participant trong 1 request
+        if (!empty($participantIds)) {
+            $activity = ClubActivity::where('club_id', $clubId)->findOrFail($activityId);
+            try {
+                $transactions = DB::transaction(function () use ($wallet, $activity, $participantIds, $validated) {
+                    return $this->transactionService->createBatchTransactions(
+                        $wallet,
+                        $activity,
+                        $participantIds,
+                        $validated['collection_type'],
+                        (float) $validated['amount'],
+                        [
+                            'payment_method' => $validated['payment_method'],
+                            'reference_code' => $validated['reference_code'] ?? null,
+                            'description' => $validated['description'] ?? null,
+                            'included_in_club_fund' => $validated['included_in_club_fund'] ?? false,
+                        ]
+                    );
+                });
+            } catch (\InvalidArgumentException $e) {
+                return ResponseHelper::error($e->getMessage(), 422);
+            }
+            ClubActivity::where('id', $activityId)->update(['has_collection' => true]);
+            $transactions->load(['wallet', 'creator', 'confirmer']);
+            return ResponseHelper::success(
+                ClubWalletTransactionResource::collection($transactions),
+                'Tạo ' . $transactions->count() . ' giao dịch thành công',
+                201
+            );
+        }
+
+        // Single transaction mode
+        if ($activityId) {
+            ClubActivity::where('club_id', $clubId)->findOrFail($activityId);
+            $validated['source_type'] = ClubWalletTransactionSourceType::Activity;
+            $validated['source_id'] = $activityId;
+        }
+
+        $participant = null;
+        if ($participantId) {
+            $participant = ClubActivityParticipant::where('id', $participantId)
+                ->whereHas('activity', fn ($q) => $q->where('club_id', $clubId))
+                ->with('activity')
+                ->firstOrFail();
+            if ($activityId && (int) $participant->club_activity_id !== (int) $activityId) {
+                return ResponseHelper::error('Participant không thuộc activity này', 422);
+            }
+        }
+
+        $creatorId = $participant ? $participant->user_id : $userId;
+
+        $transaction = $this->transactionService->createTransaction($wallet, $validated, $creatorId);
+
+        if ($participantId) {
+            ClubActivityParticipant::where('id', $participantId)->update(['wallet_transaction_id' => $transaction->id]);
+        }
+
+        if ($activityId) {
+            ClubActivity::where('id', $activityId)->update(['has_collection' => true]);
+        }
         $transaction->load(['wallet', 'creator', 'confirmer']);
         return ResponseHelper::success(new ClubWalletTransactionResource($transaction), 'Tạo giao dịch thành công', 201);
     }

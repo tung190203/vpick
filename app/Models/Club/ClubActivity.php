@@ -51,6 +51,7 @@ class ClubActivity extends Model
         'qr_code_url',
         'check_in_token',
         'creator_always_join',
+        'has_collection',
     ];
 
     protected $casts = [
@@ -68,6 +69,7 @@ class ClubActivity extends Model
         'allow_member_invite' => 'boolean',
         'is_public' => 'boolean',
         'creator_always_join' => 'boolean',
+        'has_collection' => 'boolean',
     ];
 
     public function club()

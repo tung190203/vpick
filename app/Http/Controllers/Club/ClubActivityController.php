@@ -121,6 +121,7 @@ class ClubActivityController extends Controller
                 'club',
                 'participants',
                 'participants.user' => User::FULL_RELATIONS,
+                'participants.walletTransaction',
                 'miniTournament'
             ])
             ->withSum(self::ACTIVITY_COLLECTED_SUM, 'amount')

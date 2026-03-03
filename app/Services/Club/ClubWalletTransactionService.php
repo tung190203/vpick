@@ -2,11 +2,17 @@
 
 namespace App\Services\Club;
 
+use App\Enums\ClubActivityParticipantStatus;
+use App\Enums\ClubWalletTransactionDirection;
+use App\Enums\ClubWalletTransactionSourceType;
 use App\Enums\ClubWalletTransactionStatus;
 use App\Models\Club\Club;
+use App\Models\Club\ClubActivity;
+use App\Models\Club\ClubActivityParticipant;
 use App\Models\Club\ClubWallet;
 use App\Models\Club\ClubWalletTransaction;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 
 class ClubWalletTransactionService
 {
@@ -14,7 +20,10 @@ class ClubWalletTransactionService
     {
         $query = ClubWalletTransaction::whereHas('wallet', function ($q) use ($club) {
             $q->where('club_id', $club->id);
-        })->with(['wallet', 'creator', 'confirmer']);
+        })->with(['wallet', 'creator', 'confirmer'])
+            ->where(function ($q) {
+            $q->where('included_in_club_fund', true)->orWhereNull('included_in_club_fund');
+        });
 
         if (!empty($filters['wallet_id'])) {
             $query->where('club_wallet_id', $filters['wallet_id']);
@@ -58,6 +67,9 @@ class ClubWalletTransactionService
             $q->where('club_id', $club->id);
         })
             ->where('created_by', $userId)
+            ->where(function ($q) {
+                $q->where('included_in_club_fund', true)->orWhereNull('included_in_club_fund');
+            })
             ->with(['wallet', 'creator', 'confirmer']);
 
         if (!empty($filters['date_from'])) {
@@ -104,8 +116,52 @@ class ClubWalletTransactionService
             'status' => ClubWalletTransactionStatus::Pending,
             'reference_code' => $data['reference_code'] ?? null,
             'description' => $data['description'] ?? null,
+            'included_in_club_fund' => $data['included_in_club_fund'] ?? true,
             'created_by' => $creatorId,
         ]);
+    }
+
+    /**
+     * Tạo nhiều giao dịch thu (In) cho nhiều participant trong 1 request.
+     * - fixed: amount = số tiền mỗi người
+     * - equal: amount = tổng tiền, chia đều cho count(participant_ids)
+     *
+     * @return Collection<int, ClubWalletTransaction>
+     */
+    public function createBatchTransactions(
+        ClubWallet $wallet,
+        ClubActivity $activity,
+        array $participantIds,
+        string $collectionType,
+        float $amount,
+        array $baseData
+    ): Collection {
+        $participants = ClubActivityParticipant::whereIn('id', $participantIds)
+            ->where('club_activity_id', $activity->id)
+            ->whereIn('status', [ClubActivityParticipantStatus::Accepted, ClubActivityParticipantStatus::Attended])
+            ->get();
+
+        if ($participants->count() !== count($participantIds)) {
+            throw new \InvalidArgumentException('Một hoặc nhiều participant không hợp lệ (chỉ chấp nhận accepted/attended)');
+        }
+
+        $amountPerPerson = $collectionType === 'equal'
+            ? round($amount / count($participantIds), 2)
+            : $amount;
+
+        $transactions = collect();
+        foreach ($participants as $participant) {
+            $tx = $this->createTransaction($wallet, array_merge($baseData, [
+                'direction' => ClubWalletTransactionDirection::In,
+                'amount' => $amountPerPerson,
+                'source_type' => ClubWalletTransactionSourceType::Activity,
+                'source_id' => $activity->id,
+            ]), $participant->user_id);
+            ClubActivityParticipant::where('id', $participant->id)->update(['wallet_transaction_id' => $tx->id]);
+            $transactions->push($tx);
+        }
+
+        return $transactions;
     }
 
     public function updateTransaction(ClubWalletTransaction $transaction, array $data): ClubWalletTransaction
