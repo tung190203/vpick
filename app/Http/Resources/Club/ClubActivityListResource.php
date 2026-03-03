@@ -30,7 +30,7 @@ class ClubActivityListResource extends JsonResource
             'guest_fee' => $this->guest_fee ? (float) $this->guest_fee : null,
             'currency' => $this->currency ?? 'VND',
             'participants_count' => $this->whenLoaded('participants', fn() => $this->participants->count()),
-            'participants' => $this->whenLoaded('participants', fn() => $this->participants),
+            'participants' => $this->whenLoaded('participants', fn() => ClubActivityParticipantResource::collection($this->participants)),
         ];
     }
 }

@@ -64,7 +64,8 @@ class ClubActivityController extends Controller
 
         $cached = Cache::get($cacheKey);
         if ($cached !== null) {
-            return response()->json($cached);
+            $options = config('app.debug') ? (JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : JSON_UNESCAPED_UNICODE;
+            return response()->json($cached, 200, [], $options);
         }
 
         $activities = $this->activityService->getActivities($club, $filters, $userId);
