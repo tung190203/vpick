@@ -815,11 +815,13 @@ class ClubActivityService
         $newActivity->recurrence_series_cancelled_at = null;
         $newActivity->save();
 
-        ClubActivityParticipant::create([
-            'club_activity_id' => $newActivity->id,
-            'user_id' => $userId,
-            'status' => ClubActivityParticipantStatus::Accepted,
-        ]);
+        if ($activity->creator_always_join) {
+            ClubActivityParticipant::create([
+                'club_activity_id' => $newActivity->id,
+                'user_id' => $userId,
+                'status' => ClubActivityParticipantStatus::Accepted,
+            ]);
+        }
 
         $checkInToken = Str::random(48);
         $newActivity->update(['check_in_token' => $checkInToken]);
