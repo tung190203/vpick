@@ -20,7 +20,6 @@ use App\Notifications\ClubActivityPaymentConfirmedNotification;
 use App\Notifications\ClubActivityPaymentRequestNotification;
 use App\Services\Club\ClubWalletTransactionService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class ClubWalletTransactionController extends Controller
@@ -85,24 +84,17 @@ class ClubWalletTransactionController extends Controller
 
         $validated = $request->validate([
             'club_wallet_id' => 'required|exists:club_wallets,id',
-            'direction' => ['required_without:participant_ids', Rule::enum(ClubWalletTransactionDirection::class)],
+            'direction' => ['required', Rule::enum(ClubWalletTransactionDirection::class)],
             'amount' => 'required|numeric|min:0.01',
             'source_type' => ['nullable', Rule::enum(ClubWalletTransactionSourceType::class)],
             'source_id' => 'nullable|integer',
-            'activity_id' => ['required_with:participant_ids', 'required_if:source_type,activity', 'nullable', 'exists:club_activities,id'],
+            'activity_id' => ['nullable', 'exists:club_activities,id'],
             'participant_id' => ['nullable', 'exists:club_activity_participants,id'],
-            'participant_ids' => ['nullable', 'array', 'min:1'],
-            'participant_ids.*' => ['integer', 'exists:club_activity_participants,id'],
-            'collection_type' => ['required_with:participant_ids', 'in:fixed,equal'],
             'payment_method' => ['required', Rule::enum(PaymentMethod::class)],
             'reference_code' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'included_in_club_fund' => 'sometimes|boolean',
         ]);
-
-        if (!empty($validated['participant_ids']) && !empty($validated['participant_id'])) {
-            return ResponseHelper::error('Chỉ dùng participant_id hoặc participant_ids, không dùng cả hai', 422);
-        }
 
         $wallet = ClubWallet::findOrFail($validated['club_wallet_id']);
         if ($wallet->club_id != $clubId) {
@@ -111,39 +103,6 @@ class ClubWalletTransactionController extends Controller
 
         $activityId = $validated['activity_id'] ?? null;
         $participantId = $validated['participant_id'] ?? null;
-        $participantIds = $validated['participant_ids'] ?? [];
-
-        // Batch mode: tạo nhiều giao dịch thu cho nhiều participant trong 1 request
-        if (!empty($participantIds)) {
-            $activity = ClubActivity::where('club_id', $clubId)->findOrFail($activityId);
-            try {
-                $transactions = DB::transaction(function () use ($wallet, $activity, $participantIds, $validated) {
-                    return $this->transactionService->createBatchTransactions(
-                        $wallet,
-                        $activity,
-                        $participantIds,
-                        $validated['collection_type'],
-                        (float) $validated['amount'],
-                        [
-                            'payment_method' => $validated['payment_method'],
-                            'reference_code' => $validated['reference_code'] ?? null,
-                            'description' => $validated['description'] ?? null,
-                            'included_in_club_fund' => $validated['included_in_club_fund'] ?? false,
-                        ]
-                    );
-                });
-            } catch (\InvalidArgumentException $e) {
-                return ResponseHelper::error($e->getMessage(), 422);
-            }
-            ClubActivity::where('id', $activityId)->update(['has_collection' => true]);
-            $transactions->load(['wallet', 'creator', 'confirmer']);
-            $this->notifyParticipantsOnPaymentRequest($club, $activity, $transactions);
-            return ResponseHelper::success(
-                ClubWalletTransactionResource::collection($transactions),
-                'Tạo ' . $transactions->count() . ' giao dịch thành công',
-                201
-            );
-        }
 
         // Single transaction mode
         if ($activityId) {
@@ -172,7 +131,7 @@ class ClubWalletTransactionController extends Controller
         }
 
         if ($activityId) {
-            ClubActivity::where('id', $activityId)->update(['has_collection' => true]);
+            ClubActivity::where('id', $activityId)->update(['has_transaction' => true]);
         }
         if ($participantId && $activityId) {
             $activity = ClubActivity::where('club_id', $clubId)->find($activityId);

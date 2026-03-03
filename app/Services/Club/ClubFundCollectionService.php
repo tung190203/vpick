@@ -2,10 +2,12 @@
 
 namespace App\Services\Club;
 
+use App\Enums\ClubActivityParticipantStatus;
 use App\Enums\ClubFundCollectionStatus;
 use App\Enums\ClubFundContributionStatus;
 use App\Jobs\SendPushJob;
 use App\Models\Club\Club;
+use App\Models\Club\ClubActivity;
 use App\Models\Club\ClubFundCollection;
 use App\Models\User;
 use App\Notifications\ClubFundCollectionCancelledNotification;
@@ -66,6 +68,17 @@ class ClubFundCollectionService
             throw new \Exception('Chỉ admin/manager/secretary/treasurer mới có quyền tạo đợt thu');
         }
 
+        $activityId = $data['activity_id'] ?? null;
+        if ($activityId) {
+            $activity = ClubActivity::where('club_id', $club->id)->findOrFail($activityId);
+            $data['member_ids'] = $activity->participants()
+                ->whereIn('status', [ClubActivityParticipantStatus::Accepted, ClubActivityParticipantStatus::Attended])
+                ->pluck('user_id')
+                ->unique()
+                ->values()
+                ->all();
+        }
+
         $endDate = $data['end_date'] ?? $data['deadline'] ?? null;
         $titleOrDescription = $data['title'] ?? $data['description'] ?? '';
         $memberCount = !empty($data['member_ids']) ? count($data['member_ids']) : 0;
@@ -75,8 +88,16 @@ class ClubFundCollectionService
             ? (float) $data['target_amount']
             : (float) ($amountPerMember * $memberCount);
 
+        // included_in_club_fund CHỈ áp dụng khi tạo khoản thu từ activity (chia tiền hoạt động).
+        // Khi có activity_id: dùng giá trị gửi lên (false = không tính vào quỹ chung).
+        // Khi không có activity_id: luôn true (đợt thu thường luôn tính vào quỹ chung).
+        $includedInClubFund = $activityId && array_key_exists('included_in_club_fund', $data)
+            ? filter_var($data['included_in_club_fund'], FILTER_VALIDATE_BOOLEAN)
+            : true;
+
         $collection = ClubFundCollection::create([
             'club_id' => $club->id,
+            'club_activity_id' => $activityId,
             'title' => $titleOrDescription,
             'description' => $titleOrDescription,
             'target_amount' => $targetAmount,
@@ -88,7 +109,12 @@ class ClubFundCollectionService
             'status' => ClubFundCollectionStatus::Active,
             'qr_code_url' => $data['qr_code_url'] ?? null,
             'created_by' => $userId,
+            'included_in_club_fund' => $includedInClubFund,
         ]);
+
+        if ($activityId) {
+            ClubActivity::where('id', $activityId)->update(['has_transaction' => true]);
+        }
 
         if (!empty($data['member_ids'])) {
             $syncData = [];

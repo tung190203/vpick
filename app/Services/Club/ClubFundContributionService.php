@@ -147,6 +147,7 @@ class ClubFundContributionService
             } else {
                 $collection = $contribution->fundCollection;
                 $description = $collection->title ?: $collection->description ?: 'Đợt thu quỹ';
+                $includedInClubFund = $collection->included_in_club_fund ?? true;
                 $transaction = $mainWallet->transactions()->create([
                     'direction' => ClubWalletTransactionDirection::In,
                     'amount' => $contribution->amount,
@@ -158,6 +159,7 @@ class ClubFundContributionService
                     'created_by' => $contribution->user_id,
                     'confirmed_by' => $confirmerId,
                     'confirmed_at' => now(),
+                    'included_in_club_fund' => $includedInClubFund,
                 ]);
                 $contribution->update(['wallet_transaction_id' => $transaction->id]);
             }
@@ -181,6 +183,91 @@ class ClubFundContributionService
         }
 
         return $contribution;
+    }
+
+    /**
+     * Admin đánh dấu thành viên đã đóng mà không cần nộp biên lai.
+     * Chỉ áp dụng cho fund-collection có club_activity_id (đợt thu từ sự kiện).
+     */
+    public function markMemberPaid(ClubFundCollection $collection, int $memberUserId, int $confirmerId): ClubFundContribution
+    {
+        if (!$collection->club_activity_id) {
+            throw new \Exception('Chỉ áp dụng cho đợt thu từ sự kiện');
+        }
+
+        $assigned = $collection->assignedMembers()->where('user_id', $memberUserId)->first();
+        if (!$assigned) {
+            throw new \Exception('Thành viên không có trong danh sách thu');
+        }
+
+        $amountDue = (float) ($assigned->pivot?->amount_due ?? $collection->amount_per_member ?? 0);
+        if ($amountDue <= 0) {
+            throw new \Exception('Số tiền cần đóng không hợp lệ');
+        }
+
+        $existing = $collection->contributions()->where('user_id', $memberUserId)->first();
+        if ($existing) {
+            if ($existing->status === ClubFundContributionStatus::Confirmed) {
+                return $existing;
+            }
+            if ($existing->status === ClubFundContributionStatus::Pending) {
+                return $this->confirmContribution($existing, $confirmerId);
+            }
+            throw new \Exception('Đóng góp đã bị từ chối, không thể đánh dấu đã đóng');
+        }
+
+        return DB::transaction(function () use ($collection, $memberUserId, $amountDue, $confirmerId) {
+            $contribution = ClubFundContribution::create([
+                'club_fund_collection_id' => $collection->id,
+                'user_id' => $memberUserId,
+                'amount' => $amountDue,
+                'receipt_url' => null,
+                'note' => 'Admin đánh dấu đã đóng (không cần biên lai)',
+                'status' => ClubFundContributionStatus::Confirmed,
+            ]);
+
+            $club = $collection->club;
+            $mainWallet = $club->mainWallet;
+            if (!$mainWallet) {
+                $mainWallet = $this->walletService->createWallet($club, [
+                    'type' => ClubWalletType::Main,
+                    'currency' => 'VND',
+                ]);
+            }
+
+            $includedInClubFund = $collection->included_in_club_fund ?? true;
+            $description = $collection->title ?: $collection->description ?: 'Đợt thu quỹ';
+            $transaction = $mainWallet->transactions()->create([
+                'direction' => ClubWalletTransactionDirection::In,
+                'amount' => $amountDue,
+                'source_type' => ClubWalletTransactionSourceType::FundCollection,
+                'source_id' => $contribution->id,
+                'payment_method' => PaymentMethod::Other,
+                'status' => ClubWalletTransactionStatus::Confirmed,
+                'description' => $description,
+                'created_by' => $memberUserId,
+                'confirmed_by' => $confirmerId,
+                'confirmed_at' => now(),
+                'included_in_club_fund' => $includedInClubFund,
+            ]);
+            $contribution->update(['wallet_transaction_id' => $transaction->id]);
+            $collection->updateCollectedAmount();
+
+            $user = User::find($memberUserId);
+            if ($user && $club) {
+                $collectionTitle = $collection->title ?: $collection->description ?: 'Đợt thu quỹ';
+                $message = "Thanh toán {$collectionTitle} đã được admin xác nhận";
+                $user->notify(new ClubFundContributionApprovedNotification($club, $collection, $contribution));
+                SendPushJob::dispatch($user->id, 'Thanh toán đã được xác nhận', $message, [
+                    'type' => 'CLUB_FUND_CONTRIBUTION_APPROVED',
+                    'club_id' => (string) $club->id,
+                    'club_fund_collection_id' => (string) $collection->id,
+                    'club_fund_contribution_id' => (string) $contribution->id,
+                ]);
+            }
+
+            return $contribution->load(['user', 'walletTransaction']);
+        });
     }
 
     public function rejectContribution(ClubFundContribution $contribution, ?string $rejectionReason = null): ClubFundContribution

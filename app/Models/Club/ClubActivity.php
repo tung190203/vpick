@@ -51,7 +51,7 @@ class ClubActivity extends Model
         'qr_code_url',
         'check_in_token',
         'creator_always_join',
-        'has_collection',
+        'has_transaction',
     ];
 
     protected $casts = [
@@ -69,7 +69,7 @@ class ClubActivity extends Model
         'allow_member_invite' => 'boolean',
         'is_public' => 'boolean',
         'creator_always_join' => 'boolean',
-        'has_collection' => 'boolean',
+        'has_transaction' => 'boolean',
     ];
 
     public function club()
@@ -98,6 +98,11 @@ class ClubActivity extends Model
             ->where('source_type', ClubWalletTransactionSourceType::Activity)
             ->where('direction', ClubWalletTransactionDirection::In)
             ->where('status', ClubWalletTransactionStatus::Confirmed);
+    }
+
+    public function fundCollection()
+    {
+        return $this->hasOne(ClubFundCollection::class, 'club_activity_id');
     }
 
     public function acceptedParticipants()

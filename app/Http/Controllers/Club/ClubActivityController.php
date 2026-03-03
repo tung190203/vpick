@@ -122,7 +122,9 @@ class ClubActivityController extends Controller
                 'participants',
                 'participants.user' => User::FULL_RELATIONS,
                 'participants.walletTransaction',
-                'miniTournament'
+                'miniTournament',
+                'fundCollection.contributions.user' => User::FULL_RELATIONS,
+                'fundCollection.assignedMembers' => User::FULL_RELATIONS,
             ])
             ->withSum(self::ACTIVITY_COLLECTED_SUM, 'amount')
             ->findOrFail($activityId);

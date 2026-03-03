@@ -170,18 +170,17 @@ class ClubWalletController extends Controller
         $club = Club::findOrFail($clubId);
         $mainWallet = $club->mainWallet;
 
-        if (!$mainWallet) {
-            return ResponseHelper::error('CLB chưa có ví chính', 404);
-        }
-
-        if (!$mainWallet->qr_code_url) {
-            return ResponseHelper::error('Ví chưa có mã QR thanh toán', 404);
+        $qrCodeUrl = null;
+        $walletId = null;
+        if ($mainWallet && $mainWallet->qr_code_url) {
+            $qrCodeUrl = $mainWallet->qr_code_url;
+            $walletId = $mainWallet->id;
         }
 
         return ResponseHelper::success([
             'club_id' => $club->id,
-            'wallet_id' => $mainWallet->id,
-            'qr_code_url' => $mainWallet->qr_code_url,
+            'wallet_id' => $walletId,
+            'qr_code_url' => $qrCodeUrl,
         ], 'Lấy mã QR thanh toán quỹ CLB thành công');
     }
 }

@@ -17,6 +17,7 @@ class StoreExpenseRequest extends FormRequest
             'description' => 'required|string|max:65535',
             'amount' => 'required|numeric|min:0.01',
             'payment_method' => 'required|in:cash,bank_transfer,qr_code,other',
+            'activity_id' => ['nullable', 'exists:club_activities,id'],
             'spent_at' => 'nullable|date',
             'note' => 'nullable|string',
             'reference_code' => 'nullable|string|max:255',
