@@ -9,6 +9,7 @@ use App\Http\Requests\Club\GetParticipantsRequest;
 use App\Http\Requests\Club\InviteParticipantsRequest;
 use App\Http\Requests\Club\UpdateParticipantRequest;
 use App\Http\Resources\Club\ClubActivityParticipantResource;
+use App\Enums\ClubActivityParticipantStatus;
 use App\Models\Club\ClubActivity;
 use App\Models\Club\ClubActivityParticipant;
 use App\Services\Club\ClubActivityParticipantService;
@@ -54,9 +55,13 @@ class ClubActivityParticipantController extends Controller
             $participant = $this->participantService->joinActivity($activity, $userId);
             $participant->load(['user', 'walletTransaction']);
 
+            $message = in_array($participant->status, [ClubActivityParticipantStatus::Accepted, ClubActivityParticipantStatus::Attended])
+                ? 'Đã tham gia hoạt động'
+                : 'Đã gửi yêu cầu tham gia, chờ admin duyệt';
+
             return ResponseHelper::success(
                 new ClubActivityParticipantResource($participant),
-                'Đã gửi yêu cầu tham gia, chờ admin duyệt',
+                $message,
                 201
             );
         } catch (\Exception $e) {
