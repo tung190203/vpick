@@ -87,7 +87,12 @@ const login = async () => {
 }
 
 const loginWithGoogle = () => {
-  window.location.href = import.meta.env.VITE_BASE_URL + '/auth/google/redirect'
+  const redirect = router.currentRoute.value.query.redirect
+  let url = import.meta.env.VITE_BASE_URL + '/auth/google/redirect'
+  if (redirect) {
+    url += '?redirect=' + encodeURIComponent(redirect)
+  }
+  window.location.href = url
 }
 
 const loginWithFacebook = () => {
