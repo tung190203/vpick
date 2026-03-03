@@ -14,6 +14,7 @@ use App\Models\Club\Club;
 use App\Models\Club\ClubActivity;
 use App\Models\User;
 use App\Services\Club\ClubActivityService;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 
 class ClubActivityController extends Controller
@@ -33,6 +34,31 @@ class ClubActivityController extends Controller
         $userId = auth()->id();
         $filters = $request->validated();
 
+        $clientSentStatuses = $request->has('statuses');
+        if (!$clientSentStatuses) {
+            $filters['statuses'] = ['scheduled', 'ongoing'];
+        } elseif (isset($filters['statuses']) && !is_array($filters['statuses'])) {
+            $filters['statuses'] = array_filter([$filters['statuses']]);
+        }
+        $statusesOnlyCompletedOrCancelled = !empty($filters['statuses'])
+            && empty(array_diff($filters['statuses'], ['completed', 'cancelled']));
+
+        $clientSentDate = $request->has('date_from') || $request->has('from_date') || $request->has('date_to') || $request->has('to_date');
+        if (!$clientSentDate) {
+            if (!$statusesOnlyCompletedOrCancelled) {
+                $filters['date_from'] = Carbon::now()->startOfWeek()->format('Y-m-d');
+                $filters['date_to'] = Carbon::now()->endOfWeek()->format('Y-m-d');
+                $filters['include_next_occurrence_for_series_done_this_week'] = true;
+            }
+        } else {
+            if (empty($filters['date_from']) && $request->has('from_date')) {
+                $filters['date_from'] = $request->input('from_date');
+            }
+            if (empty($filters['date_to']) && $request->has('to_date')) {
+                $filters['date_to'] = $request->input('to_date');
+            }
+        }
+
         $version = (int) Cache::get('club_activities_version:' . $clubId, 0);
         $cacheKey = 'club_activities:' . $clubId . ':' . $version . ':' . md5(json_encode($filters) . ':' . ($userId ?? 'guest'));
 
@@ -43,7 +69,6 @@ class ClubActivityController extends Controller
 
         $activities = $this->activityService->getActivities($club, $filters, $userId);
 
-        // Trả về mảng phẳng để frontend nhận đúng (tránh Resource::collection bọc { data, links, meta })
         $data = [
             'activities' => ClubActivityListResource::collection($activities->items())->toArray($request),
         ];
@@ -208,6 +233,28 @@ class ClubActivityController extends Controller
                 $statusCode = 404;
             }
             return ResponseHelper::error($e->getMessage(), $statusCode);
+        }
+    }
+
+    public function cancelRecurrenceSeries(\Illuminate\Http\Request $request, $clubId, $activityId)
+    {
+        $club = Club::findOrFail($clubId);
+        $userId = auth()->id();
+
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
+        }
+
+        try {
+            $count = $this->activityService->cancelRecurrenceSeries($club, (string) $activityId, $userId);
+            Cache::increment('club_activities_version:' . $clubId);
+            return ResponseHelper::success(
+                ['cancelled_count' => $count],
+                'Đã hủy toàn bộ chuỗi lặp lại',
+                200
+            );
+        } catch (\Exception $e) {
+            return ResponseHelper::error($e->getMessage(), 403);
         }
     }
 }

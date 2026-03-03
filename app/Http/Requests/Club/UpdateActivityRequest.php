@@ -3,9 +3,11 @@
 namespace App\Http\Requests\Club;
 
 use App\Enums\ClubActivityFeeSplitType;
+use App\Models\Club\ClubActivity;
 use App\Rules\ValidRecurringSchedule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class UpdateActivityRequest extends FormRequest
 {
@@ -16,7 +18,6 @@ class UpdateActivityRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        // Convert empty strings to null for numeric fields
         $numericFields = ['latitude', 'longitude', 'fee_amount', 'guest_fee', 'penalty_amount', 'duration', 'max_participants', 'reminder_minutes'];
         $data = [];
 
@@ -31,37 +32,39 @@ class UpdateActivityRequest extends FormRequest
         }
 
         if ($this->has('is_public')) {
-            $isPublic = $this->is_public;
-            if (is_string($isPublic)) {
-                $isPublic = filter_var($isPublic, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-            }
-            $this->merge(['is_public' => $isPublic !== null ? (bool) $isPublic : true]);
+            $this->merge([
+                'is_public' => filter_var($this->is_public, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true
+            ]);
         }
-
         if ($this->has('allow_member_invite')) {
-            $allowInvite = $this->allow_member_invite;
-            if (is_string($allowInvite)) {
-                $allowInvite = filter_var($allowInvite, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-            }
-            $this->merge(['allow_member_invite' => $allowInvite !== null ? (bool) $allowInvite : false]);
+            $this->merge([
+                'allow_member_invite' => filter_var($this->allow_member_invite, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false
+            ]);
+        }
+        if ($this->has('creator_always_join')) {
+            $this->merge([
+                'creator_always_join' => filter_var($this->creator_always_join, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true
+            ]);
         }
     }
 
     public function rules(): array
     {
         return [
-            'title' => 'sometimes|string|max:255',
+            'edit_scope' => 'sometimes|string|in:this_occurrence,entire_series',
+            'title' => 'sometimes|required|string|max:255',
             'description' => 'nullable|string',
-            'type' => 'sometimes|in:meeting,practice,match,tournament,event,other',
+            'type' => 'nullable|in:meeting,practice,match,tournament,event,other',
             'start_time' => 'sometimes|date',
             'end_time' => 'nullable|date|after:start_time',
             'duration' => 'nullable|integer|min:1',
-            'address' => 'nullable|string|max:500',
+            'address' => 'sometimes|string|max:500',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
             'cancellation_deadline' => 'nullable|date|before:start_time',
             'cancellation_deadline_hours' => 'nullable|integer|min:1|max:168',
             'cancellation_deadline_minutes' => 'nullable|integer|min:1|max:10080',
+            'mini_tournament_id' => 'nullable|exists:mini_tournaments,id',
             'recurring_schedule' => ['nullable', 'array', new ValidRecurringSchedule()],
             'reminder_minutes' => 'sometimes|integer|min:0',
             'fee_amount' => 'nullable|numeric|min:0',
@@ -73,6 +76,48 @@ class UpdateActivityRequest extends FormRequest
             'is_public' => 'sometimes|boolean',
             'max_participants' => 'nullable|integer|min:1',
             'qr_image' => 'nullable|image|mimes:png,jpg,jpeg|max:5120',
+            'creator_always_join' => 'sometimes|boolean',
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            $editScope = $this->input('edit_scope', 'this_occurrence');
+            if ($editScope !== 'this_occurrence' || !$this->has('recurring_schedule')) {
+                return;
+            }
+
+            $clubId = $this->route('clubId');
+            $activityId = $this->route('activityId');
+            if (!$clubId || !$activityId) {
+                return;
+            }
+
+            $activity = ClubActivity::where('club_id', $clubId)->find($activityId);
+            if (!$activity) {
+                return;
+            }
+
+            $currentRaw = $activity->getRecurringScheduleRaw();
+            $newSchedule = $this->input('recurring_schedule');
+            if ($this->recurringScheduleChanged($currentRaw, $newSchedule)) {
+                $validator->errors()->add(
+                    'recurring_schedule',
+                    'Khi đổi loại lặp lại phải chọn sửa cả chuỗi.'
+                );
+            }
+        });
+    }
+
+    private function recurringScheduleChanged(?array $current, $new): bool
+    {
+        if ($current === null && ($new === null || $new === [])) {
+            return false;
+        }
+        if ($current === null || $new === null || !is_array($new)) {
+            return true;
+        }
+        return json_encode($current) !== json_encode($new);
     }
 }

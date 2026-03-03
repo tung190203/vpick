@@ -69,7 +69,7 @@ class ClubNotificationService
                 'content' => $data['content'],
                 'attachment_url' => $attachmentUrl,
                 'priority' => $data['priority'] ?? ClubNotificationPriority::Normal,
-                'status' => $data['status'] ?? ClubNotificationStatus::Draft,
+                'status' => $data['status'] ?? ClubNotificationStatus::Sent,
                 'metadata' => $data['metadata'] ?? null,
                 'is_pinned' => $data['is_pinned'] ?? false,
                 'scheduled_at' => $data['scheduled_at'] ?? null,
@@ -85,7 +85,7 @@ class ClubNotificationService
                 }
             }
 
-            $status = $data['status'] ?? ClubNotificationStatus::Draft;
+            $status = $data['status'] ?? ClubNotificationStatus::Sent;
             $isSent = $status === ClubNotificationStatus::Sent
                 || (is_string($status) && strtolower($status) === 'sent');
             if ($isSent) {

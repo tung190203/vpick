@@ -21,6 +21,20 @@ class GetActivitiesRequest extends FormRequest
             'statuses.*' => 'sometimes|in:all,registered,available,scheduled,ongoing,completed,cancelled',
             'date_from' => 'sometimes|date',
             'date_to' => 'sometimes|date|after_or_equal:date_from',
+            'from_date' => 'sometimes|date',
+            'to_date' => 'sometimes|date|after_or_equal:from_date',
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $data = $this->all();
+        if (!empty($data['from_date']) && empty($data['date_from'])) {
+            $data['date_from'] = $data['from_date'];
+        }
+        if (!empty($data['to_date']) && empty($data['date_to'])) {
+            $data['date_to'] = $data['to_date'];
+        }
+        $this->merge($data);
     }
 }
