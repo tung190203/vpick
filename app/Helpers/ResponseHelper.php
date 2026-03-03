@@ -4,6 +4,15 @@ namespace App\Helpers;
 
 class ResponseHelper
 {
+    private static function jsonOptions(): int
+    {
+        $options = JSON_UNESCAPED_UNICODE;
+        if (config('app.debug')) {
+            $options |= JSON_PRETTY_PRINT;
+        }
+        return $options;
+    }
+
     /**
      * Success Response
      */
@@ -14,7 +23,7 @@ class ResponseHelper
             'message' => $message,
             'data' => $data,
             'meta' => $meta,
-        ], $code);
+        ], $code, [], self::jsonOptions());
     }
 
     /**
@@ -26,6 +35,6 @@ class ResponseHelper
             'status' => false,
             'message' => $message,
             'errors' => $errors,
-        ], $code);
+        ], $code, [], self::jsonOptions());
     }
 }

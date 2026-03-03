@@ -461,11 +461,13 @@ class ClubActivity extends Model
         $newActivity->status = ClubActivityStatus::Scheduled;
         $newActivity->save();
 
-        ClubActivityParticipant::create([
-            'club_activity_id' => $newActivity->id,
-            'user_id' => $this->created_by,
-            'status' => ClubActivityParticipantStatus::Accepted,
-        ]);
+        if ($this->creator_always_join && $this->created_by) {
+            ClubActivityParticipant::create([
+                'club_activity_id' => $newActivity->id,
+                'user_id' => $this->created_by,
+                'status' => ClubActivityParticipantStatus::Accepted,
+            ]);
+        }
 
         $checkInToken = \Illuminate\Support\Str::random(48);
         $newActivity->update(['check_in_token' => $checkInToken]);

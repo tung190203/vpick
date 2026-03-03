@@ -73,6 +73,10 @@ class ClubActivityParticipantService
             throw new \Exception('Bạn không phải thành viên CLB');
         }
 
+        $isCreator = (int) $activity->created_by === (int) $userId;
+        $isAdminOrManager = in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary]);
+        $shouldAutoAccept = $isCreator || $isAdminOrManager;
+
         // Check if user already has a participant record
         $existingParticipant = $activity->participants()->where('user_id', $userId)->first();
 
@@ -86,36 +90,53 @@ class ClubActivityParticipantService
                 throw new \Exception('Bạn đã tham gia hoạt động này');
             }
 
-            // If status is Declined or Absent, allow rejoin by updating status to Pending
-            $existingParticipant->update([
-                'status' => ClubActivityParticipantStatus::Pending,
-                'wallet_transaction_id' => null, // Reset transaction
-            ]);
+            // If status is Declined or Absent, allow rejoin
+            $newStatus = $shouldAutoAccept ? ClubActivityParticipantStatus::Accepted : ClubActivityParticipantStatus::Pending;
 
-            $applicant = User::find($userId);
-            if ($applicant) {
-                $this->notifyManagersOfJoinRequest($activity, $applicant);
+            if ($shouldAutoAccept && $activity->fee_amount > 0) {
+                $existingParticipant->update(['wallet_transaction_id' => null]);
+                $this->createFeeTransaction($existingParticipant, $activity);
+            } else {
+                $existingParticipant->update([
+                    'status' => $newStatus,
+                    'wallet_transaction_id' => null,
+                ]);
             }
 
-            return $existingParticipant;
+            if (!$shouldAutoAccept) {
+                $applicant = User::find($userId);
+                if ($applicant) {
+                    $this->notifyManagersOfJoinRequest($activity, $applicant);
+                }
+            }
+
+            return $existingParticipant->fresh();
         }
 
         if ($activity->max_participants !== null && $activity->acceptedParticipants()->count() >= $activity->max_participants) {
             throw new \Exception('Sự kiện đã đủ số lượng người tham gia');
         }
 
+        $initialStatus = $shouldAutoAccept ? ClubActivityParticipantStatus::Accepted : ClubActivityParticipantStatus::Pending;
+
         $participant = ClubActivityParticipant::create([
             'club_activity_id' => $activity->id,
             'user_id' => $userId,
-            'status' => ClubActivityParticipantStatus::Pending,
+            'status' => $initialStatus,
         ]);
 
-        $applicant = User::find($userId);
-        if ($applicant) {
-            $this->notifyManagersOfJoinRequest($activity, $applicant);
+        if ($shouldAutoAccept && $activity->fee_amount > 0) {
+            $this->createFeeTransaction($participant, $activity);
         }
 
-        return $participant;
+        if (!$shouldAutoAccept) {
+            $applicant = User::find($userId);
+            if ($applicant) {
+                $this->notifyManagersOfJoinRequest($activity, $applicant);
+            }
+        }
+
+        return $participant->fresh();
     }
 
     private function notifyManagersOfJoinRequest(ClubActivity $activity, User $applicant): void
@@ -550,10 +571,12 @@ class ClubActivityParticipantService
             throw new \Exception('Chỉ có thể báo vắng cho chính mình');
         }
 
-        $participant->update([
-            'status' => ClubActivityParticipantStatus::Absent,
-            'is_absent' => true,
-        ]);
+        if (!in_array($participant->status, [ClubActivityParticipantStatus::Accepted, ClubActivityParticipantStatus::Attended])) {
+            throw new \Exception('Chỉ có thể báo vắng khi đã được duyệt tham gia');
+        }
+
+        // Báo vắng chỉ set cờ is_absent, không đổi status - user vẫn là participant, vẫn có thể check-in
+        $participant->update(['is_absent' => true]);
 
         return $participant;
     }
