@@ -571,10 +571,12 @@ class ClubActivityParticipantService
             throw new \Exception('Chỉ có thể báo vắng cho chính mình');
         }
 
-        $participant->update([
-            'status' => ClubActivityParticipantStatus::Absent,
-            'is_absent' => true,
-        ]);
+        if (!in_array($participant->status, [ClubActivityParticipantStatus::Accepted, ClubActivityParticipantStatus::Attended])) {
+            throw new \Exception('Chỉ có thể báo vắng khi đã được duyệt tham gia');
+        }
+
+        // Báo vắng chỉ set cờ is_absent, không đổi status - user vẫn là participant, vẫn có thể check-in
+        $participant->update(['is_absent' => true]);
 
         return $participant;
     }
