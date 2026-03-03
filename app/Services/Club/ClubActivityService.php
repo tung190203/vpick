@@ -158,12 +158,18 @@ class ClubActivityService
             $query->where(function ($q) use ($dateFrom, $dateTo, $nextOccurrenceIds, $firstOccurrenceIdsMonthlyQuarterlyYearly, $hasDateRange, $includeMonthlyQuarterlyYearlyFirstInRange) {
                 if ($hasDateRange) {
                     $q->where(function ($q2) use ($dateFrom, $dateTo) {
-                        if (!empty($dateFrom)) {
-                            $q2->whereDate('start_time', '>=', $dateFrom);
-                        }
-                        if (!empty($dateTo)) {
-                            $q2->whereDate('start_time', '<=', $dateTo);
-                        }
+                        // Hoạt động không lặp lại: luôn hiển thị (không lọc theo khoảng ngày)
+                        $q2->whereNull('club_activities.recurring_schedule')
+                            ->orWhere(function ($q3) use ($dateFrom, $dateTo) {
+                                // Hoạt động lặp lại: lọc theo khoảng ngày
+                                $q3->whereNotNull('club_activities.recurring_schedule');
+                                if (!empty($dateFrom)) {
+                                    $q3->whereDate('start_time', '>=', $dateFrom);
+                                }
+                                if (!empty($dateTo)) {
+                                    $q3->whereDate('start_time', '<=', $dateTo);
+                                }
+                            });
                     });
                 }
                 if (!empty($nextOccurrenceIds)) {
