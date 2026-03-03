@@ -173,6 +173,7 @@ Route::middleware(['auth:api', 'update.last_login'])->group(function () {
                 Route::delete('/{activityId}', [ClubActivityController::class, 'destroy']);
                 Route::post('/{activityId}/complete', [ClubActivityController::class, 'complete']);
                 Route::post('/{activityId}/cancel', [ClubActivityController::class, 'cancel']);
+                Route::post('/{activityId}/recurrence-series/cancel', [ClubActivityController::class, 'cancelRecurrenceSeries']);
                 Route::post('/{activityId}/check-in', [ClubActivityParticipantController::class, 'checkIn']);
                 Route::get('/{activityId}/check-ins', [ClubActivityParticipantController::class, 'checkInList']);
 
@@ -426,6 +427,7 @@ Route::middleware(['auth:api', 'update.last_login', 'throttle:api'])->group(func
                 Route::delete('/{activityId}', [ClubActivityController::class, 'destroy']);
                 Route::post('/{activityId}/complete', [ClubActivityController::class, 'complete']);
                 Route::post('/{activityId}/cancel', [ClubActivityController::class, 'cancel']);
+                Route::post('/{activityId}/recurrence-series/cancel', [ClubActivityController::class, 'cancelRecurrenceSeries']);
                 Route::post('/{activityId}/check-in', [ClubActivityParticipantController::class, 'checkIn']);
                 Route::get('/{activityId}/check-ins', [ClubActivityParticipantController::class, 'checkInList']);
 

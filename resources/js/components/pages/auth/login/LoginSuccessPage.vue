@@ -19,6 +19,8 @@ const route = useRoute()
 const token = route.query.access_token
 const type = route.query.token_type || 'Bearer'
 const refreshToken = route.query.refresh_token
+const redirectPath = route.query.redirect
+
 if (refreshToken) {
   localStorage.setItem(LOCAL_STORAGE_KEY.REFRESH_TOKEN, refreshToken)
 }
@@ -38,6 +40,12 @@ async function fetchUser(token, type) {
         }, 1000)
         return
       }
+
+      if (redirectPath) {
+        router.replace(redirectPath)
+        return
+      }
+
       switch (res.data.data.role) {
         case ROLE.ADMIN:
           router.replace({ name: 'admin.dashboard' })

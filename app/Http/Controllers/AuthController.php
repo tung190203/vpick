@@ -244,14 +244,28 @@ class AuthController extends Controller
         }
     }
 
-    public function redirectToGoogle()
+    public function redirectToGoogle(Request $request)
     {
-        return Socialite::driver('google')->stateless()->redirect();
+        $redirect = $request->query('redirect');
+        $state = $redirect ? base64_encode(json_encode(['redirect' => $redirect])) : null;
+
+        $driver = Socialite::driver('google')->stateless();
+        if ($state) {
+            $driver->with(['state' => $state]);
+        }
+        return $driver->redirect();
     }
 
     public function handleGoogleCallback(Request $request)
     {
         try {
+            $state = $request->input('state');
+            $redirectUrl = null;
+            if ($state) {
+                $decodedState = json_decode(base64_decode($state), true);
+                $redirectUrl = $decodedState['redirect'] ?? null;
+            }
+
             $googleUser = Socialite::driver('google')->stateless()->user();
             $user = User::where('email', $googleUser->getEmail())
                 ->orWhere('google_id', $googleUser->getId())
@@ -296,12 +310,16 @@ class AuthController extends Controller
             if ($request->header('User-Agent') && strpos($request->header('User-Agent'), 'MobileApp') !== false) {
                 return ResponseHelper::success(array_merge($this->responseWithToken($accessToken, $refreshToken, $user), ['status_code' => 'VERIFIED']), 'Đăng nhập bằng Google thành công');
             } else {
-                return redirect(config('app.redirect_success_url') . '/login-success?' . http_build_query([
+                $queryParams = [
                     'access_token' => $accessToken,
                     'refresh_token' => $refreshToken,
                     'token_type' => 'Bearer',
                     'expires_in' => 3600,
-                ]));
+                ];
+                if ($redirectUrl) {
+                    $queryParams['redirect'] = $redirectUrl;
+                }
+                return redirect(config('app.redirect_success_url') . '/login-success?' . http_build_query($queryParams));
             }
         } catch (\Exception $e) {
             return ResponseHelper::error('Không thể đăng nhập bằng Google', 500, ['status_code' => 'OAUTH_FAILED']);
