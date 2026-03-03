@@ -26,6 +26,8 @@ class ClubActivity extends Model
         'description',
         'type',
         'recurring_schedule',
+        'recurrence_series_id',
+        'recurrence_series_cancelled_at',
         'start_time',
         'end_time',
         'duration',
@@ -54,7 +56,7 @@ class ClubActivity extends Model
     protected $casts = [
         'status' => ClubActivityStatus::class,
         'fee_split_type' => ClubActivityFeeSplitType::class,
-        // NOTE: Do NOT cast recurring_schedule to 'array' - accessor will handle it
+        'recurrence_series_cancelled_at' => 'datetime',
         'start_time' => 'datetime',
         'end_time' => 'datetime',
         'cancellation_deadline' => 'datetime',
@@ -181,7 +183,16 @@ class ClubActivity extends Model
         return $this->recurring_schedule !== null && !empty($this->recurring_schedule);
     }
 
-    /** Số phút trước start_time (để hiển thị "30 phút" hoặc "1 Tiếng"). */
+    public function isRecurrenceSeriesCancelled(): bool
+    {
+        return $this->recurrence_series_cancelled_at !== null;
+    }
+
+    public function scopeInRecurrenceSeries($query, string $seriesId)
+    {
+        return $query->where('recurrence_series_id', $seriesId);
+    }
+
     public function getCancellationDeadlineMinutesAttribute(): ?int
     {
         if (!$this->cancellation_deadline || !$this->start_time) {
@@ -191,7 +202,6 @@ class ClubActivity extends Model
         return $minutes > 0 ? (int) $minutes : null;
     }
 
-    /** Số giờ trước start_time (cho backward compat, làm tròn). */
     public function getCancellationDeadlineHoursAttribute(): ?float
     {
         $minutes = $this->cancellation_deadline_minutes;
@@ -217,13 +227,10 @@ class ClubActivity extends Model
 
         if ($data['period'] === 'weekly') {
             $result['week_days'] = $data['week_days'] ?? null;
-        } else {
-            if (isset($data['recurring_date']) && $data['recurring_date']) {
-                $result['recurring_date'] = $this->formatRecurringDateForOutput(
-                    $data['period'],
-                    $data['recurring_date']
-                );
-            }
+        } elseif (isset($data['recurring_date'])) {
+            $result['recurring_date'] = is_string($data['recurring_date'])
+                ? $data['recurring_date']
+                : (string) $data['recurring_date'];
         }
 
         return $result;
@@ -236,23 +243,7 @@ class ClubActivity extends Model
             return;
         }
 
-        // Store as JSON
         $this->attributes['recurring_schedule'] = json_encode($value);
-    }
-
-    private function formatRecurringDateForOutput(string $period, string $dateString): ?string
-    {
-        $date = $this->parseDate($dateString);
-        if (!$date) {
-            return null;
-        }
-
-        return match($period) {
-            'monthly' => "ngày {$date['day']} hàng tháng",
-            'quarterly' => "ngày {$date['day']} tháng đầu tiên hàng quý",
-            'yearly' => "ngày {$date['day']}/{$date['month']} hàng năm",
-            default => null
-        };
     }
 
     private function parseDate(string $dateString): ?array
@@ -286,6 +277,15 @@ class ClubActivity extends Model
 
         $data = json_decode($value, true);
         return $data && isset($data['period']) ? $data : null;
+    }
+
+    public function getRecurringDateParts(): ?array
+    {
+        $schedule = $this->getRecurringScheduleRaw();
+        if (!$schedule || empty($schedule['recurring_date'])) {
+            return null;
+        }
+        return $this->parseDate($schedule['recurring_date']);
     }
 
     public function calculateNextOccurrence(Carbon $fromDate = null): ?Carbon
@@ -372,30 +372,29 @@ class ClubActivity extends Model
         }
 
         $targetDay = $dateInfo['day'];
-
-        $quarterStartMonths = [1, 4, 7, 10];
-        $currentMonth = $fromDate->month;
+        $selectedMonth = $dateInfo['month'];
+        $monthPositionInQuarter = ((int) $selectedMonth - 1) % 3 + 1;
+        $targetMonths = [$monthPositionInQuarter, $monthPositionInQuarter + 3, $monthPositionInQuarter + 6, $monthPositionInQuarter + 9];
 
         $timeString = $this->start_time?->format('H:i:s');
+        $currentYear = $fromDate->year;
+        $currentMonth = $fromDate->month;
 
-        foreach ($quarterStartMonths as $month) {
-            if ($month >= $currentMonth) {
-                $nextDate = $fromDate->copy()->month($month)->day(min($targetDay, Carbon::create($fromDate->year, $month)->daysInMonth));
+        foreach ([$currentYear, $currentYear + 1] as $year) {
+            foreach ($targetMonths as $m) {
+                $nextDate = Carbon::create($year, $m, 1);
+                $effectiveDay = min($targetDay, $nextDate->daysInMonth);
+                $nextDate->day($effectiveDay);
                 if ($timeString) {
                     $nextDate->setTimeFromTimeString($timeString);
                 }
-
                 if ($nextDate->gt($fromDate)) {
                     return $nextDate;
                 }
             }
         }
 
-        $nextDate = $fromDate->copy()->addYear()->month(1)->day(min($targetDay, 31));
-        if ($timeString) {
-            $nextDate->setTimeFromTimeString($timeString);
-        }
-        return $nextDate;
+        return null;
     }
 
     private function calculateNextYearlyOccurrence(Carbon $fromDate, ?string $dateString): ?Carbon

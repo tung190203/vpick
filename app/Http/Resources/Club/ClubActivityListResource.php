@@ -21,6 +21,7 @@ class ClubActivityListResource extends JsonResource
             'is_public' => (bool) ($this->is_public ?? true),
             'is_recurring' => $this->recurring_schedule !== null,
             'recurring_schedule' => $this->recurring_schedule,
+            'recurrence_series_id' => $this->recurrence_series_id,
             'created_by' => $this->created_by,
             'creator_always_join' => (bool) ($this->creator_always_join ?? true),
             'creator' => new \App\Http\Resources\UserResource($this->whenLoaded('creator')),

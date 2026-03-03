@@ -85,42 +85,106 @@ class ClubActivityService
                 ->where('end_time', '>=', now());
         }
 
-        if (!empty($filters['date_from'])) {
-            $query->whereDate('start_time', '>=', $filters['date_from']);
-        }
-
-        if (!empty($filters['date_to'])) {
-            $query->whereDate('start_time', '<=', $filters['date_to']);
-        }
-
         $shouldCollapseRecurring = $hasAll
             || empty($statuses)
             || in_array('scheduled', $activityStatuses)
             || in_array('ongoing', $activityStatuses)
             || (($hasRegistered || $hasAvailable) && empty($activityStatuses));
 
-        if ($shouldCollapseRecurring) {
-            $firstsSub = DB::table('club_activities')
-                ->select('club_id', 'title', 'recurring_schedule', DB::raw('MIN(start_time) as min_start'))
-                ->where('club_id', $club->id)
-                ->whereNotNull('recurring_schedule')
-                ->whereIn('status', [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing])
-                ->groupBy('club_id', 'title', 'recurring_schedule');
+        $dateFrom = $filters['date_from'] ?? $filters['from_date'] ?? null;
+        $dateTo = $filters['date_to'] ?? $filters['to_date'] ?? null;
+        $includeNextOccurrence = !empty($filters['include_next_occurrence_for_series_done_this_week']);
 
-            $firstOccurrenceIds = DB::table('club_activities as ca')
-                ->select('ca.id')
-                ->joinSub($firstsSub, 'firsts', function ($join) {
-                    $join->on('ca.club_id', '=', 'firsts.club_id')
-                        ->on('ca.title', '=', 'firsts.title')
-                        ->whereRaw('(ca.recurring_schedule <=> firsts.recurring_schedule)')
+        $driver = $query->getConnection()->getDriverName();
+        $periodExpr = $driver === 'mysql'
+            ? "JSON_UNQUOTE(JSON_EXTRACT(club_activities.recurring_schedule, '$.period'))"
+            : "json_extract(club_activities.recurring_schedule, '$.period')";
+
+        $firstOccurrenceIdsMonthlyQuarterlyYearly = [];
+        if ($shouldCollapseRecurring) {
+            $periodExprSub = $driver === 'mysql'
+                ? "JSON_UNQUOTE(JSON_EXTRACT(recurring_schedule, '$.period'))"
+                : "json_extract(recurring_schedule, '$.period')";
+            $firstsSeriesSub = DB::table('club_activities')
+                ->select('recurrence_series_id', DB::raw('MIN(start_time) as min_start'))
+                ->where('club_id', $club->id)
+                ->whereNotNull('recurrence_series_id')
+                ->whereNull('recurrence_series_cancelled_at')
+                ->whereIn('status', [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing])
+                ->whereRaw("({$periodExprSub} IN ('monthly', 'quarterly', 'yearly'))")
+                ->groupBy('recurrence_series_id');
+
+            $firstOccurrenceIdsMonthlyQuarterlyYearly = DB::table('club_activities as ca')
+                ->joinSub($firstsSeriesSub, 'firsts', function ($join) {
+                    $join->on('ca.recurrence_series_id', '=', 'firsts.recurrence_series_id')
                         ->on('ca.start_time', '=', 'firsts.min_start')
                         ->whereIn('ca.status', [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing]);
-                });
+                })
+                ->where('ca.club_id', $club->id)
+                ->whereNull('ca.recurrence_series_cancelled_at')
+                ->pluck('ca.id')
+                ->all();
+        }
 
-            $query->where(function ($q) use ($firstOccurrenceIds) {
-                $q->whereNull('recurring_schedule')
-                    ->orWhereNotIn('status', [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing])
-                    ->orWhereIn('id', $firstOccurrenceIds);
+        $nextOccurrenceIds = [];
+        if ($includeNextOccurrence && !empty($dateFrom) && !empty($dateTo)) {
+            $seriesCountDoneThisWeek = ClubActivity::where('club_id', $club->id)
+                ->whereNotNull('recurrence_series_id')
+                ->whereIn('status', [ClubActivityStatus::Completed, ClubActivityStatus::Cancelled])
+                ->whereDate('start_time', '>=', $dateFrom)
+                ->whereDate('start_time', '<=', $dateTo)
+                ->selectRaw('recurrence_series_id, COUNT(*) as cnt')
+                ->groupBy('recurrence_series_id')
+                ->pluck('cnt', 'recurrence_series_id')
+                ->all();
+            $afterWeekEnd = Carbon::parse($dateTo)->endOfDay()->addSecond()->format('Y-m-d H:i:s');
+            foreach ($seriesCountDoneThisWeek as $seriesId => $count) {
+                $ids = ClubActivity::where('club_id', $club->id)
+                    ->where('recurrence_series_id', $seriesId)
+                    ->whereIn('status', [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing])
+                    ->where('start_time', '>', $afterWeekEnd)
+                    ->orderBy('start_time')
+                    ->limit((int) $count)
+                    ->pluck('id')
+                    ->all();
+                $nextOccurrenceIds = array_merge($nextOccurrenceIds, $ids);
+            }
+        }
+
+        $hasDateRange = !empty($dateFrom) || !empty($dateTo);
+        $includeMonthlyQuarterlyYearlyFirstInRange = $hasDateRange && $shouldCollapseRecurring && !empty($firstOccurrenceIdsMonthlyQuarterlyYearly);
+
+        if ($hasDateRange || !empty($nextOccurrenceIds) || $includeMonthlyQuarterlyYearlyFirstInRange) {
+            $query->where(function ($q) use ($dateFrom, $dateTo, $nextOccurrenceIds, $firstOccurrenceIdsMonthlyQuarterlyYearly, $hasDateRange, $includeMonthlyQuarterlyYearlyFirstInRange) {
+                if ($hasDateRange) {
+                    $q->where(function ($q2) use ($dateFrom, $dateTo) {
+                        if (!empty($dateFrom)) {
+                            $q2->whereDate('start_time', '>=', $dateFrom);
+                        }
+                        if (!empty($dateTo)) {
+                            $q2->whereDate('start_time', '<=', $dateTo);
+                        }
+                    });
+                }
+                if (!empty($nextOccurrenceIds)) {
+                    if ($hasDateRange) {
+                        $q->orWhereIn('club_activities.id', $nextOccurrenceIds);
+                    } else {
+                        $q->whereIn('club_activities.id', $nextOccurrenceIds);
+                    }
+                }
+                if ($includeMonthlyQuarterlyYearlyFirstInRange) {
+                    $q->orWhereIn('club_activities.id', $firstOccurrenceIdsMonthlyQuarterlyYearly);
+                }
+            });
+        }
+
+        if ($shouldCollapseRecurring) {
+            $query->where(function ($q) use ($periodExpr, $firstOccurrenceIdsMonthlyQuarterlyYearly) {
+                $q->whereNull('club_activities.recurring_schedule')
+                    ->orWhereNotIn('club_activities.status', [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing])
+                    ->orWhereRaw("({$periodExpr} = 'weekly')")
+                    ->orWhereIn('club_activities.id', $firstOccurrenceIdsMonthlyQuarterlyYearly ?: [0]);
             });
         }
 
@@ -178,13 +242,17 @@ class ClubActivityService
             $qrCodeUrl = $this->imageService->optimizeThumbnail($data['qr_image'], 'activity_qr_codes', 90);
         }
 
+        $recurringSchedule = $data['recurring_schedule'] ?? null;
+        $seriesId = $recurringSchedule ? Str::uuid()->toString() : null;
+
         $activity = ClubActivity::create([
             'club_id' => $club->id,
             'mini_tournament_id' => $data['mini_tournament_id'] ?? null,
             'title' => $data['title'],
             'description' => $data['description'] ?? null,
             'type' => $data['type'] ?? 'other',
-            'recurring_schedule' => $data['recurring_schedule'] ?? null,
+            'recurring_schedule' => $recurringSchedule,
+            'recurrence_series_id' => $seriesId,
             'start_time' => $data['start_time'],
             'end_time' => $endTime,
             'duration' => $data['duration'] ?? null,
@@ -224,7 +292,119 @@ class ClubActivityService
             );
         }
 
+        if ($activity->isRecurring() && $seriesId) {
+            $this->createBatchOccurrencesForNewSeries($activity, $userId);
+        }
+
         return $activity;
+    }
+
+    public function generateOccurrenceStartTimesForPeriod(ClubActivity $activity): array
+    {
+        $schedule = $activity->getRecurringScheduleRaw();
+        if (!$schedule || empty($schedule['period'])) {
+            return [];
+        }
+
+        $start = $activity->start_time ? Carbon::parse($activity->start_time) : Carbon::now();
+        $timeString = $activity->start_time ? $activity->start_time->format('H:i:s') : $start->format('H:i:s');
+        $period = $schedule['period'];
+        $list = [];
+
+        if ($period === 'weekly') {
+            $weekDays = $schedule['week_days'] ?? [];
+            if (empty($weekDays)) {
+                return [];
+            }
+            $monthStart = $start->copy()->startOfMonth();
+            $monthEnd = $start->copy()->endOfMonth();
+            for ($d = $monthStart->copy(); $d->lte($monthEnd); $d->addDay()) {
+                if (in_array((int) $d->dayOfWeek, array_map('intval', $weekDays), true)) {
+                    $d->setTimeFromTimeString($timeString);
+                    if ($d->gte($start)) {
+                        $list[] = $d->copy();
+                    }
+                }
+            }
+            return $list;
+        }
+
+        $parts = $activity->getRecurringDateParts();
+        if (!$parts) {
+            return [];
+        }
+
+        $day = (int) $parts['day'];
+        $month = (int) $parts['month'];
+
+        if ($period === 'monthly') {
+            for ($i = 0; $i < 3; $i++) {
+                $base = $start->copy()->addMonths($i)->startOfMonth();
+                $effectiveDay = min($day, $base->daysInMonth);
+                $occurrence = $base->copy()->day($effectiveDay)->setTimeFromTimeString($timeString);
+                if ($occurrence->gte($start)) {
+                    $list[] = $occurrence;
+                }
+            }
+            return $list;
+        }
+
+        if ($period === 'quarterly') {
+            $monthPositionInQuarter = (($month - 1) % 3) + 1;
+            $targetMonths = [$monthPositionInQuarter, $monthPositionInQuarter + 3, $monthPositionInQuarter + 6, $monthPositionInQuarter + 9];
+            $year = $start->year;
+            foreach ($targetMonths as $m) {
+                $base = Carbon::create($year, $m, 1);
+                $effectiveDay = min($day, $base->daysInMonth);
+                $occurrence = Carbon::create($year, $m, $effectiveDay)->setTimeFromTimeString($timeString);
+                if ($occurrence->gte($start)) {
+                    $list[] = $occurrence;
+                }
+            }
+            return $list;
+        }
+
+        if ($period === 'yearly') {
+            for ($y = 0; $y < 2; $y++) {
+                $year = $start->year + $y;
+                $base = Carbon::create($year, $month, 1);
+                $effectiveDay = min($day, $base->daysInMonth);
+                $occurrence = Carbon::create($year, $month, $effectiveDay)->setTimeFromTimeString($timeString);
+                if ($occurrence->gte($start)) {
+                    $list[] = $occurrence;
+                }
+            }
+            return $list;
+        }
+
+        return [];
+    }
+
+    private function createBatchOccurrencesForNewSeries(ClubActivity $firstActivity, int $userId): void
+    {
+        $seriesId = $firstActivity->recurrence_series_id;
+        if (!$seriesId) {
+            return;
+        }
+
+        $startTimes = $this->generateOccurrenceStartTimesForPeriod($firstActivity);
+        $firstStart = $firstActivity->start_time ? $firstActivity->start_time->copy()->startOfMinute() : null;
+
+        foreach ($startTimes as $nextStartTime) {
+            $nextStart = $nextStartTime->copy()->startOfMinute();
+            if ($firstStart && $nextStart->eq($firstStart)) {
+                continue;
+            }
+
+            $existing = ClubActivity::where('club_id', $firstActivity->club_id)
+                ->where('recurrence_series_id', $seriesId)
+                ->whereBetween('start_time', [$nextStart->copy(), $nextStart->copy()->endOfMinute()])
+                ->exists();
+
+            if (!$existing) {
+                $this->createNextOccurrence($firstActivity, $nextStartTime, $userId, $seriesId);
+            }
+        }
     }
 
     public function updateActivity(ClubActivity $activity, array $data, int $userId): ClubActivity
@@ -264,9 +444,121 @@ class ClubActivityService
         unset($data['cancellation_deadline_hours'], $data['cancellation_deadline_minutes']);
         unset($data['qr_image']);
 
-        $activity->update($data);
+        $editScope = $data['edit_scope'] ?? 'this_occurrence';
+        unset($data['edit_scope']);
 
-        return $activity;
+        if ($editScope === 'entire_series' && $activity->recurrence_series_id) {
+            return $this->updateActivityAsNewSeries($activity, $data, $userId);
+        }
+
+        if ($editScope === 'this_occurrence') {
+            unset($data['recurring_schedule']);
+            DB::transaction(function () use ($activity, $data) {
+                $activity->update($data);
+            });
+            return $activity->fresh();
+        }
+
+        $newRecurringSchedule = $data['recurring_schedule'] ?? null;
+        $seriesId = $activity->recurrence_series_id;
+        DB::transaction(function () use ($activity, $data, $newRecurringSchedule, $seriesId, $userId) {
+            $activity->update($data);
+            if ($seriesId && $newRecurringSchedule !== null && isset($newRecurringSchedule['period'])) {
+                $this->syncRecurrenceSeriesAfterScheduleChange($activity, $newRecurringSchedule, $userId);
+            }
+        });
+        return $activity->fresh();
+    }
+
+    /**
+     * Sửa cả chuỗi: hủy chuỗi cũ, tạo chuỗi mới với thông tin đã sửa.
+     */
+    private function updateActivityAsNewSeries(ClubActivity $activity, array $data, int $userId): ClubActivity
+    {
+        $club = $activity->club;
+        $seriesId = $activity->recurrence_series_id;
+
+        $payload = [
+            'title' => $data['title'] ?? $activity->title,
+            'description' => $data['description'] ?? $activity->description,
+            'type' => $data['type'] ?? $activity->type ?? 'other',
+            'start_time' => $data['start_time'] ?? $activity->start_time?->format('Y-m-d H:i:s'),
+            'duration' => $data['duration'] ?? $activity->duration,
+            'address' => $data['address'] ?? $activity->address,
+            'latitude' => $data['latitude'] ?? $activity->latitude,
+            'longitude' => $data['longitude'] ?? $activity->longitude,
+            'cancellation_deadline_hours' => isset($data['cancellation_deadline_hours']) ? $data['cancellation_deadline_hours'] : null,
+            'cancellation_deadline_minutes' => $data['cancellation_deadline_minutes'] ?? null,
+            'mini_tournament_id' => $data['mini_tournament_id'] ?? $activity->mini_tournament_id,
+            'recurring_schedule' => $data['recurring_schedule'] ?? $activity->getRecurringScheduleRaw(),
+            'reminder_minutes' => $data['reminder_minutes'] ?? $activity->reminder_minutes ?? 15,
+            'fee_amount' => $data['fee_amount'] ?? $activity->fee_amount ?? 0,
+            'fee_description' => $data['fee_description'] ?? $activity->fee_description,
+            'guest_fee' => $data['guest_fee'] ?? $activity->guest_fee ?? 0,
+            'penalty_amount' => $data['penalty_amount'] ?? $activity->penalty_amount ?? 0,
+            'fee_split_type' => $data['fee_split_type'] ?? $activity->fee_split_type?->value ?? 'fixed',
+            'allow_member_invite' => isset($data['allow_member_invite']) ? (bool) $data['allow_member_invite'] : (bool) $activity->allow_member_invite,
+            'is_public' => isset($data['is_public']) ? (bool) $data['is_public'] : (bool) $activity->is_public,
+            'max_participants' => $data['max_participants'] ?? $activity->max_participants,
+            'creator_always_join' => isset($data['creator_always_join']) ? (bool) $data['creator_always_join'] : (bool) $activity->creator_always_join,
+        ];
+
+        return DB::transaction(function () use ($club, $activity, $seriesId, $payload, $userId) {
+            $this->replaceSeriesKeepingHistory($club, $seriesId);
+            return $this->createActivity($club, $payload, $userId);
+        });
+    }
+
+    /**
+     * Khi sửa cả chuỗi: xóa hết bản ghi cũ trạng thái scheduled/ongoing (không còn hiển thị),
+     * chỉ giữ lại bản ghi đã hoàn thành hoặc đã hủy để xem lịch sử; đánh dấu chuỗi đã thay thế.
+     */
+    private function replaceSeriesKeepingHistory(Club $club, string $seriesId): void
+    {
+        $now = Carbon::now();
+
+        ClubActivity::where('club_id', $club->id)
+            ->where('recurrence_series_id', $seriesId)
+            ->whereIn('status', [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing])
+            ->delete();
+
+        ClubActivity::where('club_id', $club->id)
+            ->where('recurrence_series_id', $seriesId)
+            ->update(['recurrence_series_cancelled_at' => $now]);
+    }
+
+    private function syncRecurrenceSeriesAfterScheduleChange(ClubActivity $updatedActivity, array $newSchedule, int $userId): void
+    {
+        $seriesId = $updatedActivity->recurrence_series_id;
+        if (!$seriesId) {
+            return;
+        }
+
+        $now = Carbon::now();
+        $period = $newSchedule['period'] ?? null;
+
+        $futureInSeries = ClubActivity::where('recurrence_series_id', $seriesId)
+            ->whereIn('status', [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing])
+            ->where('start_time', '>', $now)
+            ->get();
+
+        foreach ($futureInSeries as $a) {
+            $a->update(['recurring_schedule' => $newSchedule]);
+        }
+
+        if ($period === 'weekly' && !empty($newSchedule['week_days'])) {
+            $allowedWeekDays = array_map('intval', (array) $newSchedule['week_days']);
+            foreach ($futureInSeries as $a) {
+                $dayOfWeek = (int) Carbon::parse($a->start_time)->dayOfWeek;
+                if (!in_array($dayOfWeek, $allowedWeekDays, true)) {
+                    $a->update([
+                        'status' => ClubActivityStatus::Cancelled,
+                        'cancellation_reason' => 'Lịch lặp đã thay đổi, ngày này không còn trong chu kỳ.',
+                        'cancelled_by' => $userId,
+                    ]);
+                }
+            }
+        }
     }
 
     public function deleteActivity(ClubActivity $activity, int $userId): void
@@ -298,7 +590,6 @@ class ClubActivityService
 
         $activity->markAsCompleted();
 
-        // Recurring: tạo occurrence tiếp theo nếu chưa có (đảm bảo luôn có lịch sắp tới)
         if ($activity->isRecurring()) {
             $this->ensureNextOccurrenceExists($activity, $userId);
         }
@@ -362,7 +653,6 @@ class ClubActivityService
                 }
             }
 
-            // Notify participants (accepted/attended) that activity was cancelled
             $participantsToNotify = $activity->participants()
                 ->whereIn('status', [ClubActivityParticipantStatus::Accepted, ClubActivityParticipantStatus::Attended])
                 ->with('user')
@@ -381,7 +671,6 @@ class ClubActivityService
                 }
             }
 
-            // Recurring: hủy chỉ áp dụng cho ngày đó, vẫn tạo lịch occurrence tiếp theo
             if ($activity->isRecurring()) {
                 $this->ensureNextOccurrenceForCancelled($activity);
             }
@@ -390,9 +679,6 @@ class ClubActivityService
         });
     }
 
-    /**
-     * Đảm bảo có occurrence tiếp theo sau khi hủy một occurrence của recurring (chỉ hủy ngày đó, lịch tiếp vẫn tạo).
-     */
     public function ensureNextOccurrenceForCancelled(ClubActivity $cancelledActivity): void
     {
         if (!$cancelledActivity->isRecurring()) {
@@ -404,10 +690,6 @@ class ClubActivityService
         }
     }
 
-    /**
-     * Đảm bảo có occurrence tiếp theo sau khi activity recurring hoàn thành (gọi từ cron hoặc manual).
-     * Tạo occurrence mới nếu chưa có trong 30 ngày tới.
-     */
     public function ensureNextOccurrenceForCompleted(ClubActivity $completedActivity): void
     {
         if (!$completedActivity->isRecurring()) {
@@ -426,15 +708,12 @@ class ClubActivityService
             return;
         }
 
-        // Tính occurrence tiếp theo dựa trên thời điểm hoàn thành
         $nextStartTime = $completedActivity->calculateNextOccurrence($fromDate);
 
-        // Nếu không còn occurrence tiếp theo thì dừng
         if (!$nextStartTime) {
             return;
         }
 
-        // Tránh trường hợp nextStartTime trùng hoặc trước fromDate (do chỉnh sửa giờ)
         if ($nextStartTime->lte($fromDate)) {
             $nextStartTime = $completedActivity->calculateNextOccurrence($nextStartTime->copy()->addMinute());
             if (!$nextStartTime) {
@@ -442,27 +721,26 @@ class ClubActivityService
             }
         }
 
-        $rawSchedule = $completedActivity->attributes['recurring_schedule'] ?? null;
-        $existing = ClubActivity::where('club_id', $completedActivity->club_id)
-            ->where('title', $completedActivity->title)
-            ->where('recurring_schedule', $rawSchedule)
+        $seriesId = $completedActivity->recurrence_series_id;
+        $existingQuery = ClubActivity::where('club_id', $completedActivity->club_id)
             ->whereBetween('start_time', [
                 $nextStartTime->copy()->startOfMinute(),
                 $nextStartTime->copy()->endOfMinute(),
-            ])
-            ->exists();
-
-        if ($existing) {
+            ]);
+        if ($seriesId) {
+            $existingQuery->where('recurrence_series_id', $seriesId);
+        } else {
+            $rawSchedule = $completedActivity->attributes['recurring_schedule'] ?? null;
+            $existingQuery->where('title', $completedActivity->title)
+                ->where('recurring_schedule', $rawSchedule);
+        }
+        if ($existingQuery->exists()) {
             return;
         }
 
-        $this->createNextOccurrence($completedActivity, $nextStartTime, $userId);
+        $this->createNextOccurrence($completedActivity, $nextStartTime, $userId, $seriesId);
     }
 
-    /**
-     * Generate initial occurrences for a recurring activity
-     * Creates next 30 days worth of occurrences
-     */
     private function generateInitialOccurrences(ClubActivity $activity, int $userId): int
     {
         $count = 0;
@@ -470,7 +748,6 @@ class ClubActivityService
         $iteration = 0;
         $lookAheadDate = Carbon::now()->addDays(30);
 
-        // Start from the activity's end_time to find next occurrence
         $fromDate = $activity->end_time ?? $activity->start_time;
 
         while ($iteration < $maxIterations) {
@@ -482,13 +759,11 @@ class ClubActivityService
                 break;
             }
 
-            // Tránh tạo trùng ngày
             if ($nextStartTime->lte($fromDate)) {
                 $fromDate = $nextStartTime->copy()->addMinute();
                 continue;
             }
 
-            // Check if occurrence already exists
             $rawSchedule = $activity->attributes['recurring_schedule'] ?? null;
             $existing = ClubActivity::where('club_id', $activity->club_id)
                 ->where('title', $activity->title)
@@ -500,7 +775,7 @@ class ClubActivityService
                 ->exists();
 
             if (!$existing) {
-                $this->createNextOccurrence($activity, $nextStartTime, $userId);
+                $this->createNextOccurrence($activity, $nextStartTime, $userId, $activity->recurrence_series_id);
                 $count++;
             }
 
@@ -510,10 +785,7 @@ class ClubActivityService
         return $count;
     }
 
-    /**
-     * Create a single occurrence from recurring activity template
-     */
-    private function createNextOccurrence(ClubActivity $activity, Carbon $nextStartTime, int $userId): ClubActivity
+    private function createNextOccurrence(ClubActivity $activity, Carbon $nextStartTime, int $userId, ?string $recurrenceSeriesId = null): ClubActivity
     {
         $duration = $activity->duration ?? ($activity->end_time ? $activity->start_time->diffInMinutes($activity->end_time) : null);
         $nextEndTime = $duration ? $nextStartTime->copy()->addMinutes($duration) : null;
@@ -526,6 +798,8 @@ class ClubActivityService
             }
         }
 
+        $seriesId = $recurrenceSeriesId ?? $activity->recurrence_series_id;
+
         $newActivity = $activity->replicate([
             'status',
             'cancellation_reason',
@@ -537,16 +811,16 @@ class ClubActivityService
         $newActivity->end_time = $nextEndTime;
         $newActivity->cancellation_deadline = $nextCancellationDeadline;
         $newActivity->status = ClubActivityStatus::Scheduled;
+        $newActivity->recurrence_series_id = $seriesId;
+        $newActivity->recurrence_series_cancelled_at = null;
         $newActivity->save();
 
-        // Add creator as participant
         ClubActivityParticipant::create([
             'club_activity_id' => $newActivity->id,
             'user_id' => $userId,
             'status' => ClubActivityParticipantStatus::Accepted,
         ]);
 
-        // Generate check-in token
         $checkInToken = Str::random(48);
         $newActivity->update(['check_in_token' => $checkInToken]);
 
@@ -556,5 +830,173 @@ class ClubActivityService
     public function buildCheckInUrl(int $clubId, int $activityId, string $token): string
     {
         return url("/api/clubs/{$clubId}/activities/{$activityId}/check-in?token={$token}");
+    }
+
+    public function generateOccurrenceStartTimesForRollover(ClubActivity $template, Carbon $afterDate): array
+    {
+        $schedule = $template->getRecurringScheduleRaw();
+        if (!$schedule || empty($schedule['period'])) {
+            return [];
+        }
+
+        $timeString = $template->start_time ? $template->start_time->format('H:i:s') : '00:00:00';
+        $period = $schedule['period'];
+        $list = [];
+
+        if ($period === 'weekly') {
+            $weekDays = $schedule['week_days'] ?? [];
+            if (empty($weekDays)) {
+                return [];
+            }
+            $nextMonthStart = $afterDate->copy()->addMonth()->startOfMonth();
+            $monthEnd = $nextMonthStart->copy()->endOfMonth();
+            for ($d = $nextMonthStart->copy(); $d->lte($monthEnd); $d->addDay()) {
+                if (in_array((int) $d->dayOfWeek, array_map('intval', $weekDays), true)) {
+                    $d->setTimeFromTimeString($timeString);
+                    $list[] = $d->copy();
+                }
+            }
+            return $list;
+        }
+
+        $parts = $template->getRecurringDateParts();
+        if (!$parts) {
+            return [];
+        }
+        $day = (int) $parts['day'];
+        $month = (int) $parts['month'];
+
+        if ($period === 'monthly') {
+            $startFrom = $afterDate->copy()->addMonth()->startOfMonth();
+            for ($i = 0; $i < 3; $i++) {
+                $base = $startFrom->copy()->addMonths($i);
+                $effectiveDay = min($day, $base->daysInMonth);
+                $list[] = $base->copy()->day($effectiveDay)->setTimeFromTimeString($timeString);
+            }
+            return $list;
+        }
+
+        if ($period === 'quarterly') {
+            $monthPositionInQuarter = (($month - 1) % 3) + 1;
+            $targetMonths = [$monthPositionInQuarter, $monthPositionInQuarter + 3, $monthPositionInQuarter + 6, $monthPositionInQuarter + 9];
+            $year = $afterDate->year + 1;
+            foreach ($targetMonths as $m) {
+                $base = Carbon::create($year, $m, 1);
+                $effectiveDay = min($day, $base->daysInMonth);
+                $list[] = Carbon::create($year, $m, $effectiveDay)->setTimeFromTimeString($timeString);
+            }
+            return $list;
+        }
+
+        if ($period === 'yearly') {
+            $lastYear = $afterDate->year;
+            for ($y = 1; $y <= 2; $y++) {
+                $year = $lastYear + $y;
+                $base = Carbon::create($year, $month, 1);
+                $effectiveDay = min($day, $base->daysInMonth);
+                $list[] = Carbon::create($year, $month, $effectiveDay)->setTimeFromTimeString($timeString);
+            }
+            return $list;
+        }
+
+        return [];
+    }
+
+    public function rolloverRecurrenceSeries(): int
+    {
+        $seriesIds = ClubActivity::whereNotNull('recurrence_series_id')
+            ->whereNull('recurrence_series_cancelled_at')
+            ->distinct()
+            ->pluck('recurrence_series_id');
+
+        $created = 0;
+        foreach ($seriesIds as $seriesId) {
+            $lastActivity = ClubActivity::where('recurrence_series_id', $seriesId)
+                ->orderByDesc('start_time')
+                ->first();
+            if (!$lastActivity || !$lastActivity->isRecurring()) {
+                continue;
+            }
+
+            $lastStart = $lastActivity->start_time;
+            if (!$lastStart) {
+                continue;
+            }
+
+            $schedule = $lastActivity->getRecurringScheduleRaw();
+            $period = $schedule['period'] ?? null;
+            $periodEnd = match ($period) {
+                'weekly' => $lastStart->copy()->endOfMonth(),
+                'monthly' => $lastStart->copy()->addMonths(2)->endOfMonth(),
+                'quarterly' => Carbon::create($lastStart->year, 12, 31)->endOfDay(),
+                'yearly' => Carbon::create($lastStart->year + 1, 12, 31)->endOfDay(),
+                default => null,
+            };
+
+            if (!$periodEnd || Carbon::now()->lte($periodEnd)) {
+                continue;
+            }
+
+            $startTimes = $this->generateOccurrenceStartTimesForRollover($lastActivity, $lastStart);
+            $userId = $lastActivity->created_by ?? 0;
+            if ($userId < 1) {
+                continue;
+            }
+
+            foreach ($startTimes as $nextStartTime) {
+                $nextStart = $nextStartTime->copy()->startOfMinute();
+                $existing = ClubActivity::where('recurrence_series_id', $seriesId)
+                    ->whereBetween('start_time', [$nextStart, $nextStart->copy()->endOfMinute()])
+                    ->exists();
+                if (!$existing) {
+                    $this->createNextOccurrence($lastActivity, $nextStartTime, $userId, $seriesId);
+                    $created++;
+                }
+            }
+        }
+
+        return $created;
+    }
+
+    public function cancelRecurrenceSeries(Club $club, string $seriesIdOrActivityId, int $userId): int
+    {
+        $member = $club->activeMembers()->where('user_id', $userId)->first();
+        if (!$member || !in_array($member->role, [ClubMemberRole::Admin, ClubMemberRole::Manager, ClubMemberRole::Secretary])) {
+            throw new \Exception('Chỉ admin/manager/secretary mới có quyền hủy chuỗi hoạt động');
+        }
+
+        $seriesId = Str::isUuid($seriesIdOrActivityId)
+            ? $seriesIdOrActivityId
+            : ClubActivity::where('club_id', $club->id)->where('id', $seriesIdOrActivityId)->value('recurrence_series_id');
+
+        if (!$seriesId) {
+            throw new \Exception('Chuỗi hoạt động không tồn tại');
+        }
+
+        $now = Carbon::now();
+
+        $count = ClubActivity::where('club_id', $club->id)
+            ->where('recurrence_series_id', $seriesId)
+            ->whereIn('status', [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing])
+            ->where('start_time', '>', $now)
+            ->count();
+
+        DB::transaction(function () use ($club, $seriesId, $userId, $now) {
+            ClubActivity::where('club_id', $club->id)
+                ->where('recurrence_series_id', $seriesId)
+                ->whereIn('status', [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing])
+                ->where('start_time', '>', $now)
+                ->update([
+                    'status' => ClubActivityStatus::Cancelled,
+                    'cancellation_reason' => 'Hủy cả chuỗi lặp lại',
+                    'cancelled_by' => $userId,
+                ]);
+
+            ClubActivity::where('club_id', $club->id)
+                ->where('recurrence_series_id', $seriesId)
+                ->update(['recurrence_series_cancelled_at' => $now]);
+        });
+
+        return $count;
     }
 }

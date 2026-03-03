@@ -16,10 +16,9 @@
         >
             <!-- Top Section (Logo) -->
             <div class="px-3">
-                <div class="flex items-center space-x-3 cursor-pointer">
+                <div class="flex items-center space-x-3 cursor-pointer" @click="goToDashboard">
                     <div
                         class="w-10 h-10 flex items-center justify-center flex-shrink-0"
-                        @click="goToDashboard"
                     >
                          <LogoUrl class="w-10 h-10" />
                     </div>
