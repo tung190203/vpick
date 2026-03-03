@@ -14,6 +14,10 @@ use App\Models\Club\ClubActivity;
 use App\Models\Club\ClubActivityParticipant;
 use App\Models\Club\ClubWallet;
 use App\Models\Club\ClubWalletTransaction;
+use App\Jobs\SendPushJob;
+use App\Models\User;
+use App\Notifications\ClubActivityPaymentConfirmedNotification;
+use App\Notifications\ClubActivityPaymentRequestNotification;
 use App\Services\Club\ClubWalletTransactionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -133,6 +137,7 @@ class ClubWalletTransactionController extends Controller
             }
             ClubActivity::where('id', $activityId)->update(['has_collection' => true]);
             $transactions->load(['wallet', 'creator', 'confirmer']);
+            $this->notifyParticipantsOnPaymentRequest($club, $activity, $transactions);
             return ResponseHelper::success(
                 ClubWalletTransactionResource::collection($transactions),
                 'Tạo ' . $transactions->count() . ' giao dịch thành công',
@@ -168,6 +173,12 @@ class ClubWalletTransactionController extends Controller
 
         if ($activityId) {
             ClubActivity::where('id', $activityId)->update(['has_collection' => true]);
+        }
+        if ($participantId && $activityId) {
+            $activity = ClubActivity::where('club_id', $clubId)->find($activityId);
+            if ($activity) {
+                $this->notifyParticipantsOnPaymentRequest($club, $activity, collect([$transaction]));
+            }
         }
         $transaction->load(['wallet', 'creator', 'confirmer']);
         return ResponseHelper::success(new ClubWalletTransactionResource($transaction), 'Tạo giao dịch thành công', 201);
@@ -225,6 +236,7 @@ class ClubWalletTransactionController extends Controller
         try {
             $transaction = $this->transactionService->confirmTransaction($transaction, $userId);
             $transaction->load(['wallet', 'creator', 'confirmer']);
+            $this->notifyParticipantOnPaymentConfirmed($club, $transaction);
             return ResponseHelper::success(new ClubWalletTransactionResource($transaction), 'Giao dịch đã được xác nhận');
         } catch (\Exception $e) {
             return ResponseHelper::error($e->getMessage(), 422);
@@ -249,6 +261,48 @@ class ClubWalletTransactionController extends Controller
             return ResponseHelper::success(new ClubWalletTransactionResource($transaction), 'Giao dịch đã bị từ chối');
         } catch (\Exception $e) {
             return ResponseHelper::error($e->getMessage(), 422);
+        }
+    }
+
+    private function notifyParticipantsOnPaymentRequest(Club $club, ClubActivity $activity, $transactions): void
+    {
+        foreach ($transactions as $tx) {
+            if (!$tx->created_by) {
+                continue;
+            }
+            $user = User::find($tx->created_by);
+            if ($user) {
+                $user->notify(new ClubActivityPaymentRequestNotification($club, $activity, $tx));
+                $amount = number_format($tx->amount);
+                SendPushJob::dispatch($user->id, 'Yêu cầu thanh toán sự kiện', "Bạn cần thanh toán {$amount} VND cho sự kiện {$activity->title}", [
+                    'type' => 'CLUB_ACTIVITY_PAYMENT_REQUEST',
+                    'club_id' => (string) $club->id,
+                    'club_activity_id' => (string) $activity->id,
+                    'club_wallet_transaction_id' => (string) $tx->id,
+                ]);
+            }
+        }
+    }
+
+    private function notifyParticipantOnPaymentConfirmed(Club $club, ClubWalletTransaction $transaction): void
+    {
+        if ($transaction->source_type !== ClubWalletTransactionSourceType::Activity || !$transaction->source_id || !$transaction->created_by) {
+            return;
+        }
+        $activity = ClubActivity::where('club_id', $club->id)->find($transaction->source_id);
+        if (!$activity) {
+            return;
+        }
+        $user = User::find($transaction->created_by);
+        if ($user) {
+            $user->notify(new ClubActivityPaymentConfirmedNotification($club, $activity, $transaction));
+            $amount = number_format($transaction->amount);
+            SendPushJob::dispatch($user->id, 'Đã xác nhận thanh toán', "Thanh toán {$amount} VND cho sự kiện {$activity->title} đã được xác nhận", [
+                'type' => 'CLUB_ACTIVITY_PAYMENT_CONFIRMED',
+                'club_id' => (string) $club->id,
+                'club_activity_id' => (string) $activity->id,
+                'club_wallet_transaction_id' => (string) $transaction->id,
+            ]);
         }
     }
 
