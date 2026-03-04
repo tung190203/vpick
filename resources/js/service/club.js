@@ -251,6 +251,14 @@ export const checkInActivity = async (clubId, activityId, token) => {
     return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/activities/${activityId}/check-in`, { token }).then((response) => response.data);
 }
 
+export const selfCheckinActivity = async (clubId, activityId) => {
+    return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/activities/${activityId}/participants/self/check-in`).then((response) => response.data);
+}
+
+export const selfAbsentActivity = async (clubId, activityId) => {
+    return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/activities/${activityId}/participants/self/absent`).then((response) => response.data);
+}
+
 export const reportClub = async (clubId, data) => {
     return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/report`, data).then((response) => response.data);
 }

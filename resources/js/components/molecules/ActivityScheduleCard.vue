@@ -57,30 +57,73 @@
       >
         {{ statusText || status }}
       </span>
-      <Button 
-        v-if="!isCreator"
-        size="md" 
-        :color="registrationStatus === 'pending' ? 'secondary' : buttonColor"
-        class="font-bold px-4 py-3 rounded-[4px]"
-        :class="{ 'bg-[#EDEEF2] text-[#3E414C] border border-[#DCDEE6] shadow-sm': registrationStatus === 'pending' }"
-        :disabled="disabled"
-        @click.stop="registrationStatus === 'pending' ? $emit('cancel-join') : (registrationStatus === 'accepted' ? $emit('check-in') : $emit('register'))"
-      >
-        <div class="flex items-center gap-2">
-           <ClockIcon v-if="registrationStatus === 'pending'" class="w-4 h-4" />
-           <span>{{ buttonText }}</span>
-        </div>
-      </Button>
-      <Button 
-        v-else
-        size="md" 
-        color="secondary"
-        class="font-bold px-3 py-3 rounded-[4px]"
-        :disabled="disabled"
-        @click.stop="$emit('edit')"
-      >
-        <PencilIcon class="w-5 h-5 text-[#3E414C]" />
-      </Button>
+       <div class="flex items-center gap-2">
+         <template v-if="registrationStatus === 'pending'">
+            <Button 
+              size="md" 
+              color="secondary"
+              class="font-bold px-4 py-3 rounded-[4px] bg-[#EDEEF2] text-[#3E414C] border border-[#DCDEE6] shadow-sm"
+              :disabled="disabled"
+              @click.stop="$emit('cancel-join')"
+            >
+              Huỷ tham gia
+            </Button>
+            <Button 
+              size="md" 
+              color="secondary"
+              class="font-bold px-4 py-3 rounded-[4px] bg-[#EDEEF2] text-[#3E414C] border border-[#DCDEE6] shadow-sm"
+              :disabled="true"
+            >
+              <div class="flex items-center gap-2">
+                <ClockIcon class="w-4 h-4" />
+                <span>{{ buttonText }}</span>
+              </div>
+            </Button>
+         </template>
+         <template v-else-if="registrationStatus === 'accepted'">
+            <Button 
+              size="md" 
+              color="secondary"
+              class="font-bold px-4 py-3 rounded-[4px]"
+              :disabled="disabled"
+              @click.stop="$emit('self-absent')"
+            >
+              Báo vắng
+            </Button>
+            <Button 
+              size="md" 
+              color="primary"
+              class="font-bold px-4 py-3 rounded-[4px]"
+              :disabled="disabled"
+              @click.stop="$emit('check-in')"
+            >
+              Check-in
+            </Button>
+         </template>
+         <template v-else>
+           <Button 
+            size="md" 
+            :color="registrationStatus === 'attended' ? 'secondary' : buttonColor"
+            class="font-bold px-4 py-3 rounded-[4px]"
+            :class="{ 'bg-[#EDEEF2] text-[#3E414C] border border-[#DCDEE6] shadow-sm': registrationStatus === 'attended' }"
+            :disabled="disabled || registrationStatus === 'attended'"
+            @click.stop="registrationStatus === 'attended' ? null : $emit('register')"
+          >
+            <div class="flex items-center gap-2">
+              <span>{{ registrationStatus === 'attended' ? 'Đã check-in' : buttonText }}</span>
+            </div>
+          </Button>
+         </template>
+        <Button 
+          v-if="isCreator"
+          size="md" 
+          color="secondary"
+          class="font-bold px-3 py-3.5 rounded-[4px]"
+          @click.stop="$emit('edit')"
+        >
+          <PencilIcon class="w-5 h-5 text-[#3E414C]" />
+        </Button>
+      </div>
     </div>
   </div>
 </template>
@@ -90,7 +133,7 @@ import { ClockIcon, MapPinIcon, UsersIcon, PencilIcon } from '@heroicons/vue/24/
 import Button from '@/components/atoms/Button.vue'
 import { computed } from 'vue'
 
-defineEmits(['click-card', 'edit', 'register', 'cancel-join', 'check-in'])
+defineEmits(['click-card', 'edit', 'register', 'cancel-join', 'self-absent', 'check-in'])
 
 const props = defineProps({
   day: {

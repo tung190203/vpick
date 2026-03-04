@@ -59,21 +59,9 @@
           </div>
           <p class="text-[#838799] whitespace-pre-line">{{ activity.summary }}</p>
         </div>
-        <div class="flex items-center gap-3" v-if="isFinished">
+        <div class="flex items-center gap-3">
           <Button 
-            size="lg" 
-            color="white" 
-            class="px-4 py-1 rounded-[4px] font-semibold border border-[#DCDEE6] bg-gray-100 text-[#838799] shadow-sm cursor-not-allowed"
-            :disabled="true"
-          >
-            <div class="flex items-center gap-2">
-              <CheckIcon class="w-5 h-5" />
-              Đã xong
-            </div>
-          </Button>
-        </div>
-        <div class="flex items-center gap-3" v-else-if="isOwner">
-          <Button 
+            v-if="isOwner && !isFinished && activity.status !== 'completed' && activity.status !== 'cancelled'"
             size="lg" 
             color="primary" 
             class="px-4 py-1 rounded-[4px] font-semibold shadow-lg shadow-blue-100"
@@ -85,40 +73,17 @@
             </div>
           </Button>
           <Button 
-            size="lg" 
-            color="danger" 
-            class="px-4 py-1 rounded-[4px] font-semibold shadow-lg shadow-red-100"
-            @click="shareEvent"
-          >
-            <div class="flex items-center gap-2">
-              <ShareIcon class="w-5 h-5" />
-              Chia sẻ
-            </div>
-          </Button>
-          <Button 
-            size="lg" 
-            color="white" 
-            class="px-4 py-1 rounded-[4px] font-semibold border border-[#D72D36] bg-[#FFF5F5] text-[#D72D36] shadow-sm transition-all hover:bg-[#FFEBEB]"
-            @click="openPromotionModal"
-          >
-            <div class="flex items-center gap-2">
-              <MegaphoneIcon class="w-5 h-5" />
-              Quảng bá
-            </div>
-          </Button>
-          <Button 
+            v-if="registrationButtonState.showAbsent"
             size="lg" 
             color="white" 
             class="px-4 py-1 rounded-[4px] font-semibold border border-[#DCDEE6] bg-[#EDEEF2] text-[#3E414C] shadow-sm transition-all hover:bg-gray-50"
-            @click="cancelEvent"
+            @click="handleSelfAbsentActivity"
           >
             <div class="flex items-center gap-2">
               <XMarkIcon class="w-5 h-5" />
-              Huỷ sự kiện
+              Báo vắng
             </div>
           </Button>
-        </div>
-        <div class="flex items-center gap-3" v-else>
           <Button 
             size="lg" 
             :color="registrationButtonState.color" 
@@ -133,9 +98,10 @@
             </div>
           </Button>
           <Button 
+            v-if="isOwner && !isFinished && activity.status !== 'completed' && activity.status !== 'cancelled'"
             size="lg" 
-            color="white" 
-            class="px-4 py-1 rounded-[4px] font-semibold border border-[#DCDEE6] bg-[#EDEEF2] text-[#3E414C] shadow-sm transition-all hover:bg-gray-50"
+            color="danger" 
+            class="px-4 py-1 rounded-[4px] font-semibold shadow-lg shadow-red-100"
             @click="shareEvent"
           >
             <div class="flex items-center gap-2">
@@ -144,6 +110,7 @@
             </div>
           </Button>
           <Button 
+            v-if="isOwner && !isFinished && activity.status !== 'completed' && activity.status !== 'cancelled'"
             size="lg" 
             color="white" 
             class="px-4 py-1 rounded-[4px] font-semibold border border-[#D72D36] bg-[#FFF5F5] text-[#D72D36] shadow-sm transition-all hover:bg-[#FFEBEB]"
@@ -152,6 +119,30 @@
             <div class="flex items-center gap-2">
               <MegaphoneIcon class="w-5 h-5" />
               Quảng bá
+            </div>
+          </Button>
+          <Button 
+            v-if="isOwner && !isFinished && activity.status !== 'completed' && activity.status !== 'cancelled'"
+            size="lg" 
+            color="white" 
+            class="px-4 py-1 rounded-[4px] font-semibold border border-[#DCDEE6] bg-[#EDEEF2] text-[#3E414C] shadow-sm transition-all hover:bg-gray-50"
+            @click="cancelEvent"
+          >
+            <div class="flex items-center gap-2">
+              <XMarkIcon class="w-5 h-5" />
+              Huỷ sự kiện
+            </div>
+          </Button>
+          <Button 
+            v-if="!isOwner && !isFinished && activity.status !== 'completed' && activity.status !== 'cancelled'"
+            size="lg" 
+            color="white" 
+            class="px-4 py-1 rounded-[4px] font-semibold border border-[#DCDEE6] bg-[#EDEEF2] text-[#3E414C] shadow-sm transition-all hover:bg-gray-50"
+            @click="shareEvent"
+          >
+            <div class="flex items-center gap-2">
+              <ShareIcon class="w-5 h-5" />
+              Chia sẻ
             </div>
           </Button>
         </div>
@@ -309,7 +300,7 @@
                 <h3 class="font-semibold text-[#3E414C]">Thành viên tham gia</h3>
                 <span class="w-1 h-1 rounded-full bg-[#3E414C]"></span>
                 <span class="px-2 py-0.5 bg-gray-100 text-[#838799] text-xs font-bold rounded-full">
-                  {{ participants.length }}/{{ activity.max_participants || '∞' }}
+                  {{ participants.filter(p => p.status !== 'pending').length }}/{{ activity.max_participants || '∞' }}
                 </span>
               </div>
               <button @click="isParticipantsExpanded = !isParticipantsExpanded" class="p-1 hover:bg-gray-100 rounded-full transition-transform duration-300" :class="{ 'rotate-180': !isParticipantsExpanded }">
@@ -346,20 +337,32 @@
                       Đã check-in ({{ totalParticipantAttended }})
                     </span>
                   </div>
-                <div class="space-y-0" v-if="participants && participants.length">
-                  <div v-for="(user, index) in participants" :key="user.id" 
-                    class="flex items-center gap-5 py-5 group cursor-pointer" @click="goToProfile(user.userId)"
+                <div class="space-y-0" v-if="participants && participants.filter(p => p.status !== 'pending').length">
+                  <div v-for="(user, index) in participants.filter(p => p.status !== 'pending')" :key="user.id" 
+                    class="flex items-center py-5 group cursor-pointer gap-5" @click="goToProfile(user.userId)"
                     :class="{ 'border-t border-[#F0F2F5]': index !== 0 }">
-                    <div class="relative">
+                    <div class="relative flex-shrink-0">
                       <img :src="user.avatar || defaultAvatar" class="w-14 h-14 rounded-full bg-[#F2F4F7] object-cover" />
-                      <div class="absolute bottom-0 right-0 w-4.5 h-4.5 p-1.5 bg-[#00B377] ring-4 ring-white rounded-full"></div>
                       <div class="absolute -left-1 -bottom-0.5 w-5 h-5 bg-[#4392E0] text-white text-[8px] font-semibold flex items-center justify-center rounded-full ring-2 ring-white">
                         {{ Number(user.level).toFixed(2) }}
                       </div>
                     </div>
-                    <div class="flex-1">
-                      <div class="font-bold text-[#3E414C] text-[17px] mb-1">{{ user.name }}</div>
-                      <div class="text-[14px] text-[#A4B0C1] font-medium">{{ user.joined_at || 'Tham gia 3 ngày trước' }}</div>
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-center justify-between gap-4 mb-1">
+                        <div class="font-bold text-[#3E414C] text-[17px] truncate">{{ user.name }}</div>
+                        <div class="flex-shrink-0">
+                          <span v-if="user.has_checked_in" class="px-2.5 py-1.5 bg-[#E9FBF3] text-[#00B377] text-[10px] font-bold rounded-[8px] uppercase border border-[#00B377]/10 whitespace-nowrap tracking-wide leading-tight">
+                            ĐÃ CHECK-IN
+                          </span>
+                          <span v-else-if="user.is_absent" class="px-2.5 py-1.5 bg-[#FFF5F5] text-[#D72D36] text-[10px] font-bold rounded-[8px] uppercase border border-[#D72D36]/10 whitespace-nowrap tracking-wide leading-tight">
+                            VẮNG
+                          </span>
+                          <span v-else class="px-2.5 py-1.5 bg-[#F8F9FA] text-[#838799] text-[10px] font-bold rounded-[8px] uppercase border border-gray-100 whitespace-nowrap tracking-wide leading-tight">
+                            CHƯA CHECK-IN
+                          </span>
+                        </div>
+                      </div>
+                      <div class="text-[14px] text-[#A4B0C1] font-medium truncate">{{ user.joined_at || 'Tham gia 3 ngày trước' }}</div>
                     </div>
                   </div>
                 </div>
@@ -427,31 +430,18 @@
       @success="toast.success('Đã gửi quảng bá thành công')"
     />
 
-    <!-- Check-in QR Modal -->
-    <div v-if="showCheckinModal" class="fixed inset-0 z-[10001] flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="showCheckinModal = false"></div>
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md relative z-[10002] overflow-hidden animate-in fade-in zoom-in duration-300 flex flex-col items-center p-8">
-            <button @click="showCheckinModal = false" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
-                <XMarkIcon class="w-6 h-6" stroke-width="2" />
-            </button>
-            <h3 class="text-xl font-bold text-[#3E414C] mb-6">Mã QR Check-in</h3>
-            <div class="p-4 bg-gray-50 rounded-xl mb-6">
-                <qrcode-vue :value="activity.check_in_url" :size="240" level="H" class="rounded-[4px]" />
-            </div>
-            <p class="text-center text-[#3E414C] font-semibold text-lg max-w-[280px]">
-                Mở app Picki và quét mã QR để checkin hoạt động
-            </p>
-            <Button 
-                size="md" 
-                color="white" 
-                class="w-full mt-8 bg-[#FFF5F5] text-[#D72D36] border-none font-bold py-3 hover:bg-[#FFEBEB]"
-                @click="downloadQR"
-            >
-                <ArrowDownTrayIcon class="w-5 h-5 mr-2" />
-                Tải xuống mã QR
-            </Button>
-        </div>
-    </div>
+    <ClubCreateFundModal
+      v-model:is-open="showCreateFundModal"
+      :club="club"
+      :initial-data="initialFundData"
+      @submit="handleSubmitFundRevenue"
+    />
+
+    <ClubCreateExpenseModal
+      v-model:is-open="showCreateExpenseModal"
+      :initial-data="initialExpenseData"
+      @submit="handleSubmitFundExpense"
+    />
   </div>
 </template>
 
@@ -479,6 +469,8 @@ import QrcodeIcon from '@/assets/images/qr_code.svg'
 import Button from '@/components/atoms/Button.vue'
 import CancelActivityModal from '@/components/molecules/CancelActivityModal.vue'
 import PromotionModal from '@/components/organisms/PromotionModal.vue'
+import ClubCreateFundModal from '@/components/pages/club/partials/ClubCreateFundModal.vue'
+import ClubCreateExpenseModal from '@/components/pages/club/partials/ClubCreateExpenseModal.vue'
 import QrcodeVue from 'qrcode.vue'
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -514,8 +506,9 @@ const isLoading = ref(true)
 const joinActivityRequests = ref([])
 const showCancelModal = ref(false)
 const isCancelling = ref(false)
-const showCheckinModal = ref(false)
 const isPromotionModalOpen = ref(false)
+const showCreateFundModal = ref(false)
+const showCreateExpenseModal = ref(false)
 
 const isOwner = computed(() => {
     return activity.value.created_by === getUser.value.id
@@ -585,14 +578,48 @@ const recurringText = computed(() => {
 })
 
 const totalParticipantAttended = computed(() => {
-  return participants.value.filter(p => p.status === 'attended').length
+  return participants.value.filter(p => p.has_checked_in).length
+})
+
+const initialFundData = computed(() => {
+  if (!activity.value) return {}
+  
+  // Selection logic for "Chốt bill"
+  // Default to pre-selecting all checked-in participants
+  const checkedInUserIds = participants.value
+    .filter(p => p.has_checked_in)
+    .map(p => p.userId)
+
+  let amount = 0
+  if (activity.value.fee_split_type === 'fixed') {
+    amount = activity.value.fee_amount || 0
+  } else if (activity.value.fee_split_type === 'equal') {
+    const totalAttended = totalParticipantAttended.value
+    if (totalAttended > 0) {
+      amount = Math.round((activity.value.fee_amount || 0) / totalAttended)
+    }
+  }
+
+  return {
+    title: `Chốt bill: ${activity.value.title}`,
+    amount: amount,
+    memberIds: checkedInUserIds.length > 0 ? checkedInUserIds : participants.value.filter(p => p.status !== 'pending').map(p => p.userId)
+  }
+})
+
+const initialExpenseData = computed(() => {
+  if (!activity.value) return {}
+  return {
+    title: `Chi phí sự kiện: ${activity.value.title}`,
+    amount: activity.value.fee_amount || 0
+  }
 })
 
 const feeSplitLabel = computed(() => {
   const map = {
     equal: 'Chia đều',
     fixed: 'Cố định',
-    fund: 'Quỹ bao',
+    fund: 'Quỹ chi',
   }
     return map[activity.value.fee_split_type] || ''
 })
@@ -617,7 +644,9 @@ const getActivityDetail = async () => {
                     level: p.user?.sports[0]?.scores?.vndupr_score || 'N/A',
                     joined_at: p.created_at ? dayjs(p.created_at).fromNow() : 'Vừa tham gia',
                     status: p.status,
-                    userId: p.user_id
+                    userId: p.user_id,
+                    is_absent: !!p.is_absent,
+                    has_checked_in: !!p.has_checked_in
                 }))
             }
 
@@ -679,6 +708,43 @@ const currentUserParticipant = computed(() => {
 
 const registrationButtonState = computed(() => {
     const userId = getUser.value.id
+    const isCancelled = activity.value.status === 'cancelled'
+    const isCompleted = activity.value.status === 'completed' || isFinished.value
+
+    if (isCancelled) {
+        return {
+            text: 'Đã hủy',
+            color: 'white',
+            shadowClass: 'border border-[#DCDEE6] bg-gray-100 text-[#838799] shadow-sm cursor-not-allowed',
+            disabled: true,
+            action: () => { },
+            icon: XMarkIcon,
+            showAbsent: false
+        }
+    }
+
+    if (isCompleted && activity.value.has_transaction) {
+        return {
+            text: 'Đã tạo khoản thu/chi',
+            color: 'white',
+            shadowClass: 'border border-[#DCDEE6] bg-gray-100 text-[#838799] shadow-sm cursor-not-allowed',
+            disabled: true,
+            action: () => { },
+            icon: CheckIcon,
+            showAbsent: false
+        }
+    }
+
+    if (isOwner.value && isFinished.value && !activity.value.has_transaction) {
+        return {
+            text: activity.value.fee_split_type === 'fund' ? 'Tạo khoản chi' : 'Chốt bill chia tiền',
+            color: 'danger',
+            shadowClass: 'shadow-lg shadow-red-100',
+            disabled: false,
+            action: handleOpenFinalizeBill,
+            showAbsent: false
+        }
+    }
     
     // 1. Check if user is in joinActivityRequests (Pending)
     const pendingRequest = joinActivityRequests.value.find(r => r.user_id === userId || r.user?.id === userId)
@@ -689,20 +755,57 @@ const registrationButtonState = computed(() => {
             shadowClass: 'border border-[#DCDEE6] bg-[#EDEEF2] text-[#3E414C] shadow-sm',
             disabled: false,
             action: cancelJoinEvent,
-            icon: ClockIcon
+            icon: ClockIcon,
+            showAbsent: false
         }
     }
     
     // 2. Check if user is in participants (Joined)
-    const isParticipant = participants.value.some(p => p.userId === userId)
-    if (isParticipant) {
+    const participant = participants.value.find(p => p.userId === userId)
+    if (participant) {
+        if (participant.status === 'pending') {
+            return {
+                text: 'Đang chờ duyệt',
+                color: 'white',
+                shadowClass: 'border border-[#DCDEE6] bg-[#EDEEF2] text-[#3E414C] shadow-sm',
+                disabled: false,
+                action: cancelJoinEvent,
+                icon: ClockIcon,
+                showAbsent: false
+            }
+        }
+        if (participant.has_checked_in) {
+            return {
+                text: 'Đã check-in',
+                color: 'white',
+                shadowClass: 'border border-[#DCDEE6] bg-gray-100 text-[#838799] shadow-sm cursor-not-allowed',
+                disabled: true,
+                action: () => { },
+                icon: CheckIcon,
+                showAbsent: false
+            }
+        }
+        // Joined but not attended -> Show Check-in
         return {
-            text: 'Đã tham gia',
+            text: 'Check-in ngay',
+            color: 'primary',
+            shadowClass: 'shadow-lg shadow-blue-100',
+            disabled: false,
+            action: handleSelfCheckInActivity,
+            icon: CheckIcon,
+            showAbsent: !isOwner.value && !participant.is_absent && !isFinished.value
+        }
+    }
+
+    if (isCompleted) {
+        return {
+            text: 'Đã xong',
             color: 'white',
             shadowClass: 'border border-[#DCDEE6] bg-gray-100 text-[#838799] shadow-sm cursor-not-allowed',
             disabled: true,
-            action: () => {},
-            icon: CheckIcon
+            action: () => { },
+            icon: CheckIcon,
+            showAbsent: false
         }
     }
     
@@ -713,7 +816,8 @@ const registrationButtonState = computed(() => {
         shadowClass: 'shadow-lg shadow-red-100',
         disabled: false,
         action: registerEvent,
-        icon: RegistrationIcon
+        icon: RegistrationIcon,
+        showAbsent: false
     }
 })
 
@@ -721,7 +825,10 @@ const joinActivityRequest = async () => {
     try {
         await ClubService.joinActivityRequest(clubId, activityId.value)
         toast.success('Đã gửi yêu cầu tham gia thành công')
-        await getActivityDetail()
+        await Promise.all([
+            getActivityDetail(),
+            getListJoinActivityRequest()
+        ])
     } catch (error) {
         toast.error(error.response?.data?.message || 'Không thể gửi yêu cầu tham gia')
     }
@@ -729,6 +836,65 @@ const joinActivityRequest = async () => {
 
 const updateEvent = () => {
     router.push({name: 'club-activity-edit', params: {id: clubId, activityId: activityId.value}})
+}
+
+const handleOpenFinalizeBill = () => {
+    if (activity.value.fee_split_type === 'fund') {
+        showCreateExpenseModal.value = true
+    } else {
+        showCreateFundModal.value = true
+    }
+}
+
+const handleSubmitFundRevenue = async (data) => {
+    const formData = new FormData();
+    formData.append('title', data.title);
+    formData.append('description', data.description);
+    formData.append('target_amount', data.target_amount);
+    formData.append('amount_per_member', data.amount_per_member);
+    formData.append('start_date', data.start_date);
+    formData.append('deadline', data.deadline);
+    formData.append('end_date', data.end_date);
+    formData.append('activity_id', activityId.value);
+    
+    // Pass included_in_club_fund if not a fund split
+    if (activity.value.fee_split_type !== 'fund') {
+        formData.append('included_in_club_fund', activity.value.included_in_club_fund ? 1 : 0);
+    }
+    
+    if (Array.isArray(data.member_ids)) {
+        data.member_ids.forEach(id => {
+            formData.append('member_ids[]', id);
+        });
+    }
+    if (data.qr_image) {
+        formData.append('qr_image', data.qr_image);
+    }
+
+    try {
+        const response = await ClubService.createdFundRevenue(clubId, formData)
+        toast.success(response.message || 'Tạo khoản thu thành công')
+        showCreateFundModal.value = false
+        await getActivityDetail()
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi tạo khoản thu')
+    }
+}
+
+const handleSubmitFundExpense = async (data) => {
+    const payload = {
+        ...data,
+        activity_id: activityId.value
+    }
+
+    try {
+        const response = await ClubService.createFundExpenses(clubId, payload)
+        toast.success(response.message || 'Tạo khoản chi thành công')
+        showCreateExpenseModal.value = false
+        await getActivityDetail()
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi tạo khoản chi')
+    }
 }
 
 const openPromotionModal = () => {
@@ -807,6 +973,26 @@ const goToProfile = (id) => {
     router.push({ name: 'profile', params: { id } });
 };
 
+const handleSelfCheckInActivity = async () => {
+    try {
+        await ClubService.selfCheckinActivity(clubId, activityId.value)
+        toast.success('Đã check-in thành công')
+        await getActivityDetail()
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Không thể check-in')
+    }
+}
+
+const handleSelfAbsentActivity = async () => {
+    try {
+        await ClubService.selfAbsentActivity(clubId, activityId.value)
+        toast.success('Đã báo vắng thành công')
+        await getActivityDetail()
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Không thể báo vắng')
+    }
+}
+
 const getListJoinActivityRequest = async () => {
     try {
         const response = await ClubService.getListJoinActivityRequest(clubId, activityId.value, {
@@ -850,9 +1036,6 @@ onMounted(async () => {
             ])
         } finally {
             isLoading.value = false
-            if (route.query.showCheckin === 'true') {
-                showCheckinModal.value = true
-            }
         }
     }
 })

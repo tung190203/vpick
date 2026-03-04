@@ -6,10 +6,14 @@
         </div>
         <button @click="toggle"
             class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0"
-            :class="isChecked ? 'bg-[#D72D36]' : 'bg-gray-300'">
+            :class="[
+                isChecked ? 'bg-[#D72D36]' : 'bg-gray-300',
+                disabled ? 'opacity-50 cursor-not-allowed' : ''
+            ]">
             <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
                 :class="isChecked ? 'translate-x-6' : 'translate-x-1'" />
         </button>
+
     </div>
 </template>
 
@@ -32,6 +36,10 @@ const props = defineProps({
     description: {
         type: String,
         default: ''
+    },
+    disabled: {
+        type: Boolean,
+        default: false
     }
 });
 
@@ -43,8 +51,10 @@ const isChecked = computed(() => {
 });
 
 const toggle = () => {
+    if (props.disabled) return;
     const newValue = !isChecked.value;
     emit('update:modelValue', newValue);
     emit('update', newValue);
 };
+
 </script>
