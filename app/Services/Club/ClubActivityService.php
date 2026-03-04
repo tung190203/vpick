@@ -36,6 +36,7 @@ class ClubActivityService
             ->with([
                 'participants.user',
                 'creator',
+                'fundCollection:id,club_activity_id',
             ]);
 
         if (!empty($filters['type'])) {
