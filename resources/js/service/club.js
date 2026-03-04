@@ -206,6 +206,10 @@ export const createdFundRevenue = async (clubId, data) => {
     return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/fund-collections`, data).then((response) => response.data);
 }
 
+export const deleteFundCollection = async (clubId, collectionId) => {
+    return axiosInstance.delete(`${API_ENDPOINT.CLUB}/${clubId}/fund-collections/${collectionId}`).then((response) => response.data);
+}
+
 export const createFundExpenses = async (clubId, data) => {
   return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/expenses`, data).then((response) => response.data);
 }
