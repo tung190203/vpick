@@ -46,7 +46,8 @@ class AutoCompleteActivitiesCommand extends Command
             $completed++;
             $this->line("  ✓ Completed: #{$activity->id} {$activity->title}");
 
-            // Recurring: tạo occurrence tiếp theo nếu chưa có (giống khi admin bấm "Hoàn thành")
+            $this->activityService->notifyCreatorToCollectFees($activity);
+
             if ($activity->isRecurring()) {
                 $activity->refresh();
                 $this->activityService->ensureNextOccurrenceForCompleted($activity);
