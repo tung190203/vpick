@@ -15,7 +15,9 @@ use App\Jobs\SendPushJob;
 use App\Models\Club\ClubActivity;
 use App\Models\Club\ClubActivityParticipant;
 use App\Models\Club\ClubWalletTransaction;
+use App\Models\User;
 use App\Notifications\ClubActivityCancelledNotification;
+use App\Notifications\ClubActivityCompletedFeeReminderNotification;
 use App\Services\ImageOptimizationService;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -597,6 +599,8 @@ class ClubActivityService
 
         $activity->markAsCompleted();
 
+        $this->notifyCreatorToCollectFees($activity);
+
         if ($activity->isRecurring()) {
             $this->ensureNextOccurrenceExists($activity, $userId);
         }
@@ -1007,5 +1011,40 @@ class ClubActivityService
         });
 
         return $count;
+    }
+
+    public function notifyCreatorToCollectFees(ClubActivity $activity): void
+    {
+        if ((float) $activity->fee_amount <= 0) {
+            return;
+        }
+
+        if ($activity->fee_split_type === ClubActivityFeeSplitType::Fund) {
+            return;
+        }
+
+        if ($activity->has_transaction) {
+            return;
+        }
+
+        $creatorId = $activity->created_by;
+        if (!$creatorId) {
+            return;
+        }
+
+        $user = User::find($creatorId);
+        if (!$user) {
+            return;
+        }
+
+        $club = $activity->club;
+        $message = "Hoạt động {$activity->title} đã hoàn thành. Hãy vào chốt bill thu tiền sự kiện tại CLB {$club->name}";
+
+        $user->notify(new ClubActivityCompletedFeeReminderNotification($club, $activity));
+        SendPushJob::dispatch($user->id, 'Nhắc thu tiền sự kiện', $message, [
+            'type' => 'CLUB_ACTIVITY_COMPLETED_FEE_REMINDER',
+            'club_id' => (string) $club->id,
+            'club_activity_id' => (string) $activity->id,
+        ]);
     }
 }
