@@ -44,7 +44,7 @@
               <div>
                 <div class="flex justify-between mb-2">
                   <label class="text-sm font-bold text-[#838799] uppercase tracking-wider">GHI CHÚ</label>
-                  <span class="text-xs text-[#838799] font-medium">{{ form.description.length }}/300</span>
+                  <span class="text-xs text-[#838799] font-medium">{{ form.description?.length || 0 }}/300</span>
                 </div>
                 <textarea v-model="form.description" rows="4" maxlength="300"
                   class="w-full px-5 py-4 bg-[#F0F2F5] border-none rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#D72D36]/20 transition-all resize-none placeholder:text-[#9EA2B3] font-medium text-gray-900"
@@ -304,6 +304,14 @@
                   class="w-full pl-10 pr-4 py-3 bg-[#F8F9FA] border-none rounded-[8px] focus:outline-none text-sm font-bold text-[#3E414C] placeholder:text-[#A1A5B7]" />
               </div>
 
+              <!-- Included in Club Fund -->
+              <div class="flex items-center justify-between py-2 border-t border-gray-100 pt-4">
+                <div class="space-y-1">
+                  <label class="text-xs font-bold text-[#838799] uppercase tracking-wider">TÍNH VÀO QUỸ CHUNG CLB</label>
+                </div>
+                <Toggle v-model="form.included_in_club_fund" :disabled="form.fee_split_type === 'fund'" />
+              </div>
+
               <!-- Guest Fee -->
               <div v-if="form.fee_split_type !== 'fund'" class="space-y-3 pt-4 border-t border-gray-100">
                 <div class="flex items-center justify-between">
@@ -367,7 +375,7 @@
                 <div class="flex items-center justify-between">
                   <div>
                     <label class="block text-sm font-bold text-[#3E414C]">Phạt hủy muộn</label>
-                    <p class="text-[11px] text-[#838799] mt-0.5">Tự động công nợ xấu theo mức phạt</p>
+                    <p class="text-[11px] text-[#838799] mt-0.5">Số tiền phạt sẽ được tự động tạo đến người vi phạm dưới dạng khoản thu</p>
                   </div>
                   <Toggle v-model="has_cancel_penalty" />
                 </div>
@@ -465,7 +473,7 @@ const daysOfWeek = [
 const splitTypes = [
   { label: 'Chia đều', value: 'equal' },
   { label: 'Cố định', value: 'fixed' },
-  { label: 'Quỹ bao', value: 'fund' }
+  { label: 'Quỹ chi', value: 'fund' }
 ]
 
 const form = ref({
@@ -488,10 +496,11 @@ const form = ref({
   penalty_amount: 0,
   fee_split_type: 'equal',
   is_public: true,
-  max_participants: 1,
   creator_always_join: true,
   qr_image: null,
   qr_file: null,
+  included_in_club_fund: false,
+  max_participants: 1,
 })
 
 const formattedTotalAmount = computed({
@@ -594,6 +603,15 @@ watch(() => form.value.address, (val) => {
   else locations.value = []
 })
 
+watch(() => form.value.fee_split_type, (newType, oldType) => {
+  if (newType === 'fund') {
+    form.value.included_in_club_fund = true
+  } else if (oldType === 'fund') {
+    form.value.included_in_club_fund = false
+  }
+})
+
+
 const onLocationSelect = async (loc) => {
   isSelectingLocation.value = true
   debouncedFetch.cancel()
@@ -664,6 +682,7 @@ const handleSubmit = async () => {
     formData.append('guest_fee', form.value.guest_fee)
     formData.append('penalty_amount', form.value.penalty_amount)
     formData.append('fee_split_type', form.value.fee_split_type)
+    formData.append('included_in_club_fund', form.value.included_in_club_fund ? 1 : 0)
     formData.append('is_public', form.value.is_public ? 1 : 0)
     
     if (isLimitParticipants.value) {

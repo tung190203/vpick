@@ -194,7 +194,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import {
     XMarkIcon,
     CalendarIcon,
@@ -217,6 +217,10 @@ const props = defineProps({
     club: {
         type: Object,
         required: true
+    },
+    initialData: {
+        type: Object,
+        default: () => ({})
     }
 })
 
@@ -232,6 +236,19 @@ const isDragging = ref(false)
 const fileInput = ref(null)
 const showCropper = ref(false)
 const cropImageSrc = ref(null)
+
+watch(() => props.isOpen, (newVal) => {
+    if (newVal && props.initialData) {
+        if (props.initialData.title) fundTitle.value = props.initialData.title
+        if (props.initialData.amount) {
+            let val = props.initialData.amount.toString()
+            fundAmount.value = val.replace(/\B(?=(\d{3})+(?!\d))/g, ".")
+        }
+        if (props.initialData.memberIds) {
+            selectedMemberIds.value = [...props.initialData.memberIds]
+        }
+    }
+}, { immediate: true })
 
 const formattedFundDeadline = computed(() => {
     return dayjs(fundDeadline.value).format('DD/MM/YYYY')

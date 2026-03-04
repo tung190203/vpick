@@ -18,7 +18,7 @@
 
             <!-- Featured Card (Dynamic) -->
             <div class="px-6 pb-4" v-if="nextMatch">
-                <div class="relative w-full rounded-2xl overflow-hidden shadow-md">
+                <div class="relative w-full rounded-2xl overflow-hidden shadow-md cursor-pointer hover:opacity-95 transition-opacity" @click="$emit('click-card', nextMatch)">
                     <div class="absolute inset-0 bg-[#D72D36]" :style="{ backgroundImage: `url(${thumbnail})` }">
                     </div>
 
@@ -29,7 +29,7 @@
                                 tiếp theo</span>
                             <div v-if="countdown" class="flex items-center gap-1 text-sm font-medium">
                                 <ClockIcon class="w-4 h-4" />
-                                <span>Bắt đầu sau: {{ countdown }}</span>
+                                <span>{{ countdown === 'Đang diễn ra' ? countdown : 'Bắt đầu sau: ' + countdown }}</span>
                             </div>
                         </div>
 
@@ -55,20 +55,59 @@
                                     +{{ nextMatch.participants_count - 3 }}
                                 </div>
                             </div>
-                            <button
-                                v-if="nextMatch.isCreator"
-                                class="bg-white text-[#D72D36] p-2 rounded-lg font-semibold shadow-sm transition-colors hover:bg-gray-50 flex items-center justify-center"
-                                @click.stop="$emit('edit', nextMatch)"
-                            >
-                                <PencilIcon class="w-5 h-5" />
-                            </button>
-                            <button
-                                v-else
-                                class="bg-white text-[#D72D36] text-sm hover:bg-gray-50 px-6 py-2.5 rounded-lg font-semibold shadow-sm transition-colors"
-                                @click.stop="nextMatch.registrationStatus === 'pending' ? $emit('cancel-join', nextMatch) : (nextMatch.registrationStatus === 'accepted' ? $emit('check-in', nextMatch) : $emit('register', nextMatch))"
-                            >
-                                {{ nextMatch.buttonText }}
-                            </button>
+                            <div class="flex items-center gap-2">
+                                <button
+                                    v-if="nextMatch.isCreator"
+                                    class="bg-white text-[#D72D36] p-2 rounded-lg font-semibold shadow-sm transition-colors hover:bg-gray-50 flex items-center justify-center h-10 w-10"
+                                    @click.stop="$emit('edit', nextMatch)"
+                                >
+                                    <PencilIcon class="w-5 h-5" />
+                                </button>
+                                
+                                <!-- New Split Button Logic -->
+                                <template v-if="nextMatch.registrationStatus === 'pending'">
+                                    <button
+                                        class="bg-white text-[#D72D36] text-sm hover:bg-gray-50 px-6 py-2.5 rounded-lg font-semibold shadow-sm transition-colors h-10 flex items-center justify-center"
+                                        @click.stop="$emit('cancel-join', nextMatch)"
+                                    >
+                                        Hủy tham gia
+                                    </button>
+                                    <button
+                                        class="bg-white text-[#D72D36] text-sm px-6 py-2.5 rounded-lg font-semibold shadow-sm h-10 flex items-center justify-center opacity-70 cursor-not-allowed"
+                                        disabled
+                                    >
+                                        <div class="flex items-center gap-2">
+                                            <ClockIcon class="w-4 h-4" />
+                                            <span>{{ nextMatch.buttonText }}</span>
+                                        </div>
+                                    </button>
+                                </template>
+                                <template v-else-if="nextMatch.registrationStatus === 'accepted'">
+                                    <button
+                                        class="bg-white text-[#D72D36] text-sm hover:bg-gray-50 px-6 py-2.5 rounded-lg font-semibold shadow-sm transition-colors h-10 flex items-center justify-center"
+                                        @click.stop="$emit('self-absent', nextMatch)"
+                                    >
+                                        Báo vắng
+                                    </button>
+                                    <button
+                                        class="bg-white text-[#D72D36] text-sm hover:bg-gray-50 px-6 py-2.5 rounded-lg font-semibold shadow-sm transition-colors h-10 flex items-center justify-center"
+                                        @click.stop="$emit('check-in', nextMatch)"
+                                    >
+                                        Check-in
+                                    </button>
+                                </template>
+                                <button
+                                    v-else
+                                    class="bg-white text-[#D72D36] text-sm hover:bg-gray-50 px-6 py-2.5 rounded-lg font-semibold shadow-sm transition-colors h-10 flex items-center justify-center"
+                                    :class="{ 'cursor-not-allowed': nextMatch.registrationStatus === 'attended' || nextMatch.status === 'completed' }"
+                                    :disabled="nextMatch.registrationStatus === 'attended' || nextMatch.status === 'completed'"
+                                    @click.stop="$emit('register', nextMatch)"
+                                >
+                                    <div class="flex items-center gap-2">
+                                        <span>{{ nextMatch.registrationStatus === 'attended' ? 'Đã check in' : nextMatch.buttonText }}</span>
+                                    </div>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -84,7 +123,7 @@
                         <div class="space-y-4 flex-1 overflow-y-auto custom-scrollbar pr-2" @scroll="handleUpcomingScroll">
                             <ActivitySmallCard v-for="(activity, index) in upcomingActivities" :key="index"
                                 v-bind="activity" @edit="$emit('edit', activity)" @click-card="$emit('click-card', activity)" 
-                                @register="$emit('register', activity)" @cancel-join="$emit('cancel-join', activity)" @check-in="$emit('check-in', activity)" />
+                                @register="$emit('register', activity)" @cancel-join="$emit('cancel-join', activity)" @self-absent="$emit('self-absent', activity)" @check-in="$emit('check-in', activity)" />
                                 
                             <!-- Loading Indicator -->
                             <div v-if="isLoadingUpcoming" class="flex justify-center py-4">
@@ -219,7 +258,7 @@ const props = defineProps({
     }
 })
 
-const emit = defineEmits(['close', 'edit', 'click-card', 'register', 'cancel-join', 'check-in', 'load-more-upcoming', 'load-more-history'])
+const emit = defineEmits(['close', 'edit', 'click-card', 'register', 'cancel-join', 'self-absent', 'check-in', 'load-more-upcoming', 'load-more-history'])
 
 const handleUpcomingScroll = (e) => {
     if (props.isLoadingUpcoming || !props.hasMoreUpcoming) return
