@@ -26,10 +26,9 @@ class ClubActivityListResource extends JsonResource
             'creator_always_join' => (bool) ($this->creator_always_join ?? true),
             'creator' => new \App\Http\Resources\UserResource($this->whenLoaded('creator')),
             'has_transaction' => (bool) ($this->has_transaction ?? false),
-            'fund_collection_id' => $this->when(
-                (bool) ($this->has_transaction ?? false) && $this->relationLoaded('fundCollection') && $this->fundCollection,
-                $this->fundCollection?->id
-            ),
+            'fund_collection_id' => (bool) ($this->has_transaction ?? false) && $this->relationLoaded('fundCollection') && $this->fundCollection
+                ? (int) $this->fundCollection->id
+                : null,
             'fee_split_type' => $this->fee_split_type,
             'fee_amount' => $this->fee_amount ? (float) $this->fee_amount : null,
             'guest_fee' => $this->guest_fee ? (float) $this->guest_fee : null,
