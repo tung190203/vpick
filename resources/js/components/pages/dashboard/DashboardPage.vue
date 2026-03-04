@@ -17,11 +17,13 @@
                   Number(homeData.user_info?.sports[0]?.scores?.vndupr_score || 0).toFixed(2)
                   }}
                 </div>
-                <div class="opacity-90 mb-1 text-[32px] font-semibold">VN RANK</div>
-                <div class="text-5xl font-bold leading-none text-[100px]">{{
-                  // Number(homeData.user_info?.sports[0]?.scores.dupr_score || 0).toFixed(2)
-                  getUser.vn_rank || 'Unranked'
-                  }}</div>
+                <div class="cursor-pointer hover:opacity-80 transition-opacity" @click="scrollToLeaderboard">
+                  <div class="opacity-90 mb-1 text-[32px] font-semibold">VN RANK</div>
+                  <div class="text-5xl font-bold leading-none text-[100px]">{{
+                    // Number(homeData.user_info?.sports[0]?.scores.dupr_score || 0).toFixed(2)
+                    getUser.vn_rank || 'Unranked'
+                    }}</div>
+                </div>
               </div>
 
               <div class="flex flex-col items-end justify-between h-[264px]">
@@ -198,9 +200,9 @@
             </button>
           </div>
           <div class="grid grid-cols-4 gap-4">
-            <div v-for="(f, i) in features" :key="i" class="flex flex-col items-center text-center cursor-pointer"
-              @click="navigateTo(f.route)">
-              <div class="w-12 h-12 bg-red-100 text-red-600 flex items-center justify-center rounded-full mb-2">
+            <div v-for="(f, i) in features" :key="i" class="flex flex-col items-center text-center cursor-pointer group"
+              @click="f.action ? f.action() : navigateTo(f.route)">
+              <div class="w-12 h-12 bg-red-100 text-red-600 flex items-center justify-center rounded-full mb-2 group-hover:bg-red-200 transition-colors">
                 <component :is="f.icon" class="w-6 h-6" />
               </div>
               <p class="text-xs text-gray-700 font-medium">{{ f.label }}</p>
@@ -227,7 +229,7 @@
             Không có banner
           </div>
         </div>
-        <div class="bg-white rounded-[8px] shadow p-5">
+        <div class="bg-white rounded-[8px] shadow p-5" ref="leaderboardSection">
           <div class="flex items-center justify-between mb-4">
             <h3 class="font-semibold text-gray-900 text-base">Top 50 người chơi</h3>
             <div
@@ -499,11 +501,16 @@ const profileLink = computed(() => {
   return getUser.value ? `${BASE_FRONTEND_URL}/profile/${getUser.value.id}` : '';
 });
 
+const leaderboardSection = ref(null);
+const scrollToLeaderboard = () => {
+  leaderboardSection.value?.scrollIntoView({ behavior: 'smooth' });
+};
+
 const features = [
   { label: "CLB", icon: UserGroupIcon, route: '/club' },
-  { label: "Tạo trận", icon: PlusCircleIcon, route: '/match/create' },
-  { label: "Tìm sân", icon: MapPinIconOutline, route: '/court' },
-  { label: "Xếp hạng", icon: ChartBarIcon, route: '/ranking' },
+  { label: "Tạo trận", icon: PlusCircleIcon, route: '/mini-tournament/create' },
+  { label: "Tìm sân", icon: MapPinIconOutline, route: '/map' },
+  { label: "Xếp hạng", icon: ChartBarIcon, action: scrollToLeaderboard },
 ];
 const itemsPerPage = 10;
 const currentPage = ref(1);

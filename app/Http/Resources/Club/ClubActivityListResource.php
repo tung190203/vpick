@@ -28,7 +28,7 @@ class ClubActivityListResource extends JsonResource
             'has_transaction' => (bool) ($this->has_transaction ?? false),
             'fund_collection_id' => $this->when(
                 (bool) ($this->has_transaction ?? false) && $this->relationLoaded('fundCollection') && $this->fundCollection,
-                $this->fundCollection->id
+                $this->fundCollection?->id
             ),
             'fee_split_type' => $this->fee_split_type,
             'fee_amount' => $this->fee_amount ? (float) $this->fee_amount : null,

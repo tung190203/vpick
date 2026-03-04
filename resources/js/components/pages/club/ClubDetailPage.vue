@@ -289,7 +289,8 @@
                                 @click-card="goToActivityDetail(activity)" @edit="handleEditActivity(activity)"
                                 @register="handleRegisterActivity(activity)"
                                 @cancel-join="handleCancelJoinActivity(activity)"
-                                @check-in="handleCheckInActivity(activity)" />
+                                @self-absent="handleSelfAbsentActivity(club.id, activity.id)"
+                                @check-in="handleSelfCheckInActivity(club.id, activity.id)" />
                         </template>
                         <div v-else class="p-4 text-center">
                             <p class="text-[#838799]">Hiện chưa có lịch thi đấu</p>
@@ -414,7 +415,7 @@
                 :has-more-history="currentHistoryPage < historyMeta.last_page"
                 @close="closeActivityModal"
                 @edit="handleEditActivity" @click-card="goToActivityDetail" @register="handleRegisterActivity"
-                @cancel-join="handleCancelJoinActivity" @check-in="handleCheckInActivity"
+                @cancel-join="handleCancelJoinActivity" @self-absent="handleSelfAbsentActivity" @check-in="handleSelfCheckInActivity"
                 @load-more-upcoming="handleLoadMoreUpcoming" @load-more-history="handleLoadMoreHistory" />
 
             <!-- Edit Club Modal -->
@@ -557,7 +558,7 @@ import {
 } from '@heroicons/vue/24/outline'
 import CampaignIcon from "@/assets/images/campaign.svg";
 import { useRouter, useRoute } from 'vue-router'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import VerifyIcon from "@/assets/images/verify-icon.svg";
 import Button from '@/components/atoms/Button.vue';
 import MessageIcon from "@/assets/images/message.svg";
@@ -670,8 +671,45 @@ const isInitialLoading = ref(true)
 const isLeaderboardLoading = ref(false)
 const joiningRequests = ref([])
 const selectedNotification = ref(null)
-const countdownText = ref('')
-let countdownInterval = null
+const currentTime = ref(dayjs())
+let timeInterval = null
+
+const nextMatch = computed(() => {
+    const now = currentTime.value
+
+    const match = activities.value
+        .filter(a => a.status !== 'cancelled' && a.status !== 'completed' && dayjs(a.end_time || dayjs(a.start_time).add(2, 'hour')).isAfter(now))
+        .sort((a, b) =>
+            dayjs(a.start_time).diff(dayjs(b.start_time))
+        )
+
+    return match[0] || null
+})
+
+const countdownText = computed(() => {
+    if (!nextMatch.value) return ''
+
+    const now = currentTime.value
+    const start = dayjs(nextMatch.value.start_time)
+    const diff = start.diff(now)
+
+    if (diff <= 0) {
+        return 'Đang diễn ra'
+    }
+
+    const hours = Math.floor(diff / (1000 * 60 * 60))
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+
+    const formattedMinutes = minutes.toString().padStart(2, '0')
+    const formattedSeconds = seconds.toString().padStart(2, '0')
+
+    if (hours > 0) {
+        return `${hours.toString().padStart(2, '0')}:${formattedMinutes}:${formattedSeconds}`
+    }
+    return `${formattedMinutes}:${formattedSeconds}`
+})
+
 const isReportModalOpen = ref(false)
 const isReportingClub = ref(false)
 const isPromotionModalOpen = ref(false)
@@ -750,47 +788,6 @@ const statsAdmin = computed(() => {
 
 const handleCampaign = () => {
     isPromotionModalOpen.value = true
-}
-
-const nextMatch = computed(() => {
-    const now = dayjs()
-
-    const upcoming = activities.value
-        .filter(a => a.status !== 'cancelled' && a.status !== 'completed' && dayjs(a.start_time).isAfter(now))
-        .sort((a, b) =>
-            dayjs(a.start_time).diff(dayjs(b.start_time))
-        )
-
-    return upcoming[0] || null
-})
-
-const startCountdown = () => {
-    if (countdownInterval) clearInterval(countdownInterval)
-
-    const update = () => {
-        if (!nextMatch.value) {
-            countdownText.value = ''
-            return
-        }
-
-        const now = dayjs()
-        const start = dayjs(nextMatch.value.start_time)
-        const diff = start.diff(now)
-
-        if (diff <= 0) {
-            countdownText.value = 'Đang diễn ra'
-            return
-        }
-
-        const hours = Math.floor(diff / (1000 * 60 * 60))
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-        const seconds = Math.floor((diff % (1000 * 60)) / 1000)
-
-        countdownText.value = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
-    }
-
-    update()
-    countdownInterval = setInterval(update, 1000)
 }
 
 const statsValue = computed(() => {
@@ -1072,6 +1069,8 @@ const formatActivity = (item) => {
     if (userParticipant) {
         if (userParticipant.status === 'pending') {
             registrationStatus = 'pending'
+        } else if (userParticipant.status === 'attended') {
+            registrationStatus = 'attended'
         } else if (userParticipant.status === 'accepted' || !userParticipant.status) {
             registrationStatus = 'accepted'
         }
@@ -1099,6 +1098,8 @@ const formatActivity = (item) => {
     let buttonText = 'Đăng ký'
     if (isCompleted) {
         buttonText = isCancelled ? 'Đã hủy' : 'Đã xong'
+    } else if (registrationStatus === 'attended') {
+        buttonText = 'Đã check-in'
     } else if (isRegistered) {
         buttonText = registrationStatus === 'pending' ? 'Đang chờ duyệt' : 'Check-in ngay'
     }
@@ -1382,8 +1383,6 @@ const getClubActivities = async () => {
         const activitiesList = Array.isArray(activitiesData) ? activitiesData : (activitiesData?.data || [])
         const allActivities = activitiesList.map(formatActivity)
         activities.value = allActivities.slice(0, 5)
-
-        startCountdown()
     } catch (error) {
         toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi lấy thông tin hoạt động')
     }
@@ -1748,11 +1747,21 @@ const handleInviteAction = async (user) => {
     }
 }
 
+const refreshActivityData = async () => {
+    await getClubActivities()
+    if (isActivityModalOpen.value) {
+        await Promise.all([
+            getMoreUpcomingActivities(),
+            getMoreHistoryActivities()
+        ])
+    }
+}
+
 const handleRegisterActivity = async (activity) => {
     try {
         await ClubService.joinActivityRequest(clubId.value, activity.id)
         toast.success('Đã gửi yêu cầu tham gia thành công')
-        await getClubActivities()
+        await refreshActivityData()
     } catch (error) {
         toast.error(error.response?.data?.message || 'Không thể gửi yêu cầu tham gia')
     }
@@ -1766,14 +1775,47 @@ const handleCancelJoinActivity = async (activity) => {
     try {
         await ClubService.cancelActivityJoinRequest(clubId.value, activity.id, userParticipant.id)
         toast.success('Đã hủy yêu cầu tham gia')
-        await getClubActivities()
+        await refreshActivityData()
     } catch (error) {
         toast.error(error.response?.data?.message || 'Không thể hủy yêu cầu tham gia')
     }
 }
 
-const handleCheckInActivity = (activity) => {
-    goToActivityDetail(activity, { showCheckin: true })
+const handleSelfCheckInActivity = async (arg1, arg2) => {
+    // If arg1 is an object (activity), or arg2 is undefined, use clubId.value
+    const finalClubId = (arg2 !== undefined && typeof arg1 !== 'object') ? arg1 : clubId.value
+    const finalActivityId = (arg2 !== undefined) ? arg2 : (arg1?.id || arg1)
+
+    if (!finalClubId || !finalActivityId) {
+        toast.error('Thiếu thông tin câu lạc bộ hoặc hoạt động')
+        return
+    }
+
+    try {
+        await ClubService.selfCheckinActivity(finalClubId, finalActivityId)
+        toast.success('Đã check-in thành công')
+        await refreshActivityData()
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Không thể check-in')
+    }
+}
+
+const handleSelfAbsentActivity = async (arg1, arg2) => {
+    const finalClubId = (arg2 !== undefined && typeof arg1 !== 'object') ? arg1 : clubId.value
+    const finalActivityId = (arg2 !== undefined) ? arg2 : (arg1?.id || arg1)
+
+    if (!finalClubId || !finalActivityId) {
+        toast.error('Thiếu thông tin câu lạc bộ hoặc hoạt động')
+        return
+    }
+
+    try {
+        await ClubService.selfAbsentActivity(finalClubId, finalActivityId)
+        toast.success('Đã báo vắng thành công')
+        await refreshActivityData()
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Không thể báo vắng')
+    }
 }
 
 const handleReportClub = () => {
@@ -1799,12 +1841,21 @@ onMounted(async () => {
         return;
     }
     await loadAllData()
+    
+    timeInterval = setInterval(() => {
+        currentTime.value = dayjs()
+    }, 1000)
+
     // Always load notification types in background so they are ready for edit modal
     getNotificationType()
 
     if (route.query.showNotifications) {
         openNotification()
     }
+})
+
+onBeforeUnmount(() => {
+    if (timeInterval) clearInterval(timeInterval)
 })
 
 watch(() => route.query.showNotifications, (newVal) => {
