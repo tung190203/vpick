@@ -847,6 +847,7 @@
             <ClubCreateFundModal 
                 v-model:isOpen="showCreateFundModal"
                 :club="club"
+                :initialData="fundEditData"
                 @submit="handleSubmitFundRevenue"
             />
 
@@ -872,6 +873,17 @@
                 :fundCollections="allCollections"
                 :initialCollectionId="selectedCollectionId"
                 :initialContributionId="selectedContributionId"
+                :canManage="hasAnyRole(['admin', 'secretary', 'treasurer'])"
+                @delete="handleDeleteCollection"
+            />
+
+            <!-- Delete Fund Collection Modal -->
+            <DeleteConfirmationModal
+                v-model="showDeleteCollectionModal"
+                title="Xác nhận xoá đợt thu"
+                message="Bạn có chắc chắn muốn xoá đợt thu này không? Thao tác này không thể hoàn tác."
+                confirmButtonText="Xoá ngay"
+                @confirm="handleConfirmDeleteCollection"
             />
 
             <!-- Submit Receipt Modal -->
@@ -892,7 +904,7 @@
                     <MinusIcon class="w-6 h-6" />
                 </button>
                 <button 
-                    @click="showCreateFundModal = true"
+                    @click="openCreateFundModal"
                     class="w-12 h-12 bg-[#E36C72] text-white rounded-full flex items-center justify-center shadow-lg hover:bg-[#d05a60] transition-all"
                 >
                     <PlusIcon class="w-6 h-6" />
@@ -955,11 +967,15 @@ const showQRModal = ref(false)
 const showCreateFundModal = ref(false)
 const showCreateExpenseModal = ref(false)
 const showDeleteQRModal = ref(false)
+const showDeleteCollectionModal = ref(false)
 const showCollectionDetailModal = ref(false)
 const showSubmitReceiptModal = ref(false)
 const selectedCollectionIdForReceipt = ref(null)
 const selectedContributionId = ref(null)
 const qrToDelete = ref(null)
+const collectionToDelete = ref(null)
+const selectedCollectionIdForEdit = ref(null)
+const fundEditData = ref({})
 const currentIndex = ref(0)
 const isInitialLoading = ref(true)
 const fileInput = ref(null)
@@ -976,6 +992,11 @@ const transactions = ref([])
 
 const triggerFileInput = () => {
     fileInput.value?.click()
+}
+
+const openCreateFundModal = () => {
+    fundEditData.value = {}
+    showCreateFundModal.value = true
 }
 
 const onAmountInput = (event) => {
@@ -1324,6 +1345,31 @@ const handleSubmitFundRevenue = async (data) => {
         await getFundCollection()
     } catch (error) {
         toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi tạo khoản thu')
+    }
+}
+const handleDeleteCollection = (id) => {
+    collectionToDelete.value = id
+    showDeleteCollectionModal.value = true
+}
+
+const handleConfirmDeleteCollection = async () => {
+    if (!collectionToDelete.value) return
+    
+    try {
+        const response = await ClubService.deleteFundCollection(clubId.value, collectionToDelete.value)
+        toast.success(response.message || 'Xóa đợt thu thành công')
+        showDeleteCollectionModal.value = false
+        showCollectionDetailModal.value = false
+        
+        // Refresh data
+        await getFundOverview()
+        await getAllTransaction()
+        await getAllMyTransaction()
+        await getFundCollection()
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Không thể xóa đợt thu')
+    } finally {
+        collectionToDelete.value = null
     }
 }
 

@@ -35,7 +35,7 @@
                                     <div class="flex-1 flex flex-col min-w-0">
                                         <div class="flex justify-between items-start mb-1">
                                             <h3 :class="[
-                                                'font-bold text-[15px] flex-1 mr-2 transition-colors line-clamp-1 max-w-[200px]',
+                                                'font-bold text-[15px] flex-1 mr-2 transition-colors line-clamp-1 max-w-[160px]',
                                                 Number(selectedCollectionId) === Number(collection.id) ? 'text-[#1F2937]' : 'text-gray-500'
                                             ]" v-tooltip="collection.title">
                                                 {{ collection.title }}
@@ -46,7 +46,17 @@
                                             <span class="text-[12px] text-gray-400">/người</span>
                                         </div>
                                     </div>
-                                    <ChevronRightIcon class="w-4 h-4 text-gray-400 group-hover:translate-x-0.5 transition-transform flex-shrink-0" />
+                                    <div class="flex items-center space-x-1">
+                                        <div v-if="canManage" class="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button 
+                                                @click.stop="emit('delete', collection.id)"
+                                                class="p-1.5 text-gray-400 hover:text-[#D72D36] transition-colors"
+                                            >
+                                                <TrashIcon class="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                        <ChevronRightIcon class="w-4 h-4 text-gray-400 group-hover:translate-x-0.5 transition-transform flex-shrink-0" />
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -63,11 +73,22 @@
                                     <!-- Summary Section (Top) -->
                                     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
                                         <div class="p-4">
-                                            <div class="mb-4">
-                                                <h3 class="text-xl font-semibold text-[#3E414C] mb-2 line-clamp-1" v-tooltip="details.collection.title">{{ details.collection.title }}</h3>
-                                                <div class="flex items-baseline space-x-1">
-                                                    <span class="text-xl font-semibold text-[#D72D36]">{{ formatCurrency(details.collection.amount_per_member) }}đ</span>
-                                                    <span class="text-sm text-[#838799] font-normal">/người</span>
+                                            <div class="mb-4 flex items-start justify-between">
+                                                <div class="flex-1 min-w-0">
+                                                    <h3 class="text-xl font-semibold text-[#3E414C] mb-2 line-clamp-1" v-tooltip="details.collection.title">{{ details.collection.title }}</h3>
+                                                    <div class="flex items-baseline space-x-1">
+                                                        <span class="text-xl font-semibold text-[#D72D36]">{{ formatCurrency(details.collection.amount_per_member) }}đ</span>
+                                                        <span class="text-sm text-[#838799] font-normal">/người</span>
+                                                    </div>
+                                                </div>
+                                                <div v-if="canManage" class="flex items-center space-x-2 ml-4">
+                                                    <button 
+                                                        @click="emit('delete', details.collection.id)"
+                                                        class="p-2 text-gray-400 hover:text-[#D72D36] transition-colors rounded-lg hover:bg-gray-50"
+                                                        v-tooltip="'Xoá đợt thu'"
+                                                    >
+                                                        <TrashIcon class="w-5 h-5" />
+                                                    </button>
                                                 </div>
                                             </div>
 
@@ -207,12 +228,12 @@
                                                                 <p class="font-bold text-[16px] text-[#1F2937]">{{ member.user?.full_name }}</p>
                                                                 <p v-if="isOverdue(details.collection.end_date)" class="text-xs text-red-500 font-bold mt-0.5 flex items-center">
                                                                     <span class="w-1.5 h-1.5 bg-red-500 rounded-full mr-2 animate-pulse"></span>
-                                                                    Trễ {{ overdueDays(details.collection.end_date) }} ngày
+                                                                    {{ overdueDays(details.collection.end_date) === 0 ? 'Hạn nộp hôm nay' : 'Trễ ' + overdueDays(details.collection.end_date) + ' ngày' }}
                                                                 </p>
                                                                 <p v-else class="text-xs text-[#838799] mt-0.5 font-normal">Chưa thanh toán</p>
                                                             </div>
                                                         </div>
-                                                        <button class="bg-[#F6E4C8] text-[#E0A243] px-5 py-1.5 rounded-full text-sm font-bold hover:bg-[#D48D3B] hover:text-white transition-all active:scale-95">
+                                                        <button v-if="canManage" class="bg-[#F6E4C8] text-[#E0A243] px-5 py-1.5 rounded-full text-sm font-bold hover:bg-[#D48D3B] hover:text-white transition-all active:scale-95">
                                                             Nhắc
                                                         </button>
                                                     </div>
@@ -245,7 +266,8 @@ import {
     XMarkIcon, 
     ChevronRightIcon, 
     CheckCircleIcon,
-    DocumentMagnifyingGlassIcon
+    DocumentMagnifyingGlassIcon,
+    TrashIcon
 } from '@heroicons/vue/24/outline'
 import { ref, watch, onMounted } from 'vue'
 import * as ClubService from '@/service/club.js'
@@ -262,10 +284,14 @@ const props = defineProps({
         default: () => []
     },
     initialCollectionId: [String, Number],
-    initialContributionId: [String, Number]
+    initialContributionId: [String, Number],
+    canManage: {
+        type: Boolean,
+        default: false
+    }
 })
 
-const emit = defineEmits(['update:isOpen'])
+const emit = defineEmits(['update:isOpen', 'delete'])
 
 const selectedCollectionId = ref(null)
 const details = ref(null)

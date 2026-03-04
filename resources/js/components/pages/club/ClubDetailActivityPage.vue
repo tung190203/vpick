@@ -459,7 +459,8 @@ import {
     PlusCircleIcon,
     CheckIcon,
     WrenchIcon,
-    MegaphoneIcon
+    MegaphoneIcon,
+    DocumentTextIcon
 } from '@heroicons/vue/24/outline'
 import RegistrationIcon from '@/assets/images/registration.svg'
 import PriceCheckIcon from '@/assets/images/price_check.svg'
@@ -713,7 +714,7 @@ const registrationButtonState = computed(() => {
 
     if (isCancelled) {
         return {
-            text: 'Đã hủy',
+            text: 'Hoạt động đã bị huỷ',
             color: 'white',
             shadowClass: 'border border-[#DCDEE6] bg-gray-100 text-[#838799] shadow-sm cursor-not-allowed',
             disabled: true,
@@ -725,19 +726,19 @@ const registrationButtonState = computed(() => {
 
     if (isCompleted && activity.value.has_transaction) {
         return {
-            text: 'Đã tạo khoản thu/chi',
-            color: 'white',
-            shadowClass: 'border border-[#DCDEE6] bg-gray-100 text-[#838799] shadow-sm cursor-not-allowed',
-            disabled: true,
-            action: () => { },
-            icon: CheckIcon,
+            text: 'Bảng thu tiền',
+            color: 'danger',
+            shadowClass: 'shadow-lg shadow-red-100',
+            disabled: false,
+            action: goToFundPage,
+            icon: DocumentTextIcon,
             showAbsent: false
         }
     }
 
     if (isOwner.value && isFinished.value && !activity.value.has_transaction) {
         return {
-            text: activity.value.fee_split_type === 'fund' ? 'Tạo khoản chi' : 'Chốt bill chia tiền',
+            text: activity.value.fee_split_type === 'fund' ? 'Chốt bill hoạt động' : 'Chốt bill chia tiền',
             color: 'danger',
             shadowClass: 'shadow-lg shadow-red-100',
             disabled: false,
@@ -836,6 +837,14 @@ const joinActivityRequest = async () => {
 
 const updateEvent = () => {
     router.push({name: 'club-activity-edit', params: {id: clubId, activityId: activityId.value}})
+}
+
+const goToFundPage = () => {
+    router.push({ 
+        name: 'club-fund', 
+        params: { id: clubId },
+        query: { collectionId: activity.value.fund_collection_id }
+    })
 }
 
 const handleOpenFinalizeBill = () => {
