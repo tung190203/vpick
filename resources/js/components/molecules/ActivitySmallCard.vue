@@ -76,53 +76,67 @@
     </div>
 
     <!-- Action Section -->
-    <div v-if="!isCreator" class="w-full flex items-center justify-between gap-2" @click.stop>
-      <!-- Pending Approval -->
-      <Button v-if="registrationStatus === 'pending'"
-        size="md" 
-        color="secondary"
-        class="w-full font-semibold text-sm py-2 rounded-md flex justify-center bg-[#EDEEF2] text-[#3E414C] border border-[#DCDEE6] shadow-sm"
-        :disabled="disabled"
-        @click="$emit('cancel-join')"
-      >
-        <div class="flex items-center gap-2">
-          <ClockIcon class="w-4 h-4" />
-          <span>{{ pendingText }}</span>
-        </div>
-      </Button>
-
-      <!-- Accepted / Participant -->
-      <template v-else-if="registrationStatus === 'accepted'">
-        <Button 
+    <div class="w-full flex flex-col gap-2" @click.stop>
+      <div class="flex items-center gap-2 w-full">
+        <!-- Pending Approval -->
+        <Button v-if="registrationStatus === 'pending'"
           size="md" 
           color="secondary"
-          class="w-full font-semibold text-sm py-2 rounded-md flex justify-center"
+          class="w-full font-semibold text-sm py-2 rounded-md flex justify-center bg-[#EDEEF2] text-[#3E414C] border border-[#DCDEE6] shadow-sm"
           :disabled="disabled"
           @click="$emit('cancel-join')"
         >
-          Huỷ tham gia
+          <div class="flex items-center gap-2">
+            <ClockIcon class="w-4 h-4" />
+            <span>{{ pendingText }}</span>
+          </div>
         </Button>
-        <Button 
+
+        <!-- Attended -->
+        <Button v-else-if="registrationStatus === 'attended'"
           size="md" 
-          color="primary"
+          color="secondary"
+          class="w-full font-semibold text-sm py-2 rounded-md flex justify-center bg-gray-100 text-gray-500 border border-gray-200"
+          :disabled="true"
+        >
+          <div class="flex items-center gap-2">
+            <span>Đã check-in</span>
+          </div>
+        </Button>
+
+        <!-- Accepted / Participant -->
+        <template v-else-if="registrationStatus === 'accepted'">
+          <Button 
+            size="md" 
+            color="secondary"
+            class="w-full font-semibold text-sm py-2 rounded-md flex justify-center h-10"
+            :disabled="disabled"
+            @click="$emit('self-absent')"
+          >
+            Báo vắng
+          </Button>
+          <Button 
+            size="md" 
+            color="primary"
+            class="w-full font-semibold text-sm py-2 rounded-md flex justify-center h-10"
+            :disabled="disabled"
+            @click="$emit('check-in')"
+          >
+            Check-in
+          </Button>
+        </template>
+
+        <!-- Not Registered -->
+        <Button v-else
+          size="md" 
+          :color="buttonColor"
           class="w-full font-semibold text-sm py-2 rounded-md flex justify-center"
           :disabled="disabled"
-          @click="$emit('check-in')"
+          @click="$emit('register')"
         >
-          Check-in
+          {{ buttonText }}
         </Button>
-      </template>
-
-      <!-- Not Registered -->
-      <Button v-else
-        size="md" 
-        :color="buttonColor"
-        class="w-full font-semibold text-sm py-2 rounded-md flex justify-center"
-        :disabled="disabled"
-        @click="$emit('register')"
-      >
-        {{ buttonText }}
-      </Button>
+      </div>
     </div>
   </div>
 </template>
@@ -195,7 +209,7 @@ const props = defineProps({
   }
 })
 
-defineEmits(['click-card', 'edit', 'register', 'cancel-join', 'check-in'])
+defineEmits(['click-card', 'edit', 'register', 'cancel-join', 'self-absent', 'check-in'])
 
 const buttonColor = computed(() => {
   if (props.type === 'danger') return 'danger'

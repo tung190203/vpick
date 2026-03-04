@@ -147,7 +147,7 @@
                     </div>
                   </div>
 
-                  <!-- Repeat Settings -->
+                      <!-- Repeat Settings -->
                   <div class="">
                     <div class="flex items-center justify-between">
                       <label class="block text-xs font-bold text-[#3E414C]">Thiết lập lặp lại</label>
@@ -178,6 +178,15 @@
                         <p class="text-sm font-normal text-[#D72D36]">
                           Kèo này sẽ tự động tạo vào <span class="font-bold">{{ formattedRepeatTime }}</span>
                         </p>
+                      </div>
+
+                      <!-- Edit Entire Series Switch -->
+                      <div class="flex items-center justify-between py-2 border-t border-gray-100 mt-2">
+                        <div class="space-y-0.5">
+                          <label class="text-xs font-bold text-[#3E414C]">Áp dụng cho cả chuỗi</label>
+                          <p class="text-[10px] text-[#838799]">Bật để cập nhật tất cả các buổi trong tương lai</p>
+                        </div>
+                        <Toggle v-model="editEntireSeries" />
                       </div>
                     </div>
                   </div>
@@ -287,6 +296,14 @@
                   class="w-full pl-10 pr-4 py-3 bg-[#F8F9FA] border-none rounded-[8px] focus:outline-none text-sm font-bold text-[#3E414C] placeholder:text-[#A1A5B7]" />
               </div>
 
+              <!-- Included in Club Fund -->
+              <div class="flex items-center justify-between py-2 border-t border-gray-100 pt-4">
+                <div class="space-y-1">
+                  <label class="text-xs font-bold text-[#838799] uppercase tracking-wider">TÍNH VÀO QUỸ CHUNG CLB</label>
+                </div>
+                <Toggle v-model="form.included_in_club_fund" :disabled="form.fee_split_type === 'fund'" />
+              </div>
+
               <!-- Guest Fee -->
               <div v-if="form.fee_split_type !== 'fund'" class="space-y-3 pt-4 border-t border-gray-100">
                 <div class="flex items-center justify-between">
@@ -350,7 +367,7 @@
                 <div class="flex items-center justify-between">
                   <div>
                     <label class="block text-sm font-bold text-[#3E414C]">Phạt hủy muộn</label>
-                    <p class="text-[11px] text-[#838799] mt-0.5">Tự động công nợ xấu theo mức phạt</p>
+                    <p class="text-[11px] text-[#838799] mt-0.5">Số tiền phạt sẽ được tự động tạo đến người vi phạm dưới dạng khoản thu</p>
                   </div>
                   <Toggle v-model="has_cancel_penalty" />
                 </div>
@@ -418,6 +435,7 @@ const qrInput = ref(null)
 const start_date = ref(dayjs().toDate());
 const start_time_picker = ref({ hours: dayjs().hour(), minutes: 0 });
 const is_repeated = ref(false);
+const editEntireSeries = ref(false);
 
 const daysOfWeek = [
   { label: 'T2', value: 1 },
@@ -432,7 +450,7 @@ const daysOfWeek = [
 const splitTypes = [
   { label: 'Chia đều', value: 'equal' },
   { label: 'Cố định', value: 'fixed' },
-  { label: 'Quỹ bao', value: 'fund' }
+  { label:'Quỹ chi', value: 'fund' }
 ]
 
 const form = ref({
@@ -458,6 +476,7 @@ const form = ref({
   max_participants: 1,
   qr_image: null,
   qr_file: null,
+  included_in_club_fund: false,
 })
 
 const formattedTotalAmount = computed({
@@ -560,6 +579,15 @@ watch(() => form.value.address, (val) => {
   else locations.value = []
 })
 
+watch(() => form.value.fee_split_type, (newType, oldType) => {
+  if (newType === 'fund') {
+    form.value.included_in_club_fund = true
+  } else if (oldType === 'fund') {
+    form.value.included_in_club_fund = false
+  }
+})
+
+
 const onLocationSelect = async (loc) => {
   isSelectingLocation.value = true
   debouncedFetch.cancel()
@@ -608,6 +636,7 @@ const fetchActivityDetail = async () => {
                 guest_fee: data.guest_fee || 0,
                 penalty_amount: data.penalty_amount || 0,
                 fee_split_type: data.fee_split_type || 'equal',
+                included_in_club_fund: !!data.included_in_club_fund,
                 is_public: data.type !== 'private',
                 qr_image: data.qr_image || null,
             }
@@ -685,6 +714,7 @@ const handleSubmit = async () => {
     const formData = new FormData()
     formData.append('_method', 'PUT') // For Laravel to handle PUT with FormData
     formData.append('title', form.value.title)
+    formData.append('edit_scope', editEntireSeries.value ? 'entire_series' : 'this_occurrence')
     formData.append('description', form.value.description || '')
     formData.append('type', form.value.is_public ? 'other' : 'private')
     formData.append('start_time', start.format('YYYY-MM-DD HH:mm:ss'))
@@ -719,10 +749,11 @@ const handleSubmit = async () => {
     formData.append('guest_fee', has_guest_fee.value ? form.value.guest_fee : 0)
     formData.append('penalty_amount', has_cancel_penalty.value ? form.value.penalty_amount : 0)
     formData.append('fee_split_type', form.value.fee_split_type)
+    formData.append('included_in_club_fund', form.value.included_in_club_fund ? 1 : 0)
     formData.append('is_public', form.value.is_public ? 1 : 0)
     
     if (isLimitParticipants.value) {
-      formData.append('max_participants', form.value.max_participants)
+      formData.append('max_participants', form.value.max_participants || 1)
     } else {
         formData.append('max_participants', '')
     }
@@ -731,12 +762,12 @@ const handleSubmit = async () => {
       formData.append('qr_image', form.value.qr_file)
     }
 
-    await ClubService.updateActivity(clubId, activityId, formData)
+    const res = await ClubService.updateActivity(clubId, activityId, formData)
     toast.success('Cập nhật lịch sinh hoạt thành công')
     router.push({
       name: 'club-detail-activity',
       params: { id: clubId },
-      query: { activityId: activityId }
+      query: { activityId: res?.data?.id || activityId }
     })
   } catch (error) {
     toast.error(error.response?.data?.message || 'Có lỗi xảy ra')

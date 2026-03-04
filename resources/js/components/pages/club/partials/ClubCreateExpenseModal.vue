@@ -128,6 +128,10 @@ const props = defineProps({
     isOpen: {
         type: Boolean,
         default: false
+    },
+    initialData: {
+        type: Object,
+        default: () => ({})
     }
 })
 
@@ -138,6 +142,17 @@ const expenseDescription = ref('')
 const expensePaymentMethod = ref('cash')
 const expenseNote = ref('')
 const isSubmitting = ref(false)
+
+import { watch } from 'vue'
+watch(() => props.isOpen, (newVal) => {
+    if (newVal && props.initialData) {
+        if (props.initialData.title) expenseDescription.value = props.initialData.title
+        if (props.initialData.amount) {
+            let val = props.initialData.amount.toString()
+            expenseAmount.value = val.replace(/\B(?=(\d{3})+(?!\d))/g, ".")
+        }
+    }
+}, { immediate: true })
 
 const paymentMethods = [
     { value: 'cash', label: 'Tiền mặt', icon: BanknotesIcon },
