@@ -2,7 +2,6 @@
 
 namespace App\Services\Club;
 
-use App\Enums\ClubActivityFeeSplitType;
 use App\Enums\ClubActivityParticipantStatus;
 use App\Enums\ClubActivityStatus;
 use App\Enums\ClubMemberRole;
@@ -32,7 +31,7 @@ class ClubActivityParticipantService
     {
         $allParticipants = $activity->participants()->get();
 
-        $query = $activity->participants()->with('user');
+        $query = $activity->participants()->with(['user', 'walletTransaction']);
 
         if ($statusFilter) {
             $query->where('status', $statusFilter);
@@ -93,15 +92,10 @@ class ClubActivityParticipantService
             // If status is Declined or Absent, allow rejoin
             $newStatus = $shouldAutoAccept ? ClubActivityParticipantStatus::Accepted : ClubActivityParticipantStatus::Pending;
 
-            if ($shouldAutoAccept && $activity->fee_amount > 0) {
-                $existingParticipant->update(['wallet_transaction_id' => null]);
-                $this->createFeeTransaction($existingParticipant, $activity);
-            } else {
-                $existingParticipant->update([
-                    'status' => $newStatus,
-                    'wallet_transaction_id' => null,
-                ]);
-            }
+            $existingParticipant->update([
+                'status' => $newStatus,
+                'wallet_transaction_id' => null,
+            ]);
 
             if (!$shouldAutoAccept) {
                 $applicant = User::find($userId);
@@ -124,10 +118,6 @@ class ClubActivityParticipantService
             'user_id' => $userId,
             'status' => $initialStatus,
         ]);
-
-        if ($shouldAutoAccept && $activity->fee_amount > 0) {
-            $this->createFeeTransaction($participant, $activity);
-        }
 
         if (!$shouldAutoAccept) {
             $applicant = User::find($userId);
@@ -231,18 +221,7 @@ class ClubActivityParticipantService
     public function updateParticipantStatus(ClubActivityParticipant $participant, string $status): ClubActivityParticipant
     {
         return DB::transaction(function () use ($participant, $status) {
-            $activity = $participant->activity;
-
-            // If changing to Accepted and has fee, create transaction
-            if (
-                $status === ClubActivityParticipantStatus::Accepted->value
-                && $activity->fee_amount > 0
-                && !$participant->wallet_transaction_id
-            ) {
-                $this->createFeeTransaction($participant, $activity);
-            } else {
-                $participant->update(['status' => $status]);
-            }
+            $participant->update(['status' => $status]);
 
             return $participant;
         });
@@ -273,12 +252,8 @@ class ClubActivityParticipantService
             throw new \Exception('Sự kiện đã đủ số lượng người tham gia');
         }
 
-        $participant = DB::transaction(function () use ($participant, $activity) {
-            if ($activity->fee_amount > 0) {
-                $this->createFeeTransaction($participant, $activity);
-            } else {
-                $participant->update(['status' => ClubActivityParticipantStatus::Accepted]);
-            }
+        $participant = DB::transaction(function () use ($participant) {
+            $participant->update(['status' => ClubActivityParticipantStatus::Accepted]);
 
             return $participant;
         });
@@ -354,12 +329,8 @@ class ClubActivityParticipantService
             throw new \Exception('Sự kiện đã đủ số lượng người tham gia');
         }
 
-        return DB::transaction(function () use ($participant, $activity) {
-            if ($activity->fee_amount > 0) {
-                $this->createFeeTransaction($participant, $activity);
-            } else {
-                $participant->update(['status' => ClubActivityParticipantStatus::Accepted]);
-            }
+        return DB::transaction(function () use ($participant) {
+            $participant->update(['status' => ClubActivityParticipantStatus::Accepted]);
 
             return $participant;
         });
@@ -609,42 +580,4 @@ class ClubActivityParticipantService
         ];
     }
 
-    private function createFeeTransaction(ClubActivityParticipant $participant, ClubActivity $activity): void
-    {
-        $club = $activity->club;
-        $mainWallet = $club->mainWallet;
-
-        if (!$mainWallet) {
-            $participant->update(['status' => ClubActivityParticipantStatus::Accepted]);
-            return;
-        }
-
-        $amount = $this->calculateFeeAmount($activity);
-
-        $transaction = ClubWalletTransaction::create([
-            'club_wallet_id' => $mainWallet->id,
-            'direction' => ClubWalletTransactionDirection::In,
-            'amount' => $amount,
-            'source_type' => ClubWalletTransactionSourceType::Activity,
-            'source_id' => $activity->id,
-            'payment_method' => PaymentMethod::BankTransfer,
-            'status' => ClubWalletTransactionStatus::Pending,
-            'description' => "Phí tham gia sự kiện: {$activity->title}",
-            'created_by' => $participant->user_id,
-        ]);
-
-        $participant->update([
-            'status' => ClubActivityParticipantStatus::Accepted,
-            'wallet_transaction_id' => $transaction->id,
-        ]);
-    }
-
-    private function calculateFeeAmount(ClubActivity $activity): float
-    {
-        $feeSplitType = $activity->fee_split_type ?? ClubActivityFeeSplitType::Fixed;
-
-        return $feeSplitType === ClubActivityFeeSplitType::Fixed
-            ? (float) $activity->fee_amount
-            : (float) $activity->fee_amount / max(1, (int) ($activity->max_participants ?? 1));
-    }
 }

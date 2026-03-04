@@ -24,6 +24,7 @@ class ClubWalletTransaction extends Model
         'status',
         'reference_code',
         'description',
+        'included_in_club_fund',
         'created_by',
         'confirmed_by',
         'confirmed_at',
@@ -36,6 +37,7 @@ class ClubWalletTransaction extends Model
         'status' => ClubWalletTransactionStatus::class,
         'amount' => 'decimal:2',
         'confirmed_at' => 'datetime',
+        'included_in_club_fund' => 'boolean',
     ];
 
     public function wallet()

@@ -7,6 +7,7 @@ use App\Enums\ClubWalletTransactionSourceType;
 use App\Enums\ClubWalletTransactionStatus;
 use App\Enums\ClubWalletType;
 use App\Models\Club\Club;
+use App\Models\Club\ClubActivity;
 use App\Models\Club\ClubExpense;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -54,10 +55,12 @@ class ClubExpenseService
         }
 
         $description = (string) ($data['description'] ?? $data['title'] ?? '');
+        $activityId = $data['activity_id'] ?? null;
 
-        return DB::transaction(function () use ($club, $data, $userId, $description) {
+        return DB::transaction(function () use ($club, $data, $userId, $description, $activityId) {
             $expense = ClubExpense::create([
                 'club_id' => $club->id,
+                'club_activity_id' => $activityId,
                 'title' => $description,
                 'amount' => $data['amount'],
                 'spent_by' => $userId,
@@ -85,9 +88,14 @@ class ClubExpenseService
                 'created_by' => $userId,
                 'confirmed_by' => $userId,
                 'confirmed_at' => now(),
+                'included_in_club_fund' => true,
             ]);
 
             $expense->update(['wallet_transaction_id' => $transaction->id]);
+
+            if ($activityId) {
+                ClubActivity::where('id', $activityId)->where('club_id', $club->id)->update(['has_transaction' => true]);
+            }
 
             return $expense;
         });

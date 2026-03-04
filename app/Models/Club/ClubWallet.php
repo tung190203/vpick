@@ -38,10 +38,24 @@ class ClubWallet extends Model
         return $this->hasMany(ClubWalletTransaction::class)->where('status', ClubWalletTransactionStatus::Confirmed);
     }
 
+    /**
+     * Giao dịch tính vào quỹ chung (included_in_club_fund = true hoặc null).
+     * Dùng để tính balance quỹ chung - loại trừ giao dịch có included_in_club_fund = false.
+     */
+    public function clubFundTransactions()
+    {
+        return $this->transactions()->where(function ($q) {
+            $q->where('included_in_club_fund', true)->orWhereNull('included_in_club_fund');
+        });
+    }
+
     public function getBalanceAttribute()
     {
-        $in = $this->confirmedTransactions()->where('direction', ClubWalletTransactionDirection::In)->sum('amount');
-        $out = $this->confirmedTransactions()->where('direction', ClubWalletTransactionDirection::Out)->sum('amount');
+        $base = $this->confirmedTransactions()->where(function ($q) {
+            $q->where('included_in_club_fund', true)->orWhereNull('included_in_club_fund');
+        });
+        $in = (clone $base)->where('direction', ClubWalletTransactionDirection::In)->sum('amount');
+        $out = (clone $base)->where('direction', ClubWalletTransactionDirection::Out)->sum('amount');
         return $in - $out;
     }
 
