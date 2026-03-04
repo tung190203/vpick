@@ -42,8 +42,9 @@ class ClubActivityResource extends JsonResource
             'max_participants' => $this->max_participants !== null ? (int) $this->max_participants : null,
             'collected_amount' => (float) ($this->collected_amount ?? 0),
             'qr_code_url' => $this->qr_code_url,
+            // URL dùng chung cho QR check-in và share. User quét/nhấn link → mở web app → FE xử lý redirect theo trạng thái user.
             'check_in_url' => $this->check_in_token
-                ? url("/api/clubs/{$this->club_id}/activities/{$this->id}/check-in?token={$this->check_in_token}")
+                ? url("/clubs/{$this->club_id}/detail-activity?activityId={$this->id}&token={$this->check_in_token}")
                 : null,
             'status' => $this->status,
             'created_by' => $this->created_by,

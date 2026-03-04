@@ -837,7 +837,7 @@ class ClubActivityService
 
     public function buildCheckInUrl(int $clubId, int $activityId, string $token): string
     {
-        return url("/api/clubs/{$clubId}/activities/{$activityId}/check-in?token={$token}");
+        return url("/clubs/{$clubId}/detail-activity?activityId={$activityId}&token={$token}");
     }
 
     public function generateOccurrenceStartTimesForRollover(ClubActivity $template, Carbon $afterDate): array
