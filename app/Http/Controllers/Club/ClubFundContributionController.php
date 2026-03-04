@@ -81,6 +81,33 @@ class ClubFundContributionController extends Controller
         }
     }
 
+    public function markMemberPaid(Request $request, $clubId, $collectionId)
+    {
+        $collection = ClubFundCollection::where('club_id', $clubId)->findOrFail($collectionId);
+        $club = $collection->club;
+        $userId = auth()->id();
+
+        if (!$club->canManageFinance($userId)) {
+            return ResponseHelper::error('Chỉ admin/manager/secretary/treasurer mới có quyền đánh dấu đã đóng', 403);
+        }
+
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        try {
+            $contribution = $this->contributionService->markMemberPaid(
+                $collection,
+                (int) $validated['user_id'],
+                $userId
+            );
+            $contribution->load(['user', 'walletTransaction']);
+            return ResponseHelper::success(new ClubFundContributionResource($contribution), 'Đã đánh dấu thành viên đã đóng');
+        } catch (\Exception $e) {
+            return ResponseHelper::error($e->getMessage(), 422);
+        }
+    }
+
     public function show($clubId, $collectionId, $contributionId)
     {
         $contribution = ClubFundContribution::whereHas('fundCollection', function ($q) use ($clubId) {

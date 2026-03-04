@@ -230,6 +230,7 @@ Route::middleware(['auth:api', 'update.last_login'])->group(function () {
                 Route::prefix('{collectionId}/contributions')->group(function () {
                     Route::get('/', [ClubFundContributionController::class, 'index']);
                     Route::post('/receipt', [ClubFundContributionController::class, 'store']);
+                    Route::post('/mark-paid', [ClubFundContributionController::class, 'markMemberPaid']);
                     Route::get('/{contributionId}', [ClubFundContributionController::class, 'show']);
                     Route::post('/{contributionId}/confirm', [ClubFundContributionController::class, 'confirm']);
                     Route::post('/{contributionId}/reject', [ClubFundContributionController::class, 'reject']);
@@ -483,6 +484,7 @@ Route::middleware(['auth:api', 'update.last_login', 'throttle:api'])->group(func
                 Route::prefix('{collectionId}/contributions')->group(function () {
                     Route::get('/', [ClubFundContributionController::class, 'index']);
                     Route::post('/receipt', [ClubFundContributionController::class, 'store']);
+                    Route::post('/mark-paid', [ClubFundContributionController::class, 'markMemberPaid']);
                     Route::get('/{contributionId}', [ClubFundContributionController::class, 'show']);
                     Route::post('/{contributionId}/confirm', [ClubFundContributionController::class, 'confirm']);
                     Route::post('/{contributionId}/reject', [ClubFundContributionController::class, 'reject']);

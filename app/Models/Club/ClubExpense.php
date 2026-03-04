@@ -13,6 +13,7 @@ class ClubExpense extends Model
 
     protected $fillable = [
         'club_id',
+        'club_activity_id',
         'title',
         'amount',
         'wallet_transaction_id',
@@ -29,6 +30,11 @@ class ClubExpense extends Model
     public function club()
     {
         return $this->belongsTo(Club::class);
+    }
+
+    public function activity()
+    {
+        return $this->belongsTo(ClubActivity::class, 'club_activity_id');
     }
 
     public function spender()

@@ -110,7 +110,10 @@ class ClubWalletService
         }
 
         $baseQuery = $mainWallet->transactions()
-            ->where('status', ClubWalletTransactionStatus::Confirmed);
+            ->where('status', ClubWalletTransactionStatus::Confirmed)
+            ->where(function ($q) {
+                $q->where('included_in_club_fund', true)->orWhereNull('included_in_club_fund');
+            });
 
         if (!empty($dateFrom)) {
             $baseQuery->whereDate('confirmed_at', '>=', $dateFrom);
