@@ -50,6 +50,7 @@ class ClubActivityResource extends JsonResource
             'created_by' => $this->created_by,
             'creator_always_join' => (bool) ($this->creator_always_join ?? true),
             'has_transaction' => (bool) ($this->has_transaction ?? false),
+            'fund_collection_id' => $this->fundCollection?->id !== null ? (int) $this->fundCollection->id : null,
             'participants_count' => $this->whenLoaded('participants', fn() => $this->participants->count()),
             'accepted_count' => $this->whenLoaded('participants', fn() => $this->participants->where('status', ClubActivityParticipantStatus::Accepted)->count()),
             'attended_count' => $this->whenLoaded('participants', fn() => $this->participants->where('status', ClubActivityParticipantStatus::Attended)->count()),
