@@ -71,12 +71,14 @@ class ClubFundCollectionService
         $activityId = $data['activity_id'] ?? null;
         if ($activityId) {
             $activity = ClubActivity::where('club_id', $club->id)->findOrFail($activityId);
-            $data['member_ids'] = $activity->participants()
-                ->whereIn('status', [ClubActivityParticipantStatus::Accepted, ClubActivityParticipantStatus::Attended])
-                ->pluck('user_id')
-                ->unique()
-                ->values()
-                ->all();
+            if (empty($data['member_ids'])) {
+                $data['member_ids'] = $activity->participants()
+                    ->whereIn('status', [ClubActivityParticipantStatus::Accepted, ClubActivityParticipantStatus::Attended])
+                    ->pluck('user_id')
+                    ->unique()
+                    ->values()
+                    ->all();
+            }
         }
 
         $endDate = $data['end_date'] ?? $data['deadline'] ?? null;
