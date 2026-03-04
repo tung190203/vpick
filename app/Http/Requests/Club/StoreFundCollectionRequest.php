@@ -19,6 +19,12 @@ class StoreFundCollectionRequest extends FormRequest
             $this->request->remove('qr_code_url');
         }
 
+        // included_in_club_fund chỉ áp dụng khi có activity_id (chia tiền hoạt động)
+        if ($this->has('activity_id') && $this->has('included_in_club_fund')) {
+            $val = $this->input('included_in_club_fund');
+            $this->merge(['included_in_club_fund' => filter_var($val, FILTER_VALIDATE_BOOLEAN)]);
+        }
+
         if ($this->has('member_ids')) {
             $ids = $this->member_ids;
             if (is_string($ids)) {
@@ -41,7 +47,9 @@ class StoreFundCollectionRequest extends FormRequest
             'description' => 'required_without:title|nullable|string',
             'target_amount' => 'required_without:amount_per_member|nullable|numeric|min:0.01',
             'amount_per_member' => 'required_without:target_amount|nullable|numeric|min:0.01',
-            'member_ids' => 'required|array|min:1',
+            'activity_id' => ['nullable', 'exists:club_activities,id'],
+            'included_in_club_fund' => ['sometimes', 'boolean'], // Chỉ có ý nghĩa khi có activity_id
+            'member_ids' => 'required_without:activity_id|array|min:1',
             'member_ids.*' => 'integer|exists:users,id',
             'currency' => 'sometimes|string|max:3',
             'start_date' => 'required|date',

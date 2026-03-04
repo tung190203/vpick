@@ -25,6 +25,7 @@ class ClubActivityListResource extends JsonResource
             'created_by' => $this->created_by,
             'creator_always_join' => (bool) ($this->creator_always_join ?? true),
             'creator' => new \App\Http\Resources\UserResource($this->whenLoaded('creator')),
+            'has_transaction' => (bool) ($this->has_transaction ?? false),
             'fee_split_type' => $this->fee_split_type,
             'fee_amount' => $this->fee_amount ? (float) $this->fee_amount : null,
             'guest_fee' => $this->guest_fee ? (float) $this->guest_fee : null,

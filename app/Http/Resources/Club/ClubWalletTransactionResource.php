@@ -21,6 +21,7 @@ class ClubWalletTransactionResource extends JsonResource
             'status' => $this->status,
             'reference_code' => $this->reference_code,
             'description' => $this->description,
+            'included_in_club_fund' => (bool) ($this->included_in_club_fund ?? true),
             'created_by' => $this->created_by,
             'confirmed_by' => $this->confirmed_by,
             'confirmed_at' => $this->confirmed_at?->toISOString(),

@@ -2,6 +2,8 @@
 
 namespace App\Services\Club;
 
+use App\Enums\ClubWalletTransactionDirection;
+use App\Enums\ClubWalletTransactionSourceType;
 use App\Enums\ClubWalletTransactionStatus;
 use App\Models\Club\Club;
 use App\Models\Club\ClubWallet;
@@ -14,7 +16,10 @@ class ClubWalletTransactionService
     {
         $query = ClubWalletTransaction::whereHas('wallet', function ($q) use ($club) {
             $q->where('club_id', $club->id);
-        })->with(['wallet', 'creator', 'confirmer']);
+        })->with(['wallet', 'creator', 'confirmer'])
+            ->where(function ($q) {
+            $q->where('included_in_club_fund', true)->orWhereNull('included_in_club_fund');
+        });
 
         if (!empty($filters['wallet_id'])) {
             $query->where('club_wallet_id', $filters['wallet_id']);
@@ -58,6 +63,9 @@ class ClubWalletTransactionService
             $q->where('club_id', $club->id);
         })
             ->where('created_by', $userId)
+            ->where(function ($q) {
+                $q->where('included_in_club_fund', true)->orWhereNull('included_in_club_fund');
+            })
             ->with(['wallet', 'creator', 'confirmer']);
 
         if (!empty($filters['date_from'])) {
@@ -104,6 +112,7 @@ class ClubWalletTransactionService
             'status' => ClubWalletTransactionStatus::Pending,
             'reference_code' => $data['reference_code'] ?? null,
             'description' => $data['description'] ?? null,
+            'included_in_club_fund' => $data['included_in_club_fund'] ?? true,
             'created_by' => $creatorId,
         ]);
     }

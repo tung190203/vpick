@@ -14,6 +14,7 @@ class ClubFundCollection extends Model
 
     protected $fillable = [
         'club_id',
+        'club_activity_id',
         'title',
         'description',
         'target_amount',
@@ -25,10 +26,12 @@ class ClubFundCollection extends Model
         'status',
         'qr_code_url',
         'created_by',
+        'included_in_club_fund',
     ];
 
     protected $casts = [
         'status' => ClubFundCollectionStatus::class,
+        'included_in_club_fund' => 'boolean',
         'target_amount' => 'decimal:2',
         'amount_per_member' => 'decimal:2',
         'collected_amount' => 'decimal:2',
@@ -39,6 +42,11 @@ class ClubFundCollection extends Model
     public function club()
     {
         return $this->belongsTo(Club::class);
+    }
+
+    public function activity()
+    {
+        return $this->belongsTo(ClubActivity::class, 'club_activity_id');
     }
 
     public function creator()

@@ -13,6 +13,7 @@ class ClubFundCollectionResource extends JsonResource
         return [
             'id' => $this->id,
             'club_id' => $this->club_id,
+            'club_activity_id' => $this->club_activity_id,
             'title' => $this->title,
             'description' => $this->description,
             'target_amount' => (float) $this->target_amount,
