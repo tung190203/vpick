@@ -166,8 +166,7 @@ const goToActivityDetail = () => {
   if (clubId.value && activityId.value) {
     router.push({
       name: 'club-detail-activity',
-      params: { id: clubId.value },
-      query: { activityId: activityId.value }
+      params: { id: clubId.value, activityId: activityId.value }
     });
   }
 };

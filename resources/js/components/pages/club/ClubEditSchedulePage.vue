@@ -766,8 +766,7 @@ const handleSubmit = async () => {
     toast.success('Cập nhật lịch sinh hoạt thành công')
     router.push({
       name: 'club-detail-activity',
-      params: { id: clubId },
-      query: { activityId: res?.data?.id || activityId }
+      params: { id: clubId, activityId: res?.data?.id || activityId }
     })
   } catch (error) {
     toast.error(error.response?.data?.message || 'Có lỗi xảy ra')
