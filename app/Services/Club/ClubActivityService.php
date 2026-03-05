@@ -517,6 +517,13 @@ class ClubActivityService
         unset($data['cancellation_deadline_hours'], $data['cancellation_deadline_minutes']);
         unset($data['qr_image']);
 
+        // DB columns fee_amount, guest_fee, penalty_amount are NOT NULL - normalize null to 0
+        foreach (['fee_amount', 'guest_fee', 'penalty_amount'] as $field) {
+            if (array_key_exists($field, $data) && $data[$field] === null) {
+                $data[$field] = 0;
+            }
+        }
+
         $editScope = $data['edit_scope'] ?? 'this_occurrence';
         unset($data['edit_scope']);
 
