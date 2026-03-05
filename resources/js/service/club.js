@@ -242,6 +242,10 @@ export const submitContributionReceipt = async (clubId, collectionId, data) => {
     return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/fund-collections/${collectionId}/contributions/receipt`, data).then((response) => response.data);
 }
 
+export const markPaidContribution = async (clubId, collectionId, data) => {
+    return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/fund-collections/${collectionId}/contributions/mark-paid`, data).then((response) => response.data);
+}
+
 export const getClubCandidates = async (params = {}) => {
   const { data } = await axiosInstance.get(`${API_ENDPOINT.CLUB}/members/candidates`, { params })
   return data

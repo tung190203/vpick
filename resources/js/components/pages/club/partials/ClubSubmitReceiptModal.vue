@@ -5,85 +5,104 @@
             @click.self="close">
             <Transition name="scale">
                 <div v-if="isOpen" 
-                    class="bg-white rounded-[24px] w-full max-w-[500px] transition-all duration-300 flex flex-col p-8 relative shadow-2xl overflow-hidden">
-                    <!-- Modal Close -->
-                    <button 
-                        @click="close"
-                        class="absolute right-6 top-6 text-gray-400 hover:text-gray-600 transition-colors z-10">
-                        <XMarkIcon class="w-6 h-6" />
-                    </button>
+                    class="bg-white rounded-[16px] w-full max-w-[420px] transition-all duration-300 flex flex-col p-6 relative shadow-2xl overflow-hidden">
+                    
+                    <!-- Form content -->
+                    <div class="flex flex-col items-center justify-center w-full mb-6 mt-2">
+                        <p class="text-[14px] font-bold text-[#1F2937] text-center mb-4 px-4">{{ paymentItem?.description || qrDetail?.title || 'Thanh toán' }}</p>
+                        
+                        <div class="w-36 h-36 bg-gray-50 flex items-center justify-center mb-4 overflow-hidden">
+                            <img v-if="qrDetail?.qr_code_url" :src="qrDetail.qr_code_url" class="w-full h-full object-contain mix-blend-multiply" />
+                            <div v-else class="text-sm border border-dashed border-gray-300 w-full h-full flex items-center justify-center text-gray-400">Không có mã QR</div>
+                        </div>
 
-                    <!-- Modal Header -->
-                    <div class="mb-6">
-                        <h2 class="text-xl font-bold text-[#2D3139]">Nộp biên lai thanh toán</h2>
-                        <p class="text-sm text-gray-500 mt-1">Vui lòng tải lên ảnh minh chứng giao dịch</p>
+                        <div class="flex items-center space-x-1.5 font-bold">
+                            <span class="text-[14px] text-[#1F2937]">VNĐ</span>
+                            <span class="text-[20px] text-[#4392E0]">{{ formatAmount(paymentItem?.amount_due || qrDetail?.amount_per_member || paymentItem?.amount || 0) }}</span>
+                        </div>
                     </div>
 
-                    <div class="space-y-6">
+                    <div class="space-y-5">
                         <!-- Upload Area -->
-                        <div 
-                            class="w-full h-48 bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-[#D72D36] transition-colors relative group overflow-hidden"
-                            @click="triggerFileInput"
-                        >
-                            <input 
-                                type="file" 
-                                ref="fileInput" 
-                                class="hidden" 
-                                accept="image/*" 
-                                @change="handleFileUpload"
-                            />
-                            
-                            <!-- Image Preview -->
-                            <template v-if="previewImage">
-                                <img :src="previewImage" class="w-full h-full object-contain" />
-                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                    <button 
-                                        @click.stop="removePreview"
-                                        class="bg-white/20 hover:bg-white/40 p-2 rounded-full backdrop-blur-md transition-colors"
-                                    >
-                                        <TrashIcon class="w-5 h-5 text-white" />
-                                    </button>
-                                </div>
-                            </template>
+                        <div>
+                            <label class="block text-[13px] font-bold text-[#838799] mb-2 uppercase tracking-wide">Ảnh biên lai thanh toán</label>
+                            <div 
+                                class="w-full h-[140px] bg-white border-2 border-dashed border-gray-200 rounded-[8px] flex flex-col items-center justify-center cursor-pointer hover:border-[#D72D36] transition-colors relative group overflow-hidden"
+                                @click="triggerFileInput"
+                            >
+                                <input 
+                                    type="file" 
+                                    ref="fileInput" 
+                                    class="hidden" 
+                                    accept="image/*" 
+                                    @change="handleFileUpload"
+                                />
+                                
+                                <!-- Image Preview -->
+                                <template v-if="previewImage">
+                                    <img :src="previewImage" class="w-full h-full object-contain" />
+                                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                        <button 
+                                            @click.stop="removePreview"
+                                            class="bg-white/20 hover:bg-white/40 p-2 rounded-full backdrop-blur-md transition-colors"
+                                        >
+                                            <TrashIcon class="w-5 h-5 text-white" />
+                                        </button>
+                                    </div>
+                                </template>
 
-                            <!-- Placeholder -->
-                            <template v-else>
-                                <div class="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center mb-3 group-hover:bg-[#FEE2E2] transition-colors">
-                                    <PhotoIcon class="w-6 h-6 text-gray-400 group-hover:text-[#D72D36]" />
-                                </div>
-                                <p class="font-bold text-[#1F2937]">Nhấn để tải ảnh lên</p>
-                                <p class="text-[11px] text-[#838799] mt-1">PNG, JPG (Tối đa 5MB)</p>
-                            </template>
+                                <!-- Placeholder -->
+                                <template v-else>
+                                    <div class="w-10 h-10 bg-[#EDEEF2] rounded-full flex items-center justify-center mb-2 group-hover:bg-[#FEE2E2] transition-colors">
+                                        <PhotoIcon class="w-5 h-5 text-[#838799] group-hover:text-[#D72D36]" />
+                                    </div>
+                                    <p class="font-bold text-[14px] text-[#1F2937]">Nhấn để tải ảnh lên</p>
+                                    <p class="text-[12px] text-[#838799] mt-0.5">PNG, JPG (Tối đa 5MB)</p>
+                                </template>
+                            </div>
                         </div>
 
                         <!-- Note Area -->
                         <div>
-                            <label class="block text-sm font-bold text-[#1F2937] mb-2 uppercase tracking-wide">Ghi chú</label>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="block text-[14px] font-bold text-[#1F2937]">Ghi chú thêm</label>
+                                <span class="text-[12px] text-[#838799]">{{ note.length }}/300</span>
+                            </div>
                             <textarea 
                                 v-model="note"
                                 rows="3"
-                                placeholder="Nhập ghi chú giao dịch (nếu có)..."
-                                class="w-full bg-[#EDEEF2] border-none rounded-xl py-4 px-4 text-sm focus:ring-2 focus:ring-[#D72D36]/20 placeholder:text-[#9EA2B3] resize-none"
+                                maxlength="300"
+                                placeholder="Ghi chú cho admin/thủ quỹ về giao dịch của bạn"
+                                class="w-full bg-[#f9fafb] border-none rounded-xl py-3 px-4 text-[13px] focus:ring-0 placeholder:text-[#9EA2B3] resize-none"
                             ></textarea>
                         </div>
 
-                        <!-- Submit Button -->
-                        <button 
-                            @click="handleSubmit"
-                            :disabled="isSubmitting || !selectedFile"
-                            class="w-full py-4 bg-[#D72D36] text-white rounded-xl font-bold hover:bg-[#b91c1c] transition-all shadow-lg active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                        >
-                            <template v-if="isSubmitting">
-                                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                Đang xử lý...
-                            </template>
-                            <template v-else>
-                                Gửi biên lai
-                            </template>
-                        </button>
+                        <!-- Submit Buttons -->
+                        <div class="grid grid-cols-2 gap-3 pt-2">
+                            <button 
+                                @click="close"
+                                class="w-full py-3.5 bg-[#F2F3F5] text-[#2D3139] rounded-[4px] font-bold text-[14px] hover:bg-gray-200 transition-colors"
+                            >
+                                Đóng
+                            </button>
+                            <button 
+                                @click="handleSubmit"
+                                :disabled="isSubmitting || !selectedFile"
+                                class="w-full py-3.5 bg-[#F3F4F6] text-[#9CA3AF] rounded-[4px] font-bold text-[14px] transition-colors flex items-center justify-center"
+                                :class="{ '!bg-[#D72D36] !text-white hover:!bg-[#b91c1c] shadow-md': selectedFile && !isSubmitting }"
+                            >
+                                <template v-if="isSubmitting">
+                                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Đang gửi...
+                                </template>
+                                <template v-else>
+                                    Gửi yêu cầu
+                                </template>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </Transition>
@@ -109,10 +128,23 @@ const props = defineProps({
     collectionId: {
         type: [String, Number],
         required: true
+    },
+    qrDetail: {
+        type: Object,
+        default: () => ({})
+    },
+    paymentItem: {
+        type: Object,
+        default: () => ({})
     }
 })
 
 const emit = defineEmits(['update:isOpen', 'success'])
+
+const formatAmount = (value) => {
+    if (!value) return '0'
+    return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")
+}
 
 const fileInput = ref(null)
 const selectedFile = ref(null)
