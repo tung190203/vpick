@@ -241,7 +241,7 @@ export const route = [
             component: ClubFundPage,
           },
           {
-            path: ':id/detail-activity',
+            path: ':id/activity/:activityId',
             name: 'club-detail-activity',
             component: ClubDetailActivityPage,
           },
@@ -432,8 +432,8 @@ export const route = [
     redirect: to => `/clubs/${to.params.id}/fund`
   },
   {
-    path: '/club/:id/detail-activity',
-    redirect: to => `/clubs/${to.params.id}/detail-activity`
+    path: '/club/:id/activity/:activityId',
+    redirect: to => `/clubs/${to.params.id}/activity/${to.params.activityId}`
   },
   {
     path: '/club/:id/create-activity',

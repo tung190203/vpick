@@ -381,7 +381,7 @@
               <div class="w-8 h-8 bg-[#D72D36] rounded-full p-2 flex items-center justify-center text-white">
                 <QrcodeIcon class="w-5 h-5" />
               </div>
-              <h3 class="font-semibold text-[#3E414C]">Mã QR Check-in</h3>
+              <h3 class="font-semibold text-[#3E414C]">Mã QR hoạt động</h3>
             </div>
             <button @click="isQRExpanded = !isQRExpanded" class="p-1 hover:bg-gray-100 rounded-full transition-transform duration-300" :class="{ 'rotate-180': !isQRExpanded }">
               <ChevronDownIcon class="w-5 h-5 text-gray-400" />
@@ -391,18 +391,37 @@
           <div class="grid transition-all duration-300 ease-in-out" :class="isQRExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'">
             <div class="overflow-hidden">
               <div class="p-8 flex flex-col items-center">
-                <div ref="qrcodeContainer" class="p-4 mb-6">
-                  <qrcode-vue :value="activity.check_in_url" :size="200" level="H" class="rounded-[4px]" />
+                <div ref="qrcodeContainer" class="p-4 mb-6 border rounded-[12px]">
+                  <div class="space-y-2 mb-4">
+                    <p class="text-center font-semibold text-[#3E414C]">{{ activity.title }}</p>
+                    <p class="text-center text-[#3E414C] text-xs">{{ club.name }}</p>
+                    <p class="text-center text-[#3E414C] text-xs">{{ formatTimeRange(activity.start_time, activity.end_time) }}, {{ formatDate(activity.start_time) }}</p>
+                  </div>
+                  <qrcode-vue :value="pageUrl" :size="200" level="H" class="rounded-[4px]" />
                 </div>
-                <Button 
-                    size="md" 
-                    color="white" 
-                    class="w-full bg-[#FFF5F5] text-[#D72D36] border-none font-bold py-3 hover:bg-[#FFEBEB]"
-                    @click="downloadQR"
-                >
-                  <ArrowDownTrayIcon class="w-5 h-5 mr-2" />
-                  Tải xuống mã QR
-                </Button>
+                <div class="mb-6 w-full text-center">
+                  <span class="text-sm text-[#4392E0] break-all">{{ pageUrl }}</span>
+                </div>
+                <div class="flex items-center gap-3 w-full">
+                  <Button 
+                      size="md" 
+                      color="white" 
+                      class="flex-1 bg-white text-[#D72D36] border border-[#D72D36] font-bold py-3 hover:bg-[#FFF5F5] flex items-center justify-center"
+                      @click="copyLink"
+                  >
+                    <LinkIcon class="w-5 h-5 mr-2" />
+                    Sao chép link
+                  </Button>
+                  <Button 
+                      size="md" 
+                      color="danger" 
+                      class="flex-1 bg-[#D72D36] text-white border border-[#D72D36] font-bold py-3 hover:bg-[#c4252e] flex items-center justify-center"
+                      @click="downloadQR"
+                  >
+                    <ArrowDownTrayIcon class="w-5 h-5 mr-2" />
+                    Lưu mã QR
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -460,7 +479,8 @@ import {
     CheckIcon,
     WrenchIcon,
     MegaphoneIcon,
-    DocumentTextIcon
+    DocumentTextIcon,
+    LinkIcon
 } from '@heroicons/vue/24/outline'
 import RegistrationIcon from '@/assets/images/registration.svg'
 import PriceCheckIcon from '@/assets/images/price_check.svg'
@@ -473,6 +493,7 @@ import PromotionModal from '@/components/organisms/PromotionModal.vue'
 import ClubCreateFundModal from '@/components/pages/club/partials/ClubCreateFundModal.vue'
 import ClubCreateExpenseModal from '@/components/pages/club/partials/ClubCreateExpenseModal.vue'
 import QrcodeVue from 'qrcode.vue'
+import html2canvas from 'html2canvas'
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/store/auth'
@@ -494,7 +515,8 @@ const route = useRoute()
 const userStore = useUserStore()
 const { getUser } = storeToRefs(userStore)
 const clubId = route.params.id
-const activityId = computed(() => route.query.activityId)
+const activityId = computed(() => route.params.activityId)
+const pageUrl = computed(() => window.location.href)
 const activity = ref({})
 const club = ref({})
 const participants = ref([])
@@ -914,7 +936,7 @@ const shareEvent = () => {
    navigator.share({
         title: activity.value.title,
         text: activity.value.description,
-        url: activity.value.check_in_url
+        url: pageUrl.value
     })
     .then(() => {
         toast.info('Đã chia sẻ sự kiện')
@@ -943,17 +965,32 @@ const confirmCancelEvent = async (data) => {
     }
 }
 
-const downloadQR = () => {
+const copyLink = async () => {
+    if (pageUrl.value) {
+        try {
+            await navigator.clipboard.writeText(pageUrl.value)
+            toast.success('Đã sao chép đường link')
+        } catch (err) {
+            toast.error('Không thể sao chép link')
+        }
+    }
+}
+
+const downloadQR = async () => {
   if (!qrcodeContainer.value) return;
   
-  const canvas = qrcodeContainer.value.querySelector('canvas');
-  
-  if (!canvas) {
-    toast.error('Không tìm thấy mã QR');
-    return;
+  try {
+    const canvas = await html2canvas(qrcodeContainer.value, {
+      scale: 2,
+      backgroundColor: '#ffffff',
+      useCORS: true
+    });
+    
+    triggerDownload(canvas);
+  } catch (error) {
+    console.error('Lỗi khi tạo ảnh QR:', error);
+    toast.error('Có lỗi xảy ra khi lưu mã QR');
   }
-
-  triggerDownload(canvas);
 }
 
 const triggerDownload = (canvas) => {
