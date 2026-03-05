@@ -362,9 +362,10 @@ class ClubActivityService
             if (empty($weekDays)) {
                 return [];
             }
-            $monthStart = $start->copy()->startOfMonth();
-            $monthEnd = $start->copy()->endOfMonth();
-            for ($d = $monthStart->copy(); $d->lte($monthEnd); $d->addDay()) {
+            $isFullWeek = count(array_unique(array_map('intval', $weekDays))) === 7;
+            $weeksToGenerate = $isFullWeek ? 1 : 2;
+            $rangeEnd = $start->copy()->startOfWeek()->addWeeks($weeksToGenerate)->subDay()->endOfDay();
+            for ($d = $start->copy(); $d->lte($rangeEnd); $d->addDay()) {
                 if (in_array((int) $d->dayOfWeek, array_map('intval', $weekDays), true)) {
                     $d->setTimeFromTimeString($timeString);
                     if ($d->gte($start)) {
@@ -384,7 +385,7 @@ class ClubActivityService
         $month = (int) $parts['month'];
 
         if ($period === 'monthly') {
-            for ($i = 0; $i < 3; $i++) {
+            for ($i = 0; $i < 2; $i++) {
                 $base = $start->copy()->addMonths($i)->startOfMonth();
                 $effectiveDay = min($day, $base->daysInMonth);
                 $occurrence = $base->copy()->day($effectiveDay)->setTimeFromTimeString($timeString);
@@ -898,9 +899,11 @@ class ClubActivityService
             if (empty($weekDays)) {
                 return [];
             }
-            $nextMonthStart = $afterDate->copy()->addMonth()->startOfMonth();
-            $monthEnd = $nextMonthStart->copy()->endOfMonth();
-            for ($d = $nextMonthStart->copy(); $d->lte($monthEnd); $d->addDay()) {
+            $isFullWeek = count(array_unique(array_map('intval', $weekDays))) === 7;
+            $weeksToGenerate = $isFullWeek ? 1 : 2;
+            $nextWeekStart = $afterDate->copy()->addWeek()->startOfWeek();
+            $rangeEnd = $nextWeekStart->copy()->addWeeks($weeksToGenerate)->subDay()->endOfDay();
+            for ($d = $nextWeekStart->copy(); $d->lte($rangeEnd); $d->addDay()) {
                 if (in_array((int) $d->dayOfWeek, array_map('intval', $weekDays), true)) {
                     $d->setTimeFromTimeString($timeString);
                     $list[] = $d->copy();
@@ -918,7 +921,7 @@ class ClubActivityService
 
         if ($period === 'monthly') {
             $startFrom = $afterDate->copy()->addMonth()->startOfMonth();
-            for ($i = 0; $i < 3; $i++) {
+            for ($i = 0; $i < 2; $i++) {
                 $base = $startFrom->copy()->addMonths($i);
                 $effectiveDay = min($day, $base->daysInMonth);
                 $list[] = $base->copy()->day($effectiveDay)->setTimeFromTimeString($timeString);
@@ -975,11 +978,14 @@ class ClubActivityService
 
             $schedule = $lastActivity->getRecurringScheduleRaw();
             $period = $schedule['period'] ?? null;
-            $periodEnd = match ($period) {
-                'weekly' => $lastStart->copy()->endOfMonth(),
-                'monthly' => $lastStart->copy()->addMonths(2)->endOfMonth(),
-                'quarterly' => Carbon::create($lastStart->year, 12, 31)->endOfDay(),
-                'yearly' => Carbon::create($lastStart->year + 1, 12, 31)->endOfDay(),
+            $weekDays = $schedule['week_days'] ?? [];
+            $isFullWeek = $period === 'weekly' && count(array_unique(array_map('intval', $weekDays))) === 7;
+            $periodEnd = match (true) {
+                $period === 'weekly' && $isFullWeek => $lastStart->copy()->endOfWeek(),
+                $period === 'weekly' => $lastStart->copy()->addWeek()->endOfWeek(),
+                $period === 'monthly' => $lastStart->copy()->addMonth()->endOfMonth(),
+                $period === 'quarterly' => Carbon::create($lastStart->year, 12, 31)->endOfDay(),
+                $period === 'yearly' => Carbon::create($lastStart->year + 1, 12, 31)->endOfDay(),
                 default => null,
             };
 
