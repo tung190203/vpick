@@ -154,6 +154,43 @@ class ClubActivityService
             }
         }
 
+        $minWeeklyOccurrences = (int) ($filters['min_weekly_occurrences'] ?? 0);
+        if ($minWeeklyOccurrences > 0 && !empty($dateFrom) && !empty($dateTo)) {
+            $weeklyPeriodExpr = $driver === 'mysql'
+                ? "JSON_UNQUOTE(JSON_EXTRACT(recurring_schedule, '$.period'))"
+                : "json_extract(recurring_schedule, '$.period')";
+
+            $weeklySeriesCountInRange = ClubActivity::where('club_id', $club->id)
+                ->whereNotNull('recurrence_series_id')
+                ->whereNull('recurrence_series_cancelled_at')
+                ->whereIn('status', [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing])
+                ->whereRaw("({$weeklyPeriodExpr} = 'weekly')")
+                ->whereDate('start_time', '>=', $dateFrom)
+                ->whereDate('start_time', '<=', $dateTo)
+                ->selectRaw('recurrence_series_id, COUNT(*) as cnt')
+                ->groupBy('recurrence_series_id')
+                ->pluck('cnt', 'recurrence_series_id')
+                ->all();
+
+            $afterDateEnd = Carbon::parse($dateTo)->endOfDay()->addSecond()->format('Y-m-d H:i:s');
+            foreach ($weeklySeriesCountInRange as $seriesId => $countInRange) {
+                $needed = $minWeeklyOccurrences - $countInRange;
+                if ($needed <= 0) {
+                    continue;
+                }
+
+                $ids = ClubActivity::where('club_id', $club->id)
+                    ->where('recurrence_series_id', $seriesId)
+                    ->whereIn('status', [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing])
+                    ->where('start_time', '>', $afterDateEnd)
+                    ->orderBy('start_time')
+                    ->limit($needed)
+                    ->pluck('id')
+                    ->all();
+                $nextOccurrenceIds = array_merge($nextOccurrenceIds, $ids);
+            }
+        }
+
         $hasDateRange = !empty($dateFrom) || !empty($dateTo);
         $includeMonthlyQuarterlyYearlyFirstInRange = $hasDateRange && $shouldCollapseRecurring && !empty($firstOccurrenceIdsMonthlyQuarterlyYearly);
 
