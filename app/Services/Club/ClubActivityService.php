@@ -108,16 +108,18 @@ class ClubActivityService
             $periodExprSub = $driver === 'mysql'
                 ? "JSON_UNQUOTE(JSON_EXTRACT(recurring_schedule, '$.period'))"
                 : "json_extract(recurring_schedule, '$.period')";
+
+            // Quarterly and yearly: show 1 (first) occurrence per series
             $firstsSeriesSub = DB::table('club_activities')
                 ->select('recurrence_series_id', DB::raw('MIN(start_time) as min_start'))
                 ->where('club_id', $club->id)
                 ->whereNotNull('recurrence_series_id')
                 ->whereNull('recurrence_series_cancelled_at')
                 ->whereIn('status', [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing])
-                ->whereRaw("({$periodExprSub} IN ('monthly', 'quarterly', 'yearly'))")
+                ->whereRaw("({$periodExprSub} IN ('quarterly', 'yearly'))")
                 ->groupBy('recurrence_series_id');
 
-            $firstOccurrenceIdsMonthlyQuarterlyYearly = DB::table('club_activities as ca')
+            $quarterlyYearlyIds = DB::table('club_activities as ca')
                 ->joinSub($firstsSeriesSub, 'firsts', function ($join) {
                     $join->on('ca.recurrence_series_id', '=', 'firsts.recurrence_series_id')
                         ->on('ca.start_time', '=', 'firsts.min_start')
@@ -127,6 +129,26 @@ class ClubActivityService
                 ->whereNull('ca.recurrence_series_cancelled_at')
                 ->pluck('ca.id')
                 ->all();
+
+            // Monthly: show 2 consecutive occurrences per series
+            $monthlyRows = DB::table('club_activities')
+                ->where('club_id', $club->id)
+                ->whereNotNull('recurrence_series_id')
+                ->whereNull('recurrence_series_cancelled_at')
+                ->whereIn('status', [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing])
+                ->whereRaw("({$periodExprSub} = 'monthly')")
+                ->orderBy('recurrence_series_id')
+                ->orderBy('start_time')
+                ->select(['id', 'recurrence_series_id'])
+                ->get();
+
+            $monthlyIds = $monthlyRows
+                ->groupBy('recurrence_series_id')
+                ->flatMap(fn ($items) => $items->take(2)->pluck('id'))
+                ->values()
+                ->all();
+
+            $firstOccurrenceIdsMonthlyQuarterlyYearly = array_merge($monthlyIds, $quarterlyYearlyIds);
         }
 
         $nextOccurrenceIds = [];
@@ -151,6 +173,48 @@ class ClubActivityService
                     ->pluck('id')
                     ->all();
                 $nextOccurrenceIds = array_merge($nextOccurrenceIds, $ids);
+            }
+        }
+
+        // Weekly partial-day series (< 7 days/week): also show next week's occurrences
+        if ($shouldCollapseRecurring && !empty($dateFrom) && !empty($dateTo)) {
+            $weeklyPeriodExprSub = $driver === 'mysql'
+                ? "JSON_UNQUOTE(JSON_EXTRACT(recurring_schedule, '$.period'))"
+                : "json_extract(recurring_schedule, '$.period')";
+
+            $weeklySeriesRep = DB::table('club_activities')
+                ->where('club_id', $club->id)
+                ->whereNotNull('recurrence_series_id')
+                ->whereNull('recurrence_series_cancelled_at')
+                ->whereIn('status', [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing])
+                ->whereRaw("({$weeklyPeriodExprSub} = 'weekly')")
+                ->whereDate('start_time', '>=', $dateFrom)
+                ->whereDate('start_time', '<=', $dateTo)
+                ->orderBy('recurrence_series_id')
+                ->orderBy('start_time')
+                ->select(['recurrence_series_id', 'recurring_schedule'])
+                ->get()
+                ->unique('recurrence_series_id');
+
+            $afterCurrentWeekEnd = Carbon::parse($dateTo)->endOfDay()->addSecond()->format('Y-m-d H:i:s');
+            $nextWeekEnd = Carbon::parse($dateTo)->addWeek()->endOfDay()->format('Y-m-d H:i:s');
+
+            foreach ($weeklySeriesRep as $row) {
+                $schedule = is_string($row->recurring_schedule)
+                    ? json_decode($row->recurring_schedule, true)
+                    : (array) $row->recurring_schedule;
+                $weekDays = $schedule['week_days'] ?? [];
+
+                if (count($weekDays) < 7) {
+                    $nextWeekIds = ClubActivity::where('club_id', $club->id)
+                        ->where('recurrence_series_id', $row->recurrence_series_id)
+                        ->whereIn('status', [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing])
+                        ->where('start_time', '>', $afterCurrentWeekEnd)
+                        ->where('start_time', '<=', $nextWeekEnd)
+                        ->pluck('id')
+                        ->all();
+                    $nextOccurrenceIds = array_merge($nextOccurrenceIds, $nextWeekIds);
+                }
             }
         }
 
