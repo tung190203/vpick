@@ -433,8 +433,7 @@ const redirectByType = (n) => {
 
       router.push({
         name: 'club-detail-activity',
-        params: { id: d.club_id },
-        query: { activityId: d.club_activity_id }
+        params: { id: d.club_id, activityId: d.club_activity_id }
       })
       break
 
@@ -459,8 +458,7 @@ const redirectByType = (n) => {
       if (!d.club_id || !d.club_activity_id) return
       router.push({
         name: 'club-detail-activity',
-        params: { id: d.club_id },
-        query: { activityId: d.club_activity_id }
+        params: { id: d.club_id, activityId: d.club_activity_id }
       })
       break
 

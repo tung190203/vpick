@@ -1050,11 +1050,10 @@ const handleEditActivity = (activity) => {
     })
 }
 
-const goToActivityDetail = (activity, query = {}) => {
+const goToActivityDetail = (activity) => {
     router.push({
         name: 'club-detail-activity',
-        params: { id: clubId.value },
-        query: { activityId: activity.id, ...query }
+        params: { id: clubId.value, activityId: activity.id }
     })
 }
 
