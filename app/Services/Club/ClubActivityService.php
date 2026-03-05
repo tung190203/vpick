@@ -108,16 +108,18 @@ class ClubActivityService
             $periodExprSub = $driver === 'mysql'
                 ? "JSON_UNQUOTE(JSON_EXTRACT(recurring_schedule, '$.period'))"
                 : "json_extract(recurring_schedule, '$.period')";
+
+            // Quarterly and yearly: show 1 (first) occurrence per series
             $firstsSeriesSub = DB::table('club_activities')
                 ->select('recurrence_series_id', DB::raw('MIN(start_time) as min_start'))
                 ->where('club_id', $club->id)
                 ->whereNotNull('recurrence_series_id')
                 ->whereNull('recurrence_series_cancelled_at')
                 ->whereIn('status', [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing])
-                ->whereRaw("({$periodExprSub} IN ('monthly', 'quarterly', 'yearly'))")
+                ->whereRaw("({$periodExprSub} IN ('quarterly', 'yearly'))")
                 ->groupBy('recurrence_series_id');
 
-            $firstOccurrenceIdsMonthlyQuarterlyYearly = DB::table('club_activities as ca')
+            $quarterlyYearlyIds = DB::table('club_activities as ca')
                 ->joinSub($firstsSeriesSub, 'firsts', function ($join) {
                     $join->on('ca.recurrence_series_id', '=', 'firsts.recurrence_series_id')
                         ->on('ca.start_time', '=', 'firsts.min_start')
@@ -127,6 +129,26 @@ class ClubActivityService
                 ->whereNull('ca.recurrence_series_cancelled_at')
                 ->pluck('ca.id')
                 ->all();
+
+            // Monthly: show 2 consecutive occurrences per series
+            $monthlyRows = DB::table('club_activities')
+                ->where('club_id', $club->id)
+                ->whereNotNull('recurrence_series_id')
+                ->whereNull('recurrence_series_cancelled_at')
+                ->whereIn('status', [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing])
+                ->whereRaw("({$periodExprSub} = 'monthly')")
+                ->orderBy('recurrence_series_id')
+                ->orderBy('start_time')
+                ->select(['id', 'recurrence_series_id'])
+                ->get();
+
+            $monthlyIds = $monthlyRows
+                ->groupBy('recurrence_series_id')
+                ->flatMap(fn ($items) => $items->take(2)->pluck('id'))
+                ->values()
+                ->all();
+
+            $firstOccurrenceIdsMonthlyQuarterlyYearly = array_merge($monthlyIds, $quarterlyYearlyIds);
         }
 
         $nextOccurrenceIds = [];
@@ -154,40 +176,45 @@ class ClubActivityService
             }
         }
 
-        $minWeeklyOccurrences = (int) ($filters['min_weekly_occurrences'] ?? 0);
-        if ($minWeeklyOccurrences > 0 && !empty($dateFrom) && !empty($dateTo)) {
-            $weeklyPeriodExpr = $driver === 'mysql'
+        // Weekly partial-day series (< 7 days/week): also show next week's occurrences
+        if ($shouldCollapseRecurring && !empty($dateFrom) && !empty($dateTo)) {
+            $weeklyPeriodExprSub = $driver === 'mysql'
                 ? "JSON_UNQUOTE(JSON_EXTRACT(recurring_schedule, '$.period'))"
                 : "json_extract(recurring_schedule, '$.period')";
 
-            $weeklySeriesCountInRange = ClubActivity::where('club_id', $club->id)
+            $weeklySeriesRep = DB::table('club_activities')
+                ->where('club_id', $club->id)
                 ->whereNotNull('recurrence_series_id')
                 ->whereNull('recurrence_series_cancelled_at')
                 ->whereIn('status', [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing])
-                ->whereRaw("({$weeklyPeriodExpr} = 'weekly')")
+                ->whereRaw("({$weeklyPeriodExprSub} = 'weekly')")
                 ->whereDate('start_time', '>=', $dateFrom)
                 ->whereDate('start_time', '<=', $dateTo)
-                ->selectRaw('recurrence_series_id, COUNT(*) as cnt')
-                ->groupBy('recurrence_series_id')
-                ->pluck('cnt', 'recurrence_series_id')
-                ->all();
+                ->orderBy('recurrence_series_id')
+                ->orderBy('start_time')
+                ->select(['recurrence_series_id', 'recurring_schedule'])
+                ->get()
+                ->unique('recurrence_series_id');
 
-            $afterDateEnd = Carbon::parse($dateTo)->endOfDay()->addSecond()->format('Y-m-d H:i:s');
-            foreach ($weeklySeriesCountInRange as $seriesId => $countInRange) {
-                $needed = $minWeeklyOccurrences - $countInRange;
-                if ($needed <= 0) {
-                    continue;
+            $afterCurrentWeekEnd = Carbon::parse($dateTo)->endOfDay()->addSecond()->format('Y-m-d H:i:s');
+            $nextWeekEnd = Carbon::parse($dateTo)->addWeek()->endOfDay()->format('Y-m-d H:i:s');
+
+            foreach ($weeklySeriesRep as $row) {
+                $schedule = is_string($row->recurring_schedule)
+                    ? json_decode($row->recurring_schedule, true)
+                    : (array) $row->recurring_schedule;
+                $weekDays = $schedule['week_days'] ?? [];
+
+                if (count($weekDays) < 7) {
+                    $nextWeekIds = ClubActivity::where('club_id', $club->id)
+                        ->where('recurrence_series_id', $row->recurrence_series_id)
+                        ->whereIn('status', [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing])
+                        ->where('start_time', '>', $afterCurrentWeekEnd)
+                        ->where('start_time', '<=', $nextWeekEnd)
+                        ->pluck('id')
+                        ->all();
+                    $nextOccurrenceIds = array_merge($nextOccurrenceIds, $nextWeekIds);
                 }
-
-                $ids = ClubActivity::where('club_id', $club->id)
-                    ->where('recurrence_series_id', $seriesId)
-                    ->whereIn('status', [ClubActivityStatus::Scheduled, ClubActivityStatus::Ongoing])
-                    ->where('start_time', '>', $afterDateEnd)
-                    ->orderBy('start_time')
-                    ->limit($needed)
-                    ->pluck('id')
-                    ->all();
-                $nextOccurrenceIds = array_merge($nextOccurrenceIds, $ids);
             }
         }
 
@@ -362,10 +389,9 @@ class ClubActivityService
             if (empty($weekDays)) {
                 return [];
             }
-            $isFullWeek = count(array_unique(array_map('intval', $weekDays))) === 7;
-            $weeksToGenerate = $isFullWeek ? 1 : 2;
-            $rangeEnd = $start->copy()->startOfWeek()->addWeeks($weeksToGenerate)->subDay()->endOfDay();
-            for ($d = $start->copy(); $d->lte($rangeEnd); $d->addDay()) {
+            $monthStart = $start->copy()->startOfMonth();
+            $monthEnd = $start->copy()->endOfMonth();
+            for ($d = $monthStart->copy(); $d->lte($monthEnd); $d->addDay()) {
                 if (in_array((int) $d->dayOfWeek, array_map('intval', $weekDays), true)) {
                     $d->setTimeFromTimeString($timeString);
                     if ($d->gte($start)) {
@@ -385,7 +411,7 @@ class ClubActivityService
         $month = (int) $parts['month'];
 
         if ($period === 'monthly') {
-            for ($i = 0; $i < 2; $i++) {
+            for ($i = 0; $i < 3; $i++) {
                 $base = $start->copy()->addMonths($i)->startOfMonth();
                 $effectiveDay = min($day, $base->daysInMonth);
                 $occurrence = $base->copy()->day($effectiveDay)->setTimeFromTimeString($timeString);
@@ -899,11 +925,9 @@ class ClubActivityService
             if (empty($weekDays)) {
                 return [];
             }
-            $isFullWeek = count(array_unique(array_map('intval', $weekDays))) === 7;
-            $weeksToGenerate = $isFullWeek ? 1 : 2;
-            $nextWeekStart = $afterDate->copy()->addWeek()->startOfWeek();
-            $rangeEnd = $nextWeekStart->copy()->addWeeks($weeksToGenerate)->subDay()->endOfDay();
-            for ($d = $nextWeekStart->copy(); $d->lte($rangeEnd); $d->addDay()) {
+            $nextMonthStart = $afterDate->copy()->addMonth()->startOfMonth();
+            $monthEnd = $nextMonthStart->copy()->endOfMonth();
+            for ($d = $nextMonthStart->copy(); $d->lte($monthEnd); $d->addDay()) {
                 if (in_array((int) $d->dayOfWeek, array_map('intval', $weekDays), true)) {
                     $d->setTimeFromTimeString($timeString);
                     $list[] = $d->copy();
@@ -921,7 +945,7 @@ class ClubActivityService
 
         if ($period === 'monthly') {
             $startFrom = $afterDate->copy()->addMonth()->startOfMonth();
-            for ($i = 0; $i < 2; $i++) {
+            for ($i = 0; $i < 3; $i++) {
                 $base = $startFrom->copy()->addMonths($i);
                 $effectiveDay = min($day, $base->daysInMonth);
                 $list[] = $base->copy()->day($effectiveDay)->setTimeFromTimeString($timeString);
@@ -978,14 +1002,11 @@ class ClubActivityService
 
             $schedule = $lastActivity->getRecurringScheduleRaw();
             $period = $schedule['period'] ?? null;
-            $weekDays = $schedule['week_days'] ?? [];
-            $isFullWeek = $period === 'weekly' && count(array_unique(array_map('intval', $weekDays))) === 7;
-            $periodEnd = match (true) {
-                $period === 'weekly' && $isFullWeek => $lastStart->copy()->endOfWeek(),
-                $period === 'weekly' => $lastStart->copy()->addWeek()->endOfWeek(),
-                $period === 'monthly' => $lastStart->copy()->addMonth()->endOfMonth(),
-                $period === 'quarterly' => Carbon::create($lastStart->year, 12, 31)->endOfDay(),
-                $period === 'yearly' => Carbon::create($lastStart->year + 1, 12, 31)->endOfDay(),
+            $periodEnd = match ($period) {
+                'weekly' => $lastStart->copy()->endOfMonth(),
+                'monthly' => $lastStart->copy()->addMonths(2)->endOfMonth(),
+                'quarterly' => Carbon::create($lastStart->year, 12, 31)->endOfDay(),
+                'yearly' => Carbon::create($lastStart->year + 1, 12, 31)->endOfDay(),
                 default => null,
             };
 

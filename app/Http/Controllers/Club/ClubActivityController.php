@@ -49,7 +49,6 @@ class ClubActivityController extends Controller
                 $filters['date_from'] = Carbon::now()->startOfWeek()->format('Y-m-d');
                 $filters['date_to'] = Carbon::now()->endOfWeek()->format('Y-m-d');
                 $filters['include_next_occurrence_for_series_done_this_week'] = true;
-                $filters['min_weekly_occurrences'] = 3;
             }
         } else {
             if (empty($filters['date_from']) && $request->has('from_date')) {
