@@ -641,7 +641,7 @@
                                                     <!-- Action Buttons -->
                                                     <div class="flex items-center justify-center space-x-4 w-full mt-auto">
                                                         <button v-if="hasAnyRole(['member', 'manager'])" 
-                                                            @click="handleOpenReceiptModal(qr.id)"
+                                                            @click="handleOpenReceiptModal(qr)"
                                                             class="w-12 h-12 rounded-full bg-[#F3F4F6] flex items-center justify-center text-[#141519] hover:bg-gray-200 transition-colors">
                                                             <CreditCardIcon class="w-5 h-5" />
                                                         </button>
@@ -881,8 +881,8 @@
             <DeleteConfirmationModal
                 v-model="showDeleteCollectionModal"
                 title="Xác nhận xoá đợt thu"
-                message="Bạn có chắc chắn muốn xoá đợt thu này không? Thao tác này không thể hoàn tác."
-                confirmButtonText="Xoá ngay"
+                message="Dữ liệu những thành viên đã đóng tiền hoặc đang chờ xác nhận cũng sẽ bị xóa. Bạn có chắc chắn muốn xóa khoản thu này?"
+                confirmButtonText="Đồng ý"
                 @confirm="handleConfirmDeleteCollection"
             />
 
@@ -891,6 +891,8 @@
                 v-model:isOpen="showSubmitReceiptModal"
                 :clubId="clubId"
                 :collectionId="selectedCollectionIdForReceipt"
+                :qrDetail="selectedQRDetail"
+                :paymentItem="selectedPaymentItem"
                 @success="handleReceiptSuccess"
             />
 
@@ -971,6 +973,8 @@ const showDeleteCollectionModal = ref(false)
 const showCollectionDetailModal = ref(false)
 const showSubmitReceiptModal = ref(false)
 const selectedCollectionIdForReceipt = ref(null)
+const selectedPaymentItem = ref(null)
+const selectedQRDetail = ref(null)
 const selectedContributionId = ref(null)
 const qrToDelete = ref(null)
 const collectionToDelete = ref(null)
@@ -1261,23 +1265,29 @@ const handlePayNow = (item) => {
     // Try matching by URL first, then by ID
     const qrIndex = qrList.value.findIndex(qr => 
         (qr.qr_code_url && qr.qr_code_url === item.qr_code_url) || 
-        (Number(qr.id) === Number(item.id))
+        (Number(qr.id) === Number(item.id)) ||
+        (Number(qr.collection_id) === Number(item.id)) // Fallback if item.id is actually collection.id
     )
     
+    let qr = null
     if (qrIndex !== -1) {
-        currentIndex.value = qrIndex
-        showQRModal.value = true
-    } else {
-        toast.info('Khoản thu này hiện chưa có mã QR thanh toán')
+        qr = qrList.value[qrIndex]
     }
+
+    selectedPaymentItem.value = item
+    selectedQRDetail.value = qr || {}
+    selectedCollectionIdForReceipt.value = item.id || (qr && qr.collection_id) || ''
+    showSubmitReceiptModal.value = true
 }
 
-const handleOpenReceiptModal = (collectionId) => {
-    if (!collectionId) {
+const handleOpenReceiptModal = (qr) => {
+    if (!qr || (!qr.collection_id && !qr.id)) {
         toast.error('Mã QR này chưa được gắn với đợt thu nào')
         return
     }
-    selectedCollectionIdForReceipt.value = collectionId
+    selectedCollectionIdForReceipt.value = qr.collection_id || qr.id
+    selectedQRDetail.value = qr
+    selectedPaymentItem.value = null
     showSubmitReceiptModal.value = true
 }
 

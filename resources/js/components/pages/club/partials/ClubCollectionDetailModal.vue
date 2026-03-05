@@ -197,17 +197,25 @@
                                                                 <p class="text-xs text-[#838799] mt-0.5 font-normal">Đã ck, check ảnh!</p>
                                                             </div>
                                                         </div>
-                                                        <button 
-                                                            @click="onApprove(member)"
-                                                            :class="[
-                                                                'px-5 py-1.5 rounded-full text-sm font-bold transition-all active:scale-95',
-                                                                Number(member.contribution?.id) === Number(props.initialContributionId)
-                                                                    ? 'bg-[#D72D36] text-white animate-pulse shadow-lg shadow-[#D72D36]/20'
-                                                                    : 'bg-[#10B981] text-white hover:bg-[#059669]'
-                                                            ]"
-                                                        >
-                                                            {{ Number(member.contribution?.id) === Number(props.initialContributionId) ? 'CẦN DUYỆT' : 'Duyệt' }}
-                                                        </button>
+                                                        <div class="flex items-center space-x-2">
+                                                            <button 
+                                                                @click="onReject(member)"
+                                                                class="px-5 py-1.5 rounded-full text-sm font-bold transition-all active:scale-95 bg-white text-[#D72D36] border border-[#D72D36] hover:bg-red-50"
+                                                            >
+                                                                Không duyệt
+                                                            </button>
+                                                            <button 
+                                                                @click="onApprove(member)"
+                                                                :class="[
+                                                                    'px-5 py-1.5 rounded-full text-sm font-bold transition-all active:scale-95',
+                                                                    Number(member.contribution?.id) === Number(props.initialContributionId)
+                                                                        ? 'bg-[#D72D36] text-white animate-pulse shadow-lg shadow-[#D72D36]/20'
+                                                                        : 'bg-[#10B981] text-white hover:bg-[#059669]'
+                                                                ]"
+                                                            >
+                                                                {{ Number(member.contribution?.id) === Number(props.initialContributionId) ? 'CẦN DUYỆT' : 'Duyệt' }}
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
 
@@ -233,9 +241,16 @@
                                                                 <p v-else class="text-xs text-[#838799] mt-0.5 font-normal">Chưa thanh toán</p>
                                                             </div>
                                                         </div>
-                                                        <button v-if="canManage" class="bg-[#F6E4C8] text-[#E0A243] px-5 py-1.5 rounded-full text-sm font-bold hover:bg-[#D48D3B] hover:text-white transition-all active:scale-95">
-                                                            Nhắc
-                                                        </button>
+                                                        <div v-if="canManage" class="flex items-center space-x-2">
+                                                            <button class="bg-[#F6E4C8] text-[#E0A243] px-5 py-1.5 rounded-full text-sm font-bold hover:bg-[#D48D3B] hover:text-white transition-all active:scale-95 border border-transparent">
+                                                                Nhắc
+                                                            </button>
+                                                            <button v-if="details.collection.club_activity_id"
+                                                                @click="confirmMarkPaid(member)"
+                                                                class="bg-[#10B981]/10 text-[#10B981] px-5 py-1.5 rounded-full text-sm font-bold hover:bg-[#10B981] hover:text-white transition-all active:scale-95 border border-[#10B981]/20">
+                                                                Đã đóng
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
 
@@ -253,6 +268,28 @@
                                 <DocumentMagnifyingGlassIcon class="w-16 h-16 mb-4 opacity-20" />
                                 <p>Vui lòng chọn một đợt thu để xem chi tiết</p>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </Transition>
+
+            <!-- Confirm Mark Paid Modal -->
+            <Transition name="fade">
+                <div v-if="isConfirmMarkPaidOpen" class="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" @click.self="!isMarkingPaid && (isConfirmMarkPaidOpen = false)">
+                    <div class="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl relative">
+                        <h3 class="text-xl font-bold text-[#2D3139] mb-4">Xác nhận đã đóng</h3>
+                        <p class="text-gray-600 mb-6 text-sm">Xác nhận thành viên <span class="font-bold text-[#1F2937]">{{ selectedMemberForPaid?.user?.full_name }}</span> đã đóng tiền?</p>
+                        <div class="flex justify-end space-x-3">
+                            <button @click="isConfirmMarkPaidOpen = false" :disabled="isMarkingPaid" class="px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-100 rounded-xl transition-colors disabled:opacity-50">
+                                Hủy
+                            </button>
+                            <button @click="handleMarkPaid" :disabled="isMarkingPaid" class="px-4 py-2 text-sm font-medium bg-[#10B981] hover:bg-[#059669] text-white rounded-xl transition-colors disabled:opacity-50 flex items-center">
+                                <svg v-if="isMarkingPaid" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Đồng ý
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -297,6 +334,33 @@ const selectedCollectionId = ref(null)
 const details = ref(null)
 const isLoading = ref(false)
 const activeTab = ref('paid') // paid | unpaid
+
+const isConfirmMarkPaidOpen = ref(false)
+const selectedMemberForPaid = ref(null)
+const isMarkingPaid = ref(false)
+
+const confirmMarkPaid = (member) => {
+    selectedMemberForPaid.value = member
+    isConfirmMarkPaidOpen.value = true
+}
+
+const handleMarkPaid = async () => {
+    if (!selectedMemberForPaid.value) return
+    
+    try {
+        isMarkingPaid.value = true
+        await ClubService.markPaidContribution(props.clubId, selectedCollectionId.value, {
+            user_id: selectedMemberForPaid.value.user.id
+        })
+        toast.success('Đã xác nhận thanh toán')
+        isConfirmMarkPaidOpen.value = false
+        await fetchDetails()
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Không thể đánh dấu đã đóng')
+    } finally {
+        isMarkingPaid.value = false
+    }
+}
 
 const closeModal = () => {
     emit('update:isOpen', false)
@@ -345,6 +409,18 @@ const onApprove = async (member) => {
         await fetchDetails()
     } catch (error) {
         toast.error('Không thể xác nhận thanh toán')
+    }
+}
+
+const onReject = async (member) => {
+    if (!member.contribution?.id) return
+    
+    try {
+        await ClubService.rejectFundContribution(props.clubId, selectedCollectionId.value, member.contribution.id, {})
+        toast.success('Đã từ chối thanh toán')
+        await fetchDetails()
+    } catch (error) {
+        toast.error('Không thể từ chối thanh toán')
     }
 }
 
