@@ -77,7 +77,7 @@ class ClubController extends Controller
     {
         try {
             // Chỉ load relations cần thiết; members được load trong getClubDetail khi user là member
-            $club = Club::with(['creator', 'profile', 'wallets'])->findOrFail($clubId);
+            $club = Club::with(['creator', 'profile', 'mainWallet'])->findOrFail($clubId);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return ResponseHelper::error('Câu lạc bộ không còn tồn tại trong hệ thống', 404);
         }
@@ -232,7 +232,7 @@ class ClubController extends Controller
 
     public function getFund($clubId)
     {
-        $club = Club::with(['wallets', 'mainWallet'])->findOrFail($clubId);
+        $club = Club::with(['mainWallet'])->findOrFail($clubId);
         $mainWallet = $club->mainWallet;
 
         $fund = [
@@ -241,7 +241,7 @@ class ClubController extends Controller
             'balance' => $mainWallet?->balance ?? 0,
             'currency' => $mainWallet?->currency ?? 'VND',
             'qr_code_url' => $mainWallet?->qr_code_url,
-            'total_wallets' => $club->wallets()->count(),
+            'total_wallets' => $club->mainWallet ? 1 : 0,
         ];
 
         return ResponseHelper::success($fund, 'Lấy thông tin quỹ CLB thành công');

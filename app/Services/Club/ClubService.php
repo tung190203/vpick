@@ -6,7 +6,6 @@ use App\Enums\ClubMemberRole;
 use App\Enums\ClubMembershipStatus;
 use App\Enums\ClubMemberStatus;
 use App\Enums\ClubStatus;
-use App\Enums\ClubWalletType;
 use App\Jobs\SendPushJob;
 use App\Models\Club\Club;
 use App\Models\Club\ClubMember;
@@ -71,7 +70,6 @@ class ClubService
             ]);
 
             $this->walletService->createWallet($club, [
-                'type' => ClubWalletType::Main,
                 'currency' => 'VND',
             ]);
 

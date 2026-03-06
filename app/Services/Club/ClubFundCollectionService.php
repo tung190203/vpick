@@ -9,6 +9,7 @@ use App\Jobs\SendPushJob;
 use App\Models\Club\Club;
 use App\Models\Club\ClubActivity;
 use App\Models\Club\ClubFundCollection;
+use App\Models\Club\ClubWallet;
 use App\Models\User;
 use App\Notifications\ClubFundCollectionCancelledNotification;
 use App\Notifications\ClubFundCollectionCreatedNotification;
@@ -90,12 +91,15 @@ class ClubFundCollectionService
             ? (float) $data['target_amount']
             : (float) ($amountPerMember * $memberCount);
 
-        // included_in_club_fund CHỈ áp dụng khi tạo khoản thu từ activity (chia tiền hoạt động).
-        // Khi có activity_id: dùng giá trị gửi lên (false = không tính vào quỹ chung).
-        // Khi không có activity_id: luôn true (đợt thu thường luôn tính vào quỹ chung).
-        $includedInClubFund = $activityId && array_key_exists('included_in_club_fund', $data)
+        // included_in_club_fund áp dụng cho tất cả khoản thu.
+        // Nếu false: dùng QR riêng upload lên, không ghi transaction vào ví chính.
+        // Nếu true (mặc định): dùng QR ví chính, ghi transaction vào ví chính.
+        $includedInClubFund = array_key_exists('included_in_club_fund', $data)
             ? filter_var($data['included_in_club_fund'], FILTER_VALIDATE_BOOLEAN)
             : true;
+
+        // Chỉ lưu qr_code_url riêng cho collection khi included_in_club_fund = false.
+        $collectionQrUrl = !$includedInClubFund ? ($data['qr_code_url'] ?? null) : null;
 
         $collection = ClubFundCollection::create([
             'club_id' => $club->id,
@@ -109,7 +113,7 @@ class ClubFundCollectionService
             'start_date' => $data['start_date'],
             'end_date' => $endDate,
             'status' => ClubFundCollectionStatus::Active,
-            'qr_code_url' => $data['qr_code_url'] ?? null,
+            'qr_code_url' => $collectionQrUrl,
             'created_by' => $userId,
             'included_in_club_fund' => $includedInClubFund,
         ]);
@@ -328,6 +332,51 @@ class ClubFundCollectionService
             return true;
         }
         return $collection->assignedMembers->contains('id', $userId);
+    }
+
+    /**
+     * Lưu QR thanh toán vào main wallet của CLB (mỗi CLB chỉ có 1 mã QR).
+     */
+    public function upsertMainWalletQr(Club $club, array $data, int $userId): ClubWallet
+    {
+        if (!$club->canManageFinance($userId)) {
+            throw new \Exception('Chỉ admin/manager/secretary/treasurer mới có quyền cập nhật mã QR');
+        }
+
+        $wallet = ClubWallet::firstOrCreate(
+            ['club_id' => $club->id],
+            ['currency' => 'VND']
+        );
+
+        $updateData = [
+            'qr_note' => array_key_exists('qr_note', $data) ? $data['qr_note'] : $wallet->qr_note,
+        ];
+
+        if (!empty($data['image'])) {
+            $updateData['qr_code_url'] = $this->imageService->optimizeThumbnail($data['image'], 'qr_codes', 90);
+        }
+
+        $wallet->update($updateData);
+
+        return $wallet->fresh();
+    }
+
+    public function deleteMainWalletQr(Club $club, int $userId): void
+    {
+        if (!$club->canManageFinance($userId)) {
+            throw new \Exception('Chỉ admin/manager/secretary/treasurer mới có quyền xóa mã QR');
+        }
+
+        $wallet = ClubWallet::where('club_id', $club->id)->first();
+
+        if (!$wallet || empty($wallet->qr_code_url)) {
+            throw new \Exception('CLB chưa có mã QR thanh toán quỹ.');
+        }
+
+        $wallet->update([
+            'qr_code_url' => null,
+            'qr_note'     => null,
+        ]);
     }
 
     public function createOrAttachQrCode(Club $club, array $data, int $userId): ClubFundCollection

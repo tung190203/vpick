@@ -81,7 +81,10 @@ class ClubResource extends JsonResource
             ),
             'can_edit_footer' => $this->when(auth()->check(), fn () => $this->resource->canEditFooter(auth()->id()), false),
             'profile' => $this->whenLoaded('profile', fn () => static::formatProfile($this->profile), static::getDefaultProfile()),
-            'wallets' => $this->whenLoaded('wallets'),
+            'fund_qr' => $this->whenLoaded('mainWallet', fn () => [
+                'qr_code_url' => $this->mainWallet?->qr_code_url,
+                'qr_note'     => $this->mainWallet?->qr_note,
+            ]),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

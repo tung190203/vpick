@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Club;
 
 use App\Enums\ClubWalletTransactionDirection;
 use App\Enums\ClubWalletTransactionStatus;
-use App\Enums\ClubWalletType;
 use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Club\ClubWalletResource;
@@ -25,14 +24,8 @@ class ClubWalletController extends Controller
     public function index(Request $request, $clubId)
     {
         $club = Club::findOrFail($clubId);
-
-        $validated = $request->validate([
-            'type' => ['sometimes', Rule::enum(ClubWalletType::class)],
-        ]);
-
-        $wallets = $this->walletService->getWallets($club, $validated);
-
-        return ResponseHelper::success(ClubWalletResource::collection($wallets), 'Lấy danh sách ví thành công');
+        $wallet = $this->walletService->getWallets($club, []);
+        return ResponseHelper::success(ClubWalletResource::collection($wallet), 'Lấy ví thành công');
     }
 
     public function store(Request $request, $clubId)
@@ -44,14 +37,8 @@ class ClubWalletController extends Controller
             return ResponseHelper::error('Chỉ admin/manager/secretary/treasurer mới có quyền tạo ví', 403);
         }
 
-        $validated = $request->validate([
-            'type' => ['required', Rule::enum(ClubWalletType::class)],
-            'currency' => 'sometimes|string|max:3',
-            'qr_code_url' => 'nullable|string',
-        ]);
-
         try {
-            $wallet = $this->walletService->createWallet($club, $validated);
+            $wallet = $this->walletService->createWallet($club, ['currency' => 'VND']);
             return ResponseHelper::success(new ClubWalletResource($wallet), 'Tạo ví thành công', 201);
         } catch (\Exception $e) {
             return ResponseHelper::error($e->getMessage(), 409);

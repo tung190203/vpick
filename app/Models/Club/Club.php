@@ -6,7 +6,6 @@ use App\Enums\ClubMemberRole;
 use App\Enums\ClubMemberStatus;
 use App\Enums\ClubMembershipStatus;
 use App\Enums\ClubStatus;
-use App\Enums\ClubWalletType;
 use App\Models\User;
 use App\Models\Tournament;
 use App\Models\MiniTournament;
@@ -98,14 +97,15 @@ class Club extends Model
         return $this->hasOne(ClubProfile::class);
     }
 
-    public function wallets()
+    public function wallet()
     {
-        return $this->hasMany(ClubWallet::class);
+        return $this->hasOne(ClubWallet::class);
     }
 
+    // Alias giữ tương thích với code cũ
     public function mainWallet()
     {
-        return $this->hasOne(ClubWallet::class)->where('type', ClubWalletType::Main);
+        return $this->hasOne(ClubWallet::class);
     }
 
     public function monthlyFees()
@@ -160,7 +160,7 @@ class Club extends Model
             'profile',
             'members.user.vnduprScores',
             'members.reviewer',
-            'wallets',
+            'mainWallet',
             'activeMembers.user.vnduprScores'
         ]);
     }
