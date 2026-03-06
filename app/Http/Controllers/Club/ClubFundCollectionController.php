@@ -242,31 +242,19 @@ class ClubFundCollectionController extends Controller
             return ResponseHelper::error('Chỉ thành viên CLB mới xem được', 403);
         }
 
-        $validated = $request->validate([
-            'page' => 'sometimes|integer|min:1',
-            'per_page' => 'sometimes|integer|min:1|max:100',
-        ]);
+        $mainWallet = $club->mainWallet;
 
-        $collections = $this->collectionService->getQrCodes($club, $validated);
-        $userId = auth()->id();
-        if ($userId !== null) {
-            foreach ($collections->items() as $collection) {
-                $collection->setAttribute(
-                    'need_payment',
-                    $this->collectionService->needPaymentForUser($collection, $userId)
-                );
-            }
+        if (!$mainWallet || empty($mainWallet->qr_code_url)) {
+            return ResponseHelper::success([
+                'qr_code_url' => null,
+                'qr_note'     => null,
+            ], 'CLB chưa có mã QR thanh toán quỹ');
         }
 
-        $data = ['qr_codes' => ClubFundCollectionResource::collection($collections)];
-        $meta = [
-            'current_page' => $collections->currentPage(),
-            'per_page' => $collections->perPage(),
-            'total' => $collections->total(),
-            'last_page' => $collections->lastPage(),
-        ];
-
-        return ResponseHelper::success($data, 'Lấy danh sách mã QR thành công', 200, $meta);
+        return ResponseHelper::success([
+            'qr_code_url' => $mainWallet->qr_code_url,
+            'qr_note'     => $mainWallet->qr_note,
+        ], 'Lấy mã QR thành công');
     }
 
     public function createQrCode(CreateQrCodeRequest $request, $clubId)

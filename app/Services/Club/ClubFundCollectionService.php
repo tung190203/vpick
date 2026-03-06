@@ -6,7 +6,6 @@ use App\Enums\ClubActivityParticipantStatus;
 use App\Enums\ClubFundCollectionStatus;
 use App\Enums\ClubFundContributionStatus;
 use App\Jobs\SendPushJob;
-use App\Enums\ClubWalletType;
 use App\Models\Club\Club;
 use App\Models\Club\ClubActivity;
 use App\Models\Club\ClubFundCollection;
@@ -335,51 +334,19 @@ class ClubFundCollectionService
     /**
      * Lưu QR thanh toán vào main wallet của CLB (mỗi CLB chỉ có 1 mã QR).
      */
-    public function saveMainWalletQr(Club $club, array $data, int $userId): ClubWallet
-    {
-        if (!$club->canManageFinance($userId)) {
-            throw new \Exception('Chỉ admin/manager/secretary/treasurer mới có quyền tải lên mã QR');
-        }
-
-        $wallet = ClubWallet::where('club_id', $club->id)
-            ->where('type', ClubWalletType::Main)
-            ->first();
-
-        if ($wallet && !empty($wallet->qr_code_url)) {
-            throw new \Exception('CLB đã có mã QR thanh toán quỹ. Vui lòng cập nhật hoặc xóa mã QR hiện tại trước khi tải lên mã mới.');
-        }
-
-        $qrCodeUrl = $this->imageService->optimizeThumbnail($data['image'], 'qr_codes', 90);
-
-        $wallet = ClubWallet::firstOrCreate(
-            ['club_id' => $club->id, 'type' => ClubWalletType::Main],
-            ['currency' => 'VND']
-        );
-
-        $wallet->update([
-            'qr_code_url' => $qrCodeUrl,
-            'qr_note'     => $data['qr_note'] ?? null,
-        ]);
-
-        return $wallet->fresh();
-    }
-
-    public function updateMainWalletQr(Club $club, array $data, int $userId): ClubWallet
+    public function upsertMainWalletQr(Club $club, array $data, int $userId): ClubWallet
     {
         if (!$club->canManageFinance($userId)) {
             throw new \Exception('Chỉ admin/manager/secretary/treasurer mới có quyền cập nhật mã QR');
         }
 
-        $wallet = ClubWallet::where('club_id', $club->id)
-            ->where('type', ClubWalletType::Main)
-            ->first();
-
-        if (!$wallet || empty($wallet->qr_code_url)) {
-            throw new \Exception('CLB chưa có mã QR thanh toán quỹ. Vui lòng tải lên mã QR mới.');
-        }
+        $wallet = ClubWallet::firstOrCreate(
+            ['club_id' => $club->id],
+            ['currency' => 'VND']
+        );
 
         $updateData = [
-            'qr_note' => $data['qr_note'] ?? $wallet->qr_note,
+            'qr_note' => array_key_exists('qr_note', $data) ? $data['qr_note'] : $wallet->qr_note,
         ];
 
         if (!empty($data['image'])) {
@@ -397,9 +364,7 @@ class ClubFundCollectionService
             throw new \Exception('Chỉ admin/manager/secretary/treasurer mới có quyền xóa mã QR');
         }
 
-        $wallet = ClubWallet::where('club_id', $club->id)
-            ->where('type', ClubWalletType::Main)
-            ->first();
+        $wallet = ClubWallet::where('club_id', $club->id)->first();
 
         if (!$wallet || empty($wallet->qr_code_url)) {
             throw new \Exception('CLB chưa có mã QR thanh toán quỹ.');
