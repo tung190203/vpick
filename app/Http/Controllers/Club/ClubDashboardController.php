@@ -21,7 +21,7 @@ class ClubDashboardController extends Controller
     {
         $club = Club::with([
             'members',
-            'wallets',
+            'mainWallet',
             'fundCollections',
             'activities',
             'notifications',
