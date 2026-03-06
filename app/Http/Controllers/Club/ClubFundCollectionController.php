@@ -279,18 +279,57 @@ class ClubFundCollectionController extends Controller
         }
 
         try {
-            $validated = $request->validated();
-            $collection = $this->collectionService->createOrAttachQrCode($club, $validated, $userId);
-            $collection->load(['creator', 'club', 'contributions.user']);
+            $wallet = $this->collectionService->saveMainWalletQr($club, $request->validated(), $userId);
 
-            $message = !empty($validated['collection_id'])
-                ? 'Gắn mã QR thành công'
-                : 'Tạo mã QR thành công (chờ gắn đợt thu)';
-            $statusCode = !empty($validated['collection_id']) ? 200 : 201;
-
-            return ResponseHelper::success(new ClubFundCollectionResource($collection), $message, $statusCode);
+            return ResponseHelper::success([
+                'qr_code_url' => $wallet->qr_code_url,
+                'qr_note'     => $wallet->qr_note,
+            ], 'Tải lên mã QR thành công', 201);
         } catch (\Exception $e) {
-            return ResponseHelper::error($e->getMessage(), 403);
+            return ResponseHelper::error($e->getMessage(), 422);
+        }
+    }
+
+    public function updateMainQrCode(Request $request, $clubId)
+    {
+        $club = Club::findOrFail($clubId);
+        $userId = auth()->id();
+
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
+        }
+
+        $validated = $request->validate([
+            'image'   => 'sometimes|image|mimes:png,jpg,jpeg,gif|max:5120',
+            'qr_note' => 'nullable|string|max:1000',
+        ]);
+
+        try {
+            $wallet = $this->collectionService->updateMainWalletQr($club, $validated, $userId);
+
+            return ResponseHelper::success([
+                'qr_code_url' => $wallet->qr_code_url,
+                'qr_note'     => $wallet->qr_note,
+            ], 'Cập nhật mã QR thành công');
+        } catch (\Exception $e) {
+            return ResponseHelper::error($e->getMessage(), 422);
+        }
+    }
+
+    public function destroyMainQrCode($clubId)
+    {
+        $club = Club::findOrFail($clubId);
+        $userId = auth()->id();
+
+        if (!$userId) {
+            return ResponseHelper::error('Bạn cần đăng nhập', 401);
+        }
+
+        try {
+            $this->collectionService->deleteMainWalletQr($club, $userId);
+            return ResponseHelper::success(null, 'Xóa mã QR thành công');
+        } catch (\Exception $e) {
+            return ResponseHelper::error($e->getMessage(), 422);
         }
     }
 

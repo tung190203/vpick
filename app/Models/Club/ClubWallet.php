@@ -17,6 +17,7 @@ class ClubWallet extends Model
         'type',
         'currency',
         'qr_code_url',
+        'qr_note',
     ];
 
     protected $casts = [

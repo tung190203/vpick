@@ -220,6 +220,8 @@ Route::middleware(['auth:api', 'update.last_login'])->group(function () {
                 Route::get('/my-collections', [ClubFundCollectionController::class, 'getMyCollections']);
                 Route::get('/qr-codes', [ClubFundCollectionController::class, 'listQrCodes']);
                 Route::post('/qr-codes', [ClubFundCollectionController::class, 'createQrCode']);
+                Route::post('/qr-codes/main', [ClubFundCollectionController::class, 'updateMainQrCode']);
+                Route::delete('/qr-codes/main', [ClubFundCollectionController::class, 'destroyMainQrCode']);
                 Route::delete('/qr-codes/{qrCodeId}', [ClubFundCollectionController::class, 'destroyQrCode']);
                 Route::get('/{collectionId}', [ClubFundCollectionController::class, 'show']);
                 Route::put('/{collectionId}', [ClubFundCollectionController::class, 'update']);
@@ -474,6 +476,8 @@ Route::middleware(['auth:api', 'update.last_login', 'throttle:api'])->group(func
                 Route::get('/my-collections', [ClubFundCollectionController::class, 'getMyCollections']);
                 Route::get('/qr-codes', [ClubFundCollectionController::class, 'listQrCodes']);
                 Route::post('/qr-codes', [ClubFundCollectionController::class, 'createQrCode']);
+                Route::post('/qr-codes/main', [ClubFundCollectionController::class, 'updateMainQrCode']);
+                Route::delete('/qr-codes/main', [ClubFundCollectionController::class, 'destroyMainQrCode']);
                 Route::delete('/qr-codes/{qrCodeId}', [ClubFundCollectionController::class, 'destroyQrCode']);
                 Route::get('/{collectionId}', [ClubFundCollectionController::class, 'show']);
                 Route::put('/{collectionId}', [ClubFundCollectionController::class, 'update']);
