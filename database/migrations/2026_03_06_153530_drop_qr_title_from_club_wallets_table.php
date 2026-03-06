@@ -8,9 +8,11 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('club_wallets', function (Blueprint $table) {
-            $table->dropColumn('qr_title');
-        });
+        if (Schema::hasColumn('club_wallets', 'qr_title')) {
+            Schema::table('club_wallets', function (Blueprint $table) {
+                $table->dropColumn('qr_title');
+            });
+        }
     }
 
     public function down(): void
