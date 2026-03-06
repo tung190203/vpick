@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Club;
 
 use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Club\CreateQrCodeRequest;
 use App\Http\Requests\Club\StoreFundCollectionRequest;
 use App\Http\Requests\Club\UpdateFundCollectionRequest;
 use App\Http\Resources\Club\ClubFundCollectionResource;
@@ -67,13 +66,19 @@ class ClubFundCollectionController extends Controller
         try {
             $data = $request->validated();
 
-            if ($request->hasFile('qr_image')) {
+            $includedInClubFund = isset($data['included_in_club_fund']) ? (bool) $data['included_in_club_fund'] : true;
+
+            if (!$includedInClubFund && $request->hasFile('qr_image')) {
                 $data['qr_code_url'] = app(ImageOptimizationService::class)->optimizeThumbnail(
                     $request->file('qr_image'),
                     'qr_codes',
                     90
                 );
-                unset($data['qr_image']);
+            }
+            unset($data['qr_image']);
+
+            if ($includedInClubFund) {
+                unset($data['qr_code_url'], $data['qr_code_id']);
             } elseif (!empty($data['qr_code_id'])) {
                 $existingQr = ClubFundCollection::where('club_id', $clubId)
                     ->whereNotNull('qr_code_url')
@@ -202,13 +207,26 @@ class ClubFundCollectionController extends Controller
             return ResponseHelper::error('Chỉ thành viên CLB mới xem được', 403);
         }
 
-        if (!$collection->qr_code_url) {
+        $includedInClubFund = $collection->included_in_club_fund ?? true;
+
+        if ($includedInClubFund) {
+            $mainWallet = $collection->club->mainWallet;
+            if (!$mainWallet || empty($mainWallet->qr_code_url)) {
+                return ResponseHelper::error('CLB chưa có mã QR thanh toán quỹ', 404);
+            }
+            return ResponseHelper::success([
+                'qr_code_url' => $mainWallet->qr_code_url,
+                'qr_note'     => $mainWallet->qr_note,
+            ], 'Lấy mã QR thành công');
+        }
+
+        if (empty($collection->qr_code_url)) {
             return ResponseHelper::error('Đợt thu chưa có mã QR', 404);
         }
 
         return ResponseHelper::success([
             'qr_code_url' => $collection->qr_code_url,
-            'qr_code_data' => null,
+            'qr_note'     => null,
         ], 'Lấy mã QR thành công');
     }
 
@@ -257,28 +275,7 @@ class ClubFundCollectionController extends Controller
         ], 'Lấy mã QR thành công');
     }
 
-    public function createQrCode(CreateQrCodeRequest $request, $clubId)
-    {
-        $club = Club::findOrFail($clubId);
-        $userId = auth()->id();
-
-        if (!$userId) {
-            return ResponseHelper::error('Bạn cần đăng nhập', 401);
-        }
-
-        try {
-            $wallet = $this->collectionService->saveMainWalletQr($club, $request->validated(), $userId);
-
-            return ResponseHelper::success([
-                'qr_code_url' => $wallet->qr_code_url,
-                'qr_note'     => $wallet->qr_note,
-            ], 'Tải lên mã QR thành công', 201);
-        } catch (\Exception $e) {
-            return ResponseHelper::error($e->getMessage(), 422);
-        }
-    }
-
-    public function updateMainQrCode(Request $request, $clubId)
+    public function createQrCode(Request $request, $clubId)
     {
         $club = Club::findOrFail($clubId);
         $userId = auth()->id();
@@ -293,7 +290,7 @@ class ClubFundCollectionController extends Controller
         ]);
 
         try {
-            $wallet = $this->collectionService->updateMainWalletQr($club, $validated, $userId);
+            $wallet = $this->collectionService->upsertMainWalletQr($club, $validated, $userId);
 
             return ResponseHelper::success([
                 'qr_code_url' => $wallet->qr_code_url,

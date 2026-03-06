@@ -19,7 +19,7 @@ class StoreFundCollectionRequest extends FormRequest
             $this->request->remove('qr_code_url');
         }
 
-        if ($this->has('activity_id') && $this->has('included_in_club_fund')) {
+        if ($this->has('included_in_club_fund')) {
             $val = $this->input('included_in_club_fund');
             $this->merge(['included_in_club_fund' => filter_var($val, FILTER_VALIDATE_BOOLEAN)]);
         }
@@ -55,7 +55,10 @@ class StoreFundCollectionRequest extends FormRequest
             'deadline' => 'nullable|date|after_or_equal:start_date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'qr_code_url' => 'nullable|string',
-            'qr_image' => 'nullable|image|mimes:png,jpg,jpeg,gif|max:5120',
+            'qr_image' => [
+                \Illuminate\Validation\Rule::requiredIf(fn () => $this->input('included_in_club_fund') === false),
+                'nullable', 'image', 'mimes:png,jpg,jpeg,gif', 'max:5120',
+            ],
             'qr_code_id' => [
                 'nullable',
                 'integer',

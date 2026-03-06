@@ -91,12 +91,15 @@ class ClubFundCollectionService
             ? (float) $data['target_amount']
             : (float) ($amountPerMember * $memberCount);
 
-        // included_in_club_fund CHỈ áp dụng khi tạo khoản thu từ activity (chia tiền hoạt động).
-        // Khi có activity_id: dùng giá trị gửi lên (false = không tính vào quỹ chung).
-        // Khi không có activity_id: luôn true (đợt thu thường luôn tính vào quỹ chung).
-        $includedInClubFund = $activityId && array_key_exists('included_in_club_fund', $data)
+        // included_in_club_fund áp dụng cho tất cả khoản thu.
+        // Nếu false: dùng QR riêng upload lên, không ghi transaction vào ví chính.
+        // Nếu true (mặc định): dùng QR ví chính, ghi transaction vào ví chính.
+        $includedInClubFund = array_key_exists('included_in_club_fund', $data)
             ? filter_var($data['included_in_club_fund'], FILTER_VALIDATE_BOOLEAN)
             : true;
+
+        // Chỉ lưu qr_code_url riêng cho collection khi included_in_club_fund = false.
+        $collectionQrUrl = !$includedInClubFund ? ($data['qr_code_url'] ?? null) : null;
 
         $collection = ClubFundCollection::create([
             'club_id' => $club->id,
@@ -110,7 +113,7 @@ class ClubFundCollectionService
             'start_date' => $data['start_date'],
             'end_date' => $endDate,
             'status' => ClubFundCollectionStatus::Active,
-            'qr_code_url' => $data['qr_code_url'] ?? null,
+            'qr_code_url' => $collectionQrUrl,
             'created_by' => $userId,
             'included_in_club_fund' => $includedInClubFund,
         ]);
