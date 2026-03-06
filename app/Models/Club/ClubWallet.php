@@ -4,7 +4,6 @@ namespace App\Models\Club;
 
 use App\Enums\ClubWalletTransactionDirection;
 use App\Enums\ClubWalletTransactionStatus;
-use App\Enums\ClubWalletType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -14,14 +13,12 @@ class ClubWallet extends Model
 
     protected $fillable = [
         'club_id',
-        'type',
         'currency',
         'qr_code_url',
+        'qr_note',
     ];
 
-    protected $casts = [
-        'type' => ClubWalletType::class,
-    ];
+    protected $casts = [];
 
     public function club()
     {
@@ -57,20 +54,5 @@ class ClubWallet extends Model
         $in = (clone $base)->where('direction', ClubWalletTransactionDirection::In)->sum('amount');
         $out = (clone $base)->where('direction', ClubWalletTransactionDirection::Out)->sum('amount');
         return $in - $out;
-    }
-
-    public function isMain()
-    {
-        return $this->type === ClubWalletType::Main;
-    }
-
-    public function isFund()
-    {
-        return $this->type === ClubWalletType::Fund;
-    }
-
-    public function isDonation()
-    {
-        return $this->type === ClubWalletType::Donation;
     }
 }

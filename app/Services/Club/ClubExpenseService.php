@@ -5,7 +5,6 @@ namespace App\Services\Club;
 use App\Enums\ClubWalletTransactionDirection;
 use App\Enums\ClubWalletTransactionSourceType;
 use App\Enums\ClubWalletTransactionStatus;
-use App\Enums\ClubWalletType;
 use App\Models\Club\Club;
 use App\Models\Club\ClubActivity;
 use App\Models\Club\ClubExpense;
@@ -71,7 +70,6 @@ class ClubExpenseService
             $mainWallet = $club->mainWallet;
             if (!$mainWallet) {
                 $mainWallet = $this->walletService->createWallet($club, [
-                    'type' => ClubWalletType::Main,
                     'currency' => 'VND',
                 ]);
             }

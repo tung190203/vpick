@@ -18,7 +18,7 @@ class ClubDashboardService
     {
         $club->loadMissing([
             'members',
-            'wallets',
+            'mainWallet',
             'fundCollections',
             'activities',
             'notifications',
@@ -72,7 +72,7 @@ class ClubDashboardService
         $mainWallet = $club->mainWallet;
 
         return [
-            'total_wallets' => $club->wallets->count(),
+            'total_wallets' => $club->mainWallet ? 1 : 0,
             'main_wallet_balance' => $mainWallet ? $mainWallet->balance : 0,
             'pending_transactions' => $mainWallet
                 ? $mainWallet->transactions()->where('status', ClubWalletTransactionStatus::Pending)->count()

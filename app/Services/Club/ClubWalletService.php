@@ -15,31 +15,18 @@ class ClubWalletService
 {
     public function getWallets(Club $club, array $filters): Collection
     {
-        $query = $club->wallets();
-
-        if (!empty($filters['type'])) {
-            $query->where('type', $filters['type']);
-        }
-
-        return $query->get();
+        return $club->wallet()->get();
     }
 
     public function createWallet(Club $club, array $data): ClubWallet
     {
-        $exists = $club->wallets()
-            ->where('type', $data['type'])
-            ->where('currency', $data['currency'] ?? 'VND')
-            ->exists();
-
-        if ($exists) {
-            throw new \Exception('Ví loại này đã tồn tại');
+        if ($club->wallet()->exists()) {
+            throw new \Exception('CLB đã có ví quỹ');
         }
 
         return ClubWallet::create([
-            'club_id' => $club->id,
-            'type' => $data['type'],
+            'club_id'  => $club->id,
             'currency' => $data['currency'] ?? 'VND',
-            'qr_code_url' => $data['qr_code_url'] ?? null,
         ]);
     }
 
