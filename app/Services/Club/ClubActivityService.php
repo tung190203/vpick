@@ -58,14 +58,13 @@ class ClubActivityService
             if (($hasRegistered || $hasAvailable) && empty($activityStatuses)) {
                 $query->whereIn('status', ['scheduled', 'ongoing']);
             } elseif (!empty($activityStatuses)) {
-                if ($isHistoryOnly) {
-                    $query->where(function ($q) {
-                        $q->whereIn('status', ['completed', 'cancelled'])
-                            ->orWhere('end_time', '<', now());
-                    });
-                } else {
-                    $query->whereIn('status', $activityStatuses);
-                }
+            if ($isHistoryOnly) {
+                // History tab: only query completed/cancelled within last 3 months
+                $query->whereIn('status', ['completed', 'cancelled'])
+                    ->where('start_time', '>=', now()->subMonths(3));
+            } else {
+                $query->whereIn('status', $activityStatuses);
+            }
             }
 
             if (!empty($activityStatuses) && !in_array('completed', $activityStatuses) && !in_array('cancelled', $activityStatuses)) {
@@ -265,7 +264,11 @@ class ClubActivityService
 
         $orderDirection = $isHistoryOnly ? 'desc' : 'asc';
 
-        if ($userId) {
+        // Custom sort: completed first, then by date (newest first)
+        if ($isHistoryOnly) {
+            $query->orderByRaw("CASE club_activities.status WHEN 'completed' THEN 1 WHEN 'cancelled' THEN 2 ELSE 3 END")
+                ->orderBy('start_time', 'desc');
+        } elseif ($userId) {
             $query->selectRaw('club_activities.*, EXISTS(
                 SELECT 1 FROM club_activity_participants
                 WHERE club_activity_participants.club_activity_id = club_activities.id
