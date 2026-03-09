@@ -58,14 +58,13 @@ class ClubActivityService
             if (($hasRegistered || $hasAvailable) && empty($activityStatuses)) {
                 $query->whereIn('status', ['scheduled', 'ongoing']);
             } elseif (!empty($activityStatuses)) {
-                if ($isHistoryOnly) {
-                    $query->where(function ($q) {
-                        $q->whereIn('status', ['completed', 'cancelled'])
-                            ->orWhere('end_time', '<', now());
-                    });
-                } else {
-                    $query->whereIn('status', $activityStatuses);
-                }
+            if ($isHistoryOnly) {
+                // History tab: only query completed/cancelled within last 3 months
+                $query->whereIn('status', ['completed', 'cancelled'])
+                    ->where('start_time', '>=', now()->subMonths(3));
+            } else {
+                $query->whereIn('status', $activityStatuses);
+            }
             }
 
             if (!empty($activityStatuses) && !in_array('completed', $activityStatuses) && !in_array('cancelled', $activityStatuses)) {
