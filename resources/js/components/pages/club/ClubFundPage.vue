@@ -608,97 +608,48 @@
                                 <div :class="[hasAnyRole(['admin', 'secretary', 'treasurer']) ? 'w-full lg:w-[45%] flex flex-col' : 'w-full flex flex-col min-h-0']">
                                     <!-- Section Subtitle -->
                                     <div class="mb-6 flex-shrink-0">
-                                        <div class="flex items-center space-x-2 text-[#838799] text-sm font-semibold tracking-wider uppercase">
-                                            <span>MÃ QR HIỆN CÓ</span>
-                                            <span>•</span>
-                                            <span>{{ qrList.length }}</span>
+                                        <div class="flex items-center space-x-2 text-[#838799] text-sm font-bold tracking-wider uppercase">
+                                            <span>MÃ QR CHUNG CỦA CLB</span>
                                         </div>
                                     </div>
 
-                                    <!-- Swiper Container -->
-                                    <div class="w-full overflow-hidden relative mb-6 min-h-0">
-                                        <div 
-                                            class="flex h-full transition-transform duration-500 ease-out"
-                                            :style="{ transform: `translateX(-${currentIndex * 100}%)` }">
-                                            <div v-for="(qr, index) in qrList" :key="index" class="min-w-full h-full p-1">
-                                                <!-- QR Content Card -->
-                                                <div class="bg-white border border-[#F2F3F5] rounded-[24px] p-6 h-full flex flex-col items-center shadow-sm">
-                                                    <h3 class="text-[20px] font-bold text-[#1F2937] mb-2 truncate w-full text-center line-clamp-1" v-tooltip="qr.title">{{ qr.title }}</h3>
-                                                    
-                                                    <!-- QR Placeholder -->
-                                                    <div class="w-full aspect-square flex items-center justify-center overflow-hidden flex-shrink min-h-0">
-                                                        <img :src="qr.qr_code_url" class="w-5/6 h-5/6 opacity-90" :alt="qr.title" />
-                                                    </div>
-
-                                                    <div class="text-center mb-2 flex-shrink-0 w-full">
-                                                        <div class="flex items-center justify-center space-x-1.5 mb-1">
-                                                            <span class="text-[14px] font-normal text-[#1F2937]">VNĐ</span>
-                                                            <span class="text-[20px] font-bold text-[#4392E0]">{{ formatCurrency(qr.amount_per_member) }}</span>
-                                                        </div>
-                                                        <p class="text-[14px] text-[#838799] font-normal line-clamp-1 w-full" v-tooltip="qr.description">{{ qr.description }}</p>
-                                                    </div>
-
-                                                    <!-- Action Buttons -->
-                                                    <div class="flex items-center justify-center space-x-4 w-full mt-auto">
-                                                        <button v-if="hasAnyRole(['member', 'manager'])" 
-                                                            @click="handleOpenReceiptModal(qr)"
-                                                            class="w-12 h-12 rounded-full bg-[#F3F4F6] flex items-center justify-center text-[#141519] hover:bg-gray-200 transition-colors">
-                                                            <CreditCardIcon class="w-5 h-5" />
-                                                        </button>
-                                                        <button class="w-12 h-12 rounded-full bg-[#F3F4F6] flex items-center justify-center text-[#141519] hover:bg-gray-200 transition-colors">
-                                                            <ArrowDownTrayIcon class="w-5 h-5" />
-                                                        </button>
-                                                        <button class="w-12 h-12 rounded-full bg-[#F3F4F6] flex items-center justify-center text-[#141519] hover:bg-gray-200 transition-colors">
-                                                            <ShareIcon class="w-5 h-5" />
-                                                        </button>
-                                                        <button v-if="hasAnyRole(['admin', 'secretary', 'treasurer'])" class="w-12 h-12 rounded-full bg-[#F3F4F6] flex items-center justify-center hover:bg-gray-200 transition-colors text-[#141519]" @click="confirmDeleteQR(qr.id)">
-                                                            <TrashIcon class="w-5 h-5" />
-                                                        </button>
-                                                    </div>
-                                                </div>
+                                    <!-- Single QR Display -->
+                                    <div class="w-full overflow-hidden relative mb-6 min-h-0 flex-1">
+                                        <div v-if="mainQrCode?.qr_code_url" class="bg-white border border-[#F2F3F5] rounded-[24px] p-6 h-full flex flex-col items-center shadow-sm">
+                                            <div class="w-full aspect-[4/3] flex items-center justify-center overflow-hidden flex-shrink border border-gray-100 rounded-xl bg-[#F8FAFC] min-h-0 mb-5 relative group">
+                                                <img :src="mainQrCode.qr_code_url" class="absolute inset-0 w-full h-full object-contain mix-blend-multiply p-2" />
+                                            </div>
+                                            <div class="text-center flex-shrink-0 w-full mb-5">
+                                                <p class="text-[14px] text-[#3E414C] font-medium leading-relaxed max-h-[80px] overflow-y-auto whitespace-pre-line px-2">{{ mainQrCode.qr_note || 'Chưa có ghi chú cho mã QR này' }}</p>
+                                            </div>
+                                            <div class="flex items-center justify-center space-x-4 w-full mt-auto pt-4 border-t border-gray-100">
+                                                <button @click="downloadQrCode" class="w-11 h-11 rounded-full bg-[#f1f5f9] flex items-center justify-center text-[#475569] hover:bg-[#e2e8f0] transition-colors" title="Tải xuống mã QR">
+                                                    <ArrowDownTrayIcon class="w-5 h-5" />
+                                                </button>
+                                                <button v-if="hasAnyRole(['admin', 'secretary', 'treasurer'])" class="w-11 h-11 rounded-full bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100 transition-colors" @click="confirmDeleteQR">
+                                                    <TrashIcon class="w-5 h-5" />
+                                                </button>
                                             </div>
                                         </div>
-                                    </div>
-
-                                    <!-- Pagination & Navigation -->
-                                    <div class="flex items-center justify-center space-x-6 flex-shrink-0">
-                                        <button 
-                                            @click="prevQR"
-                                            :disabled="currentIndex === 0"
-                                            :class="['transition-opacity duration-300', currentIndex === 0 ? 'opacity-20 cursor-not-allowed' : 'text-[#D72D36] hover:opacity-70']">
-                                            <ChevronLeftIcon class="w-6 h-6" />
-                                        </button>
-                                        <div class="flex space-x-2">
-                                            <div 
-                                                v-for="(_, index) in qrList" 
-                                                :key="index"
-                                                @click="currentIndex = index"
-                                                :class="[
-                                                    'h-1.5 rounded-full transition-all duration-300 cursor-pointer',
-                                                    currentIndex === index ? 'w-8 bg-[#D72D36]' : 'w-1.5 bg-[#EDEEF2]'
-                                                ]">
+                                        <div v-else class="bg-[#F8FAFC] border-2 border-dashed border-gray-200 rounded-[24px] p-6 h-full flex flex-col items-center justify-center text-center">
+                                            <div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-sm mb-4">
+                                                <QRCodeIcon class="w-8 h-8 text-gray-400" />
                                             </div>
+                                            <p class="text-[#64748B] font-medium text-[14px]">Chưa thiết lập mã QR chung</p>
+                                            <p class="text-[#94A3B8] text-[12px] mt-1">Thêm mã QR để thành viên dễ dàng chuyển khoản</p>
                                         </div>
-                                        <button 
-                                            @click="nextQR"
-                                            :disabled="currentIndex === qrList.length - 1"
-                                            :class="['transition-opacity duration-300', currentIndex === qrList.length - 1 ? 'opacity-20 cursor-not-allowed' : 'text-[#D72D36] hover:opacity-70']">
-                                            <ChevronRightIcon class="w-6 h-6" />
-                                        </button>
                                     </div>
                                 </div>
 
                                 <!-- Right Column: THÊM MÃ QR MỚI (Admin only) -->
                                 <div v-if="hasAnyRole(['admin', 'secretary', 'treasurer'])" class="w-full lg:w-[55%] flex flex-col">
                                     <div class="mb-6">
-                                        <h2 class="text-[14px] font-bold text-[#838799] tracking-wider uppercase">THÊM MÃ QR MỚI</h2>
+                                        <h2 class="text-[14px] font-bold text-[#838799] tracking-wider uppercase">{{ mainQrCode?.qr_code_url ? 'CẬP NHẬT MÃ QR CHUNG' : 'THÊM MÃ QR CHUNG' }}</h2>
                                     </div>
                                     
                                     <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                                        
-                                        <!-- Upload Area -->
                                         <div 
-                                            class="w-full h-44 bg-white border-2 border-dashed border-gray-200 rounded-[4px] flex flex-col items-center justify-center cursor-pointer hover:border-[#D72D36] transition-colors mb-6 group relative overflow-hidden"
+                                            class="w-full h-[180px] bg-white border-2 border-dashed border-gray-200 rounded-[12px] flex flex-col items-center justify-center cursor-pointer hover:border-[#D72D36] transition-colors mb-6 group relative overflow-hidden"
                                             @click="triggerFileInput"
                                         >
                                             <input 
@@ -708,132 +659,65 @@
                                                 accept="image/*" 
                                                 @change="handleFileUpload"
                                             />
-                                            
-                                            <!-- Image Preview -->
                                             <template v-if="previewImage">
-                                                <img :src="previewImage" class="w-full h-full object-contain" />
+                                                <img :src="previewImage" class="absolute inset-0 w-full h-full object-contain mix-blend-multiply p-2" />
                                                 <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                                     <button 
                                                         @click.stop="removePreview"
-                                                        class="bg-white/20 hover:bg-white/40 p-2 rounded-full backdrop-blur-md transition-colors"
+                                                        class="bg-white/20 hover:bg-white/40 p-2.5 rounded-full backdrop-blur-md transition-colors"
                                                     >
                                                         <TrashIcon class="w-6 h-6 text-white" />
                                                     </button>
                                                 </div>
                                             </template>
-
-                                            <!-- Placeholder -->
                                             <template v-else>
-                                                <div class="w-12 h-12 bg-[#F3F4F6] rounded-full flex items-center justify-center mb-3 group-hover:bg-[#FEE2E2] transition-colors">
-                                                    <PhotoIcon class="w-6 h-6 text-gray-500 group-hover:text-[#D72D36]" />
+                                                <div class="w-12 h-12 bg-[#F1F5F9] rounded-full flex items-center justify-center mb-3 group-hover:bg-[#FEE2E2] transition-colors">
+                                                    <PhotoIcon class="w-6 h-6 text-[#64748B] group-hover:text-[#D72D36]" />
                                                 </div>
-                                                <p class="font-bold text-[#1F2937]">Nhấn để tải ảnh lên</p>
-                                                <p class="text-xs text-[#838799] mt-1">PNG, JPG, GIF (Tối đa 5MB)</p>
+                                                <p class="font-bold text-[14px] text-[#1E293B]">
+                                                    {{ mainQrCode?.qr_code_url ? 'Nhấn để tải ảnh lên (tùy chọn)' : 'Nhấn để tải ảnh lên' }}
+                                                </p>
+                                                <p class="text-[12px] text-[#64748B] mt-1">
+                                                    {{ mainQrCode?.qr_code_url ? 'Sẽ giữ nguyên ảnh cũ nếu không đổi' : 'PNG, JPG, GIF (Tối đa 5MB)' }}
+                                                </p>
                                             </template>
                                         </div>
 
-                                        <!-- Form Fields -->
                                         <div class="space-y-6">
                                             <div>
-                                                <label class="block text-sm font-bold text-[#1F2937] mb-2 uppercase tracking-wide">Khoản thu</label>
-                                                <div class="relative" v-click-outside="() => showCollectionDropdown = false">
-                                                    <!-- Dropdown Toggle -->
-                                                    <div 
-                                                        @click="toggleCollectionDropdown"
-                                                        class="w-full bg-[#EDEEF2] border-none rounded-[4px] py-3 pl-4 pr-4 font-bold text-[#1F2937] cursor-pointer flex items-center justify-between"
-                                                    >
-                                                        <span :class="{'text-[#9EA2B3]': !selectedCollectionId}" class="truncate mr-2">
-                                                            {{ selectedCollection ? (selectedCollection.description || selectedCollection.title) : 'Chọn khoản thu' }}
-                                                        </span>
-                                                        <ChevronDownIcon :class="['w-5 h-5 text-[#9EA2B3] transition-transform duration-200', { 'rotate-180': showCollectionDropdown }]" />
-                                                    </div>
-
-                                                    <!-- Dropdown Menu -->
-                                                    <Transition name="fade">
-                                                        <div 
-                                                            v-if="showCollectionDropdown"
-                                                            class="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-100 rounded-[12px] shadow-xl z-[100] overflow-hidden"
-                                                        >
-                                                            <div 
-                                                                class="max-h-[160px] overflow-y-auto overflow-x-hidden custom-scrollbar"
-                                                                @scroll="handleCollectionScroll"
-                                                            >
-                                                                <div 
-                                                                    v-for="collection in fundCollections" 
-                                                                    :key="collection.id"
-                                                                    @click="selectCollection(collection)"
-                                                                    :class="[
-                                                                        'px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors border-b border-gray-50 last:border-b-0',
-                                                                        selectedCollectionId === collection.id ? 'bg-[#D72D36]/5 text-[#D72D36]' : 'text-[#1F2937]'
-                                                                    ]"
-                                                                >
-                                                                    <p class="font-bold text-sm truncate" v-tooltip="collection.description || collection.title">{{ collection.description || collection.title }}</p>
-                                                                    <p class="text-[11px] text-[#838799] mt-0.5">Hạn: {{ formatDatetime(collection.end_date, '/') }}</p>
-                                                                </div>
-
-                                                                <!-- Loading More State -->
-                                                                <div v-if="isFundCollectionLoadingMore" class="py-4 flex justify-center">
-                                                                    <svg class="animate-spin h-5 w-5 text-[#D72D36]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                                    </svg>
-                                                                </div>
-                                                                
-                                                                <div v-if="fundCollections.length === 0 && !isFundCollectionLoading" class="p-6 text-center">
-                                                                    <p class="text-sm text-[#838799]">Không có khoản thu nào</p>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </Transition>
-                                                </div>
-                                            </div>
-
-                                            <div>
                                                 <div class="flex items-center justify-between mb-2">
-                                                    <label class="block text-sm font-bold text-[#1F2937] uppercase tracking-wide">Nội dung</label>
-                                                    <span class="text-[10px] text-[#9EA2B3] font-normal uppercase">{{ newQRDescription.length }}/300</span>
+                                                    <label class="block text-[13px] font-bold text-[#1F2937] uppercase tracking-wide">Nội dung ghi chú</label>
+                                                    <span class="text-[11px] text-[#9CA3AF] font-medium">{{ newQRDescription.length }}/300</span>
                                                 </div>
                                                 <div class="relative">
-                                                    <div class="absolute top-4 left-4 pointer-events-none">
-                                                        <PencilSquareIcon class="w-5 h-5 text-[#9EA2B3]" />
+                                                    <div class="absolute top-[18px] left-4 pointer-events-none">
+                                                        <PencilSquareIcon class="w-[18px] h-[18px] text-[#9CA3AF]" />
                                                     </div>
                                                     <textarea 
                                                         v-model="newQRDescription"
                                                         rows="3"
-                                                        placeholder="VD: Pickleball SGP - Quy thang 10"
-                                                        class="w-full bg-[#EDEEF2] border-none rounded-[4px] py-5 pl-12 pr-4 text-sm focus:ring-0 placeholder:text-[#9EA2B3] resize-none"
+                                                        placeholder="VD: Chuyển khoản quỹ chung CLB VPick..."
+                                                        class="w-full bg-[#F8FAFC] border border-gray-100 rounded-[12px] py-4 pl-11 pr-4 text-[14px] focus:bg-white focus:ring-2 focus:ring-[#D72D36]/20 focus:border-[#D72D36] placeholder:text-[#9CA3AF] transition-all resize-none shadow-sm"
                                                     ></textarea>
                                                 </div>
-                                            </div>
-
-                                            <div class="flex items-center justify-between">
-                                                <div>
-                                                    <p class="text-sm font-bold text-[#1F2937]">Áp dụng cho các CLB khác</p>
-                                                    <p class="text-[12px] text-[#838799]">Gửi thông báo tới các CLB mà bạn làm quản trị viên</p>
-                                                </div>
-                                                <label class="relative inline-flex items-center cursor-pointer">
-                                                    <input type="checkbox" v-model="applyToOtherClubs" class="sr-only peer">
-                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#D72D36]"></div>
-                                                </label>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <!-- Submit Button -->
                                     <button 
                                         @click="handleSaveQRCode"
                                         :disabled="isSubmittingQR"
-                                        class="mx-auto w-fit px-10 py-3 bg-[#D72D36] text-white rounded-[4px] font-bold text-lg hover:bg-[#b91c1c] transition-colors mt-6 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                                        class="mx-auto w-full max-w-[280px] py-3.5 bg-[#D72D36] text-white rounded-[8px] font-bold text-[15px] hover:bg-[#b91c1c] active:scale-[0.98] transition-all mt-6 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-red-500/20"
                                     >
                                         <template v-if="isSubmittingQR">
-                                            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                             </svg>
                                             Đang lưu...
                                         </template>
                                         <template v-else>
-                                            Lưu mã QR
+                                            {{ mainQrCode?.qr_code_url ? 'Cập nhật mã QR' : 'Thêm mã QR' }}
                                         </template>
                                      </button>
                                 </div>
@@ -936,14 +820,9 @@ import {
     MinusIcon,
     XMarkIcon,
     ArrowDownTrayIcon,
-    ShareIcon,
     TrashIcon,
-    ChevronLeftIcon,
-    ChevronRightIcon,
-    ChevronDownIcon,
     PhotoIcon,
     PencilSquareIcon,
-    CreditCardIcon,
 } from '@heroicons/vue/24/outline'
 import { useRouter, useRoute } from 'vue-router'
 import { onMounted, ref, computed, watch } from 'vue'
@@ -976,20 +855,16 @@ const selectedCollectionIdForReceipt = ref(null)
 const selectedPaymentItem = ref(null)
 const selectedQRDetail = ref(null)
 const selectedContributionId = ref(null)
-const qrToDelete = ref(null)
 const collectionToDelete = ref(null)
-const selectedCollectionIdForEdit = ref(null)
 const fundEditData = ref({})
-const currentIndex = ref(0)
 const isInitialLoading = ref(true)
 const fileInput = ref(null)
 const previewImage = ref(null)
 const fundOverview = ref(null)
+const mainQrCode = ref(null)
 
-// Add New QR Form State
-const selectedCollectionId = ref('')
+// Main QR Form State
 const newQRDescription = ref('')
-const applyToOtherClubs = ref(false)
 const selectedFile = ref(null)
 const isSubmittingQR = ref(false)
 const transactions = ref([])
@@ -1003,17 +878,6 @@ const openCreateFundModal = () => {
     showCreateFundModal.value = true
 }
 
-const onAmountInput = (event) => {
-    // Remove all non-numeric characters
-    let value = event.target.value.replace(/\D/g, '')
-
-    // Format with dots
-    if (value) {
-        value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ".")
-    }
-
-    newQRAmount.value = value
-}
 
 const searchQuery = ref('')
 const currentPage = ref(1)
@@ -1027,10 +891,6 @@ const fundCollectionLastPage = ref(1)
 const isFundCollectionLoadingMore = ref(false)
 const showCollectionDropdown = ref(false)
 const myTransactions = ref([])
-
-const selectedCollection = computed(() => {
-    return fundCollections.value.find(c => c.id === selectedCollectionId.value) || null
-})
 
 const allCollections = computed(() => {
     let collections = []
@@ -1141,22 +1001,26 @@ const hasAnyRole = (roles = []) => {
     return roles.includes(currentUserMember.value?.role)
 }
 
-const qrList = ref([])
-
-const nextQR = () => {
-    if (currentIndex.value < qrList.value.length - 1) {
-        currentIndex.value++
-    }
-}
-
-const prevQR = () => {
-    if (currentIndex.value > 0) {
-        currentIndex.value--
-    }
-}
-
 const goBack = () => {
     router.back()
+}
+
+const downloadQrCode = async () => {
+    if (!mainQrCode.value?.qr_code_url) return
+    try {
+        const response = await fetch(mainQrCode.value.qr_code_url)
+        const blob = await response.blob()
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = 'qr-code-clb.png'
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+    } catch (e) {
+        toast.error('Không thể tải mã QR. Vui lòng thử lại.')
+    }
 }
 
 const getClubDetail = async () => {
@@ -1180,49 +1044,44 @@ const getFundOverview = async () => {
 const getlistQrCodes = async () => {
     try {
         const response = await ClubService.listQrCodes(clubId.value)
-        qrList.value = response.data?.qr_codes
+        mainQrCode.value = response.data || null
     } catch (error) {
-        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi lấy danh sách mã QR')
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi lấy mã QR chung')
     }
 }
 
-const createQrCode = async (data) => {
+const createQrCode = async () => {
     try {
         isSubmittingQR.value = true
         const formData = new FormData();
-        formData.append('content', data.content);
-        formData.append('collection_id', data.collection_id);
-        formData.append('image', data.image);
-        formData.append('apply_to_other_clubs', data.apply_to_other_clubs ? 1 : 0);
+        formData.append('qr_note', newQRDescription.value);
+        if (selectedFile.value) {
+            formData.append('image', selectedFile.value);
+        }
+        
         const response = await ClubService.createQrCode(clubId.value, formData)
-        toast.success(response.message || 'Tạo mã QR thành công')
+        toast.success(response.message || 'Cập nhật mã QR chung thành công')
         
         // Reset form
-        selectedCollectionId.value = ''
         newQRDescription.value = ''
-        applyToOtherClubs.value = false
         removePreview()
         
         // Refresh list
         await getlistQrCodes()
     } catch (error) {
-        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi tạo mã QR')
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật mã QR')
     } finally {
         isSubmittingQR.value = false
     }
 }
 
-const deleteQrCode = async (qrCodeId) => {
+const deleteQrCode = async () => {
     try {
         isSubmittingQR.value = true
-        const response = await ClubService.deleteQrCode(clubId.value, qrCodeId)
-        toast.success(response.message || 'Xóa mã QR thành công')
+        const response = await ClubService.destroyMainQrCode(clubId.value)
+        toast.success(response.message || 'Xóa mã QR chung thành công')
+        mainQrCode.value = null
         await getlistQrCodes()
-        
-        // Adjust currentIndex if necessary
-        if (currentIndex.value >= qrList.value.length && currentIndex.value > 0) {
-            currentIndex.value = qrList.value.length - 1
-        }
     } catch (error) {
         toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi xóa mã QR')
     } finally {
@@ -1230,8 +1089,7 @@ const deleteQrCode = async (qrCodeId) => {
     }
 }
 
-const confirmDeleteQR = (qrId) => {
-    qrToDelete.value = qrId
+const confirmDeleteQR = () => {
     showDeleteQRModal.value = true
 }
 
@@ -1261,34 +1119,23 @@ const handleViewDetail = (item) => {
     showCollectionDetailModal.value = true
 }
 
-const handlePayNow = (item) => {
-    // Try matching by URL first, then by ID
-    const qrIndex = qrList.value.findIndex(qr => 
-        (qr.qr_code_url && qr.qr_code_url === item.qr_code_url) || 
-        (Number(qr.id) === Number(item.id)) ||
-        (Number(qr.collection_id) === Number(item.id)) // Fallback if item.id is actually collection.id
-    )
+const handlePayNow = async (item) => {
+    selectedPaymentItem.value = item
     
-    let qr = null
-    if (qrIndex !== -1) {
-        qr = qrList.value[qrIndex]
+    try {
+        const response = await ClubService.getQrCode(clubId.value, item.id)
+        selectedQRDetail.value = response.data || {}
+    } catch (e) {
+        toast.error('Không tải được thông tin QR. Vui lòng thử lại.')
+        return
     }
 
-    selectedPaymentItem.value = item
-    selectedQRDetail.value = qr || {}
-    selectedCollectionIdForReceipt.value = item.id || (qr && qr.collection_id) || ''
+    selectedCollectionIdForReceipt.value = item.id
     showSubmitReceiptModal.value = true
 }
 
-const handleOpenReceiptModal = (qr) => {
-    if (!qr || (!qr.collection_id && !qr.id)) {
-        toast.error('Mã QR này chưa được gắn với đợt thu nào')
-        return
-    }
-    selectedCollectionIdForReceipt.value = qr.collection_id || qr.id
-    selectedQRDetail.value = qr
-    selectedPaymentItem.value = null
-    showSubmitReceiptModal.value = true
+const handleOpenReceiptModal = async () => {
+    // Only used conceptually, no longer an action from the MÃ QR HIỆN CÓ list as it is just 1 global QR now.
 }
 
 const handleReceiptSuccess = async () => {
@@ -1299,32 +1146,16 @@ const handleReceiptSuccess = async () => {
 }
 
 const handleConfirmDelete = async () => {
-    if (qrToDelete.value) {
-        await deleteQrCode(qrToDelete.value)
-        qrToDelete.value = null
-    }
+    await deleteQrCode()
 }
 
 const handleSaveQRCode = async () => {
-    if (!selectedFile.value) {
-        toast.error('Vui lòng chọn ảnh mã QR')
-        return
-    }
-    if (!selectedCollectionId.value) {
-        toast.error('Vui lòng chọn khoản thu')
-        return
-    }
-    if (!newQRDescription.value) {
-        toast.error('Vui lòng nhập nội dung')
+    if (!selectedFile.value && !mainQrCode.value?.qr_code_url && !newQRDescription.value) {
+        toast.error('Vui lòng chọn ảnh hoặc nhập nội dung mã QR')
         return
     }
 
-    await createQrCode({
-        content: newQRDescription.value,
-        collection_id: selectedCollectionId.value,
-        image: selectedFile.value,
-        apply_to_other_clubs: applyToOtherClubs.value
-    })
+    await createQrCode()
 }
 
 const handleSubmitFundRevenue = async (data) => {
@@ -1336,13 +1167,18 @@ const handleSubmitFundRevenue = async (data) => {
     formData.append('start_date', data.start_date);
     formData.append('deadline', data.deadline);
     formData.append('end_date', data.end_date);
+    formData.append('included_in_club_fund', data.included_in_club_fund ?? 1);
     
     if (Array.isArray(data.member_ids)) {
         data.member_ids.forEach(id => {
             formData.append('member_ids[]', id);
         });
     }
-    formData.append('qr_image', data.qr_image);
+
+    // Only attach qr_image when the collection has its own QR (not using main club QR)
+    if (!data.included_in_club_fund && data.qr_image) {
+        formData.append('qr_image', data.qr_image);
+    }
 
     try {
         const response = await ClubService.createdFundRevenue(clubId.value, formData)
@@ -1396,33 +1232,6 @@ const handleSubmitFundExpenses = async (data) => {
     } catch (error) {
         toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi tạo khoản chi')
     }
-}
-
-const toggleCollectionDropdown = () => {
-    showCollectionDropdown.value = !showCollectionDropdown.value
-    if (showCollectionDropdown.value && fundCollections.value.length === 0) {
-        fundCollectionPage.value = 1
-        getFundCollection()
-    }
-}
-
-const selectCollection = (collection) => {
-    selectedCollectionId.value = collection.id
-    showCollectionDropdown.value = false
-}
-
-const handleCollectionScroll = (e) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.target
-    if (scrollTop + clientHeight >= scrollHeight - 20) {
-        loadMoreCollections()
-    }
-}
-
-const loadMoreCollections = async () => {
-    if (isFundCollectionLoadingMore.value || fundCollectionPage.value >= fundCollectionLastPage.value) return
-    
-    fundCollectionPage.value++
-    await getFundCollection(true)
 }
 
 const getAllTransaction = async () => {
