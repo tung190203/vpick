@@ -75,9 +75,21 @@
                                 </div>
                             </div>
 
+                            <!-- Included in Club Fund Toggle -->
+                            <div class="flex items-center justify-between bg-[#F8FAFC] rounded-xl p-4 border border-[#F2F3F5] flex-shrink-0">
+                                <div>
+                                    <p class="text-[13px] font-bold text-[#1F2937]">Quỹ chung CLB</p>
+                                    <p class="text-[11px] text-[#838799] mt-0.5">Dùng chung mã QR ví CLB</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" v-model="includedInClubFund" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#D72D36]"></div>
+                                </label>
+                            </div>
+
                             <!-- QR Code Upload Section -->
-                            <div class="space-y-3 flex-shrink-0">
-                                <label class="block text-[11px] font-bold text-[#838799] uppercase tracking-wider">ẢNH QR CHUYỂN KHOẢN</label>
+                            <div class="space-y-3 flex-shrink-0" v-if="!includedInClubFund">
+                                <label class="block text-[11px] font-bold text-[#838799] uppercase tracking-wider">ẢNH QR CHUYỂN KHOẢN (TÙY CHỌN)</label>
                                 
                                 <div 
                                     @click="triggerFileInput"
@@ -236,6 +248,7 @@ const isDragging = ref(false)
 const fileInput = ref(null)
 const showCropper = ref(false)
 const cropImageSrc = ref(null)
+const includedInClubFund = ref(true)
 
 watch(() => props.isOpen, (newVal) => {
     if (newVal && props.initialData) {
@@ -376,6 +389,7 @@ const submitCreateFund = () => {
         end_date: deadlineDate ? deadlineDate.format('YYYY-MM-DD') : null,
         member_ids: selectedMemberIds.value,
         qr_image: qrImageFile.value,
+        included_in_club_fund: includedInClubFund.value ? 1 : 0
     })
     close()
     resetForm()
@@ -388,6 +402,7 @@ const resetForm = () => {
     selectedMemberIds.value = []
     qrImageFile.value = null
     qrCodePreview.value = null
+    includedInClubFund.value = true
 }
 </script>
 
