@@ -265,7 +265,11 @@ class ClubActivityService
 
         $orderDirection = $isHistoryOnly ? 'desc' : 'asc';
 
-        if ($userId) {
+        // Custom sort: completed first, then by date (newest first)
+        if ($isHistoryOnly) {
+            $query->orderByRaw("CASE club_activities.status WHEN 'completed' THEN 1 WHEN 'cancelled' THEN 2 ELSE 3 END")
+                ->orderBy('start_time', 'desc');
+        } elseif ($userId) {
             $query->selectRaw('club_activities.*, EXISTS(
                 SELECT 1 FROM club_activity_participants
                 WHERE club_activity_participants.club_activity_id = club_activities.id
