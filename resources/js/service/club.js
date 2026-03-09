@@ -222,6 +222,14 @@ export const createQrCode = async (clubId, data) => {
     return axiosInstance.post(`${API_ENDPOINT.CLUB}/${clubId}/fund-collections/qr-codes`, data).then((response) => response.data);
 }
 
+export const destroyMainQrCode = async (clubId) => {
+    return axiosInstance.delete(`${API_ENDPOINT.CLUB}/${clubId}/fund-collections/qr-codes/main`).then((response) => response.data);
+}
+
+export const getQrCode = async (clubId, collectionId) => {
+    return axiosInstance.get(`${API_ENDPOINT.CLUB}/${clubId}/fund-collections/${collectionId}/qr-code`).then((response) => response.data);
+}
+
 export const deleteQrCode = async (clubId, qrCodeId) => {
     return axiosInstance.delete(`${API_ENDPOINT.CLUB}/${clubId}/fund-collections/qr-codes/${qrCodeId}`).then((response) => response.data);
 }
