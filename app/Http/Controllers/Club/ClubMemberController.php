@@ -58,7 +58,9 @@ class ClubMemberController extends Controller
 
             return ResponseHelper::success(
                 new ClubMemberResource($member),
-                'Đã gửi lời mời tham gia CLB, chờ user đồng ý',
+                $member->status->value === \App\Enums\ClubMemberStatus::Active->value
+                    ? 'Đã thêm thành viên vào CLB thành công'
+                    : 'Đã gửi lời mời tham gia CLB, chờ user đồng ý',
                 201
             );
         } catch (\Exception $e) {
