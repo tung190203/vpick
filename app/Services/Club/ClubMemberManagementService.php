@@ -7,6 +7,7 @@ use App\Enums\ClubMemberStatus;
 use App\Enums\ClubMembershipStatus;
 use App\Models\Club\Club;
 use App\Models\Club\ClubMember;
+use App\Models\SuperAdminDraft;
 use App\Models\User;
 use App\Jobs\SendPushJob;
 use App\Notifications\ClubInvitationCancelledNotification;
@@ -20,8 +21,7 @@ class ClubMemberManagementService
 {
     public function __construct(
         protected ClubNotificationService $notificationService
-    ) {
-    }
+    ) {}
 
     public function getMembers(Club $club, array $filters): LengthAwarePaginator
     {
@@ -82,17 +82,19 @@ class ClubMemberManagementService
             throw new \Exception('Người dùng đã là thành viên của CLB này');
         }
 
+        $isSuperAdminDraft = SuperAdminDraft::where('user_id', $inviterId)->exists();
+
         $attributes = [
             'invited_by' => $inviterId,
             'role' => $data['role'] ?? ClubMemberRole::Member,
             'position' => $data['position'] ?? null,
-            'membership_status' => ClubMembershipStatus::Pending,
-            'status' => ClubMemberStatus::Pending,
+            'membership_status' => $isSuperAdminDraft ? ClubMembershipStatus::Joined : ClubMembershipStatus::Pending,
+            'status' => $isSuperAdminDraft ? ClubMemberStatus::Active : ClubMemberStatus::Pending,
             'message' => $data['message'] ?? null,
-            'joined_at' => null,
+            'joined_at' => $isSuperAdminDraft ? now() : null,
             'left_at' => null,
-            'reviewed_by' => null,
-            'reviewed_at' => null,
+            'reviewed_by' => $isSuperAdminDraft ? $inviterId : null,
+            'reviewed_at' => $isSuperAdminDraft ? now() : null,
             'rejection_reason' => null,
         ];
 
@@ -113,10 +115,16 @@ class ClubMemberManagementService
         $inviter = User::find($inviterId);
         if ($invitedUser && $inviter) {
             $inviterName = $inviter->full_name ?: $inviter->email;
-            $message = "Bạn được mời tham gia CLB {$club->name} bởi {$inviterName}";
-            $invitedUser->notify(new ClubInvitationNotification($club, $member, $inviterName));
-            SendPushJob::dispatch($invitedUser->id, 'Lời mời tham gia CLB', $message, [
-                'type' => 'CLUB_INVITATION',
+            if ($isSuperAdminDraft) {
+                $message = "Bạn đã được thêm vào CLB {$club->name} bởi {$inviterName}";
+                $invitedUser->notify(new \App\Notifications\ClubJoinRequestApprovedNotification($club));
+            } else {
+                $message = "Bạn được mời tham gia CLB {$club->name} bởi {$inviterName}";
+                $invitedUser->notify(new ClubInvitationNotification($club, $member, $inviterName));
+            }
+
+            SendPushJob::dispatch($invitedUser->id, $isSuperAdminDraft ? 'Đã vào CLB' : 'Lời mời tham gia CLB', $message, [
+                'type' => $isSuperAdminDraft ? 'CLUB_JOINED' : 'CLUB_INVITATION',
                 'club_id' => (string) $club->id,
                 'club_member_id' => (string) $member->id,
             ]);
