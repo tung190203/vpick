@@ -114,7 +114,7 @@ class MetaPreviewController extends Controller
             ? (str_starts_with($activity->qr_code_url, 'http') ? $activity->qr_code_url : asset('storage/' . $activity->qr_code_url))
             : ($club?->logo_url ?? asset('favicon.png'));
         $image = $this->absoluteUrl($imageUrl);
-        $url = $this->canonicalUrl($request, "/clubs/{$clubId}/edit-activity/{$activityId}");
+        $url = $this->canonicalUrl($request, "/clubs/{$clubId}/activity/{$activityId}");
 
         return view('meta.club-activity', compact('title', 'description', 'image', 'url'));
     }
