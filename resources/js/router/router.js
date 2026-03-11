@@ -241,7 +241,7 @@ export const route = [
             component: ClubFundPage,
           },
           {
-            path: ':id/activity/:activityId',
+            path: ':id/activities/:activityId',
             name: 'club-detail-activity',
             component: ClubDetailActivityPage,
           },
