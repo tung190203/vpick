@@ -400,6 +400,57 @@ class MiniTournament extends Model
             ->withTimestamps();
     }
 
+    /**
+     * Get payments for this tournament
+     */
+    public function participantPayments()
+    {
+        return $this->hasMany(MiniParticipantPayment::class);
+    }
+
+    /**
+     * Get pending payments for this tournament
+     */
+    public function pendingPayments()
+    {
+        return $this->hasMany(MiniParticipantPayment::class)->where('status', MiniParticipantPayment::STATUS_PENDING);
+    }
+
+    /**
+     * Get paid payments awaiting confirmation
+     */
+    public function awaitingConfirmationPayments()
+    {
+        return $this->hasMany(MiniParticipantPayment::class)->where('status', MiniParticipantPayment::STATUS_PAID);
+    }
+
+    /**
+     * Get confirmed payments
+     */
+    public function confirmedPayments()
+    {
+        return $this->hasMany(MiniParticipantPayment::class)->where('status', MiniParticipantPayment::STATUS_CONFIRMED);
+    }
+
+    /**
+     * Get payment summary for this tournament
+     */
+    public function getPaymentSummaryAttribute(): array
+    {
+        $participantCount = $this->participants()->count();
+        
+        return [
+            'total_expected' => $this->has_fee ? ($this->auto_split_court_fee ? 
+                ($this->fee_amount * $participantCount) : 
+                ($this->fee_amount * $participantCount)) : 0,
+            'total_collected' => $this->confirmedPayments()->sum('amount'),
+            'total_pending' => $this->pendingPayments()->count(),
+            'total_awaiting_confirmation' => $this->awaitingConfirmationPayments()->count(),
+            'participant_count' => $participantCount,
+            'paid_participant_count' => $this->confirmedPayments()->count(),
+        ];
+    }
+
 
     public function scopeWithFullRelations($query)
     {
