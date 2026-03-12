@@ -26,7 +26,6 @@ class MiniTournamentTemplateController extends Controller
 
     /**
      * Lưu kèo mẫu mới.
-     * FE gửi toàn bộ payload tạo kèo (trừ poster/file) vào field "settings".
      */
     public function store(Request $request)
     {
