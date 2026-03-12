@@ -220,12 +220,12 @@ class HomeController extends Controller
     
         // Lấy upcoming mini tournaments
         $upcomingMiniTournaments = MiniTournament::withFullRelations()
-            ->whereDate('starts_at', '>=', $nowVN)
+            ->whereDate('start_time', '>=', $nowVN)
             ->where(function ($query) use ($userId) {
                 $query->whereHas('participants', fn($p) => $p->where('user_id', $userId))
                       ->orWhereHas('staff', fn($s) => $s->where('user_id', $userId));
             })
-            ->orderBy('starts_at', 'asc')
+            ->orderBy('start_time', 'asc')
             ->take($validated['mini_tournament_per_page'] ?? MiniTournament::PER_PAGE)
             ->get();
     

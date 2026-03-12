@@ -47,7 +47,7 @@ class MapController extends Controller
         $today = now()->toDateString();
 
         $miniTournamentQuery = MiniTournament::withFullRelations()
-            ->whereDate('starts_at', '>=', $today)
+            ->whereDate('start_time', '>=', $today)
             ->filter($validated);
 
         $tournamentQuery = Tournament::withFullRelations()

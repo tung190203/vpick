@@ -47,7 +47,7 @@ class MiniTournamentPaymentController extends Controller
         // Tính số tiền mỗi người phải đóng
         $feePerPerson = 0;
         if ($miniTournament->has_fee) {
-            if ($miniTournament->auto_split_court_fee) {
+            if ($miniTournament->auto_split_fee) {
                 // Chia tự động: tổng tiền / số người hiện tại
                 $feePerPerson = $participantCount > 0 ? round($miniTournament->fee_amount / $participantCount) : 0;
             } else {
@@ -60,11 +60,11 @@ class MiniTournamentPaymentController extends Controller
             'tournament' => new MiniTournamentResource($miniTournament),
             'payment_config' => [
                 'has_fee' => $miniTournament->has_fee,
-                'auto_split_court_fee' => $miniTournament->auto_split_court_fee,
+                'auto_split_fee' => $miniTournament->auto_split_fee,
                 'fee_amount' => $miniTournament->fee_amount,
                 'fee_per_person' => $feePerPerson,
-                'payment_note' => $miniTournament->payment_note,
-                'qr_code_image' => $miniTournament->qr_code_image,
+                'fee_description' => $miniTournament->fee_description,
+                'qr_code_url' => $miniTournament->qr_code_url,
                 'payment_account_id' => $miniTournament->payment_account_id,
             ],
             'summary' => [
@@ -122,7 +122,7 @@ class MiniTournamentPaymentController extends Controller
         $participantCount = $miniTournament->participants()->count();
         $feePerPerson = 0;
         
-        if ($miniTournament->auto_split_court_fee) {
+        if ($miniTournament->auto_split_fee) {
             // Chia tự động: tổng tiền / số người
             $feePerPerson = $participantCount > 0 ? round($miniTournament->fee_amount / $participantCount) : 0;
         } else {
@@ -262,7 +262,7 @@ class MiniTournamentPaymentController extends Controller
      * Nhắc thành viên đóng phí
      * API: POST /api/mini-tournaments/{id}/payments/remind/{participantId}
      */
-(Request $request, $miniTournamentId, $participantId)
+    public function remind(Request $request, $miniTournamentId, $participantId)
     {
         $miniTournament = MiniTournament::findOrFail($miniTournamentId);
 
@@ -374,7 +374,7 @@ class MiniTournamentPaymentController extends Controller
         $feePerPerson = 0;
         if ($miniTournament->has_fee) {
             $participantCount = $miniTournament->participants()->count();
-            if ($miniTournament->auto_split_court_fee) {
+            if ($miniTournament->auto_split_fee) {
                 $feePerPerson = $participantCount > 0 ? round($miniTournament->fee_amount / $participantCount) : 0;
             } else {
                 $feePerPerson = $miniTournament->fee_amount;
@@ -385,8 +385,8 @@ class MiniTournamentPaymentController extends Controller
             'participant_id' => $participant->id,
             'has_fee' => $miniTournament->has_fee,
             'fee_per_person' => $feePerPerson,
-            'qr_code_image' => $miniTournament->qr_code_image,
-            'payment_note' => $miniTournament->payment_note,
+            'qr_code_url' => $miniTournament->qr_code_url,
+            'fee_description' => $miniTournament->fee_description,
             'payment' => $payment ? new MiniParticipantPaymentResource($payment) : null,
         ];
 

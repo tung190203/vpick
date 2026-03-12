@@ -23,54 +23,56 @@ class MiniTournamentResource extends JsonResource
             'sport' => new SportResource($this->whenLoaded('sport')),
             'name' => $this->name,
             'description' => $this->description,
-            'match_type' => $this->match_type,
-            'match_type_text' => $this->match_type_text,
             'play_mode' => $this->play_mode,
             'play_mode_text' => $this->play_mode_text,
             'format' => $this->format,
             'format_text' => $this->format_text,
-            'starts_at' => $this->starts_at,
-            'duration_minutes' => $this->duration_minutes,
+            
+            // Updated time fields
+            'start_time' => $this->start_time,
+            'end_time' => $this->end_time,
+            'duration' => $this->duration,
+            
             'competition_location' => new CompetitionLocationResource($this->whenLoaded('competitionLocation')),
             'is_private' => $this->is_private,
-            'fee' => $this->fee,
-            'age_group' => $this->age_group,
-            'age_group_text' => $this->age_group_text,
-            'prize_pool' => $this->prize_pool,
-            'fee_amount' => $this->fee_amount,
-            'max_players' => $this->max_players,
             
-            // New fee fields
+            // Updated fee fields
             'has_fee' => $this->has_fee,
-            'auto_split_court_fee' => $this->auto_split_court_fee,
-            'payment_note' => $this->payment_note,
-            'qr_code_image' => $this->qr_code_image,
+            'auto_split_fee' => $this->auto_split_fee,
+            'fee_amount' => $this->fee_amount,
+            'fee_description' => $this->fee_description,
+            'qr_code_url' => $this->qr_code_url,
             'payment_account_id' => $this->payment_account_id,
             // Computed fee properties
             'fee_per_person' => $this->fee_per_person,
             'total_fee_expected' => $this->total_fee_expected,
             
-            'enable_dupr' => $this->enable_dupr,
-            'enable_vndupr' => $this->enable_vndupr,
+            'max_players' => $this->max_players,
+            
+            // Rating
             'min_rating' => $this->min_rating,
             'max_rating' => $this->max_rating,
+            
+            // Game rules
             'set_number' => $this->set_number,
-            'games_per_set' => $this->games_per_set,
+            'base_points' => $this->base_points,
             'points_difference' => $this->points_difference,
             'max_points' => $this->max_points,
-            'court_switch_points' => $this->court_switch_points,
-            'gender_policy' => $this->gender_policy,
-            'gender_policy_text' => $this->gender_policy_text,
-            'repeat_type' => $this->repeat_type,
-            'repeat_type_text' => $this->repeat_type_text,
-            'role_type' => $this->role_type,
-            'role_type_text' => $this->role_type_text,
-            'lock_cancellation' => $this->lock_cancellation,
+            
+            // Gender (replaced gender_policy)
+            'gender' => $this->gender,
+            'gender_text' => $this->gender_text,
+            
+            // Updated new fields
+            'apply_rule' => $this->apply_rule,
+            'allow_cancellation' => $this->allow_cancellation,
+            'cancellation_duration' => $this->cancellation_duration,
             'auto_approve' => $this->auto_approve,
             'allow_participant_add_friends' => $this->allow_participant_add_friends,
-            'send_notification' => $this->send_notification,
+            
             'status' => $this->status,
             'status_text' => $this->status_text,
+            
             'staff' => $this->whenLoaded('staff', function () {
                 return $this->staff
                     ->groupBy(fn($staff) => MiniTournamentStaff::getRoleText( $staff->pivot->role))
@@ -78,6 +80,9 @@ class MiniTournamentResource extends JsonResource
             }),
             'participants' => MiniParticipantResource::collection($participants),
             'all_users' => UserListResource::collection($this->all_users ?? collect()),
+            
+            // Recurring schedule
+            'recurring_schedule' => new MiniRecurringScheduleResource($this->whenLoaded('recurringSchedule')),
         ];
     }
 }
