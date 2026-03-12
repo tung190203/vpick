@@ -14,6 +14,7 @@ use App\Notifications\MiniTournamentCreatorInvitationNotification;
 use App\Notifications\MiniTournamentJoinConfirmedNotification;
 use App\Notifications\MiniTournamentJoinRequestNotification;
 use App\Notifications\MiniTournamentRemovedNotification;
+use App\Notifications\MiniTournamentInvitationNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -112,7 +113,7 @@ class MiniParticipantController extends Controller
                     'participant_id' => $participant->id,
                 ]
             );
-        }        
+        }
 
         return ResponseHelper::success(
             new MiniParticipantResource($participant->loadFullRelations()),
@@ -153,14 +154,14 @@ class MiniParticipantController extends Controller
             'is_confirmed' => $isSuperAdmin,
             'invited_by' => Auth::id(),
         ]);
-    
+
         $user = User::find($validated['user_id']);
-    
+
         // 📩 Notification DB
         $user->notify(
             new MiniTournamentCreatorInvitationNotification($participant)
         );
-    
+
         // 🔔 PUSH Notification
         $this->pushToUsers(
             [$user->id],
@@ -172,7 +173,7 @@ class MiniParticipantController extends Controller
                 'participant_id' => $participant->id,
             ]
         );
-    
+
         return ResponseHelper::success(
             new MiniParticipantResource($participant->loadFullRelations()),
             'Đã gửi lời mời',
@@ -348,6 +349,96 @@ class MiniParticipantController extends Controller
     }
 
     /**
+     * Participant mời bạn bè tham gia mini tournament
+     */
+    public function inviteFriends(Request $request, $tournamentId)
+    {
+        $miniTournament = MiniTournament::with('staff')->findOrFail($tournamentId);
+
+        // Check if allow_participant_add_friends is enabled
+        if (!$miniTournament->allow_participant_add_friends) {
+            return ResponseHelper::error('Tính năng mời bạn bè không được bật cho kèo đấu này', 403);
+        }
+
+        // Check if current user is a confirmed participant
+        $participant = $miniTournament->participants()
+            ->where('user_id', Auth::id())
+            ->where('is_confirmed', true)
+            ->first();
+
+        if (!$participant) {
+            return ResponseHelper::error('Bạn phải là thành viên được duyệt của kèo đấu để mời bạn bè', 403);
+        }
+
+        $validated = $request->validate([
+            'user_ids' => 'required|array',
+            'user_ids.*' => 'exists:users,id',
+        ]);
+
+        $invitedCount = 0;
+        $errors = [];
+
+        foreach ($validated['user_ids'] as $userId) {
+            try {
+                // Check if user already exists
+                $exists = $miniTournament->participants()
+                    ->where('user_id', $userId)
+                    ->exists();
+
+                if ($exists) {
+                    $errors[] = "User ID {$userId} đã tham gia hoặc được mời";
+                    continue;
+                }
+
+                // Check max players
+                $this->checkMaxPlayers($miniTournament);
+
+                // Create new participant
+                $newParticipant = $miniTournament->participants()->create([
+                    'user_id' => $userId,
+                    'is_confirmed' => $miniTournament->auto_approve && !$miniTournament->is_private,
+                    'invited_by' => Auth::id(),
+                ]);
+
+                // Send notification
+                $user = User::find($userId);
+                if ($user) {
+                    $user->notify(new MiniTournamentInvitationNotification($miniTournament));
+                    $this->pushToUsers(
+                        [$userId],
+                        'Lời mời tham gia kèo đấu',
+                        auth()->user()->full_name . ' mời bạn tham gia kèo đấu "' . $miniTournament->name . '"',
+                        [
+                            'type' => 'MINI_TOURNAMENT_INVITED',
+                            'mini_tournament_id' => $miniTournament->id,
+                            'participant_id' => $newParticipant->id,
+                        ]
+                    );
+                }
+
+                $invitedCount++;
+            } catch (\Exception $e) {
+                $errors[] = "Lỗi khi mời user {$userId}: " . $e->getMessage();
+            }
+        }
+
+        $message = "Đã mời {$invitedCount} bạn bè tham gia kèo đấu";
+        if (!empty($errors)) {
+            return ResponseHelper::success(
+                ['invited_count' => $invitedCount, 'errors' => $errors],
+                $message . ' (có lỗi)',
+                200
+            );
+        }
+
+        return ResponseHelper::success(
+            ['invited_count' => $invitedCount],
+            $message,
+            200
+        );
+    }
+
+    /**
      * =====================
      * Helpers
      * =====================
@@ -371,7 +462,7 @@ class MiniParticipantController extends Controller
     {
         $miniTournament = MiniTournament::withFullRelations()->findOrFail($tournamentId);
         $user = Auth::user();
-    
+
         $validated = $request->validate([
             'scope' => 'required|in:club,friends,area,all',
             'club_id' => 'required_if:scope,club|exists:clubs,id',
@@ -381,17 +472,17 @@ class MiniParticipantController extends Controller
             'lng' => 'required_if:scope,area|numeric',
             'radius' => 'required_if:scope,area|numeric|min:0.1|max:200',
         ]);
-    
+
         $perPage = $validated['per_page'] ?? 20;
         $scope = $validated['scope'];
-    
+
         // 🧮 Tính mid level cho sorting (nếu mini tournament có min/max level)
         $midLevel = null;
-        if (isset($miniTournament->min_level) && isset($miniTournament->max_level) 
+        if (isset($miniTournament->min_level) && isset($miniTournament->max_level)
             && $miniTournament->min_level !== null && $miniTournament->max_level !== null) {
             $midLevel = (float)(($miniTournament->min_level + $miniTournament->max_level) / 2);
         }
-    
+
         // 🎯 Tùy theo phạm vi (scope)
         switch ($scope) {
             case 'club':
@@ -445,12 +536,12 @@ class MiniParticipantController extends Controller
                         $lat
                     ]);
                 break;
-                
+
             case 'all':
                 $query = User::withFullRelations();
                 break;
         }
-    
+
         // 🔐 Visibility filter (trừ scope 'all')
         if ($scope !== 'all') {
             $query->whereIn('users.visibility', [
@@ -460,7 +551,7 @@ class MiniParticipantController extends Controller
         } else {
             $query->whereIn('users.visibility', [User::VISIBILITY_PUBLIC]);
         }
-    
+
         // ⚽ Filter theo setting của giải (chỉ áp dụng khi scope !== 'all')
         if ($scope !== 'all') {
             // 1. Có môn thể thao phù hợp (nếu mini tournament có sport_id)
@@ -469,30 +560,30 @@ class MiniParticipantController extends Controller
                     $q->where('sport_id', $miniTournament->sport_id);
                 });
             }
-    
+
             // 2. Tuổi (nếu mini tournament có age_group)
             if (isset($miniTournament->age_group)) {
                 $query->tap(fn ($q) => $this->filterByAge($q, $miniTournament->age_group));
             }
-    
+
             // 3. Giới tính (nếu mini tournament có gender_policy)
             if (isset($miniTournament->gender_policy)) {
                 $query->tap(fn ($q) => $this->filterByGender($q, $miniTournament->gender_policy));
             }
         }
-    
+
         // 4. Loại trừ người có ĐỒNG THỜI trong cả participant VÀ staff (áp dụng cho tất cả scope)
         $participantUserIds = $miniTournament->participants->pluck('user_id')->toArray();
         $staffUserIds = $miniTournament->miniTournamentStaffs->pluck('user_id')->toArray();
-        
+
         // Lấy những user có trong CẢ 2 mảng (giao của 2 tập hợp)
         $excludedUserIds = array_intersect($participantUserIds, $staffUserIds);
-        
+
         // Loại trừ những user có trong cả 2 bảng
         if (!empty($excludedUserIds)) {
             $query->whereNotIn('users.id', $excludedUserIds);
         }
-    
+
         // 5. Join để lấy level + filter level (chỉ khi scope !== 'all' và có sport_id)
         if ($scope !== 'all' && isset($miniTournament->sport_id)) {
             $query->leftJoin('user_sport', function ($join) use ($miniTournament) {
@@ -503,7 +594,7 @@ class MiniParticipantController extends Controller
                 $join->on('user_sport.id', '=', 'user_sport_scores.user_sport_id')
                     ->where('user_sport_scores.score_type', 'vndupr_score');
             });
-    
+
             // 6. Filter level
             if (isset($miniTournament->min_level)) {
                 $query->where('user_sport_scores.score_value', '>=', $miniTournament->min_level);
@@ -512,14 +603,14 @@ class MiniParticipantController extends Controller
                 $query->where('user_sport_scores.score_value', '<=', $miniTournament->max_level);
             }
         }
-    
+
         // 7. Select + Sort
         if ($scope !== 'all') {
             $query->select('users.*');
-            
+
             if (isset($miniTournament->sport_id)) {
                 $query->selectRaw('user_sport_scores.score_value as level');
-                
+
                 if ($midLevel !== null) {
                     $query->selectRaw(
                         'ABS(user_sport_scores.score_value - ?) as level_diff',
@@ -527,7 +618,7 @@ class MiniParticipantController extends Controller
                     );
                 }
             }
-            
+
             if (isset($miniTournament->location_id)) {
                 $query->selectRaw(
                     'CASE WHEN users.location_id = ? THEN 1 ELSE 0 END as same_location',
@@ -535,19 +626,19 @@ class MiniParticipantController extends Controller
                 )
                 ->orderByDesc('same_location');
             }
-            
+
             if ($midLevel !== null) {
                 $query->orderBy('level_diff');
             }
         } else {
             $query->select('users.*');
         }
-    
+
         // 🔍 Tìm kiếm tên người dùng (áp dụng cho tất cả scope)
         if (!empty($validated['search'])) {
             $query->where('users.full_name', 'like', '%' . $validated['search'] . '%');
         }
-    
+
         // 🧮 Phân trang
         $paginated = $query->paginate($perPage);
         $candidates = $paginated->getCollection()->map(function ($u) use ($user, $excludedUserIds) {
@@ -561,12 +652,12 @@ class MiniParticipantController extends Controller
                 'gender' => $u->gender,
                 'gender_text' => $u->gender_text,
                 'play_times' => [],
-        
+
                 'sports' => $u->sports->map(function ($userSport) {
                     $scores = $userSport->scores
                         ->pluck('score_value', 'score_type')
                         ->toArray();
-        
+
                     return [
                         'sport_id' => $userSport->sport_id,
                         'sport_icon' => $userSport->sport?->icon,
@@ -581,11 +672,11 @@ class MiniParticipantController extends Controller
                         'total_prizes'      => $userSport->total_prizes ?? 0,
                     ];
                 }),
-                'is_friend' => $user->isFriendWith($u),
+                'is_friend' => $user && $u && $user->isFriendWith($u),
                 'is_mini_participant' => in_array($u->id, $excludedUserIds),
             ];
         });
-    
+
         return ResponseHelper::success([
             'result' => $candidates,
         ], 'Danh sách ứng viên', 200, [
@@ -595,40 +686,40 @@ class MiniParticipantController extends Controller
             'total'        => $paginated->total(),
         ]);
     }
-    
+
     /**
      * Lọc theo độ tuổi
      */
     private function filterByAge($query, $ageGroup)
     {
         $today = Carbon::today();
-    
+
         switch ($ageGroup) {
             case MiniTournament::YOUTH: // Dưới 18
                 $minDate = $today->copy()->subYears(18);
                 $query->where('date_of_birth', '>', $minDate);
                 break;
-    
+
             case MiniTournament::ADULT: // 18-55
                 $minDate = $today->copy()->subYears(55);
                 $maxDate = $today->copy()->subYears(18);
                 $query->whereBetween('date_of_birth', [$minDate, $maxDate]);
                 break;
-    
+
             case MiniTournament::SENIOR: // Trên 55
                 $maxDate = $today->copy()->subYears(55);
                 $query->where('date_of_birth', '<', $maxDate);
                 break;
-    
+
             case MiniTournament::ALL_AGES:
             default:
                 // Không lọc
                 break;
         }
-    
+
         return $query;
     }
-    
+
     /**
      * Lọc theo giới tính
      */
@@ -640,7 +731,7 @@ class MiniParticipantController extends Controller
             $query->where('gender', MiniTournament::FEMALE);
         }
         // MIXED: không lọc
-    
+
         return $query;
     }
 

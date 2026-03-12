@@ -11,7 +11,9 @@ class MiniParticipant extends Model
     use HasFactory, Notifiable;
     protected $fillable = [
         'mini_tournament_id',
+        'type',
         'user_id',
+        'team_id',
         'is_confirmed',
     ];
 
@@ -35,5 +37,37 @@ class MiniParticipant extends Model
     public function scopeLoadFullRelations()
     {
         return $this->load('user.sports.scores', 'user.sports.sport');
+    }
+
+    /**
+     * Get payments for this participant
+     */
+    public function payments()
+    {
+        return $this->hasMany(MiniParticipantPayment::class);
+    }
+
+    /**
+     * Get pending payment for this participant
+     */
+    public function pendingPayment()
+    {
+        return $this->hasOne(MiniParticipantPayment::class)->where('status', MiniParticipantPayment::STATUS_PENDING);
+    }
+
+    /**
+     * Get paid payment for this participant
+     */
+    public function paidPayment()
+    {
+        return $this->hasOne(MiniParticipantPayment::class)->where('status', MiniParticipantPayment::STATUS_PAID);
+    }
+
+    /**
+     * Get confirmed payment for this participant
+     */
+    public function confirmedPayment()
+    {
+        return $this->hasOne(MiniParticipantPayment::class)->where('status', MiniParticipantPayment::STATUS_CONFIRMED);
     }
 }

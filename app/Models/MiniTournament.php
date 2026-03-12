@@ -17,78 +17,69 @@ class MiniTournament extends Model
         'sport_id',
         'name',
         'description',
-        'match_type',
-        'starts_at',
-        'duration_minutes',
+        'play_mode',
+        'format',
+        'start_time',
+        'end_time',
+        'duration',
         'competition_location_id',
         'is_private',
-        'fee',
+        'has_fee',
+        'auto_split_fee',
         'fee_amount',
-        'prize_pool',
-        'age_group',
+        'fee_description',
+        'qr_code_url',
+        'payment_account_id',
         'max_players',
-        'enable_dupr',
-        'enable_vndupr',
         'min_rating',
         'max_rating',
         'set_number',
-        'games_per_set',
+        'base_points',
         'points_difference',
         'max_points',
-        'court_switch_points',
-        'gender_policy',
-        'repeat_type',
-        'role_type',
-        'lock_cancellation',
+        'gender',
         'auto_approve',
         'allow_participant_add_friends',
-        'send_notification',
+        'allow_cancellation',
+        'cancellation_duration',
+        'apply_rule',
+        'recurring_schedule',
         'status',
     ];
 
     const PER_PAGE = 15;
 
-    const MATCH_TYPE_FRIENDLY = 1;
-    const MATCH_TYPE_SINGLE = 2;
-    const MATCH_TYPE_DOUBLE = 3;
-    const MATCH_TYPE_TRAINING = 4;
+    // Play Mode: 1=casual, 2=competition, 3=practice
+    const PLAY_MODE_CASUAL = 1;
+    const PLAY_MODE_COMPETITION = 2;
+    const PLAY_MODE_PRACTICE = 3;
+    const PLAY_MODE = [
+        self::PLAY_MODE_CASUAL,
+        self::PLAY_MODE_COMPETITION,
+        self::PLAY_MODE_PRACTICE,
+    ];
 
-    const MATCH_TYPE_NUMBER = [
-        self::MATCH_TYPE_FRIENDLY,
-        self::MATCH_TYPE_SINGLE,
-        self::MATCH_TYPE_DOUBLE,
-        self::MATCH_TYPE_TRAINING,
+    // Format: 1=single, 2=double, 3=mens_doubles, 4=womens_doubles, 5=mixed
+    const FORMAT_SINGLE = 1;
+    const FORMAT_DOUBLE = 2;
+    const FORMAT_MENS_DOUBLES = 3;
+    const FORMAT_WOMENS_DOUBLES = 4;
+    const FORMAT_MIXED = 5;
+    const FORMAT = [
+        self::FORMAT_SINGLE,
+        self::FORMAT_DOUBLE,
     ];
 
     const MALE = 1;
     const FEMALE = 2;
-
-    const UNLIMIT = 3;
+    const MIXED = 3;
 
     const GENDER = [
         self::MALE,
         self::FEMALE,
-        self::UNLIMIT,
+        self::MIXED,
     ];
 
-    const REPEAT_ONE_WEEK = 1;
-    const REPEAT_TWO_WEEKS = 2;
-    const REPEAT_THREE_WEEKS = 3;
-    const REPEAT_FOUR_WEEKS = 4;
-
-    const REPEAT = [
-        self::REPEAT_ONE_WEEK,
-        self::REPEAT_TWO_WEEKS,
-        self::REPEAT_THREE_WEEKS,
-        self::REPEAT_FOUR_WEEKS,
-    ];
-
-    const ROLE_ORGANIZER = 1;
-    const ROLE_ORGANIZER_AND_PARTICIPANT = 2;
-    const ROLE = [
-        self::ROLE_ORGANIZER,
-        self::ROLE_ORGANIZER_AND_PARTICIPANT,
-    ];
     const STATUS_DRAFT = 1;
     const STATUS_OPEN = 2;
     const STATUS_CLOSED = 3;
@@ -100,140 +91,117 @@ class MiniTournament extends Model
         self::STATUS_CANCELLED,
     ];
 
-    const FEE_NONE = 'none';
-    const FEE_FREE = 'free';
-    const FEE_AUTO_SPLIT = 'auto_split';
-    const FEE_PER_PERSON = 'per_person';
-    const FEE = [
-        self::FEE_NONE,
-        self::FEE_FREE,
-        self::FEE_AUTO_SPLIT,
-        self::FEE_PER_PERSON,
-    ];
-
-    const LOCK_1_HOUR = 1;
-    const LOCK_2_HOURS = 2;
-    const LOCK_4_HOURS = 3;
-    const LOCK_6_HOURS = 4;
-    const LOCK_8_HOURS = 5;
-    const LOCK_12_HOURS = 6;
-    const LOCK_24_HOURS = 7;
-
-    const LOCK_CANCELLATION = [
-        self::LOCK_1_HOUR,
-        self::LOCK_2_HOURS,
-        self::LOCK_4_HOURS,
-        self::LOCK_6_HOURS,
-        self::LOCK_8_HOURS,
-        self::LOCK_12_HOURS,
-        self::LOCK_24_HOURS,
-    ];
-
+    // Age group constants
     const ALL_AGES = 1;
-    const YOUTH = 2;
-    const ADULT = 3;
-    const SENIOR = 4;
-    const AGE_GROUP = [
+    const YOUTH = 2; // dưới 18
+    const ADULT = 3; // 18-55
+    const SENIOR = 4; // trên 55
+
+    const AGE_GROUPS = [
         self::ALL_AGES,
         self::YOUTH,
         self::ADULT,
         self::SENIOR,
     ];
 
-    public function getMatchTypeTextAttribute()
+    // Fee settings constants
+    const HAS_FEE_FALSE = false;
+    const HAS_FEE_TRUE = true;
+
+    const AUTO_SPLIT_FALSE = false;
+    const AUTO_SPLIT_TRUE = true;
+
+    // Gender constants
+    public function getGenderTextAttribute(): string
     {
-        switch ($this->match_type) {
-            case 1:
-                return 'Giao hữu';
-            case 2:
-                return 'Vòng tròn';
-            case 3:
-                return 'Đánh đơn';
-            case 4:
-                return 'Đánh đôi';
-            case 5:
-                return 'Tập luyện';
-            case 6:
-                return 'Buổi học';
-            case 7:
-                return 'Họp mặt';
-            default:
-                return 'Unknown Match Type';
-        }
+        return match($this->gender) {
+            self::MALE => 'Nam',
+            self::FEMALE => 'Nữ',
+            self::MIXED => 'Nam nữ',
+            default => 'Không xác định',
+        };
     }
 
-    public function getAgeGroupTextAttribute()
+    public function getPlayModeTextAttribute(): string
     {
-        switch ($this->age_group) {
-            case self::ALL_AGES:
-                return 'Không giới hạn';
-            case self::YOUTH:
-                return 'Thiếu niên (Dưới 18)';
-            case self::ADULT:
-                return 'Người lớn (18 - 55)';
-            case self::SENIOR:
-                return 'Cao tuổi (Trên 55)';
-            default:
-                return 'Chưa xác định';
-        }
+        return match($this->play_mode) {
+            self::PLAY_MODE_CASUAL => 'Vui vẻ',
+            self::PLAY_MODE_COMPETITION => 'Thi đấu',
+            self::PLAY_MODE_PRACTICE => 'Luyện tập',
+            default => 'Chưa xác định',
+        };
     }
 
-    public function getGenderPolicyTextAttribute()
+    public function getFormatTextAttribute(): string
     {
-        switch ($this->gender_policy) {
-            case 1:
-                return 'Nam';
-            case 2:
-                return 'Nữ';
-            case 3:
-                return 'Không giới hạn';
-            default:
-                return 'Chưa xác định';
-        }
+        return match($this->format) {
+            self::FORMAT_SINGLE => 'Đánh đơn',
+            self::FORMAT_DOUBLE => 'Đánh đôi',
+            self::FORMAT_MENS_DOUBLES => 'Đánh đôi nam',
+            self::FORMAT_WOMENS_DOUBLES => 'Đánh đôi nữ',
+            self::FORMAT_MIXED => 'Đánh đôi nam nữ',
+            default => 'Chưa xác định',
+        };
     }
 
-    public function getRepeatTypeTextAttribute()
+    public function getHasFeeTextAttribute(): string
     {
-        switch ($this->repeat_type) {
-            case 1:
-                return 'Lặp lại trong 1 tuần';
-            case 2:
-                return 'Lặp lại trong 2 tuần';
-            case 3:
-                return 'Lặp lại trong 3 tuần';
-            case 4:
-                return 'Lặp lại trong 4 tuần';
-            default:
-                return 'Chưa xác định';
-        }
+        return $this->has_fee ? 'Có phí' : 'Miễn phí';
     }
 
-    public function getRoleTypeTextAttribute()
+    public function getAutoSplitFeeTextAttribute(): string
     {
-        switch ($this->role_type) {
-            case 1:
-                return 'Ban tổ chức';
-            case 2:
-                return 'Người tham gia';
-            default:
-                return 'Chưa xác định';
-        }
+        return $this->auto_split_fee ? 'Chia tiền tự động' : 'Tiền cố định/người';
     }
 
-    public function getStatusTextAttribute()
+    /**
+     * Tính phí mỗi người dựa trên cài đặt
+     * Nếu auto_split_fee = true: fee_amount / số người tham gia thực tế
+     * Nếu auto_split_fee = false: fee_amount (tiền cố định mỗi người)
+     */
+    public function getFeePerPersonAttribute()
     {
-        switch ($this->status) {
-            case 1:
-                return 'Nháp';
-            case 2:
-                return 'Mở';
-            case 3:
-                return 'Đóng';
-            case 4:
-                return 'Hủy';
-            default:
-                return 'Chưa xác định';
+        if (!$this->has_fee) {
+            return 0;
         }
+
+        if ($this->auto_split_fee) {
+            $participantCount = $this->participants()->count();
+            if ($participantCount > 0) {
+                return round($this->fee_amount / $participantCount);
+            }
+            return null;
+        }
+
+        return $this->fee_amount;
+    }
+
+    /**
+     * Tính tổng tiền thu được (dự kiến)
+     */
+    public function getTotalFeeExpectedAttribute()
+    {
+        if (!$this->has_fee) {
+            return 0;
+        }
+
+        $participantCount = $this->participants()->count();
+        if ($participantCount > 0) {
+            return $this->fee_per_person * $participantCount;
+        }
+
+        return 0;
+    }
+
+    public function getStatusTextAttribute(): string
+    {
+        return match($this->status) {
+            self::STATUS_DRAFT => 'Nháp',
+            self::STATUS_OPEN => 'Mở',
+            self::STATUS_CLOSED => 'Đóng',
+            self::STATUS_CANCELLED => 'Hủy',
+            default => 'Chưa xác định',
+        };
     }
 
     public function participants()
@@ -241,7 +209,6 @@ class MiniTournament extends Model
         return $this->hasMany(MiniParticipant::class);
     }
 
-    // Sport
     public function sport()
     {
         return $this->belongsTo(Sport::class);
@@ -264,16 +231,115 @@ class MiniTournament extends Model
             ->withTimestamps();
     }
 
+    public function matches()
+    {
+        return $this->hasMany(MiniMatch::class);
+    }
+
+    /**
+     * Get recurring schedule for this tournament
+     */
+    public function recurringSchedule()
+    {
+        return $this->hasOne(MiniRecurringSchedule::class);
+    }
+
+    public function getRecurringScheduleAttribute($value)
+    {
+        if (!$value) {
+            return null;
+        }
+
+        $data = is_array($value) ? $value : json_decode($value, true);
+        if (!$data || !isset($data['period'])) {
+            return null;
+        }
+
+        $result = [
+            'period' => $data['period'],
+            'week_days' => null,
+            'recurring_date' => null,
+        ];
+
+        if ($data['period'] === 'weekly') {
+            $result['week_days'] = $data['week_days'] ?? null;
+        } elseif (isset($data['recurring_date'])) {
+            $result['recurring_date'] = is_string($data['recurring_date'])
+                ? $data['recurring_date']
+                : (string) $data['recurring_date'];
+        }
+
+        return $result;
+    }
+
+    public function setRecurringScheduleAttribute($value)
+    {
+        if (!$value) {
+            $this->attributes['recurring_schedule'] = null;
+            return;
+        }
+
+        $this->attributes['recurring_schedule'] = json_encode($value);
+    }
+
+    public function getRecurringScheduleRaw(): ?array
+    {
+        $value = $this->attributes['recurring_schedule'] ?? null;
+        if (!$value) {
+            return null;
+        }
+
+        $data = json_decode($value, true);
+        return $data && isset($data['period']) ? $data : null;
+    }
+
+    public function participantPayments()
+    {
+        return $this->hasMany(MiniParticipantPayment::class);
+    }
+
+    public function pendingPayments()
+    {
+        return $this->hasMany(MiniParticipantPayment::class)->where('status', MiniParticipantPayment::STATUS_PENDING);
+    }
+
+    public function awaitingConfirmationPayments()
+    {
+        return $this->hasMany(MiniParticipantPayment::class)->where('status', MiniParticipantPayment::STATUS_PAID);
+    }
+
+    public function confirmedPayments()
+    {
+        return $this->hasMany(MiniParticipantPayment::class)->where('status', MiniParticipantPayment::STATUS_CONFIRMED);
+    }
+
+    public function getPaymentSummaryAttribute(): array
+    {
+        $participantCount = $this->participants()->count();
+
+        return [
+            'total_expected' => $this->has_fee ? ($this->auto_split_fee ?
+                ($this->fee_amount * $participantCount) :
+                ($this->fee_amount * $participantCount)) : 0,
+            'total_collected' => $this->confirmedPayments()->sum('amount'),
+            'total_pending' => $this->pendingPayments()->count(),
+            'total_awaiting_confirmation' => $this->awaitingConfirmationPayments()->count(),
+            'participant_count' => $participantCount,
+            'paid_participant_count' => $this->confirmedPayments()->count(),
+        ];
+    }
 
     public function scopeWithFullRelations($query)
     {
         return $query->with([
             'sport',
             'competitionLocation',
+            'recurringSchedule',
             'participants.user.sports.sport',
             'participants.user.sports.scores',
             'miniTournamentStaffs.user',
             'staff',
+            'matches',
         ]);
     }
 
@@ -282,10 +348,12 @@ class MiniTournament extends Model
         return $this->load([
             'sport',
             'competitionLocation',
+            'recurringSchedule',
             'participants.user.sports.sport',
             'participants.user.sports.scores',
             'miniTournamentStaffs.user',
             'staff',
+            'matches',
         ]);
     }
 
@@ -336,7 +404,7 @@ class MiniTournament extends Model
             )
             ->when(
                 !empty($filter['date_from']),
-                fn($q) => $q->whereBetween('starts_at', [
+                fn($q) => $q->whereBetween('start_time', [
                     Carbon::parse($filter['date_from'])->startOfDay(),
                     Carbon::parse($filter['date_from'])->endOfDay()
                 ])
@@ -347,9 +415,9 @@ class MiniTournament extends Model
                     $q->where(function ($subQuery) use ($filter) {
                         foreach ($filter['type'] as $type) {
                             if ($type === 'single') {
-                                $subQuery->orWhere('match_type', self::MATCH_TYPE_SINGLE);
+                                $subQuery->orWhere('format', self::FORMAT_SINGLE);
                             } elseif ($type === 'double') {
-                                $subQuery->orWhere('match_type', self::MATCH_TYPE_DOUBLE);
+                                $subQuery->orWhere('format', self::FORMAT_DOUBLE);
                             }
                         }
                     });
@@ -378,27 +446,9 @@ class MiniTournament extends Model
                     $q->where(function ($subQuery) use ($filter) {
                         foreach ($filter['fee'] as $fee) {
                             if ($fee === 'free') {
-                                $subQuery->orWhere(function ($cond) {
-                                    $cond->where('fee', self::FEE_FREE)
-                                        ->orWhere(function ($inner) {
-                                            $inner->where('fee', self::FEE_NONE)
-                                                ->where('fee_amount', 0);
-                                        });
-                                });
+                                $subQuery->orWhere('has_fee', false);
                             } elseif ($fee === 'paid') {
-                                $min = $filter['min_price'] ?? 0;
-                                $max = $filter['max_price'] ?? PHP_INT_MAX;
-
-                                $subQuery->orWhere(function ($paid) use ($min, $max) {
-                                    $paid->where(function ($perPerson) use ($min, $max) {
-                                        $perPerson->where('fee', self::FEE_PER_PERSON)
-                                            ->whereBetween('fee_amount', [$min, $max]);
-                                    })
-                                        ->orWhere(function ($autoSplit) use ($min, $max) {
-                                            $autoSplit->where('fee', self::FEE_AUTO_SPLIT)
-                                                ->whereRaw('(prize_pool / NULLIF(max_players, 0)) BETWEEN ? AND ?', [$min, $max]);
-                                        });
-                                });
+                                $subQuery->orWhere('has_fee', true);
                             }
                         }
                     });
@@ -410,14 +460,14 @@ class MiniTournament extends Model
                     $q->where(function ($subQuery) use ($filter) {
                         foreach ($filter['time_of_day'] as $timeOfDay) {
                             if ($timeOfDay === 'morning') {
-                                $subQuery->orWhereTime('starts_at', '<', '11:00:00');
+                                $subQuery->orWhereTime('start_time', '<', '11:00:00');
                             } elseif ($timeOfDay === 'afternoon') {
                                 $subQuery->orWhere(function ($timeQuery) {
-                                    $timeQuery->whereTime('starts_at', '>=', '11:00:00')
-                                        ->whereTime('starts_at', '<', '16:00:00');
+                                    $timeQuery->whereTime('start_time', '>=', '11:00:00')
+                                        ->whereTime('start_time', '<', '16:00:00');
                                 });
                             } elseif ($timeOfDay === 'evening') {
-                                $subQuery->orWhereTime('starts_at', '>=', '16:00:00');
+                                $subQuery->orWhereTime('start_time', '>=', '16:00:00');
                             }
                         }
                     });
@@ -505,6 +555,7 @@ class MiniTournament extends Model
                 ->whereBetween('longitude', [$minLng, $maxLng]);
         });
     }
+
     public function scopeOrderByDistanceFromLocation(
         Builder $query,
         float $lat,

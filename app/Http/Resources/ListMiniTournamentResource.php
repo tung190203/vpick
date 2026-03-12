@@ -19,19 +19,33 @@ class ListMiniTournamentResource extends JsonResource
         return [
             'id' => $this->id,
             'poster' => $this->poster,
-            'starts_at' => $this->starts_at,
+            'start_time' => $this->start_time,
+            'end_time' => $this->end_time,
+            'duration' => $this->duration,
             'sport' => new SportResource($this->whenLoaded('sport')),
             'name' => $this->name,
             'description' => $this->description,
             'competition_location' => new CompetitionLocationResource($this->whenLoaded('competitionLocation')),
             'status' => $this->status,
             'status_text' => $this->status_text,
+            'has_fee' => $this->has_fee,
+            'fee_amount' => $this->fee_amount,
+            'gender' => $this->gender,
+            'gender_text' => $this->gender_text,
+            'max_players' => $this->max_players,
+            'play_mode' => $this->play_mode,
+            'play_mode_text' => $this->play_mode_text,
+            'format' => $this->format,
+            'format_text' => $this->format_text,
             'staff' => $this->whenLoaded('staff', function () {
                 return $this->staff
                     ->groupBy(fn($staff) => MiniTournamentStaff::getRoleText( $staff->pivot->role))
                     ->map(fn($group) => MiniTournamentStaffResource::collection($group));
             }),
             'participants' => MiniParticipantResource::collection($participants),
+            'matches' => $this->whenLoaded('matches', function () {
+                return MiniMatchResource::collection($this->matches);
+            }),
             'all_users' => UserListResource::collection($this->all_users ?? collect()),
         ];
     }
