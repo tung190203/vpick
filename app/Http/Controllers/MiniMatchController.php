@@ -107,13 +107,16 @@ class MiniMatchController extends Controller
             return ResponseHelper::error('Số lượng người chơi của 2 đội phải bằng nhau', 422);
         }
 
-        switch ($miniTournament->match_type) {
-            case MiniTournament::MATCH_TYPE_SINGLE:
+        switch ($miniTournament->format) {
+            case MiniTournament::FORMAT_SINGLE:
                 if ($team1Count !== 1) {
                     return ResponseHelper::error('Kèo này chỉ cho phép tạo trận 1v1', 422);
                 }
                 break;
-            case MiniTournament::MATCH_TYPE_DOUBLE:
+            case MiniTournament::FORMAT_DOUBLE:
+            case MiniTournament::FORMAT_MENS_DOUBLES:
+            case MiniTournament::FORMAT_WOMENS_DOUBLES:
+            case MiniTournament::FORMAT_MIXED:
                 if ($team1Count !== 2) {
                     return ResponseHelper::error('Kèo này chỉ cho phép tạo trận 2v2', 422);
                 }
@@ -223,14 +226,17 @@ class MiniMatchController extends Controller
             return ResponseHelper::error('Số lượng người chơi của 2 đội phải bằng nhau', 422);
         }
 
-        switch ($miniTournament->match_type) {
-            case MiniTournament::MATCH_TYPE_SINGLE:
+        switch ($miniTournament->format) {
+            case MiniTournament::FORMAT_SINGLE:
                 if ($team1Count !== 1) {
                     return ResponseHelper::error('Kèo này chỉ cho phép tạo trận 1v1', 422);
                 }
                 break;
 
-            case MiniTournament::MATCH_TYPE_DOUBLE:
+            case MiniTournament::FORMAT_DOUBLE:
+            case MiniTournament::FORMAT_MENS_DOUBLES:
+            case MiniTournament::FORMAT_WOMENS_DOUBLES:
+            case MiniTournament::FORMAT_MIXED:
                 if ($team1Count !== 2) {
                     return ResponseHelper::error('Kèo này chỉ cho phép tạo trận 2v2', 422);
                 }
@@ -334,31 +340,31 @@ class MiniMatchController extends Controller
 
         // Validate team thuộc trận đấu
         $teamIds = [$match->team1_id, $match->team2_id];
-    
+
         DB::transaction(function () use ($validated, $match, $teamIds) {
-    
+
             foreach ($validated['sets'] as $set) {
                 $inputResults = collect($set['results']);
-    
+
                 // Validate đủ 2 team
                 if ($inputResults->count() !== 2) {
                     throw new \Exception('Cần cung cấp điểm số cho cả hai đội');
                 }
-    
+
                 $teamA = $inputResults->firstWhere('team_id', $teamIds[0]);
                 $teamB = $inputResults->firstWhere('team_id', $teamIds[1]);
-    
+
                 if (!$teamA || !$teamB) {
                     throw new \Exception(
                         'Team không hợp lệ hoặc không thuộc trận đấu này'
                     );
                 }
-    
+
                 // Xóa set cũ (nếu update lại set)
                 MiniMatchResult::where('mini_match_id', $match->id)
                     ->where('set_number', $set['set_number'])
                     ->delete();
-    
+
                 // Lưu kết quả set
                 foreach ($set['results'] as $res) {
                     MiniMatchResult::create([
@@ -533,12 +539,12 @@ class MiniMatchController extends Controller
             $opponentTeam = $userTeam->id === $match->team1_id
                 ? $match->team2
                 : $match->team1;
-        
+
             $recipientIds = $opponentTeam->members()
                 ->where('user_id', '!=', $currentUserId)
                 ->pluck('user_id')
                 ->toArray();
-        
+
             $this->pushToUsers(
                 $recipientIds,
                 'Xác nhận kết quả kèo đấu',
@@ -557,14 +563,14 @@ class MiniMatchController extends Controller
                 ->where('user_id', '!=', $currentUserId)
                 ->pluck('user_id')
                 ->toArray();
-        
+
             $team2UserIds = $match->team2->members()
                 ->where('user_id', '!=', $currentUserId)
                 ->pluck('user_id')
                 ->toArray();
-        
+
             $recipientIds = array_unique(array_merge($team1UserIds, $team2UserIds));
-        
+
             $this->pushToUsers(
                 $recipientIds,
                 'Kết quả kèo đấu đã được xác nhận',
@@ -575,7 +581,7 @@ class MiniMatchController extends Controller
                     'by' => 'organizer',
                 ]
             );
-        }        
+        }
 
         return ResponseHelper::success(
             new MiniMatchResource($result->refresh()),
@@ -585,7 +591,7 @@ class MiniMatchController extends Controller
 
     private function validateAllSets($match, $tournament)
     {
-        $pointsToWinSet = $tournament->games_per_set;
+        $pointsToWinSet = $tournament->base_points;
         $pointsDifference = $tournament->points_difference;
         $maxPoints = $tournament->max_points;
 
@@ -773,21 +779,21 @@ class MiniMatchController extends Controller
         $t1Score = $scores->get($match->team1_id, 0);
         $t2Score = $scores->get($match->team2_id, 0);
         $totalScore = $t1Score + $t2Score;
-    
+
         // S_match (thắng / thua)
         $winnerTeamId = $match->team_win_id;
-    
+
         $S_match_t1 = $winnerTeamId === $match->team1_id ? 1.0 : 0.0;
         $S_match_t2 = $winnerTeamId === $match->team2_id ? 1.0 : 0.0;
-    
+
         // S_points (tỷ lệ điểm)
         $S_points_t1 = $totalScore > 0 ? $t1Score / $totalScore : 0;
         $S_points_t2 = $totalScore > 0 ? $t2Score / $totalScore : 0;
-    
+
         // S_final
         $S_t1 = (0.5 * $S_match_t1) + (0.5 * $S_points_t1);
         $S_t2 = (0.5 * $S_match_t2) + (0.5 * $S_points_t2);
-    
+
         // =====================================================
         // D. TÍNH RATING TRUNG BÌNH (E)
         // =====================================================

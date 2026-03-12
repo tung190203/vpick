@@ -21,7 +21,7 @@ class SendMiniTournamentRemindersJob implements ShouldQueue
         $now = Carbon::now();
         $reminderTime = $now->copy()->addMinutes(15);
 
-        $tournaments = MiniTournament::whereBetween('starts_at', [$now, $reminderTime])->get();
+        $tournaments = MiniTournament::whereBetween('start_time', [$now, $reminderTime])->get();
 
         foreach ($tournaments as $tournament) {
             $subscriptions = MiniTournamentUserNotification::where('mini_tournament_id', $tournament->id)
