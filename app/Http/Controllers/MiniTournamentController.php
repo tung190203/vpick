@@ -17,6 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class MiniTournamentController extends Controller
 {
@@ -55,9 +56,11 @@ class MiniTournamentController extends Controller
             }
         }
 
-        if ($request->hasFile('poster')) {
-            $posterPath = $request->file('poster')->store('posters', 'public');
-            $miniTournament->update(['poster' => $posterPath]);
+        $file = $request->file('qr_code_url');
+        if ($file) {
+            $path = $file->store('qr_codes', 'public');
+            $url = asset('storage/' . $path);
+            $miniTournament->update(['qr_code_url' => $url]);
         }
         $miniTournament->loadFullRelations();
 

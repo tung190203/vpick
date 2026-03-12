@@ -34,8 +34,16 @@ class MiniTournamentTemplateController extends Controller
             'settings' => 'required|array',
         ]);
 
+        $userId = auth()->id();
+
+        //check limit 10 kèo mẫu
+        $count = MiniTournamentTemplate::where('user_id', $userId)->count();
+        if ($count >=10) {
+            return ResponseHelper::error('Bạn đã đạt giới hạn 10 kèo mẫu', 400);
+        }
+
         $template = MiniTournamentTemplate::create([
-            'user_id' => Auth::id(),
+            'user_id' => $userId,
             'name' => $validated['name'],
             'settings' => $validated['settings'],
         ]);
@@ -44,6 +52,36 @@ class MiniTournamentTemplateController extends Controller
             $template,
             'Lưu kèo mẫu thành công',
             201
+        );
+    }
+
+    /**
+     * Cập nhật kèo mẫu.
+     * API: POST /api/mini-tournament-templates/{id}
+     */
+    public function update(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'settings' => 'required|array',
+        ]);
+
+        $template = MiniTournamentTemplate::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->first();
+
+        if (!$template) {
+            return ResponseHelper::error('Kèo mẫu không tồn tại', 404);
+        }
+
+        $template->update([
+            'name' => $validated['name'],
+            'settings' => $validated['settings'],
+        ]);
+
+        return ResponseHelper::success(
+            $template->fresh(),
+            'Cập nhật kèo mẫu thành công'
         );
     }
 

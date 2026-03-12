@@ -16,6 +16,7 @@ use App\Notifications\PaymentReminderNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class MiniTournamentPaymentController extends Controller
 {
@@ -44,7 +45,7 @@ class MiniTournamentPaymentController extends Controller
 
         // Tính tổng tiền
         $participantCount = $miniTournament->participants()->count();
-        
+
         // Tính số tiền mỗi người phải đóng
         $feePerPerson = 0;
         if ($miniTournament->has_fee) {
@@ -57,6 +58,11 @@ class MiniTournamentPaymentController extends Controller
             }
         }
 
+        $qrUrl = $miniTournament->qr_code_url;
+        if ($qrUrl && !str_starts_with($qrUrl, 'http')) {
+            $qrUrl = asset('storage/' . ltrim($qrUrl, '/'));
+        }
+
         $data = [
             'tournament' => new MiniTournamentResource($miniTournament),
             'payment_config' => [
@@ -65,7 +71,7 @@ class MiniTournamentPaymentController extends Controller
                 'fee_amount' => $miniTournament->fee_amount,
                 'fee_per_person' => $feePerPerson,
                 'fee_description' => $miniTournament->fee_description,
-                'qr_code_url' => $miniTournament->qr_code_url,
+                'qr_code_url' => $qrUrl,
                 'payment_account_id' => $miniTournament->payment_account_id,
             ],
             'summary' => [
@@ -95,7 +101,7 @@ class MiniTournamentPaymentController extends Controller
     {
         $data = $request->validate([
             'participant_id' => 'required|exists:mini_participants,id',
-            'receipt_image' => 'required|string', // base64 hoặc URL
+            'receipt_image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'note' => 'nullable|string|max:500',
         ]);
 
@@ -136,7 +142,7 @@ class MiniTournamentPaymentController extends Controller
         // Tính số tiền phải đóng
         $participantCount = $miniTournament->participants()->count();
         $feePerPerson = 0;
-        
+
         if ($miniTournament->auto_split_fee) {
             // Chia tự động: tổng tiền / số người
             $feePerPerson = $participantCount > 0 ? round($miniTournament->fee_amount / $participantCount) : 0;
@@ -150,6 +156,12 @@ class MiniTournamentPaymentController extends Controller
             ->where('participant_id', $data['participant_id'])
             ->first();
 
+        $receiptImage = $data['receipt_image'];
+        if ($receiptImage) {
+            $path = Storage::disk('public')->put('mini_tournament_payments', $receiptImage);
+            $receiptImage = asset('storage/' . $path);
+        }
+
         DB::beginTransaction();
         try {
             if ($existingPayment) {
@@ -162,7 +174,7 @@ class MiniTournamentPaymentController extends Controller
                 $existingPayment->update([
                     'amount' => $feePerPerson,
                     'status' => MiniParticipantPayment::STATUS_PAID,
-                    'receipt_image' => $data['receipt_image'],
+                    'receipt_image' => $receiptImage,
                     'note' => $data['note'] ?? null,
                     'paid_at' => now(),
                     'admin_note' => null,
@@ -179,7 +191,7 @@ class MiniTournamentPaymentController extends Controller
                     'user_id' => $userId,
                     'amount' => $feePerPerson,
                     'status' => MiniParticipantPayment::STATUS_PAID,
-                    'receipt_image' => $data['receipt_image'],
+                    'receipt_image' => $receiptImage,
                     'note' => $data['note'] ?? null,
                     'paid_at' => now(),
                 ]);
@@ -241,7 +253,7 @@ class MiniTournamentPaymentController extends Controller
         DB::beginTransaction();
         try {
             $newStatus = $isConfirm ? MiniParticipantPayment::STATUS_CONFIRMED : MiniParticipantPayment::STATUS_REJECTED;
-            
+
             $payment->update([
                 'status' => $newStatus,
                 'admin_note' => $data['admin_note'] ?? null,
@@ -262,7 +274,7 @@ class MiniTournamentPaymentController extends Controller
             DB::commit();
 
             $message = $isConfirm ? 'Xác nhận thanh toán thành công' : 'Từ chối thanh toán thành công';
-            
+
             return ResponseHelper::success(
                 new MiniParticipantPaymentResource($payment->load(['user', 'confirmer'])),
                 $message
@@ -370,7 +382,7 @@ class MiniTournamentPaymentController extends Controller
             ->get();
 
         $remindedCount = 0;
-        
+
         foreach ($participants as $participant) {
             // Kiểm tra đã thanh toán chưa
             $payment = MiniParticipantPayment::where('mini_tournament_id', $miniTournamentId)
@@ -424,11 +436,16 @@ class MiniTournamentPaymentController extends Controller
             }
         }
 
+        $qrUrl = $miniTournament->qr_code_url;
+        if ($qrUrl && !str_starts_with($qrUrl, 'http')) {
+            $qrUrl = asset('storage/' . ltrim($qrUrl, '/'));
+        }
+
         $data = [
             'participant_id' => $participant->id,
             'has_fee' => $miniTournament->has_fee,
             'fee_per_person' => $feePerPerson,
-            'qr_code_url' => $miniTournament->qr_code_url,
+            'qr_code_url' => $qrUrl,
             'fee_description' => $miniTournament->fee_description,
             'payment' => $payment ? new MiniParticipantPaymentResource($payment) : null,
         ];

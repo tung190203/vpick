@@ -548,6 +548,7 @@ Route::middleware(['auth:api', 'update.last_login', 'throttle:api'])->group(func
     Route::prefix('mini-tournament-templates')->group(function (): void {
         Route::get('/', [MiniTournamentTemplateController::class, 'index']);
         Route::post('/', [MiniTournamentTemplateController::class, 'store']);
+        Route::post('/{id}', [MiniTournamentTemplateController::class, 'update']);
         Route::delete('/{id}', [MiniTournamentTemplateController::class, 'destroy']);
     });
     // Mini Participant Routes
