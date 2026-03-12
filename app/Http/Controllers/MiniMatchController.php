@@ -107,13 +107,16 @@ class MiniMatchController extends Controller
             return ResponseHelper::error('Số lượng người chơi của 2 đội phải bằng nhau', 422);
         }
 
-        switch ($miniTournament->match_type) {
-            case MiniTournament::MATCH_TYPE_SINGLE:
+        switch ($miniTournament->format) {
+            case MiniTournament::FORMAT_SINGLE:
                 if ($team1Count !== 1) {
                     return ResponseHelper::error('Kèo này chỉ cho phép tạo trận 1v1', 422);
                 }
                 break;
-            case MiniTournament::MATCH_TYPE_DOUBLE:
+            case MiniTournament::FORMAT_DOUBLE:
+            case MiniTournament::FORMAT_MENS_DOUBLES:
+            case MiniTournament::FORMAT_WOMENS_DOUBLES:
+            case MiniTournament::FORMAT_MIXED:
                 if ($team1Count !== 2) {
                     return ResponseHelper::error('Kèo này chỉ cho phép tạo trận 2v2', 422);
                 }
@@ -223,14 +226,17 @@ class MiniMatchController extends Controller
             return ResponseHelper::error('Số lượng người chơi của 2 đội phải bằng nhau', 422);
         }
 
-        switch ($miniTournament->match_type) {
-            case MiniTournament::MATCH_TYPE_SINGLE:
+        switch ($miniTournament->format) {
+            case MiniTournament::FORMAT_SINGLE:
                 if ($team1Count !== 1) {
                     return ResponseHelper::error('Kèo này chỉ cho phép tạo trận 1v1', 422);
                 }
                 break;
 
-            case MiniTournament::MATCH_TYPE_DOUBLE:
+            case MiniTournament::FORMAT_DOUBLE:
+            case MiniTournament::FORMAT_MENS_DOUBLES:
+            case MiniTournament::FORMAT_WOMENS_DOUBLES:
+            case MiniTournament::FORMAT_MIXED:
                 if ($team1Count !== 2) {
                     return ResponseHelper::error('Kèo này chỉ cho phép tạo trận 2v2', 422);
                 }

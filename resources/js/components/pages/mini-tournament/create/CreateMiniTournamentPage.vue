@@ -31,16 +31,32 @@
 
                     </div>
                     <hr class="my-4 border-1">
-                    <p class="text-[#838799]">Cấp độ giải đấu • {{ matchTypes.length }}</p>
-                    <div class="grid lg:grid-cols-2 grid-cols-4 gap-2 mt-2">
-                        <button v-for="type in matchTypes" :key="type.id" @click="selectedType = type.id" :class="[
+                    <!-- Play Mode Selection -->
+                    <p class="text-[#838799]">Chế độ chơi</p>
+                    <div class="grid grid-cols-3 gap-2 mt-2">
+                        <button v-for="mode in playModes" :key="mode.id" @click="handlePlayModeChange(mode.id)" :class="[
                             'text-base px-2 text-center py-2 rounded transition-colors',
-                            selectedType === type.id
+                            selectedPlayMode === mode.id
                                 ? 'bg-[#D72D36] text-white border border-[#D72D36]'
                                 : 'border border-[#BBBFCC] text-gray-700 hover:border-gray-400'
                         ]">
-                            {{ type.name }}
+                            {{ mode.name }}
                         </button>
+                    </div>
+                    
+                    <!-- Format Selection (only show when play_mode = 2 - Thi đấu) -->
+                    <div v-if="selectedPlayMode === 2" class="mt-4">
+                        <p class="text-[#838799]">Thể thức</p>
+                        <div class="grid lg:grid-cols-3 grid-cols-3 gap-2 mt-2">
+                            <button v-for="fmt in formats" :key="fmt.id" @click="selectedFormat = fmt.id" :class="[
+                                'text-base px-2 text-center py-2 rounded transition-colors',
+                                selectedFormat === fmt.id
+                                    ? 'bg-[#D72D36] text-white border border-[#D72D36]'
+                                    : 'border border-[#BBBFCC] text-gray-700 hover:border-gray-400'
+                            ]">
+                                {{ fmt.name }}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -227,21 +243,22 @@
                 <div class="bg-white rounded-[8px] shadow p-5">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="font-semibold text-gray-900 text-[20px]">DUPR</h3>
+                        <span v-if="!canEditDuprSettings" class="text-xs text-gray-500">(Chỉ áp dụng cho chế độ Thi đấu)</span>
                     </div>
                     <div class="space-y-4">
-                        <div class="flex justify-between items-center">
+                        <div class="flex justify-between items-center" :class="{ 'opacity-50': !canEditDuprSettings }">
                             <span class="text-gray-700">Tích điểm DUPR</span>
-                            <button @click="toggleDUPR"
-                                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+                            <button @click="toggleDUPR" :disabled="!canEditDuprSettings"
+                                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:cursor-not-allowed"
                                 :class="duprEnabled ? 'bg-[#D72D36]' : 'bg-gray-300'">
                                 <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
                                     :class="duprEnabled ? 'translate-x-6' : 'translate-x-1'" />
                             </button>
                         </div>
-                        <div class="flex justify-between items-center">
+                        <div class="flex justify-between items-center" :class="{ 'opacity-50': !canEditDuprSettings }">
                             <span class="text-gray-700">Tích điểm PICKI</span>
-                            <button @click="toggleVNDUPR"
-                                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+                            <button @click="toggleVNDUPR" :disabled="!canEditDuprSettings"
+                                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:cursor-not-allowed"
                                 :class="vnduprEnabled ? 'bg-[#D72D36]' : 'bg-gray-300'">
                                 <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
                                     :class="vnduprEnabled ? 'translate-x-6' : 'translate-x-1'" />
@@ -560,7 +577,7 @@ import 'swiper/css'
 import 'swiper/css/free-mode'
 import { genderOptions } from '@/constants/genderOption';
 import { feeOptions } from '@/constants/feeOption';
-import { matchTypes } from '@/constants/matchTypes';
+import { playModes, formats, matchTypeToPlayModeAndFormat } from '@/constants/playModeAndFormat';
 import { levels } from '@/constants/levels';
 import { setOptions } from '@/constants/setOption';
 import { winRuleOptions } from '@/constants/winRuleOption';
@@ -606,6 +623,8 @@ const vnduprEnabled = ref(true)
 const minLevel = ref('Không giới hạn')
 const maxLevel = ref('Không giới hạn')
 const selectedType = ref(1)
+const selectedPlayMode = ref(1)
+const selectedFormat = ref(null)
 const autoApprove = ref(true)
 const allowParticipantAddFriends = ref(true)
 const sendNotification = ref(true)
@@ -691,7 +710,7 @@ const initialStates = {
     isLocationDropdownOpen: false, isPointModalOpen: false,
     date: null, durationMinutes: null, selectedDuration: '', playerCount: 1, privacy: 'Công khai',
     fee: 'none', feeAmount: 0, formattedFeeAmount: '',
-    tournamentName: '', tournamentNote: '', selectedType: 1, selectedSportId: null,
+    tournamentName: '', tournamentNote: '', selectedType: 1, selectedPlayMode: 1, selectedFormat: null, selectedSportId: null,
     duprEnabled: true, vnduprEnabled: true, minLevel: 'Không giới hạn', maxLevel: 'Không giới hạn',
     locationKeyword: '', selectedLocation: null, competitionLocations: [],
     setNumber: 1, gamesPerSet: 11, pointsDifference: 2, maxPoints: 11, courtSwitchPoints: 1,
@@ -807,11 +826,40 @@ const toggleOpenMaxLevel = () => {
 }
 
 const toggleDUPR = () => {
+    // Chỉ cho phép thay đổi khi play_mode = 2 (Thi đấu)
+    if (selectedPlayMode.value !== 2) return
+    // Thi đấu thì không cho phép tắt - luôn bật
+    if (duprEnabled.value) return
     duprEnabled.value = !duprEnabled.value
 }
 
 const toggleVNDUPR = () => {
+    // Chỉ cho phép thay đổi khi play_mode = 2 (Thi đấu)
+    if (selectedPlayMode.value !== 2) return
+    // Thi đấu thì không cho phép tắt - luôn bật
+    if (vnduprEnabled.value) return
     vnduprEnabled.value = !vnduprEnabled.value
+}
+
+// Computed để kiểm tra có cho phép chỉnh sửa DUPR/VNDUPR không
+const canEditDuprSettings = computed(() => selectedPlayMode.value === 2)
+
+// Khi play_mode thay đổi, tự động set DUPR/VNDUPR
+const handlePlayModeChange = (mode) => {
+    selectedPlayMode.value = mode
+    
+    // Nếu là Vui vẻ (1) hoặc Luyện tập (3): disable và set = false
+    // Nếu là Thi đấu (2): enable và set = true
+    if (mode === 2) {
+        duprEnabled.value = true
+        vnduprEnabled.value = true
+    } else {
+        duprEnabled.value = false
+        vnduprEnabled.value = false
+    }
+    
+    // Khi play_mode thay đổi, reset format về null
+    selectedFormat.value = null
 }
 
 const toggleOpenSet = () => {
@@ -1025,6 +1073,9 @@ const handleSubmit = async () => {
         sport_id: selectedSportId.value,
         name: tournamentName.value,
         description: tournamentNote.value || null,
+        play_mode: selectedPlayMode.value,
+        format: selectedFormat.value,
+        // Giữ lại match_type để backward compatibility
         match_type: selectedType.value,
         starts_at: startsAt,
         duration_minutes: durationMinutes.value,
@@ -1137,6 +1188,23 @@ const prefillForm = (data) => {
     tournamentName.value = data?.name || '';
     tournamentNote.value = data?.description || '';
     selectedType.value = data?.match_type || 1;
+    
+    // Play mode và format mới
+    if (data?.play_mode) {
+        selectedPlayMode.value = data.play_mode
+        // Nếu là Thi đấu (2), enable DUPR settings; ngược lại disable
+        if (data.play_mode === 2) {
+            duprEnabled.value = data?.enable_dupr ?? true
+            vnduprEnabled.value = data?.enable_vndupr ?? true
+        } else {
+            duprEnabled.value = false
+            vnduprEnabled.value = false
+        }
+    }
+    if (data?.format) {
+        selectedFormat.value = data.format
+    }
+    
     // Ngày giờ - địa điểm  - người chơi
     if(data?.starts_at) {
         date.value = new Date(data.starts_at);

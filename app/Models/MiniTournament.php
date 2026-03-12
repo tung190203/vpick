@@ -18,6 +18,8 @@ class MiniTournament extends Model
         'name',
         'description',
         'match_type',
+        'play_mode',
+        'format',
         'starts_at',
         'duration_minutes',
         'competition_location_id',
@@ -58,6 +60,30 @@ class MiniTournament extends Model
         self::MATCH_TYPE_SINGLE,
         self::MATCH_TYPE_DOUBLE,
         self::MATCH_TYPE_TRAINING,
+    ];
+
+    // Play Mode: 1=Vui vẻ, 2=Thi đấu, 3=Luyện tập
+    const PLAY_MODE_FUN = 1;
+    const PLAY_MODE_COMPETITIVE = 2;
+    const PLAY_MODE_TRAINING = 3;
+    const PLAY_MODE = [
+        self::PLAY_MODE_FUN,
+        self::PLAY_MODE_COMPETITIVE,
+        self::PLAY_MODE_TRAINING,
+    ];
+
+    // Format: 1=Đánh đơn, 2=Đánh đôi, 3=Đôi nam, 4=Đôi nữ, 5=Mixed
+    const FORMAT_SINGLE = 1;
+    const FORMAT_DOUBLE = 2;
+    const FORMAT_MENS_DOUBLES = 3;
+    const FORMAT_WOMENS_DOUBLES = 4;
+    const FORMAT_MIXED = 5;
+    const FORMAT = [
+        self::FORMAT_SINGLE,
+        self::FORMAT_DOUBLE,
+        self::FORMAT_MENS_DOUBLES,
+        self::FORMAT_WOMENS_DOUBLES,
+        self::FORMAT_MIXED,
     ];
 
     const MALE = 1;
@@ -159,6 +185,50 @@ class MiniTournament extends Model
                 return 'Họp mặt';
             default:
                 return 'Unknown Match Type';
+        }
+    }
+
+    public function getPlayModeTextAttribute()
+    {
+        switch ($this->play_mode) {
+            case self::PLAY_MODE_FUN:
+                return 'Vui vẻ';
+            case self::PLAY_MODE_COMPETITIVE:
+                return 'Thi đấu';
+            case self::PLAY_MODE_TRAINING:
+                return 'Luyện tập';
+            default:
+                return 'Chưa xác định';
+        }
+    }
+
+    public function getFormatTextAttribute()
+    {
+        switch ($this->format) {
+            case self::FORMAT_SINGLE:
+                return 'Đánh đơn';
+            case self::FORMAT_DOUBLE:
+                return 'Đánh đôi';
+            case self::FORMAT_MENS_DOUBLES:
+                return 'Đôi nam';
+            case self::FORMAT_WOMENS_DOUBLES:
+                return 'Đôi nữ';
+            case self::FORMAT_MIXED:
+                return 'Mixed';
+            default:
+                return 'Chưa xác định';
+        }
+    }
+
+    public static function getDefaultDuprSettings(int $playMode): array
+    {
+        switch ($playMode) {
+            case self::PLAY_MODE_COMPETITIVE:
+                return ['enable_dupr' => true, 'enable_vndupr' => true];
+            case self::PLAY_MODE_FUN:
+            case self::PLAY_MODE_TRAINING:
+            default:
+                return ['enable_dupr' => false, 'enable_vndupr' => false];
         }
     }
 
@@ -347,9 +417,9 @@ class MiniTournament extends Model
                     $q->where(function ($subQuery) use ($filter) {
                         foreach ($filter['type'] as $type) {
                             if ($type === 'single') {
-                                $subQuery->orWhere('match_type', self::MATCH_TYPE_SINGLE);
+                                $subQuery->orWhere('format', self::FORMAT_SINGLE);
                             } elseif ($type === 'double') {
-                                $subQuery->orWhere('match_type', self::MATCH_TYPE_DOUBLE);
+                                $subQuery->orWhere('format', self::FORMAT_DOUBLE);
                             }
                         }
                     });

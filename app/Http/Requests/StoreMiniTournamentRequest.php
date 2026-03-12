@@ -28,7 +28,22 @@ class StoreMiniTournamentRequest extends FormRequest
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
 
-            'match_type' => 'required|integer|in:' . implode(',', MiniTournament::MATCH_TYPE_NUMBER),
+            // New fields: play_mode and format
+            'play_mode' => 'required|integer|in:' . implode(',', MiniTournament::PLAY_MODE),
+            // format is required when play_mode = 2 (Thi đấu)
+            'format' => [
+                'nullable',
+                'integer',
+                'in:' . implode(',', MiniTournament::FORMAT),
+                function ($_, $value, $fail) {
+                    if ($this->play_mode == MiniTournament::PLAY_MODE_COMPETITIVE && empty($value)) {
+                        $fail('Thể thức là bắt buộc khi chế độ chơi là Thi đấu.');
+                    }
+                },
+            ],
+
+            // Keep match_type for backward compatibility but make nullable
+            'match_type' => 'nullable|integer|in:' . implode(',', MiniTournament::MATCH_TYPE_NUMBER),
 
             'starts_at' => 'nullable|date',
             'duration_minutes' => 'nullable|integer|min:1',
@@ -40,6 +55,7 @@ class StoreMiniTournamentRequest extends FormRequest
             'prize_pool' => 'nullable|integer|min:0',
             'max_players' => 'nullable|integer|min:1',
 
+            // Dupr settings will be auto-set based on play_mode
             'enable_dupr' => 'boolean',
             'enable_vndupr' => 'boolean',
 
@@ -67,5 +83,22 @@ class StoreMiniTournamentRequest extends FormRequest
             'invite_user' => 'nullable|array',
             'invite_user.*' => 'exists:users,id',
         ];
+        
+        return $rules;
+    }
+
+    /**
+     * Prepare the data for validation.
+     * Auto-set dupr settings based on play_mode.
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('play_mode')) {
+            $duprSettings = MiniTournament::getDefaultDuprSettings($this->play_mode);
+            $this->merge([
+                'enable_dupr' => $duprSettings['enable_dupr'],
+                'enable_vndupr' => $duprSettings['enable_vndupr'],
+            ]);
+        }
     }
 }
