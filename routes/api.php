@@ -46,6 +46,7 @@ use App\Http\Controllers\SportController;
 use App\Http\Controllers\SystemNotificationController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TournamentStaffController;
+use App\Http\Controllers\MiniTournamentPaymentController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Broadcast;
 
@@ -532,6 +533,15 @@ Route::middleware(['auth:api', 'update.last_login', 'throttle:api'])->group(func
         Route::get('/{id}', [MiniTournamentController::class, 'show']);
         Route::post('/update/{id}', [MiniTournamentController::class, 'update']);
         Route::post('/delete/{id}', [MiniTournamentController::class,'destroy']);
+
+        // Mini Tournament Payment Routes
+        Route::get('/{id}/payments', [MiniTournamentPaymentController::class, 'index']);
+        Route::post('/{id}/pay', [MiniTournamentPaymentController::class, 'pay']);
+        Route::post('/{id}/my-payment', [MiniTournamentPaymentController::class, 'myPayment']);
+        Route::post('/{id}/payments/{paymentId}/confirm', [MiniTournamentPaymentController::class, 'confirm']);
+        Route::post('/{id}/payments/{paymentId}/reject', [MiniTournamentPaymentController::class, 'reject']);
+        Route::post('/{id}/payments/remind/{participantId}', [MiniTournamentPaymentController::class, 'remind']);
+        Route::post('/{id}/payments/remind-all', [MiniTournamentPaymentController::class, 'remindAll']);
     });
     // Mini Participant Routes
     Route::prefix('mini-participants')->group(function (): void {
@@ -541,6 +551,7 @@ Route::middleware(['auth:api', 'update.last_login', 'throttle:api'])->group(func
         Route::post('accept/{participantId}', [MiniParticipantController::class, 'acceptInvite']);
         Route::post('decline/{participantId}', [MiniParticipantController::class, 'declineInvite']);
         Route::post('/invite/{miniTournamentId}', [MiniParticipantController::class, 'invite']);
+        Route::post('/invite-friends/{miniTournamentId}', [MiniParticipantController::class, 'inviteFriends']);
         Route::match(['get', 'post'], '/candidates/{miniTournamentId}', [MiniParticipantController::class, 'getCandidates']);
         Route::post('/delete/{participantId}', [MiniParticipantController::class, 'delete']);
         Route::post('/delete-staff/{staffId}', [MiniParticipantController::class, 'deleteStaff']);

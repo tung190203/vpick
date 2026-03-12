@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\ResponseHelper;
 use App\Http\Requests\StoreMiniTournamentRequest;
+use App\Http\Requests\UpdateMiniTournamentRequest;
 use App\Http\Resources\ListMiniTournamentResource;
 use App\Http\Resources\MiniTournamentResource;
 use App\Models\MiniMatch;
@@ -24,12 +25,14 @@ class MiniTournamentController extends Controller
      */
     public function store(StoreMiniTournamentRequest $request)
     {
-        $data = $request->safe()->except(['invite_user']);
+        $data = $request->safe()->except(['invite_user', 'role_type']);
 
         $miniTournament = MiniTournament::create($data);
         $miniTournament->staff()->attach(Auth::id(), ['role' => MiniTournamentStaff::ROLE_ORGANIZER]);
 
-        if ($data['role_type'] !== MiniTournament::ROLE_ORGANIZER) {
+        // Add creator as participant if role_type is 'participant'
+        $roleType = $request->input('role_type', 'participant');
+        if ($roleType !== 'organizer') {
             MiniParticipant::create([
                 'mini_tournament_id' => $miniTournament->id,
                 'user_id' => Auth::id(),
@@ -95,7 +98,7 @@ class MiniTournamentController extends Controller
             });
         }
 
-        $query->whereDate('starts_at', '>=', $nowVN);
+        $query->whereDate('start_time', '>=', $nowVN);
         $userId = auth()->id();
         $query->where(function ($q) use ($userId) {
             $q->where('is_private', 0)
@@ -129,10 +132,13 @@ class MiniTournamentController extends Controller
     /**
      * cập nhật mini tournament
      */
-    public function update(StoreMiniTournamentRequest $request, $id)
+    public function update(UpdateMiniTournamentRequest $request, $id)
     {
         $miniTournament = MiniTournament::findOrFail($id);
         $data = $request->validated();
+        // Remove 'role_type' from data before updating tournament
+        $data = collect($data)->except('role_type')->toArray();
+
         $isOrganizer = $miniTournament->hasOrganizer(Auth::id());
 
         if (!$isOrganizer) {
@@ -145,11 +151,15 @@ class MiniTournamentController extends Controller
             $posterPath = $request->file('poster')->store('posters', 'public');
             $miniTournament->update(['poster' => $posterPath]);
         }
-        if($request->has('role_type')){
+
+        // Handle role_type change for tournament creator
+        if ($request->has('role_type')) {
             $roleType = $request->input('role_type');
-            if($roleType === MiniTournament::ROLE_ORGANIZER){
+            if ($roleType === 'organizer') {
+                // Remove creator as participant if switching to organizer-only
                 $miniTournament->participants()->where('user_id', Auth::id())->delete();
             } else {
+                // Add creator as participant if not already
                 $existingParticipant = $miniTournament->participants()->where('user_id', Auth::id())->first();
                 if (!$existingParticipant) {
                     MiniParticipant::create([
@@ -181,7 +191,26 @@ class MiniTournamentController extends Controller
         $hasCompletedMatch = MiniMatch::where('mini_tournament_id', $miniTournament->id)->where('status', MiniMatch::STATUS_COMPLETED)->exists();
 
         if($hasCompletedMatch) {
-            return ResponseHelper::error('Không thể huỷ bỏ kèo đã có trận đấu được xác nhận',404);
+            return ResponseHelper::error('Không thể huỷ bỏ kèo đã có trận đấu được xác nhận', 404);
+        }
+
+        // Check allow_cancellation setting
+        if (!$miniTournament->allow_cancellation) {
+            return ResponseHelper::error('Kèo đấu này không cho phép hủy', 403);
+        }
+
+        // Check cancellation_duration
+        if ($miniTournament->start_time) {
+            $now = Carbon::now();
+            $minutesUntilStart = $now->diffInMinutes($miniTournament->start_time, false);
+
+            if ($minutesUntilStart < $miniTournament->cancellation_duration) {
+                $minutesRemaining = $miniTournament->cancellation_duration - $minutesUntilStart;
+                return ResponseHelper::error(
+                    "Không thể hủy kèo lúc này. Phải hủy ít nhất {$miniTournament->cancellation_duration} phút trước khi kèo bắt đầu. Còn {$minutesRemaining} phút nữa mới hết hạn.",
+                    403
+                );
+            }
         }
 
         DB::transaction(function () use ($miniTournament) {

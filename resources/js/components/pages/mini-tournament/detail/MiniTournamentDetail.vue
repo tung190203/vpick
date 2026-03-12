@@ -359,7 +359,7 @@ export default {
                 max_points: mini.value.max_points,
                 name: mini.value.name,
                 points_difference: mini.value.points_difference,
-                repeat_type: mini.value.repeat_type,
+                recurring_schedule: mini.value.recurring_schedule,
                 role_type: mini.value.role_type,
                 set_number: mini.value.set_number,
                 sport_id: mini.value.sport?.id,
