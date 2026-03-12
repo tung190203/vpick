@@ -46,6 +46,12 @@ class MiniTournament extends Model
         'allow_participant_add_friends',
         'send_notification',
         'status',
+        // New fee fields
+        'has_fee',
+        'auto_split_court_fee',
+        'payment_note',
+        'qr_code_image',
+        'payment_account_id',
     ];
 
     const PER_PAGE = 15;
@@ -136,6 +142,13 @@ class MiniTournament extends Model
         self::FEE_AUTO_SPLIT,
         self::FEE_PER_PERSON,
     ];
+
+    // Fee settings constants
+    const HAS_FEE_FALSE = false;
+    const HAS_FEE_TRUE = true;
+
+    const AUTO_SPLIT_FALSE = false;
+    const AUTO_SPLIT_TRUE = true;
 
     const LOCK_1_HOUR = 1;
     const LOCK_2_HOURS = 2;
@@ -230,6 +243,59 @@ class MiniTournament extends Model
             default:
                 return ['enable_dupr' => false, 'enable_vndupr' => false];
         }
+    }
+
+    // Fee computed properties
+    public function getHasFeeTextAttribute(): string
+    {
+        return $this->has_fee ? 'Có phí' : 'Miễn phí';
+    }
+
+    public function getAutoSplitTextAttribute(): string
+    {
+        return $this->auto_split_court_fee ? 'Chia tiền sân tự động' : 'Tiền cố định/người';
+    }
+
+    /**
+     * Tính phí mỗi người dựa trên cài đặt
+     * Nếu auto_split = true: fee_amount / số người tham gia thực tế
+     * Nếu auto_split = false: fee_amount (tiền cố định mỗi người)
+     */
+    public function getFeePerPersonAttribute()
+    {
+        if (!$this->has_fee) {
+            return 0;
+        }
+
+        if ($this->auto_split_court_fee) {
+            // Chia theo số người tham gia thực tế
+            $participantCount = $this->participants()->count();
+            if ($participantCount > 0) {
+                return round($this->fee_amount / $participantCount);
+            }
+            // Nếu chưa có người, trả về null hoặc có thể hiển thị "Chưa xác định"
+            return null;
+        }
+
+        // Tiền cố định mỗi người
+        return $this->fee_amount;
+    }
+
+    /**
+     * Tính tổng tiền thu được (dự kiến)
+     */
+    public function getTotalFeeExpectedAttribute()
+    {
+        if (!$this->has_fee) {
+            return 0;
+        }
+
+        $participantCount = $this->participants()->count();
+        if ($participantCount > 0) {
+            return $this->fee_per_person * $participantCount;
+        }
+        
+        return 0;
     }
 
     public function getAgeGroupTextAttribute()

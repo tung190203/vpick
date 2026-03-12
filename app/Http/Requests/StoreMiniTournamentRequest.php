@@ -22,7 +22,7 @@ class StoreMiniTournamentRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        $rules = [
             'poster' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'sport_id' => 'required|exists:sports,id',
             'name' => 'required|string|max:255',
@@ -50,6 +50,15 @@ class StoreMiniTournamentRequest extends FormRequest
             'competition_location_id' => 'nullable|exists:competition_locations,id',
 
             'is_private' => 'boolean',
+            
+            // Fee fields - new structure
+            'has_fee' => 'boolean',
+            'auto_split_court_fee' => 'boolean',
+            'payment_note' => 'nullable|string|max:500',
+            'qr_code_image' => 'nullable|string', // base64 or URL
+            'payment_account_id' => 'nullable|exists:club_wallets,id',
+            
+            // Legacy fee fields (still supported for backward compatibility)
             'fee' => 'nullable|in:' . implode(',', MiniTournament::FEE),
             'fee_amount' => 'nullable|integer|min:0',
             'prize_pool' => 'nullable|integer|min:0',
@@ -83,7 +92,13 @@ class StoreMiniTournamentRequest extends FormRequest
             'invite_user' => 'nullable|array',
             'invite_user.*' => 'exists:users,id',
         ];
-        
+
+        // Custom validation: if has_fee is true, require fee details
+        if ($this->has('has_fee') && $this->has_fee) {
+            $rules['fee'] = 'required|in:' . implode(',', MiniTournament::FEE);
+            $rules['fee_amount'] = 'required|integer|min:1';
+        }
+
         return $rules;
     }
 

@@ -39,6 +39,17 @@ class MiniTournamentResource extends JsonResource
             'prize_pool' => $this->prize_pool,
             'fee_amount' => $this->fee_amount,
             'max_players' => $this->max_players,
+            
+            // New fee fields
+            'has_fee' => $this->has_fee,
+            'auto_split_court_fee' => $this->auto_split_court_fee,
+            'payment_note' => $this->payment_note,
+            'qr_code_image' => $this->qr_code_image,
+            'payment_account_id' => $this->payment_account_id,
+            // Computed fee properties
+            'fee_per_person' => $this->fee_per_person,
+            'total_fee_expected' => $this->total_fee_expected,
+            
             'enable_dupr' => $this->enable_dupr,
             'enable_vndupr' => $this->enable_vndupr,
             'min_rating' => $this->min_rating,
