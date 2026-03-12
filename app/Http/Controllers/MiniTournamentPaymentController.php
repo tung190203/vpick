@@ -9,6 +9,7 @@ use App\Models\MiniParticipant;
 use App\Models\MiniParticipantPayment;
 use App\Models\MiniTournament;
 use App\Models\MiniTournamentStaff;
+use App\Models\MiniMatch;
 use App\Notifications\PaymentConfirmedNotification;
 use App\Notifications\PaymentRejectedNotification;
 use App\Notifications\PaymentReminderNotification;
@@ -99,6 +100,20 @@ class MiniTournamentPaymentController extends Controller
         ]);
 
         $miniTournament = MiniTournament::findOrFail($miniTournamentId);
+
+        // Nếu kèo chia tiền tự động thì chỉ được thanh toán sau khi đã có ít nhất 1 trận hoàn tất
+        if ($miniTournament->auto_split_fee) {
+            $hasCompletedMatch = MiniMatch::where('mini_tournament_id', $miniTournament->id)
+                ->where('status', MiniMatch::STATUS_COMPLETED)
+                ->exists();
+
+            if (!$hasCompletedMatch) {
+                return ResponseHelper::error(
+                    'Kèo đang cài đặt chia tiền tự động, chỉ được thanh toán sau khi trận đấu đã kết thúc',
+                    400
+                );
+            }
+        }
 
         // Kiểm tra kèo có thu phí không
         if (!$miniTournament->has_fee) {
@@ -276,6 +291,20 @@ class MiniTournamentPaymentController extends Controller
             return ResponseHelper::error('Kèo này không thu phí tham gia', 400);
         }
 
+        // Nếu kèo chia tiền tự động thì chỉ được nhắc thanh toán sau khi đã có ít nhất 1 trận hoàn tất
+        if ($miniTournament->auto_split_fee) {
+            $hasCompletedMatch = MiniMatch::where('mini_tournament_id', $miniTournament->id)
+                ->where('status', MiniMatch::STATUS_COMPLETED)
+                ->exists();
+
+            if (!$hasCompletedMatch) {
+                return ResponseHelper::error(
+                    'Kèo đang cài đặt chia tiền tự động, chỉ được nhắc thanh toán sau khi trận đấu đã kết thúc',
+                    400
+                );
+            }
+        }
+
         $participant = MiniParticipant::where('id', $participantId)
             ->where('mini_tournament_id', $miniTournamentId)
             ->first();
@@ -319,6 +348,20 @@ class MiniTournamentPaymentController extends Controller
         // Kiểm tra kèo có thu phí không
         if (!$miniTournament->has_fee) {
             return ResponseHelper::error('Kèo này không thu phí tham gia', 400);
+        }
+
+        // Nếu kèo chia tiền tự động thì chỉ được nhắc thanh toán sau khi đã có ít nhất 1 trận hoàn tất
+        if ($miniTournament->auto_split_fee) {
+            $hasCompletedMatch = MiniMatch::where('mini_tournament_id', $miniTournament->id)
+                ->where('status', MiniMatch::STATUS_COMPLETED)
+                ->exists();
+
+            if (!$hasCompletedMatch) {
+                return ResponseHelper::error(
+                    'Kèo đang cài đặt chia tiền tự động, chỉ được nhắc thanh toán sau khi trận đấu đã kết thúc',
+                    400
+                );
+            }
         }
 
         // Lấy danh sách thành viên chưa thanh toán

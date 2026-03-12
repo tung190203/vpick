@@ -47,6 +47,7 @@ use App\Http\Controllers\SystemNotificationController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TournamentStaffController;
 use App\Http\Controllers\MiniTournamentPaymentController;
+use App\Http\Controllers\MiniTournamentTemplateController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Broadcast;
 
@@ -542,6 +543,12 @@ Route::middleware(['auth:api', 'update.last_login', 'throttle:api'])->group(func
         Route::post('/{id}/payments/{paymentId}/reject', [MiniTournamentPaymentController::class, 'reject']);
         Route::post('/{id}/payments/remind/{participantId}', [MiniTournamentPaymentController::class, 'remind']);
         Route::post('/{id}/payments/remind-all', [MiniTournamentPaymentController::class, 'remindAll']);
+    });
+    // Mini Tournament Templates
+    Route::prefix('mini-tournament-templates')->group(function (): void {
+        Route::get('/', [MiniTournamentTemplateController::class, 'index']);
+        Route::post('/', [MiniTournamentTemplateController::class, 'store']);
+        Route::delete('/{id}', [MiniTournamentTemplateController::class, 'destroy']);
     });
     // Mini Participant Routes
     Route::prefix('mini-participants')->group(function (): void {
