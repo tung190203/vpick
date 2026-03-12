@@ -1,0 +1,72 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Helpers\ResponseHelper;
+use App\Models\MiniTournamentTemplate;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
+class MiniTournamentTemplateController extends Controller
+{
+    /**
+     * Lấy danh sách kèo mẫu của user hiện tại.
+     */
+    public function index(Request $request)
+    {
+        $templates = MiniTournamentTemplate::where('user_id', Auth::id())
+            ->orderByDesc('id')
+            ->get();
+
+        return ResponseHelper::success(
+            ['templates' => $templates],
+            'Lấy danh sách kèo mẫu thành công'
+        );
+    }
+
+    /**
+     * Lưu kèo mẫu mới.
+     * FE gửi toàn bộ payload tạo kèo (trừ poster/file) vào field "settings".
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'settings' => 'required|array',
+        ]);
+
+        $template = MiniTournamentTemplate::create([
+            'user_id' => Auth::id(),
+            'name' => $validated['name'],
+            'settings' => $validated['settings'],
+        ]);
+
+        return ResponseHelper::success(
+            $template,
+            'Lưu kèo mẫu thành công',
+            201
+        );
+    }
+
+    /**
+     * Xoá kèo mẫu.
+     */
+    public function destroy($id)
+    {
+        $template = MiniTournamentTemplate::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->first();
+
+        if (!$template) {
+            return ResponseHelper::error('Kèo mẫu không tồn tại', 404);
+        }
+
+        $template->delete();
+
+        return ResponseHelper::success(
+            null,
+            'Xoá kèo mẫu thành công'
+        );
+    }
+}
+
