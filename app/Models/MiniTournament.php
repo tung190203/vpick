@@ -43,6 +43,7 @@ class MiniTournament extends Model
         'allow_cancellation',
         'cancellation_duration',
         'apply_rule',
+        'recurring_schedule',
         'status',
     ];
 
@@ -67,19 +68,16 @@ class MiniTournament extends Model
     const FORMAT = [
         self::FORMAT_SINGLE,
         self::FORMAT_DOUBLE,
-        self::FORMAT_MENS_DOUBLES,
-        self::FORMAT_WOMENS_DOUBLES,
-        self::FORMAT_MIXED,
     ];
 
     const MALE = 1;
     const FEMALE = 2;
-    const UNLIMIT = 3;
+    const MIXED = 3;
 
     const GENDER = [
         self::MALE,
         self::FEMALE,
-        self::UNLIMIT,
+        self::MIXED,
     ];
 
     const STATUS_DRAFT = 1;
@@ -119,7 +117,7 @@ class MiniTournament extends Model
         return match($this->gender) {
             self::MALE => 'Nam',
             self::FEMALE => 'Nữ',
-            self::UNLIMIT => 'Nam nữ',
+            self::MIXED => 'Nam nữ',
             default => 'Không xác định',
         };
     }
@@ -191,7 +189,7 @@ class MiniTournament extends Model
         if ($participantCount > 0) {
             return $this->fee_per_person * $participantCount;
         }
-        
+
         return 0;
     }
 
@@ -233,12 +231,66 @@ class MiniTournament extends Model
             ->withTimestamps();
     }
 
+    public function matches()
+    {
+        return $this->hasMany(MiniMatch::class);
+    }
+
     /**
      * Get recurring schedule for this tournament
      */
     public function recurringSchedule()
     {
         return $this->hasOne(MiniRecurringSchedule::class);
+    }
+
+    public function getRecurringScheduleAttribute($value)
+    {
+        if (!$value) {
+            return null;
+        }
+
+        $data = is_array($value) ? $value : json_decode($value, true);
+        if (!$data || !isset($data['period'])) {
+            return null;
+        }
+
+        $result = [
+            'period' => $data['period'],
+            'week_days' => null,
+            'recurring_date' => null,
+        ];
+
+        if ($data['period'] === 'weekly') {
+            $result['week_days'] = $data['week_days'] ?? null;
+        } elseif (isset($data['recurring_date'])) {
+            $result['recurring_date'] = is_string($data['recurring_date'])
+                ? $data['recurring_date']
+                : (string) $data['recurring_date'];
+        }
+
+        return $result;
+    }
+
+    public function setRecurringScheduleAttribute($value)
+    {
+        if (!$value) {
+            $this->attributes['recurring_schedule'] = null;
+            return;
+        }
+
+        $this->attributes['recurring_schedule'] = json_encode($value);
+    }
+
+    public function getRecurringScheduleRaw(): ?array
+    {
+        $value = $this->attributes['recurring_schedule'] ?? null;
+        if (!$value) {
+            return null;
+        }
+
+        $data = json_decode($value, true);
+        return $data && isset($data['period']) ? $data : null;
     }
 
     public function participantPayments()
@@ -264,10 +316,10 @@ class MiniTournament extends Model
     public function getPaymentSummaryAttribute(): array
     {
         $participantCount = $this->participants()->count();
-        
+
         return [
-            'total_expected' => $this->has_fee ? ($this->auto_split_fee ? 
-                ($this->fee_amount * $participantCount) : 
+            'total_expected' => $this->has_fee ? ($this->auto_split_fee ?
+                ($this->fee_amount * $participantCount) :
                 ($this->fee_amount * $participantCount)) : 0,
             'total_collected' => $this->confirmedPayments()->sum('amount'),
             'total_pending' => $this->pendingPayments()->count(),
@@ -287,6 +339,7 @@ class MiniTournament extends Model
             'participants.user.sports.scores',
             'miniTournamentStaffs.user',
             'staff',
+            'matches',
         ]);
     }
 
@@ -300,6 +353,7 @@ class MiniTournament extends Model
             'participants.user.sports.scores',
             'miniTournamentStaffs.user',
             'staff',
+            'matches',
         ]);
     }
 

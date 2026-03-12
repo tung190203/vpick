@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\MiniTournament;
+use App\Rules\ValidRecurringSchedule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateMiniTournamentRequest extends FormRequest
@@ -60,6 +61,9 @@ class UpdateMiniTournamentRequest extends FormRequest
             'cancellation_duration' => 'nullable|integer|min:0',
             'auto_approve' => 'boolean',
             'allow_participant_add_friends' => 'boolean',
+
+            // Recurring schedule (same format as clubs)
+            'recurring_schedule' => ['nullable', 'array', new ValidRecurringSchedule()],
 
             'status' => 'sometimes|integer|in:' . implode(',', MiniTournament::STATUS),
 

@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\MiniTournament;
+use App\Rules\ValidRecurringSchedule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreMiniTournamentRequest extends FormRequest
@@ -29,8 +30,8 @@ class StoreMiniTournamentRequest extends FormRequest
             'description' => 'nullable|string',
 
             // Play mode and format
-            'play_mode' => 'required|string|in:casual,competition,practice',
-            'format' => 'nullable|integer|in:' . implode(',', MiniTournament::FORMAT),
+            'play_mode' => 'required|in:casual,competition,practice,' . implode(',', [MiniTournament::PLAY_MODE_CASUAL, MiniTournament::PLAY_MODE_COMPETITION, MiniTournament::PLAY_MODE_PRACTICE]),
+            'format' => 'nullable|in:single,double,' . implode(',', MiniTournament::FORMAT),
 
             // Time fields (new naming)
             'start_time' => 'nullable|date',
@@ -39,7 +40,7 @@ class StoreMiniTournamentRequest extends FormRequest
             'competition_location_id' => 'nullable|exists:competition_locations,id',
 
             'is_private' => 'boolean',
-            
+
             // Fee fields (updated naming)
             'has_fee' => 'boolean',
             'auto_split_fee' => 'boolean',
@@ -68,6 +69,9 @@ class StoreMiniTournamentRequest extends FormRequest
             'cancellation_duration' => 'nullable|integer|min:0',
             'auto_approve' => 'boolean',
             'allow_participant_add_friends' => 'boolean',
+
+            // Recurring schedule (same format as clubs)
+            'recurring_schedule' => ['nullable', 'array', new ValidRecurringSchedule()],
 
             'status' => 'required|integer|in:' . implode(',', MiniTournament::STATUS),
 
@@ -101,6 +105,20 @@ class StoreMiniTournamentRequest extends FormRequest
         $playMode = $this->input('play_mode');
         if ($playMode && isset($playModeMap[$playMode])) {
             $this->merge(['play_mode' => $playModeMap[$playMode]]);
+        }
+
+        // Convert format string to integer
+        $formatMap = [
+            'single' => MiniTournament::FORMAT_SINGLE,
+            'double' => MiniTournament::FORMAT_DOUBLE,
+            'mens_doubles' => MiniTournament::FORMAT_MENS_DOUBLES,
+            'womens_doubles' => MiniTournament::FORMAT_WOMENS_DOUBLES,
+            'mixed' => MiniTournament::FORMAT_MIXED,
+        ];
+
+        $format = $this->input('format');
+        if ($format && isset($formatMap[$format])) {
+            $this->merge(['format' => $formatMap[$format]]);
         }
 
         $startTime = $this->input('start_time');

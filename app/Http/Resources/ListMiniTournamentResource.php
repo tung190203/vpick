@@ -43,6 +43,9 @@ class ListMiniTournamentResource extends JsonResource
                     ->map(fn($group) => MiniTournamentStaffResource::collection($group));
             }),
             'participants' => MiniParticipantResource::collection($participants),
+            'matches' => $this->whenLoaded('matches', function () {
+                return MiniMatchResource::collection($this->matches);
+            }),
             'all_users' => UserListResource::collection($this->all_users ?? collect()),
         ];
     }

@@ -1170,6 +1170,22 @@ const handlePointConfirm = () => {
 // Computed and Submit
 // =================================================================================
 
+const buildRecurringSchedule = () => {
+    // Same format as clubs: { period, week_days, recurring_date }
+    // Current UI only supports weekly on the selected start day (repeatType=1 week).
+    if (!date.value) return null
+    if (repeatType.value !== 1) return null
+
+    const d = new Date(date.value)
+    const dayOfWeek = d.getDay() // 0=CN..6=T7 (matches backend ValidRecurringSchedule)
+
+    return {
+        period: 'weekly',
+        week_days: [dayOfWeek],
+        recurring_date: null,
+    }
+}
+
 const handleSubmit = async () => {
     let startsAt = null;
     if (date.value) {
@@ -1229,6 +1245,7 @@ const handleSubmit = async () => {
         gender_policy: genderPolicy.value,
         age_group: ageGroup.value,
         repeat_type: repeatType.value,
+        recurring_schedule: buildRecurringSchedule(),
         role_type: roleType.value,
         lock_cancellation: lockValue,
         auto_approve: autoApprove.value,
@@ -1375,6 +1392,10 @@ const prefillForm = (data) => {
     genderPolicy.value = data?.gender_policy
     ageGroup.value = data?.age_group
     repeatType.value = data?.repeat_type
+    if (data?.recurring_schedule?.period === 'weekly') {
+        // Current UI maps recurring schedule weekly to "1 tuần"
+        repeatType.value = 1
+    }
     roleType.value = data?.role_type
     lockCancellation.value = data?.lock_cancellation === 'unlock' ? 0 : data?.lock_cancellation
     autoApprove.value = data?.auto_approve || false
