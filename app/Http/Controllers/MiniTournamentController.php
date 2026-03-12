@@ -203,7 +203,7 @@ class MiniTournamentController extends Controller
         if ($miniTournament->start_time) {
             $now = Carbon::now();
             $minutesUntilStart = $now->diffInMinutes($miniTournament->start_time, false);
-            
+
             if ($minutesUntilStart < $miniTournament->cancellation_duration) {
                 $minutesRemaining = $miniTournament->cancellation_duration - $minutesUntilStart;
                 return ResponseHelper::error(
