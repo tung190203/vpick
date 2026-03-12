@@ -14,6 +14,7 @@ use App\Notifications\MiniTournamentCreatorInvitationNotification;
 use App\Notifications\MiniTournamentJoinConfirmedNotification;
 use App\Notifications\MiniTournamentJoinRequestNotification;
 use App\Notifications\MiniTournamentRemovedNotification;
+use App\Notifications\MiniTournamentInvitationNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -345,6 +346,96 @@ class MiniParticipantController extends Controller
         DB::table('mini_tournament_staff')->where('id', $staffId)->delete();
 
         return ResponseHelper::success(null, 'Xoá nhân viên thành công', 200);
+    }
+
+    /**
+     * Participant mời bạn bè tham gia mini tournament
+     */
+    public function inviteFriends(Request $request, $tournamentId)
+    {
+        $miniTournament = MiniTournament::with('staff')->findOrFail($tournamentId);
+
+        // Check if allow_participant_add_friends is enabled
+        if (!$miniTournament->allow_participant_add_friends) {
+            return ResponseHelper::error('Tính năng mời bạn bè không được bật cho kèo đấu này', 403);
+        }
+
+        // Check if current user is a confirmed participant
+        $participant = $miniTournament->participants()
+            ->where('user_id', Auth::id())
+            ->where('is_confirmed', true)
+            ->first();
+
+        if (!$participant) {
+            return ResponseHelper::error('Bạn phải là thành viên được duyệt của kèo đấu để mời bạn bè', 403);
+        }
+
+        $validated = $request->validate([
+            'user_ids' => 'required|array',
+            'user_ids.*' => 'exists:users,id',
+        ]);
+
+        $invitedCount = 0;
+        $errors = [];
+
+        foreach ($validated['user_ids'] as $userId) {
+            try {
+                // Check if user already exists
+                $exists = $miniTournament->participants()
+                    ->where('user_id', $userId)
+                    ->exists();
+
+                if ($exists) {
+                    $errors[] = "User ID {$userId} đã tham gia hoặc được mời";
+                    continue;
+                }
+
+                // Check max players
+                $this->checkMaxPlayers($miniTournament);
+
+                // Create new participant
+                $newParticipant = $miniTournament->participants()->create([
+                    'user_id' => $userId,
+                    'is_confirmed' => $miniTournament->auto_approve && !$miniTournament->is_private,
+                    'invited_by' => Auth::id(),
+                ]);
+
+                // Send notification
+                $user = User::find($userId);
+                if ($user) {
+                    $user->notify(new MiniTournamentInvitationNotification($miniTournament));
+                    $this->pushToUsers(
+                        [$userId],
+                        'Lời mời tham gia kèo đấu',
+                        auth()->user()->full_name . ' mời bạn tham gia kèo đấu "' . $miniTournament->name . '"',
+                        [
+                            'type' => 'MINI_TOURNAMENT_INVITED',
+                            'mini_tournament_id' => $miniTournament->id,
+                            'participant_id' => $newParticipant->id,
+                        ]
+                    );
+                }
+
+                $invitedCount++;
+            } catch (\Exception $e) {
+                $errors[] = "Lỗi khi mời user {$userId}: " . $e->getMessage();
+            }
+        }
+
+        $message = "Đã mời {$invitedCount} bạn bè tham gia kèo đấu";
+        if (!empty($errors)) {
+            return ResponseHelper::success(
+                ['invited_count' => $invitedCount, 'errors' => $errors],
+                $message . ' (có lỗi)',
+                200
+            );
+        }
+
+        return ResponseHelper::success(
+            ['invited_count' => $invitedCount],
+            $message,
+            200
+        );
     }
 
     /**

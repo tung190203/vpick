@@ -551,6 +551,7 @@ Route::middleware(['auth:api', 'update.last_login', 'throttle:api'])->group(func
         Route::post('accept/{participantId}', [MiniParticipantController::class, 'acceptInvite']);
         Route::post('decline/{participantId}', [MiniParticipantController::class, 'declineInvite']);
         Route::post('/invite/{miniTournamentId}', [MiniParticipantController::class, 'invite']);
+        Route::post('/invite-friends/{miniTournamentId}', [MiniParticipantController::class, 'inviteFriends']);
         Route::match(['get', 'post'], '/candidates/{miniTournamentId}', [MiniParticipantController::class, 'getCandidates']);
         Route::post('/delete/{participantId}', [MiniParticipantController::class, 'delete']);
         Route::post('/delete-staff/{staffId}', [MiniParticipantController::class, 'deleteStaff']);

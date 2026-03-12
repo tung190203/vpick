@@ -87,6 +87,11 @@ class StoreMiniTournamentRequest extends FormRequest
             $rules['fee_amount'] = 'required|integer|min:1';
         }
 
+        // Custom validation: if allow_cancellation is true, require cancellation_duration
+        if ($this->has('allow_cancellation') && $this->allow_cancellation) {
+            $rules['cancellation_duration'] = 'required|integer|min:1';
+        }
+
         return $rules;
     }
 
@@ -179,6 +184,8 @@ class StoreMiniTournamentRequest extends FormRequest
             'gender.in' => 'Giới tính không hợp lệ',
             'status.required' => 'Vui lòng chọn trạng thái',
             'status.in' => 'Trạng thái không hợp lệ',
+            'cancellation_duration.required' => 'Vui lòng nhập thời gian hủy kèo (phút)',
+            'cancellation_duration.min' => 'Thời gian hủy kèo phải lớn hơn 0',
             'invite_user.*.exists' => 'Người dùng được mời không tồn tại',
         ];
     }

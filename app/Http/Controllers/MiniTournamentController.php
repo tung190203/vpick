@@ -191,7 +191,26 @@ class MiniTournamentController extends Controller
         $hasCompletedMatch = MiniMatch::where('mini_tournament_id', $miniTournament->id)->where('status', MiniMatch::STATUS_COMPLETED)->exists();
 
         if($hasCompletedMatch) {
-            return ResponseHelper::error('Không thể huỷ bỏ kèo đã có trận đấu được xác nhận',404);
+            return ResponseHelper::error('Không thể huỷ bỏ kèo đã có trận đấu được xác nhận', 404);
+        }
+
+        // Check allow_cancellation setting
+        if (!$miniTournament->allow_cancellation) {
+            return ResponseHelper::error('Kèo đấu này không cho phép hủy', 403);
+        }
+
+        // Check cancellation_duration
+        if ($miniTournament->start_time) {
+            $now = Carbon::now();
+            $minutesUntilStart = $now->diffInMinutes($miniTournament->start_time, false);
+            
+            if ($minutesUntilStart < $miniTournament->cancellation_duration) {
+                $minutesRemaining = $miniTournament->cancellation_duration - $minutesUntilStart;
+                return ResponseHelper::error(
+                    "Không thể hủy kèo lúc này. Phải hủy ít nhất {$miniTournament->cancellation_duration} phút trước khi kèo bắt đầu. Còn {$minutesRemaining} phút nữa mới hết hạn.",
+                    403
+                );
+            }
         }
 
         DB::transaction(function () use ($miniTournament) {

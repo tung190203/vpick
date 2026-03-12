@@ -22,8 +22,8 @@ class UpdateMiniTournamentRequest extends FormRequest
             'description' => 'nullable|string',
 
             // Play mode and format
-            'play_mode' => 'sometimes|string|in:casual,competition,practice',
-            'format' => 'nullable|integer|in:' . implode(',', MiniTournament::FORMAT),
+            'play_mode' => 'sometimes|in:casual,competition,practice,' . implode(',', [MiniTournament::PLAY_MODE_CASUAL, MiniTournament::PLAY_MODE_COMPETITION, MiniTournament::PLAY_MODE_PRACTICE]),
+            'format' => 'nullable|in:single,double,mens_doubles,womens_doubles,mixed,' . implode(',', MiniTournament::FORMAT),
 
             // Time fields
             'start_time' => 'nullable|date',
@@ -79,6 +79,11 @@ class UpdateMiniTournamentRequest extends FormRequest
             $rules['fee_amount'] = 'required|integer|min:1';
         }
 
+        // Custom validation: if allow_cancellation is true, require cancellation_duration
+        if ($this->has('allow_cancellation') && $this->allow_cancellation) {
+            $rules['cancellation_duration'] = 'required|integer|min:1';
+        }
+
         return $rules;
     }
 
@@ -97,6 +102,20 @@ class UpdateMiniTournamentRequest extends FormRequest
         $playMode = $this->input('play_mode');
         if ($playMode && isset($playModeMap[$playMode])) {
             $this->merge(['play_mode' => $playModeMap[$playMode]]);
+        }
+
+        // Convert format string to integer
+        $formatMap = [
+            'single' => MiniTournament::FORMAT_SINGLE,
+            'double' => MiniTournament::FORMAT_DOUBLE,
+            'mens_doubles' => MiniTournament::FORMAT_MENS_DOUBLES,
+            'womens_doubles' => MiniTournament::FORMAT_WOMENS_DOUBLES,
+            'mixed' => MiniTournament::FORMAT_MIXED,
+        ];
+
+        $format = $this->input('format');
+        if ($format && isset($formatMap[$format])) {
+            $this->merge(['format' => $formatMap[$format]]);
         }
 
         $startTime = $this->input('start_time');
