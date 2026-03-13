@@ -618,7 +618,8 @@ export default {
             openPaymentModal,
             showSubmitPaymentModal,
             openSubmitPaymentModal,
-            handlePaymentButtonClick
+            handlePaymentButtonClick,
+            toast
         }
     }
 }
