@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\MiniTournament;
 use App\Models\MiniParticipant;
 use App\Models\MiniParticipantPayment;
+use App\Enums\PaymentStatusEnum;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 
@@ -30,18 +31,13 @@ class MiniTournamentService
             'recurrence_series_id' => $seriesId,
         ]);
 
-        // Calculate payment_status for creator
-        $paymentStatus = PaymentStatusEnum::CONFIRMED;
-        if ($miniTournament->has_fee && !$miniTournament->auto_split_fee) {
-            $paymentStatus = PaymentStatusEnum::PENDING;
-        }
-
-        // Creator always participates by default
+        // Creator always participates by default with confirmed payment status
+        // (creator is exempt from payment or auto-confirmed)
         $participant = MiniParticipant::create([
             'mini_tournament_id' => $miniTournament->id,
             'user_id' => $userId,
             'is_confirmed' => true,
-            'payment_status' => $paymentStatus,
+            'payment_status' => PaymentStatusEnum::CONFIRMED,
         ]);
 
         // Tạo khoản thu cho chủ kèo nếu kèo có thu phí
