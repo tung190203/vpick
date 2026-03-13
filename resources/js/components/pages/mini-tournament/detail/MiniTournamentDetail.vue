@@ -36,6 +36,8 @@ import DeleteConfirmationModal from '@/components/molecules/DeleteConfirmationMo
 import MiniMatchScheduleTab from '@/components/molecules/mini-match-schedule-tab/MiniMatchScheduleTab.vue'
 import ChatFormMiniTournament from '@/components/organisms/ChatFormMiniTournament.vue'
 import PromotionModal from '@/components/organisms/PromotionModal.vue'
+import MiniTournamentPaymentModal from '@/components/pages/mini-tournament/partials/MiniTournamentPaymentModal.vue'
+import MiniTournamentSubmitReceiptModal from '@/components/pages/mini-tournament/partials/MiniTournamentSubmitReceiptModal.vue'
 
 export default {
     name: 'MiniTournamentDetail',
@@ -67,6 +69,8 @@ export default {
         DeleteConfirmationModal,
         ChatFormMiniTournament,
         PromotionModal,
+        MiniTournamentPaymentModal,
+        MiniTournamentSubmitReceiptModal,
         MegaphoneIcon
     },
 
@@ -99,6 +103,8 @@ export default {
         const currentParticipant = ref(null)
         const isUserConfirmed = ref(false)
         const showDelineMiniParticipantModal = ref(false)
+        const showPaymentModal = ref(false)
+        const showSubmitPaymentModal = ref(false)
 
         const isDescriptionChanged = computed(() => {
             return descriptionModel.value !== mini.value.description;
@@ -188,13 +194,33 @@ export default {
         const updateMiniTournament = async (id, payload) => {
             try {
                 const formData = new FormData()
-                for (const key in payload) {
-                    let value = payload[key]
+                Object.entries(payload).forEach(([key, raw]) => {
+                    if (raw === undefined || raw === null) return
+
+                    // Recurring schedule: expand thành các field con như phía clubs
+                    if (key === 'recurring_schedule' && typeof raw === 'object') {
+                        const value = raw || {}
+                        if (value.period) {
+                            formData.append('recurring_schedule[period]', value.period)
+                        }
+                        if (Array.isArray(value.week_days) && value.week_days.length) {
+                            value.week_days.forEach((day, index) => {
+                                formData.append(`recurring_schedule[week_days][${index}]`, day)
+                            })
+                        }
+                        if (value.recurring_date) {
+                            formData.append('recurring_schedule[recurring_date]', value.recurring_date)
+                        }
+                        return
+                    }
+
+                    let value = raw
                     if (typeof value === 'boolean') {
                         value = value ? '1' : '0'
                     }
                     formData.append(key, value)
-                }
+                })
+
                 await MiniTournamnetService.updateMiniTournament(id, formData)
                 toast.success('Cập nhật thông tin kèo đấu thành công!')
             } catch (error) {
@@ -350,19 +376,32 @@ export default {
 
         const baseSetColumnUpdateMiniTournament = async () => {
             return {
-                age_group: mini.value.age_group,
-                court_switch_points: mini.value.court_switch_points,
-                games_per_set: mini.value.games_per_set,
-                gender_policy: mini.value.gender_policy,
-                lock_cancellation: mini.value.lock_cancellation,
-                match_type: mini.value.match_type,
-                max_points: mini.value.max_points,
-                name: mini.value.name,
-                points_difference: mini.value.points_difference,
-                recurring_schedule: mini.value.recurring_schedule,
-                role_type: mini.value.role_type,
-                set_number: mini.value.set_number,
                 sport_id: mini.value.sport?.id,
+                name: mini.value.name,
+                description: mini.value.description,
+                start_time: mini.value.start_time,
+                end_time: mini.value.end_time,
+                duration: mini.value.duration,
+                competition_location_id: mini.value.competition_location?.id,
+                is_private: mini.value.is_private,
+                has_fee: mini.value.has_fee,
+                auto_split_fee: mini.value.auto_split_fee,
+                fee_description: mini.value.fee_description,
+                fee_amount: mini.value.fee_amount,
+                max_players: mini.value.max_players,
+                min_rating: mini.value.min_rating,
+                max_rating: mini.value.max_rating,
+                set_number: mini.value.set_number,
+                base_points: mini.value.base_points,
+                points_difference: mini.value.points_difference,
+                max_points: mini.value.max_points,
+                gender: mini.value.gender,
+                apply_rule: mini.value.apply_rule,
+                allow_cancellation: mini.value.allow_cancellation,
+                cancellation_duration: mini.value.cancellation_duration,
+                auto_approve: mini.value.auto_approve,
+                allow_participant_add_friends: mini.value.allow_participant_add_friends,
+                recurring_schedule: mini.value.recurring_schedule,
                 status: mini.value.status,
             }
         };
@@ -382,6 +421,24 @@ export default {
             } catch (error) {
                 toast.error(error.response?.data?.message || 'Đã xảy ra lỗi khi xoá giải đấu.')
             }
+        }
+
+        const openPaymentModal = () => {
+            if (!mini.value?.id) return
+            if (!mini.value.has_fee) {
+                toast.error('Kèo này không thu phí tham gia.')
+                return
+            }
+            showPaymentModal.value = true
+        }
+
+        const openSubmitPaymentModal = () => {
+            if (!mini.value?.id) return
+            if (!mini.value.has_fee) {
+                toast.error('Kèo này không thu phí tham gia.')
+                return
+            }
+            showSubmitPaymentModal.value = true
         }
 
 
@@ -546,7 +603,11 @@ export default {
             confirmDelineMiniParticipant,
             declineMiniTournament,
             showDelineMiniParticipantModal,
-            onRadiusChange
+            onRadiusChange,
+            showPaymentModal,
+            openPaymentModal,
+            showSubmitPaymentModal,
+            openSubmitPaymentModal
         }
     }
 }
