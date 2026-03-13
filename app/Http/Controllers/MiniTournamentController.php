@@ -234,23 +234,27 @@ class MiniTournamentController extends Controller
             return ResponseHelper::error('Không thể huỷ bỏ kèo đã có trận đấu được xác nhận', 404);
         }
 
-        // Check allow_cancellation setting
+        // Check allow_cancellation setting + thời điểm hết hạn hủy kèo
         if (!$miniTournament->allow_cancellation) {
             return ResponseHelper::error('Kèo đấu này không cho phép hủy', 403);
         }
 
-        // Check cancellation_duration
-        if ($miniTournament->start_time) {
-            $now = Carbon::now();
-            $minutesUntilStart = $now->diffInMinutes($miniTournament->start_time, false);
+        if ($miniTournament->isCancellationClosed(Carbon::now())) {
+            $minutesRemaining = null;
 
-            if ($minutesUntilStart < $miniTournament->cancellation_duration) {
+            if ($miniTournament->start_time && $miniTournament->cancellation_duration !== null) {
+                $now = Carbon::now();
+                $minutesUntilStart = $now->diffInMinutes($miniTournament->start_time, false);
                 $minutesRemaining = $miniTournament->cancellation_duration - $minutesUntilStart;
-                return ResponseHelper::error(
-                    "Không thể hủy kèo lúc này. Phải hủy ít nhất {$miniTournament->cancellation_duration} phút trước khi kèo bắt đầu. Còn {$minutesRemaining} phút nữa mới hết hạn.",
-                    403
-                );
             }
+
+            $message = "Không thể hủy kèo lúc này. Phải hủy ít nhất {$miniTournament->cancellation_duration} phút trước khi kèo bắt đầu.";
+
+            if ($minutesRemaining !== null) {
+                $message .= " Còn {$minutesRemaining} phút nữa mới hết hạn.";
+            }
+
+            return ResponseHelper::error($message, 403);
         }
 
         DB::transaction(function () use ($miniTournament) {
