@@ -2,7 +2,6 @@
 
 namespace App\Notifications;
 
-use App\Models\MiniParticipant;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\BroadcastMessage;
@@ -12,11 +11,13 @@ class MiniTournamentRemovedNotification extends Notification implements ShouldQu
 {
     use Queueable;
 
-    protected $participant;
+    protected $participantData;
+    protected $removedBy;
 
-    public function __construct(MiniParticipant $participant)
+    public function __construct($participantData, $removedBy = null)
     {
-        $this->participant = $participant;
+        $this->participantData = $participantData;
+        $this->removedBy = $removedBy;
     }
 
     public function via($notifiable)
@@ -27,31 +28,31 @@ class MiniTournamentRemovedNotification extends Notification implements ShouldQu
     public function toDatabase($notifiable)
     {
         return [
-            'participant_id' => $this->participant->id,
-            'mini_tournament_id' => $this->participant->mini_tournament_id,
+            'participant_id' => $this->participantData['id'],
+            'mini_tournament_id' => $this->participantData['mini_tournament_id'],
             'title' => 'Bạn đã bị xóa khỏi kèo đấu',
-            'message' => "Bạn đã bị xóa khỏi kèo đấu '{$this->participant->miniTournament->name}'",
-            'removed_by' => auth()->id(),
+            'message' => "Bạn đã bị xóa khỏi kèo đấu '{$this->participantData['tournament_name']}'",
+            'removed_by' => $this->removedBy,
         ];
     }
 
     public function toBroadcast($notifiable)
     {
         return new BroadcastMessage([
-            'participant_id' => $this->participant->id,
-            'mini_tournament_id' => $this->participant->mini_tournament_id,
+            'participant_id' => $this->participantData['id'],
+            'mini_tournament_id' => $this->participantData['mini_tournament_id'],
             'title' => 'Bạn đã bị xóa khỏi kèo đấu',
-            'message' => "Bạn đã bị xóa khỏi kèo đấu '{$this->participant->miniTournament->name}'",
-            'removed_by' => auth()->id(),
+            'message' => "Bạn đã bị xóa khỏi kèo đấu '{$this->participantData['tournament_name']}'",
+            'removed_by' => $this->removedBy,
         ]);
     }
 
     public function toArray($notifiable)
     {
         return [
-            'participant_id' => $this->participant->id,
-            'message' => "Bạn đã bị xóa khỏi kèo đấu: {$this->participant->miniTournament->name}",
-            'removed_by' => auth()->id(),
+            'participant_id' => $this->participantData['id'],
+            'message' => "Bạn đã bị xóa khỏi kèo đấu: {$this->participantData['tournament_name']}",
+            'removed_by' => $this->removedBy,
         ];
     }
 }

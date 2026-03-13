@@ -64,7 +64,7 @@ class MiniTournamentPaymentController extends Controller
         }
 
         $data = [
-            'tournament' => new MiniTournamentResource($miniTournament),
+            'mini_tournament_id' => $miniTournament->id,
             'payment_config' => [
                 'has_fee' => $miniTournament->has_fee,
                 'auto_split_fee' => $miniTournament->auto_split_fee,

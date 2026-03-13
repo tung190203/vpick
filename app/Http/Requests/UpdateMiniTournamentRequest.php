@@ -47,10 +47,10 @@ class UpdateMiniTournamentRequest extends FormRequest
             'max_rating' => 'nullable|numeric|min:0',
 
             // Game rules
-            'set_number' => 'sometimes|integer|min:1',
-            'base_points' => 'sometimes|integer|min:11',
-            'points_difference' => 'sometimes|integer|min:1',
-            'max_points' => 'sometimes|integer|min:11',
+            'set_number' => 'sometimes|nullable|integer|min:1',
+            'base_points' => 'sometimes|nullable|integer|min:11',
+            'points_difference' => 'sometimes|nullable|integer|min:1',
+            'max_points' => 'sometimes|nullable|integer|min:11',
 
             // Gender
             'gender' => 'sometimes|integer|in:' . implode(',', MiniTournament::GENDER),
@@ -82,6 +82,14 @@ class UpdateMiniTournamentRequest extends FormRequest
         // Custom validation: if allow_cancellation is true, require cancellation_duration
         if ($this->has('allow_cancellation') && $this->allow_cancellation) {
             $rules['cancellation_duration'] = 'required|integer|min:1';
+        }
+
+        // Custom validation: if apply_rule is true, require game rule fields
+        if ($this->has('apply_rule') && $this->apply_rule) {
+            $rules['set_number'] = 'required|integer|min:1';
+            $rules['base_points'] = 'required|integer|min:11';
+            $rules['points_difference'] = 'required|integer|min:1';
+            $rules['max_points'] = 'required|integer|min:11';
         }
 
         return $rules;
@@ -116,6 +124,18 @@ class UpdateMiniTournamentRequest extends FormRequest
         $format = $this->input('format');
         if ($format && isset($formatMap[$format])) {
             $this->merge(['format' => $formatMap[$format]]);
+        }
+
+        // Handle conditional game rule fields based on apply_rule
+        $applyRule = $this->input('apply_rule');
+        if ($applyRule === false || $applyRule === '0' || $applyRule === 0) {
+            // Set game rule fields to NULL when apply_rule is false
+            $this->merge([
+                'set_number' => null,
+                'base_points' => null,
+                'points_difference' => null,
+                'max_points' => null,
+            ]);
         }
 
         $startTime = $this->input('start_time');

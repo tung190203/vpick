@@ -22,16 +22,19 @@ class MiniTournamentResource extends JsonResource
             $qrUrl = asset('storage/' . ltrim($qrUrl, '/'));
         }
 
-        return [
+        $posterUrl = $this->poster;
+        if ($posterUrl && !str_starts_with($posterUrl, 'http')) {
+            $posterUrl = asset('storage/' . ltrim($posterUrl, '/'));
+        }
+
+        $data = [
             'id' => $this->id,
-            'poster' => $this->poster,
+            'poster' => $posterUrl,
             'sport' => new SportResource($this->whenLoaded('sport')),
             'name' => $this->name,
             'description' => $this->description,
             'play_mode' => $this->play_mode,
-            'play_mode_text' => $this->play_mode_text,
             'format' => $this->format,
-            'format_text' => $this->format_text,
 
             // Updated time fields
             'start_time' => $this->start_time,
@@ -57,12 +60,6 @@ class MiniTournamentResource extends JsonResource
             // Rating
             'min_rating' => $this->min_rating,
             'max_rating' => $this->max_rating,
-
-            // Game rules
-            'set_number' => $this->set_number,
-            'base_points' => $this->base_points,
-            'points_difference' => $this->points_difference,
-            'max_points' => $this->max_points,
 
             // Gender (replaced gender_policy)
             'gender' => $this->gender,
@@ -93,5 +90,15 @@ class MiniTournamentResource extends JsonResource
             // Same format as clubs: { period, week_days, recurring_date }
             'recurring_schedule' => $this->recurring_schedule,
         ];
+
+        // Include game rule fields only if apply_rule is true
+        if ($this->apply_rule) {
+            $data['set_number'] = $this->set_number;
+            $data['base_points'] = $this->base_points;
+            $data['points_difference'] = $this->points_difference;
+            $data['max_points'] = $this->max_points;
+        }
+
+        return $data;
     }
 }

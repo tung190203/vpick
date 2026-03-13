@@ -44,6 +44,8 @@ class MiniTournament extends Model
         'cancellation_duration',
         'apply_rule',
         'recurring_schedule',
+        'recurrence_series_id',
+        'recurrence_series_cancelled_at',
         'status',
     ];
 
@@ -114,12 +116,34 @@ class MiniTournament extends Model
     // Gender constants
     public function getGenderTextAttribute(): string
     {
-        return match($this->gender) {
+        return match($this->attributes['gender'] ?? $this->gender) {
             self::MALE => 'Nam',
             self::FEMALE => 'Nữ',
             self::MIXED => 'Nam nữ',
             default => 'Không xác định',
         };
+    }
+
+    public function getPlayModeAttribute($value)
+    {
+        $map = [
+            self::PLAY_MODE_CASUAL => 'casual',
+            self::PLAY_MODE_COMPETITION => 'competition',
+            self::PLAY_MODE_PRACTICE => 'practice',
+        ];
+        return $map[$value] ?? $value;
+    }
+
+    public function getFormatAttribute($value)
+    {
+        $map = [
+            self::FORMAT_SINGLE => 'single',
+            self::FORMAT_DOUBLE => 'double',
+            self::FORMAT_MENS_DOUBLES => 'mens_doubles',
+            self::FORMAT_WOMENS_DOUBLES => 'womens_doubles',
+            self::FORMAT_MIXED => 'mixed',
+        ];
+        return $map[$value] ?? $value;
     }
 
     public function getPlayModeTextAttribute(): string
@@ -280,17 +304,6 @@ class MiniTournament extends Model
         }
 
         $this->attributes['recurring_schedule'] = json_encode($value);
-    }
-
-    public function getRecurringScheduleRaw(): ?array
-    {
-        $value = $this->attributes['recurring_schedule'] ?? null;
-        if (!$value) {
-            return null;
-        }
-
-        $data = json_decode($value, true);
-        return $data && isset($data['period']) ? $data : null;
     }
 
     public function participantPayments()
@@ -577,5 +590,193 @@ class MiniTournament extends Model
             ", [$lat, $lng, $lat])
             ->orderByRaw('competition_locations.latitude IS NULL OR competition_locations.longitude IS NULL')
             ->orderBy('distance', 'asc');
+    }
+
+    public function isRecurring(): bool
+    {
+        return $this->recurring_schedule !== null && !empty($this->recurring_schedule);
+    }
+
+    public function isRecurrenceSeriesCancelled(): bool
+    {
+        return $this->recurrence_series_cancelled_at !== null;
+    }
+
+    public function getRecurringScheduleRaw(): ?array
+    {
+        $value = $this->attributes['recurring_schedule'] ?? null;
+        if (!$value) {
+            return null;
+        }
+
+        $data = json_decode($value, true);
+        return $data && isset($data['period']) ? $data : null;
+    }
+
+    private function parseDate(string $dateString): ?array
+    {
+        $formats = ['d/m/Y', 'd-m-Y', 'Y-m-d', 'Y-m-d H:i:s', 'Y-m-d H:i', 'd/m/Y H:i:s', 'd-m-Y H:i:s'];
+
+        foreach ($formats as $format) {
+            try {
+                $date = Carbon::createFromFormat($format, $dateString);
+                if ($date) {
+                    return [
+                        'day' => $date->day,
+                        'month' => $date->month,
+                        'year' => $date->year,
+                    ];
+                }
+            } catch (\Exception $e) {
+                continue;
+            }
+        }
+
+        return null;
+    }
+
+    public function getRecurringDateParts(): ?array
+    {
+        $schedule = $this->getRecurringScheduleRaw();
+        if (!$schedule || empty($schedule['recurring_date'])) {
+            return null;
+        }
+        return $this->parseDate($schedule['recurring_date']);
+    }
+
+    public function calculateNextOccurrence(?Carbon $fromDate = null): ?Carbon
+    {
+        if (!$this->isRecurring()) {
+            return null;
+        }
+
+        $schedule = $this->getRecurringScheduleRaw();
+        if (!$schedule) {
+            return null;
+        }
+
+        $fromDate = $fromDate ?? Carbon::now();
+        $period = $schedule['period'];
+
+        return match($period) {
+            'weekly' => $this->calculateNextWeeklyOccurrence($fromDate, $schedule['week_days'] ?? []),
+            'monthly' => $this->calculateNextMonthlyOccurrence($fromDate, $schedule['recurring_date'] ?? null),
+            'quarterly' => $this->calculateNextQuarterlyOccurrence($fromDate, $schedule['recurring_date'] ?? null),
+            'yearly' => $this->calculateNextYearlyOccurrence($fromDate, $schedule['recurring_date'] ?? null),
+            default => null
+        };
+    }
+
+    private function calculateNextWeeklyOccurrence(Carbon $fromDate, array $weekDays): ?Carbon
+    {
+        if (empty($weekDays)) {
+            return null;
+        }
+
+        sort($weekDays);
+        $currentDayOfWeek = $fromDate->dayOfWeek;
+        $timeString = $this->start_time ? (is_string($this->start_time) ? Carbon::parse($this->start_time)->format('H:i:s') : $this->start_time->format('H:i:s')) : $fromDate->format('H:i:s');
+
+        foreach ($weekDays as $targetDay) {
+            if ($targetDay > $currentDayOfWeek) {
+                $daysToAdd = $targetDay - $currentDayOfWeek;
+                return $fromDate->copy()->addDays($daysToAdd)->setTimeFromTimeString($timeString);
+            }
+        }
+
+        $daysToAdd = 7 - $currentDayOfWeek + $weekDays[0];
+        return $fromDate->copy()->addDays($daysToAdd)->setTimeFromTimeString($timeString);
+    }
+
+    private function calculateNextMonthlyOccurrence(Carbon $fromDate, ?string $dateString): ?Carbon
+    {
+        if (!$dateString) {
+            return null;
+        }
+
+        $dateInfo = $this->parseDate($dateString);
+        if (!$dateInfo) {
+            return null;
+        }
+
+        $targetDay = $dateInfo['day'];
+        $nextDate = $fromDate->copy()->day(min($targetDay, $fromDate->daysInMonth));
+        if ($this->start_time) {
+            $timeString = is_string($this->start_time) ? Carbon::parse($this->start_time)->format('H:i:s') : $this->start_time->format('H:i:s');
+            $nextDate->setTimeFromTimeString($timeString);
+        }
+
+        if ($nextDate->lte($fromDate)) {
+            $nextDate->addMonth();
+            $nextDate->day(min($targetDay, $nextDate->daysInMonth));
+        }
+
+        return $nextDate;
+    }
+
+    private function calculateNextQuarterlyOccurrence(Carbon $fromDate, ?string $dateString): ?Carbon
+    {
+        if (!$dateString) {
+            return null;
+        }
+
+        $dateInfo = $this->parseDate($dateString);
+        if (!$dateInfo) {
+            return null;
+        }
+
+        $targetDay = $dateInfo['day'];
+        $selectedMonth = $dateInfo['month'];
+        $monthPositionInQuarter = ((int) $selectedMonth - 1) % 3 + 1;
+        $targetMonths = [$monthPositionInQuarter, $monthPositionInQuarter + 3, $monthPositionInQuarter + 6, $monthPositionInQuarter + 9];
+
+        $timeString = $this->start_time ? (is_string($this->start_time) ? Carbon::parse($this->start_time)->format('H:i:s') : $this->start_time->format('H:i:s')) : null;
+        $currentYear = $fromDate->year;
+
+        foreach ([$currentYear, $currentYear + 1] as $year) {
+            foreach ($targetMonths as $m) {
+                $nextDate = Carbon::create($year, $m, 1);
+                $effectiveDay = min($targetDay, $nextDate->daysInMonth);
+                $nextDate->day($effectiveDay);
+                if ($timeString) {
+                    $nextDate->setTimeFromTimeString($timeString);
+                }
+                if ($nextDate->gt($fromDate)) {
+                    return $nextDate;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private function calculateNextYearlyOccurrence(Carbon $fromDate, ?string $dateString): ?Carbon
+    {
+        if (!$dateString) {
+            return null;
+        }
+
+        $dateInfo = $this->parseDate($dateString);
+        if (!$dateInfo) {
+            return null;
+        }
+
+        $targetDay = $dateInfo['day'];
+        $targetMonth = $dateInfo['month'];
+
+        $nextDate = $fromDate->copy()
+            ->month($targetMonth)
+            ->day(min($targetDay, Carbon::create($fromDate->year, $targetMonth)->daysInMonth));
+
+        if ($this->start_time) {
+            $timeString = is_string($this->start_time) ? Carbon::parse($this->start_time)->format('H:i:s') : $this->start_time->format('H:i:s');
+            $nextDate->setTimeFromTimeString($timeString);
+        }
+
+        if ($nextDate->lte($fromDate)) {
+            $nextDate->addYear();
+        }
+
+        return $nextDate;
     }
 }
