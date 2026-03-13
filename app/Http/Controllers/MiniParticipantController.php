@@ -115,6 +115,30 @@ class MiniParticipantController extends Controller
                 ]
             );
 
+            // Gửi notification cho user được auto-approve
+            auth()->user()->notify(
+                new MiniTournamentJoinConfirmedNotification($participant)
+            );
+
+            // Gửi push notification cho user
+            $this->pushToUsers(
+                [Auth::id()],
+                'Đã được duyệt tham gia',
+                'Bạn đã được duyệt tham gia kèo đấu "' . $miniTournament->name . '"',
+                [
+                    'type' => 'MINI_TOURNAMENT_JOIN_CONFIRMED',
+                    'mini_tournament_id' => $miniTournament->id,
+                    'participant_id' => $participant->id,
+                ]
+            );
+
+            // Gửi notification cho chủ kèo
+            foreach ($miniTournament->staff as $organizer) {
+                $organizer->notify(
+                    new MiniTournamentJoinConfirmedNotification($participant)
+                );
+            }
+
             // Gắn thanh toán pending cho người chơi nếu kèo có thu phí
             if ($miniTournament->has_fee) {
                 // Tính số tiền phải đóng
@@ -391,8 +415,16 @@ class MiniParticipantController extends Controller
 
         $participant->delete();
 
+        // Lưu thông tin trước khi xóa để tránh lỗi khi queue xử lý
+        $participantData = [
+            'id' => $participant->id,
+            'mini_tournament_id' => $participant->mini_tournament_id,
+            'tournament_name' => $participant->miniTournament->name,
+            'user_id' => $participant->user_id,
+        ];
+
         $participant->user?->notify(
-            new MiniTournamentRemovedNotification($participant)
+            new MiniTournamentRemovedNotification($participantData, Auth::id())
         );
 
         $this->pushToUsers(
