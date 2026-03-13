@@ -16,7 +16,7 @@ class ListMiniTournamentResource extends JsonResource
     public function toArray(Request $request): array
     {
         $participants = $this->relationLoaded('participants') ? $this->participants : collect();
-        return [
+        $data = [
             'id' => $this->id,
             'poster' => $this->poster,
             'start_time' => $this->start_time,
@@ -35,6 +35,7 @@ class ListMiniTournamentResource extends JsonResource
             'max_players' => $this->max_players,
             'play_mode' => $this->play_mode,
             'format' => $this->format,
+            'apply_rule' => $this->apply_rule,
             'staff' => $this->whenLoaded('staff', function () {
                 return $this->staff
                     ->groupBy(fn($staff) => MiniTournamentStaff::getRoleText( $staff->pivot->role))
@@ -46,5 +47,15 @@ class ListMiniTournamentResource extends JsonResource
             }),
             'all_users' => UserListResource::collection($this->all_users ?? collect()),
         ];
+
+        // Include game rule fields only if apply_rule is true
+        if ($this->apply_rule) {
+            $data['set_number'] = $this->set_number;
+            $data['base_points'] = $this->base_points;
+            $data['points_difference'] = $this->points_difference;
+            $data['max_points'] = $this->max_points;
+        }
+
+        return $data;
     }
 }

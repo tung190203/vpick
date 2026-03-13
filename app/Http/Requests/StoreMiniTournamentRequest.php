@@ -54,11 +54,11 @@ class StoreMiniTournamentRequest extends FormRequest
             'min_rating' => 'nullable|numeric|min:0',
             'max_rating' => 'nullable|numeric|min:0',
 
-            // Game rules (updated naming)
-            'set_number' => 'required|integer|min:1',
-            'base_points' => 'required|integer|min:11',
-            'points_difference' => 'required|integer|min:1',
-            'max_points' => 'required|integer|min:11',
+            // Game rules (updated naming) - conditional based on apply_rule
+            'set_number' => 'nullable|integer|min:1',
+            'base_points' => 'nullable|integer|min:11',
+            'points_difference' => 'nullable|integer|min:1',
+            'max_points' => 'nullable|integer|min:11',
 
             // Gender (replaced gender_policy)
             'gender' => 'required|integer|in:' . implode(',', MiniTournament::GENDER),
@@ -91,6 +91,14 @@ class StoreMiniTournamentRequest extends FormRequest
         // Custom validation: if allow_cancellation is true, require cancellation_duration
         if ($this->has('allow_cancellation') && $this->allow_cancellation) {
             $rules['cancellation_duration'] = 'required|integer|min:1';
+        }
+
+        // Custom validation: if apply_rule is true, require game rule fields
+        if ($this->has('apply_rule') && $this->apply_rule) {
+            $rules['set_number'] = 'required|integer|min:1';
+            $rules['base_points'] = 'required|integer|min:11';
+            $rules['points_difference'] = 'required|integer|min:1';
+            $rules['max_points'] = 'required|integer|min:11';
         }
 
         return $rules;
@@ -148,6 +156,18 @@ class StoreMiniTournamentRequest extends FormRequest
                 $this->merge(['recurring_schedule' => $schedule]);
             }
             // If it's already an object/array from JSON, leave it as is
+        }
+
+        // Handle conditional game rule fields based on apply_rule
+        $applyRule = $this->input('apply_rule');
+        if ($applyRule === false || $applyRule === '0' || $applyRule === 0) {
+            // Set game rule fields to NULL when apply_rule is false
+            $this->merge([
+                'set_number' => null,
+                'base_points' => null,
+                'points_difference' => null,
+                'max_points' => null,
+            ]);
         }
 
         $startTime = $this->input('start_time');
