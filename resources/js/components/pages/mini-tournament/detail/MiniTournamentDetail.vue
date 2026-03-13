@@ -441,6 +441,16 @@ export default {
             showSubmitPaymentModal.value = true
         }
 
+        const handlePaymentButtonClick = () => {
+            if (isCreator.value) {
+                // Chủ kèo: mở modal quản lý thanh toán
+                openPaymentModal()
+            } else {
+                // Member hoặc user bình thường: mở modal thanh toán
+                openSubmitPaymentModal()
+            }
+        }
+
 
         const publicMiniTournament = async () => {
             const newStatus = mini.value.status === 1 ? 2 : 1;
@@ -607,7 +617,8 @@ export default {
             showPaymentModal,
             openPaymentModal,
             showSubmitPaymentModal,
-            openSubmitPaymentModal
+            openSubmitPaymentModal,
+            handlePaymentButtonClick
         }
     }
 }

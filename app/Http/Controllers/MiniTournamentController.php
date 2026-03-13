@@ -192,20 +192,10 @@ class MiniTournamentController extends Controller
                     ]);
 
                     // Tạo khoản thu cho chủ kèo nếu kèo có thu phí
-                    if ($miniTournament->has_fee) {
-                        // Tính số tiền phải đóng
-                        $participantCount = $miniTournament->participants()->count();
-                        $feePerPerson = 0;
+                    // Nếu auto_split_fee = true, chỉ tạo payment khi kèo kết thúc (via command)
+                    if ($miniTournament->has_fee && !$miniTournament->auto_split_fee) {
+                        $feePerPerson = $miniTournament->fee_amount;
 
-                        if ($miniTournament->auto_split_fee) {
-                            // Chia tự động: tổng tiền / số người
-                            $feePerPerson = $participantCount > 0 ? round($miniTournament->fee_amount / $participantCount) : 0;
-                        } else {
-                            // Tiền cố định mỗi người
-                            $feePerPerson = $miniTournament->fee_amount;
-                        }
-
-                        // Tạo khoản thu và tự động đánh dấu là đã nộp tiền
                         MiniParticipantPayment::create([
                             'mini_tournament_id' => $miniTournament->id,
                             'participant_id' => $participant->id,

@@ -27,6 +27,8 @@ class MiniTournament extends Model
         'has_fee',
         'auto_split_fee',
         'fee_amount',
+        'final_fee_per_person',
+        'auto_payment_created',
         'fee_description',
         'qr_code_url',
         'payment_account_id',
@@ -182,11 +184,17 @@ class MiniTournament extends Model
      * Tính phí mỗi người dựa trên cài đặt
      * Nếu auto_split_fee = true: fee_amount / số người tham gia thực tế
      * Nếu auto_split_fee = false: fee_amount (tiền cố định mỗi người)
+     * Nếu kèo đã kết thúc: dùng final_fee_per_person (đã lock)
      */
     public function getFeePerPersonAttribute()
     {
         if (!$this->has_fee) {
             return 0;
+        }
+
+        // Nếu kèo đã kết thúc và có final_fee_per_person, dùng giá trị đó
+        if ($this->final_fee_per_person !== null) {
+            return $this->final_fee_per_person;
         }
 
         if ($this->auto_split_fee) {
@@ -258,6 +266,11 @@ class MiniTournament extends Model
     public function matches()
     {
         return $this->hasMany(MiniMatch::class);
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(MiniParticipantPayment::class);
     }
 
     /**

@@ -40,15 +40,9 @@ class MiniTournamentService
             ]);
 
             // Tạo khoản thu cho chủ kèo nếu kèo có thu phí
-            if ($miniTournament->has_fee) {
-                $participantCount = $miniTournament->participants()->count();
-                $feePerPerson = 0;
-
-                if ($miniTournament->auto_split_fee) {
-                    $feePerPerson = $participantCount > 0 ? round($miniTournament->fee_amount / $participantCount) : 0;
-                } else {
-                    $feePerPerson = $miniTournament->fee_amount;
-                }
+            // Nếu auto_split_fee = true, chỉ tạo payment khi kèo kết thúc (via command)
+            if ($miniTournament->has_fee && !$miniTournament->auto_split_fee) {
+                $feePerPerson = $miniTournament->fee_amount;
 
                 MiniParticipantPayment::create([
                     'mini_tournament_id' => $miniTournament->id,
