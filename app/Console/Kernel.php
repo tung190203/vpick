@@ -19,6 +19,7 @@ class Kernel extends ConsoleKernel
         })->daily();
 
         $schedule->command('activities:auto-complete')->everyTwoMinutes();
+        $schedule->command('mini-tournaments:rollover-recurrence')->daily();
     }
 
     protected function commands(): void
