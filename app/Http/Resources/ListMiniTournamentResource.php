@@ -16,9 +16,15 @@ class ListMiniTournamentResource extends JsonResource
     public function toArray(Request $request): array
     {
         $participants = $this->relationLoaded('participants') ? $this->participants : collect();
+        
+        $posterUrl = $this->poster;
+        if ($posterUrl && !str_starts_with($posterUrl, 'http')) {
+            $posterUrl = asset('storage/' . ltrim($posterUrl, '/'));
+        }
+        
         $data = [
             'id' => $this->id,
-            'poster' => $this->poster,
+            'poster' => $posterUrl,
             'start_time' => $this->start_time,
             'end_time' => $this->end_time,
             'duration' => $this->duration,

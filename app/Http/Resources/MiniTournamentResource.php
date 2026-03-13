@@ -22,9 +22,14 @@ class MiniTournamentResource extends JsonResource
             $qrUrl = asset('storage/' . ltrim($qrUrl, '/'));
         }
 
+        $posterUrl = $this->poster;
+        if ($posterUrl && !str_starts_with($posterUrl, 'http')) {
+            $posterUrl = asset('storage/' . ltrim($posterUrl, '/'));
+        }
+
         $data = [
             'id' => $this->id,
-            'poster' => $this->poster,
+            'poster' => $posterUrl,
             'sport' => new SportResource($this->whenLoaded('sport')),
             'name' => $this->name,
             'description' => $this->description,

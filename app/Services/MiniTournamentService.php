@@ -185,6 +185,8 @@ class MiniTournamentService
 
         $seriesId = $recurrenceSeriesId ?? $tournament->recurrence_series_id;
 
+        // Replicate tournament but exclude only status and recurrence_series_cancelled_at
+        // This ensures poster and qr_code_url are copied to the new occurrence
         $newTournament = $tournament->replicate([
             'status',
             'recurrence_series_cancelled_at',

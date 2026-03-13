@@ -33,7 +33,7 @@ class MiniTournamentController extends Controller
      */
     public function store(StoreMiniTournamentRequest $request)
     {
-        $data = $request->safe()->except(['invite_user', 'role_type']);
+        $data = $request->safe()->except(['invite_user', 'role_type', 'poster', 'qr_code_url']);
 
         $miniTournament = $this->tournamentService->createTournament($data, Auth::id());
         $miniTournament->staff()->attach(Auth::id(), ['role' => MiniTournamentStaff::ROLE_ORGANIZER]);
@@ -53,12 +53,22 @@ class MiniTournamentController extends Controller
             }
         }
 
-        $file = $request->file('qr_code_url');
-        if ($file) {
-            $path = $file->store('qr_codes', 'public');
-            $url = asset('storage/' . $path);
-            $miniTournament->update(['qr_code_url' => $url]);
+        // Handle poster file
+        $posterFile = $request->file('poster');
+        if ($posterFile) {
+            $posterPath = $posterFile->store('posters', 'public');
+            $posterUrl = asset('storage/' . $posterPath);
+            $miniTournament->update(['poster' => $posterUrl]);
         }
+
+        // Handle qr_code_url file
+        $qrFile = $request->file('qr_code_url');
+        if ($qrFile) {
+            $qrPath = $qrFile->store('qr_codes', 'public');
+            $qrUrl = asset('storage/' . $qrPath);
+            $miniTournament->update(['qr_code_url' => $qrUrl]);
+        }
+
         $miniTournament->loadFullRelations();
 
         return ResponseHelper::success(new MiniTournamentResource($miniTournament), 'Tạo kèo đấu thành công', 201);
@@ -136,8 +146,8 @@ class MiniTournamentController extends Controller
     {
         $miniTournament = MiniTournament::findOrFail($id);
         $data = $request->validated();
-        // Remove 'role_type' from data before updating tournament
-        $data = collect($data)->except('role_type')->toArray();
+        // Remove 'role_type', 'poster', 'qr_code_url' from data before updating tournament
+        $data = collect($data)->except(['role_type', 'poster', 'qr_code_url'])->toArray();
 
         $isOrganizer = $miniTournament->hasOrganizer(Auth::id());
 
@@ -149,7 +159,14 @@ class MiniTournamentController extends Controller
 
         if ($request->hasFile('poster')) {
             $posterPath = $request->file('poster')->store('posters', 'public');
-            $miniTournament->update(['poster' => $posterPath]);
+            $posterUrl = asset('storage/' . $posterPath);
+            $miniTournament->update(['poster' => $posterUrl]);
+        }
+
+        if ($request->hasFile('qr_code_url')) {
+            $qrPath = $request->file('qr_code_url')->store('qr_codes', 'public');
+            $qrUrl = asset('storage/' . $qrPath);
+            $miniTournament->update(['qr_code_url' => $qrUrl]);
         }
 
         // Handle role_type change for tournament creator

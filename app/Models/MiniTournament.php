@@ -644,7 +644,7 @@ class MiniTournament extends Model
         return $this->parseDate($schedule['recurring_date']);
     }
 
-    public function calculateNextOccurrence(Carbon $fromDate = null): ?Carbon
+    public function calculateNextOccurrence(?Carbon $fromDate = null): ?Carbon
     {
         if (!$this->isRecurring()) {
             return null;
@@ -675,7 +675,7 @@ class MiniTournament extends Model
 
         sort($weekDays);
         $currentDayOfWeek = $fromDate->dayOfWeek;
-        $timeString = $this->start_time?->format('H:i:s') ?? $fromDate->format('H:i:s');
+        $timeString = $this->start_time ? (is_string($this->start_time) ? Carbon::parse($this->start_time)->format('H:i:s') : $this->start_time->format('H:i:s')) : $fromDate->format('H:i:s');
 
         foreach ($weekDays as $targetDay) {
             if ($targetDay > $currentDayOfWeek) {
@@ -702,7 +702,8 @@ class MiniTournament extends Model
         $targetDay = $dateInfo['day'];
         $nextDate = $fromDate->copy()->day(min($targetDay, $fromDate->daysInMonth));
         if ($this->start_time) {
-            $nextDate->setTimeFromTimeString($this->start_time->format('H:i:s'));
+            $timeString = is_string($this->start_time) ? Carbon::parse($this->start_time)->format('H:i:s') : $this->start_time->format('H:i:s');
+            $nextDate->setTimeFromTimeString($timeString);
         }
 
         if ($nextDate->lte($fromDate)) {
@@ -729,7 +730,7 @@ class MiniTournament extends Model
         $monthPositionInQuarter = ((int) $selectedMonth - 1) % 3 + 1;
         $targetMonths = [$monthPositionInQuarter, $monthPositionInQuarter + 3, $monthPositionInQuarter + 6, $monthPositionInQuarter + 9];
 
-        $timeString = $this->start_time?->format('H:i:s');
+        $timeString = $this->start_time ? (is_string($this->start_time) ? Carbon::parse($this->start_time)->format('H:i:s') : $this->start_time->format('H:i:s')) : null;
         $currentYear = $fromDate->year;
 
         foreach ([$currentYear, $currentYear + 1] as $year) {
@@ -768,7 +769,8 @@ class MiniTournament extends Model
             ->day(min($targetDay, Carbon::create($fromDate->year, $targetMonth)->daysInMonth));
 
         if ($this->start_time) {
-            $nextDate->setTimeFromTimeString($this->start_time->format('H:i:s'));
+            $timeString = is_string($this->start_time) ? Carbon::parse($this->start_time)->format('H:i:s') : $this->start_time->format('H:i:s');
+            $nextDate->setTimeFromTimeString($timeString);
         }
 
         if ($nextDate->lte($fromDate)) {
