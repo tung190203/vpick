@@ -30,31 +30,28 @@ class MiniTournamentService
             'recurrence_series_id' => $seriesId,
         ]);
 
-        // Add creator as participant if role_type is 'participant'
-        $roleType = $data['role_type'] ?? 'participant';
-        if ($roleType !== 'organizer') {
-            $participant = MiniParticipant::create([
+        // Creator always participates by default
+        $participant = MiniParticipant::create([
+            'mini_tournament_id' => $miniTournament->id,
+            'user_id' => $userId,
+            'is_confirmed' => true,
+        ]);
+
+        // Tạo khoản thu cho chủ kèo nếu kèo có thu phí
+        // Nếu auto_split_fee = true, chỉ tạo payment khi kèo kết thúc (via command)
+        if ($miniTournament->has_fee && !$miniTournament->auto_split_fee) {
+            $feePerPerson = $miniTournament->fee_amount;
+
+            MiniParticipantPayment::create([
                 'mini_tournament_id' => $miniTournament->id,
+                'participant_id' => $participant->id,
                 'user_id' => $userId,
-                'is_confirmed' => true,
+                'amount' => $feePerPerson,
+                'status' => MiniParticipantPayment::STATUS_CONFIRMED,
+                'paid_at' => now(),
+                'confirmed_at' => now(),
+                'confirmed_by' => $userId,
             ]);
-
-            // Tạo khoản thu cho chủ kèo nếu kèo có thu phí
-            // Nếu auto_split_fee = true, chỉ tạo payment khi kèo kết thúc (via command)
-            if ($miniTournament->has_fee && !$miniTournament->auto_split_fee) {
-                $feePerPerson = $miniTournament->fee_amount;
-
-                MiniParticipantPayment::create([
-                    'mini_tournament_id' => $miniTournament->id,
-                    'participant_id' => $participant->id,
-                    'user_id' => $userId,
-                    'amount' => $feePerPerson,
-                    'status' => MiniParticipantPayment::STATUS_CONFIRMED,
-                    'paid_at' => now(),
-                    'confirmed_at' => now(),
-                    'confirmed_by' => $userId,
-                ]);
-            }
         }
 
         // Tạo batch occurrences nếu là recurring

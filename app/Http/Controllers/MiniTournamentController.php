@@ -33,7 +33,7 @@ class MiniTournamentController extends Controller
      */
     public function store(StoreMiniTournamentRequest $request)
     {
-        $data = $request->safe()->except(['invite_user', 'role_type', 'poster', 'qr_code_url']);
+        $data = $request->safe()->except(['invite_user', 'poster', 'qr_code_url']);
 
         $miniTournament = $this->tournamentService->createTournament($data, Auth::id());
         $miniTournament->staff()->attach(Auth::id(), ['role' => MiniTournamentStaff::ROLE_ORGANIZER]);
@@ -146,8 +146,8 @@ class MiniTournamentController extends Controller
     {
         $miniTournament = MiniTournament::findOrFail($id);
         $data = $request->validated();
-        // Remove 'role_type', 'poster', 'qr_code_url' from data before updating tournament
-        $data = collect($data)->except(['role_type', 'poster', 'qr_code_url'])->toArray();
+        // Remove 'poster', 'qr_code_url' from data before updating tournament
+        $data = collect($data)->except(['poster', 'qr_code_url'])->toArray();
 
         $isOrganizer = $miniTournament->hasOrganizer(Auth::id());
 
@@ -169,47 +169,6 @@ class MiniTournamentController extends Controller
             $miniTournament->update(['qr_code_url' => $qrUrl]);
         }
 
-        // Handle role_type change for tournament creator
-        if ($request->has('role_type')) {
-            $roleType = $request->input('role_type');
-            if ($roleType === 'organizer') {
-                // Remove creator as participant if switching to organizer-only
-                $miniTournament->participants()->where('user_id', Auth::id())->delete();
-                // Xóa khoản thu của chủ kèo
-                MiniParticipantPayment::where('mini_tournament_id', $miniTournament->id)
-                    ->whereHas('participant', function ($q) {
-                        $q->where('user_id', Auth::id());
-                    })
-                    ->delete();
-            } else {
-                // Add creator as participant if not already
-                $existingParticipant = $miniTournament->participants()->where('user_id', Auth::id())->first();
-                if (!$existingParticipant) {
-                    $participant = MiniParticipant::create([
-                        'mini_tournament_id' => $miniTournament->id,
-                        'user_id' => Auth::id(),
-                        'is_confirmed' => true,
-                    ]);
-
-                    // Tạo khoản thu cho chủ kèo nếu kèo có thu phí
-                    // Nếu auto_split_fee = true, chỉ tạo payment khi kèo kết thúc (via command)
-                    if ($miniTournament->has_fee && !$miniTournament->auto_split_fee) {
-                        $feePerPerson = $miniTournament->fee_amount;
-
-                        MiniParticipantPayment::create([
-                            'mini_tournament_id' => $miniTournament->id,
-                            'participant_id' => $participant->id,
-                            'user_id' => Auth::id(),
-                            'amount' => $feePerPerson,
-                            'status' => MiniParticipantPayment::STATUS_CONFIRMED,
-                            'paid_at' => now(),
-                            'confirmed_at' => now(),
-                            'confirmed_by' => Auth::id(),
-                        ]);
-                    }
-                }
-            }
-        }
         $miniTournament->loadFullRelations();
 
         return ResponseHelper::success(new MiniTournamentResource($miniTournament), 'Cập nhật thông tin kèo đấu thành công');
