@@ -34,9 +34,7 @@ class MiniTournamentResource extends JsonResource
             'name' => $this->name,
             'description' => $this->description,
             'play_mode' => $this->play_mode,
-            'play_mode_text' => $this->play_mode_text,
             'format' => $this->format,
-            'format_text' => $this->format_text,
 
             // Updated time fields
             'start_time' => $this->start_time,

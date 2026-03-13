@@ -116,7 +116,7 @@ class MiniTournament extends Model
     // Gender constants
     public function getGenderTextAttribute(): string
     {
-        return match($this->gender) {
+        return match($this->attributes['gender'] ?? $this->gender) {
             self::MALE => 'Nam',
             self::FEMALE => 'Nữ',
             self::MIXED => 'Nam nữ',
