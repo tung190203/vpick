@@ -45,7 +45,7 @@ class StoreMiniTournamentRequest extends FormRequest
             'has_fee' => 'boolean',
             'auto_split_fee' => 'boolean',
             'fee_description' => 'nullable|string|max:500',
-            'qr_code_url' => 'nullable|string',
+            'qr_code_url' => 'nullable|image|mimes:png,jpg,jpeg,gif|max:5120',
             'payment_account_id' => 'nullable|exists:club_wallets,id',
             'fee_amount' => 'nullable|integer|min:0',
             'max_players' => 'nullable|integer|min:1',
@@ -82,9 +82,10 @@ class StoreMiniTournamentRequest extends FormRequest
             'role_type' => 'nullable|string|in:organizer,participant',
         ];
 
-        // Custom validation: if has_fee is true, require fee_amount
+        // Custom validation: if has_fee is true, require fee_amount and qr_code_url
         if ($this->has('has_fee') && $this->has_fee) {
             $rules['fee_amount'] = 'required|integer|min:1';
+            $rules['qr_code_url'] = 'required|image|mimes:png,jpg,jpeg,gif|max:5120';
         }
 
         // Custom validation: if allow_cancellation is true, require cancellation_duration
