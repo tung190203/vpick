@@ -40,11 +40,19 @@ class MiniTournamentController extends Controller
 
         if ($request->has('invite_user')) {
             $inviteUsers = $request->input('invite_user', []);
+            
+            // Calculate payment_status for invited users
+            $paymentStatus = \App\Enums\PaymentStatusEnum::CONFIRMED;
+            if ($miniTournament->has_fee && !$miniTournament->auto_split_fee) {
+                $paymentStatus = \App\Enums\PaymentStatusEnum::PENDING;
+            }
+            
             foreach ($inviteUsers as $userId) {
                 MiniParticipant::create([
                     'mini_tournament_id' => $miniTournament->id,
                     'user_id' => $userId,
                     'is_confirmed' => true,
+                    'payment_status' => $paymentStatus,
                 ]);
                 $user = User::find($userId);
                 if ($user) {

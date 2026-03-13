@@ -79,12 +79,12 @@ class MiniParticipantController extends Controller
             return ResponseHelper::error('Bạn đã tham gia kèo đấu này rồi.', 400);
         }
 
-        $paymentStatus = PaymentStatusEnum::PENDING;
+        $paymentStatus = PaymentStatusEnum::CONFIRMED;
         $isConfirmed = $miniTournament->auto_approve && !$miniTournament->is_private;
         
         // Set payment_status based on tournament fee settings
-        if (!$miniTournament->has_fee) {
-            $paymentStatus = PaymentStatusEnum::CONFIRMED;
+        if ($miniTournament->has_fee && !$miniTournament->auto_split_fee) {
+            $paymentStatus = PaymentStatusEnum::PENDING;
         }
 
         $participant = MiniParticipant::create([
@@ -211,9 +211,9 @@ class MiniParticipantController extends Controller
 
         $isSuperAdmin = SuperAdminDraft::where('user_id', Auth::id())->exists();
 
-        $paymentStatus = PaymentStatusEnum::PENDING;
-        if (!$miniTournament->has_fee) {
-            $paymentStatus = PaymentStatusEnum::CONFIRMED;
+        $paymentStatus = PaymentStatusEnum::CONFIRMED;
+        if ($miniTournament->has_fee && !$miniTournament->auto_split_fee) {
+            $paymentStatus = PaymentStatusEnum::PENDING;
         }
 
         $participant = $miniTournament->participants()->create([
@@ -269,9 +269,9 @@ class MiniParticipantController extends Controller
 
         $this->checkMaxPlayers($participant->miniTournament);
 
-        $paymentStatus = PaymentStatusEnum::PENDING;
-        if (!$participant->miniTournament->has_fee) {
-            $paymentStatus = PaymentStatusEnum::CONFIRMED;
+        $paymentStatus = PaymentStatusEnum::CONFIRMED;
+        if ($participant->miniTournament->has_fee && !$participant->miniTournament->auto_split_fee) {
+            $paymentStatus = PaymentStatusEnum::PENDING;
         }
 
         $participant->update([
@@ -347,9 +347,9 @@ class MiniParticipantController extends Controller
 
         $this->checkMaxPlayers($participant->miniTournament);
 
-        $paymentStatus = PaymentStatusEnum::PENDING;
-        if (!$participant->miniTournament->has_fee) {
-            $paymentStatus = PaymentStatusEnum::CONFIRMED;
+        $paymentStatus = PaymentStatusEnum::CONFIRMED;
+        if ($participant->miniTournament->has_fee && !$participant->miniTournament->auto_split_fee) {
+            $paymentStatus = PaymentStatusEnum::PENDING;
         }
 
         $participant->update([
@@ -541,9 +541,9 @@ class MiniParticipantController extends Controller
                 $this->checkMaxPlayers($miniTournament);
 
                 // Determine payment_status based on tournament fee settings
-                $paymentStatus = PaymentStatusEnum::PENDING;
-                if (!$miniTournament->has_fee) {
-                    $paymentStatus = PaymentStatusEnum::CONFIRMED;
+                $paymentStatus = PaymentStatusEnum::CONFIRMED;
+                if ($miniTournament->has_fee && !$miniTournament->auto_split_fee) {
+                    $paymentStatus = PaymentStatusEnum::PENDING;
                 }
 
                 // Create new participant

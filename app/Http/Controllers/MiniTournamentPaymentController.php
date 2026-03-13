@@ -155,11 +155,18 @@ class MiniTournamentPaymentController extends Controller
                 );
             }
 
+            // Calculate payment_status for new participant
+            $paymentStatus = PaymentStatusEnum::CONFIRMED;
+            if ($miniTournament->has_fee && !$miniTournament->auto_split_fee) {
+                $paymentStatus = PaymentStatusEnum::PENDING;
+            }
+
             // Tạo participant mới với auto_approve
             $participant = MiniParticipant::create([
                 'mini_tournament_id' => $miniTournamentId,
                 'user_id' => $userId,
                 'is_confirmed' => true, // Tự động duyệt
+                'payment_status' => $paymentStatus,
                 'joined_at' => now(),
             ]);
         }
