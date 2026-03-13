@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PaymentStatusEnum;
 use App\Helpers\ResponseHelper;
 use App\Models\MiniParticipant;
 use App\Models\MiniTournament;
@@ -78,10 +79,19 @@ class MiniParticipantController extends Controller
             return ResponseHelper::error('Bạn đã tham gia kèo đấu này rồi.', 400);
         }
 
+        $paymentStatus = PaymentStatusEnum::PENDING;
+        $isConfirmed = $miniTournament->auto_approve && !$miniTournament->is_private;
+        
+        // Set payment_status based on tournament fee settings
+        if (!$miniTournament->has_fee) {
+            $paymentStatus = PaymentStatusEnum::CONFIRMED;
+        }
+
         $participant = MiniParticipant::create([
             'mini_tournament_id' => $tournamentId,
             'user_id' => Auth::id(),
-            'is_confirmed' => $miniTournament->auto_approve && !$miniTournament->is_private,
+            'is_confirmed' => $isConfirmed,
+            'payment_status' => $paymentStatus,
         ]);
 
         $organizerIds = $miniTournament->staff
@@ -201,10 +211,16 @@ class MiniParticipantController extends Controller
 
         $isSuperAdmin = SuperAdminDraft::where('user_id', Auth::id())->exists();
 
+        $paymentStatus = PaymentStatusEnum::PENDING;
+        if (!$miniTournament->has_fee) {
+            $paymentStatus = PaymentStatusEnum::CONFIRMED;
+        }
+
         $participant = $miniTournament->participants()->create([
             'user_id' => $validated['user_id'],
             'is_confirmed' => $isSuperAdmin,
             'invited_by' => Auth::id(),
+            'payment_status' => $paymentStatus,
         ]);
 
         $user = User::find($validated['user_id']);
@@ -253,7 +269,15 @@ class MiniParticipantController extends Controller
 
         $this->checkMaxPlayers($participant->miniTournament);
 
-        $participant->update(['is_confirmed' => true]);
+        $paymentStatus = PaymentStatusEnum::PENDING;
+        if (!$participant->miniTournament->has_fee) {
+            $paymentStatus = PaymentStatusEnum::CONFIRMED;
+        }
+
+        $participant->update([
+            'is_confirmed' => true,
+            'payment_status' => $paymentStatus,
+        ]);
 
         $participant->user->notify(
             new MiniTournamentJoinConfirmedNotification($participant)
@@ -323,7 +347,15 @@ class MiniParticipantController extends Controller
 
         $this->checkMaxPlayers($participant->miniTournament);
 
-        $participant->update(['is_confirmed' => true]);
+        $paymentStatus = PaymentStatusEnum::PENDING;
+        if (!$participant->miniTournament->has_fee) {
+            $paymentStatus = PaymentStatusEnum::CONFIRMED;
+        }
+
+        $participant->update([
+            'is_confirmed' => true,
+            'payment_status' => $paymentStatus,
+        ]);
 
         $organizerIds = $participant->miniTournament->staff
             ->where('role', MiniTournamentStaff::ROLE_ORGANIZER)
@@ -413,9 +445,10 @@ class MiniParticipantController extends Controller
             return ResponseHelper::error('Không có quyền', 403);
         }
 
-        $participant->delete();
+        // Set payment_status to cancelled instead of deleting
+        $participant->update(['payment_status' => PaymentStatusEnum::CANCELLED]);
 
-        // Lưu thông tin trước khi xóa để tránh lỗi khi queue xử lý
+        // Lưu thông tin để gửi notification
         $participantData = [
             'id' => $participant->id,
             'mini_tournament_id' => $participant->mini_tournament_id,
@@ -507,11 +540,18 @@ class MiniParticipantController extends Controller
                 // Check max players
                 $this->checkMaxPlayers($miniTournament);
 
+                // Determine payment_status based on tournament fee settings
+                $paymentStatus = PaymentStatusEnum::PENDING;
+                if (!$miniTournament->has_fee) {
+                    $paymentStatus = PaymentStatusEnum::CONFIRMED;
+                }
+
                 // Create new participant
                 $newParticipant = $miniTournament->participants()->create([
                     'user_id' => $userId,
                     'is_confirmed' => $miniTournament->auto_approve && !$miniTournament->is_private,
                     'invited_by' => Auth::id(),
+                    'payment_status' => $paymentStatus,
                 ]);
 
                 // Send notification

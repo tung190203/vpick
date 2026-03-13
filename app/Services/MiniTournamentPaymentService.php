@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\PaymentStatusEnum;
 use App\Models\MiniTournament;
 use App\Models\MiniParticipant;
 use App\Models\MiniParticipantPayment;
@@ -77,6 +78,13 @@ class MiniTournamentPaymentService
                     'confirmed_at' => $isOrganizer ? now() : null,
                     'confirmed_by' => $isOrganizer ? $participant->user_id : null,
                 ]);
+
+                // Update participant payment_status
+                if ($isOrganizer) {
+                    $participant->update(['payment_status' => PaymentStatusEnum::CONFIRMED]);
+                } else {
+                    $participant->update(['payment_status' => PaymentStatusEnum::PENDING]);
+                }
 
                 // Gửi thông báo
                 $participant->user?->notify(

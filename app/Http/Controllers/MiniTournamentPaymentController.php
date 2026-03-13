@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PaymentStatusEnum;
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\MiniParticipantPaymentResource;
 use App\Http\Resources\MiniTournamentResource;
@@ -289,6 +290,12 @@ class MiniTournamentPaymentController extends Controller
                 'confirmed_by' => Auth::id(),
             ]);
 
+            // Update participant payment_status to confirmed
+            $participant = MiniParticipant::find($payment->participant_id);
+            if ($participant) {
+                $participant->confirmPayment();
+            }
+
             // Gửi notification cho thành viên
             $payment->load('user');
             if ($payment->user) {
@@ -339,6 +346,14 @@ class MiniTournamentPaymentController extends Controller
                 'confirmed_at' => now(),
                 'confirmed_by' => Auth::id(),
             ]);
+
+            // Update participant payment_status only if confirming
+            if ($isConfirm) {
+                $participant = MiniParticipant::find($payment->participant_id);
+                if ($participant) {
+                    $participant->confirmPayment();
+                }
+            }
 
             // Gửi notification cho thành viên
             $payment->load('user');

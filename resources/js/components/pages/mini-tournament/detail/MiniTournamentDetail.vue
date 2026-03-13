@@ -249,9 +249,41 @@ export default {
             )
         })
 
+        const confirmedParticipants = computed(() => {
+            if (!mini.value?.participants) return []
+            // Filter participants with payment_status = 'confirmed'
+            return mini.value.participants.filter(p => p.payment_status === 'confirmed')
+        })
+
         const openPromotionModal = () => {
             isPromotionModalOpen.value = true;
         };
+
+        const getPaymentStatusBadgeClass = (status) => {
+            switch(status) {
+                case 'confirmed':
+                    return 'bg-green-100 text-green-700'
+                case 'pending':
+                    return 'bg-yellow-100 text-yellow-700'
+                case 'cancelled':
+                    return 'bg-red-100 text-red-700'
+                default:
+                    return 'bg-gray-100 text-gray-700'
+            }
+        }
+
+        const getPaymentStatusLabel = (status) => {
+            switch(status) {
+                case 'confirmed':
+                    return 'Đã xác nhận'
+                case 'pending':
+                    return 'Chờ thanh toán'
+                case 'cancelled':
+                    return 'Đã hủy'
+                default:
+                    return 'Không xác định'
+            }
+        }
 
         const openInviteModalDefault = async () => {
             inviteType.value = 'staff'
@@ -619,7 +651,10 @@ export default {
             showSubmitPaymentModal,
             openSubmitPaymentModal,
             handlePaymentButtonClick,
-            toast
+            toast,
+            confirmedParticipants,
+            getPaymentStatusBadgeClass,
+            getPaymentStatusLabel
         }
     }
 }
