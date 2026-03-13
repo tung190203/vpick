@@ -225,6 +225,56 @@ class MiniTournamentPaymentController extends Controller
         return $this->processConfirmation($request, $miniTournamentId, $paymentId, false);
     }
 
+    public function markPaid(Request $request, $miniTournamentId, $paymentId)
+    {
+        $payment = MiniParticipantPayment::where('id', $paymentId)
+            ->where('mini_tournament_id', $miniTournamentId)
+            ->first();
+        if (!$payment) {
+            // Debug: kiểm tra xem payment có tồn tại không (bất kể tournament)
+            $paymentExists = MiniParticipantPayment::where('id', $paymentId)->first();
+            if ($paymentExists) {
+                return ResponseHelper::error(
+                    "Thanh toán này không thuộc kèo đấu này. Payment tournament_id: {$paymentExists->mini_tournament_id}, expected: {$miniTournamentId}",
+                    404
+                );
+            }
+            return ResponseHelper::error('Không tìm thấy thanh toán', 404);
+        }
+        $miniTournament = MiniTournament::findOrFail($miniTournamentId);
+        if (!$miniTournament->hasOrganizer(Auth::id())) {
+            return ResponseHelper::error('Bạn không có quyền đánh dấu thanh toán thành công', 403);
+        }
+
+        // Chỉ cho phép đánh dấu từ trạng thái PENDING hoặc REJECTED
+        if (!in_array($payment->status, [MiniParticipantPayment::STATUS_PENDING, MiniParticipantPayment::STATUS_REJECTED])) {
+            return ResponseHelper::error('Thanh toán đang ở trạng thái không thể đánh dấu', 400);
+        }
+
+        DB::beginTransaction();
+        try {
+            $payment->update([
+                'status' => MiniParticipantPayment::STATUS_CONFIRMED,
+                'paid_at' => now(),
+                'confirmed_at' => now(),
+                'confirmed_by' => Auth::id(),
+            ]);
+
+            // Gửi notification cho thành viên
+            $payment->load('user');
+            if ($payment->user) {
+                $payment->user->notify(new PaymentConfirmedNotification($payment));
+            }
+
+            DB::commit();
+
+            return ResponseHelper::success(new MiniParticipantPaymentResource($payment->load(['user', 'confirmer'])), 'Đã đánh dấu thanh toán và xác nhận thành công');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return ResponseHelper::error($e->getMessage());
+        }
+    }
+
     private function processConfirmation(Request $request, $miniTournamentId, $paymentId, bool $isConfirm)
     {
         $data = $request->validate([
