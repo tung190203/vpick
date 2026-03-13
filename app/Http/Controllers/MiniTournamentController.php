@@ -14,6 +14,7 @@ use App\Models\MiniTournament;
 use App\Models\MiniTournamentStaff;
 use App\Models\User;
 use App\Notifications\MiniTournamentInvitationNotification;
+use App\Services\MiniTournamentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -22,6 +23,11 @@ use Illuminate\Support\Facades\Storage;
 
 class MiniTournamentController extends Controller
 {
+    public function __construct(
+        protected MiniTournamentService $tournamentService
+    ) {
+    }
+
     /**
      * tạo mini tournament
      */
@@ -29,47 +35,10 @@ class MiniTournamentController extends Controller
     {
         $data = $request->safe()->except(['invite_user', 'role_type']);
 
-        $miniTournament = MiniTournament::create($data);
+        $miniTournament = $this->tournamentService->createTournament($data, Auth::id());
         $miniTournament->staff()->attach(Auth::id(), ['role' => MiniTournamentStaff::ROLE_ORGANIZER]);
 
-        // Add creator as participant if role_type is 'participant'
-        $roleType = $request->input('role_type', 'participant');
-        if ($roleType !== 'organizer') {
-            $participant = MiniParticipant::create([
-                'mini_tournament_id' => $miniTournament->id,
-                'user_id' => Auth::id(),
-                'is_confirmed' => true,
-            ]);
-
-            // Tạo khoản thu cho chủ kèo nếu kèo có thu phí
-            if ($miniTournament->has_fee) {
-                // Tính số tiền phải đóng
-                $participantCount = $miniTournament->participants()->count();
-                $feePerPerson = 0;
-
-                if ($miniTournament->auto_split_fee) {
-                    // Chia tự động: tổng tiền / số người
-                    $feePerPerson = $participantCount > 0 ? round($miniTournament->fee_amount / $participantCount) : 0;
-                } else {
-                    // Tiền cố định mỗi người
-                    $feePerPerson = $miniTournament->fee_amount;
-                }
-
-                // Tạo khoản thu và tự động đánh dấu là đã nộp tiền
-                MiniParticipantPayment::create([
-                    'mini_tournament_id' => $miniTournament->id,
-                    'participant_id' => $participant->id,
-                    'user_id' => Auth::id(),
-                    'amount' => $feePerPerson,
-                    'status' => MiniParticipantPayment::STATUS_CONFIRMED,
-                    'paid_at' => now(),
-                    'confirmed_at' => now(),
-                    'confirmed_by' => Auth::id(),
-                ]);
-            }
-        }
-
-        if( $request->has('invite_user') ) {
+        if ($request->has('invite_user')) {
             $inviteUsers = $request->input('invite_user', []);
             foreach ($inviteUsers as $userId) {
                 MiniParticipant::create([

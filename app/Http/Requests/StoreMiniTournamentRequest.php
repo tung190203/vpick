@@ -127,6 +127,29 @@ class StoreMiniTournamentRequest extends FormRequest
             $this->merge(['format' => $formatMap[$format]]);
         }
 
+        // Handle recurring_schedule from FormData (convert array to proper structure)
+        $recurringSchedule = $this->input('recurring_schedule');
+        if ($recurringSchedule) {
+            if (is_array($recurringSchedule)) {
+                // From FormData
+                $schedule = [
+                    'period' => $recurringSchedule['period'] ?? null,
+                ];
+                
+                if ($schedule['period'] === 'weekly' && isset($recurringSchedule['week_days'])) {
+                    $schedule['week_days'] = array_values(array_filter(
+                        (array) $recurringSchedule['week_days'],
+                        fn($v) => $v !== null && $v !== ''
+                    ));
+                } elseif (in_array($schedule['period'], ['monthly', 'quarterly', 'yearly']) && isset($recurringSchedule['recurring_date'])) {
+                    $schedule['recurring_date'] = $recurringSchedule['recurring_date'];
+                }
+                
+                $this->merge(['recurring_schedule' => $schedule]);
+            }
+            // If it's already an object/array from JSON, leave it as is
+        }
+
         $startTime = $this->input('start_time');
         $endTime = $this->input('end_time');
         $duration = $this->input('duration');

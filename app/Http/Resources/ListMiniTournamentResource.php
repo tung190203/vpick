@@ -34,9 +34,7 @@ class ListMiniTournamentResource extends JsonResource
             'gender_text' => $this->gender_text,
             'max_players' => $this->max_players,
             'play_mode' => $this->play_mode,
-            'play_mode_text' => $this->play_mode_text,
             'format' => $this->format,
-            'format_text' => $this->format_text,
             'staff' => $this->whenLoaded('staff', function () {
                 return $this->staff
                     ->groupBy(fn($staff) => MiniTournamentStaff::getRoleText( $staff->pivot->role))
