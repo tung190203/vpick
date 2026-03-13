@@ -9,6 +9,7 @@ use App\Http\Resources\ListMiniTournamentResource;
 use App\Http\Resources\MiniTournamentResource;
 use App\Models\MiniMatch;
 use App\Models\MiniParticipant;
+use App\Models\MiniParticipantPayment;
 use App\Models\MiniTournament;
 use App\Models\MiniTournamentStaff;
 use App\Models\User;
@@ -17,6 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class MiniTournamentController extends Controller
 {
@@ -33,11 +35,38 @@ class MiniTournamentController extends Controller
         // Add creator as participant if role_type is 'participant'
         $roleType = $request->input('role_type', 'participant');
         if ($roleType !== 'organizer') {
-            MiniParticipant::create([
+            $participant = MiniParticipant::create([
                 'mini_tournament_id' => $miniTournament->id,
                 'user_id' => Auth::id(),
                 'is_confirmed' => true,
             ]);
+
+            // Tạo khoản thu cho chủ kèo nếu kèo có thu phí
+            if ($miniTournament->has_fee) {
+                // Tính số tiền phải đóng
+                $participantCount = $miniTournament->participants()->count();
+                $feePerPerson = 0;
+
+                if ($miniTournament->auto_split_fee) {
+                    // Chia tự động: tổng tiền / số người
+                    $feePerPerson = $participantCount > 0 ? round($miniTournament->fee_amount / $participantCount) : 0;
+                } else {
+                    // Tiền cố định mỗi người
+                    $feePerPerson = $miniTournament->fee_amount;
+                }
+
+                // Tạo khoản thu và tự động đánh dấu là đã nộp tiền
+                MiniParticipantPayment::create([
+                    'mini_tournament_id' => $miniTournament->id,
+                    'participant_id' => $participant->id,
+                    'user_id' => Auth::id(),
+                    'amount' => $feePerPerson,
+                    'status' => MiniParticipantPayment::STATUS_CONFIRMED,
+                    'paid_at' => now(),
+                    'confirmed_at' => now(),
+                    'confirmed_by' => Auth::id(),
+                ]);
+            }
         }
 
         if( $request->has('invite_user') ) {
@@ -55,9 +84,11 @@ class MiniTournamentController extends Controller
             }
         }
 
-        if ($request->hasFile('poster')) {
-            $posterPath = $request->file('poster')->store('posters', 'public');
-            $miniTournament->update(['poster' => $posterPath]);
+        $file = $request->file('qr_code_url');
+        if ($file) {
+            $path = $file->store('qr_codes', 'public');
+            $url = asset('storage/' . $path);
+            $miniTournament->update(['qr_code_url' => $url]);
         }
         $miniTournament->loadFullRelations();
 
@@ -158,15 +189,48 @@ class MiniTournamentController extends Controller
             if ($roleType === 'organizer') {
                 // Remove creator as participant if switching to organizer-only
                 $miniTournament->participants()->where('user_id', Auth::id())->delete();
+                // Xóa khoản thu của chủ kèo
+                MiniParticipantPayment::where('mini_tournament_id', $miniTournament->id)
+                    ->whereHas('participant', function ($q) {
+                        $q->where('user_id', Auth::id());
+                    })
+                    ->delete();
             } else {
                 // Add creator as participant if not already
                 $existingParticipant = $miniTournament->participants()->where('user_id', Auth::id())->first();
                 if (!$existingParticipant) {
-                    MiniParticipant::create([
+                    $participant = MiniParticipant::create([
                         'mini_tournament_id' => $miniTournament->id,
                         'user_id' => Auth::id(),
                         'is_confirmed' => true,
                     ]);
+
+                    // Tạo khoản thu cho chủ kèo nếu kèo có thu phí
+                    if ($miniTournament->has_fee) {
+                        // Tính số tiền phải đóng
+                        $participantCount = $miniTournament->participants()->count();
+                        $feePerPerson = 0;
+
+                        if ($miniTournament->auto_split_fee) {
+                            // Chia tự động: tổng tiền / số người
+                            $feePerPerson = $participantCount > 0 ? round($miniTournament->fee_amount / $participantCount) : 0;
+                        } else {
+                            // Tiền cố định mỗi người
+                            $feePerPerson = $miniTournament->fee_amount;
+                        }
+
+                        // Tạo khoản thu và tự động đánh dấu là đã nộp tiền
+                        MiniParticipantPayment::create([
+                            'mini_tournament_id' => $miniTournament->id,
+                            'participant_id' => $participant->id,
+                            'user_id' => Auth::id(),
+                            'amount' => $feePerPerson,
+                            'status' => MiniParticipantPayment::STATUS_CONFIRMED,
+                            'paid_at' => now(),
+                            'confirmed_at' => now(),
+                            'confirmed_by' => Auth::id(),
+                        ]);
+                    }
                 }
             }
         }

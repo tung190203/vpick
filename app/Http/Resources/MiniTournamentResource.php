@@ -17,6 +17,11 @@ class MiniTournamentResource extends JsonResource
     {
         $participants = $this->relationLoaded('participants') ? $this->participants : collect();
 
+        $qrUrl = $this->qr_code_url;
+        if ($qrUrl && !str_starts_with($qrUrl, 'http')) {
+            $qrUrl = asset('storage/' . ltrim($qrUrl, '/'));
+        }
+
         return [
             'id' => $this->id,
             'poster' => $this->poster,
@@ -41,7 +46,7 @@ class MiniTournamentResource extends JsonResource
             'auto_split_fee' => $this->auto_split_fee,
             'fee_amount' => $this->fee_amount,
             'fee_description' => $this->fee_description,
-            'qr_code_url' => $this->qr_code_url,
+            'qr_code_url' => $qrUrl,
             'payment_account_id' => $this->payment_account_id,
             // Computed fee properties
             'fee_per_person' => $this->fee_per_person,

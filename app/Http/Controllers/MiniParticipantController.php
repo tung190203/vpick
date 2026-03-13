@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\ResponseHelper;
 use App\Models\MiniParticipant;
 use App\Models\MiniTournament;
+use App\Models\MiniParticipantPayment;
 use App\Http\Resources\MiniParticipantResource;
 use App\Jobs\SendPushJob;
 use App\Models\MiniTournamentStaff;
@@ -113,6 +114,33 @@ class MiniParticipantController extends Controller
                     'participant_id' => $participant->id,
                 ]
             );
+
+            // Gắn thanh toán pending cho người chơi nếu kèo có thu phí
+            if ($miniTournament->has_fee) {
+                // Tính số tiền phải đóng
+                $participantCount = $miniTournament->participants()->count();
+                $feePerPerson = 0;
+
+                if ($miniTournament->auto_split_fee) {
+                    // Chia tự động: tổng tiền / số người
+                    $feePerPerson = $participantCount > 0 ? round($miniTournament->fee_amount / $participantCount) : 0;
+                } else {
+                    // Tiền cố định mỗi người
+                    $feePerPerson = $miniTournament->fee_amount;
+                }
+
+                MiniParticipantPayment::firstOrCreate(
+                    [
+                        'mini_tournament_id' => $miniTournament->id,
+                        'participant_id' => $participant->id,
+                    ],
+                    [
+                        'user_id' => Auth::id(),
+                        'amount' => $feePerPerson,
+                        'status' => MiniParticipantPayment::STATUS_PENDING,
+                    ]
+                );
+            }
         }
 
         return ResponseHelper::success(
@@ -218,6 +246,33 @@ class MiniParticipantController extends Controller
             ]
         );
 
+        // Gắn thanh toán pending nếu kèo có thu phí
+        if ($participant->miniTournament->has_fee) {
+            // Tính số tiền phải đóng
+            $participantCount = $participant->miniTournament->participants()->count();
+            $feePerPerson = 0;
+
+            if ($participant->miniTournament->auto_split_fee) {
+                // Chia tự động: tổng tiền / số người
+                $feePerPerson = $participantCount > 0 ? round($participant->miniTournament->fee_amount / $participantCount) : 0;
+            } else {
+                // Tiền cố định mỗi người
+                $feePerPerson = $participant->miniTournament->fee_amount;
+            }
+
+            MiniParticipantPayment::firstOrCreate(
+                [
+                    'mini_tournament_id' => $participant->mini_tournament_id,
+                    'participant_id' => $participant->id,
+                ],
+                [
+                    'user_id' => $participant->user_id,
+                    'amount' => $feePerPerson,
+                    'status' => MiniParticipantPayment::STATUS_PENDING,
+                ]
+            );
+        }
+
         return ResponseHelper::success(
             new MiniParticipantResource($participant->loadFullRelations()),
             'Duyệt thành công'
@@ -261,6 +316,33 @@ class MiniParticipantController extends Controller
                 'participant_id' => $participant->id,
             ]
         );
+
+        // Gắn thanh toán pending nếu kèo có thu phí
+        if ($participant->miniTournament->has_fee) {
+            // Tính số tiền phải đóng
+            $participantCount = $participant->miniTournament->participants()->count();
+            $feePerPerson = 0;
+
+            if ($participant->miniTournament->auto_split_fee) {
+                // Chia tự động: tổng tiền / số người
+                $feePerPerson = $participantCount > 0 ? round($participant->miniTournament->fee_amount / $participantCount) : 0;
+            } else {
+                // Tiền cố định mỗi người
+                $feePerPerson = $participant->miniTournament->fee_amount;
+            }
+
+            MiniParticipantPayment::firstOrCreate(
+                [
+                    'mini_tournament_id' => $participant->mini_tournament_id,
+                    'participant_id' => $participant->id,
+                ],
+                [
+                    'user_id' => $participant->user_id,
+                    'amount' => $feePerPerson,
+                    'status' => MiniParticipantPayment::STATUS_PENDING,
+                ]
+            );
+        }
 
         return ResponseHelper::success(
             new MiniParticipantResource($participant->loadFullRelations()),

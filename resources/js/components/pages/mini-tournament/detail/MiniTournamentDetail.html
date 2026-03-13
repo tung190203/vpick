@@ -40,8 +40,8 @@
                             <div class="flex items-start gap-2">
                                 <CalendarDaysIcon class="w-5 h-5 shrink-0" />
                                 <div>
-                                    <p class="text-gray-900 font-medium">{{ formatEventDate(mini.starts_at) }}</p>
-                                    <p class="text-gray-500 text-sm">{{ mini.duration_minutes }} phút</p>
+                                    <p class="text-gray-900 font-medium">{{ formatEventDate(mini.start_time) }}</p>
+                                    <p class="text-gray-500 text-sm" v-if="mini.duration">{{ mini.duration }} phút</p>
                                     <a href="#" class="text-blue-600 text-sm font-medium hover:underline">Thêm vào
                                         lịch</a>
                                 </div>
@@ -61,7 +61,9 @@
 
                             <div class="flex items-center gap-2">
                                 <CircleStackIcon class="w-6 h-6" />
-                                <span class="text-gray-800">{{ mini.match_type_text }}</span>
+                                <span class="text-gray-800">
+                                    {{ [mini.play_mode_text, mini.format_text].filter(Boolean).join(' • ') }}
+                                </span>
                             </div>
                         </div>
 
@@ -85,8 +87,8 @@
                                 class="border rounded p-3 flex items-center gap-3 hover:shadow-md transition cursor-pointer">
                                 <UserIcon class="w-6 h-6 text-red-600" />
                                 <div>
-                                    <p class="font-medium text-gray-800">{{ mini.gender_policy_text }}</p>
-                                    <p class="text-sm text-gray-500">{{ mini.age_group_text }}</p>
+                                    <p class="font-medium text-gray-800">{{ mini.gender_text }}</p>
+                                    <p class="text-sm text-gray-500">Giới tính áp dụng</p>
                                 </div>
                             </div>
                         </div>
@@ -154,6 +156,14 @@
                                     Từ chối lời mời
                                 </button>
                             </div>
+                            <div v-else-if="currentParticipant && isUserConfirmed && mini?.has_fee">
+                                <button
+                                    class="flex items-center justify-center gap-2 bg-[#D72D36] hover:bg-white text-white hover:text-[#D72D36] border hover:border-[#D72D36] font-medium px-6 py-2 rounded-md transition"
+                                    @click="openSubmitPaymentModal"
+                                >
+                                    Thanh toán kèo đấu
+                                </button>
+                            </div>
                         </template>
                     </div>
 
@@ -164,10 +174,10 @@
                             <p class="font-semibold">Quản lý điểm DUPR</p>
                         </div>
                         <div v-if="isCreator" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
-                            <div class="flex items-center justify-start border border-[#BBBFCC] rounded px-3 py-2">
+                            <button type="button" @click="openPaymentModal" class="flex items-center justify-start border border-[#BBBFCC] rounded px-3 py-2 hover:bg-gray-50 transition">
                                 <CreditCardIcon class="w-5 h-5 mr-2" />
                                 <p class="font-semibold">Thanh toán</p>
-                            </div>
+                            </button>
                             <div
                                 class="flex items-center justify-between border border-[#BBBFCC] rounded px-3 py-2">
                                 <p class="font-semibold">Duyệt tự động</p>
@@ -249,4 +259,13 @@
     <DeleteConfirmationModal v-model="showDeleteModal" title="Xác nhận hủy bỏ kèo đấu" message="Thao tác này không thể hoàn tác." confirmButtonText="Xác nhận" @confirm="removeMiniTournament" />
     <DeleteConfirmationModal v-model="showDelineMiniParticipantModal" title="Xác nhận từ chối tham gia kèo đấu" message="Thao tác này không thể hoàn tác." confirmButtonText="Xác nhận" @confirm="declineMiniTournament" />
     <PromotionModal v-model="isPromotionModalOpen" promotable-type="mini_tournament" :promotable-id="Number(id)" @success="toast.success('Đã gửi quảng bá thành công')" />
+        <MiniTournamentPaymentModal
+           v-model:isOpen="showPaymentModal"
+           :miniId="mini.id"
+           :canManage="isCreator"
+       />
+       <MiniTournamentSubmitReceiptModal
+           v-model:isOpen="showSubmitPaymentModal"
+           :miniId="mini.id"
+       />
 </div>

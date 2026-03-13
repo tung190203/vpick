@@ -1,12 +1,12 @@
 <template>
-    <div class="p-4 max-w-5xl mx-auto">
-        <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
-            <div class="lg:col-span-1 space-y-6">
-                <div class="bg-white rounded-[8px] shadow p-5 sticky top-4">
+    <div class="figma-create-page bg-[#F7F8FA] min-h-screen py-6 px-3 lg:px-6">
+        <div class="max-w-[1320px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
+            <div class="space-y-4 lg:col-span-4 lg:order-2">
+                <div class="bg-white rounded-[12px] border border-[#DCDEE6] p-5 lg:sticky lg:top-6">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="font-semibold text-gray-900 text-[20px]">Môn thể thao</h3>
+                        <h3 class="font-bold text-[#838799] text-[14px] uppercase tracking-wide">Môn thể thao</h3>
                     </div>
-                    <p class="text-[#838799]">Môn thể thao của tôi • {{ sports.length }}</p>
+                    <p class="text-[#838799] text-[12px] mb-2">Môn thể thao của tôi • {{ sports.length }}</p>
                     <Swiper :slides-per-view="'auto'" :space-between="8" :freeMode="true" @swiper="onSwiperInit"
                         :mousewheel="{ forceToAxis: true }" :modules="modules" class="mt-2 !pb-2">
                         <SwiperSlide v-for="sport in sports" :key="sport.id" class="!w-32">
@@ -30,28 +30,29 @@
                     <div>
 
                     </div>
-                    <hr class="my-4 border-1">
+                    <hr class="my-4 border-[#DCDEE6]">
                     <!-- Play Mode Selection -->
-                    <p class="text-[#838799]">Chế độ chơi</p>
+                    <p class="text-[#838799] font-bold text-[14px] uppercase tracking-wide">Chế độ chơi</p>
                     <div class="grid grid-cols-3 gap-2 mt-2">
                         <button v-for="mode in playModes" :key="mode.id" @click="handlePlayModeChange(mode.id)" :class="[
-                            'text-base px-2 text-center py-2 rounded transition-colors',
+                            'flex flex-col items-center justify-center rounded-[8px] border px-2 py-3 min-h-[108px] transition-colors',
                             selectedPlayMode === mode.id
-                                ? 'bg-[#D72D36] text-white border border-[#D72D36]'
+                                ? 'bg-[#D72D36] text-white border-[#D72D36]'
                                 : 'border border-[#BBBFCC] text-gray-700 hover:border-gray-400'
                         ]">
-                            {{ mode.name }}
+                            <span class="text-[28px] leading-none">{{ getPlayModeIcon(mode.id) }}</span>
+                            <span class="mt-2 text-[16px] font-semibold tracking-[-0.25px]">{{ mode.name }}</span>
                         </button>
                     </div>
-                    
+
                     <!-- Format Selection (only show when play_mode = 2 - Thi đấu) -->
                     <div v-if="selectedPlayMode === 2" class="mt-4">
-                        <p class="text-[#838799]">Thể thức</p>
-                        <div class="grid lg:grid-cols-3 grid-cols-3 gap-2 mt-2">
+                        <p class="text-[#838799] font-bold text-[14px] uppercase tracking-wide">Thể thức</p>
+                        <div class="grid grid-cols-3 gap-2 mt-2">
                             <button v-for="fmt in formats" :key="fmt.id" @click="selectedFormat = fmt.id" :class="[
-                                'text-base px-2 text-center py-2 rounded transition-colors',
+                                'text-[13px] px-2 text-center py-2 rounded-[8px] transition-colors border',
                                 selectedFormat === fmt.id
-                                    ? 'bg-[#D72D36] text-white border border-[#D72D36]'
+                                    ? 'bg-[#D72D36] text-white border-[#D72D36]'
                                     : 'border border-[#BBBFCC] text-gray-700 hover:border-gray-400'
                             ]">
                                 {{ fmt.name }}
@@ -59,10 +60,28 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="bg-white rounded-[12px] border border-[#DCDEE6] p-5">
+                    <p class="text-[#838799] font-bold text-[14px] uppercase tracking-wide mb-3">Hoàn tất tạo kèo</p>
+                    <div class="rounded-[8px] border border-[#F7D5D7] bg-[#FBEAEB] p-3 mb-4">
+                        <p class="text-[14px] text-[#3E414C] font-semibold">Quyền riêng tư: {{ privacy }}</p>
+                        <p class="text-[12px] text-[#6B6F80] mt-1">
+                            {{ hasFee ? 'Kèo có phí tham gia' : 'Kèo miễn phí tham gia' }}
+                        </p>
+                    </div>
+                    <button type="button" @click="handleSubmit"
+                        class="w-full py-3 bg-[#D72D36] text-white rounded-[8px] font-semibold hover:bg-red-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-500">
+                        {{ btnTitle }}
+                    </button>
+                    <button type="button" @click="router.back()" v-if="isEditMode"
+                        class="w-full mt-2 py-3 bg-gray-200 text-gray-700 rounded-[8px] font-semibold hover:bg-gray-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400">
+                        Quay lại
+                    </button>
+                </div>
             </div>
 
-            <div class="space-y-6 lg:col-span-2">
-                <div class="bg-white rounded-[8px] shadow p-5">
+            <div class="space-y-4 lg:col-span-8 lg:order-1">
+                <div class="bg-white rounded-[12px] border border-[#DCDEE6] p-5">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="font-semibold text-gray-900 text-[20px]">Thông tin kèo đấu</h3>
                     </div>
@@ -76,7 +95,7 @@
                     </div>
                 </div>
 
-                <div class="bg-white rounded-[8px] shadow p-5">
+                <div class="bg-white rounded-[12px] border border-[#DCDEE6] p-5">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="font-semibold text-gray-900 text-[20px]">Thời gian</h3>
                     </div>
@@ -156,6 +175,42 @@
                                     class="p-4 text-gray-500 text-sm">Không tìm thấy địa điểm nào.</p>
                             </div>
                         </div>
+
+                        <div class="border border-[#DCDEE6] rounded-[8px] px-3 py-3 bg-white" @click.stop>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <ArrowPathRoundedSquareIcon class="w-5 h-5 text-[#D72D36]" />
+                                    <p class="text-sm font-semibold text-[#3E414C]">Thiết lập lặp lại</p>
+                                </div>
+                                <Toggle v-model="isRepeated" />
+                            </div>
+
+                            <div v-if="isRepeated" class="space-y-4 mt-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                                <div class="grid grid-cols-4 gap-2">
+                                    <button v-for="unit in repeatUnits" :key="unit" @click="repeatUnit = unit"
+                                        class="py-2.5 text-sm font-bold rounded-[4px] transition-all border"
+                                        :class="repeatUnit === unit ? 'bg-[#D72D36] border-[#D72D36] text-white shadow-md shadow-red-100' : 'bg-white border-gray-200 text-[#838799] hover:border-gray-300'">
+                                        {{ unit }}
+                                    </button>
+                                </div>
+
+                                <div v-if="repeatUnit === 'Tuần'" class="flex justify-between gap-2 p-1 bg-white">
+                                    <button v-for="day in daysOfWeek" :key="day.value" @click="toggleRecurringDay(day.value)"
+                                        class="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold transition-all border"
+                                        :class="recurringWeekDays.includes(day.value) ? 'bg-[#D72D36] text-white border-[#D72D36] shadow-red-100 shadow-md' : 'bg-white text-[#838799] border-gray-200 hover:bg-gray-50'">
+                                        {{ day.label }}
+                                    </button>
+                                </div>
+
+                                <div v-if="repeatUnit === 'Tuần'"
+                                    class="bg-[#FFF5F5] border border-[#FBEAEB] px-4 py-2 rounded-[4px] flex items-center justify-center gap-3">
+                                    <ArrowPathRoundedSquareIcon class="w-5 h-5 text-[#D72D36]" />
+                                    <p class="text-sm font-normal text-[#D72D36]">
+                                        Kèo này sẽ tự động tạo vào <span class="font-bold">{{ formattedRepeatTime }}</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
                         <hr>
                         <div class="bg-white rounded-lg py-2 space-y-4">
                             <div class="flex items-center justify-between">
@@ -164,14 +219,14 @@
                                     <span class="text-gray-700">Số người chơi</span>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <button @click="decreasePlayer"
-                                        class="w-6 h-6 bg-gray-800 text-white rounded hover:bg-gray-700 flex items-center justify-center text-sm select-none">
+                                    <button type="button" @click="decreasePlayer" aria-label="Giảm số người chơi"
+                                        class="w-6 h-6 bg-gray-800 text-white rounded hover:bg-gray-700 flex items-center justify-center text-sm select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-800">
                                         −
                                     </button>
                                     <span class="text-xl font-semibold w-12 text-center select-none">{{ playerCount
                                         }}</span>
-                                    <button @click="increasePlayer"
-                                        class="w-6 h-6 bg-gray-800 text-white rounded hover:bg-gray-700 flex items-center justify-center text-sm select-none">
+                                    <button type="button" @click="increasePlayer" aria-label="Tăng số người chơi"
+                                        class="w-6 h-6 bg-gray-800 text-white rounded hover:bg-gray-700 flex items-center justify-center text-sm select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-800">
                                         +
                                     </button>
                                 </div>
@@ -214,8 +269,8 @@
                                     <CurrencyDollarIcon class="w-5 h-5 text-gray-700" />
                                     <span class="text-gray-700">Phí tham gia</span>
                                 </div>
-                                <button @click="toggleHasFee"
-                                    class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+                                <button type="button" @click="toggleHasFee" :aria-checked="hasFee"
+                                    class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-500"
                                     :class="hasFee ? 'bg-[#D72D36]' : 'bg-gray-300'">
                                     <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
                                         :class="hasFee ? 'translate-x-6' : 'translate-x-1'" />
@@ -254,39 +309,39 @@
 
                                 <!-- Số tiền input -->
                                 <div>
-                                    <label class="text-sm text-gray-600 block mb-1">
+                                    <label class="text-sm text-gray-600 block mb-1" for="fee-amount-input">
                                         {{ autoSplitCourtFee ? 'Tổng tiền sân (VNĐ)' : 'Tiền cố định/người (VNĐ)' }}
                                     </label>
-                                    <input v-model="formattedFeeAmount" @input="handleFeeInput" type="text"
-                                        placeholder="Nhập số tiền"
+                                    <input id="fee-amount-input" v-model="formattedFeeAmount" @input="handleFeeInput" type="text" inputmode="numeric"
+                                        placeholder="Nhập số tiền…"
                                         class="w-full px-3 py-2 border rounded focus:outline-none placeholder:text-sm placeholder:text-[#BBBFCC] bg-[#EDEEF2]" />
                                 </div>
 
                                 <!-- Ghi chú -->
                                 <div>
-                                    <label class="text-sm text-gray-600 block mb-1">Ghi chú</label>
-                                    <textarea v-model="paymentNote" rows="2"
-                                        placeholder="Thêm ghi chú về chi phí..."
+                                    <label class="text-sm text-gray-600 block mb-1" for="fee-note-input">Ghi chú</label>
+                                    <textarea id="fee-note-input" v-model="paymentNote" rows="2"
+                                        placeholder="Thêm ghi chú về chi phí…"
                                         class="w-full px-3 py-2 border rounded focus:outline-none placeholder:text-sm placeholder:text-[#BBBFCC] bg-[#EDEEF2] resize-none"></textarea>
                                 </div>
 
                                 <!-- QR Code Upload -->
                                 <div>
-                                    <label class="text-sm text-gray-600 block mb-1">Mã QR thanh toán</label>
-                                    <div v-if="!qrCodePreview" 
-                                        class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-[#D72D36] transition-colors"
+                                    <label class="text-sm text-gray-600 block mb-1" for="qr-file-input">Mã QR thanh toán</label>
+                                    <button v-if="!qrCodePreview" type="button"
+                                        class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-[#D72D36] transition-colors w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-500"
                                         @click="$refs.qrFileInput.click()">
-                                        <input type="file" ref="qrFileInput" class="hidden" accept="image/*" @change="handleQrCodeUpload" />
+                                        <input id="qr-file-input" type="file" ref="qrFileInput" class="hidden" accept="image/*" @change="handleQrCodeUpload" />
                                         <div class="flex flex-col items-center">
-                                            <ArrowUpTrayIcon class="w-8 h-8 text-gray-400 mb-2" />
+                                            <ArrowUpTrayIcon class="w-8 h-8 text-gray-400 mb-2" aria-hidden="true" />
                                             <p class="text-sm text-gray-500">Tải ảnh lên</p>
                                             <p class="text-xs text-gray-400">JPG, PNG (tối đa 5MB)</p>
                                         </div>
-                                    </div>
+                                    </button>
                                     <div v-else class="relative">
-                                        <img :src="qrCodePreview" alt="QR Code" class="w-32 h-32 object-contain mx-auto rounded-lg border" />
-                                        <button @click="clearQrCode"
-                                            class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1">
+                                        <img :src="qrCodePreview" alt="QR Code thanh toán" class="w-32 h-32 object-contain mx-auto rounded-lg border" />
+                                        <button type="button" @click="clearQrCode" aria-label="Xóa mã QR"
+                                            class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-500">
                                             <XMarkIcon class="w-4 h-4" />
                                         </button>
                                     </div>
@@ -295,7 +350,7 @@
                                 <!-- Cảnh báo khi chọn chia tự động -->
                                 <div v-if="autoSplitCourtFee" class="bg-yellow-50 border border-yellow-200 rounded p-3">
                                     <p class="text-sm text-yellow-700">
-                                        <span class="font-medium">Lưu ý:</span> Phí sẽ được chia đều theo số người tham gia thực tế. 
+                                        <span class="font-medium">Lưu ý:</span> Phí sẽ được chia đều theo số người tham gia thực tế.
                                         Vui lòng chuẩn bị danh sách người tham gia trước khi tạo kèo đấu.
                                     </p>
                                 </div>
@@ -303,7 +358,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="bg-white rounded-[8px] shadow p-5">
+                <div class="bg-white rounded-[12px] border border-[#DCDEE6] p-5">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="font-semibold text-gray-900 text-[20px]">DUPR</h3>
                         <span v-if="!canEditDuprSettings" class="text-xs text-gray-500">(Chỉ áp dụng cho chế độ Thi đấu)</span>
@@ -370,7 +425,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="bg-white rounded-[8px] shadow p-5">
+                <div class="bg-white rounded-[12px] border border-[#DCDEE6] p-5">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="font-semibold text-gray-900 text-[20px]">Luật thi đấu</h3>
                     </div>
@@ -441,7 +496,7 @@
                     </div>
                 </div>
 
-                <div class="bg-white rounded-[8px] shadow p-5">
+                <div class="bg-white rounded-[12px] border border-[#DCDEE6] p-5">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="font-semibold text-gray-900 text-[20px]">Cài đặt nâng cao</h3>
                     </div>
@@ -479,25 +534,6 @@
                                     class="px-4 py-2 w-full text-sm text-left hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg block whitespace-nowrap"
                                     :class="{ 'bg-gray-50 font-medium': ageGroup === age.value }">
                                     {{ age.label }}
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center justify-between relative">
-                            <span class="text-gray-700">Lặp lại</span>
-                            <button @click="toggleOpenRepeat" @click.stop
-                                class="flex items-center gap-2 text-gray-700 hover:text-gray-900">
-                                <span class="font-medium">{{ repeatLabel }}</span>
-                                <ChevronRightIcon class="w-5 h-5 transition-transform"
-                                    :class="{ 'rotate-90': openRepeat }" />
-                            </button>
-                            <div v-if="openRepeat" @click.stop
-                                class="absolute right-0 top-full mt-2 bg-white border rounded-lg shadow-lg z-50">
-                                <button v-for="repeat in repeatOptions" :key="repeat.value"
-                                    @click="selectRepeat(repeat.value)"
-                                    class="px-4 py-2 w-full text-sm text-left hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg block whitespace-nowrap"
-                                    :class="{ 'bg-gray-50 font-medium': repeatType === repeat.value }">
-                                    {{ repeat.label }}
                                 </button>
                             </div>
                         </div>
@@ -541,8 +577,8 @@
 
                         <div class="flex items-center justify-between">
                             <span class="text-gray-700">Duyệt tự động</span>
-                            <button @click="autoApprove = !autoApprove"
-                                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+                            <button type="button" @click="autoApprove = !autoApprove" :aria-checked="autoApprove"
+                                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-500"
                                 :class="autoApprove ? 'bg-[#D72D36]' : 'bg-gray-300'">
                                 <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
                                     :class="autoApprove ? 'translate-x-6' : 'translate-x-1'" />
@@ -551,8 +587,8 @@
 
                         <div class="flex items-center justify-between">
                             <span class="text-gray-700">Cho phép người tham gia thêm bạn</span>
-                            <button @click="allowParticipantAddFriends = !allowParticipantAddFriends"
-                                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+                            <button type="button" @click="allowParticipantAddFriends = !allowParticipantAddFriends" :aria-checked="allowParticipantAddFriends"
+                                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-500"
                                 :class="allowParticipantAddFriends ? 'bg-[#D72D36]' : 'bg-gray-300'">
                                 <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
                                     :class="allowParticipantAddFriends ? 'translate-x-6' : 'translate-x-1'" />
@@ -561,8 +597,8 @@
 
                         <div class="flex items-center justify-between">
                             <span class="text-gray-700">Gửi thông báo</span>
-                            <button @click="sendNotification = !sendNotification"
-                                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+                            <button type="button" @click="sendNotification = !sendNotification" :aria-checked="sendNotification"
+                                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-500"
                                 :class="sendNotification ? 'bg-[#D72D36]' : 'bg-gray-300'">
                                 <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
                                     :class="sendNotification ? 'translate-x-6' : 'translate-x-1'" />
@@ -571,16 +607,6 @@
                     </div>
                 </div>
 
-                <div class="flex items-center justify-start gap-4">
-                    <button @click="handleSubmit"
-                        class="w-full max-w-[228px] py-3 bg-[#D72D36] text-white rounded font-semibold hover:bg-red-700 transition-colors">
-                        {{ btnTitle }}
-                    </button>
-                    <button @click="router.back()" v-if="isEditMode"
-                        class="w-fit px-4 py-3 bg-gray-200 text-gray-700 rounded font-semibold hover:bg-gray-300 transition-colors">
-                        Quay lại
-                    </button>
-                </div>
             </div>
         </div>
 
@@ -628,9 +654,9 @@ import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import VueDatePicker from '@vuepic/vue-datepicker'
 import '@vuepic/vue-datepicker/dist/main.css'
 import { vi } from 'date-fns/locale'
-import { ChevronDownIcon, ChevronRightIcon } from "@heroicons/vue/24/solid";
-import { CalendarDaysIcon, ClockIcon, MapPinIcon, UsersIcon, LockClosedIcon, CurrencyDollarIcon, ArrowUpTrayIcon } from "@heroicons/vue/24/outline";
-import { XMarkIcon } from "@heroicons/vue/24/solid";
+import { ChevronDownIcon, ChevronRightIcon, XMarkIcon } from "@heroicons/vue/24/solid";
+import { CalendarDaysIcon, ClockIcon, MapPinIcon, UsersIcon, LockClosedIcon, CurrencyDollarIcon, ArrowUpTrayIcon, ArrowPathRoundedSquareIcon } from "@heroicons/vue/24/outline";
+import Toggle from '@/components/atoms/Toggle.vue'
 import * as MiniTournamentService from '@/service/miniTournament'
 import * as SportService from '@/service/sport'
 import * as CompetitionLocationService from '@/service/competitionLocation'
@@ -640,13 +666,11 @@ import { FreeMode, Mousewheel } from 'swiper/modules'
 import 'swiper/css'
 import 'swiper/css/free-mode'
 import { genderOptions } from '@/constants/genderOption';
-import { feeOptions } from '@/constants/feeOption';
-import { playModes, formats, matchTypeToPlayModeAndFormat } from '@/constants/playModeAndFormat';
+import { playModes, formats } from '@/constants/playModeAndFormat';
 import { levels } from '@/constants/levels';
 import { setOptions } from '@/constants/setOption';
 import { winRuleOptions } from '@/constants/winRuleOption';
 import { ageGroupOptions } from '@/constants/ageGroupOption';
-import { repeatOptions } from '@/constants/repeatOption';
 import { roleOptions } from '@/constants/roleOption';
 import { lockCancellationOptions } from '@/constants/lockCancellationOption';
 import { durationOptions } from '@/constants/durationOption';
@@ -658,6 +682,12 @@ const route = useRoute()
 const miniTournamentId = route.params.id || null
 const isEditMode = computed(() => !!miniTournamentId)
 const btnTitle = computed(() => isEditMode.value ? 'Chỉnh sửa kèo đấu' : 'Tạo kèo đấu');
+const getPlayModeIcon = (modeId) => {
+    if (modeId === 1) return '☺'
+    if (modeId === 2) return '▦'
+    if (modeId === 3) return '🎾'
+    return '•'
+}
 
 // =================================================================================
 // Refs and State (Existing)
@@ -680,6 +710,8 @@ const autoSplitCourtFee = ref(false)
 const paymentNote = ref('')
 const qrCodeImage = ref(null)
 const qrCodePreview = ref(null)
+const qrCodeFile = ref(null) // File object for upload
+const qrFileInput = ref(null)
 
 // Legacy fee fields
 const fee = ref('none')
@@ -757,30 +789,50 @@ watch(selectedSportId, (id) => {
 
 const genderPolicy = ref(3)
 const ageGroup = ref(1)
-const repeatType = ref(1)
+const isRepeated = ref(false)
+const repeatUnit = ref('Tuần')
+const recurringWeekDays = ref([])
 const roleType = ref(2)
 const lockCancellation = ref(1)
 
 const openGender = ref(false)
 const openAge = ref(false)
-const openRepeat = ref(false)
 const openRole = ref(false)
 const openLock = ref(false)
 
 const genderLabel = computed(() => genderOptions.find(g => g.value === genderPolicy.value)?.label || 'Không giới hạn')
 const ageGroupLabel = computed(() => ageGroupOptions.find(a => a.value === ageGroup.value)?.label || 'Không giới hạn')
-const repeatLabel = computed(() => repeatOptions.find(r => r.value === repeatType.value)?.label || '1 tuần')
 const roleLabel = computed(() => roleOptions.find(r => r.value === roleType.value)?.label || 'Tổ chức và tham gia')
 const lockCancellationLabel = computed(() => {
     return lockCancellation.value === 0
         ? 'Không có'
         : lockCancellationOptions.find(l => l.value === lockCancellation.value)?.label || 'Không có'
 })
+const repeatUnits = ['Tuần', 'Tháng', 'Quý', 'Năm']
+const daysOfWeek = [
+    { label: 'T2', value: 1 },
+    { label: 'T3', value: 2 },
+    { label: 'T4', value: 3 },
+    { label: 'T5', value: 4 },
+    { label: 'T6', value: 5 },
+    { label: 'T7', value: 6 },
+    { label: 'CN', value: 0 },
+]
+const formattedRepeatTime = computed(() => {
+    const selected = daysOfWeek
+        .filter((d) => recurringWeekDays.value.includes(d.value))
+        .map((d) => d.label)
+        .join('-')
+    const d = date.value ? new Date(date.value) : null
+    const hh = d ? String(d.getHours()).padStart(2, '0') : '--'
+    const mm = d ? String(d.getMinutes()).padStart(2, '0') : '--'
+    return `${hh}:${mm} ${selected || 'Chưa chọn ngày'} hàng tuần`
+})
 
 // Định nghĩa trạng thái ban đầu để reset form
 const initialStates = {
     openDate: false, openTime: false, openPrivacy: false, openFee: false, openMinLevel: false, openMaxLevel: false,
-    openSet: false, openWinRule: false, openGender: false, openAge: false, openRepeat: false, openRole: false, openLock: false,
+    openSet: false, openWinRule: false, openGender: false, openAge: false, openRole: false, openLock: false,
     isLocationDropdownOpen: false, isPointModalOpen: false,
     date: null, durationMinutes: null, selectedDuration: '', playerCount: 1, privacy: 'Công khai',
     fee: 'none', feeAmount: 0, formattedFeeAmount: '',
@@ -788,7 +840,7 @@ const initialStates = {
     duprEnabled: true, vnduprEnabled: true, minLevel: 'Không giới hạn', maxLevel: 'Không giới hạn',
     locationKeyword: '', selectedLocation: null, competitionLocations: [],
     setNumber: 1, gamesPerSet: 11, pointsDifference: 2, maxPoints: 11, courtSwitchPoints: 1,
-    genderPolicy: 3, ageGroup: 1, repeatType: 1, roleType: 2, lockCancellation: 1,
+    genderPolicy: 3, ageGroup: 1, isRepeated: false, repeatUnit: 'Tuần', recurringWeekDays: [], roleType: 2, lockCancellation: 1,
     autoApprove: true, allowParticipantAddFriends: true, sendNotification: true,
 };
 
@@ -817,7 +869,9 @@ const resetFormState = () => {
     courtSwitchPoints.value = initialStates.courtSwitchPoints;
     genderPolicy.value = initialStates.genderPolicy;
     ageGroup.value = initialStates.ageGroup;
-    repeatType.value = initialStates.repeatType;
+    isRepeated.value = initialStates.isRepeated;
+    repeatUnit.value = initialStates.repeatUnit;
+    recurringWeekDays.value = [...initialStates.recurringWeekDays];
     roleType.value = initialStates.roleType;
     lockCancellation.value = initialStates.lockCancellation;
     autoApprove.value = initialStates.autoApprove;
@@ -825,6 +879,9 @@ const resetFormState = () => {
     sendNotification.value = initialStates.sendNotification;
     competitionLocations.value = initialStates.competitionLocations;
     isLocationDropdownOpen.value = initialStates.isLocationDropdownOpen;
+    qrCodeImage.value = null;
+    qrCodePreview.value = null;
+    qrCodeFile.value = null;
     // Đảm bảo chọn lại môn thể thao đầu tiên
     if (sports.value.length > 0) {
         selectedSportId.value = sports.value[0].id;
@@ -848,7 +905,6 @@ const closeOtherDropdowns = (exceptRef) => {
     if (exceptRef !== openWinRule) openWinRule.value = false
     if (exceptRef !== openGender) openGender.value = false
     if (exceptRef !== openAge) openAge.value = false
-    if (exceptRef !== openRepeat) openRepeat.value = false
     if (exceptRef !== openRole) openRole.value = false
     if (exceptRef !== openLock) openLock.value = false
     // Đóng dropdown địa điểm
@@ -896,6 +952,7 @@ const toggleHasFee = () => {
         paymentNote.value = ''
         qrCodeImage.value = null
         qrCodePreview.value = null
+        qrCodeFile.value = null
         fee.value = 'none'
         feeAmount.value = 0
         formattedFeeAmount.value = ''
@@ -916,16 +973,17 @@ const toggleAutoSplit = () => {
 const handleQrCodeUpload = (event) => {
     const file = event.target.files[0]
     if (!file) return
-    
+
     if (file.size > 5 * 1024 * 1024) {
         toast.error('Kích thước ảnh không được quá 5MB')
         return
     }
-    
+
+    qrCodeFile.value = file
     const reader = new FileReader()
     reader.onload = (e) => {
         qrCodePreview.value = e.target.result
-        qrCodeImage.value = e.target.result // base64
+        qrCodeImage.value = e.target.result // base64 for preview
     }
     reader.readAsDataURL(file)
 }
@@ -934,6 +992,8 @@ const handleQrCodeUpload = (event) => {
 const clearQrCode = () => {
     qrCodeImage.value = null
     qrCodePreview.value = null
+    qrCodeFile.value = null
+    if (qrFileInput.value) qrFileInput.value.value = ''
 }
 
 const toggleOpenMinLevel = () => {
@@ -970,7 +1030,7 @@ const canEditDuprSettings = computed(() => selectedPlayMode.value === 2)
 // Khi play_mode thay đổi, tự động set DUPR/VNDUPR
 const handlePlayModeChange = (mode) => {
     selectedPlayMode.value = mode
-    
+
     // Nếu là Vui vẻ (1) hoặc Luyện tập (3): disable và set = false
     // Nếu là Thi đấu (2): enable và set = true
     if (mode === 2) {
@@ -980,7 +1040,7 @@ const handlePlayModeChange = (mode) => {
         duprEnabled.value = false
         vnduprEnabled.value = false
     }
-    
+
     // Khi play_mode thay đổi, reset format về null
     selectedFormat.value = null
 }
@@ -1007,12 +1067,6 @@ const toggleOpenAge = () => {
     const currentState = openAge.value
     closeOtherDropdowns(openAge)
     openAge.value = !currentState
-}
-
-const toggleOpenRepeat = () => {
-    const currentState = openRepeat.value
-    closeOtherDropdowns(openRepeat)
-    openRepeat.value = !currentState
 }
 
 const toggleOpenRole = () => {
@@ -1067,10 +1121,10 @@ const selectDuration = (option) => {
 }
 
 const handleFeeInput = (event) => {
-    let value = event.target.value.replace(/[^\d]/g, '')
-    feeAmount.value = value ? parseInt(value) : 0
+    let value = event.target.value.replaceAll(/[^\d]/g, '')
+    feeAmount.value = value ? Number.parseInt(value) : 0
     if (value) {
-        formattedFeeAmount.value = parseInt(value).toLocaleString('vi-VN')
+        formattedFeeAmount.value = Number.parseInt(value).toLocaleString('vi-VN')
     } else {
         formattedFeeAmount.value = ''
     }
@@ -1096,9 +1150,10 @@ const selectAge = (value) => {
     openAge.value = false
 }
 
-const selectRepeat = (value) => {
-    repeatType.value = value
-    openRepeat.value = false
+const toggleRecurringDay = (day) => {
+    const idx = recurringWeekDays.value.indexOf(day)
+    if (idx === -1) recurringWeekDays.value.push(day)
+    else recurringWeekDays.value.splice(idx, 1)
 }
 
 const selectRole = (value) => {
@@ -1171,23 +1226,44 @@ const handlePointConfirm = () => {
 // =================================================================================
 
 const buildRecurringSchedule = () => {
-    // Same format as clubs: { period, week_days, recurring_date }
-    // Current UI only supports weekly on the selected start day (repeatType=1 week).
+    if (!isRepeated.value) return null
     if (!date.value) return null
-    if (repeatType.value !== 1) return null
 
-    const d = new Date(date.value)
-    const dayOfWeek = d.getDay() // 0=CN..6=T7 (matches backend ValidRecurringSchedule)
+    const periodMap = {
+        'Tuần': 'weekly',
+        'Tháng': 'monthly',
+        'Quý': 'quarterly',
+        'Năm': 'yearly',
+    }
+    const period = periodMap[repeatUnit.value] || 'weekly'
+    const startDate = new Date(date.value)
 
+    if (period === 'weekly') {
+        const weekDays = recurringWeekDays.value.length
+            ? [...recurringWeekDays.value]
+            : [startDate.getDay()]
+        return {
+            period: 'weekly',
+            week_days: weekDays,
+            recurring_date: null,
+        }
+    }
+
+    const recurringDate = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`
     return {
-        period: 'weekly',
-        week_days: [dayOfWeek],
-        recurring_date: null,
+        period,
+        week_days: null,
+        recurring_date: recurringDate,
     }
 }
 
 const handleSubmit = async () => {
-    let startsAt = null;
+    // Nếu kèo có thu phí nhưng không có QR mới và cũng không có QR cũ => bắt buộc upload
+    if (hasFee.value && !qrCodeFile.value && !qrCodeImage.value) {
+        toast.error('Vui lòng tải ảnh mã QR thanh toán lên')
+        return
+    }
+    let startTime = null;
     if (date.value) {
         const d = new Date(date.value);
 
@@ -1198,15 +1274,27 @@ const handleSubmit = async () => {
         const minutes = String(d.getMinutes()).padStart(2, '0');
         const seconds = String(d.getSeconds()).padStart(2, '0');
 
-        startsAt = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+        startTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
     }
 
     const getNumericLevel = (level) => {
         if (level === 'Không giới hạn') return null
-        return parseFloat(level)
+        return Number.parseFloat(level)
     }
 
-    const lockValue = lockCancellation.value === 0 ? 'unlock' : lockCancellation.value
+    const getCancellationDuration = () => {
+        const hoursMap = {
+            1: 1,
+            2: 2,
+            3: 4,
+            4: 6,
+            5: 8,
+            6: 12,
+            7: 24,
+        }
+        const hours = hoursMap[lockCancellation.value] || null
+        return hours ? hours * 60 : null
+    }
 
     const data = {
         sport_id: selectedSportId.value,
@@ -1214,58 +1302,74 @@ const handleSubmit = async () => {
         description: tournamentNote.value || null,
         play_mode: selectedPlayMode.value,
         format: selectedFormat.value,
-        // Giữ lại match_type để backward compatibility
-        match_type: selectedType.value,
-        starts_at: startsAt,
-        duration_minutes: durationMinutes.value,
+        start_time: startTime,
+        duration: durationMinutes.value,
         competition_location_id: selectedLocation.value ? selectedLocation.value?.id : null,
         max_players: playerCount.value,
         is_private: privacy.value === 'Riêng tư',
-        
-        // New fee fields
+
         has_fee: hasFee.value,
-        auto_split_court_fee: autoSplitCourtFee.value,
-        payment_note: paymentNote.value || null,
-        qr_code_image: qrCodeImage.value,
-        
-        // Legacy fee fields (for backward compatibility)
-        fee: hasFee.value ? (autoSplitCourtFee.value ? 'auto_split' : 'per_person') : 'free',
-        fee_amount: hasFee.value ? feeAmount.value : 0,
-        prize_pool: 0,
-        
-        enable_dupr: duprEnabled.value,
-        enable_vndupr: vnduprEnabled.value,
+        auto_split_fee: autoSplitCourtFee.value,
+        fee_description: paymentNote.value || null,
+        fee_amount: hasFee.value ? feeAmount.value : null,
+
         min_rating: getNumericLevel(minLevel.value),
         max_rating: getNumericLevel(maxLevel.value),
         set_number: setNumber.value,
-        games_per_set: gamesPerSet.value,
+        base_points: gamesPerSet.value,
         points_difference: pointsDifference.value,
         max_points: maxPoints.value,
-        court_switch_points: courtSwitchPoints.value,
-        gender_policy: genderPolicy.value,
-        age_group: ageGroup.value,
-        repeat_type: repeatType.value,
+        gender: genderPolicy.value,
         recurring_schedule: buildRecurringSchedule(),
-        role_type: roleType.value,
-        lock_cancellation: lockValue,
+        apply_rule: true,
+        allow_cancellation: true,
+        cancellation_duration: getCancellationDuration(),
         auto_approve: autoApprove.value,
         allow_participant_add_friends: allowParticipantAddFriends.value,
-        send_notification: sendNotification.value,
         status: 1,
         invite_user: []
     }
 
-    if(isEditMode.value) {
+    if (isEditMode.value) {
         await updateMiniTournament(miniTournamentId, data)
-        return
     } else {
-        await createMiniTournament(data)   
+        // Khi có file QR code, dùng FormData để gửi multipart/form-data
+        const payload = qrCodeFile.value
+            ? buildFormDataWithFile(data)
+            : { ...data, qr_code_url: qrCodeImage.value || null }
+        await createMiniTournament(payload)
     }
+}
+
+const buildFormDataWithFile = (data) => {
+    const formData = new FormData()
+    Object.entries(data).forEach(([key, value]) => {
+        if (value === null || value === undefined) return
+        if (key === 'recurring_schedule' && typeof value === 'object') {
+            formData.append('recurring_schedule[period]', value.period)
+            if (Array.isArray(value.week_days) && value.week_days.length) {
+                value.week_days.forEach((day, index) => {
+                    formData.append(`recurring_schedule[week_days][${index}]`, day)
+                })
+            }
+            if (value.recurring_date) {
+                formData.append('recurring_schedule[recurring_date]', value.recurring_date)
+            }
+        } else if (key === 'invite_user' && Array.isArray(value)) {
+            value.forEach((id) => formData.append('invite_user[]', id))
+        } else if (typeof value === 'boolean') {
+            formData.append(key, value ? '1' : '0')
+        } else {
+            formData.append(key, value)
+        }
+    })
+    formData.append('qr_code_url', qrCodeFile.value)
+    return formData
 }
 
 const updateMiniTournament = async (id, data) => {
     try {
-        const res = await MiniTournamentService.updateMiniTournament(id, data)
+        await MiniTournamentService.updateMiniTournament(id, data)
         toast.success('Chỉnh sửa kèo đấu thành công!')
         setTimeout(() => {
             router.push({ name: 'mini-tournament-detail', params: { id: miniTournamentId } })
@@ -1330,37 +1434,49 @@ const fetchCompetitionLocations = async (keyword) => {
     }
 }
 
+const applyRecurringScheduleFromData = (recurringSchedule) => {
+    if (recurringSchedule?.period) {
+        isRepeated.value = true
+        const periodLabelMap = {
+            weekly: 'Tuần',
+            monthly: 'Tháng',
+            quarterly: 'Quý',
+            yearly: 'Năm',
+        }
+        repeatUnit.value = periodLabelMap[recurringSchedule.period] || 'Tuần'
+        recurringWeekDays.value = Array.isArray(recurringSchedule.week_days)
+            ? [...recurringSchedule.week_days]
+            : []
+        return
+    }
+
+    isRepeated.value = false
+    repeatUnit.value = 'Tuần'
+    recurringWeekDays.value = []
+}
+
 const prefillForm = (data) => {
     if(!data) return;
     // Thông tin cơ bản
     selectedSportId.value = data?.sport.id || null;
     tournamentName.value = data?.name || '';
     tournamentNote.value = data?.description || '';
-    selectedType.value = data?.match_type || 1;
-    
-    // Play mode và format mới
+
+    // Play mode và format
     if (data?.play_mode) {
         selectedPlayMode.value = data.play_mode
-        // Nếu là Thi đấu (2), enable DUPR settings; ngược lại disable
-        if (data.play_mode === 2) {
-            duprEnabled.value = data?.enable_dupr ?? true
-            vnduprEnabled.value = data?.enable_vndupr ?? true
-        } else {
-            duprEnabled.value = false
-            vnduprEnabled.value = false
-        }
     }
     if (data?.format) {
         selectedFormat.value = data.format
     }
-    
+
     // Ngày giờ - địa điểm  - người chơi
-    if(data?.starts_at) {
-        date.value = new Date(data.starts_at);
+    if(data?.start_time) {
+        date.value = new Date(data.start_time);
     }
-    if(data?.duration_minutes) {
-        durationMinutes.value = data.duration_minutes;
-        const durationOption = durationOptions.find(option => option.value === data.duration_minutes);
+    if(data?.duration) {
+        durationMinutes.value = data.duration;
+        const durationOption = durationOptions.find(option => option.value === data.duration);
         selectedDuration.value = durationOption ? durationOption.label : '';
     }
     if(data?.competition_location) {
@@ -1369,38 +1485,35 @@ const prefillForm = (data) => {
     }
     playerCount.value = data?.max_players || 1;
     privacy.value = data?.is_private ? 'Riêng tư' : 'Công khai';
+
     // Phí
-    fee.value = data?.fee || 'none';
+    hasFee.value = !!data?.has_fee;
+    autoSplitCourtFee.value = !!data?.auto_split_fee;
+    paymentNote.value = data?.fee_description || '';
+    qrCodePreview.value = data?.qr_code_url || null;
+    qrCodeImage.value = data?.qr_code_url || null;
     feeAmount.value = data?.fee_amount || 0;
     if(feeAmount.value) {
         formattedFeeAmount.value = feeAmount.value.toLocaleString('vi-VN');
     } else {
         formattedFeeAmount.value = '';
     }
-    // điểm DUPR và PICKI
-    duprEnabled.value = data?.enable_dupr || false;
-    vnduprEnabled.value = data?.enable_vndupr || false;
+
+    // Trình độ
     minLevel.value = data?.min_rating ? data.min_rating.toString() : 'Không giới hạn';
     maxLevel.value = data?.max_rating ? data.max_rating.toString() : 'Không giới hạn';
+
     // Luật thi đấu
     setNumber.value = data?.set_number || 1;
-    gamesPerSet.value = data?.games_per_set || 11;
+    gamesPerSet.value = data?.base_points || 11;
     pointsDifference.value = data?.points_difference || 2;
     maxPoints.value = data?.max_points || 11;
-    courtSwitchPoints.value = data?.court_switch_points || 1;
+
     // Cài đặt nâng cao
-    genderPolicy.value = data?.gender_policy
-    ageGroup.value = data?.age_group
-    repeatType.value = data?.repeat_type
-    if (data?.recurring_schedule?.period === 'weekly') {
-        // Current UI maps recurring schedule weekly to "1 tuần"
-        repeatType.value = 1
-    }
-    roleType.value = data?.role_type
-    lockCancellation.value = data?.lock_cancellation === 'unlock' ? 0 : data?.lock_cancellation
-    autoApprove.value = data?.auto_approve || false
-    allowParticipantAddFriends.value = data?.allow_participant_add_friends || false
-    sendNotification.value = data?.send_notification || false
+    genderPolicy.value = data?.gender || 3
+    applyRecurringScheduleFromData(data?.recurring_schedule)
+    autoApprove.value = !!data?.auto_approve
+    allowParticipantAddFriends.value = !!data?.allow_participant_add_friends
 }
 
 const detailMiniTournament = async (id) => {
@@ -1430,6 +1543,7 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+
 .filter-invert-white {
     filter: invert(1) grayscale(100%) brightness(200%) contrast(150%);
 }
