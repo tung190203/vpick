@@ -46,4 +46,18 @@ abstract class BaseNotification extends Notification
             'data' => $data,
         ];
     }
+
+    /**
+     * Helper để build payload dạng { title, message, ...extra } cho toDatabase().
+     */
+    protected static function payload(string $title, string $message, array $extra = []): array
+    {
+        return array_merge(
+            [
+                'title' => $title,
+                'message' => $message,
+            ],
+            $extra
+        );
+    }
 }
