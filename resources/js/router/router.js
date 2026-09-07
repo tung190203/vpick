@@ -424,6 +424,14 @@ export const route = [
     }
   },
   {
+    path: '/admin/sponsors',
+    name: 'admin.sponsors',
+    component: () => import('@/components/pages/admin/AdminSponsorsPage.vue'),
+    meta: {
+      requiresAdmin: true,
+    }
+  },
+  {
     path: '/admin/notifications',
     name: 'admin.notifications',
     component: AdminNotificationPage,

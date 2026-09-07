@@ -49,6 +49,7 @@ const navItems = [
   { label: 'Quản lý', routeName: 'admin.moderation', icon: 'gavel' },
   { label: 'Push Notification', routeName: 'admin.notifications', icon: 'notifications' },
   { label: 'Banner Carousel', routeName: 'admin.banners', icon: 'view_carousel' },
+  { label: 'Nhãn hàng tài trợ', routeName: 'admin.sponsors', icon: 'storefront' },
   { label: 'Cấu hình', routeName: 'admin.config', icon: 'settings' }
 ]
 
