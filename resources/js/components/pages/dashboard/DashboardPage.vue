@@ -73,6 +73,9 @@
           </div>
         </div>
 
+        <!-- Nhãn hàng tài trợ (dải logo chạy ngang dưới khung đỏ, trên Kèo đấu sắp tới) -->
+        <SponsorsTicker :sponsors="homeData.sponsors" />
+
         <section>
           <div class="flex items-center justify-start mb-4">
             <h2 class="text-xl font-semibold text-gray-800">Kèo đấu sắp tới</h2>
@@ -485,6 +488,7 @@ import VerifyIcon from "@/assets/images/verify-icon.svg";
 import PromotionModal from "@/components/organisms/PromotionModal.vue";
 import LeaderboardSection from "./LeaderboardSection.vue";
 import FavoriteFeaturesModal, { getSavedFavoriteFeatures } from "@/components/molecules/FavoriteFeaturesModal.vue";
+import SponsorsTicker from "@/components/molecules/SponsorsTicker.vue";
 
 const userStore = useUserStore();
 const { getUser } = storeToRefs(userStore);
