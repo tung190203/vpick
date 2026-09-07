@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Helpers\ResponseHelper;
 use App\Http\Resources\BannerResource;
+use App\Http\Resources\SponsorResource;
 use App\Http\Resources\ListClubResource;
 use App\Http\Resources\ListMiniTournamentResource;
 use App\Http\Resources\ListTournamentResource;
 use App\Http\Resources\UserSportResource;
 use App\Models\Banner;
+use App\Models\Sponsor;
 use App\Models\Club\Club;
 use App\Models\MiniTournament;
 use App\Models\Sport;
@@ -61,12 +63,19 @@ class HomeController extends Controller
 
         $badgeService = app(\App\Services\BadgeService::class);
 
+        $userSettings = $user->settings;
+        if (empty($userSettings) || (is_array($userSettings) && empty($userSettings))) {
+            $userSettings = (object) [];
+        }
+
         $userInfo = [
-            'win_rate'    => $primarySportStats['win_rate'] ?? 0.0,
-            'performance' => $primarySportStats['performance'] ?? 0,
-            'sports'      => UserSportResource::collection($userSports),
-            'badges'      => $badgeService->getUserBadges($userId)['badges'],
+            'win_rate'      => $primarySportStats['win_rate'] ?? 0.0,
+            'performance'   => $primarySportStats['performance'] ?? 0,
+            'sports'        => UserSportResource::collection($userSports),
+            'badges'        => $badgeService->getUserBadges($userId)['badges'],
             'primary_badge' => $badgeService->getPrimaryBadge($userId),
+            'theme_mode'    => $user->theme_mode ?? 'system',
+            'settings'      => $userSettings,
         ];
         $nowVN = Carbon::now('Asia/Ho_Chi_Minh')->toDateString();
     
@@ -205,12 +214,17 @@ class HomeController extends Controller
         $userIds = $leaderboard->pluck('id')->toArray();
         $weeklyChanges = User::getBatchWeeklyChanges($userIds, $sportId);
 
+        // Nhãn hàng tài trợ đang active
+        $sponsors = Sponsor::active()->get();
+
         // Trả về data
         $data = [
             'user_info'              => $userInfo,
+            'settings'               => $userSettings,
             'upcoming_mini_tournament' => ListMiniTournamentResource::collection($upcomingMiniTournaments),
             'upcoming_tournaments'     => ListTournamentResource::collection($upcomingTournaments),
             'banners'                   => BannerResource::collection($banners),
+            'sponsors'                  => SponsorResource::collection($sponsors),
             'my_club'                   => ListClubResource::collection($myClub),
             'leaderboard_club'               => ListClubResource::collection($leaderboardClub),
             'leaderboard' => $leaderboard->map(function($user) use ($weeklyChanges) {

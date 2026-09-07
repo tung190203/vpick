@@ -9,6 +9,7 @@ use App\Jobs\SendAdminPushNotificationCampaignJob;
 use App\Models\AdminPushNotificationCampaign;
 use App\Models\DeviceToken;
 use App\Models\User;
+use App\Notifications\AdminPushTestNotification;
 use App\Services\Admin\AdminPushNotification\PushNotificationRecipientResolver;
 use App\Services\Admin\AuditLogService;
 use App\Services\ImageOptimizationService;
@@ -113,7 +114,7 @@ class AdminPushNotificationService
     }
 
     /**
-     * Gửi test notification cho admin hiện tại (sync, không qua queue).
+     * Gửi test notification cho admin hiện tại (qua Notification flow → listener → SendPushJob → FirebaseService::sendToUser).
      */
     public function sendTest(User $admin, string $title, string $content, ?UploadedFile $image = null, ?string $imageUrl = null, ?string $actionType = null, ?int $actionId = null): array
     {
@@ -121,36 +122,20 @@ class AdminPushNotificationService
             $imageUrl = $this->uploadImage($image);
         }
 
-        $devices = DeviceToken::where('user_id', $admin->id)
+        // Check admin có ít nhất 1 thiết bị enabled để nhận push thử.
+        $devicesCount = DeviceToken::where('user_id', $admin->id)
             ->where('is_enabled', true)
-            ->get();
+            ->count();
 
-        if ($devices->isEmpty()) {
+        if ($devicesCount === 0) {
             throw new \App\Exceptions\BusinessException(
                 'Tài khoản admin chưa đăng ký thiết bị để nhận thông báo thử.',
                 422
             );
         }
 
-        $data = [
-            'type' => 'ADMIN_PUSH_TEST',
-            'admin_id' => (string) $admin->id,
-        ];
-
-        if ($actionType && $actionType !== 'NONE' && $actionId) {
-            $data['action_type'] = $actionType;
-            $data['action_id'] = (string) $actionId;
-            $data['action_url'] = match ($actionType) {
-                'TOURNAMENT' => "tournament-detail/{$actionId}",
-                'MINI_TOURNAMENT' => "mini-tournament-detail/{$actionId}",
-                'CLUB' => "club-detail/{$actionId}",
-                default => null,
-            };
-        }
-
-        $firebase = app(\App\Services\FirebaseService::class);
-        $tokens = $devices->pluck('token')->toArray();
-        $result = $firebase->sendMulticast($tokens, $title, $content, $data, $imageUrl);
+        // Đẩy qua Notification flow để FCM được gửi duy nhất qua SendPushNotificationListener → SendPushJob.
+        $admin->notify(new AdminPushTestNotification($title, $content, $imageUrl, $actionType, $actionId));
 
         $this->auditLogService->log(
             $admin,
@@ -161,17 +146,14 @@ class AdminPushNotificationService
             [
                 'title' => $title,
                 'content' => $content,
-                'devices_count' => count($tokens),
-                'success' => $result['success'],
-                'failed' => $result['failed'],
+                'devices_count' => $devicesCount,
             ],
             "Sent test push notification"
         );
 
         return [
-            'devices_count' => count($tokens),
-            'success' => $result['success'],
-            'failed' => $result['failed'],
+            'devices_count' => $devicesCount,
+            'notified' => true,
         ];
     }
 
