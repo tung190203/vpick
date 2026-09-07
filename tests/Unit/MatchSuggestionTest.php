@@ -6,6 +6,20 @@ use App\DTO\MatchSuggestionRequestDTO;
 use App\DTO\MatchSuggestionSettingsDTO;
 use App\DTO\ParticipantTierDTO;
 use App\DTO\PlayerContextDTO;
+use App\DTO\FixedPairDTO;
+
+// MatchSuggestionRequestDTO.php defines multiple classes in one file (PSR-4 only
+// auto-loads the file when the matching class is referenced). Force-load the
+// file so FixedPairDTO becomes available in PHPUnit unit tests where Laravel's
+// bootstrappers do not run.
+require_once __DIR__ . '/../../app/DTO/MatchSuggestionRequestDTO.php';
+
+// Provide a tiny no-op \Log class so SchedulerService::generateCandidates() can
+// call \Log::info() without bootstrapping the full Laravel application.
+// Unit tests don't need real logging; they just need the symbol to exist.
+if (!class_exists('Log', false)) {
+    eval('class Log { public static function info(...$a) {} public static function warning(...$a) {} public static function error(...$a) {} public static function debug(...$a) {} public static function notice(...$a) {} }');
+}
 use App\Enums\PlayerTier;
 use App\Models\User;
 use App\Services\SchedulerService;
@@ -1898,5 +1912,554 @@ class MatchSuggestionTest extends TestCase
         // E should be better (same_tier > adjacent_tier)
         $result = $method->invoke($this->scheduler, $candidateE, $candidateF);
         $this->assertLessThan(0, $result, 'Candidate E (same_tier) should be better than F (adjacent_tier)');
+    }
+
+    // =============================================================================
+    // PLAYER-PAIR PRIORITY TESTS
+    // Player-pairs (FixedPairDTO) must be the highest priority in compareCandidates.
+    // A candidate that groups both members of a pair together wins over a candidate
+    // that doesn't, even if the latter has better fairness / tier / balance scores.
+    // =============================================================================
+
+    /**
+     * When 2 linked users can fit in the match, both MUST be on the same team.
+     * Regression: previously the algorithm could pick a candidate that split the
+     * pair across the two teams because fixed_pairs was only a hard filter, not
+     * a tiebreaker.
+     */
+    public function test_player_pair_must_be_on_same_team(): void
+    {
+        $players = $this->createPlayers([
+            ['id' => 1, 'user_id' => 1, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 2, 'user_id' => 2, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 3, 'user_id' => 3, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 4, 'user_id' => 4, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 5, 'user_id' => 5, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 6, 'user_id' => 6, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 7, 'user_id' => 7, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 8, 'user_id' => 8, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+        ]);
+
+        // Link users 1 and 2 - they MUST be on the same team.
+        $request = $this->createRequestWithFixedPairs([
+            new FixedPairDTO(player1_id: 1, player2_id: 2),
+        ]);
+
+        $result = $this->scheduler->generate($players, $request);
+
+        $this->assertNotNull($result->match, 'Should produce a match');
+
+        $team1Ids = array_map(fn($m) => $m->user_id, $result->match->team1->members);
+        $team2Ids = array_map(fn($m) => $m->user_id, $result->match->team2->members);
+
+        $bothInTeam1 = in_array(1, $team1Ids, true) && in_array(2, $team1Ids, true);
+        $bothInTeam2 = in_array(1, $team2Ids, true) && in_array(2, $team2Ids, true);
+
+        $this->assertTrue(
+            $bothInTeam1 || $bothInTeam2,
+            'Linked pair (1, 2) must be on the same team. ' .
+            'team1=' . implode(',', $team1Ids) . ' team2=' . implode(',', $team2Ids)
+        );
+    }
+
+    /**
+     * With TWO linked pairs in an 8-player pool, both pairs must be grouped.
+     * Pair (1,2) goes together, pair (5,6) goes together.
+     */
+    public function test_two_player_pairs_both_satisfied_in_8_player_pool(): void
+    {
+        $players = $this->createPlayers([
+            ['id' => 1, 'user_id' => 1, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 2, 'user_id' => 2, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 3, 'user_id' => 3, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 4, 'user_id' => 4, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 5, 'user_id' => 5, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 6, 'user_id' => 6, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 7, 'user_id' => 7, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 8, 'user_id' => 8, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+        ]);
+
+        $request = $this->createRequestWithFixedPairs([
+            new FixedPairDTO(player1_id: 1, player2_id: 2),
+            new FixedPairDTO(player1_id: 5, player2_id: 6),
+        ]);
+
+        $result = $this->scheduler->generate($players, $request);
+
+        $this->assertNotNull($result->match, 'Should produce a match');
+
+        $team1Ids = array_map(fn($m) => $m->user_id, $result->match->team1->members);
+        $team2Ids = array_map(fn($m) => $m->user_id, $result->match->team2->members);
+
+        // Pair (1, 2) same team
+        $pair12Together = (in_array(1, $team1Ids, true) && in_array(2, $team1Ids, true))
+            || (in_array(1, $team2Ids, true) && in_array(2, $team2Ids, true));
+        // Pair (5, 6) same team
+        $pair56Together = (in_array(5, $team1Ids, true) && in_array(6, $team1Ids, true))
+            || (in_array(5, $team2Ids, true) && in_array(6, $team2Ids, true));
+
+        // They must be on opposite teams (so both pairs are placed, not collapsed)
+        $pair12InTeam1 = in_array(1, $team1Ids, true) && in_array(2, $team1Ids, true);
+        $pair56InTeam1 = in_array(5, $team1Ids, true) && in_array(6, $team1Ids, true);
+
+        $this->assertTrue($pair12Together, 'Pair (1,2) must be on the same team');
+        $this->assertTrue($pair56Together, 'Pair (5,6) must be on the same team');
+        $this->assertNotSame($pair12InTeam1, $pair56InTeam1,
+            'Two pairs must occupy different teams (one each) so 4 distinct members are placed');
+    }
+
+    /**
+     * Player-pair priority OVERRIDES fairness (starvation). Even when one
+     * starved unlinked player needs to play more than pair members, the pair
+     * still wins - because user-defined pairing rule has the highest priority.
+     */
+    public function test_player_pair_priority_overrides_fairness_starvation(): void
+    {
+        // P1, P2 are linked (player-pair). P3 has played 0 (highest starvation).
+        // P4, P5, P6, P7, P8 are filler with varied played counts.
+        $players = $this->createPlayers([
+            ['id' => 1, 'user_id' => 1, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 4],
+            ['id' => 2, 'user_id' => 2, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 4],
+            ['id' => 3, 'user_id' => 3, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 4, 'user_id' => 4, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 5, 'user_id' => 5, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 5],
+            ['id' => 6, 'user_id' => 6, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 5],
+            ['id' => 7, 'user_id' => 7, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 5],
+            ['id' => 8, 'user_id' => 8, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 5],
+        ]);
+
+        // Pool max_played = 5. Pair (1,2) starvations = 1,1. Unlinked P3 starvation = 5.
+        // Without pair priority, P3 would dominate (fairness). With pair priority,
+        // the pair is grouped even though P3 is hungrier.
+        $request = $this->createRequestWithFixedPairs([
+            new FixedPairDTO(player1_id: 1, player2_id: 2),
+        ]);
+
+        $result = $this->scheduler->generate($players, $request);
+
+        $this->assertNotNull($result->match);
+
+        $team1Ids = array_map(fn($m) => $m->user_id, $result->match->team1->members);
+        $team2Ids = array_map(fn($m) => $m->user_id, $result->match->team2->members);
+        $allIds = array_merge($team1Ids, $team2Ids);
+
+        $pairTogether = (in_array(1, $team1Ids, true) && in_array(2, $team1Ids, true))
+            || (in_array(1, $team2Ids, true) && in_array(2, $team2Ids, true));
+        $this->assertTrue($pairTogether, 'Pair (1,2) must still be grouped together even though they are less starved');
+
+        // And the rules_applied should advertise the priority
+        $this->assertContains('fixed_pair_priority', $result->rules_applied,
+            'rules_applied must include fixed_pair_priority when a pair was satisfied');
+    }
+
+    /**
+     * When a pair member is filtered out (is_playing=true), the algorithm
+     * gracefully falls back to fairness for the remaining users.
+     */
+    public function test_player_pair_skipped_when_member_filtered_out_as_playing(): void
+    {
+        $players = $this->createPlayers([
+            ['id' => 1, 'user_id' => 1, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0, 'is_playing' => true],
+            ['id' => 2, 'user_id' => 2, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 3, 'user_id' => 3, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 4, 'user_id' => 4, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 5, 'user_id' => 5, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 6, 'user_id' => 6, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+        ]);
+
+        $request = $this->createRequestWithFixedPairs([
+            new FixedPairDTO(player1_id: 1, player2_id: 2),
+        ]);
+
+        $result = $this->scheduler->generate($players, $request);
+
+        $this->assertNotNull($result->match);
+
+        $team1Ids = array_map(fn($m) => $m->user_id, $result->match->team1->members);
+        $team2Ids = array_map(fn($m) => $m->user_id, $result->match->team2->members);
+        $allIds = array_merge($team1Ids, $team2Ids);
+
+        // P1 must NOT appear (is_playing)
+        $this->assertNotContains(1, $allIds, 'P1 (is_playing) must be filtered out');
+
+        // P2 will be paired with someone else - that's expected, no assertion on that.
+        // The point is: no crash, no error, normal match produced.
+    }
+
+    /**
+     * countSatisfiedFixedPairs() must return 0 when no pair is satisfied and
+     * N when N pairs are satisfied. Direct unit test of the helper.
+     */
+    public function test_count_satisfied_fixed_pairs_helper(): void
+    {
+        $reflection = new \ReflectionClass($this->scheduler);
+        $method = $reflection->getMethod('countSatisfiedFixedPairs');
+        $method->setAccessible(true);
+
+        $pair = new FixedPairDTO(player1_id: 100, player2_id: 200);
+
+        // Both in team A
+        $teamA = [
+            $this->createPlayerContext(['id' => 1, 'user_id' => 100]),
+            $this->createPlayerContext(['id' => 2, 'user_id' => 200]),
+        ];
+        $teamB = [
+            $this->createPlayerContext(['id' => 3, 'user_id' => 300]),
+            $this->createPlayerContext(['id' => 4, 'user_id' => 400]),
+        ];
+        $this->assertEquals(1, $method->invoke($this->scheduler, $teamA, $teamB, [$pair]));
+
+        // Both in team B
+        $teamA2 = [
+            $this->createPlayerContext(['id' => 1, 'user_id' => 999]),
+            $this->createPlayerContext(['id' => 2, 'user_id' => 888]),
+        ];
+        $teamB2 = [
+            $this->createPlayerContext(['id' => 3, 'user_id' => 100]),
+            $this->createPlayerContext(['id' => 4, 'user_id' => 200]),
+        ];
+        $this->assertEquals(1, $method->invoke($this->scheduler, $teamA2, $teamB2, [$pair]));
+
+        // Split across teams - should be 0
+        $teamA3 = [
+            $this->createPlayerContext(['id' => 1, 'user_id' => 100]),
+            $this->createPlayerContext(['id' => 2, 'user_id' => 999]),
+        ];
+        $teamB3 = [
+            $this->createPlayerContext(['id' => 3, 'user_id' => 200]),
+            $this->createPlayerContext(['id' => 4, 'user_id' => 888]),
+        ];
+        $this->assertEquals(0, $method->invoke($this->scheduler, $teamA3, $teamB3, [$pair]));
+
+        // Only one member present - should be 0 (incomplete pair doesn't count)
+        $teamA4 = [
+            $this->createPlayerContext(['id' => 1, 'user_id' => 100]),
+            $this->createPlayerContext(['id' => 2, 'user_id' => 999]),
+        ];
+        $teamB4 = [
+            $this->createPlayerContext(['id' => 3, 'user_id' => 888]),
+            $this->createPlayerContext(['id' => 4, 'user_id' => 777]),
+        ];
+        $this->assertEquals(0, $method->invoke($this->scheduler, $teamA4, $teamB4, [$pair]));
+
+        // Empty fixed_pairs - always 0
+        $this->assertEquals(0, $method->invoke($this->scheduler, $teamA, $teamB, []));
+    }
+
+    /**
+     * Helper: build a request with the given player-pairs attached.
+     */
+    private function createRequestWithFixedPairs(array $fixedPairs): MatchSuggestionRequestDTO
+    {
+        return new MatchSuggestionRequestDTO(
+            mini_tournament_id: 1,
+            participants: [],
+            settings: new MatchSuggestionSettingsDTO(
+                fair_play: true,
+                balance_team: true,
+                prefer_high_tier_match: true,
+                prevent_three_consecutive: true,
+                organizer_as_backup: false,
+            ),
+            seed: null,
+            exclude_player_ids: null,
+            anchor_participant_id: null,
+            anchor_user_id: null,
+            fixed_pairs: $fixedPairs,
+        );
+    }
+
+    /**
+     * REGRESSION TEST: player1_id / player2_id sent by the frontend are
+     * mini_participant_id values (e.g. 2766, 2781), NOT user_id values.
+     * The backend must normalize them to user_id before the scheduler compares.
+     *
+     * Scenario from production: pair {2766, 2781} (mini_participant_ids) should
+     * resolve to {2, 95} (user_ids).  If not normalized, 2766 != any user_id and
+     * the constraint silently fails.
+     */
+    public function test_player_pair_uses_mini_participant_id_normalized_to_user_id(): void
+    {
+        // 6 players with distinct user_ids so the warning tests stay clean.
+        // mini_participant_id range: 2766..2771, user_ids: 2..7 (all unique for this test).
+        $players = $this->createPlayers([
+            ['id' => 2766, 'user_id' => 2,  'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 2781, 'user_id' => 95, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 2782, 'user_id' => 3,  'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 2783, 'user_id' => 4,  'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 2784, 'user_id' => 5,  'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 2785, 'user_id' => 6,  'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+        ]);
+
+        // Request carries fixed_pairs as mini_participant_id values (the real bug)
+        $request = $this->createRequestWithFixedPairs([
+            new FixedPairDTO(player1_id: 2766, player2_id: 2781),
+        ]);
+
+        // The scheduler receives the pair; normalization must kick in and resolve
+        // mini_participant_id 2766 → user_id 2, 2781 → user_id 95.
+        $result = $this->scheduler->generate($players, $request, []);
+
+        $this->assertNotNull($result->match, 'Should produce a match');
+
+        $team1Ids = array_map(fn($m) => $m->user_id, $result->match->team1->members);
+        $team2Ids = array_map(fn($m) => $m->user_id, $result->match->team2->members);
+        $allIds = array_merge($team1Ids, $team2Ids);
+
+        // Players with user_id 2 and 95 (resolved from mini_participant_ids 2766, 2781)
+        // must be on the SAME team — that is the whole point of the fix.
+        $bothOnTeam1 = in_array(2, $team1Ids, true) && in_array(95, $team1Ids, true);
+        $bothOnTeam2 = in_array(2, $team2Ids, true) && in_array(95, $team2Ids, true);
+
+        $this->assertTrue(
+            $bothOnTeam1 || $bothOnTeam2,
+            'Linked players (mini_participant_id 2766→user_id 2, 2781→user_id 95) ' .
+            'must be on the same team. team1=[' . implode(',', $team1Ids) .
+            '] team2=[' . implode(',', $team2Ids) . ']'
+        );
+
+        // rules_applied should include fixed_pair_priority
+        $this->assertContains('fixed_pair_priority', $result->rules_applied,
+            'rules_applied must contain fixed_pair_priority');
+    }
+
+    /**
+     * REGRESSION TEST (real production data):
+     * Pair {mini_participant_id: 2766, 2781} → user_ids {2, 95}.
+     * 7 participants → must pick a 4-player match that puts user_ids 2 + 95 on the same team.
+     */
+    public function test_player_pair_priority_with_real_production_data(): void
+    {
+        // Real IDs from the bug report: 2781 (user 95), 2782 (user 100),
+        // 2783 (user 103), 2784 (user 2), 2785 (user 8), 2786 (user 265), 2787 (user 1793).
+        // Plus the linked 2766 (user 2 - already mapped to the same user_id as 2784).
+        // To keep the test clean, give 2766 its own unique user_id (101).
+        $players = $this->createPlayers([
+            ['id' => 2766, 'user_id' => 101, 'gender' => User::MALE, 'tier' => PlayerTier::Yellow, 'played' => 0],
+            ['id' => 2781, 'user_id' => 95,  'gender' => User::MALE, 'tier' => PlayerTier::Yellow, 'played' => 0],
+            ['id' => 2782, 'user_id' => 100, 'gender' => User::MALE, 'tier' => PlayerTier::Yellow, 'played' => 0],
+            ['id' => 2783, 'user_id' => 103, 'gender' => User::MALE, 'tier' => PlayerTier::Yellow, 'played' => 0],
+            ['id' => 2784, 'user_id' => 2,   'gender' => User::MALE, 'tier' => PlayerTier::Yellow, 'played' => 0],
+            ['id' => 2785, 'user_id' => 8,   'gender' => User::MALE, 'tier' => PlayerTier::Yellow, 'played' => 0],
+            ['id' => 2786, 'user_id' => 265, 'gender' => User::MALE, 'tier' => PlayerTier::Yellow, 'played' => 0],
+        ]);
+
+        $request = $this->createRequestWithFixedPairs([
+            // Frontend sends mini_participant_id, scheduler normalizes to user_id.
+            new FixedPairDTO(player1_id: 2766, player2_id: 2781),
+        ]);
+
+        $result = $this->scheduler->generate($players, $request, []);
+
+        $this->assertNotNull($result->match, 'Should produce a match');
+
+        $team1Ids = array_map(fn($m) => $m->user_id, $result->match->team1->members);
+        $team2Ids = array_map(fn($m) => $m->user_id, $result->match->team2->members);
+
+        // Linked user_ids (resolved from mini_participant_ids 2766 → 101, 2781 → 95)
+        // must be on the SAME team.
+        $bothOnTeam1 = in_array(101, $team1Ids, true) && in_array(95, $team1Ids, true);
+        $bothOnTeam2 = in_array(101, $team2Ids, true) && in_array(95, $team2Ids, true);
+
+        $this->assertTrue(
+            $bothOnTeam1 || $bothOnTeam2,
+            'Linked pair (mini_pid 2766→user 101, mini_pid 2781→user 95) must be on the same team. ' .
+            'team1=' . json_encode($team1Ids) . ' team2=' . json_encode($team2Ids)
+        );
+
+        $this->assertContains('fixed_pair_priority', $result->rules_applied);
+    }
+
+    /**
+     * REGRESSION TEST: Reproduce production bug with user's actual data.
+     *
+     * User scenario: 7 players in pool, all yellow tier, mixed genders.
+     * Pair 2781(Minh TQ)-2782(Jenny) is fixed.
+     * BUG: API suggested [2781, 2783] vs [2784, 2787] instead of grouping 2781+2782.
+     *
+     * This test reproduces the exact scenario with diverse vndupr scores to
+     * surface any case where compareCandidates() picks an unsatisfied pair.
+     */
+    public function test_player_pair_respected_with_real_production_scenario(): void
+    {
+        // Reproducing user's exact scenario - 7 players, all yellow tier
+        // Different vndupr scores to make fairness/balance comparisons realistic
+        // Note: Pool has 8 total, but 1 is is_backup=true and filtered out
+        $players = $this->createPlayers([
+            // Note: 2766 (Thang Tagz) is is_backup=true and will be filtered
+            ['id' => 2781, 'user_id' => 95,   'gender' => User::MALE,   'tier' => PlayerTier::Yellow, 'played' => 2, 'vndupr_score' => 2.478],
+            ['id' => 2782, 'user_id' => 100,  'gender' => User::FEMALE, 'tier' => PlayerTier::Yellow, 'played' => 0, 'vndupr_score' => 0.0],
+            ['id' => 2783, 'user_id' => 103,  'gender' => User::FEMALE, 'tier' => PlayerTier::Yellow, 'played' => 2, 'vndupr_score' => 1.572],
+            ['id' => 2784, 'user_id' => 2,    'gender' => User::MALE,   'tier' => PlayerTier::Yellow, 'played' => 2, 'vndupr_score' => 2.227],
+            ['id' => 2785, 'user_id' => 8,    'gender' => User::MALE,   'tier' => PlayerTier::Yellow, 'played' => 0, 'vndupr_score' => 0.0],
+            ['id' => 2786, 'user_id' => 265,  'gender' => User::FEMALE, 'tier' => PlayerTier::Yellow, 'played' => 0, 'vndupr_score' => 0.0],
+            ['id' => 2787, 'user_id' => 1793, 'gender' => User::MALE,   'tier' => PlayerTier::Yellow, 'played' => 1, 'vndupr_score' => 1.867],
+        ]);
+
+        // Pair 2781 with 2782 (using mini_participant_id - same as production)
+        $request = $this->createRequestWithFixedPairs([
+            new FixedPairDTO(player1_id: 2781, player2_id: 2782),
+        ]);
+
+        $result = $this->scheduler->generate($players, $request);
+
+        $this->assertNotNull($result->match, 'Should produce a match');
+
+        // Check user_ids (since FixedPairDTO compares user_ids)
+        $team1UserIds = array_map(fn($m) => $m->user_id, $result->match->team1->members);
+        $team2UserIds = array_map(fn($m) => $m->user_id, $result->match->team2->members);
+
+        // 2781 (user_id=95) and 2782 (user_id=100) MUST be on the same team
+        $bothInTeam1 = in_array(95, $team1UserIds, true) && in_array(100, $team1UserIds, true);
+        $bothInTeam2 = in_array(95, $team2UserIds, true) && in_array(100, $team2UserIds, true);
+
+        $this->assertTrue(
+            $bothInTeam1 || $bothInTeam2,
+            'Linked pair (2781→95, 2782→100) must be on the same team in 7-player pool. ' .
+            'team1_user_ids=' . json_encode($team1UserIds) . ' team2_user_ids=' . json_encode($team2UserIds)
+        );
+    }
+
+    /**
+     * REGRESSION TEST: Test with exact production data - 8 players, one backup.
+     * This reproduces the exact scenario from logs.
+     */
+    public function test_player_pair_with_8_players_1_backup(): void
+    {
+        // Exact production scenario: 8 players, 1 is backup (2766), pool = 7
+        $players = $this->createPlayers([
+            ['id' => 2766, 'user_id' => 1,   'gender' => User::MALE, 'tier' => PlayerTier::Yellow, 'played' => 0, 'is_backup' => true],
+            ['id' => 2781, 'user_id' => 95,   'gender' => User::MALE,   'tier' => PlayerTier::Yellow, 'played' => 2, 'vndupr_score' => 2.478],
+            ['id' => 2782, 'user_id' => 100,  'gender' => User::FEMALE, 'tier' => PlayerTier::Yellow, 'played' => 0, 'vndupr_score' => 0.0],
+            ['id' => 2783, 'user_id' => 103,  'gender' => User::FEMALE, 'tier' => PlayerTier::Yellow, 'played' => 2, 'vndupr_score' => 1.572],
+            ['id' => 2784, 'user_id' => 2,    'gender' => User::MALE,   'tier' => PlayerTier::Yellow, 'played' => 2, 'vndupr_score' => 2.227],
+            ['id' => 2785, 'user_id' => 8,    'gender' => User::MALE,   'tier' => PlayerTier::Yellow, 'played' => 0, 'vndupr_score' => 0.0],
+            ['id' => 2786, 'user_id' => 265,  'gender' => User::FEMALE, 'tier' => PlayerTier::Yellow, 'played' => 0, 'vndupr_score' => 0.0],
+            ['id' => 2787, 'user_id' => 1793, 'gender' => User::MALE,   'tier' => PlayerTier::Yellow, 'played' => 1, 'vndupr_score' => 1.867],
+        ]);
+
+        // Pair 2781 with 2782
+        $request = $this->createRequestWithFixedPairs([
+            new FixedPairDTO(player1_id: 2781, player2_id: 2782),
+        ]);
+
+        $result = $this->scheduler->generate($players, $request);
+
+        $this->assertNotNull($result->match, 'Should produce a match');
+
+        $team1UserIds = array_map(fn($m) => $m->user_id, $result->match->team1->members);
+        $team2UserIds = array_map(fn($m) => $m->user_id, $result->match->team2->members);
+
+        $bothInTeam1 = in_array(95, $team1UserIds, true) && in_array(100, $team1UserIds, true);
+        $bothInTeam2 = in_array(95, $team2UserIds, true) && in_array(100, $team2UserIds, true);
+
+        $this->assertTrue(
+            $bothInTeam1 || $bothInTeam2,
+            'Linked pair (2781→95, 2782→100) must be on the same team. ' .
+            'team1_user_ids=' . json_encode($team1UserIds) . ' team2_user_ids=' . json_encode($team2UserIds)
+        );
+    }
+
+    /**
+     * REGRESSION TEST: enumerateCandidates (used by regenerate() flow) must
+     * also put candidates that satisfy the fixed pair at the top. If even
+     * one candidate has satisfied_fixed_pairs > 0, it MUST come before all
+     * candidates with satisfied_fixed_pairs = 0.
+     *
+     * This reproduces the production log where selected candidate had
+     * satisfied_pairs=0 even though pair (95, 100) was provided.
+     */
+    public function test_enumerate_candidates_respects_fixed_pair_priority(): void
+    {
+        $players = $this->createPlayers([
+            ['id' => 2781, 'user_id' => 95,   'gender' => User::MALE,   'tier' => PlayerTier::Yellow, 'played' => 0],
+            ['id' => 2782, 'user_id' => 100,  'gender' => User::FEMALE, 'tier' => PlayerTier::Yellow, 'played' => 0],
+            ['id' => 2783, 'user_id' => 103,  'gender' => User::FEMALE, 'tier' => PlayerTier::Yellow, 'played' => 0],
+            ['id' => 2784, 'user_id' => 2,    'gender' => User::MALE,   'tier' => PlayerTier::Yellow, 'played' => 0],
+            ['id' => 2785, 'user_id' => 8,    'gender' => User::MALE,   'tier' => PlayerTier::Yellow, 'played' => 0],
+            ['id' => 2786, 'user_id' => 265,  'gender' => User::FEMALE, 'tier' => PlayerTier::Yellow, 'played' => 0],
+            ['id' => 2787, 'user_id' => 1793, 'gender' => User::MALE,   'tier' => PlayerTier::Yellow, 'played' => 0],
+        ]);
+
+        $request = $this->createRequestWithFixedPairs([
+            new FixedPairDTO(player1_id: 2781, player2_id: 2782),
+        ]);
+
+        $result = $this->scheduler->enumerateCandidates($players, $request, []);
+        $candidates = $result['candidates'];
+
+        $this->assertNotEmpty($candidates, 'Should have candidates');
+        $this->assertGreaterThanOrEqual(1, $result['total_candidates']);
+
+        // Find any candidate that satisfies the fixed pair
+        $satisfyingIds = [];
+        foreach ($candidates as $idx => $c) {
+            $teamAIds = array_column($c['team_a'], 'user_id');
+            $teamBIds = array_column($c['team_b'], 'user_id');
+            $pairInA = in_array(95, $teamAIds, true) && in_array(100, $teamAIds, true);
+            $pairInB = in_array(95, $teamBIds, true) && in_array(100, $teamBIds, true);
+            if ($pairInA || $pairInB) {
+                $satisfyingIds[] = $idx;
+            }
+        }
+
+        $this->assertNotEmpty(
+            $satisfyingIds,
+            'There MUST be at least one candidate where users (95, 100) are on the same team. Got ' . count($candidates) . ' candidates.'
+        );
+
+        // The first candidate (idx=0) must satisfy the fixed pair
+        $first = $candidates[0];
+        $firstTeamAIds = array_column($first['team_a'], 'user_id');
+        $firstTeamBIds = array_column($first['team_b'], 'user_id');
+        $firstPairInA = in_array(95, $firstTeamAIds, true) && in_array(100, $firstTeamAIds, true);
+        $firstPairInB = in_array(95, $firstTeamBIds, true) && in_array(100, $firstTeamBIds, true);
+
+        $this->assertTrue(
+            $firstPairInA || $firstPairInB,
+            'Top candidate must satisfy the fixed pair. team_a=' . json_encode($firstTeamAIds) . ' team_b=' . json_encode($firstTeamBIds)
+        );
+    }
+
+    /**
+     * Test that a pair where one member cannot be resolved (orphan) is skipped entirely.
+     * Previously, the code created FixedPairDTO(player1_id: 0, player2_id: X) which caused
+     * hasPlayer() to silently fail because (0 === $userId) is always false.
+     */
+    public function test_orphan_pair_is_skipped_and_does_not_break_other_pairs(): void
+    {
+        $players = $this->createPlayers([
+            ['id' => 1, 'user_id' => 1, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 2, 'user_id' => 2, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 3, 'user_id' => 3, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 4, 'user_id' => 4, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 5, 'user_id' => 5, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 6, 'user_id' => 6, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 7, 'user_id' => 7, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 8, 'user_id' => 8, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+        ]);
+
+        // Pair (1, 2) is valid, pair (9999, 10) has orphan ID (9999 doesn't exist)
+        $request = $this->createRequestWithFixedPairs([
+            new FixedPairDTO(player1_id: 1, player2_id: 2),   // Valid pair
+            new FixedPairDTO(player1_id: 9999, player2_id: 10), // Orphan - 9999 doesn't exist in pool
+        ]);
+
+        $result = $this->scheduler->generate($players, $request);
+
+        $this->assertNotNull($result->match, 'Should produce a match');
+
+        $team1Ids = array_map(fn($m) => $m->user_id, $result->match->team1->members);
+        $team2Ids = array_map(fn($m) => $m->user_id, $result->match->team2->members);
+
+        // Pair (1, 2) MUST be on the same team
+        $bothInTeam1 = in_array(1, $team1Ids, true) && in_array(2, $team1Ids, true);
+        $bothInTeam2 = in_array(1, $team2Ids, true) && in_array(2, $team2Ids, true);
+
+        $this->assertTrue(
+            $bothInTeam1 || $bothInTeam2,
+            'Linked pair (1, 2) must be on the same team. ' .
+            'team1=' . implode(',', $team1Ids) . ' team2=' . implode(',', $team2Ids)
+        );
     }
 }
