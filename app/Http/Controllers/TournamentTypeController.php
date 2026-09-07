@@ -1059,8 +1059,39 @@ class TournamentTypeController extends Controller
             }
         }
 
-        // ✅ SẮP XẾP ĐỘI ADVANCING THEO MODE ĐÃ CHỌN (MAIN BRACKET)
-        $advancing = $this->teamPairingService->arrangeAdvancingTeams($advancingByRank, $pairingMode, $manualPairings);
+        // ✅ XỬ LÝ ĐẶC BIỆT: 1 BẢNG VÀO VÒNG KNOCKOUT
+        // Khi chỉ có 1 bảng, ghép cặp theo hạng trong bảng:
+        // - Top 2: [Nhất, Nhì] → 1 trận chung kết
+        // - Top 4: [Nhất, Tư, Nhì, Ba] → 2 trận bán kết đối xứng (Nhất vs Tư, Nhì vs Ba)
+        $isSingleGroup = ($chunks->count() === 1);
+        if ($isSingleGroup && $advancingByRank->isNotEmpty()) {
+            $singleGroupAdvancing = collect();
+
+            $rank0 = $advancingByRank->get(0, collect()); // Nhất bảng
+            $rank1 = $advancingByRank->get(1, collect()); // Nhì bảng
+            $rank2 = $advancingByRank->get(2, collect()); // Ba bảng
+            $rank3 = $advancingByRank->get(3, collect()); // Tư bảng
+
+            if ($numAdvancing >= 4 && $rank0->isNotEmpty() && $rank3->isNotEmpty()) {
+                // Top 4: Nhất vs Tư, Nhì vs Ba (đối xứng)
+                $singleGroupAdvancing->push($rank0->first()); // Nhất
+                $singleGroupAdvancing->push($rank3->first()); // Tư
+                $singleGroupAdvancing->push($rank1->first()); // Nhì
+                $singleGroupAdvancing->push($rank2->first()); // Ba
+            } elseif ($numAdvancing === 2 && $rank0->isNotEmpty() && $rank1->isNotEmpty()) {
+                // Top 2: Nhất vs Nhì (1 trận chung kết)
+                $singleGroupAdvancing->push($rank0->first()); // Nhất
+                $singleGroupAdvancing->push($rank1->first()); // Nhì
+            } else {
+                // Fallback: dùng logic thông thường
+                $singleGroupAdvancing = $this->teamPairingService->arrangeAdvancingTeams($advancingByRank, $pairingMode, $manualPairings);
+            }
+
+            $advancing = $singleGroupAdvancing;
+        } else {
+            // ✅ SẮP XẾP ĐỘI ADVANCING THEO MODE ĐÃ CHỌN (MAIN BRACKET)
+            $advancing = $this->teamPairingService->arrangeAdvancingTeams($advancingByRank, $pairingMode, $manualPairings);
+        }
 
         // ✅ KIỂM TRA SỐ ĐỘI ADVANCING
         $totalAdvancing = $advancing->count();
