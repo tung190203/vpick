@@ -6,6 +6,8 @@ use App\Http\Controllers\UserMatchStatsController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BannerController;
 use App\Http\Controllers\Admin\AdminBannerController;
+use App\Http\Controllers\Admin\AdminSponsorController;
+use App\Http\Controllers\SponsorController;
 use App\Http\Controllers\CompetitionLocationController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\MatchesController;
@@ -456,6 +458,17 @@ Route::prefix('admin')->middleware(['auth:api', 'super_admin'])->group(function 
         Route::post('/{banner}', [AdminBannerController::class, 'update']);
         Route::put('/{banner}', [AdminBannerController::class, 'update']);
         Route::delete('/{banner}', [AdminBannerController::class, 'destroy']);
+    });
+
+    Route::prefix('sponsors')->group(function () {
+        Route::get('/', [AdminSponsorController::class, 'index']);
+        Route::post('/', [AdminSponsorController::class, 'store']);
+        Route::post('/reorder', [AdminSponsorController::class, 'reorder']);
+        Route::get('/{sponsor}', [AdminSponsorController::class, 'show']);
+        Route::post('/{sponsor}', [AdminSponsorController::class, 'update']);
+        Route::put('/{sponsor}', [AdminSponsorController::class, 'update']);
+        Route::patch('/{sponsor}/toggle-status', [AdminSponsorController::class, 'toggleActive']);
+        Route::delete('/{sponsor}', [AdminSponsorController::class, 'destroy']);
     });
 });
 
@@ -966,6 +979,10 @@ Route::middleware(['auth:api', 'update.last_login', 'throttle:api'])->group(func
 
     Route::prefix('banners')->group(function () {
         Route::post('/store', [BannerController::class, 'store']);
+    });
+
+    Route::prefix('sponsors')->group(function () {
+        Route::get('/', [SponsorController::class, 'index']);
     });
 
     // Quick Match Routes
