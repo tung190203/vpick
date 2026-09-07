@@ -68,6 +68,31 @@ class TournamentTypeController extends Controller
             if ($numCompeting < $numAdvancing) {
                 return ResponseHelper::error('Số đội trong bảng phải > số đội đi tiếp', 422);
             }
+
+            // Validate 1 bảng: chỉ cho phép Top 2 hoặc Top 4
+            $numGroups = (int) ($poolStage['number_competing_teams'] ?? 1);
+            $totalTeams = $tournament->teams()->count();
+
+            if ($numGroups === 1) {
+                if (!in_array($numAdvancing, [2, 4])) {
+                    return ResponseHelper::error(
+                        'Với 1 bảng đấu, chỉ cho phép Top 2 hoặc Top 4.',
+                        422
+                    );
+                }
+                if ($numAdvancing === 2 && $totalTeams < 3) {
+                    return ResponseHelper::error(
+                        'Top 2 cần tối thiểu 3 đội.',
+                        422
+                    );
+                }
+                if ($numAdvancing === 4 && $totalTeams < 5) {
+                    return ResponseHelper::error(
+                        'Top 4 cần tối thiểu 5 đội.',
+                        422
+                    );
+                }
+            }
         }
 
         $matchRules = $validated['match_rules'] ?? [];
@@ -242,6 +267,31 @@ class TournamentTypeController extends Controller
 
             if ($numCompeting < $numAdvancing) {
                 return ResponseHelper::error('Số đội trong bảng phải > số đội đi tiếp', 422);
+            }
+
+            // Validate 1 bảng: chỉ cho phép Top 2 hoặc Top 4
+            $numGroups = (int) ($poolStage['number_competing_teams'] ?? 1);
+            $totalTeams = $tournamentType->tournament->teams()->count();
+
+            if ($numGroups === 1) {
+                if (!in_array($numAdvancing, [2, 4])) {
+                    return ResponseHelper::error(
+                        'Với 1 bảng đấu, chỉ cho phép Top 2 hoặc Top 4.',
+                        422
+                    );
+                }
+                if ($numAdvancing === 2 && $totalTeams < 3) {
+                    return ResponseHelper::error(
+                        'Top 2 cần tối thiểu 3 đội.',
+                        422
+                    );
+                }
+                if ($numAdvancing === 4 && $totalTeams < 5) {
+                    return ResponseHelper::error(
+                        'Top 4 cần tối thiểu 5 đội.',
+                        422
+                    );
+                }
             }
         }
 
