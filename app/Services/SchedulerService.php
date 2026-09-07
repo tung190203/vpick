@@ -64,7 +64,23 @@ class SchedulerService
 
         // Select best candidate (already sorted by business priority)
         $best = $candidates[0];
-
+        
+        // Log top 5 candidates for debugging
+        $topLog = [];
+        for ($i = 0; $i < min(5, count($candidates)); $i++) {
+            $c = $candidates[$i];
+            $teamAIds = array_map(fn($p) => $p->user_id ?? 'guest_'.$p->mini_participant_id, $c['team_a']);
+            $teamBIds = array_map(fn($p) => $p->user_id ?? 'guest_'.$p->mini_participant_id, $c['team_b']);
+            $topLog[] = [
+                'idx' => $i,
+                'satisfied_pairs' => $c['satisfied_fixed_pairs'] ?? 0,
+                'team_a' => $teamAIds,
+                'team_b' => $teamBIds,
+                'max_starvation' => $c['fairness_metrics']['max_starvation'] ?? 0,
+            ];
+        }
+        \Log::info('[Scheduler/generate] Selected candidate and top 5:', $topLog);
+        
         $teamA = $best['team_a'];
         $teamB = $best['team_b'];
 
@@ -84,6 +100,11 @@ class SchedulerService
         }
         if ($usedBackup) {
             $rulesApplied[] = 'organizer_as_backup';
+        }
+        // Tag that the picked candidate was sorted to the top by player-pair
+        // satisfaction (i.e. at least one fixed pair was grouped together).
+        if (!empty($request->fixed_pairs) && !empty($best['satisfied_fixed_pairs'])) {
+            $rulesApplied[] = 'fixed_pair_priority';
         }
 
         $bestMatch = $this->buildMatchDTO(
@@ -203,6 +224,24 @@ class SchedulerService
      */
     private int $currentPoolMaxPlayed = 0;
     private ?int $currentAnchorId = null;
+    /**
+     * Cache of fixed pairs resolved to user_id values for the current
+     * generateCandidates() call. Used by buildCandidateMetadata() so the
+     * soft priority and the hard constraint agree on the same comparison.
+     *
+     * @var \App\DTO\FixedPairDTO[]
+     */
+    private array $currentNormalizedFixedPairs = [];
+    /**
+     * Full pool received by generateCandidates(). Used as a safety net so that
+     * fixed-pair candidates can still be generated even when gender grouping
+     * drops one of the pair members (e.g. a player with gender=null ends up in
+     * a too-small gender group and the chain same-gender → mixed-gender →
+     * any-tier-on-mainPool never produces a candidate with both members).
+     *
+     * @var \App\DTO\PlayerContextDTO[]
+     */
+    private array $currentFullPool = [];
 
     public function generateCandidates(
         array $pool,
@@ -212,8 +251,23 @@ class SchedulerService
     ): array {
         $settings = $request->settings;
 
-        // Extract fixed pairs for constraint validation
-        $fixedPairs = $request->fixed_pairs;
+        // Cache the full pool so STEP 3b below can re-run an extra
+        // generateAnyTierCombinations() pass over every player.
+        $this->currentFullPool = $pool;
+
+        // NORMALIZE: the frontend stores player1_id / player2_id as
+        // mini_participant_id; FixedPairDTO compares them to user_id.
+        // Build a map and resolve any mini_participant_id values that slipped
+        // through (defense-in-depth: MatchSuggestionService already normalizes,
+        // but this method is also called directly from tests and future callers).
+        $miniPidToUid = [];
+        foreach ($pool as $p) {
+            $miniPidToUid[$p->mini_participant_id] = $p->user_id;
+        }
+        $fixedPairs = $this->normalizeFixedPairs($request->fixed_pairs, $miniPidToUid);
+        // Cache for buildCandidateMetadata() to keep the soft priority and the
+        // hard constraint in sync.
+        $this->currentNormalizedFixedPairs = $fixedPairs;
 
         // Split main and backup pools
         [$mainPool, $backupPool] = $this->splitMainAndBackupPool($pool);
@@ -248,6 +302,25 @@ class SchedulerService
         }
         $candidates = array_merge($candidates, $anyCandidates);
 
+        // STEP 3b: FIX for fixed_pairs + gender=null bug.
+        // When gender grouping drops one member of a fixed_pair (e.g. pool split into
+        // a males-with-unknown group and a too-small females-with-unknown group), the
+        // chain above never generates a candidate containing BOTH pair members. Run
+        // an extra pass with the FULL pool (still respecting the explicit backup
+        // filter from filterByBackup, which already excluded backup players earlier)
+        // so that pair constraints can always be satisfied.
+        if (!empty($fixedPairs) && !empty($this->currentFullPool) && count($this->currentFullPool) >= 4) {
+            $fullAnyCandidates = $this->generateAnyTierCombinations(
+                $this->currentFullPool, $request, $userDataMap, true, $fixedPairs,
+            );
+            foreach ($fullAnyCandidates as &$c) {
+                $c['is_high_tier'] = $this->isHighTierMatch($c['team_a'], $c['team_b']);
+                $c['score'] = $this->calculateMatchScore($c['team_a'], $c['team_b'], $request->settings, $userDataMap);
+                $c['adjusted_score'] = $c['score'];
+            }
+            $candidates = array_merge($candidates, $fullAnyCandidates);
+        }
+
         // STEP 4: If organizer_as_backup is enabled, also try with backup pool
         if ($settings->organizer_as_backup && !empty($backupPool)) {
             $extendedPool = array_merge($mainPool, $backupPool);
@@ -269,7 +342,7 @@ class SchedulerService
         }
 
         // STEP 5: Sort by business priority
-        usort($candidates, fn($a, $b) => $this->compareCandidates($a, $b));
+        usort($candidates, fn($a, $b) => $this->compareCandidates($a, $b, $fixedPairs ?? [], $mainPool));
 
         // STEP 6: Filter out existing signatures AND deduplicate
         $excludeKeys = [];
@@ -356,14 +429,31 @@ class SchedulerService
         // Process each gender group — always generate all tier levels so compareCandidates
         // can pick the best one by fairness/starvation (not just the highest-tier one).
         foreach ($genderGroups as $genderPool) {
-            $sameTier = $this->generateSameTierCombinations($genderPool, $request, $userDataMap, $fixedPairs);
-            $candidates = array_merge($candidates, $sameTier);
+            // Check if this is a truly same-gender group (only males OR only females, not mixed)
+            $hasMales = !empty(array_filter($genderPool, fn($p) => $p->gender === User::MALE));
+            $hasFemales = !empty(array_filter($genderPool, fn($p) => $p->gender === User::FEMALE));
+            $isMixedGroup = $hasMales && $hasFemales;
 
-            $adjacentTier = $this->generateAdjacentTierCombinations($genderPool, $request, $userDataMap, $fixedPairs);
-            $candidates = array_merge($candidates, $adjacentTier);
+            if ($isMixedGroup) {
+                // Mixed gender group: use generateMixedGenderCandidates for proper 2M+2F validation
+                // OR generateAnyTierCombinations with skipGenderValidation=true for any valid combination
+                $mixedCandidates = $this->generateMixedGenderCandidates($genderPool, $request, $userDataMap, $fixedPairs);
+                $candidates = array_merge($candidates, $mixedCandidates);
 
-            $anyTier = $this->generateAnyTierCombinations($genderPool, $request, $userDataMap, false, $fixedPairs);
-            $candidates = array_merge($candidates, $anyTier);
+                // Also generate any-tier combinations with gender validation skipped
+                $anyTier = $this->generateAnyTierCombinations($genderPool, $request, $userDataMap, true, $fixedPairs);
+                $candidates = array_merge($candidates, $anyTier);
+            } else {
+                // Truly same-gender group: use the standard tier-based generation
+                $sameTier = $this->generateSameTierCombinations($genderPool, $request, $userDataMap, $fixedPairs);
+                $candidates = array_merge($candidates, $sameTier);
+
+                $adjacentTier = $this->generateAdjacentTierCombinations($genderPool, $request, $userDataMap, $fixedPairs);
+                $candidates = array_merge($candidates, $adjacentTier);
+
+                $anyTier = $this->generateAnyTierCombinations($genderPool, $request, $userDataMap, false, $fixedPairs);
+                $candidates = array_merge($candidates, $anyTier);
+            }
         }
 
         return $candidates;
@@ -421,7 +511,7 @@ class SchedulerService
                     }
 
                     // Find best team pairing
-                    $pairing = $this->findOptimalPairing($players, $userDataMap, $request->settings);
+                    $pairing = $this->findOptimalPairing($players, $userDataMap, $request->settings, false, $fixedPairs);
                     if (!$pairing) {
                         continue;
                     }
@@ -445,7 +535,7 @@ class SchedulerService
         }
 
         // Sort by business priority
-        usort($candidates, fn($a, $b) => $this->compareCandidates($a, $b));
+        usort($candidates, fn($a, $b) => $this->compareCandidates($a, $b, $request->fixed_pairs ?? [], $pool));
 
         return $candidates;
     }
@@ -745,6 +835,20 @@ class SchedulerService
         // Build signature
         $signature = $this->buildCandidateSignature($teamA, $teamB);
 
+        // Count how many player-pairs are satisfied (both members on the same team).
+        // Used by compareCandidates() as the highest priority so linked players
+        // are always grouped together — except when one member has been filtered
+        // out by buildPool() (e.g. is_playing=true).
+        // Use the normalized (user_id-based) pairs cached by generateCandidates(),
+        // so mini_participant_id-style IDs still work.
+        $satisfiedFixedPairs = $this->countSatisfiedFixedPairs(
+            $teamA,
+            $teamB,
+            !empty($this->currentNormalizedFixedPairs)
+                ? $this->currentNormalizedFixedPairs
+                : ($request->fixed_pairs ?? []),
+        );
+
         return [
             'players' => $players,
             'player_ids' => array_values(array_unique(array_map(
@@ -761,16 +865,199 @@ class SchedulerService
             'partner_penalty' => $partnerPenalty,
             'signature' => $signature,
             'used_backup' => $usedBackup,
+            'satisfied_fixed_pairs' => $satisfiedFixedPairs,
             'rules_applied' => [],
         ];
+    }
+
+    /**
+     * Check whether any of the provided player-pairs is mixed-gender
+     * (one male + one female). Used by compareCandidates() to decide
+     * whether the mixed-gender opponent preference should kick in.
+     *
+     * Resolves player gender by looking up each user_id in the supplied pool.
+     */
+    private function hasMixedGenderPair(array $fixedPairs, array $pool): bool
+    {
+        if (empty($fixedPairs) || empty($pool)) {
+            return false;
+        }
+        $genderByUserId = [];
+        foreach ($pool as $p) {
+            if ($p->user_id !== null) {
+                $genderByUserId[(int) $p->user_id] = $p->gender;
+            }
+        }
+        foreach ($fixedPairs as $pair) {
+            $g1 = $genderByUserId[(int) $pair->player1_id] ?? null;
+            $g2 = $genderByUserId[(int) $pair->player2_id] ?? null;
+            if ($g1 !== null && $g2 !== null && $g1 !== $g2) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Determine if a candidate has a CROSS-gender opposing layout — i.e.
+     * EACH team contains exactly 1 male + 1 female (M-F vs M-F), so the two
+     * pairs of player-pairs are matched as mixed-gender against each other.
+     *
+     * Returns true when both teams have one male and one female member.
+     * Returns false when teams are same-gender blocks (e.g. M-M vs F-F).
+     */
+    private function isCrossGenderOpponent(array $candidate): bool
+    {
+        $teamA = $candidate['team_a'] ?? [];
+        $teamB = $candidate['team_b'] ?? [];
+
+        $malesA = 0; $femalesA = 0;
+        foreach ($teamA as $p) {
+            if ($p->gender === User::MALE) $malesA++;
+            elseif ($p->gender === User::FEMALE) $femalesA++;
+        }
+        $malesB = 0; $femalesB = 0;
+        foreach ($teamB as $p) {
+            if ($p->gender === User::MALE) $malesB++;
+            elseif ($p->gender === User::FEMALE) $femalesB++;
+        }
+
+        return $malesA === 1 && $femalesA === 1 && $malesB === 1 && $femalesB === 1;
+    }
+
+    /**
+     * Count how many player-pairs (FixedPairDTO) have BOTH members on the SAME
+     * team within the candidate.
+     *
+     * A pair is only counted when both user_ids appear together in team_a or
+     * team_b. If only one member is in the candidate (e.g. the other was
+     * filtered out by buildPool due to is_playing=true), the pair is NOT
+     * counted - it stays at 0 so the comparator falls through to fairness.
+     */
+    private function countSatisfiedFixedPairs(array $teamA, array $teamB, array $fixedPairs): int
+    {
+        if (empty($fixedPairs)) {
+            return 0;
+        }
+
+        $teamAUserIds = array_column($teamA, 'user_id');
+        $teamBUserIds = array_column($teamB, 'user_id');
+
+        $count = 0;
+        foreach ($fixedPairs as $pair) {
+            $p1 = (int) $pair->player1_id;
+            $p2 = (int) $pair->player2_id;
+            $inA = in_array($p1, $teamAUserIds, true) && in_array($p2, $teamAUserIds, true);
+            $inB = in_array($p1, $teamBUserIds, true) && in_array($p2, $teamBUserIds, true);
+            if ($inA || $inB) {
+                $count++;
+            }
+        }
+        return $count;
+    }
+
+    /**
+     * Normalize fixed pairs from mini_participant_id → user_id.
+     *
+     * The frontend persists player1_id / player2_id as mini_participant_id
+     * values, but FixedPairDTO compares those ints against user_id values
+     * (because PlayerContextDTO.user_id is what the scheduler iterates over).
+     *
+     * The minimum-impact fix is to do the resolution here, where we already
+     * have both the request and the player pool. For each pair member we try:
+     *   1. exactly equal to a user_id value in the map  → already user_id
+     *   2. found as a mini_participant_id key            → use the mapped user_id
+     *   3. neither                                       → drop the member (or the whole pair if both fail)
+     *
+     * @param array $fixedPairs FixedPairDTO[]
+     * @param array $miniPidToUid map mini_participant_id (int) => user_id (int|null)
+     * @return FixedPairDTO[] New array (empty if nothing resolves)
+     */
+    private function normalizeFixedPairs(array $fixedPairs, array $miniPidToUid): array
+    {
+        if (empty($fixedPairs)) {
+            return [];
+        }
+
+        $normalized = [];
+        foreach ($fixedPairs as $pair) {
+            $uid1 = $this->resolvePairMemberId((int) $pair->player1_id, $miniPidToUid);
+            $uid2 = $this->resolvePairMemberId((int) $pair->player2_id, $miniPidToUid);
+
+            // Skip pairs where either member cannot be resolved.
+            // Creating a pair with player_id=0 would cause hasPlayer() to silently fail
+            // because (0 === $userId) is always false, breaking the constraint.
+            if ($uid1 === null || $uid2 === null) {
+                \Log::warning('[Scheduler/normalizeFixedPairs] Skipping pair with orphan ID: raw p1=' . $pair->player1_id . ' (resolved=' . ($uid1 ?? 'null') . '), raw p2=' . $pair->player2_id . ' (resolved=' . ($uid2 ?? 'null') . ')');
+                continue;
+            }
+
+            $normalized[] = new \App\DTO\FixedPairDTO(
+                player1_id: $uid1,
+                player2_id: $uid2,
+            );
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * Try to resolve one ID to a user_id using the mini_pid → user_id map.
+     * Falls through three cases (see normalizeFixedPairs()).
+     */
+    private function resolvePairMemberId(int $id, array $miniPidToUid): ?int
+    {
+        // Case 1: $id already matches a user_id value
+        if (in_array($id, $miniPidToUid, true)) {
+            return $id;
+        }
+        // Case 2: $id is a mini_participant_id key → resolve
+        if (isset($miniPidToUid[$id]) && $miniPidToUid[$id] !== null) {
+            return (int) $miniPidToUid[$id];
+        }
+        // Case 3: cannot resolve
+        return null;
     }
 
     /**
      * Compare two candidates by business priority.
      * Returns: -1 if a is better, 1 if b is better, 0 if equal
      */
-    private function compareCandidates(array $a, array $b): int
+    private function compareCandidates(array $a, array $b, array $fixedPairs = [], array $pool = []): int
     {
+        // PRIORITY -1 (Highest): Player-pair satisfaction.
+        // Linked players (player-pairs) MUST be grouped together whenever possible.
+        // A candidate that satisfies more pairs than another wins, even if its
+        // fairness / tier / balance scores are worse. This overrides fairness so
+        // the user-defined pairing rule always takes precedence.
+        //
+        // Exception: when one member of a pair was filtered out of the pool
+        // (e.g. is_playing=true) the candidate contains <2 pair members, so
+        // countSatisfiedFixedPairs() returns 0 for both candidates and the
+        // comparator falls through to fairness as before.
+        $satA = $a['satisfied_fixed_pairs'] ?? 0;
+        $satB = $b['satisfied_fixed_pairs'] ?? 0;
+        if ($satA !== $satB) {
+            return $satB <=> $satA;
+        }
+
+        // PRIORITY -0.5: Mixed-gender opponent for mixed-gender player-pairs.
+        // When player-pairs themselves are mixed-gender (M-F), the OPPOSING teams
+        // should also be mixed-gender (M-F vs M-F) rather than same-gender blocks
+        // (M-M vs F-F). This matches the rule for mixed-gender mini-tournament
+        // pairs and avoids the awkward "team player-pairs is M-F but the opponent
+        // team is M-M" case. Only applies when both candidates satisfy the same
+        // number of fixed pairs AND at least one pair in the request is mixed.
+        if ($satA > 0 && $satA === $satB && !empty($fixedPairs)
+            && $this->hasMixedGenderPair($fixedPairs, $pool)) {
+            $crossA = $this->isCrossGenderOpponent($a);
+            $crossB = $this->isCrossGenderOpponent($b);
+            if ($crossA !== $crossB) {
+                // Mixed-gender opponent (1M+1F each side) beats same-gender-block opponent.
+                return $crossA ? 1 : -1;
+            }
+        }
+
         // PRIORITY 0: FAIRNESS — starvation (pool_max_played - player_played) is absolute
         // Người chơi "đói" nhất (ít trận nhất so với pool) phải được ghép TRƯỚC.
         // "Mọi người đều được chơi bằng nhau" = pick the candidate that helps the most-starved player.
@@ -1481,7 +1768,7 @@ class SchedulerService
 
         // Get gender info for validation
         $genderCounts = $this->countGenders($players);
-        
+
         // Try all permutations
         // Use mini_participant_id so guest players (null user_id) are uniquely
         // identifiable in the permutation space.
@@ -1490,7 +1777,7 @@ class SchedulerService
             $players
         );
         $permutations = $this->getPermutations($ids);
-        
+
         $bestPairing = null;
         $bestTierScore = -1.0;      // Tier score cao nhất tìm được
         $bestBalanceDiff = PHP_FLOAT_MAX;
@@ -1567,7 +1854,27 @@ class SchedulerService
      */
     private function validateFixedPairsConstraint(array $teamA, array $teamB, array $fixedPairs): bool
     {
+        if (empty($fixedPairs)) {
+            return true;
+        }
+        // Performance: only do full validation for combos that actually contain both pair members
+        // (most calls won't have any pair members in the teams at all)
+        $teamAUserIds = array_column($teamA, 'user_id');
+        $teamBUserIds = array_column($teamB, 'user_id');
+        $allTeamUids = array_merge($teamAUserIds, $teamBUserIds);
+        $relevantPairs = [];
         foreach ($fixedPairs as $pair) {
+            $p1In = in_array($pair->player1_id, $allTeamUids, true);
+            $p2In = in_array($pair->player2_id, $allTeamUids, true);
+            if ($p1In || $p2In) {
+                $relevantPairs[] = $pair;
+            }
+        }
+        if (empty($relevantPairs)) {
+            return true;
+        }
+
+        foreach ($relevantPairs as $pair) {
             $player1InA = null;
             $player1InB = null;
             $player2InA = null;
@@ -1593,15 +1900,11 @@ class SchedulerService
                 }
             }
 
-            // If both players are found but in different teams, constraint violated
-            if (($player1InA !== null || $player1InB !== null) &&
-                ($player2InA !== null || $player2InB !== null)) {
-                // Both players found - check they're in the same team
-                $inSameTeam = ($player1InA !== null && $player2InA !== null) ||
-                              ($player1InB !== null && $player2InB !== null);
-                if (!$inSameTeam) {
-                    return false;
-                }
+            // Both pair members are in the candidate — check they are in the SAME team.
+            $inSameTeam = ($player1InA !== null && $player2InA !== null) ||
+                          ($player1InB !== null && $player2InB !== null);
+            if (!$inSameTeam) {
+                return false; // Pair members are split across teams — constraint violated
             }
         }
 
