@@ -182,4 +182,74 @@ class MatchSuggestionRequestDTO
             'fixed_pairs' => array_map(fn($p) => $p->toArray(), $this->fixed_pairs),
         ];
     }
+
+    /**
+     * Return a NEW MatchSuggestionRequestDTO with fixed_pairs normalized so that
+     * both player IDs are user_ids.
+     *
+     * The frontend stores player1_id / player2_id as mini_participant_id, but
+     * FixedPairDTO::hasPlayer() compares them to user_id. When the payload
+     * value is NOT a known user_id, we try to resolve it as a
+     * mini_participant_id by consulting the provided map.
+     *
+     * @param array $miniParticipantIdToUserId mini_participant_id (int) => user_id (int|null)
+     * @return self New instance with resolved fixed_pairs (unchanged when empty)
+     */
+    public function normalizeToUserIds(array $miniParticipantIdToUserId): self
+    {
+        if (empty($this->fixed_pairs)) {
+            return $this;
+        }
+
+        $normalized = [];
+        foreach ($this->fixed_pairs as $pair) {
+            $uid1 = self::resolveToUserId($pair->player1_id, $miniParticipantIdToUserId);
+            $uid2 = self::resolveToUserId($pair->player2_id, $miniParticipantIdToUserId);
+
+            // Skip pairs where either member cannot be resolved.
+            // Creating a pair with player_id=0 would cause hasPlayer() to silently fail
+            // because (0 === $userId) is always false, breaking the constraint.
+            if ($uid1 === null || $uid2 === null) {
+                continue;
+            }
+
+            $normalized[] = new FixedPairDTO(
+                player1_id: $uid1,
+                player2_id: $uid2,
+            );
+        }
+
+        return new self(
+            mini_tournament_id: $this->mini_tournament_id,
+            participants: $this->participants,
+            settings: $this->settings,
+            seed: $this->seed,
+            exclude_player_ids: $this->exclude_player_ids,
+            anchor_participant_id: $this->anchor_participant_id,
+            anchor_user_id: $this->anchor_user_id,
+            fixed_pairs: $normalized,
+        );
+    }
+
+    /**
+     * Try to resolve a numeric ID to a user_id.
+     * - If $id exists as a mini_participant_id key in the map, return its user_id.
+     * - If $id exists as a user_id value in the map, return it unchanged.
+     * - Otherwise returns null (unresolvable).
+     */
+    private static function resolveToUserId(int $id, array $map): ?int
+    {
+        // Case 1: $id is a mini_participant_id key → resolve to user_id
+        if (array_key_exists($id, $map) && $map[$id] !== null) {
+            return (int) $map[$id];
+        }
+
+        // Case 2: $id is already a user_id value → return as-is
+        if (in_array($id, $map, true)) {
+            return $id;
+        }
+
+        // Case 3: cannot resolve
+        return null;
+    }
 }
