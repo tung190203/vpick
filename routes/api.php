@@ -569,10 +569,11 @@ Route::middleware(['auth:api', 'update.last_login', 'throttle:api'])->group(func
         Route::get('/{tournamentId}/rank', [TournamentTypeController::class, 'getRank']);
         Route::get('/{tournamentType}/advancement-status', [TournamentTypeController::class, 'getAdvancementStatus']);
         Route::post('/{tournamentType}/regenerate-matches', [TournamentTypeController::class, 'regenerateMatches']);
-        // manual
         Route::get('/{tournamentType}/groups-with-teams', [TournamentTypeController::class, 'getGroupsWithTeams']);
         Route::post('/{tournamentType}/assign-teams-and-generate', [TournamentTypeController::class, 'assignTeamsAndGenerate']);
         Route::post('/{tournamentType}/auto-generate-matches', [TournamentTypeController::class, 'autoGenerateMatches']);
+        Route::get('/{tournamentType}/cross-group-comparison', [TournamentTypeController::class, 'getCrossGroupComparison']);
+        Route::get('/{tournamentType}/cross-group-comparison/{team}/matches', [TournamentTypeController::class, 'getCrossGroupComparisonTeamMatches']);
     });
 
     Route::prefix('matches')->group(function() {
@@ -584,11 +585,7 @@ Route::middleware(['auth:api', 'update.last_login', 'throttle:api'])->group(func
         Route::get('/{matchId}/generate-qr', [MatchesController::class, 'generateQr']);
         Route::post('/confirm-result/{matchId}', [MatchesController::class, 'confirmResult']);
         Route::post('/{matchId}/advance-team-manual', [MatchesController::class, 'advanceTeamManual']);
-
-        // Match Score Realtime
-        // GET /current: public - chỉ đọc điểm, ai cũng xem được
         Route::get('/{matchId}/score/current', [MatchScoreController::class, 'current']);
-        // POST start/update: cần auth - chỉ trọng tài/super_admin mới được cập nhật
         Route::middleware(['auth:api'])->prefix('{matchId}/score')->group(function () {
             Route::post('/start', [MatchScoreController::class, 'start']);
             Route::post('/update', [MatchScoreController::class, 'update']);
@@ -713,7 +710,6 @@ Route::middleware(['auth:api', 'update.last_login', 'throttle:api'])->group(func
                 });
             });
 
-            // club_alert: list toàn bộ thông báo của CLB (khác user_notification)
             Route::prefix('notifications')->group(function () {
                 Route::get('/types', [ClubNotificationController::class, 'getNotificationTypes']);
                 Route::get('/', [ClubNotificationController::class, 'index']);
