@@ -226,6 +226,7 @@ Lấy danh sách campaign đã tạo, có filter và pagination.
       "action_type": "TOURNAMENT",
       "action_id": 123,
       "recipient_type": "ALL",
+      "recipient_label": "Tất cả người dùng",
       "send_type": "IMMEDIATE",
       "scheduled_at": null,
       "sent_at": "2026-08-13T18:00:05+07:00",
@@ -236,6 +237,11 @@ Lấy danh sách campaign đã tạo, có filter và pagination.
       "actual_recipient_count": 1532,
       "success_count": 1530,
       "failure_count": 2,
+      "success_rate": 99.9,
+      "failed_users": [
+        { "id": 101, "name": "Nguyễn Văn A" },
+        { "id": 205, "name": "Trần Văn B" }
+      ],
       "created_by": 1,
       "creator_name": "Super Admin",
       "created_at": "2026-08-13T18:00:00+07:00"
@@ -249,6 +255,15 @@ Lấy danh sách campaign đã tạo, có filter và pagination.
     "last_page": 7
   }
 }
+```
+
+### New Fields in Response
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `recipient_label` | string | Label tiếng Việt cho đối tượng nhận thông báo (VD: "Tất cả người dùng", "CLB Picki Hà Nội - 234 thành viên") |
+| `success_rate` | float/null | Phần trăm gửi thành công (VD: 99.9). Null nếu chưa có actual_recipient_count |
+| `failed_users` | array | Danh sách users chưa nhận được push thành công (tối đa 50 users). Mỗi object có `id` và `name` |
 ```
 
 ---

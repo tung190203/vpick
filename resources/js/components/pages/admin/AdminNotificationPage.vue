@@ -8,24 +8,42 @@
       <AdminHeader />
 
       <div class="p-6 max-w-5xl mx-auto">
-      <!-- Page Header -->
-      <div class="mb-8">
-        <div class="flex items-center justify-between">
-          <div>
-            <h1 class="text-3xl font-bold text-gray-800">Tạo thông báo Push</h1>
-            <p class="text-gray-500 mt-1">Gửi thông báo đẩy đến người dùng ứng dụng</p>
-          </div>
-          <div class="flex gap-3">
+        <!-- Page Header -->
+        <div class="mb-6">
+          <h1 class="text-3xl font-bold text-gray-800">Quản lý thông báo Push</h1>
+          <p class="text-gray-500 mt-1">Gửi và xem lịch sử thông báo đẩy đến người dùng</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="bg-white rounded-2xl shadow-sm border mb-6">
+          <div class="flex border-b">
             <button
-              @click="showTemplateModal = true"
-              class="flex items-center gap-2 px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              v-for="tab in tabs"
+              :key="tab.key"
+              @click="activeTab = tab.key"
+              class="px-6 py-3 font-semibold text-sm transition-colors border-b-2 -mb-px"
+              :class="activeTab === tab.key
+                ? 'text-[#D72D36] border-[#D72D36]'
+                : 'text-gray-500 border-transparent hover:text-gray-700'"
             >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
-              </svg>
-              Mẫu đã lưu
+              {{ tab.label }}
             </button>
           </div>
+        </div>
+
+        <!-- Tab: Create -->
+        <div v-show="activeTab === 'create'">
+      <div class="flex items-center justify-between mb-6">
+        <div class="flex gap-3">
+          <button
+            @click="showTemplateModal = true"
+            class="flex items-center gap-2 px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+            </svg>
+            Mẫu đã lưu
+          </button>
         </div>
       </div>
 
@@ -248,31 +266,196 @@
           </div>
         </form>
       </div>
-    </div>
-  </main>
+        </div>
+
+        <!-- Tab: History -->
+        <div v-show="activeTab === 'history'" class="bg-white rounded-2xl shadow-sm border p-6">
+          <!-- Filters -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div>
+              <label class="block text-xs font-medium text-gray-600 mb-1">Trạng thái</label>
+              <select
+                v-model="filters.status"
+                @change="fetchCampaigns(1)"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#D72D36] focus:border-transparent"
+              >
+                <option value="">Tất cả</option>
+                <option value="DRAFT">Nháp</option>
+                <option value="SCHEDULED">Đã hẹn giờ</option>
+                <option value="PROCESSING">Đang gửi</option>
+                <option value="SENT">Đã gửi</option>
+                <option value="PARTIAL">Gửi một phần</option>
+                <option value="FAILED">Thất bại</option>
+                <option value="CANCELLED">Đã hủy</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-600 mb-1">Loại người nhận</label>
+              <select
+                v-model="filters.recipient_type"
+                @change="fetchCampaigns(1)"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#D72D36] focus:border-transparent"
+              >
+                <option value="">Tất cả</option>
+                <option value="ALL">Tất cả người dùng</option>
+                <option value="CLUB">Theo câu lạc bộ</option>
+                <option value="ACTIVITY">Theo mức độ hoạt động</option>
+                <option value="USERS">Theo danh sách</option>
+              </select>
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-xs font-medium text-gray-600 mb-1">Tìm kiếm</label>
+              <input
+                v-model="filters.search"
+                @keyup.enter="fetchCampaigns(1)"
+                type="text"
+                placeholder="Tìm theo tiêu đề hoặc nội dung..."
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#D72D36] focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          <!-- Loading -->
+          <div v-if="isLoadingHistory" class="flex items-center justify-center py-16">
+            <div class="w-8 h-8 border-4 border-[#D72D36] border-t-transparent rounded-full animate-spin"></div>
+          </div>
+
+          <!-- Empty -->
+          <div v-else-if="campaigns.length === 0" class="text-center py-16">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+              <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+            </div>
+            <p class="text-gray-500">Chưa có chiến dịch nào</p>
+          </div>
+
+          <!-- List -->
+          <div v-else class="space-y-3">
+            <div
+              v-for="item in campaigns"
+              :key="item.id"
+              @click="openDetail(item)"
+              class="border border-gray-200 rounded-xl p-4 hover:border-[#D72D36] hover:shadow-sm transition-all cursor-pointer"
+            >
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 mb-1 flex-wrap">
+                    <span
+                      class="inline-block px-2 py-0.5 rounded-full text-xs font-medium"
+                      :class="statusBadgeClass(item.status)"
+                    >
+                      {{ item.status_label || item.status }}
+                    </span>
+                    <span class="text-xs text-gray-500">
+                      {{ item.created_at ? formatDate(item.created_at) : '' }}
+                    </span>
+                  </div>
+                  <h4 class="font-semibold text-gray-800 truncate">{{ item.title }}</h4>
+                  <p class="text-sm text-gray-500 truncate mt-0.5">{{ item.content }}</p>
+                  <p class="text-xs text-gray-500 mt-1">
+                    Đối tượng: <span class="font-medium text-gray-700">{{ item.recipient_label || '-' }}</span>
+                  </p>
+                </div>
+
+                <div class="text-right flex-shrink-0 w-40">
+                  <p class="text-xs text-gray-500">Gửi thành công</p>
+                  <p class="text-lg font-bold" :class="successRateColor(item.success_rate)">
+                    {{ item.success_rate !== null && item.success_rate !== undefined ? `${item.success_rate}%` : '-' }}
+                  </p>
+                  <p class="text-xs text-gray-500 mt-1">
+                    {{ item.success_count ?? 0 }}/{{ item.actual_recipient_count ?? 0 }}
+                  </p>
+                  <!-- Mini progress bar -->
+                  <div class="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden mt-1">
+                    <div
+                      class="h-full transition-all"
+                      :class="successBarColor(item.success_rate)"
+                      :style="{ width: `${item.success_rate || 0}%` }"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pagination -->
+          <div v-if="historyMeta && historyMeta.last_page > 1" class="flex items-center justify-between mt-6 pt-4 border-t">
+            <p class="text-sm text-gray-500">
+              Trang {{ historyMeta.current_page }} / {{ historyMeta.last_page }} - Tổng {{ historyMeta.total }}
+            </p>
+            <div class="flex gap-2">
+              <button
+                @click="fetchCampaigns(historyMeta.current_page - 1)"
+                :disabled="historyMeta.current_page <= 1"
+                class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Trước
+              </button>
+              <button
+                @click="fetchCampaigns(historyMeta.current_page + 1)"
+                :disabled="historyMeta.current_page >= historyMeta.last_page"
+                class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Sau
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
 
     <!-- Template Modal -->
     <AdminNotificationTemplateModal
       v-model="showTemplateModal"
       @apply-template="handleApplyTemplate"
     />
+
+    <!-- Detail Modal -->
+    <AdminPushNotificationDetailModal
+      v-model="showDetailModal"
+      :campaign="selectedCampaign"
+      :is-loading="isLoadingDetail"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { toast } from 'vue3-toastify'
 import AdminSidebar from '@/components/organisms/AdminSidebar.vue'
 import AdminHeader from '@/components/organisms/AdminHeader.vue'
 import AdminNotificationTemplateModal from '@/components/organisms/AdminNotificationTemplateModal.vue'
+import AdminPushNotificationDetailModal from '@/components/organisms/AdminPushNotificationDetailModal.vue'
 import axiosInstance from '@/utils/httpRequest.js'
+import { listCampaigns as fetchListCampaigns, getCampaignDetail as fetchCampaignDetail } from '@/service/adminPushNotification.js'
 
+const tabs = [
+  { key: 'create', label: 'Tạo thông báo' },
+  { key: 'history', label: 'Lịch sử' }
+]
+
+const activeTab = ref('create')
 const showTemplateModal = ref(false)
 const isDragging = ref(false)
 const imagePreview = ref(null)
 const estimatedCount = ref(null)
 const isSendingTest = ref(false)
 const isCreating = ref(false)
+
+// History state
+const campaigns = ref([])
+const historyMeta = ref(null)
+const isLoadingHistory = ref(false)
+const showDetailModal = ref(false)
+const selectedCampaign = ref(null)
+const isLoadingDetail = ref(false)
+
+const filters = reactive({
+  status: '',
+  recipient_type: '',
+  search: ''
+})
 
 const form = reactive({
   title: '',
@@ -284,6 +467,92 @@ const form = reactive({
   recipient_config: {},
   send_type: 'IMMEDIATE',
   scheduled_at: null
+})
+
+const formatDate = (iso) => {
+  if (!iso) return ''
+  try {
+    return new Date(iso).toLocaleString('vi-VN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  } catch {
+    return iso
+  }
+}
+
+const statusBadgeClass = (status) => {
+  const map = {
+    SENT: 'bg-green-100 text-green-700',
+    PROCESSING: 'bg-yellow-100 text-yellow-700',
+    SCHEDULED: 'bg-blue-100 text-blue-700',
+    FAILED: 'bg-red-100 text-red-700',
+    PARTIAL: 'bg-orange-100 text-orange-700',
+    DRAFT: 'bg-gray-100 text-gray-700',
+    CANCELLED: 'bg-gray-200 text-gray-600'
+  }
+  return map[status] || 'bg-gray-100 text-gray-700'
+}
+
+const successRateColor = (rate) => {
+  if (rate === null || rate === undefined) return 'text-gray-400'
+  if (rate >= 95) return 'text-green-600'
+  if (rate >= 80) return 'text-yellow-600'
+  return 'text-red-600'
+}
+
+const successBarColor = (rate) => {
+  if (rate === null || rate === undefined) return 'bg-gray-300'
+  if (rate >= 95) return 'bg-green-500'
+  if (rate >= 80) return 'bg-yellow-500'
+  return 'bg-red-500'
+}
+
+const fetchCampaigns = async (page = 1) => {
+  isLoadingHistory.value = true
+  try {
+    const params = {
+      page,
+      limit: 15,
+      ...(filters.status ? { status: filters.status } : {}),
+      ...(filters.recipient_type ? { recipient_type: filters.recipient_type } : {}),
+      ...(filters.search ? { search: filters.search } : {})
+    }
+    const response = await fetchListCampaigns(params)
+    campaigns.value = response.data || []
+    historyMeta.value = response.meta || null
+  } catch (error) {
+    console.error('Failed to load campaigns:', error)
+    toast.error('Không thể tải lịch sử thông báo')
+    campaigns.value = []
+    historyMeta.value = null
+  } finally {
+    isLoadingHistory.value = false
+  }
+}
+
+const openDetail = async (item) => {
+  showDetailModal.value = true
+  selectedCampaign.value = item
+  isLoadingDetail.value = true
+  try {
+    const response = await fetchCampaignDetail(item.id)
+    selectedCampaign.value = response.data || item
+  } catch (error) {
+    console.error('Failed to load campaign detail:', error)
+    toast.error('Không thể tải chi tiết thông báo')
+  } finally {
+    isLoadingDetail.value = false
+  }
+}
+
+watch(activeTab, (val) => {
+  if (val === 'history' && campaigns.value.length === 0) {
+    fetchCampaigns(1)
+  }
 })
 
 const minScheduleTime = computed(() => {

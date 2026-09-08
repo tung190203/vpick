@@ -9,6 +9,7 @@ use App\Enums\AdminPushNotification\SendType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AdminPushNotificationCampaign extends Model
 {
@@ -82,5 +83,15 @@ class AdminPushNotificationCampaign extends Model
         return $this->status === CampaignStatus::Scheduled
             && $this->scheduled_at !== null
             && $this->scheduled_at->lte(now());
+    }
+
+    public function results(): HasMany
+    {
+        return $this->hasMany(AdminPushNotificationResult::class, 'campaign_id');
+    }
+
+    public function failedResults(): HasMany
+    {
+        return $this->hasMany(AdminPushNotificationResult::class, 'campaign_id')->where('status', 'failed');
     }
 }
