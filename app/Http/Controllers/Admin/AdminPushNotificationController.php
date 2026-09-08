@@ -101,7 +101,7 @@ class AdminPushNotificationController extends Controller
         $limit = (int) ($validated['limit'] ?? 15);
 
         $query = AdminPushNotificationCampaign::query()
-            ->with('creator:id,full_name,email')
+            ->with(['creator:id,full_name,email', 'results.user:id,full_name'])
             ->orderBy('created_at', 'desc');
 
         if (!empty($validated['status'])) {

@@ -2,47 +2,81 @@
 
 namespace App\Jobs;
 
+use App\Models\AdminPushNotificationResult;
 use App\Services\FirebaseService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class SendPushJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    protected int $userId;
-    protected string $title;
-    protected string $body;
-    protected array $data;
-
     /**
      * Create a new job instance.
      */
     public function __construct(
-        int $userId,
-        string $title,
-        string $body,
-        array $data = []
-    ) {
-        $this->userId = $userId;
-        $this->title  = $title;
-        $this->body   = $body;
-        $this->data   = $data;
-    }
+        protected int $userId,
+        protected string $title,
+        protected string $body,
+        protected array $data = [],
+        protected ?int $campaignId = null
+    ) {}
 
     /**
      * Execute the job.
      */
     public function handle(FirebaseService $firebase): void
     {
-        $firebase->sendToUser(
-            $this->userId,
-            $this->title,
-            $this->body,
-            $this->data
-        );
+        try {
+            $result = $firebase->sendToUser(
+                $this->userId,
+                $this->title,
+                $this->body,
+                $this->data
+            );
+
+            // Update tracking result if this is an admin push campaign
+            if ($this->campaignId !== null) {
+                $this->updateResult('success', null);
+            }
+
+            Log::debug('SendPushJob: FCM sent successfully', [
+                'user_id' => $this->userId,
+                'campaign_id' => $this->campaignId,
+                'result' => $result,
+            ]);
+        } catch (\Throwable $e) {
+            // Update tracking result if this is an admin push campaign
+            if ($this->campaignId !== null) {
+                $this->updateResult('failed', $e->getMessage());
+            }
+
+            Log::error('SendPushJob: FCM send failed', [
+                'user_id' => $this->userId,
+                'campaign_id' => $this->campaignId,
+                'error' => $e->getMessage(),
+            ]);
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Update the notification result in the database.
+     */
+    protected function updateResult(string $status, ?string $errorMessage): void
+    {
+        AdminPushNotificationResult::where('campaign_id', $this->campaignId)
+            ->where('user_id', $this->userId)
+            ->where('status', 'pending')
+            ->update([
+                'status' => $status,
+                'error_message' => $errorMessage,
+                'sent_at' => $status === 'success' ? now() : null,
+            ]);
     }
 }

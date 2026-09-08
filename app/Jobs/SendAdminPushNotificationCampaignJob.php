@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Enums\AdminPushNotification\CampaignStatus;
 use App\Models\AdminPushNotificationCampaign;
+use App\Models\AdminPushNotificationResult;
 use App\Models\User;
 use App\Notifications\AdminPushCampaignNotification;
 use App\Services\Admin\AdminPushNotification\CampaignRecipientResolverFactory;
@@ -74,8 +75,26 @@ class SendAdminPushNotificationCampaignJob implements ShouldQueue
             Log::info('No users found for campaign', ['campaign_id' => $campaign->id]);
         }
 
+        // Tạo tracking records cho từng user với status 'pending'
+        $resultRecords = [];
+        foreach ($userIds as $userId) {
+            $resultRecords[] = [
+                'campaign_id' => $campaign->id,
+                'user_id' => $userId,
+                'status' => 'pending',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+
+        // Bulk insert tracking records
+        if (!empty($resultRecords)) {
+            AdminPushNotificationResult::insert($resultRecords);
+        }
+
         // Notify users để lưu vào bảng notifications + dispatch FCM qua listener (SendPushNotificationListener → SendPushJob → FirebaseService::sendToUser).
         // Lưu ý: Job KHÔNG gọi Firebase trực tiếp để tránh duplicate push — FCM chỉ được gửi qua NotificationSent event.
+        // Notification sẽ truyền campaign_id để SendPushJob có thể update kết quả.
         $usersToNotify = User::whereIn('id', $userIds)->get();
         foreach ($usersToNotify as $user) {
             $user->notify(new AdminPushCampaignNotification($campaign));
