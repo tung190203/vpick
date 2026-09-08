@@ -48,6 +48,14 @@ class CrossGroupComparisonService
                 'minimum_group_size' => null,
                 'description' => null,
             ],
+            'knockout_calculation' => [
+                'num_advancing_per_group' => 0,
+                'number_of_groups' => 0,
+                'total_from_pool_stage' => 0,
+                'is_power_of_two' => false,
+                'knockout_slots' => 0,
+                'additional_slots' => 0,
+            ],
             'qualification' => [
                 'number_of_groups' => 0,
                 'knockout_slots' => 0,
@@ -88,11 +96,14 @@ class CrossGroupComparisonService
 
         // Qualification info
         $numberOfGroups = count($groupTeamCounts);
-        $knockoutSlots = $this->getKnockoutSlots($type, $numberOfGroups);
+        $numAdvancing = $this->getNumAdvancingPerGroup($type);
+        $knockoutSlots = $this->getKnockoutSlots($numAdvancing, $numberOfGroups);
+        $totalFromPool = $numAdvancing * $numberOfGroups;
+        $isPowerOfTwo = $totalFromPool > 0 && (($totalFromPool & ($totalFromPool - 1)) === 0);
         $additionalSlots = max(0, $knockoutSlots - $numberOfGroups);
         $applyTo = $this->extractApplyTo($rawConfig);
 
-        // Gắn qualified flag dựa trên top additionalSlots
+        // Gắn qualified flag dựa trên knockoutSlots (= 2^n gần nhất)
         $runnerUpCount = $rankedCandidates
             ->where('candidate_type', self::CANDIDATE_TYPE_RUNNER_UP)
             ->count();
@@ -102,7 +113,8 @@ class CrossGroupComparisonService
 
         $rankedCandidates = $this->assignQualifiedStatus(
             $rankedCandidates,
-            $additionalSlots,
+            $knockoutSlots,
+            $numberOfGroups,
             $applyTo
         );
 
@@ -113,6 +125,14 @@ class CrossGroupComparisonService
                 'minimum_group_size' => $minimumGroupSize,
                 'description' => $this->buildRuleDescription($groupTeamCounts),
                 'ranking_rules' => $rankingRules, // thứ tự ưu tiên thực tế được áp dụng
+            ],
+            'knockout_calculation' => [
+                'num_advancing_per_group' => $numAdvancing,
+                'number_of_groups' => $numberOfGroups,
+                'total_from_pool_stage' => $totalFromPool,
+                'is_power_of_two' => $isPowerOfTwo,
+                'knockout_slots' => $knockoutSlots,
+                'additional_slots' => $additionalSlots,
             ],
             'qualification' => [
                 'number_of_groups' => $numberOfGroups,
@@ -230,17 +250,65 @@ class CrossGroupComparisonService
     }
 
     /**
-     * Lấy tổng số suất vào vòng knockout.
-     * Công thức: number_competing_teams * num_advancing_teams (từ pool_stage).
+     * Lấy số đội đi tiếp / bảng từ format_specific_config[0].pool_stage.num_advancing_teams.
      */
-    protected function getKnockoutSlots(TournamentType $type, int $numberOfGroups): int
+    protected function getNumAdvancingPerGroup(TournamentType $type): int
     {
         $config = $type->format_specific_config ?? [];
         $mainConfig = is_array($config) && isset($config[0]) ? $config[0] : (is_array($config) ? $config : []);
         $pool = $mainConfig['pool_stage'] ?? [];
+        return max(0, (int) ($pool['num_advancing_teams'] ?? 0));
+    }
 
-        $numAdvancing = (int) ($pool['num_advancing_teams'] ?? 0);
-        return max(0, $numAdvancing * $numberOfGroups);
+    /**
+     * Tính số slot knockout theo 2^n gần nhất với numAdvancing × numGroups.
+     *
+     * Quy tắc:
+     * - Vòng knockout yêu cầu số đội là 2^n (2, 4, 8, 16, 32).
+     * - Nếu numAdvancing × numGroups KHÔNG phải 2^n, làm tròn về 2^n gần nhất:
+     *   + Ưu tiên làm tròn xuống (gần numAdvancing × numGroups hơn)
+     *   + Tie-break: ưu tiên làm tròn xuống
+     * - Đảm bảo knockout_slots >= numberOfGroups (luôn có Nhất mỗi bảng đi tiếp).
+     *
+     * @param int $numAdvancing  Số đội đi tiếp / bảng (pool_stage.num_advancing_teams)
+     * @param int $numberOfGroups Số bảng (pool_stage.number_competing_teams)
+     */
+    protected function getKnockoutSlots(int $numAdvancing, int $numberOfGroups): int
+    {
+        $total = max(0, $numAdvancing * $numberOfGroups);
+
+        if ($total <= 0) {
+            return 0;
+        }
+
+        // Edge case: tổng = 1 đội thì knockout không hợp lệ, ép về 2
+        if ($total < 2) {
+            return max(2, $numberOfGroups);
+        }
+
+        // Tính prev_power_of_2 và next_power_of_2
+        $logVal = log($total, 2);
+        $nextPower = (int) pow(2, (int) ceil($logVal));
+        $prevPower = (int) pow(2, (int) floor($logVal));
+
+        // Đảm bảo prevPower >= 1
+        if ($prevPower < 1) {
+            $prevPower = 1;
+        }
+
+        // Tính khoảng cách tới mỗi power
+        $diffToPrev = $total - $prevPower;
+        $diffToNext = $nextPower - $total;
+
+        // Làm tròn xuống nếu gần hơn (hoặc bằng nhau → ưu tiên xuống)
+        if ($diffToPrev <= $diffToNext && $prevPower >= 2) {
+            $targetSlots = $prevPower;
+        } else {
+            $targetSlots = $nextPower;
+        }
+
+        // Đảm bảo >= numberOfGroups (luôn có Nhất mỗi bảng đi tiếp)
+        return max((int) $numberOfGroups, $targetSlots);
     }
 
     /**
@@ -613,48 +681,71 @@ class CrossGroupComparisonService
     /**
      * Gắn `status = qualified/not_qualified` cho từng candidate.
      *
-     * Quy tắc đúng theo spec:
-     * - Đội Nhì bảng (runner_up) vốn đã qualified mặc định (đi thẳng vào vòng trong)
-     *   vì mỗi bảng có 1 Nhì, và number_of_groups = số slot Nhì tự nhiên.
-     * - Khi additional_slots > 0:
-     *   + Nhóm runner_up đã có N đội qualified → chỉ xét "ai fill các suất thêm"
-     *   + Nếu runner_up không đủ → xét tiếp third_place.
-     * - Khi additional_slots == 0:
-     *   + Chỉ lấy 1 Nhì/bảng → mọi runner_up đều qualified, third_place = not_applicable.
+     * Quy tắc đúng theo spec (sau khi fix):
+     * - Số slot knockout = 2^n gần nhất với numAdvancing × numGroups (tính từ getKnockoutSlots).
+     * - Số slot Nhất "mặc định" = numberOfGroups (mỗi bảng 1 Nhất).
+     * - additionalSlots = knockoutSlots - numberOfGroups (số slot cần pick thêm).
+     * - Khi additionalSlots == 0:
+     *   + knockoutSlots = numberOfGroups → không cần pick thêm Nhì
+     *   + Nhì KHÔNG qualified tự động (vì không có suất Nhì phụ)
+     *   + Ba = not_applicable.
+     * - Khi additionalSlots > 0:
+     *   + Nhì: qualified mặc định (5 Nhì = 5 slot đầu tiên)
+     *   + Nếu additionalSlots > numberOfGroups → pick thêm Ba (additionalSlots - numberOfGroups Ba tốt nhất)
+     *   + Lưu ý: spec nói "Nhì trước, thiếu mới Ba" → nhưng trong case này Nhì đã chiếm hết numberOfGroups
+     *     slot, phần "thiếu" phải lấy Ba.
      *
      * Status gắn in-place giữ nguyên order từ rankCandidates.
+     *
+     * @param int $knockoutSlots  Số slot knockout (= 2^n gần nhất)
+     * @param int $numberOfGroups Số bảng (= số Nhất tự nhiên)
      */
-    protected function assignQualifiedStatus(Collection $candidates, int $additionalSlots, array $applyTo): Collection
-    {
-        // Đếm số runner_up có trong apply_to
-        $runnerUpTotal = $candidates
-            ->where('candidate_type', self::CANDIDATE_TYPE_RUNNER_UP)
-            ->whereIn('candidate_type', $applyTo)
-            ->count();
+    protected function assignQualifiedStatus(
+        Collection $candidates,
+        int $knockoutSlots,
+        int $numberOfGroups,
+        array $applyTo
+    ): Collection {
+        // Số slot cần pick thêm SAU Nhất mỗi bảng
+        $additionalSlots = max(0, $knockoutSlots - $numberOfGroups);
 
-        // Số suất cần xét thêm ngoài các Nhì mặc định
-        // additional_slots = knockout_slots - number_of_groups
-        // Mỗi Nhì đã chiếm 1 slot, runnerUpTotal chính = number_of_groups (nếu apply_to chứa runner_up)
-        $extraSlotsNeeded = max(0, $additionalSlots);
+        // Số Nhì tối đa được apply (mỗi bảng 1 Nhì)
+        $runnerUpMaxApply = $numberOfGroups;
 
-        // Bước 1: gom qualified team_ids từ các suất thêm
-        // Xét theo thứ tự: runner_up (theo rank) → third_place (theo rank)
+        // Sort candidates: runner_up trước third_place, theo rank
+        $sorted = $candidates->sortBy([
+            ['candidate_type', 'asc'],
+            ['rank', 'asc'],
+        ])->values();
+
         $qualifiedTeamIds = [];
-        if ($extraSlotsNeeded > 0) {
-            $ordered = $candidates->sortBy([
-                ['candidate_type', 'asc'], // runner_up < third_place alphabetically
-                ['rank', 'asc'],
-            ])->values();
+        $needed = $additionalSlots;
 
-            $needed = $extraSlotsNeeded;
-            foreach ($ordered as $candidate) {
-                if (!in_array($candidate['candidate_type'], $applyTo, true)) {
-                    continue;
+        // Round 1: lấy Nhì (ưu tiên)
+        // Nhưng chỉ lấy tối đa runnerUpMaxApply = numberOfGroups Nhì.
+        // Phần dư (nếu additionalSlots > numberOfGroups) sẽ fill bằng Ba.
+        if ($needed > 0 && in_array(self::CANDIDATE_TYPE_RUNNER_UP, $applyTo, true)) {
+            $runnerUps = $sorted->where('candidate_type', self::CANDIDATE_TYPE_RUNNER_UP);
+            $picked = 0;
+            foreach ($runnerUps as $c) {
+                if ($needed <= 0 || $picked >= $runnerUpMaxApply) {
+                    break;
                 }
-                if ($needed > 0) {
-                    $qualifiedTeamIds[$candidate['team_id']] = true;
-                    $needed--;
+                $qualifiedTeamIds[$c['team_id']] = true;
+                $needed--;
+                $picked++;
+            }
+        }
+
+        // Round 2: nếu vẫn thiếu (additionalSlots > numberOfGroups), lấy Ba
+        if ($needed > 0 && in_array(self::CANDIDATE_TYPE_THIRD_PLACE, $applyTo, true)) {
+            $thirdPlaces = $sorted->where('candidate_type', self::CANDIDATE_TYPE_THIRD_PLACE);
+            foreach ($thirdPlaces as $c) {
+                if ($needed <= 0) {
+                    break;
                 }
+                $qualifiedTeamIds[$c['team_id']] = true;
+                $needed--;
             }
         }
 
@@ -664,14 +755,10 @@ class CrossGroupComparisonService
 
             if (!in_array($type, $applyTo, true)) {
                 $candidate['status'] = 'not_applicable';
-            } elseif ($type === self::CANDIDATE_TYPE_RUNNER_UP) {
-                // Đội Nhì bảng: LUÔN qualified mặc định
+            } elseif (isset($qualifiedTeamIds[$candidate['team_id']])) {
                 $candidate['status'] = 'qualified';
             } else {
-                // third_place: qualified nếu nằm trong extraSlots
-                $candidate['status'] = isset($qualifiedTeamIds[$candidate['team_id']])
-                    ? 'qualified'
-                    : 'not_qualified';
+                $candidate['status'] = 'not_qualified';
             }
             return $candidate;
         });
