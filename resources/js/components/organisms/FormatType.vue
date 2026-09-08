@@ -162,6 +162,25 @@
                     </div>
                 </Section>
 
+                <!-- Xét Nhì/Ba khi các bảng không đều — chỉ hiện khi MIXED + >= 2 bảng -->
+                <Section v-if="isMixedMultiGroup" title="Xét đội Nhì/Ba">
+                    <div class="space-y-3">
+                        <Toggle
+                            label="Xét Nhì/Ba khi bảng không đều"
+                            description="Khi các bảng có số đội khác nhau, hệ thống loại kết quả các trận gặp đội cuối bảng ở các bảng lớn hơn để đảm bảo các đội Nhì/Ba được xét trên cùng số trận."
+                            :value="crossGroupRankingEnabled"
+                            @update="crossGroupRankingEnabled = $event" />
+                        <p v-if="isGroupsUniform && crossGroupRankingEnabled"
+                           class="text-xs text-green-600 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                            Các bảng có cùng số đội nên không cần loại trận.
+                        </p>
+                        <p v-else-if="!isGroupsUniform && crossGroupRankingEnabled"
+                           class="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                            Phát hiện các bảng có số đội không đều — rule xét Nhì/Ba sẽ được áp dụng.
+                        </p>
+                    </div>
+                </Section>
+
                 <Section title="Luật thi đấu">
                     <div class="relative">
                         <SettingItem label="Số set đấu" :value="`${setsPerMatch} Set`"
@@ -594,6 +613,7 @@ const selectBestLosers = ref(true);
 const hasResurrectionBracket = ref(false);
 const mainBracketName = ref('Giải chính');
 const subBracketName = ref('Giải Tái sinh');
+const crossGroupRankingEnabled = ref(false);
 
 const setQuickBranchNames = (mainName, subName) => {
     mainBracketName.value = mainName;
@@ -707,6 +727,22 @@ const displayCalculationMethods = computed(() => {
         value: RANKING_RULES_MAP[id].value,
         subtitle: RANKING_RULES_MAP[id].subtitle
     }));
+});
+
+/**
+ * Cross-group ranking: only applicable when MIXED + >= 2 groups.
+ */
+const isMixedMultiGroup = computed(() => {
+    return activeTab.value === 'mixed' && tables.value >= 2;
+});
+
+/**
+ * Whether all groups will have the same number of teams
+ * (totalTeams divisible evenly by tables count).
+ */
+const isGroupsUniform = computed(() => {
+    if (tables.value < 2) return true;
+    return totalTeams.value % tables.value === 0;
 });
 
 const FORMAT_MIXED = 1;
@@ -829,6 +865,14 @@ const tournamentConfigJson = computed(() => {
             specificConfig.has_resurrection_bracket = hasResurrectionBracket.value;
             specificConfig.main_bracket_name = mainBracketName.value || 'Giải chính';
             specificConfig.sub_bracket_name = subBracketName.value || 'Giải Tái sinh';
+            // Cross-group ranking: only include when MIXED + >= 2 groups
+            if (tables.value >= 2) {
+                specificConfig.cross_group_ranking = {
+                    enabled: crossGroupRankingEnabled.value,
+                    apply_to: ['runner_up', 'third_place'],
+                    exclude_bottom_team_matches: true
+                };
+            }
         }
     } else if (activeTab.value === 'roundRobin') {
         specificConfig = {

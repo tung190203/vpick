@@ -1,5 +1,6 @@
 import axiosInstance from "@/utils/httpRequest.js";
-import {API_ENDPOINT} from "@/constants/index.js";
+import {API_ENDPOINT, LOCAL_STORAGE_KEY} from "@/constants/index.js";
+import axios from "axios";
 
 const tournamentTypeEndpoint = API_ENDPOINT.TOURNAMENT_TYPE;
 
@@ -45,4 +46,33 @@ export const assignTeamsAndGenerate = async(tournamentTypeId, data) => {
 
 export const autoGenerateTeamAndMatches = async(tournamentTypeId) => {
   return axiosInstance.post(`${tournamentTypeEndpoint}/${tournamentTypeId}/auto-generate-matches`).then((response) => response.data.data);
+}
+
+// ✅ Cross-group comparison ranking (xét đội Nhì/Ba khi bảng không đều)
+export const getCrossGroupComparison = async (tournamentTypeId) => {
+  return axiosInstance.get(`${tournamentTypeEndpoint}/${tournamentTypeId}/cross-group-comparison`).then((response) => response.data.data);
+}
+
+// API 2 dùng raw axios thay vì axiosInstance để tránh response interceptor (404 → not-found page)
+// chỉ redirect khi GET dùng để load page; request từ modal candidate nên trả lỗi về component.
+// Vẫn lấy token qua LOCAL_STORAGE_KEY để đảm bảo Bearer header luôn có khi user đã đăng nhập.
+export const getCrossGroupComparisonTeamMatches = async (tournamentTypeId, teamId) => {
+  const token = localStorage.getItem(LOCAL_STORAGE_KEY.LOGIN_TOKEN) || '';
+  try {
+    const response = await axios.get(
+      `${import.meta.env.VITE_BASE_URL}${tournamentTypeEndpoint}/${tournamentTypeId}/cross-group-comparison/${teamId}/matches`,
+      {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      }
+    );
+    return response.data.data;
+  } catch (error) {
+    // Trả error có cấu trúc giống axiosInstance để FE xử lý đồng nhất
+    if (error.response) {
+      const e = new Error(error.response.data?.message || 'Team không phải candidate');
+      e.response = error.response;
+      throw e;
+    }
+    throw error;
+  }
 }

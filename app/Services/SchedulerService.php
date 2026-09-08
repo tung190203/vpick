@@ -984,6 +984,8 @@ class SchedulerService
             $uid1 = $this->resolvePairMemberId((int) $pair->player1_id, $miniPidToUid);
             $uid2 = $this->resolvePairMemberId((int) $pair->player2_id, $miniPidToUid);
 
+            \Log::info('[Scheduler/normalizeFixedPairs] pair raw=(' . $pair->player1_id . ',' . $pair->player2_id . ') resolved=(' . ($uid1 ?? 'null') . ',' . ($uid2 ?? 'null') . ')');
+
             // Skip pairs where either member cannot be resolved.
             // Creating a pair with player_id=0 would cause hasPlayer() to silently fail
             // because (0 === $userId) is always false, breaking the constraint.
@@ -997,6 +999,8 @@ class SchedulerService
                 player2_id: $uid2,
             );
         }
+
+        \Log::info('[Scheduler/normalizeFixedPairs] map size=' . count($miniPidToUid) . ' pairs_in=' . count($fixedPairs) . ' pairs_out=' . count($normalized));
 
         return $normalized;
     }
