@@ -92,7 +92,34 @@
                 <Section title="Vòng bảng">
                     <div class="space-y-4">
                         <Counter label="Số bảng đấu" :value="tables" @update="tables = $event" />
-                        <Counter label="Số đội vào vòng loại mỗi bảng" :value="teamsToKnockout"
+
+                        <!-- KHI tables === 1: hiển thị Top 2 / Top 4 -->
+                        <div v-if="tables === 1" class="space-y-2">
+                            <p class="text-sm text-gray-900">Số đội vào vòng loại mỗi bảng</p>
+                            <div class="flex gap-2">
+                                <button
+                                    v-for="opt in [2, 4]" :key="opt"
+                                    type="button"
+                                    @click="teamsToKnockout = opt"
+                                    :class="[
+                                        'flex-1 py-2 px-3 rounded-lg border-2 text-sm font-medium transition-all',
+                                        teamsToKnockout === opt
+                                            ? 'bg-[#D72D36] border-[#D72D36] text-white'
+                                            : 'bg-white border-gray-200 text-gray-700 hover:border-[#D72D36]'
+                                    ]">
+                                    Top {{ opt }}
+                                </button>
+                            </div>
+                            <p v-if="singleGroupValidationError"
+                               class="text-red-500 text-xs mt-1 font-medium">
+                                {{ singleGroupValidationError }}
+                            </p>
+                        </div>
+
+                        <!-- KHI tables >= 2: giữ nguyên Counter -->
+                        <Counter v-else
+                            label="Số đội vào vòng loại mỗi bảng"
+                            :value="teamsToKnockout"
                             @update="teamsToKnockout = $event" />
                     </div>
                 </Section>
@@ -496,7 +523,13 @@
                     <div class="font-semibold text-gray-900">{{ data.max_team ?? 0 }}</div>
                 </div>
                 <button @click="handleSubmit"
-                    class="bg-[#D72D36] text-white px-11 py-2 rounded font-medium hover:bg-red-600 transition-colors">
+                    :disabled="!!singleGroupValidationError"
+                    :class="[
+                        'px-11 py-2 rounded font-medium transition-colors',
+                        singleGroupValidationError
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            : 'bg-[#D72D36] text-white hover:bg-red-600'
+                    ]">
                     Kiểm tra
                 </button>
             </div>
@@ -573,6 +606,14 @@ watch(hasResurrectionBracket, (val) => {
         subBracketName.value = 'Giải Tái sinh';
     }
 });
+
+// Tự động hạ Top 8+ xuống Top 4 khi đổi về 1 bảng
+watch(tables, (newVal) => {
+    if (newVal === 1 && teamsToKnockout.value > 4) {
+        teamsToKnockout.value = 4;
+    }
+});
+
 const matchNotes = ref('');
 const setsPerMatch = ref(1);
 const pointsToWinSet = ref(11);
@@ -736,6 +777,19 @@ const totalMatches = computed(() => {
 
             return Math.floor(totalPoolMatches + totalKnockoutMatches);
     }
+});
+
+// Validation real-time cho 1 bảng
+const singleGroupValidationError = computed(() => {
+    if (tables.value !== 1) return null;
+    const total = totalTeams.value;
+    if (teamsToKnockout.value === 2 && total < 3) {
+        return 'Top 2 cần tối thiểu 3 đội.';
+    }
+    if (teamsToKnockout.value === 4 && total < 5) {
+        return 'Top 4 cần tối thiểu 5 đội.';
+    }
+    return null;
 });
 
 const tournamentConfigJson = computed(() => {
