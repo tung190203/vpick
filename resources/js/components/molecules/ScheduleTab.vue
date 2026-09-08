@@ -134,6 +134,13 @@
                 </div>
             </div>
 
+            <!-- ✅ Cross-group comparison ranking (xét đội Nhì/Ba khi bảng không đều) -->
+            <CrossGroupComparisonBlock
+                v-if="data.tournament_types?.[0]?.format === 1 && rank.group_rankings?.length >= 2"
+                :tournament-type-id="data.tournament_types?.[0]?.id"
+                :tournament-id="data.id"
+            />
+
             <!-- Bảng xếp hạng tổng (chỉ hiển thị khi giải đấu đã hoàn thành) -->
             <div v-if="data.is_completed && rank.overall_rankings?.length > 0" class="p-4 space-y-4">
                 <div class="flex items-center gap-2 mb-2">
@@ -431,6 +438,7 @@
 import CreateMatch from "@/components/molecules/CreateMatch.vue";
 import BracketMixedPreview from "@/components/molecules/BracketMixedPreview.vue";
 import PoolStageMatchCard from "@/components/molecules/PoolStageMatchCard.vue";
+import CrossGroupComparisonBlock from "@/components/molecules/CrossGroupComparisonBlock.vue";
 import { ref, watch, computed, onMounted } from "vue";
 import { SCHEDULE_TABS } from "@/data/tournament/index.js";
 import { toast } from "vue3-toastify";
