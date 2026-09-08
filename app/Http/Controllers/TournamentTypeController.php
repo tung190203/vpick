@@ -68,6 +68,31 @@ class TournamentTypeController extends Controller
             if ($numCompeting < $numAdvancing) {
                 return ResponseHelper::error('Số đội trong bảng phải > số đội đi tiếp', 422);
             }
+
+            // Validate 1 bảng: chỉ cho phép Top 2 hoặc Top 4
+            $numGroups = (int) ($poolStage['number_competing_teams'] ?? 1);
+            $totalTeams = $tournament->teams()->count();
+
+            if ($numGroups === 1) {
+                if (!in_array($numAdvancing, [2, 4])) {
+                    return ResponseHelper::error(
+                        'Với 1 bảng đấu, chỉ cho phép Top 2 hoặc Top 4.',
+                        422
+                    );
+                }
+                if ($numAdvancing === 2 && $totalTeams < 3) {
+                    return ResponseHelper::error(
+                        'Top 2 cần tối thiểu 3 đội.',
+                        422
+                    );
+                }
+                if ($numAdvancing === 4 && $totalTeams < 5) {
+                    return ResponseHelper::error(
+                        'Top 4 cần tối thiểu 5 đội.',
+                        422
+                    );
+                }
+            }
         }
 
         $matchRules = $validated['match_rules'] ?? [];
@@ -242,6 +267,31 @@ class TournamentTypeController extends Controller
 
             if ($numCompeting < $numAdvancing) {
                 return ResponseHelper::error('Số đội trong bảng phải > số đội đi tiếp', 422);
+            }
+
+            // Validate 1 bảng: chỉ cho phép Top 2 hoặc Top 4
+            $numGroups = (int) ($poolStage['number_competing_teams'] ?? 1);
+            $totalTeams = $tournamentType->tournament->teams()->count();
+
+            if ($numGroups === 1) {
+                if (!in_array($numAdvancing, [2, 4])) {
+                    return ResponseHelper::error(
+                        'Với 1 bảng đấu, chỉ cho phép Top 2 hoặc Top 4.',
+                        422
+                    );
+                }
+                if ($numAdvancing === 2 && $totalTeams < 3) {
+                    return ResponseHelper::error(
+                        'Top 2 cần tối thiểu 3 đội.',
+                        422
+                    );
+                }
+                if ($numAdvancing === 4 && $totalTeams < 5) {
+                    return ResponseHelper::error(
+                        'Top 4 cần tối thiểu 5 đội.',
+                        422
+                    );
+                }
             }
         }
 
@@ -1009,8 +1059,39 @@ class TournamentTypeController extends Controller
             }
         }
 
-        // ✅ SẮP XẾP ĐỘI ADVANCING THEO MODE ĐÃ CHỌN (MAIN BRACKET)
-        $advancing = $this->teamPairingService->arrangeAdvancingTeams($advancingByRank, $pairingMode, $manualPairings);
+        // ✅ XỬ LÝ ĐẶC BIỆT: 1 BẢNG VÀO VÒNG KNOCKOUT
+        // Khi chỉ có 1 bảng, ghép cặp theo hạng trong bảng:
+        // - Top 2: [Nhất, Nhì] → 1 trận chung kết
+        // - Top 4: [Nhất, Tư, Nhì, Ba] → 2 trận bán kết đối xứng (Nhất vs Tư, Nhì vs Ba)
+        $isSingleGroup = ($chunks->count() === 1);
+        if ($isSingleGroup && $advancingByRank->isNotEmpty()) {
+            $singleGroupAdvancing = collect();
+
+            $rank0 = $advancingByRank->get(0, collect()); // Nhất bảng
+            $rank1 = $advancingByRank->get(1, collect()); // Nhì bảng
+            $rank2 = $advancingByRank->get(2, collect()); // Ba bảng
+            $rank3 = $advancingByRank->get(3, collect()); // Tư bảng
+
+            if ($numAdvancing >= 4 && $rank0->isNotEmpty() && $rank3->isNotEmpty()) {
+                // Top 4: Nhất vs Tư, Nhì vs Ba (đối xứng)
+                $singleGroupAdvancing->push($rank0->first()); // Nhất
+                $singleGroupAdvancing->push($rank3->first()); // Tư
+                $singleGroupAdvancing->push($rank1->first()); // Nhì
+                $singleGroupAdvancing->push($rank2->first()); // Ba
+            } elseif ($numAdvancing === 2 && $rank0->isNotEmpty() && $rank1->isNotEmpty()) {
+                // Top 2: Nhất vs Nhì (1 trận chung kết)
+                $singleGroupAdvancing->push($rank0->first()); // Nhất
+                $singleGroupAdvancing->push($rank1->first()); // Nhì
+            } else {
+                // Fallback: dùng logic thông thường
+                $singleGroupAdvancing = $this->teamPairingService->arrangeAdvancingTeams($advancingByRank, $pairingMode, $manualPairings);
+            }
+
+            $advancing = $singleGroupAdvancing;
+        } else {
+            // ✅ SẮP XẾP ĐỘI ADVANCING THEO MODE ĐÃ CHỌN (MAIN BRACKET)
+            $advancing = $this->teamPairingService->arrangeAdvancingTeams($advancingByRank, $pairingMode, $manualPairings);
+        }
 
         // ✅ KIỂM TRA SỐ ĐỘI ADVANCING
         $totalAdvancing = $advancing->count();
