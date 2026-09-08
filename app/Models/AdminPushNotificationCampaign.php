@@ -87,11 +87,11 @@ class AdminPushNotificationCampaign extends Model
 
     public function results(): HasMany
     {
-        return $this->hasMany(AdminPushNotificationResult::class);
+        return $this->hasMany(AdminPushNotificationResult::class, 'campaign_id');
     }
 
     public function failedResults(): HasMany
     {
-        return $this->hasMany(AdminPushNotificationResult::class)->where('status', 'failed');
+        return $this->hasMany(AdminPushNotificationResult::class, 'campaign_id')->where('status', 'failed');
     }
 }

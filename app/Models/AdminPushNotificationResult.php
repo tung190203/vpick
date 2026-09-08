@@ -21,11 +21,11 @@ class AdminPushNotificationResult extends Model
 
     public function campaign(): BelongsTo
     {
-        return $this->belongsTo(AdminPushNotificationCampaign::class);
+        return $this->belongsTo(AdminPushNotificationCampaign::class, 'campaign_id');
     }
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class)->withTrashed();
+        return $this->belongsTo(User::class, 'user_id')->withTrashed();
     }
 }
