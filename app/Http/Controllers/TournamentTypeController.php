@@ -249,7 +249,14 @@ class TournamentTypeController extends Controller
 
     /**
      * Sync cross-group ranking rule text into tournament.description.
-     * Calls the CrossGroupRankingService to evaluate applicability and update description.
+     *
+     * Trigger ngay sau khi user chọn xong thể thức (store/update) hoặc sau khi
+     * teams được assign vào groups (assignTeamsAndGenerate).
+     *
+     * Logic:
+     *  - Thử evaluate runtime trước (cần teams + !isUniform) — đây là rule thực sự apply
+     *  - Nếu chưa đủ điều kiện runtime nhưng configuration đủ (MIXED + enabled + ≥2 bảng)
+     *    → vẫn show rule text để user biết trước (rule có thể apply khi teams được assign)
      */
     protected function syncCrossGroupRanking(Tournament $tournament, TournamentType $type, array $formatSpecificConfig): void
     {
@@ -259,8 +266,16 @@ class TournamentTypeController extends Controller
 
         $rawConfig = $mainConfig['cross_group_ranking'] ?? [];
 
-        $evaluation = $this->crossGroupRankingService->evaluate($type, $rawConfig);
-        $this->crossGroupRankingService->syncDescription($tournament, $evaluation, $rawConfig);
+        $runtimeEval = $this->crossGroupRankingService->evaluate($type, $rawConfig);
+        if ($runtimeEval['applied']) {
+            // Rule thực sự apply → sync với applied=true
+            $this->crossGroupRankingService->syncDescription($tournament, $runtimeEval, $rawConfig);
+            return;
+        }
+
+        // Configuration đủ điều kiện tối thiểu → vẫn show rule text
+        $configEval = $this->crossGroupRankingService->evaluateConfiguration($type, $rawConfig);
+        $this->crossGroupRankingService->syncDescription($tournament, $configEval, $rawConfig);
     }
 
     /**
@@ -3247,6 +3262,12 @@ class TournamentTypeController extends Controller
             if (!$isDraft) {
                 $this->generateMatchesForTypeWithAssignedTeams($tournamentType);
             }
+            // ✅ SYNC cross_group_ranking description khi đã biết số đội/bảng thực tế
+            $this->syncCrossGroupRanking(
+                $tournamentType->tournament,
+                $tournamentType,
+                $tournamentType->format_specific_config ?? []
+            );
             DB::commit();
 
             return ResponseHelper::success(

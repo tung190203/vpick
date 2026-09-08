@@ -83,7 +83,8 @@ class CrossGroupComparisonService
         $candidates = $this->buildCandidates($groups, $minimumGroupSize);
 
         $candidates = $this->buildComparisonStats($candidates, $minimumGroupSize);
-        $rankedCandidates = $this->rankCandidates($candidates);
+        $rankingRules = $this->extractRankingRules($type);
+        $rankedCandidates = $this->rankCandidates($candidates, $rankingRules);
 
         // Qualification info
         $numberOfGroups = count($groupTeamCounts);
@@ -111,6 +112,7 @@ class CrossGroupComparisonService
             'comparison_rule' => [
                 'minimum_group_size' => $minimumGroupSize,
                 'description' => $this->buildRuleDescription($groupTeamCounts),
+                'ranking_rules' => $rankingRules, // thứ tự ưu tiên thực tế được áp dụng
             ],
             'qualification' => [
                 'number_of_groups' => $numberOfGroups,
@@ -201,6 +203,30 @@ class CrossGroupComparisonService
     {
         $normalized = $this->crossGroupRankingService->normalizeConfig($rawConfig);
         return $normalized['apply_to'] ?? [];
+    }
+
+    /**
+     * Lấy ranking rules từ format_specific_config[0].ranking.
+     * Fallback về [1, 4, 5] giống TournamentTypeController::getRank.
+     * Luôn thêm POINTS_WON (4) + HEAD_TO_HEAD (5) nếu thiếu (giống getRank).
+     */
+    protected function extractRankingRules(TournamentType $type): array
+    {
+        $config = $type->format_specific_config ?? [];
+        $mainConfig = is_array($config) && isset($config[0]) ? $config[0] : (is_array($config) ? $config : []);
+
+        $rules = collect($mainConfig['ranking'] ?? [1, 4, 5])
+            ->map(fn($id) => (int) $id)
+            ->toArray();
+
+        if (!in_array(\App\Models\TournamentType::RANKING_POINTS_WON, $rules, true)) {
+            $rules[] = \App\Models\TournamentType::RANKING_POINTS_WON;
+        }
+        if (!in_array(\App\Models\TournamentType::RANKING_HEAD_TO_HEAD, $rules, true)) {
+            $rules[] = \App\Models\TournamentType::RANKING_HEAD_TO_HEAD;
+        }
+
+        return $rules;
     }
 
     /**
@@ -311,31 +337,46 @@ class CrossGroupComparisonService
         $draws = 0;
         $pointsFor = 0;
         $pointsAgainst = 0;
+        $setsWon = 0;
+        $setsLost = 0;
+        $points = 0; // điểm xếp hạng (Thắng=3, Hòa=1, Thua=0)
 
         foreach ($countedMatches as $match) {
             $isHome = $match->home_team_id === $teamId;
             $homeScore = (int) $match->results->where('team_id', $match->home_team_id)->sum('score');
             $awayScore = (int) $match->results->where('team_id', $match->away_team_id)->sum('score');
 
+            // Số hiệp (set) thắng của từng đội
+            $homeSetsWon = (int) $match->results->where('team_id', $match->home_team_id)->where('won_match', true)->count();
+            $awaySetsWon = (int) $match->results->where('team_id', $match->away_team_id)->where('won_match', true)->count();
+
             if ($isHome) {
                 $pointsFor += $homeScore;
                 $pointsAgainst += $awayScore;
+                $setsWon += $homeSetsWon;
+                $setsLost += $awaySetsWon;
                 if ($match->winner_id === $teamId) {
                     $wins++;
+                    $points += 3;
                 } elseif ($match->winner_id && $match->winner_id !== $teamId) {
                     $losses++;
                 } else {
                     $draws++;
+                    $points += 1;
                 }
             } else {
                 $pointsFor += $awayScore;
                 $pointsAgainst += $homeScore;
+                $setsWon += $awaySetsWon;
+                $setsLost += $homeSetsWon;
                 if ($match->winner_id === $teamId) {
                     $wins++;
+                    $points += 3;
                 } elseif ($match->winner_id && $match->winner_id !== $teamId) {
                     $losses++;
                 } else {
                     $draws++;
+                    $points += 1;
                 }
             }
         }
@@ -351,6 +392,10 @@ class CrossGroupComparisonService
             'wins' => $wins,
             'losses' => $losses,
             'draws' => $draws,
+            'points' => $points,
+            'sets_won' => $setsWon,
+            'sets_lost' => $setsLost,
+            'sets_diff' => $setsWon - $setsLost,
             'win_rate' => $winRate,
             'points_for' => $pointsFor,
             'points_against' => $pointsAgainst,
@@ -395,46 +440,67 @@ class CrossGroupComparisonService
     }
 
     /**
-     * Rank candidates theo:
-     * 1. win_rate DESC
-     * 2. average_point_difference DESC
-     * 3. points_for DESC
-     * Nếu tất cả bằng → pending_draw = true (cho cặp đó).
+     * Rank candidates theo ranking rules đã được config trong format_specific_config[0].ranking.
+     *
+     * Hỗ trợ các rule constants (giống TournamentTypeController::getRank):
+     *  - RANKING_WIN_DRAW_LOSE_POINTS (1): điểm xếp hạng (Thắng=3, Hòa=1, Thua=0)
+     *  - RANKING_WIN_RATE (2): % thắng
+     *  - RANKING_SETS_WON (3): số hiệp thắng
+     *  - RANKING_POINTS_WON (4): hiệu số điểm
+     *  - RANKING_HEAD_TO_HEAD (5): đối đầu trực tiếp
+     *  - RANKING_RANDOM_DRAW (6): stable theo team_id
+     *
+     * pending_draw = true khi CÙNG candidate_type + cùng tất cả ranking keys đang xét.
      */
-    protected function rankCandidates(Collection $candidates): Collection
+    protected function rankCandidates(Collection $candidates, array $rankingRules): Collection
     {
-        // Mark pending_draw per pair sau khi sort
-        $sorted = $candidates->sort(function ($a, $b) {
+        // Tính head-to-head trước (nếu cần)
+        $h2hMatrix = in_array(\App\Models\TournamentType::RANKING_HEAD_TO_HEAD, $rankingRules, true)
+            ? $this->buildHeadToHeadMatrix($candidates)
+            : [];
+
+        $sorted = $candidates->sort(function ($a, $b) use ($rankingRules, $h2hMatrix) {
             // Ưu tiên runner_up trước third_place khi bằng nhau
             if ($a['candidate_type'] !== $b['candidate_type']) {
                 return $a['candidate_type'] === self::CANDIDATE_TYPE_RUNNER_UP ? -1 : 1;
             }
 
-            if ($a['win_rate'] !== $b['win_rate']) {
-                return $b['win_rate'] <=> $a['win_rate'];
+            foreach ($rankingRules as $ruleId) {
+                $cmp = match ($ruleId) {
+                    \App\Models\TournamentType::RANKING_WIN_DRAW_LOSE_POINTS =>
+                        $this->compareScalar($a, $b, 'points'),
+                    \App\Models\TournamentType::RANKING_WIN_RATE =>
+                        $this->compareScalar($a, $b, 'win_rate'),
+                    \App\Models\TournamentType::RANKING_SETS_WON =>
+                        $this->compareScalar($a, $b, 'sets_diff'),
+                    \App\Models\TournamentType::RANKING_POINTS_WON =>
+                        $this->compareScalar($a, $b, 'point_diff'),
+                    \App\Models\TournamentType::RANKING_HEAD_TO_HEAD =>
+                        $this->compareHeadToHead($a, $b, $h2hMatrix),
+                    \App\Models\TournamentType::RANKING_RANDOM_DRAW =>
+                        $a['team_id'] <=> $b['team_id'],
+                    default => 0,
+                };
+
+                if ($cmp !== 0) {
+                    return $cmp;
+                }
             }
-            if ($a['average_point_difference'] !== $b['average_point_difference']) {
-                return $b['average_point_difference'] <=> $a['average_point_difference'];
-            }
-            if ($a['points_for'] !== $b['points_for']) {
-                return $b['points_for'] <=> $a['points_for'];
-            }
-            // Stable tie-break theo team_id
+
+            // Fallback cuối: stable theo team_id
             return $a['team_id'] <=> $b['team_id'];
         })->values();
 
         // Gắn rank + pending_draw
-        $withRank = $sorted->map(function (array $c, int $idx) use ($sorted) {
+        // pending_draw = true chỉ khi CẢ HAI đội cùng candidate_type
+        // (cùng loại: runner_up hoặc third_place) và cùng tất cả ranking keys.
+        $withRank = $sorted->map(function (array $c, int $idx) use ($sorted, $rankingRules) {
             $c['rank'] = $idx + 1;
 
-            // So sánh với candidate trước đó: nếu cùng stats trên 3 tiêu chí → pending_draw
             if ($idx > 0) {
                 $prev = $sorted->get($idx - 1);
-                $isSameStats =
-                    $prev['win_rate'] === $c['win_rate']
-                    && $prev['average_point_difference'] === $c['average_point_difference']
-                    && $prev['points_for'] === $c['points_for'];
-                $c['pending_draw'] = $isSameStats;
+                $isSameType = $prev['candidate_type'] === $c['candidate_type'];
+                $c['pending_draw'] = $isSameType && $this->isSameStats($prev, $c, $rankingRules);
             } else {
                 $c['pending_draw'] = false;
             }
@@ -446,45 +512,166 @@ class CrossGroupComparisonService
     }
 
     /**
-     * Gắn `status = qualified/not_qualified` cho từng candidate dựa trên top additionalSlots.
+     * So sánh hai candidate theo một scalar ranking key (DESC).
+     * Trả về -1/0/1 để dùng với usort.
+     */
+    protected function compareScalar(array $a, array $b, string $key): int
+    {
+        $av = (float) ($a[$key] ?? 0);
+        $bv = (float) ($b[$key] ?? 0);
+        if ($av === $bv) {
+            return 0;
+        }
+        return $bv <=> $av; // DESC
+    }
+
+    /**
+     * So sánh head-to-head giữa 2 đội (DESC ai thắng H2H).
+     * Trả 0 nếu chưa gặp nhau hoặc tỷ số cân.
+     */
+    protected function compareHeadToHead(array $a, array $b, array $h2hMatrix): int
+    {
+        if (empty($h2hMatrix)) {
+            return 0;
+        }
+        $keyA = $a['team_id'];
+        $keyB = $b['team_id'];
+        $pairKey = $keyA <= $keyB ? "{$keyA}|{$keyB}" : "{$keyB}|{$keyA}";
+        $pair = $h2hMatrix[$pairKey] ?? null;
+
+        if (!$pair) {
+            return 0;
+        }
+
+        $aWins = ($pair['wins'][$keyA] ?? 0);
+        $bWins = ($pair['wins'][$keyB] ?? 0);
+
+        if ($aWins === $bWins) {
+            return 0;
+        }
+        return $aWins < $bWins ? 1 : -1; // người thắng nhiều hơn xếp trên
+    }
+
+    /**
+     * Kiểm tra 2 candidate có cùng stats trên các ranking keys không.
+     */
+    protected function isSameStats(array $a, array $b, array $rankingRules): bool
+    {
+        foreach ($rankingRules as $ruleId) {
+            $key = match ($ruleId) {
+                \App\Models\TournamentType::RANKING_WIN_DRAW_LOSE_POINTS => 'points',
+                \App\Models\TournamentType::RANKING_WIN_RATE => 'win_rate',
+                \App\Models\TournamentType::RANKING_SETS_WON => 'sets_diff',
+                \App\Models\TournamentType::RANKING_POINTS_WON => 'point_diff',
+                default => null,
+            };
+            if ($key === null) {
+                continue;
+            }
+            if ((float) ($a[$key] ?? 0) !== (float) ($b[$key] ?? 0)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Build head-to-head matrix cho tất cả cặp candidate.
+     * Key = "minId|maxId", value = { wins: [teamId => count], ... }
+     */
+    protected function buildHeadToHeadMatrix(Collection $candidates): array
+    {
+        $teamIds = $candidates->pluck('team_id')->all();
+        if (count($teamIds) < 2) {
+            return [];
+        }
+
+        $matches = Matches::where('status', self::STATUS_COMPLETED)
+            ->whereIn('home_team_id', $teamIds)
+            ->whereIn('away_team_id', $teamIds)
+            ->get();
+
+        $matrix = [];
+        foreach ($matches as $match) {
+            $homeId = (int) $match->home_team_id;
+            $awayId = (int) $match->away_team_id;
+            if (!in_array($homeId, $teamIds, true) || !in_array($awayId, $teamIds, true)) {
+                continue;
+            }
+            $pairKey = $homeId <= $awayId ? "{$homeId}|{$awayId}" : "{$awayId}|{$homeId}";
+            if (!isset($matrix[$pairKey])) {
+                $matrix[$pairKey] = ['wins' => []];
+            }
+            if ($match->winner_id && in_array($match->winner_id, [$homeId, $awayId], true)) {
+                $winner = (int) $match->winner_id;
+                $matrix[$pairKey]['wins'][$winner] = ($matrix[$pairKey]['wins'][$winner] ?? 0) + 1;
+            }
+        }
+        return $matrix;
+    }
+
+    /**
+     * Gắn `status = qualified/not_qualified` cho từng candidate.
      *
-     * Quy tắc:
-     * - Xét runner_up trước, lấy tối đa additionalSlots từ danh sách runner_up.
-     * - Nếu runner_up không đủ → xét tiếp third_place.
+     * Quy tắc đúng theo spec:
+     * - Đội Nhì bảng (runner_up) vốn đã qualified mặc định (đi thẳng vào vòng trong)
+     *   vì mỗi bảng có 1 Nhì, và number_of_groups = số slot Nhì tự nhiên.
+     * - Khi additional_slots > 0:
+     *   + Nhóm runner_up đã có N đội qualified → chỉ xét "ai fill các suất thêm"
+     *   + Nếu runner_up không đủ → xét tiếp third_place.
+     * - Khi additional_slots == 0:
+     *   + Chỉ lấy 1 Nhì/bảng → mọi runner_up đều qualified, third_place = not_applicable.
      *
-     * KHÔNG reorder — giữ nguyên order từ rankCandidates() (đã được sort theo stats).
-     * Status được gắn in-place bằng cách match team_id.
+     * Status gắn in-place giữ nguyên order từ rankCandidates.
      */
     protected function assignQualifiedStatus(Collection $candidates, int $additionalSlots, array $applyTo): Collection
     {
-        // Tạo qualification order riêng (theo candidate_type priority + rank)
-        // → xác định những team_id nào qualified.
+        // Đếm số runner_up có trong apply_to
+        $runnerUpTotal = $candidates
+            ->where('candidate_type', self::CANDIDATE_TYPE_RUNNER_UP)
+            ->whereIn('candidate_type', $applyTo)
+            ->count();
+
+        // Số suất cần xét thêm ngoài các Nhì mặc định
+        // additional_slots = knockout_slots - number_of_groups
+        // Mỗi Nhì đã chiếm 1 slot, runnerUpTotal chính = number_of_groups (nếu apply_to chứa runner_up)
+        $extraSlotsNeeded = max(0, $additionalSlots);
+
+        // Bước 1: gom qualified team_ids từ các suất thêm
+        // Xét theo thứ tự: runner_up (theo rank) → third_place (theo rank)
         $qualifiedTeamIds = [];
+        if ($extraSlotsNeeded > 0) {
+            $ordered = $candidates->sortBy([
+                ['candidate_type', 'asc'], // runner_up < third_place alphabetically
+                ['rank', 'asc'],
+            ])->values();
 
-        $ordered = $candidates->sortBy([
-            ['candidate_type', 'asc'], // runner_up < third_place alphabetically
-            ['rank', 'asc'],
-        ])->values();
-
-        $needed = $additionalSlots;
-        foreach ($ordered as $candidate) {
-            if (!in_array($candidate['candidate_type'], $applyTo, true)) {
-                continue; // không xét candidate này cho qualification
-            }
-            if ($needed > 0) {
-                $qualifiedTeamIds[$candidate['team_id']] = true;
-                $needed--;
+            $needed = $extraSlotsNeeded;
+            foreach ($ordered as $candidate) {
+                if (!in_array($candidate['candidate_type'], $applyTo, true)) {
+                    continue;
+                }
+                if ($needed > 0) {
+                    $qualifiedTeamIds[$candidate['team_id']] = true;
+                    $needed--;
+                }
             }
         }
 
-        // Gắn status in-place giữ nguyên order từ rankCandidates
+        // Bước 2: gắn status
         return $candidates->map(function (array $candidate) use ($qualifiedTeamIds, $applyTo) {
-            if (!in_array($candidate['candidate_type'], $applyTo, true)) {
+            $type = $candidate['candidate_type'];
+
+            if (!in_array($type, $applyTo, true)) {
                 $candidate['status'] = 'not_applicable';
-            } elseif (isset($qualifiedTeamIds[$candidate['team_id']])) {
+            } elseif ($type === self::CANDIDATE_TYPE_RUNNER_UP) {
+                // Đội Nhì bảng: LUÔN qualified mặc định
                 $candidate['status'] = 'qualified';
             } else {
-                $candidate['status'] = 'not_qualified';
+                // third_place: qualified nếu nằm trong extraSlots
+                $candidate['status'] = isset($qualifiedTeamIds[$candidate['team_id']])
+                    ? 'qualified'
+                    : 'not_qualified';
             }
             return $candidate;
         });
@@ -516,6 +703,11 @@ class CrossGroupComparisonService
             'statistics' => [
                 'wins' => (int) ($c['wins'] ?? 0),
                 'losses' => (int) ($c['losses'] ?? 0),
+                'draws' => (int) ($c['draws'] ?? 0),
+                'points' => (int) ($c['points'] ?? 0), // điểm xếp hạng (Thắng=3, Hòa=1, Thua=0)
+                'sets_won' => (int) ($c['sets_won'] ?? 0),
+                'sets_lost' => (int) ($c['sets_lost'] ?? 0),
+                'sets_diff' => (int) ($c['sets_diff'] ?? 0),
                 'win_rate' => (float) ($c['win_rate'] ?? 0),
                 'points_for' => (int) ($c['points_for'] ?? 0),
                 'points_against' => (int) ($c['points_against'] ?? 0),

@@ -38,6 +38,9 @@ Khi các bảng có số đội không đều, thành tích các đội Nhì/Ba 
     /**
      * Evaluate runtime applicability of cross-group ranking for a tournament type.
      *
+     * Runtime applicability = rule thực sự chạy được (đủ teams, không đồng đều).
+     * Dùng cho API 1.
+     *
      * @param  TournamentType $type
      * @param  array         $rawConfig  Raw cross_group_ranking from request
      * @return array
@@ -70,6 +73,44 @@ Khi các bảng có số đội không đều, thành tích các đội Nhì/Ba 
             'group_team_counts' => $groupTeamCounts,
             'number_of_groups' => $numberOfGroups,
             'is_group_counts_uniform' => $isUniform,
+        ];
+    }
+
+    /**
+     * Configuration-time applicability check.
+     *
+     * Mục đích: quyết định có nên hiển thị "Quy tắc xét Nhì/Ba" trong mô tả giải
+     * ngay khi user chọn xong thể thức (khi teams có thể chưa được assign).
+     *
+     * Điều kiện:
+     *  - cross_group_ranking.enabled = true (user bật setting)
+     *  - format = MIXED (Hỗn hợp)
+     *  - Số bảng >= 2
+     *
+     * Không yêu cầu !isUniform vì lúc user vừa chọn thể thức, các bảng có thể đang
+     * trống chờ teams được assign sau.
+     *
+     * @param  TournamentType $type
+     * @param  array         $rawConfig
+     * @return array{enabled:bool, configured:bool, number_of_groups:int}
+     */
+    public function evaluateConfiguration(TournamentType $type, array $rawConfig = []): array
+    {
+        $config = $this->normalizeConfig($rawConfig);
+        $enabled = $config['enabled'];
+
+        $groupTeamCounts = $this->getGroupTeamCounts($type);
+        $numberOfGroups = count($groupTeamCounts);
+
+        $configured = $enabled
+            && $type->format === TournamentType::FORMAT_MIXED
+            && $numberOfGroups >= 2;
+
+        return [
+            'enabled' => $enabled,
+            'configured' => $configured,
+            'number_of_groups' => $numberOfGroups,
+            'group_team_counts' => $groupTeamCounts,
         ];
     }
 
@@ -123,11 +164,20 @@ Khi các bảng có số đội không đều, thành tích các đội Nhì/Ba 
     /**
      * Sync the cross-group ranking rule text into tournament.description.
      * Idempotent — safe to call multiple times.
+     *
+     * @param Tournament $tournament
+     * @param array      $evaluation  Output từ evaluate() hoặc evaluateConfiguration()
+     * @param array      $rawConfig
      */
-    public function syncDescription(Tournament $tournament, array $evaluation, array $rawConfig): void
+    public function syncDescription(Tournament $tournament, array $evaluation, array $rawConfig = []): void
     {
-        $shouldHaveRule = ($evaluation['applied'] === true)
-            && ($rawConfig['enabled'] ?? false);
+        // Hỗ trợ cả 2 nguồn evaluation:
+        // - evaluate() trả 'applied' (runtime)
+        // - evaluateConfiguration() trả 'configured' (configuration-time)
+        $shouldHaveRule = (bool) (
+            ($evaluation['applied'] ?? false)
+            || ($evaluation['configured'] ?? false)
+        );
 
         $current = $tournament->description ?? '';
         $newDescription = $this->rebuildDescription($current, $shouldHaveRule);
