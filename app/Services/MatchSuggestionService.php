@@ -186,6 +186,20 @@ class MatchSuggestionService
             }
         }
 
+        // DEBUG: log what we picked (and why earlier candidates were skipped)
+        $firstSig = $candidates[0]['signature'] ?? null;
+        $firstSat = $candidates[0]['satisfied_fixed_pairs'] ?? 0;
+        $pickedSig = $picked['signature'] ?? null;
+        $pickedSat = $picked['satisfied_fixed_pairs'] ?? 0;
+        \Log::info('[MatchSuggestion/regenerate] Picked candidate', [
+            'picked_idx' => $pickedIndex,
+            'picked_satisfied_pairs' => $pickedSat,
+            'picked_signature' => $pickedSig,
+            'top_candidate_signature' => $firstSig,
+            'top_candidate_satisfied_pairs' => $firstSat,
+            'top_skipped_reason' => ($firstSig !== null && $session->hasTried($firstSig)) ? 'history' : 'n/a',
+        ]);
+
         $wrapped = false;
 
         // If everything's been tried, wrap around: clear history and pick first.
