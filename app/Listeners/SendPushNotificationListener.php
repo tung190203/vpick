@@ -26,11 +26,18 @@ class SendPushNotificationListener
             return;
         }
 
+        // Extract campaign_id from data if present (for AdminPushCampaignNotification)
+        $campaignId = $payload['data']['campaign_id'] ?? null;
+        if ($campaignId !== null) {
+            $campaignId = (int) $campaignId;
+        }
+
         SendPushJob::dispatch(
             $event->notifiable->id,
             $payload['title'],
             $payload['body'],
-            $payload['data']
+            $payload['data'],
+            $campaignId
         );
     }
 
