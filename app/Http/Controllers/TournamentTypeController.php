@@ -10,6 +10,7 @@ use App\Models\Matches;
 use App\Models\PoolAdvancementRule;
 use App\Models\Tournament;
 use App\Models\TournamentType;
+use App\Services\TournamentType\CrossGroupRankingService;
 use App\Services\TournamentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -26,7 +27,8 @@ class TournamentTypeController extends Controller
         private \App\Services\TournamentType\MatchGeneratorService $matchGenerator,
         private \App\Services\TournamentType\BracketService $bracketService,
         private \App\Services\TournamentType\StandingsService $standingsService,
-        private \App\Services\TournamentType\TeamPairingService $teamPairingService
+        private \App\Services\TournamentType\TeamPairingService $teamPairingService,
+        private CrossGroupRankingService $crossGroupRankingService
     ) {}
 
     /**
@@ -167,6 +169,9 @@ class TournamentTypeController extends Controller
                 $this->autoGenerateMatches($type);
             }
 
+            // ✅ SYNC cross_group_ranking description
+            $this->syncCrossGroupRanking($tournament, $type, $validated['format_specific_config'] ?? []);
+
             DB::commit();
             return ResponseHelper::success(new TournamentTypeResource($type), 'Tạo thể thức thành công');
         } catch (BusinessException $e) {
@@ -237,6 +242,22 @@ class TournamentTypeController extends Controller
                 'name' => 'Bảng ' . chr(65 + $i) // A, B, C, D...
             ]);
         }
+    }
+
+    /**
+     * Sync cross-group ranking rule text into tournament.description.
+     * Calls the CrossGroupRankingService to evaluate applicability and update description.
+     */
+    protected function syncCrossGroupRanking(Tournament $tournament, TournamentType $type, array $formatSpecificConfig): void
+    {
+        $mainConfig = is_array($formatSpecificConfig) && isset($formatSpecificConfig[0])
+            ? $formatSpecificConfig[0]
+            : $formatSpecificConfig;
+
+        $rawConfig = $mainConfig['cross_group_ranking'] ?? [];
+
+        $evaluation = $this->crossGroupRankingService->evaluate($type, $rawConfig);
+        $this->crossGroupRankingService->syncDescription($tournament, $evaluation, $rawConfig);
     }
 
     /**
@@ -453,6 +474,9 @@ class TournamentTypeController extends Controller
                 // Các thay đổi config khác → chỉ regenerate pool stage, giữ knockout
                 $this->generateMatchesForType($tournamentType, onlyPoolStage: true);
             }
+
+            // ✅ SYNC cross_group_ranking description
+            $this->syncCrossGroupRanking($tournamentType->tournament, $tournamentType, $validated['format_specific_config'] ?? []);
 
             DB::commit();
             return ResponseHelper::success(new TournamentTypeResource($tournamentType->fresh()), 'Cập nhật thể thức thành công');
