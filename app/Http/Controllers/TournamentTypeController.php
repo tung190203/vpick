@@ -8,8 +8,10 @@ use App\Exceptions\BusinessException;
 use App\Models\Group;
 use App\Models\Matches;
 use App\Models\PoolAdvancementRule;
+use App\Models\Team;
 use App\Models\Tournament;
 use App\Models\TournamentType;
+use App\Services\TournamentType\CrossGroupComparisonService;
 use App\Services\TournamentType\CrossGroupRankingService;
 use App\Services\TournamentService;
 use Illuminate\Http\Request;
@@ -28,7 +30,8 @@ class TournamentTypeController extends Controller
         private \App\Services\TournamentType\BracketService $bracketService,
         private \App\Services\TournamentType\StandingsService $standingsService,
         private \App\Services\TournamentType\TeamPairingService $teamPairingService,
-        private CrossGroupRankingService $crossGroupRankingService
+        private CrossGroupRankingService $crossGroupRankingService,
+        private CrossGroupComparisonService $crossGroupComparisonService
     ) {}
 
     /**
@@ -3086,6 +3089,67 @@ class TournamentTypeController extends Controller
             'all_pools_completed' => $overallCompleted,
             'knockout_ready' => $overallCompleted,
         ]);
+    }
+
+    /**
+     * API 1: Trả về danh sách các đội Nhì/Ba dùng để so sánh cross-group.
+     *
+     * GET /api/tournament-types/{tournamentType}/cross-group-comparison
+     *
+     * - Read-only: KHÔNG thay đổi matches / standings.
+     * - Trả về {enabled, applied, comparison_rule, qualification, candidates[]}
+     *   khi rule áp dụng. Khi không áp dụng → enabled/applied=false, candidates=[].
+     */
+    public function getCrossGroupComparison(TournamentType $tournamentType)
+    {
+        try {
+            $payload = $this->crossGroupComparisonService->buildComparisonPayload($tournamentType);
+            return ResponseHelper::success($payload, 'Lấy cross-group comparison thành công');
+        } catch (BusinessException $e) {
+            return ResponseHelper::error($e->getMessage(), $e->getHttpCode());
+        } catch (\Throwable $e) {
+            return ResponseHelper::error('Có lỗi xảy ra khi lấy cross-group comparison', 500);
+        }
+    }
+
+    /**
+     * API 2: Trả về toàn bộ trận vòng bảng của một team với thông tin included/excluded.
+     *
+     * GET /api/tournament-types/{tournamentType}/cross-group-comparison/{team}/matches
+     *
+     * - Trả cả trận included=true và included=false untuk hiển thị trong FE.
+     * - Trả 404 nếu team không phải candidate (không ở Nhì/Ba) hoặc rule không áp dụng.
+     *   Frontend sẽ dùng để skip render modal.
+     *
+     * Note: 404 sẽ trigger not-found redirect trên FE GET → cân nhắc accept 404 (chỉ
+     * trong flow click candidate đã biết là hợp lệ, không ảnh hưởng UX chính).
+     */
+    public function getCrossGroupComparisonTeamMatches(TournamentType $tournamentType, Team $team)
+    {
+        try {
+            // Verify team thuộc tournament type này (qua tournament_id)
+            if ($team->tournament_id !== $tournamentType->tournament_id) {
+                return ResponseHelper::error(
+                    'Team không thuộc giải đấu này',
+                    404
+                );
+            }
+
+            $payload = $this->crossGroupComparisonService->buildTeamComparison($tournamentType, $team);
+
+            if ($payload === null) {
+                return ResponseHelper::error(
+                    'Team không phải đội Nhì/Ba, hoặc rule không áp dụng cho giải này',
+                    404
+                );
+            }
+
+            return ResponseHelper::success($payload, 'Lấy chi tiết trận cross-group thành công');
+        } catch (BusinessException $e) {
+            return ResponseHelper::error($e->getMessage(), $e->getHttpCode());
+        } catch (\Throwable $e) {
+            return ResponseHelper::error('Có lỗi xảy ra khi lấy chi tiết trận', 500);
+        }
     }
 
     public function regenerateMatches(TournamentType $tournamentType)
