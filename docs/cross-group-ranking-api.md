@@ -3,7 +3,7 @@
 ### Endpoint
 
 ```
-GET /api/tournaments/{tournament}/categories/{category}/group-ranking-comparison
+GET /api/tournament-types/{tournamentType}/cross-group-comparison
 ```
 
 ### Mục đích
@@ -114,7 +114,7 @@ Trả về danh sách xếp hạng tất cả đội Nhì và Ba từ mọi bả
 ### Endpoint
 
 ```
-GET /api/tournaments/{tournament}/categories/{category}/group-ranking-comparison/{team}/matches
+GET /api/tournament-types/{tournamentType}/cross-group-comparison/{team}/matches
 ```
 
 ### Mục đích

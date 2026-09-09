@@ -2096,7 +2096,7 @@ class MatchSuggestionTest extends TestCase
         $method = $reflection->getMethod('countSatisfiedFixedPairs');
         $method->setAccessible(true);
 
-        $pair = new FixedPairDTO(player1_id: 100, player2_id: 200);
+        $pair = new FixedPairDTO(player1_id: 1, player2_id: 2);
 
         // Both in team A
         $teamA = [
@@ -2115,18 +2115,18 @@ class MatchSuggestionTest extends TestCase
             $this->createPlayerContext(['id' => 2, 'user_id' => 888]),
         ];
         $teamB2 = [
-            $this->createPlayerContext(['id' => 3, 'user_id' => 100]),
-            $this->createPlayerContext(['id' => 4, 'user_id' => 200]),
+            $this->createPlayerContext(['id' => 1, 'user_id' => 100]),
+            $this->createPlayerContext(['id' => 2, 'user_id' => 200]),
         ];
         $this->assertEquals(1, $method->invoke($this->scheduler, $teamA2, $teamB2, [$pair]));
 
         // Split across teams - should be 0
         $teamA3 = [
             $this->createPlayerContext(['id' => 1, 'user_id' => 100]),
-            $this->createPlayerContext(['id' => 2, 'user_id' => 999]),
+            $this->createPlayerContext(['id' => 3, 'user_id' => 999]),
         ];
         $teamB3 = [
-            $this->createPlayerContext(['id' => 3, 'user_id' => 200]),
+            $this->createPlayerContext(['id' => 2, 'user_id' => 200]),
             $this->createPlayerContext(['id' => 4, 'user_id' => 888]),
         ];
         $this->assertEquals(0, $method->invoke($this->scheduler, $teamA3, $teamB3, [$pair]));
@@ -2134,7 +2134,7 @@ class MatchSuggestionTest extends TestCase
         // Only one member present - should be 0 (incomplete pair doesn't count)
         $teamA4 = [
             $this->createPlayerContext(['id' => 1, 'user_id' => 100]),
-            $this->createPlayerContext(['id' => 2, 'user_id' => 999]),
+            $this->createPlayerContext(['id' => 3, 'user_id' => 999]),
         ];
         $teamB4 = [
             $this->createPlayerContext(['id' => 3, 'user_id' => 888]),
@@ -2418,6 +2418,37 @@ class MatchSuggestionTest extends TestCase
         $this->assertTrue(
             $firstPairInA || $firstPairInB,
             'Top candidate must satisfy the fixed pair. team_a=' . json_encode($firstTeamAIds) . ' team_b=' . json_encode($firstTeamBIds)
+        );
+    }
+
+    /**
+     * A user can appear in more than one mini_participant row. The link applies
+     * to the exact participant rows selected in the UI, not another row that
+     * happens to share the same user_id.
+     */
+    public function test_player_pair_uses_participant_identity_when_user_is_duplicated(): void
+    {
+        $players = $this->createPlayers([
+            ['id' => 101, 'user_id' => 50, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 102, 'user_id' => 60, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            // A second participant row for user 50 must not substitute for 101.
+            ['id' => 103, 'user_id' => 50, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 104, 'user_id' => 70, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+            ['id' => 105, 'user_id' => 80, 'gender' => User::MALE, 'tier' => PlayerTier::Red, 'played' => 0],
+        ]);
+
+        $result = $this->scheduler->generate($players, $this->createRequestWithFixedPairs([
+            new FixedPairDTO(player1_id: 101, player2_id: 102),
+        ]));
+
+        $this->assertNotNull($result->match);
+        $team1Ids = array_column($result->match->team1->members, 'mini_participant_id');
+        $team2Ids = array_column($result->match->team2->members, 'mini_participant_id');
+
+        $this->assertTrue(
+            (in_array(101, $team1Ids, true) && in_array(102, $team1Ids, true))
+            || (in_array(101, $team2Ids, true) && in_array(102, $team2Ids, true)),
+            'The specifically linked participant rows 101 and 102 must stay together.'
         );
     }
 

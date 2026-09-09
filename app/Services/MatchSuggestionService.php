@@ -45,15 +45,6 @@ class MatchSuggestionService
         // Build player contexts: merge FE tier with DB stats
         $players = $this->buildPlayerContexts($miniTournamentId, $request->participants, $needsPaymentCheck);
 
-        // NORMALIZE: The frontend sends player1_id / player2_id as mini_participant_id,
-        // but FixedPairDTO uses user_id for comparison.  Resolve the IDs here so the
-        // scheduler always gets user_id values.
-        $miniParticipantIdToUserId = [];
-        foreach ($players as $p) {
-            $miniParticipantIdToUserId[$p->mini_participant_id] = $p->user_id;
-        }
-        $request = $request->normalizeToUserIds($miniParticipantIdToUserId);
-
         // Apply backup filter
         $players = $this->filterByBackup($players, $request->settings->organizer_as_backup);
 
@@ -112,15 +103,6 @@ class MatchSuggestionService
 
         // Build player contexts (full pool, no exclusion - rotation handles dedup)
         $players = $this->buildPlayerContexts($miniTournamentId, $request->participants, $needsPaymentCheck);
-
-        // NORMALIZE: The frontend sends player1_id / player2_id as mini_participant_id,
-        // but FixedPairDTO uses user_id for comparison.  Resolve the IDs here so the
-        // scheduler always gets user_id values.
-        $miniParticipantIdToUserId = [];
-        foreach ($players as $p) {
-            $miniParticipantIdToUserId[$p->mini_participant_id] = $p->user_id;
-        }
-        $request = $request->normalizeToUserIds($miniParticipantIdToUserId);
 
         // Apply backup filter
         $players = $this->filterByBackup($players, $request->settings->organizer_as_backup);
