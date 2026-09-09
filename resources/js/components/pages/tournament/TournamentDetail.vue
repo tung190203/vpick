@@ -986,7 +986,11 @@ const loadPairingConfig = () => {
 
     // Load manual_pairings nếu có
     if (knockoutStage?.manual_pairings) {
-        manualPairings.value = knockoutStage.manual_pairings;
+        const loaded = knockoutStage.manual_pairings;
+        // ✅ Sanity check: số entries hợp lệ = totalAdvancing × 2 (mỗi cặp 2 entries)
+        // Nếu DB có data cũ vượt quá (do bug trước), cắt bớt để tránh render sai.
+        // Lưu ý: totalAdvancing chưa tính ở đây, tính sau → đặt cờ và validate bên dưới.
+        manualPairings.value = Array.isArray(loaded) ? loaded : [];
     } else {
         manualPairings.value = [];
     }
@@ -1010,6 +1014,20 @@ const loadPairingConfig = () => {
         while ((totalAdvancing & (totalAdvancing - 1)) !== 0 || totalAdvancing < 2) {
             totalAdvancing++;
         }
+    }
+
+    // ✅ Validate lại manual_pairings sau khi đã tính totalAdvancing
+    // Nếu data cũ vượt quá capacity → cắt bớt để tránh bug "7 cặp trận"
+    const expectedEntries = totalAdvancing * 2; // 8 entries cho 4 cặp
+    if (manualPairings.value.length > expectedEntries) {
+        console.warn(
+            `[loadPairingConfig] manual_pairings có ${manualPairings.value.length} entries, ` +
+            `vượt quá ${expectedEntries} (totalAdvancing=${totalAdvancing}). Cắt bớt.`
+        );
+        // Cắt theo position để giữ các entry đầu (giữ đúng số cặp)
+        manualPairings.value = [...manualPairings.value]
+            .sort((a, b) => (parseInt(a.position) || 0) - (parseInt(b.position) || 0))
+            .slice(0, expectedEntries);
     }
 
     // ✅ pairingNumGroups = số CẶP đấu vòng knockout = totalAdvancing / 2

@@ -226,11 +226,11 @@ const hasVirtualGroups = computed(() => {
 });
 
 // Computed: có thể pick Nhì thật từ real group hay không
-// Rule: ADMIN TỰ QUYẾT ĐỊNH — luôn hiển thị nút Nhì thật nếu group có dữ liệu
-// (admin có thể muốn ghép chéo bảng thay vì dùng "Nhì tốt nhất" ảo).
-// BE sẽ validate lại ở phía server nếu cần.
+// Rule: CHỈ hiển thị nút "Nhì thật" khi numAdvancingTeams >= 2 (lấy ≥2 đội mỗi bảng).
+// Khi numAdvancingTeams = 1, các suất Nhì phải đến từ "Nhì tốt nhất" (cross_group_ranking / virtual),
+// KHÔNG pick Nhì thật từ từng bảng — để tránh admin ghép nhầm nguồn đội.
 const canPickRealNhi = computed(() => {
-    return true;
+    return (props.numAdvancingTeams ?? 1) >= 2;
 });
 
 // Computed: chỉ real groups (dùng để render grid "Đội từ mỗi bảng")
@@ -241,14 +241,21 @@ const realGroupList = computed(() => {
 // Computed: chỉ virtual groups (dùng để render row "Nhì tốt nhất")
 // Mỗi virtual group có virtualIndex (1-based) cho label thân thiện
 const virtualGroupList = computed(() => {
-    const filtered = groupList.value.filter(function(g) { return g.isVirtual; });
-    return filtered.map(function(item, index) {
-        var result = { virtualIndex: index + 1 };
-        result.groupId = item.groupId;
-        result.groupName = item.groupName;
-        result.isVirtual = item.isVirtual;
-        return result;
-    });
+    var out = [];
+    var counter = 0;
+    for (var i = 0; i < groupList.value.length; i++) {
+        var g = groupList.value[i];
+        if (g.isVirtual) {
+            counter = counter + 1;
+            out.push({
+                virtualIndex: counter,
+                groupId: g.groupId,
+                groupName: g.groupName,
+                isVirtual: true
+            });
+        }
+    }
+    return out;
 });
 
 // Helper: lấy virtualIndex của group (1-based) — dùng cho slot picker label
@@ -294,6 +301,8 @@ const initializeData = () => {
     //  - Virtual group: có id < 0 và isVirtual=true (suất "Nhì tốt nhất"), label dùng virtualIndex
     let realIndex = 0;
     let virtualIndex = 0;
+    const nAdv = props.numAdvancingTeams ?? 1;
+    const showRealNhi = nAdv >= 2; // Chỉ hiển thị "Nhì thật" khi lấy ≥2 đội mỗi bảng
     props.poolGroups.forEach((g) => {
         const isVirtual = g.isVirtual === true;
         if (isVirtual) {
@@ -313,15 +322,17 @@ const initializeData = () => {
                 groupId: g.id,
                 groupName: letter,
                 firstTeam: `Nhất ${letter}`,
-                secondTeam: `Nhì ${letter}`,
+                // Khi numAdvancingTeams = 1, KHÔNG tạo Nhì thật (chỉ lấy Nhất mỗi bảng).
+                // Các suất Nhì phải đến từ virtual "Nhì tốt nhất".
+                secondTeam: showRealNhi ? `Nhì ${letter}` : '',
                 isVirtual: false,
                 virtualIndex: 0
             });
         }
     });
 
-    // Calculate number of slots needed (each slot = 1 cặp = 2 teams: 1 Nhất + 1 Nhì)
-    // Số cặp = số Nhất = numGroups (đã tính sẵn từ FE parent, đã tính cả virtual khi cần)
+    // Create slots (pairingSlots[i] = [team1, team2] for each knockout pair)
+    // Số cặp = numGroups (parent tính sẵn = totalAdvancing / 2)
     const numSlots = numGroups;
     pairingSlots.value = [];
 
@@ -329,7 +340,8 @@ const initializeData = () => {
         pairingSlots.value.push([null, null]);
     }
 
-    // Load existing pairings if any
+    // Load existing pairings if any (only when prop is already available on mount)
+    // For updates after modal is open, the existingPairings watcher handles it
     if (props.existingPairings && props.existingPairings.length > 0) {
         loadExistingPairings(props.existingPairings);
     }
@@ -367,6 +379,19 @@ const loadExistingPairings = (pairings) => {
     // Convention: position = slotIndex * 2 + subIndex (0 = ô trái, 1 = ô phải)
     // group_id = 0 + rank = 2 → virtual "Nhì tốt nhất" (lấy virtual đầu tiên)
     const sortedPairings = [...pairings].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+
+    // ✅ Sanity: nếu có entry vượt quá số slot hiện có, bỏ qua + cảnh báo (data cũ từ DB)
+    const expectedCount = pairingSlots.value.length * 2;
+    const skipped = sortedPairings.length > expectedCount
+        ? sortedPairings.length - expectedCount
+        : 0;
+    if (skipped > 0) {
+        console.warn(
+            `[ManualPairingModal] loadExistingPairings: có ${pairings.length} entries ` +
+            `nhưng chỉ có ${expectedCount} slot. Bỏ qua ${skipped} entries thừa (data cũ từ DB).`
+        );
+    }
+
     let firstVirtualAssigned = false;
 
     sortedPairings.forEach(pairing => {
@@ -406,20 +431,21 @@ const loadExistingPairings = (pairings) => {
         const team = teamMap[`${pairing.group_id}_${rank}`];
         if (!team) return;
         slot[subIndex] = { ...team, rank };
-
-// Watch for modal open to initialize
+    });
+};
+// Watch for prop changes
 watch(() => props.modelValue, (newVal) => {
     if (newVal) {
         initializeData();
     }
 }, { immediate: true });
 
-// Watch for modal open to initialize
-watch(() => props.modelValue, (newVal) => {
-    if (newVal) {
-        initializeData();
+// Watch for existingPairings changes (after modal is open)
+watch(() => props.existingPairings, (newVal) => {
+    if (props.modelValue && newVal && newVal.length > 0) {
+        loadExistingPairings(newVal);
     }
-}, { immediate: true });
+}, { deep: true });
 
 // Build một team object sạch từ groupList entry
 const buildTeamFromGroup = (groupInfo, rank) => {
@@ -442,6 +468,9 @@ const addTeamToSlot = (groupId, rank) => {
 
     // Bảng ảo chỉ có rank=2 (Nhì tốt nhất), không có Nhất
     if (teamInfo.isVirtual && rank === 1) return;
+
+    // Defensive: khi numAdvancingTeams = 1, không pick Nhì thật từ real group
+    if (!teamInfo.isVirtual && rank === 2 && (props.numAdvancingTeams ?? 1) < 2) return;
 
     const team = buildTeamFromGroup(teamInfo, rank);
 
@@ -472,6 +501,10 @@ const isTeamUsed = (groupId, rank) => {
     const teamInfo = groupList.value.find(g => g.groupId === groupId);
     // Bảng ảo không có Nhất → không pick được
     if (rank === 1 && teamInfo?.isVirtual) return true;
+
+    // Defensive: khi numAdvancingTeams = 1, không pick Nhì thật từ real group
+    // (canPickRealNhi đã ẩn nút, nhưng chặn cả drag/drop từ chỗ khác)
+    if (!teamInfo?.isVirtual && rank === 2 && (props.numAdvancingTeams ?? 1) < 2) return true;
 
     for (const slot of pairingSlots.value) {
         if (slot[0] && slot[0].groupId === groupId && slot[0].rank === rank) return true;
@@ -631,6 +664,14 @@ const applyPairing = () => {
                 position: basePos + 1
             });
         }
+    });
+
+    // ✅ DEBUG: Log để user xác nhận số entry được gửi đi
+    console.log('[ManualPairingModal] applyPairing()', {
+        numSlots: pairingSlots.value.length,
+        numEntries: manualPairings.length,
+        numPairs: manualPairings.length / 2,
+        entries: manualPairings
     });
 
     emit('apply', manualPairings);
