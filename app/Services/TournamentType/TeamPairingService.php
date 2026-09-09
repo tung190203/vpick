@@ -128,12 +128,22 @@ class TeamPairingService
 
     /**
      * Sắp xếp theo danh sách thủ công
-     * $manualPairings format:
+     * $manualPairings format (FE convention mới):
      * [
-     *   ['group_id' => 587, 'rank' => 1, 'position' => 0],  // group_id = database ID (_from_group)
-     *   ['group_id' => 588, 'rank' => 2, 'position' => 1],
+     *   ['group_id' => 631, 'rank' => 1, 'position' => 0],  // Nhất bảng 631 ở slot 0 (pair 0, home)
+     *   ['group_id' => 635, 'rank' => 2, 'position' => 0],  // Nhì bảng 635 ở slot 0 (pair 0, away)
+     *   ['group_id' => 636, 'rank' => 1, 'position' => 1],  // Nhất bảng 636 ở slot 1 (pair 0, home) ...
      *   ...
+     *   ['group_id' => 0,   'rank' => 2, 'position' => 6],  // Virtual "Nhì tốt nhất" #1 ở slot 6
+     *   ['group_id' => 0,   'rank' => 2, 'position' => 7],  // Virtual "Nhì tốt nhất" #2 ở slot 7
      * ]
+     *
+     * Convention:
+     *   - position = slot index (0-based), mỗi slot = 1 cặp = 2 entries (rank=1 và rank=2)
+     *   - group_id = 0 + rank = 2 (1-based) → virtual "Nhì tốt nhất" #N
+     *   - group_id = 0 + rank = 3 (1-based) → virtual "Ba tốt nhất" #N
+     *     (BE tự resolve team cụ thể sau khi pool stage kết thúc)
+     *   - Thứ tự virtual được xác định theo position (1, 2, 3, ... tương ứng #1, #2, #3)
      */
     private function arrangeManual($advancingByRank, ?array $manualPairings): Collection
     {
@@ -141,26 +151,81 @@ class TeamPairingService
             return $this->arrangeSequential($advancingByRank);
         }
 
-        $advancing = collect();
+        // ✅ Detect convention: old vs new
+        // Old: position = slotIndex (0,0, 1,1, 2,2, ...) max < numSlots
+        // New: position = slotIndex*2 + subIndex (0,1, 2,3, ...) max >= numSlots
+        $maxPos = 0;
+        foreach ($manualPairings as $p) {
+            $maxPos = max($maxPos, (int)($p['position'] ?? 0));
+        }
+        $numSlots = count($manualPairings) > 0
+            ? max(1, (int)ceil(sqrt(2 * count($manualPairings))))
+            : 1;
+        $isOldConvention = $maxPos < $numSlots && $maxPos > 0;
 
-        // Map theo database ID (_from_group)
+        // ✅ Normalize to new convention: position = slotIndex*2 + subIndex
+        // Old: (position, rank=1) → (position*2, rank=1), (position, rank=2) → (position*2+1, rank=2)
+        // New: already in correct format, no change needed
+        foreach ($manualPairings as &$p) {
+            $pos = (int)($p['position'] ?? 0);
+            $rank = (int)($p['rank'] ?? 1);
+            if ($isOldConvention) {
+                $p['position'] = $pos * 2 + ($rank - 1);
+            }
+            // rank stays as-is (1 = Nhất, 2 = Nhì, 3 = Ba)
+        }
+        unset($p); // break reference
+
+        // ✅ Bước 1: Sắp xếp FE pairings theo (position, rank) — Nhất (rank=1) trước Nhì (rank=2) trong cùng slot
+        usort($manualPairings, function ($a, $b) {
+            $posCmp = ($a['position'] ?? 0) <=> ($b['position'] ?? 0);
+            if ($posCmp !== 0) return $posCmp;
+            return ($a['rank'] ?? 1) <=> ($b['rank'] ?? 1);
+        });
+
+        // ✅ Bước 2: Map real groups theo (group_id, rank) → entry
         $teamMap = [];
         foreach ($advancingByRank as $rank => $teamsAtRank) {
             foreach ($teamsAtRank as $team) {
-                if ($team->_from_group !== null) {
+                if (($team->_from_group ?? null) !== null) {
                     $key = "{$team->_from_group}_{$rank}";
                     $teamMap[$key] = $team;
                 }
             }
         }
 
-        usort($manualPairings, fn($a, $b) => ($a['position'] ?? 0) <=> ($b['position'] ?? 0));
+        // ✅ Bước 3: Map virtual "Nhì/Ba tốt nhất" entries theo _virtual_index, phân theo rank
+        $virtualByRank = [1 => [], 2 => []]; // rank=1 (0-based) = Nhì, rank=2 (0-based) = Ba
+        foreach ($advancingByRank as $rank => $teamsAtRank) {
+            foreach ($teamsAtRank as $team) {
+                if (($team->_from_group ?? null) === null) {
+                    $vIdx = (int) ($team->_virtual_index ?? 0);
+                    $virtualByRank[$rank][$vIdx] = $team;
+                }
+            }
+        }
+        $virtualCursor = [1 => 0, 2 => 0]; // Đếm số virtual đã dùng theo rank
 
+        // ✅ Bước 4: Build $advancing từ manual_pairings
+        // Mỗi entry có position → knockoutIndex, basePosition = position % 2 (home/away)
+        $advancing = collect();
         foreach ($manualPairings as $pairing) {
             $groupId = $pairing['group_id'] ?? null;
-            $rank = (int)($pairing['rank'] ?? 1) - 1;  // Convert 1-based (frontend) sang 0-based
-            $key = "{$groupId}_{$rank}";
+            $rankInput = (int)($pairing['rank'] ?? 1);
+            $position = (int)($pairing['position'] ?? 0);
+            $rankIndex = $rankInput - 1; // 0-based: 0 = Nhất, 1 = Nhì, 2 = Ba
 
+            // Virtual "Nhì/Ba tốt nhất" (group_id = 0, rank = 2 hoặc 3)
+            if ((int) $groupId === 0 && $rankIndex >= 1) {
+                $virtualCursor[$rankIndex]++;
+                if (isset($virtualByRank[$rankIndex][$virtualCursor[$rankIndex]])) {
+                    $advancing->push($virtualByRank[$rankIndex][$virtualCursor[$rankIndex]]);
+                }
+                continue;
+            }
+
+            // Real entry
+            $key = "{$groupId}_{$rankIndex}";
             if (isset($teamMap[$key])) {
                 $advancing->push($teamMap[$key]);
             }
