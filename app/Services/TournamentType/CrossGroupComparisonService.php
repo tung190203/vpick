@@ -9,6 +9,7 @@ use App\Models\Team;
 use App\Models\TournamentType;
 use App\Services\TournamentService;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Service tính toán CROSS-GROUP COMPARISON RANKING (read-only).
@@ -886,6 +887,76 @@ class CrossGroupComparisonService
         }
 
         return $matchList;
+    }
+
+    /**
+     * Resolve đội Nhì tốt nhất (qualified) vào các bảng ảo trong knockout bracket.
+     *
+     * Được gọi trong applyPoolAdvancement sau khi đã resolve đội từ các bảng thật.
+     * Tìm các trận round 2 đang trống (không có PoolAdvancementRule) và fill
+     * bằng đội Nhì tốt nhất theo thứ tự rank từ cross-group comparison.
+     *
+     * @return array<int, array{next_match_id:int, next_position:string, team_id:int}>
+     */
+    public function resolveVirtualGroupAdvancing(TournamentType $type): array
+    {
+        $payload = $this->buildComparisonPayload($type);
+        if (!$payload['applied']) {
+            return [];
+        }
+
+        // Lấy các candidate Nhì tốt nhất (qualified), sort theo rank
+        $qualifiedRunners = collect($payload['candidates'])
+            ->where('candidate_type', self::CANDIDATE_TYPE_RUNNER_UP)
+            ->where('status', 'qualified')
+            ->sortBy('rank')
+            ->values();
+
+        if ($qualifiedRunners->isEmpty()) {
+            return [];
+        }
+
+        // Lấy các trận knockout round 2 đang trống mà KHÔNG có PoolAdvancementRule
+        // (vì bảng ảo không tạo rule ở createPoolAdvancementRules)
+        $virtualSlots = Matches::where('tournament_type_id', $type->id)
+            ->where('round', 2)
+            ->where('bracket_type', 'main')
+            ->where(function ($q) {
+                $q->whereNull('home_team_id')
+                  ->orWhereNull('away_team_id');
+            })
+            ->whereNotExists(function ($q) {
+                $q->select(DB::raw(1))
+                  ->from('pool_advancement_rules')
+                  ->whereColumn('pool_advancement_rules.next_match_id', 'matches.id');
+            })
+            ->orderBy('id')
+            ->get();
+
+        if ($virtualSlots->isEmpty()) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($virtualSlots as $i => $match) {
+            $candidate = $qualifiedRunners->get($i);
+            if (!$candidate) {
+                break;
+            }
+
+            // Xác định position: mỗi trận có 2 slots (home, away)
+            // Pair index: slot 0→home, slot 1→away, slot 2→home, slot 3→away, ...
+            $slotInPair = $i % 2;
+            $nextPosition = $slotInPair === 0 ? 'home' : 'away';
+
+            $result[] = [
+                'next_match_id' => $match->id,
+                'next_position' => $nextPosition,
+                'team_id' => (int) $candidate['team']['id'],
+            ];
+        }
+
+        return $result;
     }
 
     /**

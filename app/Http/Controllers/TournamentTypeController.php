@@ -1101,6 +1101,32 @@ class TournamentTypeController extends Controller
             }
         }
 
+        // ===== PHASE 2.5: TỰ ĐỘNG THÊM BẢNG ẢO CHO NHÌ TỐT NHẤT =====
+        // Chỉ chạy khi cross_group_ranking.enabled VÀ các bảng KHÔNG đồng đều
+        $crossGroupRaw = $mainConfig['cross_group_ranking'] ?? [];
+        $crossGroupEval = $this->crossGroupRankingService->evaluate($type, $crossGroupRaw);
+
+        if ($crossGroupEval['enabled'] && !$crossGroupEval['is_group_counts_uniform']) {
+            $totalAdvancingFromRealGroups = $numAdvancing * $crossGroupEval['number_of_groups'];
+            $nextPowerOfTwo = (int) pow(2, (int) ceil(log(max(2, $totalAdvancingFromRealGroups), 2)));
+            $virtualSlotsNeeded = $nextPowerOfTwo - $totalAdvancingFromRealGroups;
+
+            if ($virtualSlotsNeeded > 0) {
+                if (!isset($advancingByRank[1])) {
+                    $advancingByRank[1] = collect();
+                }
+                for ($v = 0; $v < $virtualSlotsNeeded; $v++) {
+                    $advancingByRank[1]->push((object)[
+                        'team_id' => null,
+                        '_from_group' => null,
+                        '_virtual' => true,
+                        '_virtual_index' => $v + 1,
+                        '_rank' => 2,
+                    ]);
+                }
+            }
+        }
+
         // ✅ XỬ LÝ ĐẶC BIỆT: 1 BẢNG VÀO VÒNG KNOCKOUT
         // Khi chỉ có 1 bảng, ghép cặp theo hạng trong bảng:
         // - Top 2: [Nhất, Nhì] → 1 trận chung kết
@@ -1587,6 +1613,12 @@ class TournamentTypeController extends Controller
                 $knockoutIndex++;
                 continue;
             }
+            if (property_exists($placeholder, '_virtual') && $placeholder->_virtual) {
+                // Bảng ảo: KHÔNG tạo PoolAdvancementRule (vì không có group_id thật).
+                // Đội sẽ được resolve sau bằng cross-group comparison trong applyPoolAdvancement.
+                $knockoutIndex++;
+                continue;
+            }
             if (property_exists($placeholder, '_from_group') && $placeholder->_from_group !== null) {
                 $rank = $placeholder->_rank ?? 1;
                 // Priority: _group_index (1-based position, A=1, B=2...) → _from_group (DB ID)
@@ -1673,6 +1705,14 @@ class TournamentTypeController extends Controller
                     ]);
                 }
             }
+        }
+
+        // ===== RESOLVE ĐỘI VÀO BẢNG ẢO TỪ CROSS-GROUP COMPARISON =====
+        // Các bảng ảo (_virtual=true) không có PoolAdvancementRule → resolve bằng cross-group comparison
+        $virtualAdvancingTeams = $this->crossGroupComparisonService->resolveVirtualGroupAdvancing($type);
+        foreach ($virtualAdvancingTeams as $virtualEntry) {
+            Matches::where('id', $virtualEntry['next_match_id'])
+                ->update([$virtualEntry['next_position'] . '_team_id' => $virtualEntry['team_id']]);
         }
     }
     private function getTeamId($placeholder)

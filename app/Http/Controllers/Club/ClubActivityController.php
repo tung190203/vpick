@@ -208,19 +208,6 @@ class ClubActivityController extends Controller
             }
         }
         $mappedStatuses = array_values(array_unique($mappedStatuses));
-
-        // DEBUG: Log thông tin filter
-        \Log::info('getMiniTournaments', [
-            'club_id' => $club->id,
-            'user_id' => $userId,
-            'dateFrom' => $dateFrom,
-            'dateTo' => $dateTo,
-            'statuses' => $statuses,
-            'mappedStatuses' => $mappedStatuses,
-            'hasAll' => $hasAll,
-            'isHistoryOnly' => $isHistoryOnly,
-        ]);
-
         $normalStatuses = [
             MiniTournament::STATUS_OPEN,
             MiniTournament::STATUS_CLOSED,
@@ -313,24 +300,7 @@ class ClubActivityController extends Controller
 
         $orderDirection = $isHistoryOnly ? 'desc' : 'asc';
         $query->orderBy('start_time', $orderDirection);
-
-        // DEBUG: Log SQL query
-        \Log::info('getMiniTournaments SQL', [
-            'sql' => $query->toSql(),
-            'bindings' => $query->getBindings(),
-        ]);
-
         $results = $query->limit($filters['per_page'] ?? 50)->get();
-
-        // DEBUG: Log số lượng kết quả
-        \Log::info('getMiniTournaments results', [
-            'count' => $results->count(),
-            'ids' => $results->pluck('id')->toArray(),
-            'statuses' => $results->pluck('status')->toArray(),
-            'created_bys' => $results->pluck('created_by')->toArray(),
-            'start_times' => $results->pluck('start_time')->map(fn($t) => $t?->format('Y-m-d H:i:s'))->toArray(),
-        ]);
-
         return $results;
     }
 
@@ -343,16 +313,6 @@ class ClubActivityController extends Controller
 
         $dateFrom = $filters['date_from'] ?? null;
         $dateTo = $filters['date_to'] ?? null;
-
-        \Log::info('getTournaments', [
-            'club_id' => $club->id,
-            'user_id' => $userId,
-            'dateFrom' => $dateFrom,
-            'dateTo' => $dateTo,
-            'filters' => $filters,
-        ]);
-
-        // Check if user is club staff (admin/manager/secretary/treasurer) — they can see ALL content in their club
         $isClubStaff = $userId && $club->activeMembers()
             ->where('user_id', $userId)
             ->whereIn('role', [
@@ -480,16 +440,6 @@ class ClubActivityController extends Controller
         $query->orderBy('start_date', $orderDirection);
 
         $results = $query->limit($filters['per_page'] ?? 50)->get();
-
-        // DEBUG: Log kết quả
-        \Log::info('getTournaments results', [
-            'count' => $results->count(),
-            'ids' => $results->pluck('id')->toArray(),
-            'statuses' => $results->pluck('status')->toArray(),
-            'created_bys' => $results->pluck('created_by')->toArray(),
-            'start_dates' => $results->pluck('start_date')->toArray(),
-        ]);
-
         return $results;
     }
 
