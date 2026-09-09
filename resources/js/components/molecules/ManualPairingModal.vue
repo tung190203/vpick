@@ -7,7 +7,7 @@
                     <div class="p-5 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white rounded-t-xl z-10">
                         <div>
                             <h3 class="text-xl font-semibold text-gray-900">Ghép cặp thủ công</h3>
-                            <p class="text-sm text-gray-500 mt-1">Kéo thả hoặc chọn đội để tạo cặp đấu</p>
+                            <p class="text-sm text-gray-500 mt-1">Kéo thả hoặc nhấn vào đội để đưa vào cặp đấu</p>
                         </div>
                         <button @click="closeModal" class="text-gray-400 hover:text-gray-600 transition-colors p-1">
                             <XMarkIcon class="w-6 h-6" />
@@ -20,8 +20,14 @@
                         <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-5 flex items-start gap-2">
                             <InformationCircleIcon class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
                             <div class="text-sm text-blue-700">
-                                <p>Mỗi trận gồm <strong>2 đội</strong>: một đội nhất bảng (1) và một đội nhì bảng (2).</p>
+                                <p>Mỗi cặp cần <strong>2 đội</strong>. Kéo thả đội từ danh sách bên dưới vào <strong>bất kỳ ô trống nào</strong> của cặp đấu.</p>
                                 <p class="mt-1">Nhấn <strong>"Mặc định"</strong> để tự động sắp xếp theo tuần tự.</p>
+                                <p class="mt-1" v-if="hasVirtualGroups && crossGroupRankingEnabled">
+                                    Giải đấu đang bật <strong>cross_group_ranking</strong>: các suất ghép chéo bảng lấy từ <strong>"Nhì tốt nhất"</strong>. Hệ thống sẽ tự xác định đội cụ thể sau khi vòng bảng kết thúc.
+                                </p>
+                                <p class="mt-1" v-else-if="hasVirtualGroups">
+                                    Ngoài ra còn có <strong>các suất "Nhì tốt nhất"</strong> từ vòng bảng. Hệ thống sẽ tự động xác định đội cụ thể sau khi vòng bảng kết thúc.
+                                </p>
                             </div>
                         </div>
 
@@ -38,26 +44,48 @@
                             </button>
                         </div>
 
-                        <!-- Group Teams Grid -->
+                        <!-- Group Teams Grid (real groups) -->
                         <div class="mb-5">
                             <h4 class="text-sm font-semibold text-gray-700 mb-3">Đội từ mỗi bảng (kéo vào ô bên dưới)</h4>
                             <div class="grid grid-cols-4 gap-2">
-                                <div v-for="group in groupList" :key="group.groupId"
-                                    class="border border-gray-200 rounded-lg p-2 bg-gray-50 text-center">
-                                    <div class="text-xs text-gray-500 mb-1 font-medium">Bảng {{ group.groupName }}</div>
+                                <div v-for="group in realGroupList" :key="group.groupId"
+                                    class="border border-gray-200 rounded-lg p-2 bg-gray-50">
+                                    <div class="text-xs text-gray-500 mb-1 font-medium text-center">Bảng {{ group.groupName }}</div>
                                     <div class="flex flex-col gap-1">
                                         <button @click="addTeamToSlot(group.groupId, 1)"
-                                            class="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded border border-blue-200 transition-colors font-medium"
+                                            :draggable="!isTeamUsed(group.groupId, 1)"
+                                            @dragstart="onDragStart($event, group.groupId, 1)"
+                                            class="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded border border-blue-200 transition-colors font-medium cursor-grab active:cursor-grabbing"
                                             :disabled="isTeamUsed(group.groupId, 1)">
-                                            1. {{ group.firstTeam || 'Chưa có' }}
+                                            {{ group.firstTeam || 'Chưa có nhất' }}
                                         </button>
-                                        <button v-if="numAdvancingTeams >= 2" @click="addTeamToSlot(group.groupId, 2)"
-                                            class="text-xs px-2 py-1 bg-orange-100 hover:bg-orange-200 text-orange-700 rounded border border-orange-200 transition-colors font-medium"
+                                        <button v-if="canPickRealNhi" @click="addTeamToSlot(group.groupId, 2)"
+                                            :draggable="!isTeamUsed(group.groupId, 2)"
+                                            @dragstart="onDragStart($event, group.groupId, 2)"
+                                            class="text-xs px-2 py-1 bg-orange-100 hover:bg-orange-200 text-orange-700 rounded border border-orange-200 transition-colors font-medium cursor-grab active:cursor-grabbing"
                                             :disabled="isTeamUsed(group.groupId, 2)">
-                                            2. {{ group.secondTeam || 'Chưa có' }}
+                                            {{ group.secondTeam || 'Chưa có nhì' }}
                                         </button>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- Virtual "Nhì tốt nhất" buttons (chỉ khi có bảng ảo) -->
+                        <div v-if="hasVirtualGroups" class="mb-5 p-3 bg-orange-50/60 border border-orange-200 rounded-lg">
+                            <h4 class="text-sm font-semibold text-orange-700 mb-2">
+                                Các suất "Nhì tốt nhất" từ vòng bảng
+                                <span class="text-xs font-normal text-orange-600 ml-1">(sẽ tự động điền sau khi vòng bảng kết thúc)</span>
+                            </h4>
+                            <div class="grid grid-cols-4 gap-2">
+                                <button v-for="vg in virtualGroupList" :key="vg.groupId"
+                                    @click="addTeamToSlot(vg.groupId, 2)"
+                                    :draggable="!isTeamUsed(vg.groupId, 2)"
+                                    @dragstart="onDragStart($event, vg.groupId, 2)"
+                                    class="text-xs px-3 py-2 bg-orange-100 hover:bg-orange-200 text-orange-700 rounded border border-orange-200 transition-colors font-medium text-center cursor-grab active:cursor-grabbing"
+                                    :disabled="isTeamUsed(vg.groupId, 2)">
+                                    Nhì tốt nhất #{{ vg.virtualIndex }}
+                                </button>
                             </div>
                         </div>
 
@@ -66,47 +94,58 @@
                             <h4 class="text-sm font-semibold text-gray-700 mb-3">Các cặp đấu (nhấn ô để xóa)</h4>
                             <div class="space-y-2">
                                 <div v-for="(slot, idx) in pairingSlots" :key="idx"
-                                    class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                                    <div class="w-8 h-8 flex items-center justify-center bg-gray-200 rounded-full text-sm font-bold text-gray-600 flex-shrink-0">
+                                    class="flex items-center gap-3 p-3 rounded-lg border bg-gray-50 border-gray-200">
+                                    <div class="w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold flex-shrink-0 bg-gray-200 text-gray-600">
                                         {{ idx + 1 }}
                                     </div>
 
-                                    <!-- Slot 1 (even position) -->
+                                    <!-- Ô đội 1 (bất kỳ đội nào có thể rơi vào) -->
                                     <div class="flex-1">
                                         <div v-if="slot[0]"
                                             @click="removeFromSlot(idx, 0)"
-                                            class="flex items-center justify-between px-3 py-2 bg-blue-50 border border-blue-300 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors">
+                                            class="flex items-center justify-between px-3 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
                                             <div>
-                                                <span class="text-xs text-blue-500 font-medium">Bảng {{ slot[0].groupName }} - Nhất</span>
-                                                <div class="font-medium text-sm text-blue-800">{{ slot[0].teamName }}</div>
+                                                <span class="text-xs text-gray-500 font-medium">{{ getTeamLabel(slot[0]) }}</span>
+                                                <div class="font-medium text-sm text-gray-800">{{ slot[0]?.teamName }}</div>
                                             </div>
-                                            <XMarkIcon class="w-4 h-4 text-blue-400 hover:text-blue-600" />
+                                            <XMarkIcon class="w-4 h-4 text-gray-400 hover:text-gray-600" />
                                         </div>
                                         <div v-else
-                                            class="flex items-center justify-center h-[44px] border-2 border-dashed border-blue-200 rounded-lg text-xs text-blue-300">
-                                            Chọn đội nhất bảng...
+                                            @dragover.prevent="onDragOver($event)"
+                                            @dragenter.prevent="onDragEnter($event)"
+                                            @dragleave="onDragLeave($event)"
+                                            @drop="onDrop($event, idx, 0)"
+                                            :data-drop-slot="idx"
+                                            :data-drop-sub="0"
+                                            class="flex items-center justify-center h-[52px] border-2 border-dashed border-gray-300 rounded-lg text-xs text-gray-400 transition-colors hover:border-blue-400 hover:bg-blue-50/40 hover:text-blue-500">
+                                            Thả đội vào đây
                                         </div>
                                     </div>
 
-                                    <span v-if="numAdvancingTeams >= 2" class="text-gray-400 font-bold">VS</span>
+                                    <span class="text-gray-400 font-bold">VS</span>
 
-                                    <!-- Slot 2 (odd position) -->
-                                    <div v-if="numAdvancingTeams >= 2" class="flex-1">
+                                    <!-- Ô đội 2 (bất kỳ đội nào có thể rơi vào) -->
+                                    <div class="flex-1">
                                         <div v-if="slot[1]"
                                             @click="removeFromSlot(idx, 1)"
-                                            class="flex items-center justify-between px-3 py-2 bg-orange-50 border border-orange-300 rounded-lg cursor-pointer hover:bg-orange-100 transition-colors">
+                                            class="flex items-center justify-between px-3 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
                                             <div>
-                                                <span class="text-xs text-orange-500 font-medium">Bảng {{ slot[1].groupName }} - Nhì</span>
-                                                <div class="font-medium text-sm text-orange-800">{{ slot[1].teamName }}</div>
+                                                <span class="text-xs text-gray-500 font-medium">{{ getTeamLabel(slot[1]) }}</span>
+                                                <div class="font-medium text-sm text-gray-800">{{ slot[1]?.teamName }}</div>
                                             </div>
-                                            <XMarkIcon class="w-4 h-4 text-orange-400 hover:text-orange-600" />
+                                            <XMarkIcon class="w-4 h-4 text-gray-400 hover:text-gray-600" />
                                         </div>
                                         <div v-else
-                                            class="flex items-center justify-center h-[44px] border-2 border-dashed border-orange-200 rounded-lg text-xs text-orange-300">
-                                            Chọn đội nhì bảng...
+                                            @dragover.prevent="onDragOver($event)"
+                                            @dragenter.prevent="onDragEnter($event)"
+                                            @dragleave="onDragLeave($event)"
+                                            @drop="onDrop($event, idx, 1)"
+                                            :data-drop-slot="idx"
+                                            :data-drop-sub="1"
+                                            class="flex items-center justify-center h-[52px] border-2 border-dashed border-gray-300 rounded-lg text-xs text-gray-400 transition-colors hover:border-blue-400 hover:bg-blue-50/40 hover:text-blue-500">
+                                            Thả đội vào đây
                                         </div>
                                     </div>
-                                    <div v-else class="flex-1"></div>
                                 </div>
                             </div>
                         </div>
@@ -163,6 +202,10 @@ const props = defineProps({
     poolGroups: {
         type: Array,
         default: () => []
+    },
+    crossGroupRankingEnabled: {
+        type: Boolean,
+        default: false
     }
 });
 
@@ -176,6 +219,57 @@ const isOpen = computed({
     get: () => props.modelValue,
     set: (v) => emit('update:modelValue', v)
 });
+
+// Computed: có bảng ảo hay không
+const hasVirtualGroups = computed(() => {
+    return groupList.value.some(g => g.isVirtual);
+});
+
+// Computed: có thể pick Nhì thật từ real group hay không
+// Rule: ADMIN TỰ QUYẾT ĐỊNH — luôn hiển thị nút Nhì thật nếu group có dữ liệu
+// (admin có thể muốn ghép chéo bảng thay vì dùng "Nhì tốt nhất" ảo).
+// BE sẽ validate lại ở phía server nếu cần.
+const canPickRealNhi = computed(() => {
+    return true;
+});
+
+// Computed: chỉ real groups (dùng để render grid "Đội từ mỗi bảng")
+const realGroupList = computed(() => {
+    return groupList.value.filter(g => !g.isVirtual);
+});
+
+// Computed: chỉ virtual groups (dùng để render row "Nhì tốt nhất")
+// Mỗi virtual group có virtualIndex (1-based) cho label thân thiện
+const virtualGroupList = computed(() => {
+    const filtered = groupList.value.filter(function(g) { return g.isVirtual; });
+    return filtered.map(function(item, index) {
+        var result = { virtualIndex: index + 1 };
+        result.groupId = item.groupId;
+        result.groupName = item.groupName;
+        result.isVirtual = item.isVirtual;
+        return result;
+    });
+});
+
+// Helper: lấy virtualIndex của group (1-based) — dùng cho slot picker label
+const getVirtualIndex = (groupId) => {
+    let idx = 0;
+    for (const g of groupList.value) {
+        if (g.isVirtual) {
+            idx++;
+            if (g.groupId === groupId) return idx;
+        }
+    }
+    return 0;
+};
+
+// Helper: kiểm tra slot có phải là bảng ảo không
+// Trong layout: slot[i] tương ứng với group i trong groupList
+// Nếu groupList[i] là virtual thì slot[i] là virtual
+const isVirtualSlot = (slotIndex) => {
+    const group = groupList.value[slotIndex];
+    return Boolean(group?.isVirtual);
+};
 
 const closeModal = () => {
     isOpen.value = false;
@@ -195,17 +289,40 @@ const initializeData = () => {
     }
 
     // Dùng database ID từ poolGroups
-    props.poolGroups.forEach((g, i) => {
-        groupList.value.push({
-            groupId: g.id,
-            groupName: groupNames[i] || g.name || `Bảng ${i + 1}`,
-            firstTeam: `Nhất ${groupNames[i]}`,
-            secondTeam: `Nhì ${groupNames[i]}`
-        });
+    // Có 2 loại group:
+    //  - Real group: có id > 0 (database ID), label = "Bảng A/B/C..."
+    //  - Virtual group: có id < 0 và isVirtual=true (suất "Nhì tốt nhất"), label dùng virtualIndex
+    let realIndex = 0;
+    let virtualIndex = 0;
+    props.poolGroups.forEach((g) => {
+        const isVirtual = g.isVirtual === true;
+        if (isVirtual) {
+            virtualIndex++;
+            groupList.value.push({
+                groupId: g.id,
+                groupName: `${virtualIndex}`,
+                firstTeam: '?',
+                secondTeam: `Nhì tốt nhất #${virtualIndex}`,
+                isVirtual: true,
+                virtualIndex
+            });
+        } else {
+            realIndex++;
+            const letter = groupNames[realIndex - 1] || `Bảng ${realIndex}`;
+            groupList.value.push({
+                groupId: g.id,
+                groupName: letter,
+                firstTeam: `Nhất ${letter}`,
+                secondTeam: `Nhì ${letter}`,
+                isVirtual: false,
+                virtualIndex: 0
+            });
+        }
     });
 
-    // Calculate number of slots needed (each slot = 2 teams: 1 from first place, 1 from second place)
-    const numSlots = numGroups; // N teams from first place + N teams from second place = N pairs
+    // Calculate number of slots needed (each slot = 1 cặp = 2 teams: 1 Nhất + 1 Nhì)
+    // Số cặp = số Nhất = numGroups (đã tính sẵn từ FE parent, đã tính cả virtual khi cần)
+    const numSlots = numGroups;
     pairingSlots.value = [];
 
     for (let i = 0; i < numSlots; i++) {
@@ -228,28 +345,67 @@ const loadExistingPairings = (pairings) => {
     // Build a lookup map: "groupId_rank" -> team info
     const teamMap = {};
     groupList.value.forEach(g => {
-        teamMap[`${g.groupId}_1`] = { groupId: g.groupId, groupName: g.groupName, teamName: g.firstTeam, rank: 1, position: -1 };
-        teamMap[`${g.groupId}_2`] = { groupId: g.groupId, groupName: g.groupName, teamName: g.secondTeam, rank: 2, position: -1 };
+        const vIdx = g.isVirtual ? getVirtualIndex(g.groupId) : 0;
+        teamMap[`${g.groupId}_1`] = {
+            groupId: g.groupId,
+            groupName: g.groupName,
+            teamName: g.firstTeam,
+            rank: 1,
+            isVirtual: g.isVirtual,
+            virtualIndex: vIdx
+        };
+        teamMap[`${g.groupId}_2`] = {
+            groupId: g.groupId,
+            groupName: g.groupName,
+            teamName: g.secondTeam,
+            rank: 2,
+            isVirtual: g.isVirtual,
+            virtualIndex: vIdx
+        };
     });
 
-    // Fill slots based on pairings
-    // Position maps to slot×2 (home) or slot×2+1 (away); max position = numGroups * 2 - 1
-    pairings.forEach(pairing => {
-        const position = pairing.position ?? pairing.rank;
-        const team = teamMap[`${pairing.group_id}_${pairing.rank}`];
-        // Allow positions up to numGroups*2 - 1 (not just numGroups-1)
-        const maxPosition = pairingSlots.value.length * 2;
-        if (team && position >= 0 && position < maxPosition) {
-            const slotIndex = Math.floor(position / 2);
-            const isFirstSlot = position % 2 === 0;
-            if (isFirstSlot) {
-                pairingSlots.value[slotIndex][0] = { ...team, rank: 1 };
-            } else {
-                pairingSlots.value[slotIndex][1] = { ...team, rank: 2 };
+    // Convention: position = slotIndex * 2 + subIndex (0 = ô trái, 1 = ô phải)
+    // group_id = 0 + rank = 2 → virtual "Nhì tốt nhất" (lấy virtual đầu tiên)
+    const sortedPairings = [...pairings].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+    let firstVirtualAssigned = false;
+
+    sortedPairings.forEach(pairing => {
+        const position = pairing.position ?? 0;
+        const slotIndex = Math.floor(position / 2);
+        const subIndex = position % 2;
+
+        if (slotIndex < 0 || slotIndex >= pairingSlots.value.length) return;
+        if (subIndex !== 0 && subIndex !== 1) return;
+
+        const slot = pairingSlots.value[slotIndex];
+        const rank = pairing.rank ?? 1;
+
+        // Virtual "Nhì tốt nhất" (group_id = 0, rank >= 2) → slot vị trí tương ứng
+        if (parseInt(pairing.group_id, 10) === 0 && rank >= 2) {
+            // Tìm virtual group chưa được assign (theo position)
+            const vGroups = groupList.value.filter(g => g.isVirtual);
+            // Mapping: rank=2 → các virtual đầu tiên; rank=3 → các virtual tiếp theo.
+            // Tạm thời: lấy virtual đầu tiên cho rank=2, sau đó tăng "firstVirtualAssigned".
+            const idx = rank === 2 ? (firstVirtualAssigned ? 1 : 0) : 0;
+            const vGroup = vGroups[idx];
+            if (vGroup) {
+                slot[subIndex] = {
+                    groupId: vGroup.groupId,
+                    groupName: vGroup.groupName,
+                    teamName: vGroup.secondTeam,
+                    rank,
+                    isVirtual: true,
+                    virtualIndex: getVirtualIndex(vGroup.groupId)
+                };
+                if (rank === 2) firstVirtualAssigned = true;
             }
+            return;
         }
-    });
-};
+
+        // Real team → lookup theo group_id + rank
+        const team = teamMap[`${pairing.group_id}_${rank}`];
+        if (!team) return;
+        slot[subIndex] = { ...team, rank };
 
 // Watch for modal open to initialize
 watch(() => props.modelValue, (newVal) => {
@@ -258,24 +414,48 @@ watch(() => props.modelValue, (newVal) => {
     }
 }, { immediate: true });
 
-// Add team to next empty slot — enforces rank-slot binding:
-// rank 1 (Nhất) can ONLY go to slot[n][0], rank 2 (Nhì) can ONLY go to slot[n][1]
+// Watch for modal open to initialize
+watch(() => props.modelValue, (newVal) => {
+    if (newVal) {
+        initializeData();
+    }
+}, { immediate: true });
+
+// Build một team object sạch từ groupList entry
+const buildTeamFromGroup = (groupInfo, rank) => {
+    if (!groupInfo) return null;
+    return {
+        groupId: groupInfo.groupId,
+        groupName: groupInfo.groupName,
+        teamName: rank === 1 ? groupInfo.firstTeam : groupInfo.secondTeam,
+        rank,
+        isVirtual: groupInfo.isVirtual,
+        virtualIndex: groupInfo.isVirtual ? getVirtualIndex(groupInfo.groupId) : 0
+    };
+};
+
+// Add team vào ô trống đầu tiên tìm được (bất kỳ vị trí nào trong bất kỳ cặp nào).
+// Không ép rank cứng vào vị trí: Nhất có thể vào ô phải, Nhì có thể vào ô trái.
 const addTeamToSlot = (groupId, rank) => {
     const teamInfo = groupList.value.find(g => g.groupId === groupId);
     if (!teamInfo) return;
 
-    const team = {
-        groupId,
-        groupName: teamInfo.groupName,
-        teamName: rank === 1 ? teamInfo.firstTeam : teamInfo.secondTeam,
-        rank
-    };
+    // Bảng ảo chỉ có rank=2 (Nhì tốt nhất), không có Nhất
+    if (teamInfo.isVirtual && rank === 1) return;
 
-    // Find next empty slot by rank position: rank1 → slot[n][0], rank2 → slot[n][1]
-    const slotSubIndex = rank === 1 ? 0 : 1;
+    const team = buildTeamFromGroup(teamInfo, rank);
+
+    // Nếu đã ở trong slot nào đó thì không thêm nữa
+    if (isTeamUsed(groupId, rank)) return;
+
+    // Tìm ô trống đầu tiên trong pairingSlots (bất kỳ vị trí 0 hoặc 1)
     for (let i = 0; i < pairingSlots.value.length; i++) {
-        if (pairingSlots.value[i][slotSubIndex] === null) {
-            pairingSlots.value[i][slotSubIndex] = team;
+        if (pairingSlots.value[i][0] === null) {
+            pairingSlots.value[i][0] = team;
+            return;
+        }
+        if (pairingSlots.value[i][1] === null) {
+            pairingSlots.value[i][1] = team;
             return;
         }
     }
@@ -286,26 +466,37 @@ const removeFromSlot = (slotIndex, subIndex) => {
     pairingSlots.value[slotIndex][subIndex] = null;
 };
 
-// Check if a specific team (groupId + rank) is already placed in the correct slot position
+// Check xem (groupId, rank) đã được đặt ở bất kỳ vị trí nào trong slots chưa.
+// Vì 2 ô trong 1 cặp là bất kỳ (không ép Nhất trái/Nhì phải), chỉ cần check cả 2.
 const isTeamUsed = (groupId, rank) => {
-    if (rank === 2 && props.numAdvancingTeams < 2) return true;
-    const slotSubIndex = rank === 1 ? 0 : 1;
+    const teamInfo = groupList.value.find(g => g.groupId === groupId);
+    // Bảng ảo không có Nhất → không pick được
+    if (rank === 1 && teamInfo?.isVirtual) return true;
+
     for (const slot of pairingSlots.value) {
-        if (slot[slotSubIndex] && slot[slotSubIndex].groupId === groupId && slot[slotSubIndex].rank === rank) {
-            return true;
-        }
+        if (slot[0] && slot[0].groupId === groupId && slot[0].rank === rank) return true;
+        if (slot[1] && slot[1].groupId === groupId && slot[1].rank === rank) return true;
     }
     return false;
+};
+
+// Label động cho mỗi đội trong slot (vì không cố định Nhất/Nhì vị trí nữa)
+const getTeamLabel = (team) => {
+    if (!team) return '';
+    if (team.isVirtual) {
+        return `Nhì tốt nhất #${team.virtualIndex}`;
+    }
+    const rankLabel = team.rank === 1 ? 'Nhất' : 'Nhì';
+    return `Bảng ${team.groupName} - ${rankLabel}`;
 };
 
 // Validation
 const validationError = computed(() => {
     for (let i = 0; i < pairingSlots.value.length; i++) {
         const slot = pairingSlots.value[i];
-        // Khi numAdvancingTeams=1: chỉ require slot[0]; khi >=2: require cả 2
-        const requireSecond = props.numAdvancingTeams >= 2;
-        if (!slot[0] || (requireSecond && !slot[1])) {
-            return `Cặp đấu ${i + 1} chưa hoàn tất.`;
+        // Mỗi cặp cần đủ 2 đội (bất kỳ Nhất/Nhì/ảo)
+        if (!slot[0] || !slot[1]) {
+            return `Cặp đấu ${i + 1} chưa đủ 2 đội.`;
         }
     }
     return null;
@@ -315,48 +506,34 @@ const isValid = computed(() => {
     return !validationError.value && pairingSlots.value.length > 0;
 });
 
-// Reset to sequential
-const resetToSequential = () => {
-    // Sequential: Nhất[i] vs Nhì[i+1], Nhất[i+1] vs Nhì[i]
-    for (let i = 0; i < pairingSlots.value.length; i++) {
-        const firstPlaceIndex = i;
-        const secondPlaceIndex = (i + 1) % groupList.value.length;
+// Helper: build entry từ groupList để gán vào slot
+const buildEntry = (group, rank) => {
+    if (!group) return null;
+    return buildTeamFromGroup(group, rank);
+};
 
-        pairingSlots.value[i][0] = {
-            groupId: groupList.value[firstPlaceIndex].groupId,
-            groupName: groupList.value[firstPlaceIndex].groupName,
-            teamName: groupList.value[firstPlaceIndex].firstTeam,
-            rank: 1
-        };
-        pairingSlots.value[i][1] = {
-            groupId: groupList.value[secondPlaceIndex].groupId,
-            groupName: groupList.value[secondPlaceIndex].groupName,
-            teamName: groupList.value[secondPlaceIndex].secondTeam,
-            rank: 2
-        };
+// Reset to sequential: lần lượt lấy từng cặp gồm 2 đội liên tiếp trong groupList
+// (không ép Nhất vào ô 0, Nhì vào ô 1 — chỉ cần 2 đội đầy đủ)
+const resetToSequential = () => {
+    for (let i = 0; i < pairingSlots.value.length; i++) {
+        const g0 = groupList.value[(2 * i) % groupList.value.length];
+        const g1 = groupList.value[(2 * i + 1) % groupList.value.length];
+
+        // rank cho mỗi entry: nếu group ở vị trí đầu tiên của cặp thì ưu tiên rank=1 (Nhất)
+        // nếu không (ví dụ 2 virtual liên tiếp) thì mặc định rank=2 cho cả 2
+        pairingSlots.value[i][0] = buildEntry(g0, g0?.isVirtual ? 2 : 1);
+        pairingSlots.value[i][1] = buildEntry(g1, g1?.isVirtual ? 2 : 2);
     }
 };
 
-// Reset to symmetric
+// Reset to symmetric: cặp (i, len-1-i)
 const resetToSymmetric = () => {
-    // Symmetric: Nhất[i] vs Nhì[cuối-i]
     const len = groupList.value.length;
     for (let i = 0; i < pairingSlots.value.length; i++) {
-        const firstPlaceIndex = i;
-        const secondPlaceIndex = len - 1 - i;
-
-        pairingSlots.value[i][0] = {
-            groupId: groupList.value[firstPlaceIndex].groupId,
-            groupName: groupList.value[firstPlaceIndex].groupName,
-            teamName: groupList.value[firstPlaceIndex].firstTeam,
-            rank: 1
-        };
-        pairingSlots.value[i][1] = {
-            groupId: groupList.value[secondPlaceIndex].groupId,
-            groupName: groupList.value[secondPlaceIndex].groupName,
-            teamName: groupList.value[secondPlaceIndex].secondTeam,
-            rank: 2
-        };
+        const g0 = groupList.value[i % len];
+        const g1 = groupList.value[(len - 1 - i) % len];
+        pairingSlots.value[i][0] = buildEntry(g0, g0?.isVirtual ? 2 : 1);
+        pairingSlots.value[i][1] = buildEntry(g1, g1?.isVirtual ? 2 : 2);
     }
 };
 
@@ -367,24 +544,91 @@ const resetToEmpty = () => {
     }
 };
 
+// === Drag & Drop handlers (HTML5 native D&D) ===
+const onDragStart = (event, groupId, rank) => {
+    if (isTeamUsed(groupId, rank)) {
+        event.preventDefault();
+        return;
+    }
+    // Truyền groupId + rank qua dataTransfer
+    event.dataTransfer.setData('application/x-team', JSON.stringify({ groupId, rank }));
+    event.dataTransfer.effectAllowed = 'move';
+};
+
+const onDragOver = (event) => {
+    event.dataTransfer.dropEffect = 'move';
+};
+
+const onDragEnter = (event) => {
+    event.currentTarget.classList.add('border-blue-500', 'bg-blue-50');
+};
+
+const onDragLeave = (event) => {
+    event.currentTarget.classList.remove('border-blue-500', 'bg-blue-50');
+};
+
+const onDrop = (event, slotIndex, subIndex) => {
+    event.preventDefault();
+    event.currentTarget.classList.remove('border-blue-500', 'bg-blue-50');
+    const raw = event.dataTransfer.getData('application/x-team');
+    if (!raw) return;
+    try {
+        const { groupId, rank } = JSON.parse(raw);
+        // Nếu team đã đặt ở đâu đó thì gỡ trước
+        for (let i = 0; i < pairingSlots.value.length; i++) {
+            for (let k = 0; k < 2; k++) {
+                const t = pairingSlots.value[i][k];
+                if (t && t.groupId === groupId && t.rank === rank) {
+                    pairingSlots.value[i][k] = null;
+                }
+            }
+        }
+        // Nếu ô đích đang có đội khác thì giữ nguyên (không ghi đè) → đẩy sang ô trống khác
+        const targetEmpty = pairingSlots.value[slotIndex][subIndex] === null;
+        if (targetEmpty) {
+            const teamInfo = groupList.value.find(g => g.groupId === groupId);
+            pairingSlots.value[slotIndex][subIndex] = buildEntry(teamInfo, rank);
+            return;
+        }
+        // Tìm ô trống khác để đặt vào
+        for (let i = 0; i < pairingSlots.value.length; i++) {
+            for (let k = 0; k < 2; k++) {
+                if (pairingSlots.value[i][k] === null) {
+                    const teamInfo = groupList.value.find(g => g.groupId === groupId);
+                    pairingSlots.value[i][k] = buildEntry(teamInfo, rank);
+                    return;
+                }
+            }
+        }
+    } catch (err) {
+        // ignore parse errors
+    }
+};
+
 // Apply pairing and emit
 const applyPairing = () => {
     if (!isValid.value) return;
 
+    // ✅ Convention mới: mỗi slot = 1 cặp gồm 2 đội, bất kỳ vị trí nào.
+    // BE xử lý home/away theo `position` (position * 2 = pairIndex, position * 2 + 1 = sub).
+    // rank là 1 (Nhất) hoặc 2 (Nhì) — virtual Nhì tốt nhất được gửi group_id = 0.
     const manualPairings = [];
     pairingSlots.value.forEach((slot, slotIndex) => {
-        // Position: slotIndex*2 (first team), slotIndex*2+1 (second team)
-        manualPairings.push({
-            group_id: slot[0].groupId,
-            rank: slot[0].rank,
-            position: slotIndex * 2
-        });
-        // Chỉ push slot[1] khi numAdvancingTeams >= 2
-        if (props.numAdvancingTeams >= 2 && slot[1]) {
+        const basePos = slotIndex * 2;
+        if (slot[0]) {
+            const t = slot[0];
             manualPairings.push({
-                group_id: slot[1].groupId,
-                rank: slot[1].rank,
-                position: slotIndex * 2 + 1
+                group_id: t.isVirtual ? 0 : t.groupId,
+                rank: t.rank,
+                position: basePos
+            });
+        }
+        if (slot[1]) {
+            const t = slot[1];
+            manualPairings.push({
+                group_id: t.isVirtual ? 0 : t.groupId,
+                rank: t.rank,
+                position: basePos + 1
             });
         }
     });

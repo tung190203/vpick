@@ -705,9 +705,9 @@
                       <div class="grid grid-cols-4 gap-2">
                         <div v-for="(pairing, idx) in manualPairings.filter((_, i) => i % 2 === 0)" :key="idx"
                           class="text-xs text-center bg-white border border-gray-200 rounded px-2 py-1">
-                          {{ getGroupName(pairing.group_id) }}{{ pairing.rank === 1 ? '1' : '2' }}
+                          Nhất {{ getGroupName(pairing.group_id) }}
                           <span class="text-gray-400">vs</span>
-                          {{ getGroupName(manualPairings[idx * 2 + 1]?.group_id) }}{{ manualPairings[idx * 2 + 1]?.rank === 1 ? '1' : '2' }}
+                          Nhì {{ getGroupName(manualPairings[idx * 2 + 1]?.group_id) }}
                         </div>
                       </div>
                       <button @click="openManualPairingModal" class="mt-2 text-xs text-[#D72D36] hover:underline font-medium">
@@ -844,8 +844,9 @@
       v-model="showManualPairingModal"
       :num-groups="pairingNumGroups"
       :num-advancing-teams="pairingNumAdvancingTeams"
-      :existing-pairings="manualPairings"
       :pool-groups="pairingPoolGroups"
+      :existing-pairings="manualPairings"
+      :cross-group-ranking-enabled="crossGroupRankingEnabled"
       @apply="handleManualPairingApply"
     />
   </div>
@@ -962,6 +963,7 @@ const showManualPairingModal = ref(false);
 const pairingNumGroups = ref(0);  // Số bảng đấu
 const pairingNumAdvancingTeams = ref(2);  // Số đội đi tiếp từ mỗi bảng
 const pairingPoolGroups = ref([]);  // Danh sách groups thực (có database ID)
+const crossGroupRankingEnabled = ref(false);  // Cross-group ranking có bật không
 
 const PAIRING_MODE_OPTIONS = [
     { id: 'sequential', label: 'Tuần tự', subtitle: 'A-B, B-A, C-D, D-C...' },
@@ -989,11 +991,32 @@ const loadPairingConfig = () => {
         manualPairings.value = [];
     }
 
-    // Load số bảng đấu từ pool_stage
-    pairingNumGroups.value = parseInt(tournamentType.format_specific_config?.[0]?.pool_stage?.number_competing_teams) || 0;
+    // Load số cặp đấu vòng knockout (gồm cả virtual nếu có cross_group_ranking)
+    const poolStage = tournamentType.format_specific_config?.[0]?.pool_stage || {};
+    const numberOfGroups = parseInt(poolStage.number_competing_teams) || 0;
+    const numAdvancingPerGroup = parseInt(poolStage.num_advancing_teams) || 0;
+    const crossGroupRanking = tournamentType.format_specific_config?.[0]?.cross_group_ranking || {};
+    const applyTo = crossGroupRanking.apply_to || [];
+
+    let totalAdvancing = numAdvancingPerGroup * numberOfGroups;
+
+    // Nếu có cross_group_ranking và áp dụng cho runner_up → thêm slot cho "Nhì tốt nhất"
+    // để tổng advancing đạt power of 2 (đủ cho bracket knockout)
+    const crossGroupEnabled = crossGroupRanking.enabled === 'true'
+        || crossGroupRanking.enabled === true
+        || crossGroupRanking.enabled === 1;
+    crossGroupRankingEnabled.value = crossGroupEnabled;
+    if (crossGroupEnabled && applyTo.includes('runner_up') && numAdvancingPerGroup === 1) {
+        while ((totalAdvancing & (totalAdvancing - 1)) !== 0 || totalAdvancing < 2) {
+            totalAdvancing++;
+        }
+    }
+
+    // ✅ pairingNumGroups = số CẶP đấu vòng knockout = totalAdvancing / 2
+    pairingNumGroups.value = totalAdvancing / 2;
 
     // Load số đội đi tiếp từ mỗi bảng
-    pairingNumAdvancingTeams.value = parseInt(tournamentType.format_specific_config?.[0]?.pool_stage?.num_advancing_teams) || 2;
+    pairingNumAdvancingTeams.value = numAdvancingPerGroup || 2;
 
     // Load pool groups để dùng database ID thay vì index
     // groups được load sẵn trong tournamentData (tournamentTypes.groups)
@@ -1002,6 +1025,19 @@ const loadPairingConfig = () => {
         id: g.id,
         name: g.name || `Bảng ${i + 1}`
     }));
+
+    // Thêm các bảng ảo cho "Nhì tốt nhất" (nếu có cross_group_ranking.enabled && runner_up)
+    if (crossGroupEnabled && applyTo.includes('runner_up') && numAdvancingPerGroup === 1) {
+        // Số bảng ảo = totalAdvancing - numAdvancing * numberOfGroups = số Nhì tốt nhất bổ sung
+        const virtualCount = totalAdvancing - (numAdvancingPerGroup * numberOfGroups);
+        for (let v = 0; v < virtualCount; v++) {
+            pairingPoolGroups.value.push({
+                id: -1 - v, // ID âm để đánh dấu virtual (BE sẽ skip)
+                name: `Bảng ảo ${v + 1}`,
+                isVirtual: true
+            });
+        }
+    }
 
     console.log('[DEBUG] poolGroups loaded:', pairingPoolGroups.value);
 };
@@ -1084,9 +1120,16 @@ const buildFormDataFromObject = (formData, data, parentKey = '') => {
 
 // ✅ Lấy tên bảng từ groupId
 const getGroupName = (groupId) => {
-    if (!groupId) return '?';
+    if (groupId === null || groupId === undefined) return '?';
+    // Tìm trong pairingPoolGroups trước (cover cả virtual)
+    const poolGroup = pairingPoolGroups.value.find(g => g.id === groupId);
+    if (poolGroup) {
+        // Trả về tên ngắn gọn (chỉ phần "Bảng ảo X" hoặc tên thật)
+        return poolGroup.name;
+    }
+    // Fallback: dùng alphabet nếu chưa load
     const groupNames = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-    return groupNames[groupId - 1] || groupId;
+    return groupNames[groupId - 1] || String(groupId);
 };
 
 // ✅ Watcher để reload pairing config khi tournament data thay đổi
