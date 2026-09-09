@@ -289,6 +289,10 @@ export default {
                     player2Id
                 );
                 await loadPlayerPairs();
+                // The suggestion currently displayed was generated before this
+                // pairing existed. Rebuild it so linked players are immediately
+                // shown on the same team instead of leaving a stale split card.
+                await generate();
             } catch (err) {
                 console.error('Failed to create pair:', err);
             }
@@ -299,6 +303,9 @@ export default {
             try {
                 await MatchSuggestionService.deletePlayerPair(props.miniTournamentId, pair.id);
                 await loadPlayerPairs();
+                // Re-evaluate the displayed suggestion after removing a fixed
+                // pair as well, so it reflects the current pairing rules.
+                await generate();
             } catch (err) {
                 console.error('Failed to unpair:', err);
             }

@@ -225,7 +225,7 @@ class SchedulerService
     private int $currentPoolMaxPlayed = 0;
     private ?int $currentAnchorId = null;
     /**
-     * Cache of fixed pairs resolved to user_id values for the current
+     * Cache of fixed pairs resolved to mini_participant_id values for the current
      * generateCandidates() call. Used by buildCandidateMetadata() so the
      * soft priority and the hard constraint agree on the same comparison.
      *
@@ -255,16 +255,23 @@ class SchedulerService
         // generateAnyTierCombinations() pass over every player.
         $this->currentFullPool = $pool;
 
-        // NORMALIZE: the frontend stores player1_id / player2_id as
-        // mini_participant_id; FixedPairDTO compares them to user_id.
-        // Build a map and resolve any mini_participant_id values that slipped
-        // through (defense-in-depth: MatchSuggestionService already normalizes,
-        // but this method is also called directly from tests and future callers).
-        $miniPidToUid = [];
+        // Fixed pairs must use mini_participant_id, which uniquely identifies a
+        // participant in this tournament. user_id can occur in multiple rows.
+        // Retain compatibility with callers that still send a user_id, but only
+        // resolve it when that user maps to exactly one participant.
+        $miniParticipantIds = [];
+        $userIdToMiniParticipantIds = [];
         foreach ($pool as $p) {
-            $miniPidToUid[$p->mini_participant_id] = $p->user_id;
+            $miniParticipantIds[$p->mini_participant_id] = true;
+            if ($p->user_id !== null) {
+                $userIdToMiniParticipantIds[$p->user_id][] = $p->mini_participant_id;
+            }
         }
-        $fixedPairs = $this->normalizeFixedPairs($request->fixed_pairs, $miniPidToUid);
+        $fixedPairs = $this->normalizeFixedPairs(
+            $request->fixed_pairs,
+            $miniParticipantIds,
+            $userIdToMiniParticipantIds,
+        );
         // Cache for buildCandidateMetadata() to keep the soft priority and the
         // hard constraint in sync.
         $this->currentNormalizedFixedPairs = $fixedPairs;
@@ -882,15 +889,13 @@ class SchedulerService
         if (empty($fixedPairs) || empty($pool)) {
             return false;
         }
-        $genderByUserId = [];
+        $genderByMiniParticipantId = [];
         foreach ($pool as $p) {
-            if ($p->user_id !== null) {
-                $genderByUserId[(int) $p->user_id] = $p->gender;
-            }
+            $genderByMiniParticipantId[(int) $p->mini_participant_id] = $p->gender;
         }
         foreach ($fixedPairs as $pair) {
-            $g1 = $genderByUserId[(int) $pair->player1_id] ?? null;
-            $g2 = $genderByUserId[(int) $pair->player2_id] ?? null;
+            $g1 = $genderByMiniParticipantId[(int) $pair->player1_id] ?? null;
+            $g2 = $genderByMiniParticipantId[(int) $pair->player2_id] ?? null;
             if ($g1 !== null && $g2 !== null && $g1 !== $g2) {
                 return true;
             }
@@ -929,7 +934,7 @@ class SchedulerService
      * Count how many player-pairs (FixedPairDTO) have BOTH members on the SAME
      * team within the candidate.
      *
-     * A pair is only counted when both user_ids appear together in team_a or
+     * A pair is only counted when both mini_participant_ids appear together in team_a or
      * team_b. If only one member is in the candidate (e.g. the other was
      * filtered out by buildPool due to is_playing=true), the pair is NOT
      * counted - it stays at 0 so the comparator falls through to fairness.
@@ -940,15 +945,15 @@ class SchedulerService
             return 0;
         }
 
-        $teamAUserIds = array_column($teamA, 'user_id');
-        $teamBUserIds = array_column($teamB, 'user_id');
+        $teamAMiniParticipantIds = array_column($teamA, 'mini_participant_id');
+        $teamBMiniParticipantIds = array_column($teamB, 'mini_participant_id');
 
         $count = 0;
         foreach ($fixedPairs as $pair) {
             $p1 = (int) $pair->player1_id;
             $p2 = (int) $pair->player2_id;
-            $inA = in_array($p1, $teamAUserIds, true) && in_array($p2, $teamAUserIds, true);
-            $inB = in_array($p1, $teamBUserIds, true) && in_array($p2, $teamBUserIds, true);
+            $inA = in_array($p1, $teamAMiniParticipantIds, true) && in_array($p2, $teamAMiniParticipantIds, true);
+            $inB = in_array($p1, $teamBMiniParticipantIds, true) && in_array($p2, $teamBMiniParticipantIds, true);
             if ($inA || $inB) {
                 $count++;
             }
@@ -957,23 +962,15 @@ class SchedulerService
     }
 
     /**
-     * Normalize fixed pairs from mini_participant_id → user_id.
-     *
-     * The frontend persists player1_id / player2_id as mini_participant_id
-     * values, but FixedPairDTO compares those ints against user_id values
-     * (because PlayerContextDTO.user_id is what the scheduler iterates over).
-     *
-     * The minimum-impact fix is to do the resolution here, where we already
-     * have both the request and the player pool. For each pair member we try:
-     *   1. exactly equal to a user_id value in the map  → already user_id
-     *   2. found as a mini_participant_id key            → use the mapped user_id
-     *   3. neither                                       → drop the member (or the whole pair if both fail)
+     * Normalize fixed pairs to mini_participant_id. This is the only identity
+     * that remains unambiguous when the same user has duplicate participant rows.
      *
      * @param array $fixedPairs FixedPairDTO[]
-     * @param array $miniPidToUid map mini_participant_id (int) => user_id (int|null)
+     * @param array $miniParticipantIds set of mini_participant_id values
+     * @param array $userIdToMiniParticipantIds map user_id => mini_participant_id[]
      * @return FixedPairDTO[] New array (empty if nothing resolves)
      */
-    private function normalizeFixedPairs(array $fixedPairs, array $miniPidToUid): array
+    private function normalizeFixedPairs(array $fixedPairs, array $miniParticipantIds, array $userIdToMiniParticipantIds): array
     {
         if (empty($fixedPairs)) {
             return [];
@@ -981,43 +978,43 @@ class SchedulerService
 
         $normalized = [];
         foreach ($fixedPairs as $pair) {
-            $uid1 = $this->resolvePairMemberId((int) $pair->player1_id, $miniPidToUid);
-            $uid2 = $this->resolvePairMemberId((int) $pair->player2_id, $miniPidToUid);
+            $miniPid1 = $this->resolvePairMemberId((int) $pair->player1_id, $miniParticipantIds, $userIdToMiniParticipantIds);
+            $miniPid2 = $this->resolvePairMemberId((int) $pair->player2_id, $miniParticipantIds, $userIdToMiniParticipantIds);
 
-            \Log::info('[Scheduler/normalizeFixedPairs] pair raw=(' . $pair->player1_id . ',' . $pair->player2_id . ') resolved=(' . ($uid1 ?? 'null') . ',' . ($uid2 ?? 'null') . ')');
+            \Log::info('[Scheduler/normalizeFixedPairs] pair raw=(' . $pair->player1_id . ',' . $pair->player2_id . ') resolved=(' . ($miniPid1 ?? 'null') . ',' . ($miniPid2 ?? 'null') . ')');
 
             // Skip pairs where either member cannot be resolved.
             // Creating a pair with player_id=0 would cause hasPlayer() to silently fail
             // because (0 === $userId) is always false, breaking the constraint.
-            if ($uid1 === null || $uid2 === null) {
-                \Log::warning('[Scheduler/normalizeFixedPairs] Skipping pair with orphan ID: raw p1=' . $pair->player1_id . ' (resolved=' . ($uid1 ?? 'null') . '), raw p2=' . $pair->player2_id . ' (resolved=' . ($uid2 ?? 'null') . ')');
+            if ($miniPid1 === null || $miniPid2 === null) {
+                \Log::warning('[Scheduler/normalizeFixedPairs] Skipping pair with orphan ID: raw p1=' . $pair->player1_id . ' (resolved=' . ($miniPid1 ?? 'null') . '), raw p2=' . $pair->player2_id . ' (resolved=' . ($miniPid2 ?? 'null') . ')');
                 continue;
             }
 
             $normalized[] = new \App\DTO\FixedPairDTO(
-                player1_id: $uid1,
-                player2_id: $uid2,
+                player1_id: $miniPid1,
+                player2_id: $miniPid2,
             );
         }
 
-        \Log::info('[Scheduler/normalizeFixedPairs] map size=' . count($miniPidToUid) . ' pairs_in=' . count($fixedPairs) . ' pairs_out=' . count($normalized));
+        \Log::info('[Scheduler/normalizeFixedPairs] participants=' . count($miniParticipantIds) . ' pairs_in=' . count($fixedPairs) . ' pairs_out=' . count($normalized));
 
         return $normalized;
     }
 
     /**
-     * Try to resolve one ID to a user_id using the mini_pid → user_id map.
+     * Try to resolve one ID to its unambiguous mini_participant_id.
      * Falls through three cases (see normalizeFixedPairs()).
      */
-    private function resolvePairMemberId(int $id, array $miniPidToUid): ?int
+    private function resolvePairMemberId(int $id, array $miniParticipantIds, array $userIdToMiniParticipantIds): ?int
     {
-        // Case 1: $id already matches a user_id value
-        if (in_array($id, $miniPidToUid, true)) {
+        // Pair records created by the UI always use mini_participant_id.
+        if (isset($miniParticipantIds[$id])) {
             return $id;
         }
-        // Case 2: $id is a mini_participant_id key → resolve
-        if (isset($miniPidToUid[$id]) && $miniPidToUid[$id] !== null) {
-            return (int) $miniPidToUid[$id];
+        // Legacy callers may send user_id. Only accept an unambiguous mapping.
+        if (count($userIdToMiniParticipantIds[$id] ?? []) === 1) {
+            return (int) $userIdToMiniParticipantIds[$id][0];
         }
         // Case 3: cannot resolve
         return null;
@@ -1774,12 +1771,8 @@ class SchedulerService
         $genderCounts = $this->countGenders($players);
 
         // Try all permutations
-        // Use mini_participant_id so guest players (null user_id) are uniquely
-        // identifiable in the permutation space.
-        $ids = array_map(
-            fn($p) => $p->user_id ?? ('m_' . $p->mini_participant_id),
-            $players
-        );
+        // mini_participant_id is unique even when a user has duplicate entries.
+        $ids = array_column($players, 'mini_participant_id');
         $permutations = $this->getPermutations($ids);
 
         $bestPairing = null;
@@ -1861,15 +1854,15 @@ class SchedulerService
         if (empty($fixedPairs)) {
             return true;
         }
-        // Performance: only do full validation for combos that actually contain both pair members
+        // Performance: only do full validation for combos that contain a pair member.
         // (most calls won't have any pair members in the teams at all)
-        $teamAUserIds = array_column($teamA, 'user_id');
-        $teamBUserIds = array_column($teamB, 'user_id');
-        $allTeamUids = array_merge($teamAUserIds, $teamBUserIds);
+        $teamAMiniParticipantIds = array_column($teamA, 'mini_participant_id');
+        $teamBMiniParticipantIds = array_column($teamB, 'mini_participant_id');
+        $allTeamMiniParticipantIds = array_merge($teamAMiniParticipantIds, $teamBMiniParticipantIds);
         $relevantPairs = [];
         foreach ($fixedPairs as $pair) {
-            $p1In = in_array($pair->player1_id, $allTeamUids, true);
-            $p2In = in_array($pair->player2_id, $allTeamUids, true);
+            $p1In = in_array($pair->player1_id, $allTeamMiniParticipantIds, true);
+            $p2In = in_array($pair->player2_id, $allTeamMiniParticipantIds, true);
             if ($p1In || $p2In) {
                 $relevantPairs[] = $pair;
             }
@@ -1884,22 +1877,22 @@ class SchedulerService
             $player2InA = null;
             $player2InB = null;
 
-            // Find which team each player of the pair belongs to (always use user_id)
+            // Find which team each member of the pair belongs to by participant ID.
             foreach ($teamA as $p) {
-                if ($pair->hasPlayer($p->user_id)) {
+                if ($pair->hasPlayer($p->mini_participant_id)) {
                     if ($player1InA === null) {
-                        $player1InA = $p->user_id;
+                        $player1InA = $p->mini_participant_id;
                     } else {
-                        $player2InA = $p->user_id;
+                        $player2InA = $p->mini_participant_id;
                     }
                 }
             }
             foreach ($teamB as $p) {
-                if ($pair->hasPlayer($p->user_id)) {
+                if ($pair->hasPlayer($p->mini_participant_id)) {
                     if ($player1InB === null) {
-                        $player1InB = $p->user_id;
+                        $player1InB = $p->mini_participant_id;
                     } else {
-                        $player2InB = $p->user_id;
+                        $player2InB = $p->mini_participant_id;
                     }
                 }
             }
@@ -2120,38 +2113,19 @@ class SchedulerService
     }
 
     /**
-     * Get players by their user IDs.
+     * Get players by their tournament-scoped mini participant IDs.
      */
-    private function getPlayersByIds(array $userIds, array $players): array
+    private function getPlayersByIds(array $miniParticipantIds, array $players): array
     {
-        // Map by either user_id (for non-guests) or mini_participant_id (for guests
-        // whose user_id is null).
-        // - Keys prefix 'u_' for real user ids
-        // - Keys prefix 'g_' for mini_participant_id fallbacks (guests)
         $playerMap = [];
         foreach ($players as $p) {
-            if ($p->user_id !== null) {
-                $playerMap['u_' . $p->user_id] = $p;
-            }
-            $playerMap['g_' . $p->mini_participant_id] = $p;
+            $playerMap[$p->mini_participant_id] = $p;
         }
 
         $result = [];
         $seen = [];
-        foreach ($userIds as $id) {
-            $p = null;
-            if ($id !== null && isset($playerMap['u_' . $id])) {
-                $p = $playerMap['u_' . $id];
-            } elseif ($id !== null && is_string($id) && str_starts_with($id, 'm_')) {
-                // Handle "m_{mini_pid}" strings produced by permutations when guest
-                // has no real user_id.
-                $miniPid = (int) substr($id, 2);
-                if (isset($playerMap['g_' . $miniPid])) {
-                    $p = $playerMap['g_' . $miniPid];
-                }
-            } elseif (is_int($id) && isset($playerMap['g_' . $id])) {
-                $p = $playerMap['g_' . $id];
-            }
+        foreach ($miniParticipantIds as $miniParticipantId) {
+            $p = $playerMap[(int) $miniParticipantId] ?? null;
 
             if ($p !== null && !isset($seen[$p->mini_participant_id])) {
                 $result[] = $p;
