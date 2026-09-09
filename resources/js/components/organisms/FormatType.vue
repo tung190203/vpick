@@ -162,24 +162,10 @@
                     </div>
                 </Section>
 
-                <!-- Xét Nhì/Ba khi các bảng không đều — chỉ hiện khi MIXED + >= 2 bảng -->
-                <Section v-if="isMixedMultiGroup" title="Xét đội Nhì/Ba">
-                    <div class="space-y-3">
-                        <Toggle
-                            label="Xét Nhì/Ba khi bảng không đều"
-                            description="Khi các bảng có số đội khác nhau, hệ thống loại kết quả các trận gặp đội cuối bảng ở các bảng lớn hơn để đảm bảo các đội Nhì/Ba được xét trên cùng số trận."
-                            :value="crossGroupRankingEnabled"
-                            @update="crossGroupRankingEnabled = $event" />
-                        <p v-if="isGroupsUniform && crossGroupRankingEnabled"
-                           class="text-xs text-green-600 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-                            Các bảng có cùng số đội nên không cần loại trận.
-                        </p>
-                        <p v-else-if="!isGroupsUniform && crossGroupRankingEnabled"
-                           class="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                            Phát hiện các bảng có số đội không đều — rule xét Nhì/Ba sẽ được áp dụng.
-                        </p>
-                    </div>
-                </Section>
+                <!-- Section "Xét đội Nhì/Ba" đã được ẩn: cross_group_ranking.enabled hiện drive
+                     hoàn toàn bởi advanced_to_next_round (chọn đội vào vòng trong).
+                     User không còn chọn riêng nữa. Logic tương ứng ở BE:
+                     TournamentTypeController::update / store force enabled = advanced_to_next_round -->
 
                 <Section title="Luật thi đấu">
                     <div class="relative">
@@ -613,7 +599,11 @@ const selectBestLosers = ref(true);
 const hasResurrectionBracket = ref(false);
 const mainBracketName = ref('Giải chính');
 const subBracketName = ref('Giải Tái sinh');
-const crossGroupRankingEnabled = ref(false);
+// ✅ Cross-group ranking ENABLED được drive trực tiếp bởi advanced_to_next_round (selectBestLosers).
+// Khi advanced_to_next_round = true  → cross_group_ranking.enabled = true
+// Khi advanced_to_next_round = false → cross_group_ranking.enabled = false
+// KHÔNG còn toggle riêng nữa — chỉ là computed để phản ánh trạng thái.
+const crossGroupRankingEnabled = computed(() => selectBestLosers.value);
 
 const setQuickBranchNames = (mainName, subName) => {
     mainBracketName.value = mainName;
