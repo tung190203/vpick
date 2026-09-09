@@ -997,12 +997,15 @@ const loadPairingConfig = () => {
 
     // Load số cặp đấu vòng knockout (gồm cả virtual nếu có cross_group_ranking)
     const poolStage = tournamentType.format_specific_config?.[0]?.pool_stage || {};
-    const numberOfGroups = parseInt(poolStage.number_competing_teams) || 0;
     const numAdvancingPerGroup = parseInt(poolStage.num_advancing_teams) || 0;
     const crossGroupRanking = tournamentType.format_specific_config?.[0]?.cross_group_ranking || {};
     const applyTo = crossGroupRanking.apply_to || [];
 
-    let totalAdvancing = numAdvancingPerGroup * numberOfGroups;
+    // ✅ SỐ BẢNG THỰC TẾ: dùng tournamentType.groups.length (từ DB) thay vì
+    // poolStage.number_competing_teams (từ config) để tránh desync khi user thay đổi config
+    // nhưng chưa sync lại số bảng. Đây là nguồn chính xác nhất.
+    const realGroupsCount = tournamentType.groups?.length || 0;
+    let totalAdvancing = numAdvancingPerGroup * realGroupsCount;
 
     // Nếu có cross_group_ranking và áp dụng cho runner_up → thêm slot cho "Nhì tốt nhất"
     // để tổng advancing đạt power of 2 (đủ cho bracket knockout)
@@ -1046,8 +1049,8 @@ const loadPairingConfig = () => {
 
     // Thêm các bảng ảo cho "Nhì tốt nhất" (nếu có cross_group_ranking.enabled && runner_up)
     if (crossGroupEnabled && applyTo.includes('runner_up') && numAdvancingPerGroup === 1) {
-        // Số bảng ảo = totalAdvancing - numAdvancing * numberOfGroups = số Nhì tốt nhất bổ sung
-        const virtualCount = totalAdvancing - (numAdvancingPerGroup * numberOfGroups);
+        // Số bảng ảo = totalAdvancing - numAdvancing * realGroupsCount = số Nhì tốt nhất bổ sung
+        const virtualCount = totalAdvancing - (numAdvancingPerGroup * realGroupsCount);
         for (let v = 0; v < virtualCount; v++) {
             pairingPoolGroups.value.push({
                 id: -1 - v, // ID âm để đánh dấu virtual (BE sẽ skip)
