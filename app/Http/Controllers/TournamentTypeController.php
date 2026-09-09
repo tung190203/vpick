@@ -155,6 +155,24 @@ class TournamentTypeController extends Controller
                 ]
             );
 
+            // ✅ FORCE-SYNC: cross_group_ranking.enabled = advanced_to_next_round
+            // (chỉ áp dụng cho format MIXED). Phải set NGAY SAU createWithFormat để các bước
+            // generate bảng / matches bên dưới dùng đúng giá trị enabled.
+            if ($type->format === TournamentType::FORMAT_MIXED) {
+                $savedConfig = $type->format_specific_config ?? [];
+                $savedMainConfig = is_array($savedConfig) && isset($savedConfig[0]) ? $savedConfig[0] : $savedConfig;
+                if (is_array($savedMainConfig) && array_key_exists('cross_group_ranking', $savedMainConfig)
+                    && is_array($savedMainConfig['cross_group_ranking'])
+                ) {
+                    $savedMainConfig['cross_group_ranking']['enabled'] = filter_var(
+                        $savedMainConfig['advanced_to_next_round'] ?? false,
+                        FILTER_VALIDATE_BOOLEAN
+                    );
+                    $type->format_specific_config = [$savedMainConfig];
+                    $type->save();
+                }
+            }
+
             // rules không được create trực tiếp trong createWithFormat => set sau
             if (array_key_exists('rules', $validated)) {
                 $type->rules = $validated['rules'];
@@ -437,6 +455,20 @@ class TournamentTypeController extends Controller
                 }
                 if (array_key_exists('sub_bracket_name', $mergedConfig) && !empty($mergedConfig['sub_bracket_name'])) {
                     $tournamentType->sub_bracket_name = $mergedConfig['sub_bracket_name'];
+                }
+
+                // ✅ FORCE-SYNC: cross_group_ranking.enabled phải luôn bằng advanced_to_next_round.
+                // Đây là rule nghiệp vụ: chỉ khi cho phép chọn "đội thua tốt nhất vào vòng trong" (best loser)
+                // thì mới kích hoạt xét Nhì/Ba giữa các bảng. Nếu không cho phép best loser, rule xét
+                // Nhì/Ba là vô nghĩa vì đội Nhì sẽ không được đi tiếp.
+                if (array_key_exists('cross_group_ranking', $mergedConfig)
+                    && is_array($mergedConfig['cross_group_ranking'])
+                    && $tournamentType->format === TournamentType::FORMAT_MIXED
+                ) {
+                    $mergedConfig['cross_group_ranking']['enabled'] = filter_var(
+                        $mergedConfig['advanced_to_next_round'] ?? false,
+                        FILTER_VALIDATE_BOOLEAN
+                    );
                 }
 
                 // DEBUG: Log after merge
