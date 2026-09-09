@@ -195,9 +195,17 @@
               <span class="groups-main-title">Kết quả chia bảng</span>
               <span class="groups-chip">({{ groups.length }} bảng)</span>
             </div>
-            <button class="btn-reset-groups" @click="startDraw" v-if="groups.length > 0">
-              Bốc lại
-            </button>
+            <div class="groups-actions" v-if="groups.length > 0">
+              <button
+                v-if="drawHistory.length > 0"
+                class="btn-undo-draw compact"
+                :disabled="spinning"
+                @click="undoLastDraw"
+              >
+                ← Quay lại 1 bước
+              </button>
+              <button class="btn-reset-groups" @click="startDraw">Bốc lại</button>
+            </div>
           </div>
           
           <!-- All groups in 1 line -->
@@ -272,6 +280,8 @@ const spinning = ref(false);
 const rot = ref(0);
 const wheelTransition = ref('none');
 const drawingNameHtml = ref('');
+// Each completed spin is stored so the organizer can undo exactly one draw.
+const drawHistory = ref([]);
 
 // Auto trim seeds if numGroups is decreased
 watch(numGroups, (newVal) => {
@@ -422,6 +432,7 @@ function startDraw() {
   rot.value = 0;
   wheelTransition.value = 'none';
   drawingNameHtml.value = '';
+  drawHistory.value = [];
   isDrawScreen.value = true;
 
   window.history.pushState({ screen: 'draw' }, '');
@@ -526,6 +537,7 @@ function spin() {
     const gi = getNextGroupIndex();
     
     groups.value[gi].teams.push({ name, seed: isSeed });
+    drawHistory.value.push({ name, seed: isSeed, groupIndex: gi, poolIndex: pick });
     drawingNameHtml.value = `<b style="color:${isSeed ? '#D97706' : '#DC2626'}">${name}</b> → Bảng ${groups.value[gi].letter}`;
     
     if (drawPhase.value === 'seed' && seedPool.value.length === 0) {
@@ -544,6 +556,26 @@ function spin() {
     
     spinning.value = false;
   }, 4100);
+}
+
+function undoLastDraw() {
+  if (spinning.value || drawHistory.value.length === 0) return;
+
+  const lastDraw = drawHistory.value.pop();
+  const group = groups.value[lastDraw.groupIndex];
+  if (!group) return;
+
+  const teamIndex = group.teams.findIndex(team => team.name === lastDraw.name);
+  if (teamIndex === -1) return;
+
+  group.teams.splice(teamIndex, 1);
+  // Restore the same pool and phase that existed immediately before the spin.
+  drawPhase.value = lastDraw.seed ? 'seed' : 'normal';
+  const pool = lastDraw.seed ? seedPool.value : remaining.value;
+  pool.splice(Math.min(lastDraw.poolIndex, pool.length), 0, lastDraw.name);
+
+  wheelTransition.value = 'none';
+  drawingNameHtml.value = '';
 }
 </script>
 
@@ -1121,6 +1153,25 @@ function spin() {
   cursor: default;
 }
 
+.btn-undo-draw {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 10px;
+  padding: 7px 14px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+}
+.btn-undo-draw:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.32);
+}
+.btn-undo-draw:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 /* LOWER HALF: GROUPS RESULT IN 1 HORIZONTAL ROW */
 .stage-lower {
   width: 100%;
@@ -1140,6 +1191,16 @@ function spin() {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.groups-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-undo-draw.compact {
+  padding: 4px 10px;
+  font-size: 12px;
 }
 
 .groups-main-title {
