@@ -158,19 +158,38 @@ class TournamentTypeController extends Controller
             // ✅ FORCE-SYNC: cross_group_ranking.enabled = advanced_to_next_round
             // (chỉ áp dụng cho format MIXED). Phải set NGAY SAU createWithFormat để các bước
             // generate bảng / matches bên dưới dùng đúng giá trị enabled.
+            //
+            // Lưu ý: nếu payload KHÔNG gửi cross_group_ranking (app có thể bỏ qua key này vì
+            // FE đã ẩn section), ta PHẢI tự inject default config với enabled = advanced_to_next_round,
+            // nếu không sẽ default về false và PHASE 2.5 (tạo bảng ảo Nhì tốt nhất) bị skip.
             if ($type->format === TournamentType::FORMAT_MIXED) {
                 $savedConfig = $type->format_specific_config ?? [];
                 $savedMainConfig = is_array($savedConfig) && isset($savedConfig[0]) ? $savedConfig[0] : $savedConfig;
-                if (is_array($savedMainConfig) && array_key_exists('cross_group_ranking', $savedMainConfig)
-                    && is_array($savedMainConfig['cross_group_ranking'])
-                ) {
-                    $savedMainConfig['cross_group_ranking']['enabled'] = filter_var(
-                        $savedMainConfig['advanced_to_next_round'] ?? false,
-                        FILTER_VALIDATE_BOOLEAN
-                    );
-                    $type->format_specific_config = [$savedMainConfig];
-                    $type->save();
+                if (!is_array($savedMainConfig)) {
+                    $savedMainConfig = [];
                 }
+
+                $advancedToNext = filter_var(
+                    $savedMainConfig['advanced_to_next_round'] ?? false,
+                    FILTER_VALIDATE_BOOLEAN
+                );
+
+                if (!array_key_exists('cross_group_ranking', $savedMainConfig)
+                    || !is_array($savedMainConfig['cross_group_ranking'])
+                ) {
+                    // ✅ Tự inject default cross_group_ranking khi payload không gửi
+                    $savedMainConfig['cross_group_ranking'] = [
+                        'enabled' => $advancedToNext,
+                        'apply_to' => ['runner_up', 'third_place'],
+                        'exclude_bottom_team_matches' => true,
+                    ];
+                } else {
+                    // ✅ Force-sync enabled = advanced_to_next_round khi đã có config
+                    $savedMainConfig['cross_group_ranking']['enabled'] = $advancedToNext;
+                }
+
+                $type->format_specific_config = [$savedMainConfig];
+                $type->save();
             }
 
             // rules không được create trực tiếp trong createWithFormat => set sau
