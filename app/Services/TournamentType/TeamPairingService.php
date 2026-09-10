@@ -15,7 +15,19 @@ class TeamPairingService
     const PAIRING_MODE_MANUAL = 'manual';
 
     /**
-     * Sắp xếp đội advancing theo mode đã chọn
+     * Sắp xếp đội advancing theo mode đã chọn.
+     *
+     * Logic phân biệt 2 trường hợp dựa vào việc có _virtual entries trong secondPlace:
+     *
+     * 1. BÌNH THƯỜNG (numAdvancing × number_of_groups = 2^n, không có Nhì/Ba tốt nhất):
+     *    - Mỗi bảng đóng góp 1 Nhất + 1 Nhì vào knockout
+     *    - Tuần tự:  Nhất A - Nhì B, Nhất B - Nhì A, Nhất C - Nhì D, ...
+     *    - Đối xứng: Nhất A - Nhì D, Nhất B - Nhì C, ...
+     *
+     * 2. CÓ PICK NHÌ/BA TỐT NHẤT (cross_group_ranking=true, không đủ 2^n):
+     *    - Nhì tốt nhất là ảo (không thuộc bảng nào), nằm ở CUỐI mảng
+     *    - Tuần tự:  Nhất A - Nhất B, Nhất C - Nhất D, ..., Nhì 1 - Nhì 2
+     *    - Đối xứng: Nhất A - Nhì 2, Nhất B - Nhì 1, Nhất C - Nhất F, ...
      */
     public function arrangeAdvancingTeams(
         $advancingByRank,
@@ -25,16 +37,49 @@ class TeamPairingService
         // Normalize: Trim và lowercase
         $pairingMode = $pairingMode ? strtolower(trim($pairingMode)) : null;
 
-        return match ($pairingMode) {
-            self::PAIRING_MODE_SYMMETRIC, 'symmetric' => $this->arrangeSymmetric($advancingByRank),
-            self::PAIRING_MODE_MANUAL, 'manual' => $this->arrangeManual($advancingByRank, $manualPairings),
-            default => $this->arrangeSequential($advancingByRank),
-        };
+        if ($pairingMode === self::PAIRING_MODE_MANUAL) {
+            return $this->arrangeManual($advancingByRank, $manualPairings);
+        }
+
+        // Phát hiện có Nhì/Ba tốt nhất (ảo) hay không
+        $hasVirtualSecondPlace = $this->hasVirtualEntries($advancingByRank->get(1, collect()));
+
+        if ($hasVirtualSecondPlace) {
+            // === CÓ PICK NHÌ/BA TỐT NHẤT: dùng logic tách riêng ===
+            if ($pairingMode === self::PAIRING_MODE_SYMMETRIC) {
+                return $this->arrangeSymmetricWithVirtual($advancingByRank);
+            }
+            return $this->arrangeSequentialWithVirtual($advancingByRank);
+        }
+
+        // === BÌNH THƯỜNG: mỗi bảng có Nhất + Nhì ===
+        if ($pairingMode === self::PAIRING_MODE_SYMMETRIC) {
+            return $this->arrangeSymmetric($advancingByRank);
+        }
+        return $this->arrangeSequential($advancingByRank);
     }
 
     /**
-     * Pattern: Nhất A vs Nhì B, Nhất B vs Nhì A, Nhất C vs Nhì D, Nhất D vs Nhì C
-     * Ví dụ 8 bảng: A-B, B-A, C-D, D-C, E-F, F-E, G-H, H-G
+     * Kiểm tra xem có _virtual entries (Nhì/Ba tốt nhất) trong rank không
+     */
+    private function hasVirtualEntries(Collection $rankTeams): bool
+    {
+        if ($rankTeams->isEmpty()) {
+            return false;
+        }
+        foreach ($rankTeams as $team) {
+            if (isset($team->_virtual) && $team->_virtual === true) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * [BÌNH THƯỜNG] Pattern cũ: Nhất A - Nhì B, Nhất B - Nhì A, Nhất C - Nhì D, Nhất D - Nhì C
+     * Áp dụng khi numAdvancing × number_of_groups = 2^n (4 bảng×2=8, 2 bảng×2=4, ...)
+     * - Mỗi bảng đóng góp đúng 1 Nhất và 1 Nhì
+     * - numFirstPlace === numSecondPlace
      */
     private function arrangeSequential($advancingByRank): Collection
     {
@@ -77,9 +122,50 @@ class TeamPairingService
     }
 
     /**
-     * Pattern: Nhất A vs Nhì H, Nhất B vs Nhì G, Nhất C vs Nhì F, Nhất D vs Nhì E
-     * Ví dụ 8 bảng: A-H, B-G, C-F, D-E, E-D, F-C, G-B, H-A
-     * Khi chỉ có 1 đội/bảng (numAdvancing=1): symmetric pair đầu vs cuối → A-D, B-C (4 bảng)
+     * [CÓ PICK NHÌ/BA TỐT NHẤT] Pattern: Nhất A - Nhất B, Nhất C - Nhất D, ..., Nhì 1 - Nhì 2
+     * Áp dụng khi cross_group_ranking=true và không đủ 2^n đội → pick Nhì tốt nhất
+     * - Nhì tốt nhất là ảo, nằm ở CUỐI mảng secondPlaceTeams
+     * - Ghép Nhất-Nhất theo cặp tuần tự trước, Nhì-Nhì theo cặp ở cuối
+     */
+    private function arrangeSequentialWithVirtual($advancingByRank): Collection
+    {
+        $advancing = collect();
+
+        $firstPlaceTeams = $advancingByRank->get(0, collect());
+        $secondPlaceTeams = $advancingByRank->get(1, collect());
+
+        $numFirstPlace = $firstPlaceTeams->count();
+        $numSecondPlace = $secondPlaceTeams->count();
+
+        // Bước 1: Ghép Nhất-Nhất theo cặp tuần tự (A-B, C-D, E-F, ...)
+        for ($i = 0; $i + 1 < $numFirstPlace; $i += 2) {
+            $advancing->push($firstPlaceTeams->get($i));
+            $advancing->push($firstPlaceTeams->get($i + 1));
+        }
+
+        // Bước 2: Ghép Nhì-Nhì theo cặp ở cuối (Nhì 1 - Nhì 2)
+        for ($i = 0; $i + 1 < $numSecondPlace; $i += 2) {
+            $advancing->push($secondPlaceTeams->get($i));
+            $advancing->push($secondPlaceTeams->get($i + 1));
+        }
+
+        // Xử lý các hạng còn lại (hạng 3, 4...)
+        foreach ($advancingByRank as $rank => $teamsAtRank) {
+            if ($rank < 2) continue;
+            foreach ($teamsAtRank as $team) {
+                $advancing->push($team);
+            }
+        }
+
+        return $advancing;
+    }
+
+    /**
+     * [BÌNH THƯỜNG] Pattern: Nhất A - Nhì D, Nhất B - Nhì C, ...
+     * Áp dụng khi numAdvancing × number_of_groups = 2^n
+     * - Mỗi bảng đóng góp đúng 1 Nhất và 1 Nhì (numFirstPlace === numSecondPlace)
+     * - Loop xen kẽ, lấy Nhì từ cuối lên (đối xứng)
+     * - Ví dụ 4 bảng×2=8 đội: A-D, B-C, C-B, D-A (loop i=0..3)
      */
     private function arrangeSymmetric($advancingByRank): Collection
     {
@@ -89,7 +175,7 @@ class TeamPairingService
         $numFirstPlace = $firstPlaceTeams->count();
         $numSecondPlace = $secondPlaceTeams->count();
 
-        // === KHI CHỈ CÓ 1 ĐỘI/BẢNG (numSecondPlace === 0) ===
+        // === TRƯỜNG HỢP CHỈ CÓ 1 ĐỘI/BẢNG (numSecondPlace === 0) ===
         // Symmetric pair đầu vs cuối: [A1, B1, C1, D1] → [A1, D1, B1, C1] → (A-D), (B-C)
         if ($numSecondPlace === 0 && $numFirstPlace > 0) {
             $reordered = collect();
@@ -104,7 +190,8 @@ class TeamPairingService
             return $reordered;
         }
 
-        // === EXISTING LOGIC: Nhất vs Nhì theo pattern đối xứng ===
+        // === TRƯỜNG HỢP CÓ NHÌ (numSecondPlace > 0) ===
+        // Loop xen kẽ, lấy Nhì từ cuối lên (đối xứng cũ)
         $advancing = collect();
         for ($i = 0; $i < max($numFirstPlace, $numSecondPlace); $i++) {
             if ($i < $numFirstPlace) {
@@ -114,6 +201,74 @@ class TeamPairingService
             if ($oppositeIndex >= 0 && $oppositeIndex < $numSecondPlace) {
                 $advancing->push($secondPlaceTeams->get($oppositeIndex));
             }
+        }
+
+        foreach ($advancingByRank as $rank => $teamsAtRank) {
+            if ($rank < 2) continue;
+            foreach ($teamsAtRank as $team) {
+                $advancing->push($team);
+            }
+        }
+
+        return $advancing;
+    }
+
+    /**
+     * [CÓ PICK NHÌ/BA TỐT NHẤT] Pattern: Nhất A - Nhì 2, Nhất B - Nhì 1, Nhất C - Nhất F, ...
+     * Áp dụng khi cross_group_ranking=true và không đủ 2^n đội → pick Nhì tốt nhất
+     * - Nhì tốt nhất là ảo, nằm ở CUỐI mảng secondPlaceTeams
+     * - Bước 1: Nhất đầu ghép với Nhì cuối (đảo)
+     * - Bước 2: Nhất còn lại ghép đầu-cuối
+     * - Nếu không có Nhì: ghép Nhất đầu-cuối (A-H, B-G, ...)
+     */
+    private function arrangeSymmetricWithVirtual($advancingByRank): Collection
+    {
+        $firstPlaceTeams = $advancingByRank->get(0, collect());
+        $secondPlaceTeams = $advancingByRank->get(1, collect());
+
+        $numFirstPlace = $firstPlaceTeams->count();
+        $numSecondPlace = $secondPlaceTeams->count();
+
+        // === TRƯỜNG HỢP KHÔNG CÓ NHÌ (numSecondPlace === 0) ===
+        // Symmetric pair đầu vs cuối: [A, B, C, D, E, F, G, H] → [A, H, B, G, C, F, D, E]
+        if ($numSecondPlace === 0 && $numFirstPlace > 0) {
+            $reordered = collect();
+            $numPairs = intdiv($numFirstPlace, 2);
+            for ($i = 0; $i < $numPairs; $i++) {
+                $reordered->push($firstPlaceTeams->get($i));
+                $reordered->push($firstPlaceTeams->get($numFirstPlace - 1 - $i));
+            }
+            if ($numFirstPlace % 2 === 1) {
+                $reordered->push($firstPlaceTeams->get($numPairs));
+            }
+            return $reordered;
+        }
+
+        // === TRƯỜNG HỢP CÓ NHÌ (numSecondPlace > 0) ===
+        // Bước 1: Ghép Nhất đầu với Nhì cuối (đảo ngược)
+        // Ví dụ: Nhất[A,B] - Nhì[2,1] → A-Nhì2, B-Nhì1
+        $reversedSecond = $secondPlaceTeams->reverse()->values();
+
+        $advancing = collect();
+
+        $numPairsWithSecond = min($numFirstPlace, $numSecondPlace);
+        for ($i = 0; $i < $numPairsWithSecond; $i++) {
+            $advancing->push($firstPlaceTeams->get($i));
+            $advancing->push($reversedSecond->get($i));
+        }
+
+        // Bước 2: Nhất còn lại ghép đối xứng đầu-cuối
+        // Ví dụ: Nhất còn lại [C, D, E, F] → C-F, D-E
+        $remainingFirst = $firstPlaceTeams->slice($numPairsWithSecond)->values();
+        $numRemaining = $remainingFirst->count();
+
+        $numPairsRemaining = intdiv($numRemaining, 2);
+        for ($i = 0; $i < $numPairsRemaining; $i++) {
+            $advancing->push($remainingFirst->get($i));
+            $advancing->push($remainingFirst->get($numRemaining - 1 - $i));
+        }
+        if ($numRemaining % 2 === 1) {
+            $advancing->push($remainingFirst->get($numPairsRemaining));
         }
 
         foreach ($advancingByRank as $rank => $teamsAtRank) {

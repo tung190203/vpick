@@ -714,6 +714,14 @@
                         Chỉnh sửa ghép cặp
                       </button>
                     </div>
+
+                    <!-- ✅ KNOCKOUT REBUILD NOTE: hiển thị trong MODAL thủ công, không phải ở ngoài.
+                         Khi user click "Tự chọn" và mở modal ghép cặp thủ công:
+                         - Nếu pool stage đã hoàn thành → modal sẽ hiện nút "Tải đội từ vòng bảng" ở góc phải.
+                         - Click nút đó sẽ fetch API /knockout-candidates → hiển thị team thật + team_label
+                           (Nhất A, Nhất B, Nhì tốt nhất #1, ...) để user kéo thả ghép cặp lại.
+                         - Click "Áp dụng" sẽ gọi API /knockout-rebuild-pairing.
+                    -->
                   </div>
                 </template>
 
@@ -839,15 +847,26 @@
       :tournamentId="id"
     />
 
-    <!-- ✅ Manual Pairing Modal cho ghép cặp vòng loại trực tiếp -->
+    <!-- ✅ Manual Pairing Modal cho ghép cặp vòng loại trực tiếp
+         - mode='pairing_mode' (mặc định): dùng placeholder Nhất/Nhì - dùng khi tạo/đổi tournament type.
+         - poolCompleted=true + tournamentTypeId được truyền → modal sẽ tự fetch /knockout-candidates
+           khi user click nút "Tải đội từ vòng bảng" trong modal → hiển thị team thật + team_label.
+         - @apply: luồng cũ (gọi savePairingConfig).
+         - @apply-rebuild: luồng mới (gọi /knockout-rebuild-pairing).
+         - @pool-not-completed: thông báo pool chưa xong (khi user click nút tải nhưng pool chưa hoàn tất).
+    -->
     <ManualPairingModal
       v-model="showManualPairingModal"
+      :tournament-type-id="tournament?.tournament_types?.[0]?.id"
+      :pool-completed="poolCompleted"
       :num-groups="pairingNumGroups"
       :num-advancing-teams="pairingNumAdvancingTeams"
       :pool-groups="pairingPoolGroups"
       :existing-pairings="manualPairings"
       :cross-group-ranking-enabled="crossGroupRankingEnabled"
       @apply="handleManualPairingApply"
+      @apply-rebuild="handleRebuildPairingApply"
+      @pool-not-completed="onPoolNotCompleted"
     />
   </div>
 </template>
@@ -965,6 +984,12 @@ const pairingNumAdvancingTeams = ref(2);  // Số đội đi tiếp từ mỗi b
 const pairingPoolGroups = ref([]);  // Danh sách groups thực (có database ID)
 const crossGroupRankingEnabled = ref(false);  // Cross-group ranking có bật không
 
+// ✅ Refs cho KNOCKOUT REBUILD FLOW (mới - sau khi pool stage xong)
+// Lưu ý: button "Ghép cặp lại" nằm trong ManualPairingModal, không phải ở màn thể thức.
+// Modal sẽ tự gọi API /knockout-candidates và hiển thị team thật + team_label.
+const poolCompleted = ref(false);   // Pool stage đã hoàn thành 100% chưa (auto-detect từ matches)
+const isRebuildingPairing = ref(false);
+
 const PAIRING_MODE_OPTIONS = [
     { id: 'sequential', label: 'Tuần tự', subtitle: 'A-B, B-A, C-D, D-C...' },
     { id: 'symmetric', label: 'Đối xứng', subtitle: 'A-H, B-G, C-F, D-E...' },
@@ -1073,15 +1098,45 @@ const selectPairingMode = async (mode) => {
     await savePairingConfig();
 };
 
-// ✅ Mở modal ghép cặp thủ công
-const openManualPairingModal = () => {
+/**
+ * ✅ Mở modal ghép cặp thủ công.
+ * Trước khi mở: fetch /knockout-candidates để lấy pool_completed chính xác từ BE
+ * (vì detail API không load matches nên checkPoolCompleted() cục bộ không đáng tin).
+ */
+const openManualPairingModal = async () => {
+    const tournamentType = tournament.value?.tournament_types?.[0];
+    if (!tournamentType || !tournamentType.id) {
+        toast.error('Không tìm thấy thể thức thi đấu.');
+        return;
+    }
+
+    // ✅ Detect pool_completed bằng API để biết có hiển thị button "Tải đội từ vòng bảng" không
+    poolCompleted.value = await fetchPoolCompleted(tournamentType.id);
+
     showManualPairingModal.value = true;
 };
 
-// ✅ Xử lý khi apply manual pairing
+/**
+ * ✅ Xử lý khi user apply manual pairing từ modal.
+ * - Luồng cũ (chưa có trận hoàn thành): gọi PUT /tournament-types/{id} để update config.
+ * - Luồng mới (pool đã hoàn thành hoặc đã có trận knockout): gọi /knockout-rebuild-pairing.
+ *
+ * Modal đã tự detect và route đúng event ('apply' vs 'apply-rebuild'),
+ * nhưng đây là defense-in-depth để đảm bảo parent cũng route đúng nếu modal bị thay đổi.
+ */
 const handleManualPairingApply = (pairings) => {
     manualPairings.value = pairings;
     pairingMode.value = 'manual';
+
+    // ✅ Nếu pool đã hoàn thành (đã có trận round=1 status=completed),
+    // KHÔNG gọi PUT cũ vì sẽ fail với "Đã có trận đấu hoàn thành".
+    // → Chuyển sang handleRebuildPairingApply.
+    if (poolCompleted.value) {
+        console.warn('[handleManualPairingApply] pool completed → routing to /knockout-rebuild-pairing');
+        handleRebuildPairingApply(pairings);
+        return;
+    }
+
     savePairingConfig();
 };
 
@@ -1151,6 +1206,103 @@ const getGroupName = (groupId) => {
     // Fallback: dùng alphabet nếu chưa load
     const groupNames = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
     return groupNames[groupId - 1] || String(groupId);
+};
+
+// ===========================================================
+// ✅ KNOCKOUT REBUILD FLOW (mới - sau khi pool stage xong)
+// ===========================================================
+
+/**
+ * ✅ Detect pool stage đã hoàn thành bằng cách gọi API /knockout-candidates.
+ * - Đây là cách chính xác nhất vì BE biết rõ pool_completed thực tế (theo matches.status, scores...).
+ * - Nếu API fail → fallback về check matches cục bộ.
+ */
+const fetchPoolCompleted = async (tournamentTypeId) => {
+    if (!tournamentTypeId) return false;
+    try {
+        const payload = await TournamentTypeService.getKnockoutCandidates(tournamentTypeId);
+        return Boolean(payload?.pool_completed);
+    } catch (error) {
+        console.warn('[fetchPoolCompleted] API failed, falling back to matches check:', error?.message);
+        return checkPoolCompletedFromMatches();
+    }
+};
+
+/**
+ * Fallback: check pool completed từ matches (round=1 tất cả status='completed').
+ * ⚠️ Lưu ý: tournament detail API có thể không trả matches → luôn trả về false.
+ */
+const checkPoolCompletedFromMatches = () => {
+    const tournamentType = tournament.value?.tournament_types?.[0];
+    if (!tournamentType) return false;
+    const matches = tournamentType.matches || [];
+    const poolMatches = matches.filter((m) => m.round === 1);
+    if (poolMatches.length === 0) return false;
+    return poolMatches.every((m) => String(m.status).toLowerCase() === 'completed');
+};
+
+/**
+ * Computed cũ (giữ lại để tương thích): check pool stage đã hoàn thành 100% chưa.
+ * Lưu ý: Thường sẽ trả về false vì detail API không load matches.
+ * → Nên dùng fetchPoolCompleted() thay thế.
+ */
+const checkPoolCompleted = () => {
+    poolCompleted.value = checkPoolCompletedFromMatches();
+};
+
+/**
+ * Watch: tự động update poolCompleted khi matches thay đổi (fallback).
+ */
+watch(
+    () => tournament.value?.tournament_types?.[0]?.matches,
+    () => {
+        checkPoolCompleted();
+    },
+    { deep: true }
+);
+
+/**
+ * Xử lý khi user apply rebuild pairing từ modal.
+ * Gọi API POST /knockout-rebuild-pairing với manual_pairings.
+ */
+const handleRebuildPairingApply = async (manualPairings) => {
+    const tournamentType = tournament.value?.tournament_types?.[0];
+    if (!tournamentType || !tournamentType.id) {
+        toast.error('Không tìm thấy thể thức thi đấu.');
+        return;
+    }
+
+    if (isRebuildingPairing.value) return;
+
+    isRebuildingPairing.value = true;
+    try {
+        const response = await TournamentTypeService.rebuildKnockoutPairing(
+            tournamentType.id,
+            { manual_pairings: manualPairings }
+        );
+        toast.success(
+            response?.message ||
+                `Đã ghép cặp lại vòng sau thành công (${response?.rebuild_result?.reassigned_pairs ?? 0} cặp).`
+        );
+        // Reload tournament data để cập nhật UI bracket
+        await detailTournament(id);
+    } catch (error) {
+        console.error('[handleRebuildPairingApply] error:', error);
+        toast.error(
+            error.response?.data?.message ||
+                'Có lỗi xảy ra khi ghép cặp lại vòng sau.'
+        );
+    } finally {
+        isRebuildingPairing.value = false;
+    }
+};
+
+/**
+ * ✅ Listener khi user click "Tải đội từ vòng bảng" nhưng pool chưa hoàn thành.
+ * Modal sẽ emit 'pool-not-completed' để parent show toast.
+ */
+const onPoolNotCompleted = () => {
+    toast.warning('Vòng bảng chưa kết thúc. Không thể tải danh sách đội vào vòng sau.');
 };
 
 // ✅ Watcher để reload pairing config khi tournament data thay đổi

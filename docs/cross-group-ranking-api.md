@@ -8,7 +8,15 @@ GET /api/tournament-types/{tournamentType}/cross-group-comparison
 
 ### Mục đích
 
-Trả về danh sách xếp hạng tất cả đội Nhì và Ba từ mọi bảng, kèm thống kê so sánh sau khi loại các trận gặp đội cuối bảng.
+Trả về danh sách xếp hạng tất cả đội Nhì và Ba từ mọi bảng, kèm thống kê so sánh sau khi loại các trận gặp **đội cuối bảng (Ba)**.
+
+**Quy tắc loại trận:**
+- **Bảng đủ** (k đội > minimum_group_size): loại trận gặp **đội cuối bảng (Ba)** → Nhì được so sánh qua trận gặp Nhất. Điều này loại bỏ handicap không công bằng khi Ba có thể thua nhiều trận hơn.
+- **Bảng thiếu** (k đội <= minimum_group_size): không loại gì, tính đầy đủ.
+
+**Ví dụ:**
+- Bảng 3 đội (k=3, m=2): loại rank 3 (Ba) → Nhì được so sánh qua trận gặp Nhất.
+- Bảng 2 đội (k=2, m=2): không loại gì → Nhì chỉ gặp Nhất, tính đầy đủ.
 
 ### Schema Response
 
