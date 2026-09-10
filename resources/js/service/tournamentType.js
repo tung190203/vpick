@@ -55,7 +55,7 @@ export const getCrossGroupComparison = async (tournamentTypeId) => {
 
 // API 2 dùng raw axios thay vì axiosInstance để tránh response interceptor (404 → not-found page)
 // chỉ redirect khi GET dùng để load page; request từ modal candidate nên trả lỗi về component.
-// Vẫn lấy token qua LOCAL_STORAGE_KEY để đảm bảo Bearer header luôn có khi user đã đăng nhập.
+// Vẫn lấy token qua LOCAL_STORAGE_KEY để đảm bảy Bearer header luôn có khi user đã đăng nhập.
 export const getCrossGroupComparisonTeamMatches = async (tournamentTypeId, teamId) => {
   const token = localStorage.getItem(LOCAL_STORAGE_KEY.LOGIN_TOKEN) || '';
   try {
@@ -75,4 +75,19 @@ export const getCrossGroupComparisonTeamMatches = async (tournamentTypeId, teamI
     }
     throw error;
   }
+}
+
+// ✅ Knockout rebuild flow (NEW) — tách riêng khỏi luồng pairing_mode hiện tại
+// Lấy danh sách team ứng viên vào vòng sau (kèm team_label), sau khi vòng bảng đã hoàn thành.
+// Nếu vòng bảng chưa xong → trả về {pool_completed: false, candidates: []} (không error).
+export const getKnockoutCandidates = async (tournamentTypeId) => {
+  return axiosInstance.get(`${tournamentTypeEndpoint}/${tournamentTypeId}/knockout-candidates`)
+    .then((response) => response.data.data);
+}
+
+// Rebuild pairing round=2 main bracket dựa trên manual_pairings (sau khi pool stage xong).
+// CHỈ reassign home/away_team_id cho round=2 main, KHÔNG động vào round≥3 và resurrection bracket.
+export const rebuildKnockoutPairing = async (tournamentTypeId, data) => {
+  return axiosInstance.post(`${tournamentTypeEndpoint}/${tournamentTypeId}/knockout-rebuild-pairing`, data)
+    .then((response) => response.data.data);
 }

@@ -20,19 +20,23 @@
                         <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-5 flex items-start gap-2">
                             <InformationCircleIcon class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
                             <div class="text-sm text-blue-700">
-                                <p>Mỗi cặp cần <strong>2 đội</strong>. Kéo thả đội từ danh sách bên dưới vào <strong>bất kỳ ô trống nào</strong> của cặp đấu.</p>
+                                <p v-if="isRebuildMode">Mỗi cặp cần <strong>2 đội</strong>. Kéo thả đội từ danh sách bên dưới vào <strong>bất kỳ ô trống nào</strong> của cặp đấu.</p>
+                                <p v-else>Mỗi cặp cần <strong>2 đội</strong>. Kéo thả đội từ danh sách bên dưới vào <strong>bất kỳ ô trống nào</strong> của cặp đấu.</p>
                                 <p class="mt-1">Nhấn <strong>"Mặc định"</strong> để tự động sắp xếp theo tuần tự.</p>
-                                <p class="mt-1" v-if="hasVirtualGroups && crossGroupRankingEnabled">
+                                <p class="mt-1" v-if="hasVirtualGroups && crossGroupRankingEnabled && !isRebuildMode">
                                     Giải đấu đang bật <strong>cross_group_ranking</strong>: các suất ghép chéo bảng lấy từ <strong>"Nhì tốt nhất"</strong>. Hệ thống sẽ tự xác định đội cụ thể sau khi vòng bảng kết thúc.
                                 </p>
-                                <p class="mt-1" v-else-if="hasVirtualGroups">
+                                <p class="mt-1" v-else-if="hasVirtualGroups && !isRebuildMode">
                                     Ngoài ra còn có <strong>các suất "Nhì tốt nhất"</strong> từ vòng bảng. Hệ thống sẽ tự động xác định đội cụ thể sau khi vòng bảng kết thúc.
+                                </p>
+                                <p class="mt-1" v-else-if="hasVirtualGroups && isRebuildMode">
+                                    Giải đấu đang bật <strong>cross_group_ranking</strong>: các suất "Nhì tốt nhất" đã được xác định sau khi vòng bảng kết thúc.
                                 </p>
                             </div>
                         </div>
 
                         <!-- Quick Actions -->
-                        <div class="flex gap-2 mb-5">
+                        <div class="flex flex-wrap gap-2 mb-5">
                             <button @click="resetToSequential" class="px-3 py-1.5 text-sm font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors">
                                 Mặc định (Tuần tự)
                             </button>
@@ -42,6 +46,21 @@
                             <button @click="resetToEmpty" class="px-3 py-1.5 text-sm font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors">
                                 Xóa tất cả
                             </button>
+                            <!-- ✅ Nút "Tải đội từ vòng bảng" — chỉ hiện khi pool đã hoàn thành và đang ở pairing_mode -->
+                            <button
+                                v-if="poolCompleted && !isRebuildMode"
+                                @click="onLoadCandidatesClick"
+                                :disabled="isLoadingCandidates"
+                                class="ml-auto px-3 py-1.5 text-sm font-medium bg-orange-100 hover:bg-orange-200 text-orange-700 rounded-lg transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <ArrowPathIcon v-if="isLoadingCandidates" class="w-4 h-4 animate-spin" />
+                                <ArrowPathIcon v-else class="w-4 h-4" />
+                                {{ isLoadingCandidates ? 'Đang tải...' : 'Tải đội từ vòng bảng' }}
+                            </button>
+                            <!-- ✅ Badge hiển thị khi đang ở rebuild mode (đã load candidates thật) -->
+                            <span v-if="isRebuildMode"
+                                class="ml-auto px-3 py-1.5 text-xs font-semibold bg-orange-100 text-orange-700 rounded-lg border border-orange-200">
+                                Đang dùng kết quả vòng bảng
+                            </span>
                         </div>
 
                         <!-- Group Teams Grid (real groups) -->
@@ -183,10 +202,22 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue';
-import { XMarkIcon, InformationCircleIcon, ExclamationTriangleIcon, CheckCircleIcon } from '@heroicons/vue/24/outline';
+import { XMarkIcon, InformationCircleIcon, ExclamationTriangleIcon, CheckCircleIcon, ArrowPathIcon } from '@heroicons/vue/24/outline';
+import * as TournamentTypeService from '@/service/tournamentType.js';
 
 const props = defineProps({
     modelValue: Boolean,
+    // ✅ Tournament type id — dùng để modal tự gọi API /knockout-candidates khi vòng bảng đã hoàn thành.
+    tournamentTypeId: {
+        type: [Number, String, null],
+        default: null
+    },
+    // ✅ Force mode từ bên ngoài (optional). Nếu không truyền, modal sẽ tự detect khi pool stage xong.
+    mode: {
+        type: String,
+        default: null,
+        validator: (v) => v === null || ['pairing_mode', 'rebuild'].includes(v)
+    },
     numGroups: {
         type: Number,
         default: 8
@@ -206,14 +237,48 @@ const props = defineProps({
     crossGroupRankingEnabled: {
         type: Boolean,
         default: false
+    },
+    // ✅ Pool stage đã hoàn thành 100% chưa (parent detect từ matches).
+    // Khi true, modal sẽ tự động fetch /knockout-candidates khi mở.
+    poolCompleted: {
+        type: Boolean,
+        default: false
+    },
+    // ✅ Danh sách ứng viên từ parent (optional). Nếu parent đã load sẵn thì dùng,
+    // nếu không thì modal sẽ tự fetch khi cần.
+    candidates: {
+        type: Array,
+        default: () => []
     }
 });
 
-const emit = defineEmits(['update:modelValue', 'apply']);
+const emit = defineEmits(['update:modelValue', 'apply', 'apply-rebuild']);
 
 const groupList = ref([]);
 
 const pairingSlots = ref([]); // Array of [team1, team2] pairs
+
+// ✅ Mode nội bộ: có thể thay đổi runtime khi user click "Tải đội từ vòng bảng".
+// - 'pairing_mode': dùng placeholder (Nhất/Nhì theo bảng).
+// - 'rebuild': dùng team thật + team_label từ /knockout-candidates.
+const internalMode = ref(props.mode || 'pairing_mode');
+
+// ✅ Mode hiệu lực: prop.mode nếu có, không thì internalMode
+const effectiveMode = computed(() => props.mode || internalMode.value);
+
+// ✅ Mode helper: kiểm tra mode hiện tại có phải 'rebuild' không
+const isRebuildMode = computed(() => effectiveMode.value === 'rebuild');
+
+// ✅ Internal state cho candidates
+const internalCandidates = ref([]);  // candidates fetch nội bộ từ API
+const isLoadingCandidates = ref(false);
+const loadCandidatesError = ref(null);
+
+// ✅ Effective candidates: ưu tiên prop.candidates, fallback internalCandidates
+const effectiveCandidates = computed(() => {
+    if (props.candidates && props.candidates.length > 0) return props.candidates;
+    return internalCandidates.value || [];
+});
 
 const isOpen = computed({
     get: () => props.modelValue,
@@ -289,6 +354,58 @@ const initializeData = () => {
 
     groupList.value = [];
 
+    // ✅ MODE='rebuild': dùng candidates từ API /knockout-candidates
+    // - Mỗi candidate đã có team_id, team_name, team_label thật
+    // - Tạo groupList theo group_id thật (real) hoặc is_virtual (Nhì/Ba tốt nhất)
+    if (isRebuildMode.value) {
+        const candidatesToUse = effectiveCandidates.value;
+        if (!candidatesToUse || candidatesToUse.length === 0) {
+            console.warn('[ManualPairingModal] rebuild mode: candidates is empty');
+        }
+        const groupedByGroupId = {};
+        (candidatesToUse || []).forEach((c) => {
+            // Real groups dùng group_id dương, virtual dùng id âm unique theo group_position
+            const gId = c.is_virtual
+                ? -1 - (((c.candidate_type || '').charCodeAt(0) || 0) * 100 + (c.group_position ?? 1))
+                : c.group_id;
+            const key = gId;
+            if (!groupedByGroupId[key]) {
+                groupedByGroupId[key] = {
+                    groupId: key,
+                    groupName: c.is_virtual ? 'Ảo' : (c.group_name ? c.group_name.replace(/^Bảng\s+/u, '') : '?'),
+                    isVirtual: !!c.is_virtual,
+                    candidates: []
+                };
+            }
+            groupedByGroupId[key].candidates.push(c);
+        });
+
+        // Sort mỗi group theo group_position ascending
+        Object.values(groupedByGroupId).forEach((g) => {
+            g.candidates.sort((a, b) => (a.group_position ?? 1) - (b.group_position ?? 1));
+            // Pick first 2 candidates làm firstTeam/secondTeam
+            const c1 = g.candidates[0];
+            const c2 = g.candidates[1];
+            g.firstTeam = c1 ? (c1.team_label || c1.team_name) : '?';
+            g.secondTeam = c2 ? (c2.team_label || c2.team_name) : '';
+            g.virtualIndex = g.isVirtual ? (g.candidates[0]?.group_position ?? 1) : 0;
+        });
+
+        groupList.value = Object.values(groupedByGroupId);
+
+        // Create slots
+        const numSlots = numGroups;
+        pairingSlots.value = [];
+        for (let i = 0; i < numSlots; i++) {
+            pairingSlots.value.push([null, null]);
+        }
+
+        // Rebuild mode không cần load existing pairings (round=2 main chưa có team thật,
+        // user phải tự ghép lại sau khi pool xong).
+        return;
+    }
+
+    // ===== MODE='pairing_mode' (luồng cũ) =====
     // BẮT BUỘC phải có poolGroups (database ID)
     if (!props.poolGroups || props.poolGroups.length === 0) {
         console.error('ManualPairingModal: poolGroups is required for manual pairing');
@@ -434,11 +551,103 @@ const loadExistingPairings = (pairings) => {
     });
 };
 // Watch for prop changes
-watch(() => props.modelValue, (newVal) => {
+watch(() => props.modelValue, async (newVal) => {
     if (newVal) {
+        // Mỗi lần mở modal: reset internal mode về mode prop (mặc định pairing_mode)
+        internalMode.value = props.mode || 'pairing_mode';
         initializeData();
+        // Nếu pool đã hoàn thành + có tournamentTypeId + đang ở pairing_mode → auto-load candidates
+        await tryAutoLoadCandidates();
     }
 }, { immediate: true });
+
+/**
+ * ✅ Auto-load candidates khi pool đã hoàn thành (và đang ở pairing_mode).
+ * - Nếu parent đã truyền candidates → dùng luôn (không cần fetch).
+ * - Nếu chưa có và có tournamentTypeId → gọi API /knockout-candidates.
+ * - Nếu pool_completed=true và có candidates → tự chuyển sang rebuild mode.
+ */
+const tryAutoLoadCandidates = async () => {
+    if (!props.poolCompleted) return;
+    if (effectiveMode.value !== 'pairing_mode') return;
+    if (props.candidates && props.candidates.length > 0) {
+        // Parent đã có candidates → chuyển thẳng sang rebuild mode
+        internalMode.value = 'rebuild';
+        initializeData();
+        return;
+    }
+    if (!props.tournamentTypeId) return;
+    await loadCandidatesFromPool();
+};
+
+/**
+ * ✅ Gọi API /knockout-candidates để fetch danh sách đội thật vào vòng sau.
+ * - Nếu pool chưa xong → return null + không làm gì (parent sẽ hiển thị toast riêng).
+ * - Nếu có candidates → tự động chuyển sang rebuild mode và re-init.
+ */
+const loadCandidatesFromPool = async () => {
+    if (!props.tournamentTypeId) {
+        console.warn('[ManualPairingModal] loadCandidatesFromPool: missing tournamentTypeId');
+        return null;
+    }
+    if (isLoadingCandidates.value) return null;
+
+    isLoadingCandidates.value = true;
+    loadCandidatesError.value = null;
+    try {
+        const payload = await TournamentTypeService.getKnockoutCandidates(props.tournamentTypeId);
+        const poolDone = Boolean(payload?.pool_completed);
+        const candidates = payload?.candidates || [];
+
+        if (!poolDone) {
+            // Pool chưa hoàn thành → vẫn cache candidates (rỗng) để modal biết
+            internalCandidates.value = candidates;
+            return { pool_completed: false, candidates };
+        }
+
+        internalCandidates.value = candidates;
+        // Tự động chuyển sang rebuild mode
+        internalMode.value = 'rebuild';
+        initializeData();
+        return { pool_completed: true, candidates };
+    } catch (error) {
+        console.error('[ManualPairingModal] loadCandidatesFromPool error:', error);
+        loadCandidatesError.value = error.response?.data?.message || error.message || 'Lỗi không xác định';
+        return null;
+    } finally {
+        isLoadingCandidates.value = false;
+    }
+};
+
+/**
+ * ✅ Click handler cho button "Tải đội từ vòng bảng".
+ * - Nếu pool chưa xong → emit 'pool-not-completed' để parent show toast.
+ * - Nếu pool xong và có candidates → fetch + switch mode.
+ */
+const onLoadCandidatesClick = async () => {
+    const result = await loadCandidatesFromPool();
+    if (!result) {
+        // Error đã được log, loadCandidatesError có thể hiển thị
+        return;
+    }
+    if (!result.pool_completed) {
+        emit('pool-not-completed');
+    }
+};
+
+// ✅ Watch cho rebuild mode: re-init khi candidates thay đổi (sau khi pool stage xong)
+watch(() => props.candidates, (newVal) => {
+    if (props.modelValue && isRebuildMode.value) {
+        initializeData();
+    }
+}, { deep: true });
+
+// ✅ Watch internalCandidates (sau khi fetch nội bộ) → re-init nếu đang rebuild mode
+watch(internalCandidates, (newVal) => {
+    if (props.modelValue && isRebuildMode.value) {
+        initializeData();
+    }
+}, { deep: true });
 
 // Watch for existingPairings changes (after modal is open)
 watch(() => props.existingPairings, (newVal) => {
@@ -447,13 +656,18 @@ watch(() => props.existingPairings, (newVal) => {
     }
 }, { deep: true });
 
-// Build một team object sạch từ groupList entry
+// Build một team object sạch từ groupList entry.
+// ✅ Luôn include teamId để FE validation có thể track actual team_id,
+// ngăn việc cùng 1 đội xuất hiện nhiều lần trong round 2.
 const buildTeamFromGroup = (groupInfo, rank) => {
     if (!groupInfo) return null;
+    // Lấy team_id từ candidates array
+    const candidate = (groupInfo.candidates || []).find(c => c.rank === rank);
     return {
         groupId: groupInfo.groupId,
         groupName: groupInfo.groupName,
         teamName: rank === 1 ? groupInfo.firstTeam : groupInfo.secondTeam,
+        teamId: candidate?.team_id ?? null,  // ✅ Resolved team_id (null cho virtual placeholder)
         rank,
         isVirtual: groupInfo.isVirtual,
         virtualIndex: groupInfo.isVirtual ? getVirtualIndex(groupInfo.groupId) : 0
@@ -497,6 +711,9 @@ const removeFromSlot = (slotIndex, subIndex) => {
 
 // Check xem (groupId, rank) đã được đặt ở bất kỳ vị trí nào trong slots chưa.
 // Vì 2 ô trong 1 cặp là bất kỳ (không ép Nhất trái/Nhì phải), chỉ cần check cả 2.
+//
+// ✅ Cải tiến: Cũng check theo actual team_id để ngăn việc cùng 1 đội xuất hiện
+// nhiều lần (ví dụ: Đội số 7 vừa là Nhất C vừa là "Nhì tốt nhất" khi resolve).
 const isTeamUsed = (groupId, rank) => {
     const teamInfo = groupList.value.find(g => g.groupId === groupId);
     // Bảng ảo không có Nhất → không pick được
@@ -506,10 +723,38 @@ const isTeamUsed = (groupId, rank) => {
     // (canPickRealNhi đã ẩn nút, nhưng chặn cả drag/drop từ chỗ khác)
     if (!teamInfo?.isVirtual && rank === 2 && (props.numAdvancingTeams ?? 1) < 2) return true;
 
+    // Collect team_ids đang nằm trong slots (bất kể groupId/rank gốc là gì)
+    const usedTeamIds = new Set();
+    for (const slot of pairingSlots.value) {
+        if (slot[0]?.teamId) usedTeamIds.add(slot[0].teamId);
+        if (slot[1]?.teamId) usedTeamIds.add(slot[1].teamId);
+    }
+
+    // Check (groupId, rank) combination
     for (const slot of pairingSlots.value) {
         if (slot[0] && slot[0].groupId === groupId && slot[0].rank === rank) return true;
         if (slot[1] && slot[1].groupId === groupId && slot[1].rank === rank) return true;
     }
+
+    // ✅ Ngăn cùng 1 đội xuất hiện nhiều lần:
+    // Với virtual group, check xem candidate team_id đã được dùng chưa.
+    // Với real group + rank=2, check xem đội Nhì thật đã được dùng chưa (tránh dùng Nhì thật khi đang dùng "Nhì tốt nhất" ảo cùng team).
+    if (teamInfo?.isVirtual) {
+        // Lấy tất cả team_id từ candidates của group này
+        const groupCandidates = teamInfo.candidates || [];
+        for (const candidate of groupCandidates) {
+            if (candidate.teamId && usedTeamIds.has(candidate.teamId)) {
+                return true; // Team này đã nằm trong slot khác → disable
+            }
+        }
+    } else if (rank === 2) {
+        // Real Nhì: check xem team_id tương ứng đã được dùng chưa
+        const realNhi = (teamInfo?.candidates || []).find(c => c.rank === 2);
+        if (realNhi?.teamId && usedTeamIds.has(realNhi.teamId)) {
+            return true;
+        }
+    }
+
     return false;
 };
 
@@ -638,43 +883,86 @@ const onDrop = (event, slotIndex, subIndex) => {
     }
 };
 
-// Apply pairing and emit
+/**
+ * Build manual_pairings payload từ pairingSlots theo 2 convention:
+ * - 'rebuild': dùng khi đã có candidates từ /knockout-candidates (team thật + team_label).
+ *   Mỗi entry: {group_id, rank, position} với group_id=0 cho virtual.
+ * - 'pairing_mode': dùng khi tạo/đổi tournament type (chưa có kết quả vòng bảng).
+ *   Mỗi entry: {group_id, rank, position} — group_id từ poolGroups (database ID).
+ */
+const buildManualPairings = () => {
+    const useRebuildFormat = isRebuildMode.value || props.poolCompleted;
+    const manualPairings = [];
+
+    pairingSlots.value.forEach((slot, slotIndex) => {
+        const basePos = slotIndex * 2;
+        const entries = [];
+        if (useRebuildFormat) {
+            // Build 2 entries cho mỗi slot, bất kể ô có trống không (filter null)
+            [0, 1].forEach((subIdx) => {
+                const t = slot[subIdx];
+                if (!t) return;
+                entries.push({
+                    group_id: t.isVirtual ? 0 : t.groupId,
+                    rank: t.rank,
+                    position: basePos + subIdx
+                });
+            });
+        } else {
+            // Luồng cũ: chỉ push nếu ô có đội
+            if (slot[0]) {
+                const t = slot[0];
+                entries.push({
+                    group_id: t.isVirtual ? 0 : t.groupId,
+                    rank: t.rank,
+                    position: basePos
+                });
+            }
+            if (slot[1]) {
+                const t = slot[1];
+                entries.push({
+                    group_id: t.isVirtual ? 0 : t.groupId,
+                    rank: t.rank,
+                    position: basePos + 1
+                });
+            }
+        }
+        entries.forEach((e) => manualPairings.push(e));
+    });
+
+    return manualPairings;
+};
+
+/**
+ * ✅ Logic quyết định emit event nào dựa trên context hiện tại:
+ * - Nếu pool đã hoàn thành (poolCompleted=true) HOẶC đang ở rebuild mode:
+ *   → Emit 'apply-rebuild' (gọi API /knockout-rebuild-pairing).
+ * - Ngược lại:
+ *   → Emit 'apply' (gọi PUT /api/tournament-types/{id} cũ).
+ *
+ * Lý do: Nếu giải đấu đã có trận hoàn thành → PUT cũ sẽ fail với
+ * "Không thể thay đổi pairing mode. Đã có trận đấu hoàn thành...".
+ * Khi đó phải dùng /knockout-rebuild-pairing mới (chỉ reassign team).
+ */
 const applyPairing = () => {
     if (!isValid.value) return;
 
-    // ✅ Convention mới: mỗi slot = 1 cặp gồm 2 đội, bất kỳ vị trí nào.
-    // BE xử lý home/away theo `position` (position * 2 = pairIndex, position * 2 + 1 = sub).
-    // rank là 1 (Nhất) hoặc 2 (Nhì) — virtual Nhì tốt nhất được gửi group_id = 0.
-    const manualPairings = [];
-    pairingSlots.value.forEach((slot, slotIndex) => {
-        const basePos = slotIndex * 2;
-        if (slot[0]) {
-            const t = slot[0];
-            manualPairings.push({
-                group_id: t.isVirtual ? 0 : t.groupId,
-                rank: t.rank,
-                position: basePos
-            });
-        }
-        if (slot[1]) {
-            const t = slot[1];
-            manualPairings.push({
-                group_id: t.isVirtual ? 0 : t.groupId,
-                rank: t.rank,
-                position: basePos + 1
-            });
-        }
-    });
+    const manualPairings = buildManualPairings();
+    const useRebuildEndpoint = isRebuildMode.value || props.poolCompleted;
 
-    // ✅ DEBUG: Log để user xác nhận số entry được gửi đi
     console.log('[ManualPairingModal] applyPairing()', {
         numSlots: pairingSlots.value.length,
         numEntries: manualPairings.length,
-        numPairs: manualPairings.length / 2,
-        entries: manualPairings
+        poolCompleted: props.poolCompleted,
+        isRebuildMode: isRebuildMode.value,
+        endpoint: useRebuildEndpoint ? '/knockout-rebuild-pairing' : 'PUT /tournament-types/{id}'
     });
 
-    emit('apply', manualPairings);
+    if (useRebuildEndpoint) {
+        emit('apply-rebuild', manualPairings);
+    } else {
+        emit('apply', manualPairings);
+    }
     closeModal();
 };
 </script>

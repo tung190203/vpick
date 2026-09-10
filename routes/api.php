@@ -574,6 +574,9 @@ Route::middleware(['auth:api', 'update.last_login', 'throttle:api'])->group(func
         Route::post('/{tournamentType}/auto-generate-matches', [TournamentTypeController::class, 'autoGenerateMatches']);
         Route::get('/{tournamentType}/cross-group-comparison', [TournamentTypeController::class, 'getCrossGroupComparison']);
         Route::get('/{tournamentType}/cross-group-comparison/{team}/matches', [TournamentTypeController::class, 'getCrossGroupComparisonTeamMatches']);
+        // ✅ Knockout rebuild flow (NEW) — tách riêng khỏi luồng pairing_mode hiện tại
+        Route::get('/{tournamentType}/knockout-candidates', [TournamentTypeController::class, 'getKnockoutCandidates']);
+        Route::post('/{tournamentType}/knockout-rebuild-pairing', [TournamentTypeController::class, 'rebuildKnockoutPairing']);
     });
 
     Route::prefix('matches')->group(function() {
