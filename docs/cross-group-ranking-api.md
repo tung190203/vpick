@@ -42,11 +42,11 @@ Trả về danh sách xếp hạng tất cả đội Nhì và Ba từ mọi bả
             {
                 "rank": 1,
                 "team": {
-                    "id": "123",
+                    "id": 123,
                     "name": "Đoàn Trần - Radio"
                 },
                 "group": {
-                    "id": "5",
+                    "id": 5,
                     "name": "Bảng B",
                     "team_count": 4
                 },
@@ -82,7 +82,7 @@ Trả về danh sách xếp hạng tất cả đội Nhì và Ba từ mọi bả
 | `enabled` | boolean | Tính năng có được bật trong cấu hình giải đấu |
 | `applied` | boolean | Quy tắc có thực sự được áp dụng (bảng không đều + format=Mixed) |
 | `comparison_rule.minimum_group_size` | integer | Số đội của bảng nhỏ nhất |
-| `qualification.additional_slots` | integer | Số suất cần lấy thêm (knockout_slots - number_of_groups) |
+| `qualification.additional_slots` | integer | Số suất cần lấy thêm từ cross-group (knockout_slots - total_from_pool_stage) |
 | `candidates[].rank` | integer | Xếp hạng so sánh (1 = tốt nhất) |
 | `candidates[].candidate_type` | string | `runner_up` (Nhì) hoặc `third_place` (Ba) |
 | `candidates[].matches.excluded` | integer | Số trận bị loại khỏi tính toán |

@@ -63,6 +63,7 @@ class CrossGroupComparisonApiTest extends TestCase
             'status' => Tournament::DRAFT,
             'created_by' => $user->id,
             'description' => '',
+            'duration' => 1,
         ]);
 
         $numGroups = count($groupTeamCounts);
@@ -347,6 +348,8 @@ class CrossGroupComparisonApiTest extends TestCase
             'player_per_team' => 2,
             'status' => Tournament::DRAFT,
             'created_by' => $user->id,
+            'description' => '',
+            'duration' => 1,
         ]);
 
         $type = TournamentType::createWithFormat($tournament->id, TournamentType::FORMAT_MIXED, [
@@ -559,7 +562,7 @@ class CrossGroupComparisonApiTest extends TestCase
             ->getJson("/api/tournament-types/{$type->id}/cross-group-comparison/{$runnerUpTeamId}/matches");
 
         $response->assertStatus(200);
-        $response->assertJsonPath('data.team.id', (string) $runnerUpTeamId);
+        $response->assertJsonPath('data.team.id', (int) $runnerUpTeamId);
         $response->assertJsonPath('data.group.team_count', 5);
         $response->assertJsonPath('data.group_position', 2);
         $response->assertJsonPath('data.candidate_type', 'runner_up');
@@ -623,6 +626,8 @@ class CrossGroupComparisonApiTest extends TestCase
             'player_per_team' => 2,
             'status' => Tournament::DRAFT,
             'created_by' => $this->makeUser()->id,
+            'description' => '',
+            'duration' => 1,
         ]);
         $otherTeam = Team::create([
             'name' => 'Other Team',
@@ -659,5 +664,162 @@ class CrossGroupComparisonApiTest extends TestCase
             ->getJson("/api/tournament-types/{$type->id}/cross-group-comparison/{$runnerUpTeamId}/matches");
 
         $response->assertStatus(404);
+    }
+
+    // ====================================================================
+    // H2H Tie-Break Regression Tests
+    // ====================================================================
+
+    /**
+     * REGRESSION TEST: Khi 2 đội cùng points + cùng hiệu số + cùng set_diff,
+     * thì HEAD_TO_HEAD phải quyết định thứ hạng nội bộ.
+     *
+     * Bug trước đây:
+     *   CrossGroupComparisonService::buildCandidates() dùng TournamentService::calculateGroupStandings()
+     *   (thiếu HEAD_TO_HEAD) → xếp sai khi Đội 4 và Đội 5 cùng points + hiệu số.
+     *   → Đội 5 (thực ra là Ba) được chọn làm runner_up thay vì Đội 4 (Nhì thực sự).
+     *
+     * Case: Bảng B có 4 đội. Đội 3 và Đội 4 cùng points + cùng hiệu số.
+     *       Đội 3 thắng Đội 4 với tỷ số 3-0.
+     *       → Đội 3 = hạng 2 (runner_up), Đội 4 = hạng 3 (third_place).
+     *
+     * Acceptance Criteria:
+     *   Case 1: Đội 4 thắng H2H → hạng 2 (runner_up), Đội 5 = hạng 3
+     *   Case 2: runner_up_candidates của bảng B = Đội 4 (không phải Đội 5)
+     *   Case 3: third_place_candidates của bảng B = Đội 5 (không phải Đội 4)
+     */
+    public function test_h2h_tie_break_determines_correct_runner_up_and_third_place(): void
+    {
+        $type = $this->makeMixedTournament([3, 4]); // Group A: 3 teams, Group B: 4 teams
+        $this->enableCrossGroupRanking($type);
+
+        // === GROUP A (3 đội): deterministic thắng để dễ kiểm tra ===
+        $groupA = $type->groups()->orderBy('id')->first();
+        $teamIdsA = $groupA->teams()->orderBy('group_team.order')->pluck('teams.id')->all();
+        $this->createCompletedRoundRobin($groupA, $teamIdsA); // Team A thắng hết → rank 1, rank 2, rank 3
+
+        // === GROUP B (4 đội): Đội 3 vs Đội 4 cùng points + hiệu số, Đội 3 thắng H2H ===
+        $groupB = $type->groups()->orderBy('id')->last();
+        $teamIdsB = $groupB->teams()->orderBy('group_team.order')->pluck('teams.id')->all();
+        // teamIdsB[0] = Đội 1, [1] = Đội 2, [2] = Đội 3, [3] = Đội 4
+
+        // --- Đội 1 thắng Đội 2, Đội 3, Đội 4 (→ rank 1 trong bảng B) ---
+        foreach ($teamIdsB as $opponentId) {
+            if ($opponentId === $teamIdsB[0]) continue;
+            $this->createMatch(
+                $groupB,
+                $teamIdsB[0],  // Đội 1 (home)
+                $opponentId,     // Đội 2, 3, 4
+                $teamIdsB[0],   // Đội 1 thắng
+                11, 7
+            );
+        }
+
+        // --- Đội 2 thắng Đội 3 và Đội 4 (→ rank 2 trong bảng B) ---
+        foreach ([$teamIdsB[2], $teamIdsB[3]] as $opponentId) {
+            $this->createMatch(
+                $groupB,
+                $teamIdsB[1],   // Đội 2 (home)
+                $opponentId,    // Đội 3 hoặc Đội 4
+                $teamIdsB[1],   // Đội 2 thắng
+                11, 7
+            );
+        }
+
+        // --- Đội 3 vs Đội 4: cùng points + cùng hiệu số (cả 2 đều thắng 1, thua 1)
+        // Đội 3 thắng Đội 4 (H2H winner)
+        $this->createMatch(
+            $groupB,
+            $teamIdsB[2],   // Đội 3 (home)
+            $teamIdsB[3],    // Đội 4 (away)
+            $teamIdsB[2],   // Đội 3 thắng
+            11, 7
+        );
+
+        // Đội 1 vs Đội 2 (tạo hòa về stats để Đội 3 vs Đội 4 cùng points + hiệu số)
+        // Đội 1 thắng Đội 2 rồi → Đội 1 rank 1, Đội 2 rank 2
+        // Đội 3 và Đội 4: mỗi đội thắng 1, thua 1 → cùng points = 3
+        // Đội 3 thắng Đội 4 → H2H → Đội 3 = runner_up (rank 2), Đội 4 = third_place (rank 3)
+
+        // === Verify: Gọi API và kiểm tra candidates ===
+        $user = $this->makeUser();
+        $response = $this->actingAs($user)
+            ->getJson("/api/tournament-types/{$type->id}/cross-group-comparison");
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('data.applied', true);
+
+        $candidates = collect($response->json('data.candidates'));
+
+        // Group A (3 đội): runner_up = đội rank 2, third_place = đội rank 3
+        $groupACandidates = $candidates->where('group.id', (int) $groupA->id);
+        $this->assertCount(2, $groupACandidates);
+
+        // Group B (4 đội): runner_up = Đội 3 (H2H winner), third_place = Đội 4 (H2H loser)
+        $groupBCandidates = $candidates->where('group.id', (int) $groupB->id);
+        $this->assertCount(2, $groupBCandidates);
+
+        $runnerUpB = $groupBCandidates->firstWhere('candidate_type', 'runner_up');
+        $thirdPlaceB = $groupBCandidates->firstWhere('candidate_type', 'third_place');
+
+        $this->assertNotNull($runnerUpB, 'Group B must have a runner_up candidate');
+        $this->assertNotNull($thirdPlaceB, 'Group B must have a third_place candidate');
+        $this->assertEquals(
+            $teamIdsB[2],
+            (int) $runnerUpB['team']['id'],
+            'Runner-up of Group B must be Đội 3 (H2H winner), NOT Đội 4'
+        );
+        $this->assertEquals(
+            $teamIdsB[3],
+            (int) $thirdPlaceB['team']['id'],
+            'Third-place of Group B must be Đội 4 (H2H loser), NOT Đội 3'
+        );
+
+        // AC Case 2: Đội 5 (H2H loser) KHÔNG được trong runner_up candidates
+        $allRunnerUps = $candidates->where('candidate_type', 'runner_up');
+        $this->assertFalse(
+            $allRunnerUps->contains('team.id', (int) $teamIdsB[3]),
+            'Đội 4 (H2H loser) must NOT be in runner_up candidates'
+        );
+    }
+
+    /**
+     * Tạo 1 match đơn lẻ (1 set) với winner cố định.
+     */
+    protected function createMatch(
+        Group $group,
+        int $homeId,
+        int $awayId,
+        int $winnerId,
+        int $homeScore,
+        int $awayScore
+    ): Matches {
+        $match = Matches::create([
+            'tournament_type_id' => $group->tournament_type_id,
+            'group_id' => $group->id,
+            'round' => 1,
+            'home_team_id' => $homeId,
+            'away_team_id' => $awayId,
+            'leg' => 1,
+            'status' => 'completed',
+            'winner_id' => $winnerId,
+        ]);
+
+        MatchResult::create([
+            'match_id' => $match->id,
+            'team_id' => $homeId,
+            'score' => $homeScore,
+            'set_number' => 1,
+            'won_match' => $winnerId === $homeId,
+        ]);
+        MatchResult::create([
+            'match_id' => $match->id,
+            'team_id' => $awayId,
+            'score' => $awayScore,
+            'set_number' => 1,
+            'won_match' => $winnerId === $awayId,
+        ]);
+
+        return $match;
     }
 }
