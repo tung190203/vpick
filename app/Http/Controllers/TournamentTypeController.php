@@ -211,7 +211,9 @@ class TournamentTypeController extends Controller
             }
 
             // ✅ SYNC cross_group_ranking description
-            $this->syncCrossGroupRanking($tournament, $type, $validated['format_specific_config'] ?? []);
+            // Dùng format_specific_config đã được save vào DB thay vì raw request
+            $tournament->refresh();
+            $this->syncCrossGroupRanking($tournament, $type, $type->format_specific_config ?? []);
 
             DB::commit();
             return ResponseHelper::success(new TournamentTypeResource($type), 'Tạo thể thức thành công');
@@ -546,7 +548,9 @@ class TournamentTypeController extends Controller
             }
 
             // ✅ SYNC cross_group_ranking description
-            $this->syncCrossGroupRanking($tournamentType->tournament, $tournamentType, $validated['format_specific_config'] ?? []);
+            // Dùng format_specific_config đã được save vào DB thay vì raw request
+            $tournamentType->tournament->refresh();
+            $this->syncCrossGroupRanking($tournamentType->tournament, $tournamentType, $tournamentType->format_specific_config ?? []);
 
             DB::commit();
             return ResponseHelper::success(new TournamentTypeResource($tournamentType->fresh()), 'Cập nhật thể thức thành công');
