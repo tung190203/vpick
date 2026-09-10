@@ -8,6 +8,7 @@ use App\Models\MatchResult;
 use App\Models\Team;
 use App\Models\TournamentType;
 use App\Services\TournamentService;
+use App\Services\TournamentType\GroupStandingRanker;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -95,23 +96,31 @@ class CrossGroupComparisonService
         $knockoutSlots = $this->getKnockoutSlots($numAdvancing, $numberOfGroups);
         $totalFromPool = $numAdvancing * $numberOfGroups;
         $isPowerOfTwo = $totalFromPool > 0 && (($totalFromPool & ($totalFromPool - 1)) === 0);
-        $additionalSlots = max(0, $knockoutSlots - $numberOfGroups);
+        // ✅ Công thức đúng với mọi numAdvancing:
+        // - additional = knockoutSlots - max(totalFromPool, numberOfGroups)
+        // - max() đảm bảo additionalSlots không âm khi totalFromPool >= knockoutSlots (vd: total=12, slots=16).
+        $additionalSlots = max(0, $knockoutSlots - max($totalFromPool, $numberOfGroups));
         $applyTo = $this->extractApplyTo($rawConfig);
 
         // Gắn qualified flag dựa trên knockoutSlots (= 2^n gần nhất)
-        $runnerUpCount = $rankedCandidates
-            ->where('candidate_type', self::CANDIDATE_TYPE_RUNNER_UP)
-            ->count();
-        $thirdPlaceCount = $rankedCandidates
-            ->where('candidate_type', self::CANDIDATE_TYPE_THIRD_PLACE)
-            ->count();
-
         $rankedCandidates = $this->assignQualifiedStatus(
             $rankedCandidates,
             $knockoutSlots,
             $numberOfGroups,
+            $totalFromPool,
             $applyTo
         );
+
+        // ✅ Đếm candidate theo status (chỉ tính qualified/not_qualified, bỏ not_applicable).
+        // Nếu additionalSlots <= numberOfGroups (chỉ cần Nhì), Ba = not_applicable → không đếm.
+        $runnerUpCount = $rankedCandidates
+            ->where('candidate_type', self::CANDIDATE_TYPE_RUNNER_UP)
+            ->where('status', '!=', 'not_applicable')
+            ->count();
+        $thirdPlaceCount = $rankedCandidates
+            ->where('candidate_type', self::CANDIDATE_TYPE_THIRD_PLACE)
+            ->where('status', '!=', 'not_applicable')
+            ->count();
 
         $rankingRules = $this->extractRankingRules($type);
 
@@ -138,7 +147,11 @@ class CrossGroupComparisonService
                 'runner_up_candidates' => $runnerUpCount,
                 'third_place_candidates' => $thirdPlaceCount,
             ],
-            'candidates' => $rankedCandidates->map(fn($c) => $this->formatCandidate($c))->values()->all(),
+            'candidates' => $rankedCandidates
+                ->filter(fn($c) => ($c['status'] ?? null) !== 'not_applicable')
+                ->map(fn($c) => $this->formatCandidate($c))
+                ->values()
+                ->all(),
         ];
     }
 
@@ -169,9 +182,9 @@ class CrossGroupComparisonService
     private function buildAndRankCandidates(TournamentType $type, int $minimumGroupSize): Collection
     {
         $groups = $type->groups()->orderBy('id')->get();
-        $candidates = $this->buildCandidates($groups, $minimumGroupSize);
-        $candidates = $this->buildComparisonStats($candidates, $minimumGroupSize);
         $rankingRules = $this->extractRankingRules($type);
+        $candidates = $this->buildCandidates($groups, $type, $rankingRules);
+        $candidates = $this->buildComparisonStats($candidates, $minimumGroupSize, $rankingRules);
         return $this->rankCandidates($candidates, $rankingRules);
     }
 
@@ -191,23 +204,24 @@ class CrossGroupComparisonService
 
         $minimumGroupSize = (int) $evaluation['minimum_group_size'];
         $groups = $type->groups()->orderBy('id')->get();
-        $candidates = $this->buildCandidates($groups, $minimumGroupSize);
+        $rankingRules = $this->extractRankingRules($type);
+        $candidates = $this->buildCandidates($groups, $type, $rankingRules);
 
         $target = $candidates->firstWhere('team_id', $team->id);
         if (!$target) {
             return null;
         }
 
-        $stats = $this->buildCandidateStats($target, $minimumGroupSize);
-        $matchList = $this->buildCandidateMatchList($target, $minimumGroupSize);
+        $stats = $this->buildCandidateStats($target, $minimumGroupSize, $rankingRules);
+        $matchList = $this->buildCandidateMatchList($target, $minimumGroupSize, $rankingRules);
 
         return [
             'team' => [
-                'id' => (string) $team->id,
+                'id' => (int) $team->id,
                 'name' => $team->name,
             ],
             'group' => [
-                'id' => (string) $target['group']->id,
+                'id' => (int) $target['group']->id,
                 'name' => $target['group']->name,
                 'team_count' => $target['group_team_count'],
             ],
@@ -334,17 +348,27 @@ class CrossGroupComparisonService
 
     /**
      * Build danh sách candidate từ các group.
-     * Mỗi group: lấy top 2 (Nhì) + top 3 (Ba) theo actual standings.
+     * Mỗi group: lấy top 2 (Nhì) + top 3 (Ba) theo BXH nội bộ đã áp dụng ranking rules + HEAD_TO_HEAD.
+     *
+     * QUAN TRỌNG:
+     * - Source of truth để xác định Nhì/Ba là `format_specific_config[0].ranking`
+     *   (đã bao gồm fallback POINTS_WON + HEAD_TO_HEAD).
+     * - Dùng `GroupStandingRanker::rank()` thay cho `TournamentService::calculateGroupStandings()`
+     *   vì method cũ thiếu HEAD_TO_HEAD → xếp sai khi 2 đội bằng điểm + hiệu số.
+     * - `exclude_bottom_team_matches` KHÔNG ảnh hưởng thứ hạng nội bộ —
+     *   chỉ ảnh hưởng stats dùng cho cross-group comparison (xử lý ở buildCandidateStats).
      *
      * @param Collection<int,Group> $groups
+     * @param TournamentType $type
+     * @param array $rankingRules  Ranking rules đã chuẩn hóa
      */
-    protected function buildCandidates(Collection $groups, int $minimumGroupSize): Collection
+    protected function buildCandidates(Collection $groups, TournamentType $type, array $rankingRules): Collection
     {
         $candidates = collect();
 
         foreach ($groups as $group) {
-            $matches = $group->matches()->where('status', self::STATUS_COMPLETED)->get();
-            $standings = TournamentService::calculateGroupStandings($matches);
+            // ✅ Dùng helper có áp dụng HEAD_TO_HEAD + ranking rules đã config
+            $standings = GroupStandingRanker::rank($group, $rankingRules);
 
             $groupTeamCount = $group->teams()->count();
 
@@ -356,8 +380,8 @@ class CrossGroupComparisonService
                 }
 
                 $candidates->push([
-                    'team_id' => $standing['team']['id'],
-                    'team_name' => $standing['team']['name'] ?? 'Unknown',
+                    'team_id' => $standing['team_id'],
+                    'team_name' => $standing['team_name'] ?? 'Unknown',
                     'group' => $group,
                     'group_id' => $group->id,
                     'group_name' => $group->name,
@@ -376,10 +400,10 @@ class CrossGroupComparisonService
     /**
      * Build counted stats cho từng candidate.
      */
-    protected function buildComparisonStats(Collection $candidates, int $minimumGroupSize): Collection
+    protected function buildComparisonStats(Collection $candidates, int $minimumGroupSize, array $rankingRules = []): Collection
     {
-        return $candidates->map(function (array $candidate) use ($minimumGroupSize) {
-            $stats = $this->buildCandidateStats($candidate, $minimumGroupSize);
+        return $candidates->map(function (array $candidate) use ($minimumGroupSize, $rankingRules) {
+            $stats = $this->buildCandidateStats($candidate, $minimumGroupSize, $rankingRules);
             // attach stats back to candidate
             return array_merge($candidate, $stats);
         });
@@ -392,7 +416,7 @@ class CrossGroupComparisonService
      *               win_rate:float, points_for:int, points_against:int, point_diff:int,
      *               average_point_difference:float, excluded_opponent_ids:array<int>}
      */
-    protected function buildCandidateStats(array $candidate, int $minimumGroupSize): array
+    protected function buildCandidateStats(array $candidate, int $minimumGroupSize, array $rankingRules = []): array
     {
         /** @var Group $group */
         $group = $candidate['group'];
@@ -400,7 +424,10 @@ class CrossGroupComparisonService
         $groupTeamCount = $candidate['group_team_count'];
 
         // Identify excluded opponents: bottom N teams theo final group standings
-        $excludedOpponentIds = $this->getExcludedOpponentIds($group, $groupTeamCount, $minimumGroupSize);
+        // Dùng GroupStandingRanker (có H2H) để ĐỒNG BỘ với buildCandidates —
+        // nếu dùng method cũ calculateGroupStandings (thiếu H2H), team bị xếp
+        // "rank cuối" sẽ khác → loại trận sai.
+        $excludedOpponentIds = $this->getExcludedOpponentIds($group, $groupTeamCount, $minimumGroupSize, $rankingRules);
 
         // Lấy toàn bộ match completed của team trong group này
         $matches = Matches::where('group_id', $group->id)
@@ -508,18 +535,26 @@ class CrossGroupComparisonService
      * - Bảng 3 đội (k=3, m=2): loại rank 3 (Ba) → Nhì được so sánh qua trận gặp Nhất.
      * - Bảng 2 đội (k=2, m=2): không loại gì → Nhì chỉ gặp Nhất, tính đầy đủ.
      *
+     * ⚠️ QUAN TRỌNG: Dùng `GroupStandingRanker::rank()` (CÓ HEAD_TO_HEAD + ranking rules)
+     * thay cho `TournamentService::calculateGroupStandings()` (THIẾU HEAD_TO_HEAD).
+     * Lý do: buildCandidates cũng dùng GroupStandingRanker để xác định Nhì/Ba.
+     * Nếu 2 method xếp hạng khác nhau (do H2H phân biệt), team bị xếp "rank cuối" ở
+     * đây sẽ KHÁC với team "Ba" thực sự → loại trận sai.
+     *
      * @param int $groupTeamCount     Số đội trong bảng
      * @param int $minimumGroupSize   Minimum group size để comparison được apply
+     * @param array $rankingRules     Ranking rules đã chuẩn hóa (optional, fallback mặc định)
      * @return int[]                  Danh sách opponent_id bị loại
      */
-    protected function getExcludedOpponentIds(Group $group, int $groupTeamCount, int $minimumGroupSize): array
+    protected function getExcludedOpponentIds(Group $group, int $groupTeamCount, int $minimumGroupSize, array $rankingRules = []): array
     {
         if ($groupTeamCount <= $minimumGroupSize) {
             return [];
         }
 
-        $matches = $group->matches()->where('status', self::STATUS_COMPLETED)->get();
-        $standings = TournamentService::calculateGroupStandings($matches);
+        // ✅ Dùng GroupStandingRanker (đồng bộ với buildCandidates) để khi H2H
+        // phân biệt thứ hạng, đội "rank cuối" được tính đúng theo đúng rule.
+        $standings = GroupStandingRanker::rank($group, $rankingRules);
 
         $excludedCount = $groupTeamCount - $minimumGroupSize;
         $excludedIds = [];
@@ -527,8 +562,8 @@ class CrossGroupComparisonService
         // ✅ Loại từ CUỐI BXH (Ba) lên → so sánh Nhì qua trận gặp Nhất.
         for ($i = 0; $i < $excludedCount; $i++) {
             $standing = $standings->get(($groupTeamCount - 1) - $i);
-            if ($standing && isset($standing['team']['id'])) {
-                $excludedIds[] = $standing['team']['id'];
+            if ($standing && isset($standing['team_id'])) {
+                $excludedIds[] = (int) $standing['team_id'];
             }
         }
 
@@ -707,38 +742,49 @@ class CrossGroupComparisonService
     }
 
     /**
-     * Gắn `status = qualified/not_qualified` cho từng candidate.
+     * Gắn `status = qualified/not_qualified/not_applicable` cho từng candidate.
      *
-     * Quy tắc đúng theo spec (sau khi fix):
+     * Quy tắc đúng theo spec:
      * - Số slot knockout = 2^n gần nhất với numAdvancing × numGroups (tính từ getKnockoutSlots).
      * - Số slot Nhất "mặc định" = numberOfGroups (mỗi bảng 1 Nhất).
-     * - additionalSlots = knockoutSlots - numberOfGroups (số slot cần pick thêm).
-     * - Khi additionalSlots == 0:
-     *   + knockoutSlots = numberOfGroups → không cần pick thêm Nhì
-     *   + Nhì KHÔNG qualified tự động (vì không có suất Nhì phụ)
-     *   + Ba = not_applicable.
+     * - Số slot Ba "mặc định" = numberOfGroups (mỗi bảng 1 Ba, nếu numAdvancing >= 2).
+     * - additionalSlots = max(0, knockoutSlots - totalFromPool)
+     *   (KHÔNG dùng `knockoutSlots - numberOfGroups` vì sai khi numAdvancing > 1).
+     *
+     * Logic qualified:
+     * - Khi additionalSlots == 0: tất cả candidate = not_applicable (FE ẩn hết).
      * - Khi additionalSlots > 0:
-     *   + Nhì: qualified mặc định (5 Nhì = 5 slot đầu tiên)
-     *   + Nếu additionalSlots > numberOfGroups → pick thêm Ba (additionalSlots - numberOfGroups Ba tốt nhất)
-     *   + Lưu ý: spec nói "Nhì trước, thiếu mới Ba" → nhưng trong case này Nhì đã chiếm hết numberOfGroups
-     *     slot, phần "thiếu" phải lấy Ba.
+     *   + Ưu tiên Nhì trước: pick tối đa runnerUpMaxApply = numberOfGroups Nhì.
+     *   + Nếu additionalSlots > numberOfGroups → pick thêm Ba (additionalSlots - numberOfGroups Ba tốt nhất).
+     *   + Nếu additionalSlots <= numberOfGroups → CHỈ pick Nhì, Ba = not_applicable.
+     *
+     * Display logic cho Ba:
+     * - Nếu additionalSlots <= numberOfGroups: Ba không cần → status = 'not_applicable' (FE ẩn).
+     * - Nếu additionalSlots > numberOfGroups: Ba có thể được pick → status = 'qualified' hoặc 'not_qualified'.
      *
      * Status gắn in-place giữ nguyên order từ rankCandidates.
      *
-     * @param int $knockoutSlots  Số slot knockout (= 2^n gần nhất)
-     * @param int $numberOfGroups Số bảng (= số Nhất tự nhiên)
+     * @param int $knockoutSlots   Số slot knockout (= 2^n gần nhất)
+     * @param int $numberOfGroups  Số bảng (= số Nhất tự nhiên)
+     * @param int $totalFromPool   Tổng số đội từ pool stage (numAdvancing × numberOfGroups)
      */
     protected function assignQualifiedStatus(
         Collection $candidates,
         int $knockoutSlots,
         int $numberOfGroups,
+        int $totalFromPool,
         array $applyTo
     ): Collection {
-        // Số slot cần pick thêm SAU Nhất mỗi bảng
-        $additionalSlots = max(0, $knockoutSlots - $numberOfGroups);
+        // ✅ Số slot cần pick thêm SAU các đội đã được resolve từ pool stage.
+        // Công thức đúng với mọi numAdvancing: additionalSlots = knockoutSlots - totalFromPool.
+        $additionalSlots = max(0, $knockoutSlots - max($totalFromPool, $numberOfGroups));
 
         // Số Nhì tối đa được apply (mỗi bảng 1 Nhì)
         $runnerUpMaxApply = $numberOfGroups;
+
+        // Nếu additionalSlots <= numberOfGroups → chỉ cần Nhì, Ba không cần pick.
+        // Ba sẽ được mark 'not_applicable' để FE ẩn, dù `apply_to` có chứa 'third_place'.
+        $needThirdPlace = $additionalSlots > $numberOfGroups;
 
         // Sort candidates: runner_up trước third_place, theo rank
         $sorted = $candidates->sortBy([
@@ -749,9 +795,7 @@ class CrossGroupComparisonService
         $qualifiedTeamIds = [];
         $needed = $additionalSlots;
 
-        // Round 1: lấy Nhì (ưu tiên)
-        // Nhưng chỉ lấy tối đa runnerUpMaxApply = numberOfGroups Nhì.
-        // Phần dư (nếu additionalSlots > numberOfGroups) sẽ fill bằng Ba.
+        // Round 1: lấy Nhì (ưu tiên) — chỉ pick nếu additionalSlots > 0 và apply_to cho phép.
         if ($needed > 0 && in_array(self::CANDIDATE_TYPE_RUNNER_UP, $applyTo, true)) {
             $runnerUps = $sorted->where('candidate_type', self::CANDIDATE_TYPE_RUNNER_UP);
             $picked = 0;
@@ -778,10 +822,13 @@ class CrossGroupComparisonService
         }
 
         // Bước 2: gắn status
-        return $candidates->map(function (array $candidate) use ($qualifiedTeamIds, $applyTo) {
+        return $candidates->map(function (array $candidate) use ($qualifiedTeamIds, $applyTo, $needThirdPlace) {
             $type = $candidate['candidate_type'];
 
-            if (!in_array($type, $applyTo, true)) {
+            // Ba khi không cần pick → not_applicable (FE ẩn), kể cả khi apply_to có third_place.
+            if ($type === self::CANDIDATE_TYPE_THIRD_PLACE && !$needThirdPlace) {
+                $candidate['status'] = 'not_applicable';
+            } elseif (!in_array($type, $applyTo, true)) {
                 $candidate['status'] = 'not_applicable';
             } elseif (isset($qualifiedTeamIds[$candidate['team_id']])) {
                 $candidate['status'] = 'qualified';
@@ -800,11 +847,11 @@ class CrossGroupComparisonService
         return [
             'rank' => $c['rank'] ?? null,
             'team' => [
-                'id' => (string) $c['team_id'],
+                'id' => (int) $c['team_id'],
                 'name' => $c['team_name'] ?? 'Unknown',
             ],
             'group' => [
-                'id' => (string) $c['group_id'],
+                'id' => (int) $c['group_id'],
                 'name' => $c['group_name'] ?? '',
                 'team_count' => (int) ($c['group_team_count'] ?? 0),
             ],
@@ -840,22 +887,21 @@ class CrossGroupComparisonService
      *
      * @return array<int,array>
      */
-    protected function buildCandidateMatchList(array $candidate, int $minimumGroupSize): array
+    protected function buildCandidateMatchList(array $candidate, int $minimumGroupSize, array $rankingRules = []): array
     {
         /** @var Group $group */
         $group = $candidate['group'];
         $teamId = $candidate['team_id'];
         $groupTeamCount = $candidate['group_team_count'];
 
-        $excludedIds = $this->getExcludedOpponentIds($group, $groupTeamCount, $minimumGroupSize);
+        $excludedIds = $this->getExcludedOpponentIds($group, $groupTeamCount, $minimumGroupSize, $rankingRules);
 
-        // Standings cho opponent_group_position
-        $matches = $group->matches()->where('status', self::STATUS_COMPLETED)->get();
-        $standings = TournamentService::calculateGroupStandings($matches);
+        // Standings cho opponent_group_position — Dùng GroupStandingRanker (đồng bộ với buildCandidates)
+        $standings = GroupStandingRanker::rank($group, $rankingRules);
         $rankByTeamId = [];
         foreach ($standings as $standing) {
-            if (isset($standing['team']['id'])) {
-                $rankByTeamId[$standing['team']['id']] = $standing['rank'];
+            if (isset($standing['team_id'])) {
+                $rankByTeamId[$standing['team_id']] = $standing['rank'];
             }
         }
 
@@ -898,9 +944,9 @@ class CrossGroupComparisonService
             }
 
             $matchList[] = [
-                'id' => (string) $match->id,
+                'id' => (int) $match->id,
                 'opponent' => [
-                    'id' => (string) ($opponent->id ?? $opponentId),
+                    'id' => (int) ($opponent->id ?? $opponentId),
                     'name' => $opponent->name ?? 'Unknown',
                 ],
                 'opponent_group_position' => $rankByTeamId[$opponentId] ?? null,
