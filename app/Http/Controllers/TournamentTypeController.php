@@ -31,7 +31,8 @@ class TournamentTypeController extends Controller
         private \App\Services\TournamentType\StandingsService $standingsService,
         private \App\Services\TournamentType\TeamPairingService $teamPairingService,
         private CrossGroupRankingService $crossGroupRankingService,
-        private CrossGroupComparisonService $crossGroupComparisonService
+        private CrossGroupComparisonService $crossGroupComparisonService,
+        private \App\Services\TournamentType\KnockoutRebuildService $knockoutRebuildService
     ) {}
 
     /**
@@ -3884,7 +3885,142 @@ class TournamentTypeController extends Controller
             $keys = array_keys($config);
             return count($keys) === 1 && $keys[0] === 'knockout_stage';
         }
-        
+
         return false;
+    }
+
+    /**
+     * ============================================================================
+     * KNOCKOUT REBUILD FLOW (NEW) - Tách riêng khỏi luồng pairing_mode hiện tại
+     * ============================================================================
+     * - LUỒNG CŨ (vẫn giữ nguyên):
+     *   + POST /tournament-types/store → có thể set pairing_mode ngay khi tạo tournament type.
+     *   + PUT /tournament-types/{id} với "knockout-only request" → đổi pairing_mode qua
+     *     handleKnockoutOnlyUpdate() → regenerateKnockoutOnly() → xóa và tạo lại toàn bộ matches.
+     *   + TeamPairingService::arrangeAdvancingTeams / arrangeManual / arrangeSequential /
+     *     arrangeSymmetric — KHÔNG thay đổi.
+     *
+     * - LUỒNG MỚI (chỉ thêm, không thay thế):
+     *   + GET /tournament-types/{id}/knockout-candidates → trả danh sách team ứng viên
+     *     kèm team_label sau khi pool stage đã hoàn thành.
+     *   + POST /tournament-types/{id}/knockout-rebuild-pairing → nhận manual_pairings,
+     *     chỉ reassign home/away_team_id cho round=2 main bracket, giữ nguyên round≥3.
+     * ============================================================================
+     */
+
+    /**
+     * API: GET /tournament-types/{tournamentType}/knockout-candidates
+     *
+     * Trả về danh sách các đội ứng viên vào vòng sau kèm team_label.
+     *
+     * - Nếu vòng bảng chưa hoàn thành → trả {pool_completed: false, candidates: []}
+     *   (KHÔNG error, theo yêu cầu user).
+     * - Nếu vòng bảng đã xong → trả danh sách candidates bao gồm:
+     *   + Real candidates: Nhất/Nhì/Ba các bảng (từ standings).
+     *   + Virtual candidates: "Nhì tốt nhất #N", "Ba tốt nhất #N" (từ cross-group comparison,
+     *     nếu có cross_group_ranking.enabled && apply_to tương ứng).
+     */
+    public function getKnockoutCandidates(TournamentType $tournamentType)
+    {
+        try {
+            $payload = $this->knockoutRebuildService->buildCandidatesList($tournamentType);
+            return ResponseHelper::success($payload, 'Lấy danh sách ứng viên vào vòng sau thành công');
+        } catch (\Throwable $e) {
+            return ResponseHelper::error(
+                'Có lỗi xảy ra khi lấy danh sách ứng viên: ' . $e->getMessage(),
+                500
+            );
+        }
+    }
+
+    /**
+     * API: POST /tournament-types/{tournamentType}/knockout-rebuild-pairing
+     *
+     * Rebuild round=2 main bracket dựa trên manual_pairings từ FE.
+     *
+     * Input:
+     *   - manual_pairings: array of {group_id, rank, position}
+     *     + group_id > 0: real group (lookup team từ standings tại rank tương ứng)
+     *     + group_id = 0 + rank = 2: virtual "Nhì tốt nhất" (resolve qua cross-group comparison)
+     *     + group_id = 0 + rank = 3: virtual "Ba tốt nhất" (resolve qua cross-group comparison)
+     *
+     * Behavior:
+     *   - Validate pool đã hoàn thành (round=1 tất cả status=completed).
+     *   - Validate không có locked matches ở round≥2.
+     *   - Chỉ reassign home_team_id / away_team_id cho round=2 main.
+     *   - KHÔNG động vào round≥3 và KHÔNG động vào resurrection bracket.
+     *   - KHÔNG ảnh hưởng logic pairing_mode cũ.
+     */
+    public function rebuildKnockoutPairing(Request $request, TournamentType $tournamentType)
+    {
+        $validated = $request->validate([
+            'manual_pairings' => 'required|array|min:1',
+            'manual_pairings.*.group_id' => 'required',
+            'manual_pairings.*.rank' => 'required|integer|min:1|max:10',
+            'manual_pairings.*.position' => 'required|integer|min:0',
+        ]);
+
+        // Sanity check: số entries phải chẵn (mỗi cặp = 2 entries)
+        $manualPairings = $validated['manual_pairings'];
+        if (count($manualPairings) % 2 !== 0) {
+            return ResponseHelper::error(
+                'Số lượng manual_pairings phải là số chẵn (mỗi cặp = 2 entries: nhất + nhì).',
+                422
+            );
+        }
+
+        // Locked check cho round≥2 (riêng biệt với hasLockedMatches để giữ nguyên helper cũ)
+        $hasLockedKnockout = $tournamentType->matches()
+            ->where('round', '>=', 2)
+            ->where('status', Matches::STATUS_COMPLETED)
+            ->whereHas('results', function ($q) {
+                $q->where('confirmed', true);
+            })
+            ->exists();
+        if ($hasLockedKnockout) {
+            return ResponseHelper::error(
+                'Không thể rebuild. Đã có trận knockout hoàn thành và có kết quả được xác nhận.',
+                400
+            );
+        }
+
+        DB::beginTransaction();
+        try {
+            $result = $this->knockoutRebuildService->rebuildKnockoutMainBracket(
+                $tournamentType,
+                $manualPairings
+            );
+
+            $tournamentType->refresh();
+            DB::commit();
+
+            return ResponseHelper::success(
+                [
+                    'tournament_type' => new TournamentTypeResource($tournamentType),
+                    'rebuild_result' => $result,
+                ],
+                sprintf(
+                    'Rebuild pairing thành công. Đã gán lại %d cặp đấu (virtual resolved: %d).',
+                    $result['reassigned_pairs'],
+                    $result['virtual_resolved']
+                )
+            );
+        } catch (\InvalidArgumentException $e) {
+            DB::rollBack();
+            return ResponseHelper::error($e->getMessage(), 422);
+        } catch (\RuntimeException $e) {
+            DB::rollBack();
+            return ResponseHelper::error($e->getMessage(), 400);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            \Log::error('rebuildKnockoutPairing error', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return ResponseHelper::error(
+                'Có lỗi xảy ra khi rebuild pairing: ' . $e->getMessage(),
+                500
+            );
+        }
     }
 }
