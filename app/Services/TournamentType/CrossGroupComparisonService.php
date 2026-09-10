@@ -86,16 +86,10 @@ class CrossGroupComparisonService
         }
 
         $minimumGroupSize = (int) $evaluation['minimum_group_size'];
-        $groups = $type->groups()->orderBy('id')->get();
-        $groupTeamCounts = $evaluation['group_team_counts'];
-
-        $candidates = $this->buildCandidates($groups, $minimumGroupSize);
-
-        $candidates = $this->buildComparisonStats($candidates, $minimumGroupSize);
-        $rankingRules = $this->extractRankingRules($type);
-        $rankedCandidates = $this->rankCandidates($candidates, $rankingRules);
+        $rankedCandidates = $this->buildAndRankCandidates($type, $minimumGroupSize);
 
         // Qualification info
+        $groupTeamCounts = $evaluation['group_team_counts'];
         $numberOfGroups = count($groupTeamCounts);
         $numAdvancing = $this->getNumAdvancingPerGroup($type);
         $knockoutSlots = $this->getKnockoutSlots($numAdvancing, $numberOfGroups);
@@ -118,6 +112,8 @@ class CrossGroupComparisonService
             $numberOfGroups,
             $applyTo
         );
+
+        $rankingRules = $this->extractRankingRules($type);
 
         return [
             'enabled' => $evaluation['enabled'],
@@ -144,6 +140,39 @@ class CrossGroupComparisonService
             ],
             'candidates' => $rankedCandidates->map(fn($c) => $this->formatCandidate($c))->values()->all(),
         ];
+    }
+
+    /**
+     * Public helper: build + rank candidates cho cross-group comparison.
+     *
+     * ✅ LUÔN chạy — KHÔNG phụ thuộc vào `cross_group_ranking.enabled` hay `applied` flag.
+     * Dùng để các service khác (như KnockoutRebuildService) tái sử dụng logic build/rank
+     * đã có, đảm bảo kết quả luôn giống với API comparison chính.
+     *
+     * Luồng giống buildComparisonPayload (khi applied=true) nhưng:
+     *   - Bỏ check `applied` (luôn build).
+     *   - Bỏ `assignQualifiedStatus` (caller tự quyết định pick bao nhiêu).
+     *   - minimumGroupSize fallback về 0 nếu không có.
+     *
+     * @return Collection<int, array> Ranked candidates (mỗi item có 'rank', 'candidate_type', 'team_id', 'group_id', ...)
+     */
+    public function buildRankedCandidates(TournamentType $type, ?int $minimumGroupSize = null): Collection
+    {
+        $effectiveMin = $minimumGroupSize ?? 0;
+        return $this->buildAndRankCandidates($type, $effectiveMin);
+    }
+
+    /**
+     * Private helper: chạy buildCandidates → buildComparisonStats → rankCandidates.
+     * Được dùng chung bởi buildComparisonPayload (khi applied) và buildRankedCandidates.
+     */
+    private function buildAndRankCandidates(TournamentType $type, int $minimumGroupSize): Collection
+    {
+        $groups = $type->groups()->orderBy('id')->get();
+        $candidates = $this->buildCandidates($groups, $minimumGroupSize);
+        $candidates = $this->buildComparisonStats($candidates, $minimumGroupSize);
+        $rankingRules = $this->extractRankingRules($type);
+        return $this->rankCandidates($candidates, $rankingRules);
     }
 
     /**
@@ -262,24 +291,31 @@ class CrossGroupComparisonService
     }
 
     /**
-     * Tính số slot knockout theo 2^n gần nhất với numAdvancing × numGroups.
+     * Tính số slot knockout theo quy tắc CEILING power-of-2.
      *
-     * Quy tắc:
-     * - Vòng knockout yêu cầu số đội là 2^n (2, 4, 8, 16, 32).
-     * - Nếu numAdvancing × numGroups KHÔNG phải 2^n, làm tròn về 2^n gần nhất:
-     *   + Ưu tiên làm tròn xuống (gần numAdvancing × numGroups hơn)
-     *   + Tie-break: ưu tiên làm tròn xuống
-     * - Đảm bảo knockout_slots >= numberOfGroups (luôn có Nhất mỗi bảng đi tiếp).
+     * QUY TẮC NÀY PHẢI KHỚP với logic ở TournamentTypeController::PHASE 2.5 (khi generate round 2)
+     * và với KnockoutRebuildService::computeKnockoutSlotsCeiling.
+     * - total = numAdvancing * numberOfGroups
+     * - knockout_slots = ceil power-of-2 >= total
      *
-     * @param int $numAdvancing  Số đội đi tiếp / bảng (pool_stage.num_advancing_teams)
-     * @param int $numberOfGroups Số bảng (pool_stage.number_competing_teams)
+     * Ví dụ:
+     *   total=1  → 2   (đảm bảo ít nhất 2 đội)
+     *   total=2  → 2
+     *   total=3  → 4   (KHÔNG làm tròn về 2 như code cũ)
+     *   total=4  → 4
+     *   total=5  → 8
+     *
+     * Lưu ý: Kết quả LUÔN được đảm bảo >= numberOfGroups để mỗi bảng có ít nhất 1 Nhất vào round 2.
+     *
+     * @param int $numAdvancing   Số đội đi tiếp / bảng (pool_stage.num_advancing_teams)
+     * @param int $numberOfGroups Số bảng
      */
     protected function getKnockoutSlots(int $numAdvancing, int $numberOfGroups): int
     {
         $total = max(0, $numAdvancing * $numberOfGroups);
 
         if ($total <= 0) {
-            return 0;
+            return max(0, $numberOfGroups);
         }
 
         // Edge case: tổng = 1 đội thì knockout không hợp lệ, ép về 2
@@ -287,29 +323,13 @@ class CrossGroupComparisonService
             return max(2, $numberOfGroups);
         }
 
-        // Tính prev_power_of_2 và next_power_of_2
+        // ✅ Ceiling power-of-2 (KHỚP với KnockoutRebuildService::computeKnockoutSlotsCeiling)
+        // → round 2 cần power-of-2 để có bracket hợp lệ.
         $logVal = log($total, 2);
-        $nextPower = (int) pow(2, (int) ceil($logVal));
-        $prevPower = (int) pow(2, (int) floor($logVal));
-
-        // Đảm bảo prevPower >= 1
-        if ($prevPower < 1) {
-            $prevPower = 1;
-        }
-
-        // Tính khoảng cách tới mỗi power
-        $diffToPrev = $total - $prevPower;
-        $diffToNext = $nextPower - $total;
-
-        // Làm tròn xuống nếu gần hơn (hoặc bằng nhau → ưu tiên xuống)
-        if ($diffToPrev <= $diffToNext && $prevPower >= 2) {
-            $targetSlots = $prevPower;
-        } else {
-            $targetSlots = $nextPower;
-        }
+        $ceilingPower = (int) pow(2, (int) ceil($logVal));
 
         // Đảm bảo >= numberOfGroups (luôn có Nhất mỗi bảng đi tiếp)
-        return max((int) $numberOfGroups, $targetSlots);
+        return max((int) $numberOfGroups, (int) $ceilingPower);
     }
 
     /**
@@ -477,13 +497,20 @@ class CrossGroupComparisonService
     /**
      * Xác định các đội bị loại khỏi comparison ở group này.
      *
-     * Logic: với group có k đội và minimum m:
-     * - excluded_count = k - m
-     * - Loại top (k - excluded_count + 1) → k của standings, tức là rank từ (m + 1) đến k.
+     * QUY TẮC SO SÁNH CÔNG BẰNG:
+     * - Với bảng đủ (k > minimumGroupSize): loại trận gặp **đội cuối bảng (Ba)** để so sánh Nhì công bằng.
+     *   Lý do: Ba có thể thua nhiều trận hơn, tạo handicap không công bằng cho Nhì.
+     *   → Chỉ tính trận Nhì gặp Nhất.
+     *
+     * - Với bảng thiếu (k <= minimumGroupSize): không loại gì, tính đầy đủ.
      *
      * Ví dụ:
-     * - k = 5, m = 4 → loại rank 5 (1 đội cuối).
-     * - k = 6, m = 4 → loại rank 5, 6 (2 đội cuối).
+     * - Bảng 3 đội (k=3, m=2): loại rank 3 (Ba) → Nhì được so sánh qua trận gặp Nhất.
+     * - Bảng 2 đội (k=2, m=2): không loại gì → Nhì chỉ gặp Nhất, tính đầy đủ.
+     *
+     * @param int $groupTeamCount     Số đội trong bảng
+     * @param int $minimumGroupSize   Minimum group size để comparison được apply
+     * @return int[]                  Danh sách opponent_id bị loại
      */
     protected function getExcludedOpponentIds(Group $group, int $groupTeamCount, int $minimumGroupSize): array
     {
@@ -497,7 +524,7 @@ class CrossGroupComparisonService
         $excludedCount = $groupTeamCount - $minimumGroupSize;
         $excludedIds = [];
 
-        // Loại từ cuối BXH trở lên
+        // ✅ Loại từ CUỐI BXH (Ba) lên → so sánh Nhì qua trận gặp Nhất.
         for ($i = 0; $i < $excludedCount; $i++) {
             $standing = $standings->get(($groupTeamCount - 1) - $i);
             if ($standing && isset($standing['team']['id'])) {
